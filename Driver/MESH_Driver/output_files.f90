@@ -659,10 +659,10 @@ module output_files
             allocate(group%grid%dat(shd%NA, t))
             group%grid%dat = 0.0
             if (field%ilvl > 0) then
-                call output_variables_allocate_field_pntr( &
+                call output_variables_allocate_pntr( &
                     group%grid%src, out_group%grid, field%vname, shd%NA, shd%lc%IGND, field%ilvl)
             else
-                call output_variables_allocate_field_pntr(group%grid%src, out_group%grid, field%vname, shd%NA)
+                call output_variables_allocate_pntr(group%grid%src, out_group%grid, field%vname, shd%NA)
             end if
 
             !> File name.
@@ -790,10 +790,10 @@ module output_files
             allocate(group%tile%dat(shd%lc%NML, t))
             group%tile%dat = 0.0
             if (field%ilvl > 0) then
-                call output_variables_allocate_field_pntr( &
+                call output_variables_allocate_pntr( &
                     group%tile%src, out_group%tile, field%vname, shd%lc%NML, shd%lc%IGND, field%ilvl)
             else
-                call output_variables_allocate_field_pntr(group%tile%src, out_group%tile, field%vname, shd%lc%NML)
+                call output_variables_allocate_pntr(group%tile%src, out_group%tile, field%vname, shd%lc%NML)
             end if
 
             !> File name.
@@ -1435,7 +1435,7 @@ module output_files
 
                 !> Water balance.
                 case (VN_PREC, 'Rainfall', 'Rain', 'Precipitation')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PREC, args, nargs, z, -1, real(ic%dts))
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PREC, args, nargs, z)
                 case (VN_EVAP, 'Evapotranspiration')
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_EVAP, args, nargs, z, -1, real(ic%dts))
                 case (VN_PEVP)

@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1398'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1461'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -254,14 +254,14 @@ program RUNMESH
 
     !> Allocate output variables for screen output.
     if (PRINTSIMSTATUS == OUT_JDATE_DLY .or. PRINTSIMSTATUS == OUT_DATE_DLY) then
-        call output_variables_init_fields(shd, cm, out%d)
+        call output_variables_series_init(shd, cm, out%d)
     end if
     if (PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) then
-        call output_variables_init_fields(shd, cm, out%m)
+        call output_variables_series_init(shd, cm, out%m)
     end if
 
     !> Allocate output variables for run totals.
-    call output_variables_init_fields(shd, cm, out%tot)
+    call output_variables_series_init(shd, cm, out%tot)
 
     !> Initialize process modules.
     if (ro%RUNTILE) then
@@ -952,7 +952,7 @@ program RUNMESH
                     if (ro%RUNBALWB) then
                         write(line, '((a), 3(f10.3))') &
                             trim(line), &
-                            sum(out%d%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%d%grid%prec*shd%FRAC)/sum(shd%FRAC), &
                             sum(out%d%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
                             sum(out%d%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
                     end if
@@ -971,7 +971,7 @@ program RUNMESH
                     if (ro%RUNBALWB) then
                         write(line, '((a), 3(f10.3))') &
                             trim(line), &
-                            sum(out%m%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%m%grid%prec*shd%FRAC)/sum(shd%FRAC), &
                             sum(out%m%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
                             sum(out%m%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
                     end if
@@ -1108,7 +1108,7 @@ program RUNMESH
 
         !> Basin totals for the run.
         if (ro%RUNBALWB) then
-            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%prec*shd%FRAC)/sum(shd%FRAC)
             TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC)
             TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
             TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%rofo*shd%FRAC)*ic%dts/sum(shd%FRAC)
