@@ -1,0 +1,47 @@
+# Make file for IBM fortran compiler
+# This is for hadar. Do not confuse it with the pgf or gnu options!
+# J. Melton
+#
+OBJ = ctem_params.o ctem_statevars.o APREP.o CLASSBD.o GRALB.o mvidx.o SNOW_ALBVAL.o SNOW_TRANVAL.o SNOALBA.o TNPREP.o WFILL.o CANADD.o CLASSD.o GRDRAN.o SNOALBW.o  TPREP.o WFLOW.o CANALB.o CLASSG.o GRINFL.o SNOVAP.o TSOLVC.o WPREP.o wetland_methane.o ctemg1.o bio2str.o ctems1.o ctemg2.o PHTSYN3.o CANVAP.o CLASSI.o CWCALC.o ICEBAL.o SUBCAN.o TSOLVE.o XIT.o CGROW.o CLASSS.o DIASURFZ.o SCREENRH.o TFREEZ.o TSPOST.o CHKWAT.o CLASST.o DRCOEF.o SLDIAG.o TMCALC.o TSPREP.o CLASSA.o CLASSW.o FLXSURFZ.o SNINFL.o TMELT.o TWCALC.o CLASSB.o CLASSZ.o GATPREP.o SNOADD.o TNPOST.o WEND.o balcar.o GAUSSG.o ORDLEG.o TRIGL.o mainres.o hetresv.o hetresg.o allocate.o phenolgy.o turnover.o mortality.o disturb.o ctems2.o competition_map.o competition_unmap.o read_from_job_options.o soil_ch4uptake.o landuse_change_mod.o competition_mod.o ctem.o io_driver.o runclass36ctem.o
+
+# Binary dir
+#
+BDIR = /users/tor/acrn/rjm/clsctm_bin
+
+# This is our compiler and flags to use
+#
+FC=xlf90
+
+# These flags don't work for some reason. Use the simple ones below.
+#FFLAGS = -C -g -q64 -qfixed=72 -O -qmaxmem=-1 -qwarn64 -qsource -qstrict -qfloat=rrm:norsqrt:nofold -qflttrap=ov:zero:inv:imp:enable -qsigtrap -qsuppress=1501-245 -qalias=intptr -qextname -qautodbl=dbl4 -qarch=auto -qtune=auto -qnocheck -qspillsize=32648 -qnoundef -qnosave -qtbtable=full -qxref -qattr -bnoquiet -qinitauto=7FF7FFFF -qnoprint
+
+#FFLAGS2 = -C -g -q64 -qfree=f90 -O -qmaxmem=-1 -qwarn64 -qsource -qstrict -qfloat=rrm:norsqrt:nofold -qflttrap=ov:zero:inv:imp:enable -qsigtrap -qsuppress=1501-245 -qalias=intptr -qextname -qautodbl=dbl4 -qarch=auto -qtune=auto -qnocheck -qspillsize=32648 -qnoundef -qnosave -qtbtable=full -qxref -qattr -bnoquiet -qinitauto=7FF7FFFF -qnoprint
+
+#FFLAGS = -C -g -q64 -qfixed=72 -O -qmaxmem=-1 -qwdump -qsource -qstrict -qfloat=rrm:norsqrt:nofold -qflttrap=ov:zero:inv:imp:enable -qsigtrap=xl__trcedump -qsuppress=1501-245 -qalias=intptr -qextname -qautodbl=dbl4 -qarch=auto -qtune=auto -qnocheck -qspillsize=32648 -qnoundef -qnosave -qtbtable=full -qxref -qattr -bnoquiet -qinitauto=7FF7FFFF -qnoprint
+
+#FFLAGS2 = -C -g -q64 -qfree=f90 -O -qmaxmem=-1 -qwarn64 -qsource -qstrict -qfloat=rrm:norsqrt:nofold -qflttrap=ov:zero:inv:imp:enable -qsigtrap=xl__trcedump -qsuppress=1501-245 -qalias=intptr -qextname -qautodbl=dbl4 -qarch=auto -qtune=auto -qnocheck -qspillsize=32648 -qnoundef -qnosave -qtbtable=full -qxref -qattr -bnoquiet -qinitauto=7FF7FFFF -qnoprint
+
+# Working flags:
+FFLAGS = -O -q64 -qmaxmem=-1 -qrealsize=8 -qfixed=72 # -qsource #-qsuffix=f=for 
+
+FFLAGS2 = -O -q64 -qmaxmem=-1 -qrealsize=8 -qfree=f90
+
+# These are the rules to make the targets
+#
+%.o: %.for 
+	$(FC) $(FFLAGS) -c $< -o $@
+%.o: %.f90
+	$(FC) $(FFLAGS2) -c $< -o $@
+%.mod : %.f90
+	$(FC) $(FFLAGS2) -c $< -o $@ 
+
+CLASS36CTEM: $(OBJ)
+	 $(FC) $(FFLAGS) -o $(BDIR)/CLASS36CTEM $(OBJ)
+
+.PHONY: clean
+
+clean:
+	rm -f *.o *.mod *~ core CLASS36CTEM
+
+$(ODIR):
+	mkdir $(ODIR)	

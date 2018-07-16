@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Use this to move CLASS36CTEM code from local to hadar
+# for ALTERNATE code running
+
+# DON'T transfer the makefile. The IBM make file is different than the pgi one.
+# but do transfer the xlf one (and rename during the transfer!)
+scp xlf_Makefile_alt acrnrjm@hadar:/users/tor/acrn/rjm/code/class36ctem/src_alt/Makefile
+
+scp *.f acrnrjm@hadar:/users/tor/acrn/rjm/code/class36ctem/src_alt
+scp *.f90 acrnrjm@hadar:/users/tor/acrn/rjm/code/class36ctem/src_alt
+scp template_job_options_file.txt acrnrjm@hadar:/users/tor/acrn/rjm/code/joboptions
+scp netcdf_output_processing/*.f90 acrnrjm@hadar:/users/tor/acrn/rjm/code/class36ctem/src_alt/netcdf_output_processing
+scp netcdf_output_processing/*.sh acrnrjm@hadar:/users/tor/acrn/rjm/code/class36ctem/src_alt/netcdf_output_processing
+scp netcdf_output_processing/*.txt acrnrjm@hadar:/users/tor/acrn/rjm/code/class36ctem/src_alt/netcdf_output_processing
+

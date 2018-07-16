@@ -1,0 +1,63 @@
+&joboptions
+
+ TRANSIENT_RUN = .FALSE.
+ TRANS_STARTYR = 1850
+ CTEMLOOP = 5 ,
+ CTEM_ON = .TRUE. ,
+ NCYEAR = 109 ,
+ LNDUSEON = .FALSE. ,   
+ SPINFAST = 3 ,
+ CYCLEMET = .TRUE. ,
+ NUMMETCYLYRS = 30 ,
+ METCYLYRST = 1901 ,
+ CO2ON = .FALSE. ,
+ SETCO2CONC = 285.00 ,
+ CH4ON = .FALSE.,
+ SETCH4CONC = 1.785 , 
+ POPDON = .TRUE. ,
+ POPCYCLEYR = 1850 ,
+ PARALLELRUN = .FALSE. ,
+ DOFIRE = .FALSE. ,
+ DOWETLANDS = .FALSE. ,
+ OBSWETF = .false. ,
+ COMPETE=.FALSE. ,
+ INIBIOCLIM=.FALSE. ,
+ START_BARE=.FALSE.,
+ RSFILE=.TRUE. ,
+ START_FROM_RS=.FALSE.,
+ LEAP = .false.,
+
+ IDISP = 0 ,
+ IZREF = 2 ,
+ ISLFD = 0 ,
+ IPCP = 1 ,
+ ITC = 1 ,
+ ITCG = 1 ,
+ ITG = 1 ,
+ IWF = 0 ,
+ IPAI = 0 ,
+ IHGT = 0 ,
+ IALC = 0 ,
+ IALS = 0 ,
+ IALG = 0 ,
+ isnoalb = 0,
+ igralb = 0,
+
+ JHHSTD = 1 ,
+ JHHENDD = 365 ,
+ JDSTD = 1 ,
+ JDENDD = 365 ,
+ JHHSTY = 2901 ,
+ JHHENDY = 3010 ,
+ JDSTY = 2901 ,
+ JDENDY = 2999 ,
+ JMOSTY = 1000 ,
+ 
+/
+
+This area is for comments about the run. 
+
+Note: START_FROM_RS must be .false. on spica/hadar. The system call does not work when
+operating in the open_mp script.
+ 
+

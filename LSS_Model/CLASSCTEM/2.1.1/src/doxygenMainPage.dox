@@ -1,0 +1,234 @@
+//Doxygen main page introduction
+
+/*!
+\mainpage CLASS-CTEM Documentation
+\section runStandAloneMode Running CLASS-CTEM
+
+[Guide to running CLASS-CTEM in a stand-alone mode](https://docs.google.com/document/d/1pzp7UfNe6aVFXe9LI9XMiGUX2pCALk4tU8MqF_UpQLg/edit?usp=sharing)
+
+
+
+
+\section overviewCTEM Overview of CTEM
+<!-- start ignore of simple table example
+\f[
+\begin{tabular} { l c r }
+  1 & 2 & 3 \\
+  4 & 5 & 6 \\
+  7 & 8 & 9 \\
+\end{tabular}
+\f]
+end ignore -->
+
+Version 1 of the CTEM is the terrestrial carbon cycle component of the second generation Canadian Earth System Model (CanESM2) \cite Arora2011-79f where it is coupled to version 2.7 of the Canadian Land Surface Scheme (CLASS). CTEM v. 2.0, used here, is currently coupled to the CLASS v. 3.6 \cite Verseghy2012-c0e. The coupled CLASS--CTEM model is capable of being run online in the CanESM model or offline, as is the case in this study, driven by observation-based meteorological forcings. CTEM models terrestrial ecosystem processes for nine PFTs, two of which are crop PFTs (see Table \ref{tab:compparams}), by tracking the flow of carbon through three living vegetation components (leaves, stem and roots) and two dead carbon pools (litter and soil). The carbon budget equations for the model's five pools are summarized in Sect. \ref{rate_change_eqns} of the Appendix. The amount of carbon in these five carbon pools is simulated prognostically. CLASS models the land surface energy and water balance and calculates liquid and frozen soil moisture, and soil temperature for three soil layers (with thicknesses 0.1, 0.25 and 3.75\,\f$m\f$). In the CLASS--CTEM framework, CLASS uses structural vegetation attributes (including LAI, vegetation height, canopy mass and rooting depth) simulated by CTEM, and CTEM uses soil moisture, soil temperature and net radiation calculated by CLASS. Combined, CLASS and CTEM simulate the atmosphere--land fluxes of energy, water and \f$CO_2\f$.
+
+Version 1.0 of CTEM is described in a collection of papers detailing parametrization of photosynthesis, autotrophic and heterotrophic respiration \cite Arora2003-3b7; phenology, carbon allocation, biomass turnover and conversion of biomass to structural attributes \cite Arora2005-6b1; dynamic root distribution \cite Arora2003838; and disturbance (fire) \cite Arora20052ac. These processes are modelled over prescribed fractional coverage of nine PFTs \cite Wang2006-he and determine the structural vegetation dynamics including vegetation biomass, LAI, vegetation height, fraction of roots in each of the three soil layers, leaf onset and offset times and primary \f$CO_2\f$ fluxes of gross primary productivity (GPP) and NPP. A full description of CTEM and changes from v. 1.0 to v. 2.0 are included in the Appendix.
+
+A parametrization for competition between PFTs in an earlier version of CTEM is described by \cite Arora2006-pp \cite Arora2006-ax where it was evaluated at select locations. Here we present CTEM v. 2.0, which builds upon the model framework of CTEM v. 1.0 and can be run in two different modes, either (i) using specified fractional coverage of its nine PFTs, or (ii) allowing the fractional coverage of its seven non-crop PFTs to be dynamically determined based on competition between PFTs. The parametrization for simulating competition between PFTs is summarized in Sect. \ref{compmain}. The fire parametrization has also been refined in the new model version as described in Appendix \ref{fire}. The CLASS--CTEM modelling framework has the capability of representing the sub-grid scale variability of PFTs using either a composite or a mosaic configuration \cite Li2012-f7f \cite Melton2014-xk. In the composite (or single tile) configuration, the vegetation attributes for all PFTs present in a grid cell are averaged and used in energy and water balance calculations that determine the physical land surface conditions including soil moisture, soil temperature and thickness and fractional coverage of snow (if present). In the mosaic (or multi-tile) configuration each PFT is allocated its own tile for which separate energy and water balance calculations are performed. As a result, the simulated carbon balance evolves somewhat differently in the two configurations despite being driven with identical climate forcing (see \cite Melton2014-xk). The results presented in this paper are obtained using the composite configuration.
+
+\section overviewCLASS Overview of CLASS
+
+The Canadian Land Surface Scheme, CLASS, was originally developed for use with the Canadian Global Climate Model or GCM (Verseghy, 1991; Verseghy et al., 1993). This documentation describes version 3.6 of CLASS, which was released in December of 2011. The table at the end of this overview summarizes the development of CLASS from the late 1980’s to the present.
+
+The basic function of CLASS is to integrate the energy and water balances of the land surface forward in time from an initial starting point, making use of atmospheric forcing data to drive the simulation. When CLASS is run in coupled mode with a global or regional atmospheric model, the required forcing data are passed to it at each time step over each modeled grid cell from the atmospheric driver. CLASS then performs its internal calculations, evaluating a suite of prognostic and diagnostic variables such as albedo and surface radiative and turbulent fluxes, which are in turn passed back to the driver. CLASS can also be run in uncoupled or offline mode, using forcing data derived from field measurements, and the output values of its prognostic and diagnostic variables can then be validated against observations. Version 3.6 includes a single-column offline driver which can be used for this purpose.
+
+CLASS models separately the energy and water balances of the soil, snow, and vegetation canopy (see the diagram below). The basic prognostic variables consist of the temperatures and the liquid and frozen moisture contents of the soil layers; the mass, temperature, density, albedo and liquid water content of the snow pack; the temperature of the vegetation canopy and the mass of intercepted rain and snow present on it; the temperature and depth of ponded water on the soil surface; and an empirical vegetation growth index. These variables must be initialized, and a set of physical parameters describing the soil and vegetation existing on the modelled area must be assigned background values, at the beginning of the simulation.
+
+At each time step, CLASS calculates the bulk characteristics of the vegetation canopy on the basis of the vegetation types present over the modelled area. In a pre-processing step, each vegetation type is assigned representative values of parameters such as albedo, roughness length, annual maximum and minimum plant area index, rooting depth and so on (see the section on “Data Requirements”). These values are then aggregated over four main vegetation categories identified by CLASS: needleleaf trees, broadleaf trees, crops, and grass (i.e. short vegetation). The physiological characteristics of the vegetation in each category are determined at the current time step using the aggregated background parameters and assumed annual or diurnal variation functions. These physiological characteristics are then aggregated to produce the bulk canopy characteristics for the current time step.
+
+\image html "schematicDiagramOfClass.png" "Schematic Diagram Of CLASS"
+\image latex "schematicDiagramOfClass.png" "Schematic Diagram Of CLASS"
+
+In performing the surface flux calculations the modeled area is divided into up to four subareas: bare soil, vegetation over soil, snow over bare soil, and vegetation over snow. The fractional snow coverage is determined using the concept of a threshold snow depth. If the calculated snow depth is less than this value, the snow depth is set to the threshold value and the fractional snow cover is calculated on the basis of conservation of snow mass. The fluxes are calculated for each of the four subareas, and these and the prognostic variables are then areally averaged before being passed back to the atmospheric model.
+
+Originally CLASS performed only one set of these calculations for each grid cell of the model domain. In more recent versions, a “mosaic” option has been added to handle sub-grid scale heterogeneity more effectively. When this option is utilized, each grid cell is divided into a user-specified number of mosaic “tiles”, and the CLASS calculations are performed in turn over each. The surface fluxes are averaged, but the prognostic variables are kept separate for each of the tiles of the mosaic between time steps.
+
+The section on the CLASS offline driver, RUNCLASS, provides information on how a CLASS run is typically performed, from assigning the background and initial values of variables, through calling the high-level CLASS subroutines, to calculating values of diagnostic and output variables. A gather-scatter operation is included in the driver, mimicking the practice in atmospheric models of “gathering” land surface points on latitude circles onto long vectors prior to the calculations, for improved computational efficiency on vector supercomputers. For CLASS, the mosaic tiles on each of the modelled grid cells are “gathered” onto long arrays prior to calling the CLASS subroutines (thus collapsing the first two dimensions of the arrays into one), and subsequently “scattered” back onto the grid cells before performing the diagnostic averaging calculations.
+
+The two sections following the one that describes the driver provide detailed descriptions first of the common block and other preliminary routines that are called before the run is launched, and then of the pre- and post-processing routines that are called at the beginning and end of each time step. The next three sections detail the three main CLASS subroutines together with the auxiliary subroutines that they call: CLASSA, which handles the calculation of the albedos and other surface parameters; CLASST, which addresses the evaluation of the surface energy balance and related variables; and CLASSW, which performs the surface water balance calculations and the re-aggregation of the prognostic variables. The sub-section on each subroutine contains a dictionary of the variables passed into and out of it, with units. The final section provides a list of references cited.
+
+\section devHistory Developmental history of CLASS
+
+\f[
+\begin{tabular}{ | l | l || l | }
+1.0 & April 1989 & Basic thermal and hydrological model of snow and soil. \\
+2.0 & August 1991 & Addition of vegetation thermal and hydrological model. \\
+2.1 & May 1993 & Full vectorization of code to enable efficienr running on vector supercomputers. \\
+2.2 & April 1994 & Augmentation of diagnostic calculations; incorporation of in-line comments throughout; development of a parallel stand-alone version of the model for use with field data. \\
+2.3 & December 1994 & Revisions to diagnostic calculations; new near-surface atmospheric stability functions. \\
+2.4 & August 1995 & Complete set of water budget diagnostic calculations; parametrizations of organic soils and rock soils; allowance for inhomegeneity between soil layers; incorporation of variable surface detention capacity. \\
+2.5 & January 1996 & Completion of energy budget diagnostic calculations. \\
+2.6 & August 1997 & Revisions to surface stability function calculations. \\
+2.7 & December 1997 & Incorporation of variable soil permeable depth; calculation of soil thermal and hydraulic properties based on textural
+composition; modified surface temperature iteration scheme. \\
+3.0 & December 2002 & Improved treatment of soil evaporation; complete treatment of organic soils; new canopy conductance formulation; preliminary routines for lateral movement of soil water; enhanced snow density and snow interception; improved turbulent transfer from vegetation; mosaic formulation. \\
+3.1 & April 2005 & Faster surface temperature iteration scheme; refinements to leaf boundary resistance formulation; improved treatment of snow sublimation and interception; transition to Fortran 90 and single precision variables. \\
+3.2 & May 2006 & Option for multiple soil layers at depth; additional liquid water content of snow pack; revised radiation transmission in vegetation. \\
+3.3 & December 2006 & Separate temperature profile curve fit for snow and soil; multiple-layer option for ice sheets; water and energy balance checks for each time step; modifications to soil hydraulic conductivity calculations. \\
+3.4 & April 2008 & Streamline and clean up code; updated soil thermal conductivity calculations; revisions to handling of water stored on vegetation. \\
+3.5 & December 2010 & Updated field capacity calculation; revised treatment of water on canopy; reworked calculation of baseflow. \\
+3.6 & December 2011 & Revised ponding depth over organic soils; revised snow albedo refreshment threshold; new snow thermal conductivity algorithm; interface with Canadian Terrestrial Ecosystem Model (CTEM). \\
+\end{tabular}
+\f]
+
+\section dataRequirements Data Requirements
+
+This section describes the three types of data that are required to run CLASS: atmospheric forcing data, surface vegetation and soil data, and initial values for the prognostic variables.
+
+\subsection forcingData Forcing Data
+
+At each time step, for each grid cell or modelled area, the following atmospheric forcing data are required:
+
+   - FCLOROW Fractional cloud cover [ ]
+   - FDLROW Downwelling longwave sky radiation \f$[ W m^{-2} ]\f$
+   - FSIHROW Near infrared shortwave radiation incident on a horizontal surface \f$[W m^{-2} ]\f$
+   - FSVHROW Visible shortwave radiation incident on a horizontal surface \f$[W m^{-2} ]\f$
+   - PREROW Surface precipitation rate \f$[kg m^{-2} s^{-1} ]\f$
+   - PRESROW Surface air pressure \f$[P_a ]\f$
+   - QAROW Specific humidity at reference height \f$[kg kg^{-1} ]\f$
+   - TAROW Air temperature at reference height [K]
+   - ULROW Zonal component of wind velocity \f$[m s^{-1} ]\f$
+   - VLROW Meridional component of wind velocity \f$[m s^{-1} ]\f$
+   - VMODROW Wind speed at reference height \f$[m s^-1 ]\f$
+   - ZBLDROW Atmospheric blending height for surface roughness length averaging [m]
+   - ZRFHROW Reference height associated with forcing air temperature and humidity [m]
+   - ZRFMROW Reference height associated with forcing wind speed [m]
+
+When assembling the forcing data, the following guidelines should be noted:
+
+1) CLASS ordinarily requires that the forcing incoming shortwave radiation be partitioned into the visible and near-infrared components. If these are not available, however, they can each be roughly estimated as approximately half of the total incoming solar radiation.
+
+2) The fractional cloud cover is used to calculate the direct and diffuse components of the incoming shortwave radiation. If it is not available it can be estimated on the basis of the solar zenith angle and the occurrence of precipitation (see the section on the RUNCLASS driver).
+
+3) For atmospheric models, the air temperature supplied to CLASS should be the lowest level air temperature extrapolated using the dry adiabatic lapse rate to the bottom of the atmosphere, i.e. to where the wind speed is zero and the pressure is equal to the surface pressure P a . For field data, the actual measured air temperature at the reference height should be used, since in this case the adiabatic extrapolation is performed within CLASS.
+
+4) Atmospheric models provide the zonal and meridional components of the wind velocity, but CLASS does not actually require information on wind direction. Thus, if only the scalar wind speed is available, either ULROW or VLROW can be set to it, and the other to zero. (Both of these terms, plus the scalar wind speed VMODROW, must be supplied to CLASS.)
+
+5) In atmospheric models the forcing wind speed, air temperature and specific humidity are obtained from the lowest modelled atmospheric layer, and thus the reference height will be the height above the “surface” (i.e. the location where the wind speed is zero and the pressure is equal to the surface pressure P a ) corresponding to that lowest layer. Some atmospheric models use a vertical co-ordinate system in which the momentum and thermodynamic levels are staggered, and if so, ZFRMROW and ZRFHROW will have different values. If that is the case, the switch ISLFD in the CLASS driver should be set to 2, so that the subroutines FLXSURFZ and DIASURFZ are called (see the RUNCLASS documentation), since the other options do not support different reference heights. In the case of field data, the reference height is the height above the ground surface at which the variables are measured. If the measurement height for wind speed is different from that for the air temperature and specific humidity, again the ISLFD switch in the CLASS driver should be set to 2. (Note that neither ZRFHROW nor ZRFMROW may be smaller than the vegetation canopy height, as this will cause the model run to crash.)
+
+6) If the surface being modelled is a heterogeneous one, care must be taken to ensure that the reference heights are greater than the “blending height”, the distance above the surface at which the atmospheric variables are not dominated by any one surface type. In principle this height depends on the length scale of the roughness elements; it is usually of the order of 50-100 m. In CLASS the blending height is used in averaging the roughness lengths over the modelled area, and is read in separately from ZRFMROW and ZRFHROW as ZBLDROW.
+
+7) CLASS is able to run with total incoming precipitation, partitioning it into rainfall and snowfall on the basis of empirically derived equations. If the rainfall rate (RPREROW) and snowfall rate (SPREROW) are available, they should be used instead. The READ statement in the CLASS driver should be modified accordingly, and the switch IPCP should be set to 4.
+
+8) The length of the time step should be carefully considered in assembling the forcing data. CLASS has been designed to run at a time step of 30 minutes or less, and the explicit prognostic time stepping scheme used for the soil, snow and vegetation variables is based on this assumption. Longer time steps may lead to the appearance of numerical instabilities in the modelled prognostic variables.
+
+\subsection vegetationData Vegetation Data
+
+For each of the four main vegetation categories (needleleaf trees, broadleaf trees, crops and grass), the following data are required for each mosaic tile over each grid cell or modelled area:
+
+   - ALICROT Average near-IR albedo of vegetation category when fully-leafed [ ]
+   - ALVCROT Average visible albedo of vegetation category when fully-leafed [ ]
+   - CMASROT Annual maximum canopy mass for vegetation category \f$[kg m^{-2} ]\f$
+   - FCANROT Annual maximum fractional coverage of modelled area [ ]
+   - LNZ0ROT Natural logarithm of maximum vegetation roughness length [ ]
+   - PAMNROT Annual minimum plant area index of vegetation category [ ]
+   - PAMXROT Annual maximum plant area index of vegetation category [ ]
+   - PSGAROT Soil moisture suction coefficient (used in stomatal resistance calculation) [ ]
+   - PSGBROT Soil moisture suction coefficient (used in stomatal resistance calculation) [ ]
+   - QA50ROT Reference value of incoming shortwave radiation (used in stomatal resistance calculation) \f$[W m^{-2} ]\f$
+   - ROOTROT Annual maximum rooting depth of vegetation category [m]
+   - RSMNROT Minimum stomatal resistance of vegetation category \f$[s m^{-1} ]\f$
+   - VPDAROT Vapour pressure deficit coefficient (used in stomatal resistance calculation) [ ]
+   - VPDBROT Vapour pressure deficit coefficient (used in stomatal resistance calculation) [ ]
+
+CLASS models the physiological characteristics of trees as remaining constant throughout the year except for the leaf area index and plant area index, which vary seasonally between the limits defined by PAMXROT and PAMNROT. The areal coverage of crops varies from zero in the winter to FCANROT at the height of the growing season, and their physiological characteristics undergo a corresponding cycle. Grasses remain constant year-round. (For full details of these calculations, see the documentation for subroutine APREP). Urban areas are also treated as “vegetation” in the CLASS code, and have associated values for FCANROT, ALVCROT, ALICROT and LNZ0ROT. Thus these arrays have a third dimension of 5 rather than 4.
+
+Ideally the above vegetation parameters should be measured at the modelled location. Of course this is not always possible, especially when running over a large modelling domain. As a guide, the table in Appendix A provides representative values for the 20 vegetation types recognized by the Canadian GCM. If more than one type of vegetation in a given category is present on the modelled area, the parameters for the category should be areally averaged over the vegetation types present. For the stomatal resistance parameters, typical values of these for the four principal vegetation types are given below:
+
+\f[
+\begin{tabular}{ | l | l | l | l | l | l | l | }
+ & RSMN & QA50 & VPDA & VPDB & PSGA & PSGB \\
+Needleleaf trees & 200.0 & 30.0 & 0.65 & 1.05 & 100.0 & 5.0 \\
+Broadleaf trees & 125.0 & 40.0 & 0.50 & 0.60 & 100.0 & 5.0 \\
+Crops & 85.0 & 30.0 & 0.50 & 1.00 & 100.0 & 5.0 \\
+Grass & 100.0 & 30.0 & 0.50 & 1.00 & 100.0 & 5.0 \\
+\end{tabular}
+\f]
+
+\subsection soilData Soil Data
+
+The following information is required for each modelled soil layer:
+
+   - DELZ Layer thickness [m]
+   - ZBOT Depth of bottom [m]
+
+The standard operational configuration for CLASS consists of three soil layers, of thicknesses 0.10 m, 0.25 m and 3.75 m, and thus of bottom depths 0.10, 0.35 and 4.10 m respectively. CLASS versions 3.2 and higher support other options: the third soil layer may be replaced with a larger number of thinner layers, and/or the bottom of the soil profile may be extended below 4.10 m. However, because the temperature stepping scheme used in CLASS is of an explicit formulation, care must be taken not to make the layers too thin, since this may lead to numerical instability problems. As a rule of thumb, the thicknesses of layers deeper than the first should be limited to \f$\geq\f$ 0.25 m.
+
+For each of the modelled soil layers on each of the mosaic tiles, the following texture data are required:
+
+   - CLAYROT Percentage clay content
+   - ORGMROT Percentage organic matter content
+   - SANDROT Percentage sand content
+
+\image html "percentSand.png" "Percent Sand"
+\image latex "percentSand.png" "Percent Sand"
+
+1) For mineral soils, the percentages of sand, clay and organic matter content need not add up to 100%, since the residual is assigned to silt content. If the exact sand, clay and organic matter contents are not known, estimates can be made for the general soil type on the basis of the standard USDA texture triangle shown above. Organic matter contents in mineral soils are typically not more than a few percent.
+
+2) If the soil layer is a fully organic one, SANDROT, CLAYROT and ORGMROT are used differently. The sand content is assigned a flag value of -2, and the organic matter content may be assigned a flag value of 1, 2 or 3 depending on whether the peat texture is fibric, hemic or sapric (see Letts et al., 2000). The current default is for the first layer to be assumed as fibric, the second as hemic and any lower layers as sapric. CLAYROT is not used and is set to zero.
+
+3) If the layer consists of rock, SANDROT is assigned a flag value of -3. If it is part of a continental ice sheet, it is assigned a flag value of -4. In both cases, CLAYROT and ORGMROT are not used and are set to zero.
+
+SANDROT, CLAYROT and ORGMROT are utilized in the calculation of the soil layer thermal and hydraulic properties in subroutine CLASSB. If the measured values of these properties are available, they should be used instead.
+
+For each of the mosaic tiles over the modelled area, the following surface parameters must be specified:
+
+   - DRNROT Soil drainage index
+   - FAREROT Fractional coverage of mosaic tile on the modelled area
+   - MIDROT Mosaic tile type identifier (1 for land surface, 0 for inland lake)
+   - SDEPROT Soil permeable depth [m]
+
+1) The soil permeable depth, i.e. the depth to bedrock, may be less than the modelled thermal depth of the soil profile. This permeable depth is indicated by the variable SDEPROT. If the depth to bedrock occurs within a soil layer rather than at the interface between two layers, CLASS assigns the specified mineral or organic soil characteristics to the part of the layer above bedrock, and values corresponding to rock to the portion below.
+
+2) The drainage index, DRNROT, is set to 1 except in cases of deep soils where it is desired to suppress drainage from the bottom of the soil profile (e.g. in bogs, or in deep soils with a high water table). In this case it is set to 0.
+
+When the standard three-layer soil configuration is used, CLASS provides a means of accounting for the possibility of the depth to bedrock falling within the thick third layer, and therefore of phase changes of water taking place in only the upper part of the layer, by introducing the variable TBASROT, which refers to the temperature of the lower part of the layer containing the bedrock. At the beginning of the time step the temperature of the upper part of the layer is disaggregated from the overall average layer temperature using the saved value of TBASROT. The heat flow between the upper part of the soil layer and the lower part is diagnosed from the heat flux at the top of the layer. The upper layer temperature and TBASROT are stepped ahead separately, and the net heat flux in the upper part of the layer is used in the phase change of water if appropriate. The upper layer temperature and TBASROT are re-aggregated at the end of the time step to yield once again the overall average layer temperature.
+
+Two variables, assumed to be constant over the grid cell, are provided if required for atmospheric model runs:
+
+   - GGEOROW Geothermal heat flux \f$[W m^{-2} ]\f$
+   - Z0ORROW Orographic roughness length [m]
+
+Unless the soil depth is very large and/or the run is very long, the geothermal heat flux can be set to zero. Z0ORROW is the surface roughness length representing the contribution of orography or other terrain effects to the overall roughness, which becomes important when the modelled grid cell is very large (e.g. in a GCM). For field studies it can be set to zero.
+
+Finally, four parameters are required for modelling lateral movement of soil water: GRKFROT, WFCIROT, WFSFROT and XSLPROT. However, the routines for interflow and streamflow modelling are still under development, so unless the user is involved in this development, these parameters can be set to arbitrary values, since they will not be used.
+
+\subsection initProgVar Initialization of Prognostic Variables
+
+CLASS requires initial values of the land surface prognostic variables, either from the most recent atmospheric model integration or from field measurements. These are listed below, with guidelines for specifying values for each.
+
+   - ALBSROT Snow albedo [ ]
+   - CMAIROT Aggregated mass of vegetation canopy \f$[kg m^{-2} ]\f$
+   - GROROT Vegetation growth index [ ]
+   - QACROT Specific humidity of air within vegetation canopy space \f$[kg kg^{-1} ]\f$
+   - RCANROT Intercepted liquid water stored on canopy \f$[kg m^{-2} ]\f$
+   - RHOSROT Density of snow \f$[kg m^{-3} ]\f$
+   - SCANROT Intercepted frozen water stored on canopy \f$[kg m^{-2} ]\f$
+   - SNOROT Mass of snow pack \f$[kg m^{-2} ]\f$
+   - TACROT Temperature of air within vegetation canopy [K]
+   - TBARROT Temperature of soil layers [K]
+   - TBASROT Temperature of bedrock in third soil layer [K]
+   - TCANROT Vegetation canopy temperature [K]
+   - THICROT Volumetric frozen water content of soil layers \f$[m^3 m^{-3} ]\f$
+   - THLQROT Volumetric liquid water content of soil layers \f$[m^3 m^{-3} ]\f$
+   - TPNDROT Temperature of ponded water [K]
+   - TSFSROT Ground surface temperature over subarea [K]
+   - TSNOROT Snowpack temperature [K]
+   - WSNOROT Liquid water content of snow pack \f$[kg m^{-2} ]\f$
+   - ZPNDROT Depth of ponded water on surface [m]
+
+1) TBARROT, THLQROT and THICROT are required for each of the modelled soil layers. Thin soil layers near the surface equilibrate quickly, but thicker, deeper layers respond more slowly, and long-term biases can be introduced into the simulation if their temperatures and moisture contents are not initialized to reasonable values. For the moisture contents, it may be better to err on the low side, since soil moisture recharge typically takes place on shorter time scales than soil moisture loss. Field capacity is commonly used as an initial value. If the soil layer temperature is above freezing, the liquid moisture content would be set to the field capacity and the frozen moisture content to zero; if the layer temperature is below zero, the liquid moisture content would be set to the minimum value and the frozen moisture content to the field capacity minus the minimum value. Very deep soil temperatures do not have a large effect on surface fluxes, but errors in their initial values can adversely effect hydrological simulations. If the standard three-layer soil configuration is being used, TBASROT should be set to the third soil layer temperature; otherwise it can be arbitrarily set to zero. For rock or ice layers, THLQROT and THICROT should both be set to zero.
+
+2) It is best to begin a simulation in snow-free conditions, so that the snow simulation can start from the simplest possible state where SNOROT, TSNOROT, ALBSROT, RHOSROT and WSNOROT are all initialized to zero. If erroneous values of the snow variables are specified as initial conditions, this can lead to a persistent bias in the land surface simulation.
+
+3) The vegetation canopy has a relatively small heat capacity and water storage capacity compared with the soil, so its temperature and intercepted water stores equilibrate quite quickly. TCANROT and TACROT can be initialized to the air temperature and QACROT to the air specific humidity. RCANROT and SCANROT can be initialized to zero. CMAIROT, which is used only in the diagnostic energy balance check during the time step, can also be set to zero.
+
+4) GROROT should be initialized to 1 during the growing season and to 0 otherwise.
+
+5) Surface ponded water is a small term and is ephemeral in nature, so ZPNDROT and TPNDROT can both be initialized to zero. TSFSROT is included simply to provide a first guess for the surface temperature iteration in the next time step, so it can be initialized to an arbitrary value. For the snow-covered subareas of the surface it can be set to the freezing point of water; for the snow-free subareas it can be set to the temperature of the first soil layer.
+
+
+
+
+
+*/

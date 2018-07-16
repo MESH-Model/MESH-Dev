@@ -1494,3 +1494,15 @@ program RUNMESH
     stop
 
 end program
+
+        INTEGER FUNCTION STRLEN(ST)
+        INTEGER       I
+        CHARACTER     ST*(*)
+        I = LEN(ST)
+        DO WHILE (ST(I:I) .EQ. ' ')
+          I = I - 1
+        ENDDO
+        STRLEN = I
+        RETURN
+        END FUNCTION
+

@@ -1,0 +1,64 @@
+2016-12-02 Joe Melton  joe.melton@canada.ca
+
+    * Version 2.1.1
+
+        - Bug fixes to the albedo outputs
+        - Bug fix in hetresv.f and hetresg.f. If the soil coming in was a peat soil it was being treated like a mineral soil. This could lead to problems where the ice content of soils was more than the (hetres calculated) porosity. Also hetresg was slightly different in calculating psi so I have made them the same.
+        - Fixed bug where class only runs couldn't start at metcyclyrst. Fix was just to move the ctem_on switch so the metcyclyrst can occur with ctem on or off.
+        - Made it so the netcdf maker properly does chunking and compression. This results in much smaller files and perhaps a speed increase.
+        - The code can now deal with leap years in the incoming met files. Thanks to Jean-Sebastien Landry for the code changes. This also means an additional switch in the joboptions script.
+        - Jean-Sebastien Landry also noticed and fixed some bugs in how the model takes monthly lightning data and spreads it out over the days. This is also fixed here.
+
+
+2016-09-01 Joe Melton  joe.melton@canada.ca
+
+    * Version 2.1.
+
+    Major changes since version 2.0.5 include:
+
+    * CLASS v 3.6. updated with changes (v. 3.6.1) to make version 3.6.2. Changes since the original release of CLASS 3.6 in December 2011 include:
+        -   Jason Cole's (ECCC) new optional four-band calculation for the albedo of snow on the ground (three bands in the near-IR)
+        -   Paul Bartlett (ECCC) new albedo values for snow-covered canopy
+        -   Optional use of a global database of soil “colour”, on the basis of which wet and dry soil albedos are assigned
+        -   Corrections to the calculations of screen variables that are done with DRCOEF (ISLFD=0)
+        -   Change iteration limit for bisection iteration scheme in TSOLVE and TSOLVC back to 50
+        -   New upper limit on snow depth
+        -   Change wilting point matric potential back to fixed value of 150 m, as in CLASS 2.7, and calculate wilting point soil water content based on this
+        -   Re-introduce old soil texture-based soil albedo calculations as an option alongside the new "colour" database, for local studies.
+            Add new value for rock albedo.
+        -   Fixes in GRINFL and TSOLVE to handle evaporation over rock
+        -   Fixes to treatment of urban albedo
+        -   Bugfixes in call to DIASURFZ
+        -   Replace MERGE in SCREENRH for compatibility with f77
+        -   Comments in several subroutines describing all the above changes
+        -   Removal of WLOST term.
+        -   Other CLASS changes include fully incorporating the CLASS manual into the code and formatting the code for doxygen
+
+    * CTEM changes from version 2.0.5 include:
+        - New soil uptake of methane subroutine based on Curry (2007)
+        - Small bug fix for heterotrophic respiration as noted by Yuanqiao Wu (during freezing of soil).
+        - CTEM code adapted so can handle >3 soil layers
+        - Bug fix to fire and made all outputs per pft. Reparameterized fire spread rates,extn_par1, rep_area and the combustion and mortality factors.
+        - Reproductive costs for plants is now on by default (previously only for competition runs).
+        - Canopy temperature is again used for photosynthesis
+        - PAI minimum for trees is the same as for crops and grasses.
+        - Vcmax changes seasonally for NDL-DCD and BDL-COLD-DCD following Bauerle et al. 2012
+        - Vcmax for NDL-EVG reduced following tests at Fluxnet sites and global.
+        - Wetland determination is now a smooth function rather than thresholds also new parameter values.
+        - The default mosaic structure is no longer one tile per pft (although that option remains). Now you
+          can have as many pfts per tile as required.
+        - Major changes to the runclassctem driver. It was bloated so have stripped out some work into subroutines.
+        - New input/output driver (io_driver.f90)
+        - All model outputs written to file now in scientific notation
+        - Bug fixes for dealing with tiled (mosaic) runs.
+        - New structure of ctem_statevars which holds the CTEM variables and allows the use of pointers
+        - Many changes to output file formats in an attempt to make them easier to deal with.
+        - ctem.f changed to ctem.f90
+
+    * All model code is now setup for doxygen and is thereby self-documenting. This is still a work in progress. Important new folders include
+        - html: open index.html with any browser to look at the code manual
+        - latex: run make in that folder to produce refman.pdf
+
+2016-06-02  Joe Melton  joe.melton@canada.ca
+
+    * Git repo added to GitLab.

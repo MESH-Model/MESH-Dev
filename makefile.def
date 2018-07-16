@@ -28,6 +28,12 @@ RMNLIB=$(DIR_REPO)/LSS_Model/SVS/r531/rmnlib_013
 SVS=$(DIR_REPO)/LSS_Model/SVS/r531/svs_v1.1.3_cleanup_mesh
 RUNSVS=$(DIR_REPO)/LSS_Model/SVS/r531/src
 
+#Note that CTEM-specific modules are now included below
+#Note that this makefile does not call on the CLASS folder in the LSS_Model, but rather the CLASSCTEM folder
+#Note the active LSS can be controlled with the following variables
+RUNCONFIG_CTEM=2.1.1
+RUNCONFIG_CLASS=none #or 3.6
+
 # ======================================================================
 # Include the following directories in the source file searching path
 # ======================================================================
@@ -40,8 +46,6 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/Modules/permafrost_active_layer: \
 		$(DIR_REPO)/Modules/io_modules: \
 		$(DIR_REPO)/Driver/MESH_Driver: \
-		$(DIR_REPO)/LSS_Model/CLASS/3.6/sa_mesh_process: \
-		$(DIR_REPO)/LSS_Model/CLASS/3.6/src: \
 		$(DIR_REPO)/Routing_Model/WatRoute_old: \
 		$(DIR_REPO)/Routing_Model/RPN_watroute/sa_mesh_process: \
 		$(DIR_REPO)/Routing_Model/RPN_watroute/code: \
@@ -50,6 +54,14 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/Tile_Connector/Basic: \
 		$(DIR_REPO)/LSS_Model/SVS/r531/sa_mesh_process: \
 		$(PHY): $(CHANGES2PHY): $(SVS): $(RMNLIB): $(RUNSVS): $(RUNSVS)/strings: 
+ifeq ($(strip $(RUNCONFIG_CTEM)),2.1.1)
+VPATH+=		$(DIR_REPO)/LSS_Model/CLASSCTEM/2.1.1/sa_mesh_process: \
+			$(DIR_REPO)/LSS_Model/CLASSCTEM/2.1.1/src:
+endif
+ifeq ($(strip $(RUNCONFIG_CLASS)),3.6)
+VPATH+=		$(DIR_REPO)/LSS_Model/CLASS/3.6/sa_mesh_process: \
+			$(DIR_REPO)/LSS_Model/CLASS/3.6/src:
+endif
 
 # ======================================================================
 # Object files needed to build SA_MESH
@@ -114,8 +126,23 @@ OBJECTS+=	PBSMrates.o PBSMrun.o ProbabilityThreshold.o \
 #			save_state.o save_state_r2c.o \
 #			SCATTER.o WRITE_R2C_DATA.o
 
+#CLASS-CTEM 2.1.1
+ifeq ($(strip $(RUNCONFIG_CTEM)),2.1.1)
+OBJECTS+=	ctem_params.o ctem_statevars.o APREP.o CLASSBD.o GRALB.o mvidx.o SNOW_ALBVAL.o \
+			SNOW_TRANVAL.o SNOALBA.o  TNPREP.o WFILL.o CANADD.o CLASSD.o GRDRAN.o SNOALBW.o TPREP.o WFLOW.o \
+			CANALB.o CLASSG.o GRINFL.o SNOVAP.o TSOLVC.o WPREP.o wetland_methane.o ctemg1.o bio2str.o ctems1.o \
+			ctemg2.o PHTSYN3.o CANVAP.o CLASSI.o CWCALC.o ICEBAL.o SUBCAN.o TSOLVE.o XIT.o CGROW.o CLASSS.o \
+			DIASURFZ.o SCREENRH.o TFREEZ.o TSPOST.o CHKWAT.o CLASST.o DRCOEF.o SLDIAG.o TMCALC.o TSPREP.o \
+			CLASSA.o CLASSW.o FLXSURFZ.o SNINFL.o TMELT.o TWCALC.o CLASSB.o CLASSBG.o CLASSZ.o GATPREP.o SNOADD.o \
+			TNPOST.o WEND.o WATROF.o WATDRN.o balcar.o GAUSSG.o ORDLEG.o TRIGL.o mainres.o hetresv.o hetresg.o \
+			allocate.o phenolgy.o turnover.o mortality.o disturb.o ctems2.o competition_map.o competition_unmap.o \
+			read_from_job_options.o soil_ch4uptake.o landuse_change_mod.o competition_mod.o ctem.o io_driver.o
+OBJECTS+=	RUNCLASS36_config.o RUNCLASS36_module.o
+endif
+
 #CLASS
 OBJECTS+=	Julian_Day_ID.o check_parameters.o 
+ifeq ($(strip $(RUNCONFIG_CLASS)),3.6)
 OBJECTS+=	RUNCLASS36_config.o APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o \
 			CGROW.o CHKWAT.o CLASSA.o  CLASSB.o CLASSBD.o \
 			CLASSD.o CLASSG.o CLASSI.o CLASSS.o CLASST.o CLASSW.o \
@@ -126,6 +153,7 @@ OBJECTS+=	RUNCLASS36_config.o APREP.o CANADD.o CANALB.o CLASSBG.o CANVAP.o \
 			TSOLVC.o TSOLVE.o TSPOST.o TSPREP.o TWCALC.o WATDRN.o WATROF.o \
 			WEND.o WFILL.o WFLOW.o WPREP.o XIT.o \
 			SCREENRH.o PDMROF.o LATFLOW.o RUNCLASS36_module.o
+endif
 
 # SVS
 OBJECTS+=	datec.o moduledate.o

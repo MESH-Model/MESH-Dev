@@ -1,0 +1,34 @@
+!>\file
+C!THE ARGUMENT LIST IS THE SAME AS FOR GAUSSG.
+C!GAUSSG FILLS ONLY THE N HEM ORDERED N TO S. 
+C!THIS ROUTINE MAKES THE ARRAYS GLOBAL AND ORDERED FROM S TO N. 
+!!
+
+      SUBROUTINE TRIGL(ILATH,SR,WR,CR,RADR,WOSQ)
+C 
+C     * JUL 14/92 - E. CHAN (ADD REAL*8 DECLARATIONS)
+C     * JAN 19/78 - J.D.HENDERSON 
+      use ctem_params, only: lat
+C
+      REAL*8 SR(lat)   !<SIN(LAT), ANTISYMMETRIC
+      REAL*8 WR(lat)   !<GAUSSIAN WEIGHTS, SYMMETRIC ABOUT THE EQUATOR
+      REAL*8 CR(lat)   !<COS(LAT), SYMMETRIC ABOUT THE EQUATOR
+      REAL*8 RADR(lat) !<LATITUDE IN RADIANS
+      REAL*8 WOSQ(lat) !<WR/(SR**2), SYMMETRIC ABOUT THE EQUATOR
+C-------------------------------------------------------------------- 
+
+      PIH=3.14159265/2. 
+      ILAT=ILATH*2
+      DO 150 J=1,ILATH
+      K=ILAT+1-J
+      CR(K)=CR(J) 
+      WR(K)=WR(J) 
+      WOSQ(K)=WOSQ(J) 
+      SR(K)=SR(J) 
+      SR(J)=-SR(J)
+      RADR(K)=PIH-RADR(J) 
+      RADR(J)=-RADR(K)
+  150 CONTINUE
+C 
+      RETURN
+      END 
