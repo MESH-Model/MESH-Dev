@@ -136,7 +136,8 @@ OBJECTS+=	ctem_params.o ctem_statevars.o APREP.o CLASSBD.o GRALB.o mvidx.o SNOW_
 			CLASSA.o CLASSW.o FLXSURFZ.o SNINFL.o TMELT.o TWCALC.o CLASSB.o CLASSBG.o CLASSZ.o GATPREP.o SNOADD.o \
 			TNPOST.o WEND.o WATROF.o WATDRN.o balcar.o GAUSSG.o ORDLEG.o TRIGL.o mainres.o hetresv.o hetresg.o \
 			allocate.o phenolgy.o turnover.o mortality.o disturb.o ctems2.o competition_map.o competition_unmap.o \
-			read_from_job_options.o soil_ch4uptake.o landuse_change_mod.o competition_mod.o ctem.o io_driver.o
+			read_from_job_options.o soil_ch4uptake.o landuse_change_mod.o competition_mod.o ctem.o io_driver.o \
+			runclass36ctem.o
 OBJECTS+=	RUNCLASS36_config.o RUNCLASS36_module.o
 endif
 
