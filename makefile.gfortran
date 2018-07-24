@@ -33,8 +33,7 @@ FC=gfortran
 #   -g: For debugging.
 LFLAG=-c -O2
 #LFLAG=-c -O3 -ffast-math
-LFLAG=-c -g -fbacktrace -fbounds-check -ffpe-trap=invalid,zero,overflow -Wconversion -Winteger-division -Wsurprising -Wintrinsic-shadow -Wtarget-lifetime
-LFLAG=-c -g -fbacktrace -fbounds-check
+#LFLAG=-c -g
 
 # ======================================================================
 # Rules for MPI
