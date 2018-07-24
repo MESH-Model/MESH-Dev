@@ -1626,7 +1626,10 @@ C
         !Here we need to use the NLAT and NMOS values (from ctem_params)
         !and transform them into the usable parameters of NLTEST and NMTEST
         !Note that NLAT and NMOS is CTEM, NLTEST and NMTEST is CLASS and 
-        NLTEST = shd%NA
+!DAN    Set NLTEST to NAA which is the ACTIVE number of grids -- in grid-based setups,
+!DAN    this excludes the outlet, such that NAA might be NA-1 if only one outlet exists.
+!DAN    Doing this solves problems in CTEM where values in cell NA are sometimes zero.
+        NLTEST = shd%NAA
         NMTEST = shd%lc%NTYPE
         NA = shd%NA
         NTYPE = shd%lc%NTYPE
@@ -2903,8 +2906,9 @@ C===================== CTEM ==============================================\
       
       CALL CLASSD
 
-      ZDMROW(1)=10.0
-      ZDHROW(1)=2.0
+!DAN    Pull from MESH.
+      ZDMROW = pm%sfp%zrfm(1)
+      ZDHROW = pm%sfp%zrfh(1)
       NTLD=NMOS
       CUMSNO = 0.0
 
@@ -3267,126 +3271,148 @@ C======================= CTEM ========================================== /
 !Since we have the "CONTAINS" statement at the beginning of this module, these variables should transfer over to RUNCLASS36CTEM_within_tile subroutine in this module
 !Note that at this stage, we would need to put the variables into a CLASSG ROT format, which will be turned into GAT later for use
 
+        DEGLON = shd%xlng(1)
+        JLAT = NINT(shd%ylat(1)) !JLAT is only used for debugging purposes?
 
-	DO I=1,NLTEST !NLTEST is the number of MOSAIC grid cells, equivelent to the number of MESH cells (equivelent to il2)
-	DO M=1,NMTEST !For now this should be 1, however this might change later
+!DAN    Must transfer these here in order to convert from grid and GRU to tile indexing.
+        ILMOS = shd%lc%ILMOS
+        JLMOS = shd%lc%JLMOS
+        IWMOS = shd%wc%ILMOS
+        JWMOS = shd%wc%JLMOS
+
+!DAN    'shd' variables use grid indexing.
+!DAN    With a gridded domain, each cell has a unique DLAT/DLON.
+      DO I=1,NLAT
+        DLATROW(I) = shd%ylat(I)
+        RADJROW(I) = DLATROW(I)*3.14159/180.0
+        DLONROW(I) = shd%xlng(I)
+      ENDDO
+
+!DAN    'pm' and 'stas' variables use tile indexing; must convert these to grid using ILMOS and GRU using JLMOS.
+      DO K=1,NML
+
+        !Get grid and tile index
+        I = ILMOS(K)
+        M = JLMOS(K)
 
         !> Distribute variables. 
 
 !Note that the MESH variables to the right have one dimension fewer than the ROT variables
 !We are only transforming them into a 3D format to be compatible with RUNCLASS36CTEM
 !So the MESH variables have dimension of (M,J), so simply ignore I
+!DAN    MESH variables have dimension of (K,J), where K is the tile index;
+!DAN    the ILMOS/JLMOS lookup tables connect K to (I,M).
+!DAN    In short: (I,M) on the CTEM side, K on the MESH side.
 
 !Remember that ROT is delcared dimension (NLAT,NMOS,ICP1) =(1,#of tiles, 3/4)
 !Whereas GAT is delcared dimension (NMOS,ICP1) =(#of tiles, 3/4)
+!DAN    GAT are declared dimension (NML,ICP1), NML is # of active tiles -- at most it's ILG = NLAT*NMOS
 
        !These variables are from the upper part of the CLASS files and are only used once for every tile
 
+        ZRFMROW(I) = pm%sfp%zrfm(1)
+        ZRFHROW(I) = pm%sfp%zrfh(1)
+        ZBLDROW(I) = pm%sfp%zbld(1)
+        GCROW(I) = pm%tp%gc(1)
+        Z0ORROW(I) = 0.0
+        GGEOROW(I) = 0.0
 
-	  DLATROW(1) = shd%ylat(1)
-	  DEGLON = shd%xlng(1)	
-	  ZRFMROW(I) = pm%sfp%zrfm(I)
-         ZRFHROW(I) = pm%sfp%zrfh(I)
-         ZBLDROW(I) = pm%sfp%zbld(I)
-	  GCROW(I)=pm%tp%gc(I)
-	  
+        DO J=1,(ICAN+1)
+          FCANROT(I,M,J) = pm%cp%fcan(K,J) 
+          LNZ0ROT(I,M,J) = pm%cp%lnz0(K,J)
+          ALVCROT(I,M,J) = pm%cp%alvc(K,J)
+          ALICROT(I,M,J) = pm%cp%alic(K,J)
+        ENDDO
 
-         JLAT=NINT(DLATROW(1))
-         !RADJROW(1)=DLATROW(1)*3.14159/180.0
-         DLONROW(1)=DEGLON
-         Z0ORROW(1)=0.0
-         GGEOROW(1)=0.0
+        DO J=1,ICAN
+          PAMXROT(I,M,J) = pm%cp%lamx(K,J)
+          PAMNROT(I,M,J) = pm%cp%lamn(K,J)
+          CMASROT(I,M,J) = pm%cp%cmas(K,J)
+          ROOTROT(I,M,J) = pm%cp%root(K,J)
+          RSMNROT(I,M,J) = pm%cp%rsmn(K,J)
+          QA50ROT(I,M,J) = pm%cp%qa50(K,J)
+          VPDAROT(I,M,J) = pm%cp%vpda(K,J)
+          VPDBROT(I,M,J) = pm%cp%vpdb(K,J)
+          PSGAROT(I,M,J) = pm%cp%psga(K,J)
+          PSGBROT(I,M,J) = pm%cp%psgb(K,J)
+        ENDDO
 
-	DO J=1,(ICAN+1)
-        FCANROT(I,M,J) = pm%cp%fcan(M,J) 
-        LNZ0ROT(I,M,J) = pm%cp%lnz0(M,J)
-        ALVCROT(I,M,J) = pm%cp%alvc(M,J)
-        ALICROT(I,M,J) = pm%cp%alic(M,J)
-	ENDDO
+        DRNROT(I,M) = pm%hp%drn(K)
+        SDEPROT(I,M) = pm%slp%sdep(K) !This is only called in ctem so check
+        FAREROT(I,M) = pm%tp%fare(K)
+        DDROT(I,M) = pm%hp%dd(K)
+        XSLPROT(I,M) = pm%tp%xslp(K)
+        GRKFROT(I,M) = pm%hp%grkf(K)
+        WFSFROT(I,M) = pm%hp%mann(K)
+        WFCIROT(I,M) = pm%hp%ks(K)
+        MIDROT(I,M) = pm%tp%mid(K)
 
+!DAN    Changed to use IGND so it'll match the number of active soil layers
+        DO J=1,IGND
+          SANDROT(I,M,J) = pm%slp%sand(K,J) !Check the soil ones as they don't seem to be used in the original MESH module
+          CLAYROT(I,M,J) = pm%slp%clay(K,J)
+          ORGMROT(I,M,J) = pm%slp%orgm(K,J) !This is only used in CTEM so double check later
+          TBARROT(I,M,J) = stas%sl%tbar(K,J) - TFREZ
+        ENDDO
 
-	DO J=1,ICAN
-        PAMXROT(I,M,J) = pm%cp%lamx (M,J)
-        PAMNROT(I,M,J) = pm%cp%lamn (M,J)
-        CMASROT(I,M,J) = pm%cp%cmas (M,J)
-        ROOTROT(I,M,J) = pm%cp%root (M,J)
-        RSMNROT(I,M,J) = pm%cp%rsmn (M,J)
-        QA50ROT(I,M,J) = pm%cp%qa50 (M,J)
-        VPDAROT(I,M,J) = pm%cp%vpda (M,J)
-        VPDBROT(I,M,J) = pm%cp%vpdb (M,J)
-        PSGAROT(I,M,J) = pm%cp%psga (M,J)
-        PSGBROT(I,M,J) = pm%cp%psgb (M,J)
-	ENDDO
+        TCANROT(I,M) = stas%cnpy%tcan(K) - TFREZ
+        TSNOROT(I,M) = stas%sno%tsno(K) - TFREZ
+        TPNDROT(I,M) = stas%sfc%tpnd(K) - TFREZ
 
-	 MANNING_N(M) = pm%hp%mann(M)
-        DRNROT(I,M) = pm%hp%drn(M)
-        SDEPROT(I,M) = pm%slp%sdep (M) !This is only called in ctem so check
-	 FAREROT(I,M) = pm%tp%fare (M)
-	 DDROT(I,M) = pm%hp%dd(M)
-        XSLPROT(I,M) = pm%tp%xslp(M)       
-        GRKFROT(I,M) = pm%hp%grkf(M)
-	 WFSFROT(I,M) = pm%hp%mann(M)
-        WFCIROT(I,M) = pm%hp%ks(M)
-	 MIDROT(I,M) = pm%tp%mid(M)
+!DAN    Changed to use IGND so it'll match the number of active soil layers
+        DO J=1,IGND
+          THLQROT(I,M,J) = stas%sl%thlq(K,J)
+          THICROT(I,M,J) = stas%sl%thic(K,J)
+        ENDDO
 
-	DO J=1,3  !Change this if we need more soil layers, use other variable later
-        SANDROT(I,M,J) = pm%slp%sand(M,J)   !Check the soil ones as they don't seem to be used in the original MESH module
-        CLAYROT(I,M,J) = pm%slp%clay(M,J)
-        ORGMROT(I,M,J) = pm%slp%orgm(M,J)  !This is only used in CTEM so double check later
-	 TBARROT(I,M,J) = stas%sl%tbar(M,J)
-	ENDDO
+!DAN    These are calculated by the call to 'CLASSB'.
+!DAN    Should double-check if the 'pm' values have already been populated by MESH, in which
+!DAN    case those values should be transferred from MESH (and the call to 'CLASSB' here in CTEM, commented).
+        DO J=1,IGND
+!?          THPROT(I,M,J) = pm%slp%thpor(K,J)
+!?          THRROT(I,M,J) = pm%slp%thlret(K,J)
+!?          THMROT(I,M,J) = pm%slp%thlmin(K,J)
+!?          BIROT(I,M,J) = pm%slp%bi(K,J)
+!?          PSISROT(I,M,J) = pm%slp%psisat(K,J)
+!?          GRKSROT(I,M,J) = pm%slp%grksat(K,J)
+!?          THRAROT(I,M,J) = pm%slp%thlrat(K,J)
+!?          HCPSROT(I,M,J) = pm%slp%hcps(K,J)
+!?          TCSROT(I,M,J) = pm%slp%tcs(K,J)
+!?          THFCROT(I,M,J) = pm%slp%thfc(K,J)
+!?          THLWROT(I,M,J)
+!?          PSIWROT(I,M,J) = pm%slp%psiwlt(K,J)
+        ENDDO
 
+!?        ALGWROT(I,M) = pm%slp%alwet(K)
+!?        ALGDROT(I,M) = pm%slp%aldry(K)
+!?        ALGWVROT(I,M)
+!?        ALGWNROT(I,M)
+!?        ALGDVROT(I,M)
+!?        ALGDNROT(I,M)
 
-
-	 TCANROT(I,M) = stas%cnpy%tcan(M) 
-	 TSNOROT(I,M) = stas%sno%tsno(M)
-	 TPNDROT(I,M) = stas%sfc%tpnd(M)
-
-
-	DO J=1,3
-	 THLQROT(I,M,J) = stas%sl%thlq(M,J)
-	 THICROT(I,M,J) = stas%sl%thic(M,J)
-	ENDDO
-
-	 DO J=1,3
-!        pm%slp%alwet = csfv%ALGW
-!        pm%slp%aldry = csfv%ALGD
-!        pm%slp%thpor = csfv%THP
-!        pm%slp%thlret = csfv%THR
-!        pm%slp%thlmin = csfv%THM
-!        pm%slp%bi = csfv%BI
-!        pm%slp%psisat = csfv%PSIS
-!        pm%slp%grksat = csfv%GRKS
-!        pm%slp%thlrat = csfv%THRA
-!        pm%slp%hcps = csfv%HCPS
-!        pm%slp%tcs = csfv%TCS
-!        pm%slp%thfc = csfv%THFC
-!        pm%slp%psiwlt = csfv%PSIW
-
-	 ENDDO
-
- 	 ZPNDROT(I,M) = stas%sfc%zpnd(M)
-	 RCANROT(I,M) = stas%cnpy%rcan(M)
-	 SCANROT(I,M) = stas%cnpy%sncan(M)   !Note that MESH uses SNCAN and not CLASS-CTEM's SCAN
-        SNOROT (I,M) = stas%sno%sno(M)
-        ALBSROT(I,M) = stas%sno%albs(M)
-        RHOSROT(I,M) = stas%sno%rhos(M)
-        GROROT(I,M) = stas%cnpy%gro(M)
+        ZPNDROT(I,M) = stas%sfc%zpnd(K)
+        RCANROT(I,M) = stas%cnpy%rcan(K)
+        SCANROT(I,M) = stas%cnpy%sncan(K) !Note that MESH uses SNCAN and not CLASS-CTEM's SCAN
+        SNOROT(I,M) = stas%sno%sno(K)
+        ALBSROT(I,M) = stas%sno%albs(K)
+        RHOSROT(I,M) = stas%sno%rhos(K)
+        GROROT(I,M) = stas%cnpy%gro(K)
 
 !Now we provide the depth of the soil layers and the depth of the permeable layer ()
         DO J=1,IGND !(IGND being the number of soil layers)
           DELZ(J) = shd%lc%sl%DELZ(J)
-	   ZBOT(J) = shd%lc%sl%ZBOT(J)
-          !The 2 formats here at the bottom are to be used later in MESH
-	   stas%sl%delzw(M,J) = DELZ(J)
-          stas%sl%zbotw(M,J) = ZBOT(J)
-       ENDDO
+          ZBOT(J) = shd%lc%sl%ZBOT(J)
+!DAN    Per the note above about soil parameters, these should only be transferred if they've already
+!DAN    been calculated by MESH, or else they'll be calculated by the call to 'CLASSB'.
+!?          DLZWROT(I,M,J) = stas%sl%delzw(K,J)
+!?          ZBTWROT(I,M,J) = stas%sl%zbotw(K,J)
+        ENDDO
+      ENDDO !End of the K Loop
 
-
-	ENDDO  !End of the M Loop
-
-	ENDDO! End of the I Loop
-
+!DAN    This variable is special, it seems to have no ROT counterpart, so transfer directly.
+!DAN    The CTEM variable is declared to ILG, where the MESH might be declared to NML -- NML can be less than ILG;
+!DAN    in this case, transfer using explicitly NML notation.
+        MANNING_N(1:NML) = pm%hp%mann(1:NML)
 
 !Now we must provide the MESH model with the constant variables
 
@@ -3430,7 +3456,7 @@ C===================== CTEM =============================================== /
           TCANROT(I,M)=TCANROT(I,M)+TFREZ
 
           TPNDROT(I,M)=TPNDROT(I,M)+TFREZ
-          TBASROT(I,M)=TBARROT(I,M,3)
+          TBASROT(I,M)=TBARROT(I,M,IGND) !Changed to IGND
           CMAIROT(I,M)=0.
           WSNOROT(I,M)=0.
           ZSNLROT(I,M)=0.10
@@ -4371,10 +4397,6 @@ c
 !-      CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,
 !-     1             NML,NMW,GCROW,FAREROT,MIDROT,
 !-     2             NLAT,NMOS,ILG,1,NLTEST,NMTEST)
-        ILMOS = shd%lc%ILMOS
-        JLMOS = shd%lc%JLMOS
-        IWMOS = shd%wc%ILMOS
-        JWMOS = shd%wc%JLMOS
 
       call ctemg1(gleafmasgat,bleafmasgat,stemmassgat,rootmassgat,
      1      fcancmxgat,zbtwgat,dlzwgat,sdepgat,ailcggat,ailcbgat,
