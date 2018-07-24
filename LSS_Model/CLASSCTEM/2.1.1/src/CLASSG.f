@@ -388,10 +388,11 @@ c         AGVDGAT(K)=AGVDROT(ILMOS(K),JLMOS(K))
 c         AGIDGAT(K)=AGIDROT(ILMOS(K),JLMOS(K))  
           ZSNLGAT(K)=ZSNLROT(ILMOS(K),JLMOS(K))  
 !===============User Specified Interflow Parameters, July/2017==========
-!          ZPLGGAT(K)=ZPLGROT(ILMOS(K),JLMOS(K))  
-!          ZPLSGAT(K)=ZPLSROT(ILMOS(K),JLMOS(K))
-          ZPLGGAT(K) = 0.05
-          ZPLSGAT(K) = 0.05
+          ZPLGGAT(K)=ZPLGROT(ILMOS(K),JLMOS(K))  
+          ZPLSGAT(K)=ZPLSROT(ILMOS(K),JLMOS(K))
+!DAN    Restored user-specified values
+!          ZPLGGAT(K) = 0.05
+!          ZPLSGAT(K) = 0.05
 !========End of User specification================================          
           TACGAT (K)=TACROT (ILMOS(K),JLMOS(K))  
           QACGAT (K)=QACROT (ILMOS(K),JLMOS(K))  

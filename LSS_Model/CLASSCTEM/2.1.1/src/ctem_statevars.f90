@@ -1147,9 +1147,7 @@ contains
 
 !=================================================================================
 !>Allocate CTEM's 'rot' vars
-subroutine veg_rot_allocate(vrot)
-
-    type (veg_rot) vrot
+subroutine veg_rot_allocate()
 
     allocate(vrot%ailcmin(nlat,nmos,icc))
     allocate(vrot%ailcmax(nlat,nmos,icc))
@@ -1573,12 +1571,10 @@ end subroutine initrowvars
 
 !=================================================================================
 !>Allocate CTEM's 'gat' vars
-subroutine veg_gat_allocate(vgat)
+subroutine veg_gat_allocate()
 
     ! This is the basic data structure that contains the state variables
     ! for the Plant Functional Type (PFT). The dimensions are ilg,{icc,iccp1}
-
-    type (veg_gat) vgat
 
     allocate(vgat%ailcmin(ilg,icc))
     allocate(vgat%ailcmax(ilg,icc))
@@ -1775,11 +1771,9 @@ end subroutine
 
 !=================================================================================
 !>Allocate CLASS's monthly outputs
-subroutine class_moyr_output_allocate(class_out)
+subroutine class_moyr_output_allocate()
 
 !   MONTHLY OUTPUT FOR CLASS GRID-MEAN
-
-    type (class_moyr_output) class_out
 
     allocate(class_out%ALVSACC_MO(nlat))
     allocate(class_out%ALIRACC_MO(nlat))
@@ -1905,11 +1899,9 @@ end subroutine resetclassyr
 
 !=================================================================================
 !>Allocate CTEM's grid average variables
-subroutine ctem_gridavg_allocate(ctem_grd)
+subroutine ctem_gridavg_allocate()
 
 ! Grid-averaged variables (denoted with an ending of "_g")
-
-    type (ctem_gridavg) ctem_grd
 
     allocate(ctem_grd%WSNOROT_g(nlat))
     allocate(ctem_grd%ROFSROT_g(nlat))
@@ -2059,11 +2051,9 @@ end subroutine
 
 !=================================================================================
 !>Allocate CTEM's variables per tile
-subroutine ctem_tile_level_allocate(ctem_tile)
+subroutine ctem_tile_level_allocate()
 
 !   Tile-level variables (denoted by an ending of "_t")
-
-    type (ctem_tile_level) ctem_tile
 
     allocate(ctem_tile%leaflitr_t(nlat,nmos))
     allocate(ctem_tile%tltrleaf_t(nlat,nmos))

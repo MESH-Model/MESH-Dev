@@ -2363,11 +2363,11 @@ c
      1           sandgat(ilg,ignd), claygat(ilg,ignd),
      2           xdiffusgat(ilg), faregat(ilg))
 
-        call veg_rot_allocate(vrot)
-        call veg_gat_allocate(vgat)
-        call class_moyr_output_allocate(class_out)
-        call ctem_gridavg_allocate(ctem_grd)
-        call ctem_tile_level_allocate(ctem_tile)
+        call veg_rot_allocate()
+        call veg_gat_allocate()
+        call class_moyr_output_allocate()
+        call ctem_gridavg_allocate()
+        call ctem_tile_level_allocate()
         call ctem_monthly_allocate()
         call ctem_gridavg_monthly_allocate()
         call ctem_tileavg_monthly_allocate()
@@ -3340,6 +3340,9 @@ C======================= CTEM ========================================== /
         DRNROT(I,M) = pm%hp%drn(K)
         SDEPROT(I,M) = pm%slp%sdep(K) !This is only called in ctem so check
         FAREROT(I,M) = pm%tp%fare(K)
+        ZSNLROT(I,M) = pm%snp%zsnl(K)
+        ZPLGROT(I,M) = pm%sfp%zplg(K)
+        ZPLSROT(I,M) = pm%snp%zpls(K)
         DDROT(I,M) = pm%hp%dd(K)
         XSLPROT(I,M) = pm%tp%xslp(K)
         GRKFROT(I,M) = pm%hp%grkf(K)
@@ -3445,48 +3448,50 @@ C===================== CTEM =============================================== /
 
 
 
-!DAN     there's some overlap here with what's done in MESH
+!DAN    There's some overlap here with what's done in MESH.
+!DAN    The states are overwritten at the beginning of the 'within_tile' routine.
       DO 100 I=1,NLTEST
       DO 100 M=1,NMTEST
 
-          TBARROT(I,M,1)=TBARROT(I,M,1)+TFREZ
-          TBARROT(I,M,2)=TBARROT(I,M,2)+TFREZ
-          TBARROT(I,M,3)=TBARROT(I,M,3)+TFREZ
-          TSNOROT(I,M)=TSNOROT(I,M)+TFREZ
-          TCANROT(I,M)=TCANROT(I,M)+TFREZ
+!          TBARROT(I,M,1)=TBARROT(I,M,1)+TFREZ
+!          TBARROT(I,M,2)=TBARROT(I,M,2)+TFREZ
+!          TBARROT(I,M,3)=TBARROT(I,M,3)+TFREZ
+!          TSNOROT(I,M)=TSNOROT(I,M)+TFREZ
+!          TCANROT(I,M)=TCANROT(I,M)+TFREZ
 
-          TPNDROT(I,M)=TPNDROT(I,M)+TFREZ
-          TBASROT(I,M)=TBARROT(I,M,IGND) !Changed to IGND
-          CMAIROT(I,M)=0.
-          WSNOROT(I,M)=0.
-          ZSNLROT(I,M)=0.10
-          TSFSROT(I,M,1)=TFREZ
-          TSFSROT(I,M,2)=TFREZ
+!          TPNDROT(I,M)=TPNDROT(I,M)+TFREZ
+!          TBASROT(I,M)=TBARROT(I,M,IGND) !Changed to IGND
+!          CMAIROT(I,M)=0.
+!          WSNOROT(I,M)=0.
+!DAN    This is a parameter, transferred above.
+!-          ZSNLROT(I,M)=0.10
+!          TSFSROT(I,M,1)=TFREZ
+!          TSFSROT(I,M,2)=TFREZ
 
-          TSFSROT(I,M,3)=TBARROT(I,M,1)
-          TSFSROT(I,M,4)=TBARROT(I,M,1)
-          TACROT (I,M)=TCANROT(I,M)
-          QACROT (I,M)=0.5E-2
+!          TSFSROT(I,M,3)=TBARROT(I,M,1)
+!          TSFSROT(I,M,4)=TBARROT(I,M,1)
+!          TACROT (I,M)=TCANROT(I,M)
+!          QACROT (I,M)=0.5E-2
 
-          IF(IGND.GT.3)                                 THEN
-              DO 65 J=4,IGND
-                  TBARROT(I,M,J)=TBARROT(I,M,3)
-                  IF(SDEPROT(I,M).LT.(ZBOT(J-1)+0.001) .AND.
-     1                  SANDROT(I,M,3).GT.-2.5)     THEN
-                      SANDROT(I,M,J)=-3.0
-                      CLAYROT(I,M,J)=-3.0
-                      ORGMROT(I,M,J)=-3.0
-                      THLQROT(I,M,J)=0.0
-                      THICROT(I,M,J)=0.0
-                  ELSE
-                      SANDROT(I,M,J)=SANDROT(I,M,3)
-                      CLAYROT(I,M,J)=CLAYROT(I,M,3)
-                      ORGMROT(I,M,J)=ORGMROT(I,M,3)
-                      THLQROT(I,M,J)=THLQROT(I,M,3)
-                      THICROT(I,M,J)=THICROT(I,M,3)
-                  ENDIF
-65            CONTINUE
-          ENDIF
+!          IF(IGND.GT.3)                                 THEN
+!              DO 65 J=4,IGND
+!                  TBARROT(I,M,J)=TBARROT(I,M,3)
+!                  IF(SDEPROT(I,M).LT.(ZBOT(J-1)+0.001) .AND.
+!     1                  SANDROT(I,M,3).GT.-2.5)     THEN
+!                      SANDROT(I,M,J)=-3.0
+!                      CLAYROT(I,M,J)=-3.0
+!                      ORGMROT(I,M,J)=-3.0
+!                      THLQROT(I,M,J)=0.0
+!                      THICROT(I,M,J)=0.0
+!                  ELSE
+!                      SANDROT(I,M,J)=SANDROT(I,M,3)
+!                      CLAYROT(I,M,J)=CLAYROT(I,M,3)
+!                      ORGMROT(I,M,J)=ORGMROT(I,M,3)
+!                      THLQROT(I,M,J)=THLQROT(I,M,3)
+!                      THICROT(I,M,J)=THICROT(I,M,3)
+!                  ENDIF
+!65            CONTINUE
+!          ENDIF
 
           DO 75 K=1,6
           DO 75 L=1,50
@@ -4630,7 +4635,7 @@ C===================== CTEM ============================================ \
 C===================== CTEM ============================================ /
 
 
- 	WRITE(*,*) 'runclass36ctem line 3859:'
+! 	WRITE(*,*) 'runclass36ctem line 3859:'
 C
       N=N+1 !Extend the iteration
 
@@ -4710,7 +4715,7 @@ C===================== CTEM ============================================ /
       ENDDO
 
 
- 	WRITE(*,*) 'runclass36ctem line 3933:'
+! 	WRITE(*,*) 'runclass36ctem line 3933:'
 
 C
       DAY=REAL(IDAY)+(REAL(IHOUR)+REAL(IMIN)/60.)/24.
@@ -4896,7 +4901,7 @@ C
 C
 
 
- 	WRITE(*,*) 'runclass36ctem line 4118:'
+! 	WRITE(*,*) 'runclass36ctem line 4118:'
 
 
       CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT,
@@ -5227,7 +5232,7 @@ C          * ADAPTED TO COUPLING OF CLASS3.6 AND CTEM
 
 
 
- 	WRITE(*,*) 'runclass36ctem line 4449:'
+! 	WRITE(*,*) 'runclass36ctem line 4449:'
 
           CALL CLASSW  (THLQGAT,THICGAT,TBARGAT,TCANGAT,RCANGAT,SCANGAT,
      1                  ROFGAT, TROFGAT,SNOGAT, TSNOGAT,RHOSGAT,ALBSGAT,
@@ -5278,7 +5283,7 @@ C          * ADAPTED TO COUPLING OF CLASS3.6 AND CTEM
      B                  XSNOWC,    XSNOWG,    XSNOCS,    XSNOGS) 
 
 
- 	WRITE(*,*) 'runclass36ctem line 4500:'
+! 	WRITE(*,*) 'runclass36ctem line 4500:'
 	                          
 C=======================================================================
 
