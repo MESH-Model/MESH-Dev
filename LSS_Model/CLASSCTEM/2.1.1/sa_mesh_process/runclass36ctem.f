@@ -107,7 +107,7 @@ C=======================================================================
 !Some constants here were cut out because they already exist within MESH (NTYPE,IGND)
 
       use ctem_params,        only : initpftpars,nlat,nmos,ilg,nmon,
-     1                               ican,icp1, icc, iccp1,ntype, IGND,
+     1                               ican,icp1, icc, iccp1, IGND,
      2                               monthend, mmday,modelpft, l2max,
      3                                deltat, abszero, monthdays,seed,
      4                                crop, NBS, lat, edgelat,earthrad,
@@ -121,7 +121,18 @@ C=======================================================================
      3                               resetmonthend,resetyearend,
      4                               resetclassaccum,ctem_grd,
      5                               ctem_tile,resetgridavg,
-     6                               finddaylength
+     6                               finddaylength,
+     7                               veg_rot_allocate,
+     8                               veg_gat_allocate,
+     9                               class_moyr_output_allocate,
+     A                               ctem_gridavg_allocate,
+     B                               ctem_tile_level_allocate,
+     C                               ctem_monthly_allocate,
+     D                               ctem_gridavg_monthly_allocate,
+     E                               ctem_tileavg_monthly_allocate,
+     F                               ctem_annual_allocate,
+     G                               ctem_gridavg_annual_allocate,
+     H                               ctem_tileavg_annual_allocate
 
       use io_driver,          only : read_from_ctm, create_outfiles,
      1                               write_ctm_rs, class_monthly_aw,
@@ -206,49 +217,50 @@ C
       REAL TD2HIST(200)  !<
       REAL TD3HIST(200)  !<
       REAL TD4HIST(200)  !<
-      REAL PAICAN(ILG)   !<
+      real, dimension(:), allocatable :: PAICAN   !<
 
       INTEGER*4 TODAY(3), NOW(3)
 
-
-      REAL,DIMENSION(ILG)            :: ALBSGAT !<Snow albedo [ ]
-      REAL,DIMENSION(NLAT,NMOS)      :: ALBSROT !<
-      REAL,DIMENSION(ILG)            :: CMAIGAT !<Aggregated mass of vegetation canopy \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS)      :: CMAIROT !<
-      REAL,DIMENSION(ILG)            :: GROGAT  !<Vegetation growth index [ ]
-      REAL,DIMENSION(NLAT,NMOS)      :: GROROT  !<
-      REAL,DIMENSION(ILG)            :: QACGAT  !<Specific humidity of air within vegetation canopy space \f$[kg kg^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS)      :: QACROT  !<
-      REAL,DIMENSION(ILG)            :: RCANGAT !<Intercepted liquid water stored on canopy \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS)      :: RCANROT !<
-      REAL,DIMENSION(ILG)            :: RHOSGAT !<Density of snow \f$[kg m^{-3} ]\f$
-      REAL,DIMENSION(NLAT,NMOS)      :: RHOSROT !<
-      REAL,DIMENSION(ILG)            :: SCANGAT !<Intercepted frozen water stored on canopy \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS)      :: SCANROT !<
-      REAL,DIMENSION(ILG)            :: SNOGAT  !<Mass of snow pack [kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS)      :: SNOROT  !<
-      REAL,DIMENSION(ILG)            :: TACGAT  !<Temperature of air within vegetation canopy [K]
-      REAL,DIMENSION(NLAT,NMOS)      :: TACROT  !<
-      REAL,DIMENSION(ILG,IGND)       :: TBARGAT !<Temperature of soil layers [K]
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: TBARROT !<
-      REAL,DIMENSION(ILG)            :: TBASGAT !<Temperature of bedrock in third soil layer [K]
-      REAL,DIMENSION(NLAT,NMOS)      :: TBASROT !<
-      REAL,DIMENSION(ILG)            :: TCANGAT !<Vegetation canopy temperature [K]
-      REAL,DIMENSION(NLAT,NMOS)      :: TCANROT !<
-      REAL,DIMENSION(ILG,IGND)       :: THICGAT !<Volumetric frozen water content of soil layers \f$[m^3 m^{-3} ]\f$
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: THICROT !<
-      REAL,DIMENSION(ILG,IGND)       :: THLQGAT !<Volumetric liquid water content of soil layers \f$[m^3 m^{-3} ]\f$
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: THLQROT !<
-      REAL,DIMENSION(ILG)            :: TPNDGAT !<Temperature of ponded water [K]
-      REAL,DIMENSION(NLAT,NMOS)      :: TPNDROT !<
-      REAL                       TSFSGAT(ILG,4) !<Ground surface temperature over subarea [K]
-      REAL                 TSFSROT(NLAT,NMOS,4) !<
-      REAL,DIMENSION(ILG)            :: TSNOGAT !<Snowpack temperature [K]
-      REAL,DIMENSION(NLAT,NMOS)      :: TSNOROT !<
-      REAL,DIMENSION(ILG)            :: WSNOGAT !<Liquid water content of snow pack \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS)      :: WSNOROT !<
-      REAL,DIMENSION(ILG)            :: ZPNDGAT !<Depth of ponded water on surface [m]
-      REAL,DIMENSION(NLAT,NMOS)      :: ZPNDROT !<
+!DAN    changed these to allocatable (with no explicit dimensions)
+!DAN    allocated after indices are transferred from MESH in init()
+      real, dimension(:), allocatable :: ALBSGAT        !<Snow albedo [ ]
+      real, dimension(:,:), allocatable :: ALBSROT      !<
+      real, dimension(:), allocatable :: CMAIGAT        !<Aggregated mass of vegetation canopy \f$[kg m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: CMAIROT      !<
+      real, dimension(:), allocatable :: GROGAT         !<Vegetation growth index [ ]
+      real, dimension(:,:), allocatable :: GROROT       !<
+      real, dimension(:), allocatable :: QACGAT         !<Specific humidity of air within vegetation canopy space \f$[kg kg^{-1} ]\f$
+      real, dimension(:,:), allocatable :: QACROT       !<
+      real, dimension(:), allocatable :: RCANGAT        !<Intercepted liquid water stored on canopy \f$[kg m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: RCANROT      !<
+      real, dimension(:), allocatable :: RHOSGAT        !<Density of snow \f$[kg m^{-3} ]\f$
+      real, dimension(:,:), allocatable :: RHOSROT      !<
+      real, dimension(:), allocatable :: SCANGAT        !<Intercepted frozen water stored on canopy \f$[kg m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: SCANROT      !<
+      real, dimension(:), allocatable :: SNOGAT         !<Mass of snow pack [kg m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: SNOROT       !<
+      real, dimension(:), allocatable :: TACGAT         !<Temperature of air within vegetation canopy [K]
+      real, dimension(:,:), allocatable :: TACROT       !<
+      real, dimension(:,:), allocatable :: TBARGAT      !<Temperature of soil layers [K]
+      real, dimension(:,:,:), allocatable :: TBARROT    !<
+      real, dimension(:), allocatable :: TBASGAT        !<Temperature of bedrock in third soil layer [K]
+      real, dimension(:,:), allocatable :: TBASROT      !<
+      real, dimension(:), allocatable :: TCANGAT        !<Vegetation canopy temperature [K]
+      real, dimension(:,:), allocatable :: TCANROT      !<
+      real, dimension(:,:), allocatable :: THICGAT      !<Volumetric frozen water content of soil layers \f$[m^3 m^{-3} ]\f$
+      real, dimension(:,:,:), allocatable :: THICROT    !<
+      real, dimension(:,:), allocatable :: THLQGAT      !<Volumetric liquid water content of soil layers \f$[m^3 m^{-3} ]\f$
+      real, dimension(:,:,:), allocatable :: THLQROT    !<
+      real, dimension(:), allocatable :: TPNDGAT        !<Temperature of ponded water [K]
+      real, dimension(:,:), allocatable :: TPNDROT      !<
+      real, dimension(:,:), allocatable :: TSFSGAT      !<Ground surface temperature over subarea [K]
+      real, dimension(:,:,:), allocatable :: TSFSROT    !<
+      real, dimension(:), allocatable :: TSNOGAT        !<Snowpack temperature [K]
+      real, dimension(:,:), allocatable :: TSNOROT      !<
+      real, dimension(:), allocatable :: WSNOGAT        !<Liquid water content of snow pack \f$[kg m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: WSNOROT      !<
+      real, dimension(:), allocatable :: ZPNDGAT        !<Depth of ponded water on surface [m]
+      real, dimension(:,:), allocatable :: ZPNDROT      !<
 
 
 
@@ -258,157 +270,158 @@ C
 C     * LAND SURFACE PROGNOSTIC VARIABLES.
 C
 C
-      REAL,DIMENSION(NLAT,NMOS) :: REFROT  !<
-      REAL,DIMENSION(NLAT,NMOS) :: BCSNROT !<
-      REAL,DIMENSION(ILG)       :: REFGAT  !<
-      REAL,DIMENSION(ILG)       :: BCSNGAT !<
+      real, dimension(:,:), allocatable :: REFROT   !<
+      real, dimension(:,:), allocatable :: BCSNROT  !<
+      real, dimension(:), allocatable :: REFGAT     !<
+      real, dimension(:), allocatable :: BCSNGAT    !<
 C
 C     * GATHER-SCATTER INDEX ARRAYS.
 C
-      INTEGER ILMOS (ILG) !<Index of grid cell corresponding to current element of gathered vector of land surface variables [ ]
-      INTEGER JLMOS (ILG) !<Index of mosaic tile corresponding to current element of gathered vector of land surface variables [ ]
-      INTEGER IWMOS (ILG) !<Index of grid cell corresponding to current element of gathered vector of inland water body variables [ ]
-      INTEGER JWMOS (ILG) !<Index of mosaic tile corresponding to current element of gathered vector of inland water body variables [ ]
+      integer, dimension(:), allocatable :: ILMOS  !<Index of grid cell corresponding to current element of gathered vector of land surface variables [ ]
+      integer, dimension(:), allocatable :: JLMOS  !<Index of mosaic tile corresponding to current element of gathered vector of land surface variables [ ]
+      integer, dimension(:), allocatable :: IWMOS  !<Index of grid cell corresponding to current element of gathered vector of inland water body variables [ ]
+      integer, dimension(:), allocatable :: JWMOS  !<Index of mosaic tile corresponding to current element of gathered vector of inland water body variables [ ]
 C
 C     * CANOPY AND SOIL INFORMATION ARRAYS.
 C     * (THE LAST DIMENSION OF MOST OF THESE ARRAYS IS GIVEN BY
 C     * THE NUMBER OF SOIL LAYERS (IGND), THE NUMBER OF BROAD
 C     * VEGETATION CATEGORIES (ICAN), OR ICAN+1.
 C
-      REAL,DIMENSION(ILG,ICAN)       :: ACIDGAT !<Optional user-specified value of canopy near-infrared albedo to override CLASS-calculated value [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: ACIDROT !<
-      REAL,DIMENSION(ILG,ICAN)       :: ACVDGAT !<Optional user-specified value of canopy visible albedo to override CLASS-calculated value [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: ACVDROT !<
-      REAL,DIMENSION(ILG)            :: AGIDGAT !<Optional user-specified value of ground near-infrared albedo to override CLASS-calculated value [ ]
-      REAL,DIMENSION(NLAT,NMOS)      :: AGIDROT !<
-      REAL,DIMENSION(ILG)            :: AGVDGAT !<Optional user-specified value of ground visible albedo to override CLASS-calculated value [ ]
-      REAL,DIMENSION(NLAT,NMOS)      :: AGVDROT !<
-      REAL,DIMENSION(ILG)            :: ALGDGAT !<Reference albedo for dry soil [ ]
-      REAL,DIMENSION(NLAT,NMOS)      :: ALGDROT !<
-      REAL,DIMENSION(ILG)            :: ALGWGAT !<Reference albedo for saturated soil [ ]
-      REAL,DIMENSION(NLAT,NMOS)      :: ALGWROT !<
-      REAL,DIMENSION(ILG,ICP1)       :: ALICGAT !<Background average near-infrared albedo of vegetation category [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICP1) :: ALICROT !<
-      REAL,DIMENSION(ILG,ICP1)       :: ALVCGAT !<Background average visible albedo of vegetation category [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICP1) :: ALVCROT !<
-      REAL,DIMENSION(ILG)            :: ASIDGAT !<Optional user-specified value of snow near-infrared albedo to override CLASS-calculated value [ ]
-      REAL,DIMENSION(NLAT,NMOS)      :: ASIDROT !<
-      REAL,DIMENSION(ILG)            :: ASVDGAT !<Optional user-specified value of snow visible albedo to override CLASS-calculated value [ ]
-      REAL,DIMENSION(NLAT,NMOS)      :: ASVDROT !<
-      REAL,DIMENSION(ILG,IGND)       :: BIGAT   !<Clapp and Hornberger empirical “b” parameter [ ]
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: BIROT   !<
-      REAL CLAYROT(NLAT,NMOS,IGND)              !<Percentage clay content of soil
-      REAL,DIMENSION(ILG,ICAN)       :: CMASGAT !<Maximum canopy mass for vegetation category \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: CMASROT !<
-      REAL,DIMENSION(ILG)            :: DDGAT   !Drainage Density [km^{-1} ]
-      REAL,DIMENSION(NLAT,NMOS)      :: DDROT   !<
-      REAL,DIMENSION(ILG,IGND)       :: DLZWGAT !<Permeable thickness of soil layer [m]
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: DLZWROT !<
-      REAL,DIMENSION(ILG)            :: DRNGAT  !<Drainage index at bottom of soil profile [ ]
-      REAL,DIMENSION(NLAT,NMOS)      :: DRNROT  !<
-      REAL FAREROT(NLAT,NMOS)                   !<Fractional coverage of mosaic tile on modelled area
-      REAL,DIMENSION(ILG,ICP1)       :: FCANGAT !<Maximum fractional coverage of modelled area by vegetation category [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICP1) :: FCANROT !<
-      REAL,DIMENSION(ILG)            :: GRKFGAT !<WATROF parameter used when running MESH code [ ]
-      REAL,DIMENSION(NLAT,NMOS)      :: GRKFROT !<
-      REAL,DIMENSION(ILG,IGND)       :: GRKSGAT !<Saturated hydraulic conductivity of soil layers \f$[m s^{-1} ]\f$ Note that this should be registered as WFCINT
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: GRKSROT !<
-      REAL,DIMENSION(ILG,IGND)       :: HCPSGAT !<Volumetric heat capacity of soil particles \f$[J m^{-3} ]\f$
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: HCPSROT !<
-      REAL,DIMENSION(ILG,ICAN)       :: HGTDGAT !<Optional user-specified values of height of vegetation categories to override CLASS-calculated values [m]
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: HGTDROT !<
-      INTEGER IGDRGAT(ILG)                      !<Index of soil layer in which bedrock is encountered
-      INTEGER IGDRROT(NLAT,NMOS)                !<
-      INTEGER ISNDGAT(ILG,IGND)                 !<Integer identifier associated with sand content
-      INTEGER ISNDROT(NLAT,NMOS,IGND)           !<
-      REAL,DIMENSION(ILG,ICP1)       :: LNZ0GAT !<Natural logarithm of maximum roughness length of vegetation category [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICP1) :: LNZ0ROT !<
-      INTEGER MIDROT (NLAT,NMOS)                !<Mosaic tile type identifier (1 for land surface, 0 for inland lake)
-      REAL ORGMROT(NLAT,NMOS,IGND)              !<Percentage organic matter content of soil
-      REAL,DIMENSION(ILG,ICAN)       :: PAIDGAT !<Optional user-specified value of plant area indices of vegetation categories to override CLASS-calculated values [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: PAIDROT !<
-      REAL,DIMENSION(ILG,ICAN)       :: PAMNGAT !<Minimum plant area index of vegetation category [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: PAMNROT !<
-      REAL,DIMENSION(ILG,ICAN)       :: PAMXGAT !<Minimum plant area index of vegetation category [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: PAMXROT !<
-      REAL,DIMENSION(ILG,ICAN)       :: PSGAGAT !<Soil moisture suction coefficient for vegetation category (used in stomatal resistance calculation) [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: PSGAROT !<
-      REAL,DIMENSION(ILG,ICAN)       :: PSGBGAT !<Soil moisture suction coefficient for vegetation category (used in stomatal resistance calculation) [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: PSGBROT !<
-      REAL,DIMENSION(ILG,IGND)       :: PSISGAT !<Soil moisture suction at saturation [m]
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: PSISROT !<
-      REAL,DIMENSION(ILG,IGND)       :: PSIWGAT !<Soil moisture suction at wilting point [m]
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: PSIWROT !<
-      REAL,DIMENSION(ILG,ICAN)       :: QA50GAT !<Reference value of incoming shortwave radiation for vegetation category (used in stomatal resistance calculation) \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: QA50ROT !<
-      REAL,DIMENSION(ILG,ICAN)       :: ROOTGAT !<Maximum rooting depth of vegetation category [m]
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: ROOTROT !<
-      REAL,DIMENSION(ILG,ICAN)       :: RSMNGAT !<Minimum stomatal resistance of vegetation category \f$[s m^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: RSMNROT !<
-      REAL SANDROT(NLAT,NMOS,IGND)              !<Percentage sand content of soil
-      REAL SDEPROT(NLAT,NMOS)                   !<Depth to bedrock in the soil profile
-      REAL,DIMENSION(ILG,IGND)       :: TCSGAT  !<Thermal conductivity of soil particles \f$[W m^{-1} K^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: TCSROT  !<
-      REAL,DIMENSION(ILG,IGND)       :: THFCGAT !<Field capacity \f$[m^3 m^{-3} ]\f$
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: THFCROT !<
-      REAL,DIMENSION(ILG,IGND)       :: THMGAT  !<Residual soil liquid water content remaining after freezing or evaporation \f$[m^3 m^{-3} ]\f$
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: THMROT  !<
-      REAL,DIMENSION(ILG,IGND)       :: THPGAT  !<Pore volume in soil layer \f$[m^3 m^{-3} ]\f$
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: THPROT  !<
-      REAL,DIMENSION(ILG,IGND)       :: THRGAT  !<Liquid water retention capacity for organic soil \f$[m^3 m^{-3} ]\f$
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: THRROT  !<
-      REAL,DIMENSION(ILG,IGND)       :: THRAGAT !<Fractional saturation of soil behind the wetting front [ ]
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: THRAROT !<
-      REAL,DIMENSION(ILG,ICAN)       :: VPDAGAT !<Vapour pressure deficit coefficient for vegetation category (used in stomatal resistance calculation) [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: VPDAROT !<
-      REAL,DIMENSION(ILG,ICAN)       :: VPDBGAT !<Vapour pressure deficit coefficient for vegetation category (used in stomatal resistance calculation) [ ]
-      REAL,DIMENSION(NLAT,NMOS,ICAN) :: VPDBROT !<
-      REAL,DIMENSION(ILG)            :: WFCIGAT !<WATROF parameter used when running MESH code [ ], this is suppose to be equivelant to GRKSGAT or the saturated hydraulic Conductivity KSAT for use in WATROF.
-      REAL,DIMENSION(NLAT,NMOS)      :: WFCIROT !<
-      REAL,DIMENSION(ILG)            :: WFSFGAT !<WATROF parameter used when running MESH code [ ]
-      REAL,DIMENSION(NLAT,NMOS)      :: WFSFROT !<
-      REAL,DIMENSION(ILG)            :: XSLPGAT !<Surface slope (used when running MESH code) [degrees]
-      REAL,DIMENSION(NLAT,NMOS)      :: XSLPROT !<
-      REAL,DIMENSION(ILG,IGND)       :: ZBTWGAT !<Depth to permeable bottom of soil layer [m]
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: ZBTWROT !<
-      REAL,DIMENSION(ILG)            :: ZPLGGAT !<Maximum water ponding depth for snow-free subareas (user-specified when running MESH code) [m]
-      REAL,DIMENSION(NLAT,NMOS)      :: ZPLGROT !<
-      REAL,DIMENSION(ILG)            :: ZPLSGAT !<Maximum water ponding depth for snow-covered subareas (user-specified when running MESH code) [m]
-      REAL,DIMENSION(NLAT,NMOS)      :: ZPLSROT !<
-      REAL,DIMENSION(ILG)            :: ZSNLGAT !<Limiting snow depth below which coverage is < 100% [m]
-      REAL,DIMENSION(NLAT,NMOS)      :: ZSNLROT !<
+      real, dimension(:,:), allocatable :: ACIDGAT      !<Optional user-specified value of canopy near-infrared albedo to override CLASS-calculated value [ ]
+      real, dimension(:,:,:), allocatable :: ACIDROT    !<
+      real, dimension(:,:), allocatable :: ACVDGAT      !<Optional user-specified value of canopy visible albedo to override CLASS-calculated value [ ]
+      real, dimension(:,:,:), allocatable :: ACVDROT    !<
+      real, dimension(:), allocatable :: AGIDGAT        !<Optional user-specified value of ground near-infrared albedo to override CLASS-calculated value [ ]
+      real, dimension(:,:), allocatable :: AGIDROT      !<
+      real, dimension(:), allocatable :: AGVDGAT        !<Optional user-specified value of ground visible albedo to override CLASS-calculated value [ ]
+      real, dimension(:,:), allocatable :: AGVDROT      !<
+      real, dimension(:), allocatable :: ALGDGAT        !<Reference albedo for dry soil [ ]
+      real, dimension(:,:), allocatable :: ALGDROT      !<
+      real, dimension(:), allocatable :: ALGWGAT        !<Reference albedo for saturated soil [ ]
+      real, dimension(:,:), allocatable :: ALGWROT      !<
+      real, dimension(:,:), allocatable :: ALICGAT      !<Background average near-infrared albedo of vegetation category [ ]
+      real, dimension(:,:,:), allocatable :: ALICROT    !<
+      real, dimension(:,:), allocatable :: ALVCGAT      !<Background average visible albedo of vegetation category [ ]
+      real, dimension(:,:,:), allocatable :: ALVCROT    !<
+      real, dimension(:), allocatable :: ASIDGAT        !<Optional user-specified value of snow near-infrared albedo to override CLASS-calculated value [ ]
+      real, dimension(:,:), allocatable :: ASIDROT      !<
+      real, dimension(:), allocatable :: ASVDGAT        !<Optional user-specified value of snow visible albedo to override CLASS-calculated value [ ]
+      real, dimension(:,:), allocatable :: ASVDROT      !<
+      real, dimension(:,:), allocatable :: BIGAT        !<Clapp and Hornberger empirical “b” parameter [ ]
+      real, dimension(:,:,:), allocatable :: BIROT      !<
+      real, dimension(:,:,:), allocatable :: CLAYROT    !<Percentage clay content of soil
+      real, dimension(:,:), allocatable :: CMASGAT      !<Maximum canopy mass for vegetation category \f$[kg m^{-2} ]\f$
+      real, dimension(:,:,:), allocatable :: CMASROT    !<
+      real, dimension(:), allocatable :: DDGAT          !<Drainage Density [km^{-1} ]
+      real, dimension(:,:), allocatable :: DDROT        !<
+      real, dimension(:,:), allocatable :: DLZWGAT      !<Permeable thickness of soil layer [m]
+      real, dimension(:,:,:), allocatable :: DLZWROT    !<
+      real, dimension(:), allocatable :: DRNGAT         !<Drainage index at bottom of soil profile [ ]
+      real, dimension(:,:), allocatable :: DRNROT       !<
+      real, dimension(:,:), allocatable :: FAREROT      !<Fractional coverage of mosaic tile on modelled area
+      real, dimension(:,:), allocatable :: FCANGAT      !<Maximum fractional coverage of modelled area by vegetation category [ ]
+      real, dimension(:,:,:), allocatable :: FCANROT    !<
+      real, dimension(:), allocatable :: GRKFGAT        !<WATROF parameter used when running MESH code [ ]
+      real, dimension(:,:), allocatable :: GRKFROT      !<
+      real, dimension(:,:), allocatable :: GRKSGAT      !<Saturated hydraulic conductivity of soil layers \f$[m s^{-1} ]\f$ Note that this should be registered as WFCINT
+      real, dimension(:,:,:), allocatable :: GRKSROT    !<
+      real, dimension(:,:), allocatable :: HCPSGAT      !<Volumetric heat capacity of soil particles \f$[J m^{-3} ]\f$
+      real, dimension(:,:,:), allocatable :: HCPSROT    !<
+      real, dimension(:,:), allocatable :: HGTDGAT      !<Optional user-specified values of height of vegetation categories to override CLASS-calculated values [m]
+      real, dimension(:,:,:), allocatable :: HGTDROT    !<
+      integer, dimension(:), allocatable :: IGDRGAT     !<Index of soil layer in which bedrock is encountered
+      integer, dimension(:,:), allocatable :: IGDRROT   !<
+      integer, dimension(:,:), allocatable :: ISNDGAT   !<Integer identifier associated with sand content
+      integer, dimension(:,:,:), allocatable :: ISNDROT !<
+      real, dimension(:,:), allocatable :: LNZ0GAT      !<Natural logarithm of maximum roughness length of vegetation category [ ]
+      real, dimension(:,:,:), allocatable :: LNZ0ROT    !<
+      integer, dimension(:,:), allocatable :: MIDROT    !<Mosaic tile type identifier (1 for land surface, 0 for inland lake)
+      real, dimension(:,:,:), allocatable :: ORGMROT    !<Percentage organic matter content of soil
+      real, dimension(:,:), allocatable :: PAIDGAT      !<Optional user-specified value of plant area indices of vegetation categories to override CLASS-calculated values [ ]
+      real, dimension(:,:,:), allocatable :: PAIDROT    !<
+      real, dimension(:,:), allocatable :: PAMNGAT      !<Minimum plant area index of vegetation category [ ]
+      real, dimension(:,:,:), allocatable :: PAMNROT    !<
+      real, dimension(:,:), allocatable :: PAMXGAT      !<Minimum plant area index of vegetation category [ ]
+      real, dimension(:,:,:), allocatable :: PAMXROT    !<
+      real, dimension(:,:), allocatable :: PSGAGAT      !<Soil moisture suction coefficient for vegetation category (used in stomatal resistance calculation) [ ]
+      real, dimension(:,:,:), allocatable :: PSGAROT    !<
+      real, dimension(:,:), allocatable :: PSGBGAT      !<Soil moisture suction coefficient for vegetation category (used in stomatal resistance calculation) [ ]
+      real, dimension(:,:,:), allocatable :: PSGBROT    !<
+      real, dimension(:,:), allocatable :: PSISGAT      !<Soil moisture suction at saturation [m]
+      real, dimension(:,:,:), allocatable :: PSISROT    !<
+      real, dimension(:,:), allocatable :: PSIWGAT      !<Soil moisture suction at wilting point [m]
+      real, dimension(:,:,:), allocatable :: PSIWROT    !<
+      real, dimension(:,:), allocatable :: QA50GAT      !<Reference value of incoming shortwave radiation for vegetation category (used in stomatal resistance calculation) \f$[W m^{-2} ]\f$
+      real, dimension(:,:,:), allocatable :: QA50ROT    !<
+      real, dimension(:,:), allocatable :: ROOTGAT      !<Maximum rooting depth of vegetation category [m]
+      real, dimension(:,:,:), allocatable :: ROOTROT    !<
+      real, dimension(:,:), allocatable :: RSMNGAT      !<Minimum stomatal resistance of vegetation category \f$[s m^{-1} ]\f$
+      real, dimension(:,:,:), allocatable :: RSMNROT    !<
+      real, dimension(:,:,:), allocatable :: SANDROT    !<Percentage sand content of soil
+      real, dimension(:,:), allocatable :: SDEPROT      !<Depth to bedrock in the soil profile
+      real, dimension(:,:), allocatable :: TCSGAT       !<Thermal conductivity of soil particles \f$[W m^{-1} K^{-1} ]\f$
+      real, dimension(:,:,:), allocatable :: TCSROT     !<
+      real, dimension(:,:), allocatable :: THFCGAT      !<Field capacity \f$[m^3 m^{-3} ]\f$
+      real, dimension(:,:,:), allocatable :: THFCROT    !<
+      real, dimension(:,:), allocatable :: THMGAT       !<Residual soil liquid water content remaining after freezing or evaporation \f$[m^3 m^{-3} ]\f$
+      real, dimension(:,:,:), allocatable :: THMROT     !<
+      real, dimension(:,:), allocatable :: THPGAT       !<Pore volume in soil layer \f$[m^3 m^{-3} ]\f$
+      real, dimension(:,:,:), allocatable :: THPROT     !<
+      real, dimension(:,:), allocatable :: THRGAT       !<Liquid water retention capacity for organic soil \f$[m^3 m^{-3} ]\f$
+      real, dimension(:,:,:), allocatable :: THRROT     !<
+      real, dimension(:,:), allocatable :: THRAGAT      !<Fractional saturation of soil behind the wetting front [ ]
+      real, dimension(:,:,:), allocatable :: THRAROT    !<
+      real, dimension(:,:), allocatable :: VPDAGAT      !<Vapour pressure deficit coefficient for vegetation category (used in stomatal resistance calculation) [ ]
+      real, dimension(:,:,:), allocatable :: VPDAROT    !<
+      real, dimension(:,:), allocatable :: VPDBGAT      !<Vapour pressure deficit coefficient for vegetation category (used in stomatal resistance calculation) [ ]
+      real, dimension(:,:,:), allocatable :: VPDBROT    !<
+      real, dimension(:), allocatable :: WFCIGAT        !<WATROF parameter used when running MESH code [ ], this is suppose to be equivelant to GRKSGAT or the saturated hydraulic Conductivity KSAT for use in WATROF.
+      real, dimension(:,:), allocatable :: WFCIROT      !<
+      real, dimension(:), allocatable :: WFSFGAT        !<WATROF parameter used when running MESH code [ ]
+      real, dimension(:,:), allocatable :: WFSFROT      !<
+      real, dimension(:), allocatable :: XSLPGAT        !<Surface slope (used when running MESH code) [degrees]
+      real, dimension(:,:), allocatable :: XSLPROT      !<
+      real, dimension(:,:), allocatable :: ZBTWGAT      !<Depth to permeable bottom of soil layer [m]
+      real, dimension(:,:,:), allocatable :: ZBTWROT    !<
+      real, dimension(:), allocatable :: ZPLGGAT        !<Maximum water ponding depth for snow-free subareas (user-specified when running MESH code) [m]
+      real, dimension(:,:), allocatable :: ZPLGROT      !<
+      real, dimension(:), allocatable :: ZPLSGAT        !<Maximum water ponding depth for snow-covered subareas (user-specified when running MESH code) [m]
+      real, dimension(:,:), allocatable :: ZPLSROT      !<
+      real, dimension(:), allocatable :: ZSNLGAT        !<Limiting snow depth below which coverage is < 100% [m]
+      real, dimension(:,:), allocatable :: ZSNLROT      !<
 
 
 
-      REAL,DIMENSION(NLAT,NMOS,IGND) :: THLWROT  !<
-      REAL,DIMENSION(NLAT,NMOS)      :: ZSNOROT  !<
-      REAL,DIMENSION(NLAT,NMOS)      :: ALGWVROT !<
-      REAL,DIMENSION(NLAT,NMOS)      :: ALGWNROT !<
-      REAL,DIMENSION(NLAT,NMOS)      :: ALGDVROT !<
-      REAL,DIMENSION(NLAT,NMOS)      :: ALGDNROT !<
-      REAL,DIMENSION(NLAT,NMOS)      :: EMISROT  !<
-      REAL,DIMENSION(NLAT,NMOS,NBS)  :: SALBROT  !<
-      REAL,DIMENSION(NLAT,NMOS,NBS)  :: CSALROT  !<
-      REAL,DIMENSION(NLAT,NBS)       :: FSDBROL  !<
-      REAL,DIMENSION(NLAT,NBS)       :: FSFBROL  !<
-      REAL,DIMENSION(NLAT,NBS)       :: FSSBROL  !<
+      real, dimension(:,:,:), allocatable :: THLWROT!<
+      real, dimension(:,:), allocatable :: ZSNOROT  !<
+      real, dimension(:,:), allocatable :: ALGWVROT !<
+      real, dimension(:,:), allocatable :: ALGWNROT !<
+      real, dimension(:,:), allocatable :: ALGDVROT !<
+      real, dimension(:,:), allocatable :: ALGDNROT !<
+      real, dimension(:,:), allocatable :: EMISROT  !<
+      real, dimension(:,:,:), allocatable :: SALBROT!<
+      real, dimension(:,:,:), allocatable :: CSALROT!<
+      real, dimension(:,:), allocatable :: FSDBROL  !<
+      real, dimension(:,:), allocatable :: FSFBROL  !<
+      real, dimension(:,:), allocatable :: FSSBROL  !<
 
-      REAL,DIMENSION(ILG,IGND)       :: THLWGAT  !<
-      REAL,DIMENSION(ILG)            :: ALGWVGAT !<
-      REAL,DIMENSION(ILG)            :: ALGWNGAT !<
-      REAL,DIMENSION(ILG)            :: ALGDVGAT !<
-      REAL,DIMENSION(ILG)            :: ALGDNGAT !<
-      REAL,DIMENSION(ILG)            :: EMISGAT  !<
-      REAL SOCIROT(NLAT,NMOS)                    !<
+      real, dimension(:,:), allocatable :: THLWGAT  !<
+      real, dimension(:), allocatable :: ALGWVGAT   !<
+      real, dimension(:), allocatable :: ALGWNGAT   !<
+      real, dimension(:), allocatable :: ALGDVGAT   !<
+      real, dimension(:), allocatable :: ALGDNGAT   !<
+      real, dimension(:), allocatable :: EMISGAT    !<
+      real, dimension(:,:), allocatable :: SOCIROT  !<
 C
-      REAL,DIMENSION(ILG,NBS) :: FSDBGAT !<
-      REAL,DIMENSION(ILG,NBS) :: FSFBGAT !<
-      REAL,DIMENSION(ILG,NBS) :: FSSBGAT !<
-      REAL,DIMENSION(ILG,NBS) :: SALBGAT !<
-      REAL,DIMENSION(ILG,NBS) :: CSALGAT !<
+      real, dimension(:,:), allocatable :: FSDBGAT  !<
+      real, dimension(:,:), allocatable :: FSFBGAT  !<
+      real, dimension(:,:), allocatable :: FSSBGAT  !<
+      real, dimension(:,:), allocatable :: SALBGAT  !<
+      real, dimension(:,:), allocatable :: CSALGAT  !<
 C
 C     * ARRAYS ASSOCIATED WITH COMMON BLOCKS.
 C
+!DAN    these kept as-was because correspond to look-up table
       REAL THPORG (  3) !<
       REAL THRORG (  3) !<
       REAL THMORG (  3) !<
@@ -417,491 +430,484 @@ C
       REAL GRKSORG(  3) !<
 C
       REAL CANEXT(ICAN) !<
-      REAL XLEAF (ICAN) !<
-      REAL ZORAT (ICAN) !<
-      REAL DELZ  (IGND) !<
-      REAL ZBOT  (IGND) !<
+      REAL XLEAF(ICAN)  !<
+      REAL ZORAT(ICAN)  !<
+      real, dimension(:), allocatable :: DELZ   !<
+      real, dimension(:), allocatable :: ZBOT   !<
+!DAN    'GROWYR' kept as-was because corresponds to look-up table
       REAL GROWYR (  18,4,2) !<
 C
 C     * ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES.
 
-!A lot of variable dimensions of ROW were changed to NMOS instead of NLAT for MESH (since NLAT is always 1)
+      real, dimension(:), allocatable :: CSZGAT  !<Cosine of solar zenith angle [ ]
+      real, dimension(:), allocatable :: CSZROW  !<
+      real, dimension(:), allocatable :: DLONGAT !<Longitude of grid cell (east of Greenwich) [degrees]
+      real, dimension(:), allocatable :: DLONROW !<
+      real, dimension(:), allocatable :: FCLOGAT !<Fractional cloud cover [ ]
+      real, dimension(:), allocatable :: FCLOROW !<
+      real, dimension(:), allocatable :: FDLGAT  !<Downwelling longwave radiation at bottom of atmosphere (i.e. incident on modelled land surface elements \f$[W m^{-2} ]\f$
+      real, dimension(:), allocatable :: FDLROW  !<
+      real, dimension(:), allocatable :: FSIHGAT !<Near-infrared radiation incident on horizontal surface \f$[W m^{-2} ]\f$
+      real, dimension(:), allocatable :: FSIHROW !<
+      real, dimension(:), allocatable :: FSVHGAT !<Visible radiation incident on horizontal surface \f$[W m^{-2} ]\f$
+      real, dimension(:), allocatable :: FSVHROW !<
+      real, dimension(:), allocatable :: GCROW   !<Type identifier for grid cell (1 = sea ice, 0 = ocean, -1 = land)
+      real, dimension(:), allocatable :: GGEOGAT !<Geothermal heat flux at bottom of soil profile \f$[W m^{-2} ]\f$
+      real, dimension(:), allocatable :: GGEOROW !<
+      real, dimension(:), allocatable :: PADRGAT !<Partial pressure of dry air [Pa]
+      real, dimension(:), allocatable :: PADRROW !<
+      real, dimension(:), allocatable :: PREGAT  !<Surface precipitation rate \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:), allocatable :: PREROW  !<
+      real, dimension(:), allocatable :: PRESGAT !<Surface air pressure [Pa]
+      real, dimension(:), allocatable :: PRESROW !<
+      real, dimension(:), allocatable :: QAGAT   !<Specific humidity at reference height \f$[kg kg^{-1} ]\f$
+      real, dimension(:), allocatable :: QAROW   !<
+      real, dimension(:), allocatable :: RADJGAT !<Latitude of grid cell (positive north of equator) [rad]
+      real, dimension(:), allocatable :: RADJROW !<
+      real, dimension(:), allocatable :: RHOAGAT !<Density of air \f$[kg m^{-3} ]\f$
+      real, dimension(:), allocatable :: RHOAROW !<
+      real, dimension(:), allocatable :: RHSIGAT !<Density of fresh snow \f$[kg m^{-3} ]\f$
+      real, dimension(:), allocatable :: RHSIROW !<
+      real, dimension(:), allocatable :: RPCPGAT !<Rainfall rate over modelled area \f$[m s^{-1} ]\f$
+      real, dimension(:), allocatable :: RPCPROW !<
+      real, dimension(:), allocatable :: RPREROW !<Rainfall rate over modelled area \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:), allocatable :: SPCPGAT !<Snowfall rate over modelled area \f$[m s^{-1} ]\f$
+      real, dimension(:), allocatable :: SPCPROW !<
+      real, dimension(:), allocatable :: SPREROW !<Snowfall rate over modelled area \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:), allocatable :: TAGAT   !<Air temperature at reference height [K]
+      real, dimension(:), allocatable :: TAROW   !<
+      real, dimension(:), allocatable :: TADPGAT !<Dew point temperature of air [K]
+      real, dimension(:), allocatable :: TADPROW !<
+      real, dimension(:), allocatable :: TRPCGAT !<Rainfall temperature [K]
+      real, dimension(:), allocatable :: TRPCROW !<
+      real, dimension(:), allocatable :: TSPCGAT !<Snowfall temperature [K]
+      real, dimension(:), allocatable :: TSPCROW !<
+      real, dimension(:), allocatable :: ULGAT   !<Zonal component of wind velocity \f$[m s^{-1} ]\f$
+      real, dimension(:), allocatable :: ULROW   !<
+      real, dimension(:), allocatable :: VLGAT   !<Meridional component of wind velocity \f$[m s^{-1} ]\f$
+      real, dimension(:), allocatable :: VLROW   !<
+      real, dimension(:), allocatable :: VMODGAT !<Wind speed at reference height \f$[m s^{-1} ]\f$
+      real, dimension(:), allocatable :: VMODROW !<
+      real, dimension(:), allocatable :: VPDGAT  !<Vapour pressure deficit [mb]
+      real, dimension(:), allocatable :: VPDROW  !<
+      real, dimension(:), allocatable :: Z0ORGAT !<Orographic roughness length [m]
+      real, dimension(:), allocatable :: ZBLDGAT !<Atmospheric blending height for surface roughness length averaging [m]
+      real, dimension(:), allocatable :: ZBLDROW !<
+      real, dimension(:), allocatable :: ZDHGAT  !<User-specified height associated with diagnosed screen-level variables [m]
+      real, dimension(:), allocatable :: ZDHROW  !<
+      real, dimension(:), allocatable :: ZDMGAT  !<User-specified height associated with diagnosed anemometer-level wind speed [m]
+      real, dimension(:), allocatable :: ZDMROW  !<
+      real, dimension(:), allocatable :: ZRFHGAT !<Reference height associated with forcing air temperature and humidity [m]
+      real, dimension(:), allocatable :: ZRFHROW !<
+      real, dimension(:), allocatable :: ZRFMGAT !<Reference height associated with forcing wind speed [m]
+      real, dimension(:), allocatable :: ZRFMROW !<
 C
-      REAL,DIMENSION(ILG)  :: CSZGAT  !<Cosine of solar zenith angle [ ]
-      REAL,DIMENSION(NLAT) :: CSZROW  !<
-      REAL,DIMENSION(ILG)  :: DLONGAT !<Longitude of grid cell (east of Greenwich) [degrees]
-      REAL,DIMENSION(NLAT) :: DLONROW !<
-      REAL,DIMENSION(ILG)  :: FCLOGAT !<Fractional cloud cover [ ]
-      REAL,DIMENSION(NLAT) :: FCLOROW !<
-      REAL,DIMENSION(ILG)  :: FDLGAT  !<Downwelling longwave radiation at bottom of atmosphere (i.e. incident on modelled land surface elements \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NMOS) :: FDLROW  !<
-      REAL,DIMENSION(ILG)  :: FSIHGAT !<Near-infrared radiation incident on horizontal surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: FSIHROW !<
-      REAL,DIMENSION(ILG)  :: FSVHGAT !<Visible radiation incident on horizontal surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: FSVHROW !<
-      REAL,DIMENSION(NLAT) :: GCROW   !<Type identifier for grid cell (1 = sea ice, 0 = ocean, -1 = land)
-      REAL,DIMENSION(ILG)  :: GGEOGAT !<Geothermal heat flux at bottom of soil profile \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: GGEOROW !<
-      REAL,DIMENSION(ILG)  :: PADRGAT !<Partial pressure of dry air [Pa]
-      REAL,DIMENSION(NLAT) :: PADRROW !<
-      REAL,DIMENSION(ILG)  :: PREGAT  !<Surface precipitation rate \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NMOS) :: PREROW  !<
-      REAL,DIMENSION(ILG)  :: PRESGAT !<Surface air pressure [Pa]
-      REAL,DIMENSION(NMOS) :: PRESROW !<
-      REAL,DIMENSION(ILG)  :: QAGAT   !<Specific humidity at reference height \f$[kg kg^{-1} ]\f$
-      REAL,DIMENSION(NMOS) :: QAROW   !<
-      REAL,DIMENSION(ILG)  :: RADJGAT !<Latitude of grid cell (positive north of equator) [rad]
-      REAL,DIMENSION(NLAT) :: RADJROW !<
-      REAL,DIMENSION(ILG)  :: RHOAGAT !<Density of air \f$[kg m^{-3} ]\f$
-      REAL,DIMENSION(NLAT) :: RHOAROW !<
-      REAL,DIMENSION(ILG)  :: RHSIGAT !<Density of fresh snow \f$[kg m^{-3} ]\f$
-      REAL,DIMENSION(NLAT) :: RHSIROW !<
-      REAL,DIMENSION(ILG)  :: RPCPGAT !<Rainfall rate over modelled area \f$[m s^{-1} ]\f$
-      REAL,DIMENSION(NLAT) :: RPCPROW !<
-      REAL,DIMENSION(NLAT) :: RPREROW !<Rainfall rate over modelled area \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(ILG)  :: SPCPGAT !<Snowfall rate over modelled area \f$[m s^{-1} ]\f$
-      REAL,DIMENSION(NLAT) :: SPCPROW !<
-      REAL,DIMENSION(NLAT) :: SPREROW !<Snowfall rate over modelled area \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(ILG)  :: TAGAT   !<Air temperature at reference height [K]
-      REAL,DIMENSION(NLAT) :: TAROW   !<
-      REAL,DIMENSION(ILG)  :: TADPGAT !<Dew point temperature of air [K]
-      REAL,DIMENSION(NLAT) :: TADPROW !<
-      REAL,DIMENSION(ILG)  :: TRPCGAT !<Rainfall temperature [K]
-      REAL,DIMENSION(NLAT) :: TRPCROW !<
-      REAL,DIMENSION(ILG)  :: TSPCGAT !<Snowfall temperature [K]
-      REAL,DIMENSION(NLAT) :: TSPCROW !<
-      REAL,DIMENSION(ILG)  :: ULGAT   !<Zonal component of wind velocity \f$[m s^{-1} ]\f$
-      REAL,DIMENSION(NMOS) :: ULROW   !<
-      REAL,DIMENSION(ILG)  :: VLGAT   !<Meridional component of wind velocity \f$[m s^{-1} ]\f$
-      REAL,DIMENSION(NMOS) :: VLROW   !<
-      REAL,DIMENSION(ILG)  :: VMODGAT !<Wind speed at reference height \f$[m s^{-1} ]\f$
-      REAL,DIMENSION(NLAT) :: VMODROW !<
-      REAL,DIMENSION(ILG)  :: VPDGAT  !<Vapour pressure deficit [mb]
-      REAL,DIMENSION(NLAT) :: VPDROW  !<
-      REAL,DIMENSION(ILG)  :: Z0ORGAT !<Orographic roughness length [m]
-      REAL,DIMENSION(ILG)  :: ZBLDGAT !<Atmospheric blending height for surface roughness length averaging [m]
-      REAL,DIMENSION(NLAT) :: ZBLDROW !<
-      REAL,DIMENSION(ILG)  :: ZDHGAT  !<User-specified height associated with diagnosed screen-level variables [m]
-      REAL,DIMENSION(NLAT) :: ZDHROW  !<
-      REAL,DIMENSION(ILG)  :: ZDMGAT  !<User-specified height associated with diagnosed anemometer-level wind speed [m]
-      REAL,DIMENSION(NLAT) :: ZDMROW  !<
-      REAL,DIMENSION(ILG)  :: ZRFHGAT !<Reference height associated with forcing air temperature and humidity [m]
-      REAL,DIMENSION(NLAT) :: ZRFHROW !<
-      REAL,DIMENSION(ILG)  :: ZRFMGAT !<Reference height associated with forcing wind speed [m]
-      REAL,DIMENSION(NLAT) :: ZRFMROW !<
-
-
-
-      REAL,DIMENSION(NMOS) :: UVROW   !<
-      REAL,DIMENSION(NLAT) :: XDIFFUS !<
-      REAL,DIMENSION(NLAT) :: Z0ORROW !<
-
-      REAL,DIMENSION(NLAT) :: DLATROW !<
-      REAL,DIMENSION(NLAT) :: FSSROW  !< Shortwave radiation \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: PRENROW !<
-      REAL,DIMENSION(NLAT) :: CLDTROW !<
-      REAL,DIMENSION(NLAT) :: FSGROL  !<
-      REAL,DIMENSION(NLAT) :: FLGROL  !<
-      REAL,DIMENSION(NLAT) :: GUSTROL !<
-      REAL,DIMENSION(NLAT) :: DEPBROW !<
+      real, dimension(:), allocatable :: UVROW   !<
+      real, dimension(:), allocatable :: XDIFFUS !<
+      real, dimension(:), allocatable :: Z0ORROW !<
 C
-      REAL,DIMENSION(ILG)  :: FSGGAT  !<
-      REAL,DIMENSION(ILG)  :: FLGGAT  !<
-      REAL,DIMENSION(ILG)  :: GUSTGAT !<
-      REAL,DIMENSION(ILG)  :: DEPBGAT !<
-      REAL,DIMENSION(ILG)  :: GTBS    !<
-      REAL,DIMENSION(ILG)  :: SFCUBS  !<
-      REAL,DIMENSION(ILG)  :: SFCVBS  !<
-      REAL,DIMENSION(ILG)  :: USTARBS !<
-      REAL,DIMENSION(ILG)  :: TCSNOW  !<
-      REAL,DIMENSION(ILG)  :: GSNOW   !<
-
+      real, dimension(:), allocatable :: DLATROW !<
+      real, dimension(:), allocatable :: FSSROW  !< Shortwave radiation \f$[W m^{-2} ]\f$
+      real, dimension(:), allocatable :: PRENROW !<
+      real, dimension(:), allocatable :: CLDTROW !<
+      real, dimension(:), allocatable :: FSGROL  !<
+      real, dimension(:), allocatable :: FLGROL  !<
+      real, dimension(:), allocatable :: GUSTROL !<
+      real, dimension(:), allocatable :: DEPBROW !<
+C
+      real, dimension(:), allocatable :: FSGGAT  !<
+      real, dimension(:), allocatable :: FLGGAT  !<
+      real, dimension(:), allocatable :: GUSTGAT !<
+      real, dimension(:), allocatable :: DEPBGAT !<
+      real, dimension(:), allocatable :: GTBS    !<
+      real, dimension(:), allocatable :: SFCUBS  !<
+      real, dimension(:), allocatable :: SFCVBS  !<
+      real, dimension(:), allocatable :: USTARBS !<
+      real, dimension(:), allocatable :: TCSNOW  !<
+      real, dimension(:), allocatable :: GSNOW   !<
 C
 C     * LAND SURFACE DIAGNOSTIC VARIABLES.
 C
-
-      REAL,DIMENSION(ILG)       :: ALIRGAT !<Diagnosed total near-infrared albedo of land surface [ ]
-      REAL,DIMENSION(NLAT,NMOS) :: ALIRROT !<
-      REAL,DIMENSION(NLAT)      :: ALIRROW !<
-      REAL,DIMENSION(ILG)       :: ALVSGAT !<Diagnosed total visible albedo of land surface [ ]
-      REAL,DIMENSION(NLAT,NMOS) :: ALVSROT !<
-      REAL,DIMENSION(NLAT)      :: ALVSROW !<
-      REAL,DIMENSION(ILG)       :: CDHGAT  !<Surface drag coefficient for heat [ ]
-      REAL,DIMENSION(NLAT,NMOS) :: CDHROT  !<
-      REAL,DIMENSION(NLAT)      :: CDHROW  !<
-      REAL,DIMENSION(ILG)       :: CDMGAT  !<Surface drag coefficient for momentum [ ]
-      REAL,DIMENSION(NLAT,NMOS) :: CDMROT  !<
-      REAL,DIMENSION(NLAT)      :: CDMROW  !<
-      REAL,DIMENSION(ILG)       :: DRGAT   !<Surface drag coefficient under neutral stability [ ]
-      REAL,DIMENSION(NLAT,NMOS) :: DRROT   !<
-      REAL,DIMENSION(NLAT)      :: DRROW   !<
-      REAL,DIMENSION(ILG)       :: EFGAT   !<Evaporation efficiency at ground surface [ ]
-      REAL,DIMENSION(NLAT,NMOS) :: EFROT   !<
-      REAL,DIMENSION(NLAT)      :: EFROW   !<
-      REAL,DIMENSION(ILG)       :: FLGGGAT !<Diagnosed net longwave radiation at soil surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: FLGGROT !<
-      REAL,DIMENSION(NLAT)      :: FLGGROW !<
-      REAL,DIMENSION(ILG)       :: FLGSGAT !<Diagnosed net longwave radiation at snow surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: FLGSROT !<
-      REAL,DIMENSION(NLAT)      :: FLGSROW !<
-      REAL,DIMENSION(ILG)       :: FLGVGAT !<Diagnosed net longwave radiation on vegetation canopy \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: FLGVROT !<
-      REAL,DIMENSION(NLAT)      :: FLGVROW !<
-      REAL,DIMENSION(ILG)       :: FSGGGAT !<Diagnosed net shortwave radiation at soil surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: FSGGROT !<
-      REAL,DIMENSION(NLAT)      :: FSGGROW !<
-      REAL,DIMENSION(ILG)       :: FSGSGAT !<Diagnosed net shortwave radiation at snow surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: FSGSROT !<
-      REAL,DIMENSION(NLAT)      :: FSGSROW !<
-      REAL,DIMENSION(ILG)       :: FSGVGAT !<Diagnosed net shortwave radiation on vegetation canopy \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: FSGVROT !<
-      REAL,DIMENSION(NLAT)      :: FSGVROW !<
-      REAL,DIMENSION(ILG)       :: FSNOGAT !<Diagnosed fractional snow coverage [ ]
-      REAL,DIMENSION(NLAT,NMOS) :: FSNOROT !<
-      REAL,DIMENSION(NLAT)      :: FSNOROW !<
-      REAL,DIMENSION(ILG)       :: GAGAT   !<Diagnosed product of drag coefficient and wind speed over modelled area \f$[m s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: GAROT   !<
-      REAL,DIMENSION(NLAT)      :: GAROW   !<
-      REAL GFLXGAT(ILG,IGND)               !<Heat conduction between soil layers \f$[W m^{-2} ]\f$
-      REAL GFLXROT(NLAT,NMOS,IGND)         !<
-      REAL GFLXROW(NLAT,IGND)              !<
-      REAL,DIMENSION(ILG)       :: GTGAT   !<Diagnosed effective surface black-body temperature [K]
-      REAL,DIMENSION(NLAT,NMOS) :: GTROT   !<
-      REAL,DIMENSION(NLAT)      :: GTROW   !<
-      REAL,DIMENSION(ILG)       :: HBLGAT  !<Height of the atmospheric boundary layer [m]
-      REAL,DIMENSION(NLAT,NMOS) :: HBLROT  !<
-      REAL,DIMENSION(NLAT)      :: HBLROW  !<
-      REAL,DIMENSION(ILG)       :: HEVCGAT !<Diagnosed latent heat flux on vegetation canopy \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: HEVCROT !<
-      REAL,DIMENSION(NLAT)      :: HEVCROW !<
-      REAL,DIMENSION(ILG)       :: HEVGGAT !<Diagnosed latent heat flux at soil surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: HEVGROT !<
-      REAL,DIMENSION(NLAT)      :: HEVGROW !<
-      REAL,DIMENSION(ILG)       :: HEVSGAT !<Diagnosed latent heat flux at snow surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: HEVSROT !<
-      REAL,DIMENSION(NLAT)      :: HEVSROW !<
-      REAL,DIMENSION(ILG)       :: HFSGAT  !<Diagnosed total surface sensible heat flux over modelled area \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: HFSROT  !<
-      REAL,DIMENSION(NLAT)      :: HFSROW  !<
-      REAL,DIMENSION(ILG)       :: HFSCGAT !<Diagnosed sensible heat flux on vegetation canopy \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: HFSCROT !<
-      REAL,DIMENSION(NLAT)      :: HFSCROW !<
-      REAL,DIMENSION(ILG)       :: HFSGGAT !<Diagnosed sensible heat flux at soil surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: HFSGROT !<
-      REAL,DIMENSION(NLAT)      :: HFSGROW !<
-      REAL,DIMENSION(ILG)       :: HFSSGAT !<Diagnosed sensible heat flux at snow surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: HFSSROT !<
-      REAL,DIMENSION(NLAT)      :: HFSSROW !<
-      REAL,DIMENSION(ILG)       :: HMFCGAT !<Diagnosed energy associated with phase change of water on vegetation \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: HMFCROT !<
-      REAL,DIMENSION(NLAT)      :: HMFCROW !<
-      REAL HMFGGAT(ILG,IGND)               !<Diagnosed energy associated with phase change of water in soil layers \f$[W m^{-2} ]\f$
-      REAL HMFGROT(NLAT,NMOS,IGND)         !<
-      REAL HMFGROW(NLAT,IGND)              !<
-      REAL,DIMENSION(ILG)       :: HMFNGAT !<Diagnosed energy associated with phase change of water in snow pack \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: HMFNROT !<
-      REAL,DIMENSION(NLAT)      :: HMFNROW !<
-      REAL HTCGAT (ILG,IGND)               !<Diagnosed internal energy change of soil layer due to conduction and/or change in mass \f$[W m^{-2} ]\f$
-      REAL HTCROT (NLAT,NMOS,IGND)         !<
-      REAL HTCROW (NLAT,IGND)              !<
-      REAL,DIMENSION(ILG)       :: HTCCGAT !<Diagnosed internal energy change of vegetation canopy due to conduction and/or change in mass \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: HTCCROT !<
-      REAL,DIMENSION(NLAT)      :: HTCCROW !<
-      REAL,DIMENSION(ILG)       :: HTCSGAT !<Diagnosed internal energy change of snow pack due to conduction and/or change in mass \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: HTCSROT !<
-      REAL,DIMENSION(NLAT)      :: HTCSROW !<
-      REAL,DIMENSION(ILG)       :: ILMOGAT !<Inverse of Monin-Obukhov roughness length \f$(m^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: ILMOROT !<
-      REAL,DIMENSION(NLAT)      :: ILMOROW !<
-      INTEGER ISUM(6)                      !<Total number of iterations required to solve surface energy balance for the elements of the four subareas for the current run
-      INTEGER ITCTGAT(ILG,6,50)            !<Counter of number of iterations required to solve surface energy balance for the elements of the four subareas
-      INTEGER ITCTROT(NLAT,NMOS,6,50)      !<
-      REAL,DIMENSION(ILG)       :: PCFCGAT !<Diagnosed frozen precipitation intercepted by vegetation \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: PCFCROT !<
-      REAL,DIMENSION(NLAT)      :: PCFCROW !<
-      REAL,DIMENSION(ILG)       :: PCLCGAT !<Diagnosed liquid precipitation intercepted by vegetation \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: PCLCROT !<
-      REAL,DIMENSION(NLAT)      :: PCLCROW !<
-      REAL,DIMENSION(ILG)       :: PCPGGAT !<Diagnosed precipitation incident on ground \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: PCPGROT !<
-      REAL,DIMENSION(NLAT)      :: PCPGROW !<
-      REAL,DIMENSION(ILG)       :: PCPNGAT !<Diagnosed precipitation incident on snow pack \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: PCPNROT !<
-      REAL,DIMENSION(NLAT)      :: PCPNROW !<
-      REAL,DIMENSION(ILG)       :: PETGAT  !<Diagnosed potential evapotranspiration \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: PETROT  !<
-      REAL,DIMENSION(NLAT)      :: PETROW  !<
-      REAL,DIMENSION(ILG)       :: QEVPGAT !<Diagnosed total surface latent heat flux over modelled area \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: QEVPROT !<
-      REAL,DIMENSION(NLAT)      :: QEVPROW !<
-      REAL QFCGAT (ILG,IGND)               !<Diagnosed vapour flux from transpiration over modelled area \f$[W m^{-2} ]\f$
-      REAL QFCROT (NLAT,NMOS,IGND)         !<
-      REAL QFCROW (NLAT,IGND)              !<
-      REAL,DIMENSION(ILG)       :: QFCFGAT !<Diagnosed vapour flux from frozen water on vegetation \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: QFCFROT !<
-      REAL,DIMENSION(NLAT)      :: QFCFROW !<
-      REAL,DIMENSION(ILG)       :: QFCLGAT !<Diagnosed vapour flux from liquid water on vegetation \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: QFCLROT !<
-      REAL,DIMENSION(NLAT)      :: QFCLROW !<
-      REAL,DIMENSION(ILG)       :: QFGGAT  !<Diagnosed water vapour flux from ground \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: QFGROT  !<
-      REAL,DIMENSION(NLAT)      :: QFGROW  !<
-      REAL,DIMENSION(ILG)       :: QFNGAT  !<Diagnosed water vapour flux from snow pack \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: QFNROT  !<
-      REAL,DIMENSION(NLAT)      :: QFNROW  !<
-      REAL,DIMENSION(ILG)       :: QFSGAT  !<Diagnosed total surface water vapour flux over modelled area \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: QFSROT  !<
-      REAL,DIMENSION(NLAT)      :: QFSROW  !<
-      REAL,DIMENSION(ILG)       :: QFXGAT  !<Product of surface drag coefficient, wind speed and surface-air specific humidity difference \f$[m s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: QFXROT  !<
-      REAL,DIMENSION(NLAT)      :: QFXROW  !<
-      REAL,DIMENSION(ILG)       :: QGGAT   !<Diagnosed surface specific humidity \f$[kg kg^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: QGROT   !<
-      REAL,DIMENSION(NLAT)      :: QGROW   !<
-      REAL,DIMENSION(ILG)       :: ROFGAT  !<Total runoff from soil \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: ROFROT  !<
-      REAL,DIMENSION(NLAT)      :: ROFROW  !<
-      REAL,DIMENSION(ILG)       :: ROFBGAT !<Base flow from bottom of soil column \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: ROFBROT !<
-      REAL,DIMENSION(NLAT)      :: ROFBROW !<
-      REAL,DIMENSION(ILG)       :: ROFCGAT !<Liquid/frozen water runoff from vegetation \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: ROFCROT !<
-      REAL,DIMENSION(NLAT)      :: ROFCROW !<
-      REAL,DIMENSION(ILG)       :: ROFNGAT !<Liquid water runoff from snow pack \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: ROFNROT !<
-      REAL,DIMENSION(NLAT)      :: ROFNROW !<
-      REAL,DIMENSION(ILG)       :: ROFOGAT !<Overland flow from top of soil column \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: ROFOROT !<
-      REAL,DIMENSION(NLAT)      :: ROFOROW !<
-      REAL,DIMENSION(ILG)       :: ROFSGAT !<Interflow from sides of soil column \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: ROFSROT !<
-      REAL,DIMENSION(NLAT)      :: ROFSROW !<
-      REAL,DIMENSION(ILG)       :: ROVGGAT !<Diagnosed liquid/frozen water runoff from vegetation to ground surface \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: ROVGROT !<
-      REAL,DIMENSION(NLAT)      :: ROVGROW !<
-      REAL,DIMENSION(ILG)       :: SFCQGAT !<Diagnosed screen-level specific humidity \f$[kg kg^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: SFCQROT !<
-      REAL,DIMENSION(NLAT)      :: SFCQROW !<
-      REAL,DIMENSION(ILG)       :: SFCTGAT !<Diagnosed screen-level air temperature [K]
-      REAL,DIMENSION(NLAT,NMOS) :: SFCTROT !<
-      REAL,DIMENSION(NLAT)      :: SFCTROW !<
-      REAL,DIMENSION(ILG)       :: SFCUGAT !<Diagnosed anemometer-level zonal wind \f$[m s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: SFCUROT !<
-      REAL,DIMENSION(NLAT)      :: SFCUROW !<
-      REAL,DIMENSION(ILG)       :: SFCVGAT !<Diagnosed anemometer-level meridional wind \f$[m s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: SFCVROT !<
-      REAL,DIMENSION(NLAT)      :: SFCVROW !<
-      REAL,DIMENSION(ILG)       :: TFXGAT  !<Product of surface drag coefficient, wind speed and surface-air temperature difference \f$[K m s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: TFXROT  !<
-      REAL,DIMENSION(NLAT)      :: TFXROW  !<
-      REAL,DIMENSION(ILG)       :: TROBGAT !<Temperature of base flow from bottom of soil column [K]
-      REAL,DIMENSION(NLAT,NMOS) :: TROBROT !<
-      REAL,DIMENSION(ILG)       :: TROFGAT !<Temperature of total runoff [K]
-      REAL,DIMENSION(NLAT,NMOS) :: TROFROT !<
-      REAL,DIMENSION(ILG)       :: TROOGAT !<Temperature of overland flow from top of soil column [K]
-      REAL,DIMENSION(NLAT,NMOS) :: TROOROT !<
-      REAL,DIMENSION(ILG)       :: TROSGAT !<Temperature of interflow from sides of soil column [K]
-      REAL,DIMENSION(NLAT,NMOS) :: TROSROT !<
-      REAL,DIMENSION(ILG)       :: UEGAT   !<Friction velocity of air \f$[m s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: UEROT   !<
-      REAL,DIMENSION(NLAT)      :: UEROW   !<
-      REAL,DIMENSION(ILG)       :: WTABGAT !<Depth of water table in soil [m]
-      REAL,DIMENSION(NLAT,NMOS) :: WTABROT !<
-      REAL,DIMENSION(NLAT)      :: WTABROW !<
-      REAL,DIMENSION(ILG)       :: WTRCGAT !<Diagnosed residual water transferred off the vegetation canopy \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: WTRCROT !<
-      REAL,DIMENSION(NLAT)      :: WTRCROW !<
-      REAL,DIMENSION(ILG)       :: WTRGGAT !<Diagnosed residual water transferred into or out of the soil \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: WTRGROT !<
-      REAL,DIMENSION(NLAT)      :: WTRGROW !<
-      REAL,DIMENSION(ILG)       :: WTRSGAT !<Diagnosed residual water transferred into or out of the snow pack \f$[kg m^{-2} s^{-1} ]\f$
-      REAL,DIMENSION(NLAT,NMOS) :: WTRSROT !<
-      REAL,DIMENSION(NLAT)      :: WTRSROW !<
-
-      REAL,DIMENSION(ILG)       :: QLWOGAT !<
-      REAL,DIMENSION(ILG)       :: SFRHGAT !<
-      REAL,DIMENSION(NLAT,NMOS) :: SFRHROT !<
-      REAL,DIMENSION(NLAT)      :: SFRHROW !<
-
-      REAL,DIMENSION(ILG)       :: FTEMP   !<
-      REAL,DIMENSION(ILG)       :: FVAP    !<
-      REAL,DIMENSION(ILG)       :: RIB     !<
+      real, dimension(:), allocatable :: ALIRGAT    !<Diagnosed total near-infrared albedo of land surface [ ]
+      real, dimension(:,:), allocatable :: ALIRROT  !<
+      real, dimension(:), allocatable :: ALIRROW    !<
+      real, dimension(:), allocatable :: ALVSGAT    !<Diagnosed total visible albedo of land surface [ ]
+      real, dimension(:,:), allocatable :: ALVSROT  !<
+      real, dimension(:), allocatable :: ALVSROW    !<
+      real, dimension(:), allocatable :: CDHGAT     !<Surface drag coefficient for heat [ ]
+      real, dimension(:,:), allocatable :: CDHROT   !<
+      real, dimension(:), allocatable :: CDHROW     !<
+      real, dimension(:), allocatable :: CDMGAT     !<Surface drag coefficient for momentum [ ]
+      real, dimension(:,:), allocatable :: CDMROT   !<
+      real, dimension(:), allocatable :: CDMROW     !<
+      real, dimension(:), allocatable :: DRGAT      !<Surface drag coefficient under neutral stability [ ]
+      real, dimension(:,:), allocatable :: DRROT    !<
+      real, dimension(:), allocatable :: DRROW      !<
+      real, dimension(:), allocatable :: EFGAT      !<Evaporation efficiency at ground surface [ ]
+      real, dimension(:,:), allocatable :: EFROT    !<
+      real, dimension(:), allocatable :: EFROW      !<
+      real, dimension(:), allocatable :: FLGGGAT    !<Diagnosed net longwave radiation at soil surface \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: FLGGROT  !<
+      real, dimension(:), allocatable :: FLGGROW    !<
+      real, dimension(:), allocatable :: FLGSGAT    !<Diagnosed net longwave radiation at snow surface \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: FLGSROT  !<
+      real, dimension(:), allocatable :: FLGSROW    !<
+      real, dimension(:), allocatable :: FLGVGAT    !<Diagnosed net longwave radiation on vegetation canopy \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: FLGVROT  !<
+      real, dimension(:), allocatable :: FLGVROW    !<
+      real, dimension(:), allocatable :: FSGGGAT    !<Diagnosed net shortwave radiation at soil surface \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: FSGGROT  !<
+      real, dimension(:), allocatable :: FSGGROW    !<
+      real, dimension(:), allocatable :: FSGSGAT    !<Diagnosed net shortwave radiation at snow surface \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: FSGSROT  !<
+      real, dimension(:), allocatable :: FSGSROW    !<
+      real, dimension(:), allocatable :: FSGVGAT    !<Diagnosed net shortwave radiation on vegetation canopy \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: FSGVROT  !<
+      real, dimension(:), allocatable :: FSGVROW    !<
+      real, dimension(:), allocatable :: FSNOGAT    !<Diagnosed fractional snow coverage [ ]
+      real, dimension(:,:), allocatable :: FSNOROT  !<
+      real, dimension(:), allocatable :: FSNOROW    !<
+      real, dimension(:), allocatable :: GAGAT      !<Diagnosed product of drag coefficient and wind speed over modelled area \f$[m s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: GAROT    !<
+      real, dimension(:), allocatable :: GAROW      !<
+      real, dimension(:,:), allocatable :: GFLXGAT  !<Heat conduction between soil layers \f$[W m^{-2} ]\f$
+      real, dimension(:,:,:), allocatable :: GFLXROT!<
+      real, dimension(:,:), allocatable :: GFLXROW  !<
+      real, dimension(:), allocatable :: GTGAT      !<Diagnosed effective surface black-body temperature [K]
+      real, dimension(:,:), allocatable :: GTROT    !<
+      real, dimension(:), allocatable :: GTROW      !<
+      real, dimension(:), allocatable :: HBLGAT     !<Height of the atmospheric boundary layer [m]
+      real, dimension(:,:), allocatable :: HBLROT   !<
+      real, dimension(:), allocatable :: HBLROW     !<
+      real, dimension(:), allocatable :: HEVCGAT    !<Diagnosed latent heat flux on vegetation canopy \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: HEVCROT  !<
+      real, dimension(:), allocatable :: HEVCROW    !<
+      real, dimension(:), allocatable :: HEVGGAT    !<Diagnosed latent heat flux at soil surface \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: HEVGROT  !<
+      real, dimension(:), allocatable :: HEVGROW    !<
+      real, dimension(:), allocatable :: HEVSGAT    !<Diagnosed latent heat flux at snow surface \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: HEVSROT  !<
+      real, dimension(:), allocatable :: HEVSROW    !<
+      real, dimension(:), allocatable :: HFSGAT     !<Diagnosed total surface sensible heat flux over modelled area \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: HFSROT   !<
+      real, dimension(:), allocatable :: HFSROW     !<
+      real, dimension(:), allocatable :: HFSCGAT    !<Diagnosed sensible heat flux on vegetation canopy \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: HFSCROT  !<
+      real, dimension(:), allocatable :: HFSCROW    !<
+      real, dimension(:), allocatable :: HFSGGAT    !<Diagnosed sensible heat flux at soil surface \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: HFSGROT  !<
+      real, dimension(:), allocatable :: HFSGROW    !<
+      real, dimension(:), allocatable :: HFSSGAT    !<Diagnosed sensible heat flux at snow surface \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: HFSSROT  !<
+      real, dimension(:), allocatable :: HFSSROW    !<
+      real, dimension(:), allocatable :: HMFCGAT    !<Diagnosed energy associated with phase change of water on vegetation \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: HMFCROT  !<
+      real, dimension(:), allocatable :: HMFCROW    !<
+      real, dimension(:,:), allocatable :: HMFGGAT  !<Diagnosed energy associated with phase change of water in soil layers \f$[W m^{-2} ]\f$
+      real, dimension(:,:,:), allocatable :: HMFGROT!<
+      real, dimension(:,:), allocatable :: HMFGROW  !<
+      real, dimension(:), allocatable :: HMFNGAT    !<Diagnosed energy associated with phase change of water in snow pack \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: HMFNROT  !<
+      real, dimension(:), allocatable :: HMFNROW    !<
+      real, dimension(:,:), allocatable :: HTCGAT   !<Diagnosed internal energy change of soil layer due to conduction and/or change in mass \f$[W m^{-2} ]\f$
+      real, dimension(:,:,:), allocatable :: HTCROT !<
+      real, dimension(:,:), allocatable :: HTCROW   !<
+      real, dimension(:), allocatable :: HTCCGAT    !<Diagnosed internal energy change of vegetation canopy due to conduction and/or change in mass \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: HTCCROT  !<
+      real, dimension(:), allocatable :: HTCCROW    !<
+      real, dimension(:), allocatable :: HTCSGAT    !<Diagnosed internal energy change of snow pack due to conduction and/or change in mass \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: HTCSROT  !<
+      real, dimension(:), allocatable :: HTCSROW    !<
+      real, dimension(:), allocatable :: ILMOGAT    !<Inverse of Monin-Obukhov roughness length \f$(m^{-1} ]\f$
+      real, dimension(:,:), allocatable :: ILMOROT  !<
+      real, dimension(:), allocatable :: ILMOROW    !<
+      integer, dimension(:), allocatable :: ISUM    !<Total number of iterations required to solve surface energy balance for the elements of the four subareas for the current run
+      integer, dimension(:,:,:), allocatable :: ITCTGAT     !<Counter of number of iterations required to solve surface energy balance for the elements of the four subareas
+      integer, dimension(:,:,:,:), allocatable :: ITCTROT   !<
+      real, dimension(:), allocatable :: PCFCGAT    !<Diagnosed frozen precipitation intercepted by vegetation \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: PCFCROT  !<
+      real, dimension(:), allocatable :: PCFCROW    !<
+      real, dimension(:), allocatable :: PCLCGAT    !<Diagnosed liquid precipitation intercepted by vegetation \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: PCLCROT  !<
+      real, dimension(:), allocatable :: PCLCROW    !<
+      real, dimension(:), allocatable :: PCPGGAT    !<Diagnosed precipitation incident on ground \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: PCPGROT  !<
+      real, dimension(:), allocatable :: PCPGROW    !<
+      real, dimension(:), allocatable :: PCPNGAT    !<Diagnosed precipitation incident on snow pack \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: PCPNROT  !<
+      real, dimension(:), allocatable :: PCPNROW    !<
+      real, dimension(:), allocatable :: PETGAT     !<Diagnosed potential evapotranspiration \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: PETROT   !<
+      real, dimension(:), allocatable :: PETROW     !<
+      real, dimension(:), allocatable :: QEVPGAT    !<Diagnosed total surface latent heat flux over modelled area \f$[W m^{-2} ]\f$
+      real, dimension(:,:), allocatable :: QEVPROT  !<
+      real, dimension(:), allocatable :: QEVPROW    !<
+      real, dimension(:,:), allocatable :: QFCGAT   !<Diagnosed vapour flux from transpiration over modelled area \f$[W m^{-2} ]\f$
+      real, dimension(:,:,:), allocatable :: QFCROT !<
+      real, dimension(:,:), allocatable :: QFCROW   !<
+      real, dimension(:), allocatable :: QFCFGAT    !<Diagnosed vapour flux from frozen water on vegetation \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: QFCFROT  !<
+      real, dimension(:), allocatable :: QFCFROW    !<
+      real, dimension(:), allocatable :: QFCLGAT    !<Diagnosed vapour flux from liquid water on vegetation \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: QFCLROT  !<
+      real, dimension(:), allocatable :: QFCLROW    !<
+      real, dimension(:), allocatable :: QFGGAT     !<Diagnosed water vapour flux from ground \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: QFGROT   !<
+      real, dimension(:), allocatable :: QFGROW     !<
+      real, dimension(:), allocatable :: QFNGAT     !<Diagnosed water vapour flux from snow pack \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: QFNROT   !<
+      real, dimension(:), allocatable :: QFNROW     !<
+      real, dimension(:), allocatable :: QFSGAT     !<Diagnosed total surface water vapour flux over modelled area \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: QFSROT   !<
+      real, dimension(:), allocatable :: QFSROW     !<
+      real, dimension(:), allocatable :: QFXGAT     !<Product of surface drag coefficient, wind speed and surface-air specific humidity difference \f$[m s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: QFXROT   !<
+      real, dimension(:), allocatable :: QFXROW     !<
+      real, dimension(:), allocatable :: QGGAT      !<Diagnosed surface specific humidity \f$[kg kg^{-1} ]\f$
+      real, dimension(:,:), allocatable :: QGROT    !<
+      real, dimension(:), allocatable :: QGROW      !<
+      real, dimension(:), allocatable :: ROFGAT     !<Total runoff from soil \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: ROFROT   !<
+      real, dimension(:), allocatable :: ROFROW     !<
+      real, dimension(:), allocatable :: ROFBGAT    !<Base flow from bottom of soil column \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: ROFBROT  !<
+      real, dimension(:), allocatable :: ROFBROW    !<
+      real, dimension(:), allocatable :: ROFCGAT    !<Liquid/frozen water runoff from vegetation \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: ROFCROT  !<
+      real, dimension(:), allocatable :: ROFCROW    !<
+      real, dimension(:), allocatable :: ROFNGAT    !<Liquid water runoff from snow pack \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: ROFNROT  !<
+      real, dimension(:), allocatable :: ROFNROW    !<
+      real, dimension(:), allocatable :: ROFOGAT    !<Overland flow from top of soil column \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: ROFOROT  !<
+      real, dimension(:), allocatable :: ROFOROW    !<
+      real, dimension(:), allocatable :: ROFSGAT    !<Interflow from sides of soil column \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: ROFSROT  !<
+      real, dimension(:), allocatable :: ROFSROW    !<
+      real, dimension(:), allocatable :: ROVGGAT    !<Diagnosed liquid/frozen water runoff from vegetation to ground surface \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: ROVGROT  !<
+      real, dimension(:), allocatable :: ROVGROW    !<
+      real, dimension(:), allocatable :: SFCQGAT    !<Diagnosed screen-level specific humidity \f$[kg kg^{-1} ]\f$
+      real, dimension(:,:), allocatable :: SFCQROT  !<
+      real, dimension(:), allocatable :: SFCQROW    !<
+      real, dimension(:), allocatable :: SFCTGAT    !<Diagnosed screen-level air temperature [K]
+      real, dimension(:,:), allocatable :: SFCTROT  !<
+      real, dimension(:), allocatable :: SFCTROW    !<
+      real, dimension(:), allocatable :: SFCUGAT    !<Diagnosed anemometer-level zonal wind \f$[m s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: SFCUROT  !<
+      real, dimension(:), allocatable :: SFCUROW    !<
+      real, dimension(:), allocatable :: SFCVGAT    !<Diagnosed anemometer-level meridional wind \f$[m s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: SFCVROT  !<
+      real, dimension(:), allocatable :: SFCVROW    !<
+      real, dimension(:), allocatable :: TFXGAT     !<Product of surface drag coefficient, wind speed and surface-air temperature difference \f$[K m s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: TFXROT   !<
+      real, dimension(:), allocatable :: TFXROW     !<
+      real, dimension(:), allocatable :: TROBGAT    !<Temperature of base flow from bottom of soil column [K]
+      real, dimension(:,:), allocatable :: TROBROT  !<
+      real, dimension(:), allocatable :: TROFGAT    !<Temperature of total runoff [K]
+      real, dimension(:,:), allocatable :: TROFROT  !<
+      real, dimension(:), allocatable :: TROOGAT    !<Temperature of overland flow from top of soil column [K]
+      real, dimension(:,:), allocatable :: TROOROT  !<
+      real, dimension(:), allocatable :: TROSGAT    !<Temperature of interflow from sides of soil column [K]
+      real, dimension(:,:), allocatable :: TROSROT  !<
+      real, dimension(:), allocatable :: UEGAT      !<Friction velocity of air \f$[m s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: UEROT    !<
+      real, dimension(:), allocatable :: UEROW      !<
+      real, dimension(:), allocatable :: WTABGAT    !<Depth of water table in soil [m]
+      real, dimension(:,:), allocatable :: WTABROT  !<
+      real, dimension(:), allocatable :: WTABROW    !<
+      real, dimension(:), allocatable :: WTRCGAT    !<Diagnosed residual water transferred off the vegetation canopy \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: WTRCROT  !<
+      real, dimension(:), allocatable :: WTRCROW    !<
+      real, dimension(:), allocatable :: WTRGGAT    !<Diagnosed residual water transferred into or out of the soil \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: WTRGROT  !<
+      real, dimension(:), allocatable :: WTRGROW    !<
+      real, dimension(:), allocatable :: WTRSGAT    !<Diagnosed residual water transferred into or out of the snow pack \f$[kg m^{-2} s^{-1} ]\f$
+      real, dimension(:,:), allocatable :: WTRSROT  !<
+      real, dimension(:), allocatable :: WTRSROW    !<
+C
+      real, dimension(:), allocatable :: QLWOGAT    !<
+      real, dimension(:), allocatable :: SFRHGAT    !<
+      real, dimension(:,:), allocatable :: SFRHROT  !<
+      real, dimension(:), allocatable :: SFRHROW    !<
+C
+      real, dimension(:), allocatable :: FTEMP      !<
+      real, dimension(:), allocatable :: FVAP       !<
+      real, dimension(:), allocatable :: RIB        !<
 C
 C     * ARRAYS USED FOR OUTPUT AND DISPLAY PURPOSES.
 C     * (THE SUFFIX "ACC" REFERS TO ACCUMULATOR ARRAYS USED IN
 C     * CALCULATING TIME AVERAGES.)
-
+C
       CHARACTER     TITLE1*4,     TITLE2*4,     TITLE3*4,
      1              TITLE4*4,     TITLE5*4,     TITLE6*4
       CHARACTER     NAME1*4,      NAME2*4,      NAME3*4,
      1              NAME4*4,      NAME5*4,      NAME6*4
       CHARACTER     PLACE1*4,     PLACE2*4,     PLACE3*4,
      1              PLACE4*4,     PLACE5*4,     PLACE6*4
-
-      REAL,DIMENSION(NLAT) :: ALIRACC !<Diagnosed total near-infrared albedo of land surface [ ]
-      REAL,DIMENSION(NLAT) :: ALVSACC !<Diagnosed total visible albedo of land surface [ ]
-      REAL,DIMENSION(NLAT) :: EVAPACC !<Diagnosed total surface water vapour flux over modelled area \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: FLINACC !<Downwelling longwave radiation above surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: FLUTACC !<Upwelling longwave radiation from surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: FSINACC !<Downwelling shortwave radiation above surface \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: GROACC  !<Vegetation growth index [ ]
-      REAL,DIMENSION(NLAT) :: GTACC   !<Diagnosed effective surface black-body temperature [K]
-      REAL,DIMENSION(NLAT) :: HFSACC  !<Diagnosed total surface sensible heat flux over modelled area \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: HMFNACC !<Diagnosed energy associated with phase change of water in snow pack \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: OVRACC  !<Overland flow from top of soil column \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: PREACC  !<Surface precipitation rate \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: PRESACC !<Surface air pressure [Pa]
-      REAL,DIMENSION(NLAT) :: QAACC   !<Specific humidity at reference height \f$[kg kg^{-1} ]\f$
-      REAL,DIMENSION(NLAT) :: QEVPACC !<Diagnosed total surface latent heat flux over modelled area \f$[W m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: RCANACC !<Intercepted liquid water stored on canopy \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: RHOSACC !<Density of snow \f$[kg m^{-3} ]\f$
-      REAL,DIMENSION(NLAT) :: ROFACC  !<Total runoff from soil \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: SCANACC !<Intercepted frozen water stored on canopy \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: SNOACC  !<Mass of snow pack \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: TAACC   !<Air temperature at reference height [K]
-      REAL TBARACC(NLAT,IGND)         !<Temperature of soil layers [K]
-      REAL THALACC(NLAT,IGND)         !<Total volumetric water content of soil layers \f$[m^3 m^{-3} ]\f$
-      REAL THICACC(NLAT,IGND)         !<Volumetric frozen water content of soil layers \f$[m^3 m^{-3} ]\f$
-      REAL THLQACC(NLAT,IGND)         !<Volumetric liquid water content of soil layers \f$[m^3 m^{-3} ]\f$
-      REAL,DIMENSION(NLAT) :: TCANACC !<Vegetation canopy temperature [K]
-      REAL,DIMENSION(NLAT) :: TSNOACC !<Snowpack temperature [K]
-      REAL,DIMENSION(NLAT) :: UVACC   !<Wind speed \f$[m s^{-1} ]\f$
-      REAL,DIMENSION(NLAT) :: WSNOACC !<Liquid water content of snow pack \f$[kg m^{-2} ]\f$
-      REAL,DIMENSION(NLAT) :: WTBLACC !<Depth of water table in soil [m]
-      REAL,DIMENSION(NLAT) :: ALTOTACC!<Broadband albedo [-]
-
-      REAL,DIMENSION(NLAT) :: CANARE  !<
-      REAL,DIMENSION(NLAT) :: SNOARE  !<
-
 C
-!     * ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
+      real, dimension(:), allocatable :: ALIRACC    !<Diagnosed total near-infrared albedo of land surface [ ]
+      real, dimension(:), allocatable :: ALVSACC    !<Diagnosed total visible albedo of land surface [ ]
+      real, dimension(:), allocatable :: EVAPACC    !<Diagnosed total surface water vapour flux over modelled area \f$[kg m^{-2} ]\f$
+      real, dimension(:), allocatable :: FLINACC    !<Downwelling longwave radiation above surface \f$[W m^{-2} ]\f$
+      real, dimension(:), allocatable :: FLUTACC    !<Upwelling longwave radiation from surface \f$[W m^{-2} ]\f$
+      real, dimension(:), allocatable :: FSINACC    !<Downwelling shortwave radiation above surface \f$[W m^{-2} ]\f$
+      real, dimension(:), allocatable :: GROACC     !<Vegetation growth index [ ]
+      real, dimension(:), allocatable :: GTACC      !<Diagnosed effective surface black-body temperature [K]
+      real, dimension(:), allocatable :: HFSACC     !<Diagnosed total surface sensible heat flux over modelled area \f$[W m^{-2} ]\f$
+      real, dimension(:), allocatable :: HMFNACC    !<Diagnosed energy associated with phase change of water in snow pack \f$[W m^{-2} ]\f$
+      real, dimension(:), allocatable :: OVRACC     !<Overland flow from top of soil column \f$[kg m^{-2} ]\f$
+      real, dimension(:), allocatable :: PREACC     !<Surface precipitation rate \f$[kg m^{-2} ]\f$
+      real, dimension(:), allocatable :: PRESACC    !<Surface air pressure [Pa]
+      real, dimension(:), allocatable :: QAACC      !<Specific humidity at reference height \f$[kg kg^{-1} ]\f$
+      real, dimension(:), allocatable :: QEVPACC    !<Diagnosed total surface latent heat flux over modelled area \f$[W m^{-2} ]\f$
+      real, dimension(:), allocatable :: RCANACC    !<Intercepted liquid water stored on canopy \f$[kg m^{-2} ]\f$
+      real, dimension(:), allocatable :: RHOSACC    !<Density of snow \f$[kg m^{-3} ]\f$
+      real, dimension(:), allocatable :: ROFACC     !<Total runoff from soil \f$[kg m^{-2} ]\f$
+      real, dimension(:), allocatable :: SCANACC    !<Intercepted frozen water stored on canopy \f$[kg m^{-2} ]\f$
+      real, dimension(:), allocatable :: SNOACC     !<Mass of snow pack \f$[kg m^{-2} ]\f$
+      real, dimension(:), allocatable :: TAACC      !<Air temperature at reference height [K]
+      real, dimension(:,:), allocatable :: TBARACC  !<Temperature of soil layers [K]
+      real, dimension(:,:), allocatable :: THALACC  !<Total volumetric water content of soil layers \f$[m^3 m^{-3} ]\f$
+      real, dimension(:,:), allocatable :: THICACC  !<Volumetric frozen water content of soil layers \f$[m^3 m^{-3} ]\f$
+      real, dimension(:,:), allocatable :: THLQACC  !<Volumetric liquid water content of soil layers \f$[m^3 m^{-3} ]\f$
+      real, dimension(:), allocatable :: TCANACC    !<Vegetation canopy temperature [K]
+      real, dimension(:), allocatable :: TSNOACC    !<Snowpack temperature [K]
+      real, dimension(:), allocatable :: UVACC      !<Wind speed \f$[m s^{-1} ]\f$
+      real, dimension(:), allocatable :: WSNOACC    !<Liquid water content of snow pack \f$[kg m^{-2} ]\f$
+      real, dimension(:), allocatable :: WTBLACC    !<Depth of water table in soil [m]
+      real, dimension(:), allocatable :: ALTOTACC   !<Broadband albedo [-]
+C
+      real, dimension(:), allocatable :: CANARE  !<
+      real, dimension(:), allocatable :: SNOARE  !<
+C
+C     * ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
 C     * SUBSECTIONS OF CLASS ("CLASSA", "CLASST" AND "CLASSW").
- !<
-      REAL,DIMENSION(ILG,IGND) :: TBARC  !<
-      REAL,DIMENSION(ILG,IGND) :: TBARG  !<
-      REAL,DIMENSION(ILG,IGND) :: TBARCS !<
-      REAL,DIMENSION(ILG,IGND) :: TBARGS !<
-      REAL,DIMENSION(ILG,IGND) :: THLIQC !<
-      REAL,DIMENSION(ILG,IGND) :: THLIQG !<
-      REAL,DIMENSION(ILG,IGND) :: THICEC !<
-      REAL,DIMENSION(ILG,IGND) :: THICEG !<
-      REAL,DIMENSION(ILG,IGND) :: FROOT  !<
-      REAL,DIMENSION(ILG,IGND) :: HCPC   !<
-      REAL,DIMENSION(ILG,IGND) :: HCPG   !<
-      REAL,DIMENSION(ILG,IGND) :: FROOTS !<
-      REAL,DIMENSION(ILG,IGND) :: TCTOPC !<
-      REAL,DIMENSION(ILG,IGND) :: TCBOTC !<
-      REAL,DIMENSION(ILG,IGND) :: TCTOPG !<
-      REAL,DIMENSION(ILG,IGND) :: TCBOTG !<
 C
-      REAL FC     (ILG)  !<
-      REAL FG     (ILG)  !<
-      REAL FCS    (ILG)  !<
-      REAL FGS    (ILG)  !<
-      REAL RBCOEF (ILG)  !<
-      REAL ZSNOW  (ILG)  !<
-      REAL FSVF   (ILG)  !<
-      REAL FSVFS  (ILG)  !<
-      REAL ALVSCN (ILG)  !<
-      REAL ALIRCN (ILG)  !<
-      REAL ALVSG  (ILG)  !<
-      REAL ALIRG  (ILG)  !<
-      REAL ALVSCS (ILG)  !<
-      REAL ALIRCS (ILG)  !<
-      REAL ALVSSN (ILG)  !<
-      REAL ALIRSN (ILG)  !<
-      REAL ALVSGC (ILG)  !<
-      REAL ALIRGC (ILG)  !<
-      REAL ALVSSC (ILG)  !<
-      REAL ALIRSC (ILG)  !<
-      REAL TRVSCN (ILG)  !<
-      REAL TRIRCN (ILG)  !<
-      REAL TRVSCS (ILG)  !<
-      REAL TRIRCS (ILG)  !<
-      REAL RC     (ILG)  !<
-      REAL RCS    (ILG)  !<
-      REAL FRAINC (ILG)  !<
-      REAL FSNOWC (ILG)  !<
-      REAL FRAICS (ILG)  !<
-      REAL FSNOCS (ILG)  !<
-      REAL CMASSC (ILG)  !<
-      REAL CMASCS (ILG)  !<
-      REAL DISP   (ILG)  !<
-      REAL DISPS  (ILG)  !<
-      REAL ZOMLNC (ILG)  !<
-      REAL ZOELNC (ILG)  !<
-      REAL ZOMLNG (ILG)  !<
-      REAL ZOELNG (ILG)  !<
-      REAL ZOMLCS (ILG)  !<
-      REAL ZOELCS (ILG)  !<
-      REAL ZOMLNS (ILG)  !<
-      REAL ZOELNS (ILG)  !<
-      REAL TRSNOWC (ILG) !<
-      REAL CHCAP  (ILG)  !<
-      REAL CHCAPS (ILG)  !<
-      REAL GZEROC (ILG)  !<
-      REAL GZEROG (ILG)  !<
-      REAL GZROCS (ILG)  !<
-      REAL GZROGS (ILG)  !<
-      REAL G12C   (ILG)  !<
-      REAL G12G   (ILG)  !<
-      REAL G12CS  (ILG)  !<
-      REAL G12GS  (ILG)  !<
-      REAL G23C   (ILG)  !<
-      REAL G23G   (ILG)  !<
-      REAL G23CS  (ILG)  !<
-      REAL G23GS  (ILG)  !<
-      REAL QFREZC (ILG)  !<
-      REAL QFREZG (ILG)  !<
-      REAL QMELTC (ILG)  !<
-      REAL QMELTG (ILG)  !<
-      REAL EVAPC  (ILG)  !<
-      REAL EVAPCG (ILG)  !<
-      REAL EVAPG  (ILG)  !<
-      REAL EVAPCS (ILG)  !<
-      REAL EVPCSG (ILG)  !<
-      REAL EVAPGS (ILG)  !<
-      REAL TCANO  (ILG)  !<
-      REAL TCANS  (ILG)  !<
-      REAL RAICAN (ILG)  !<
-      REAL SNOCAN (ILG)  !<
-      REAL RAICNS (ILG)  !<
-      REAL SNOCNS (ILG)  !<
-      REAL CWLCAP (ILG)  !<
-      REAL CWFCAP (ILG)  !<
-      REAL CWLCPS (ILG)  !<
-      REAL CWFCPS (ILG)  !<
-      REAL TSNOCS (ILG)  !<
-      REAL TSNOGS (ILG)  !<
-      REAL RHOSCS (ILG)  !<
-      REAL RHOSGS (ILG)  !<
-      REAL WSNOCS (ILG)  !<
-      REAL WSNOGS (ILG)  !<
-      REAL TPONDC (ILG)  !<
-      REAL TPONDG (ILG)  !<
-      REAL TPNDCS (ILG)  !<
-      REAL TPNDGS (ILG)  !<
-      REAL ZPLMCS (ILG)  !<
-      REAL ZPLMGS (ILG)  !<
-      REAL ZPLIMC (ILG)  !<
-      REAL ZPLIMG (ILG)  !<
+      real, dimension(:,:), allocatable :: TBARC  !<
+      real, dimension(:,:), allocatable :: TBARG  !<
+      real, dimension(:,:), allocatable :: TBARCS !<
+      real, dimension(:,:), allocatable :: TBARGS !<
+      real, dimension(:,:), allocatable :: THLIQC !<
+      real, dimension(:,:), allocatable :: THLIQG !<
+      real, dimension(:,:), allocatable :: THICEC !<
+      real, dimension(:,:), allocatable :: THICEG !<
+      real, dimension(:,:), allocatable :: FROOT  !<
+      real, dimension(:,:), allocatable :: HCPC   !<
+      real, dimension(:,:), allocatable :: HCPG   !<
+      real, dimension(:,:), allocatable :: FROOTS !<
+      real, dimension(:,:), allocatable :: TCTOPC !<
+      real, dimension(:,:), allocatable :: TCBOTC !<
+      real, dimension(:,:), allocatable :: TCTOPG !<
+      real, dimension(:,:), allocatable :: TCBOTG !<
 C
-      REAL ALTG(ILG,NBS)    !<
-      REAL ALSNO(ILG,NBS)   !<
-      REAL TRSNOWG(ILG,NBS) !<
-
+      real, dimension(:), allocatable :: FC       !<
+      real, dimension(:), allocatable :: FG       !<
+      real, dimension(:), allocatable :: FCS      !<
+      real, dimension(:), allocatable :: FGS      !<
+      real, dimension(:), allocatable :: RBCOEF   !<
+      real, dimension(:), allocatable :: ZSNOW    !<
+      real, dimension(:), allocatable :: FSVF     !<
+      real, dimension(:), allocatable :: FSVFS    !<
+      real, dimension(:), allocatable :: ALVSCN   !<
+      real, dimension(:), allocatable :: ALIRCN   !<
+      real, dimension(:), allocatable :: ALVSG    !<
+      real, dimension(:), allocatable :: ALIRG    !<
+      real, dimension(:), allocatable :: ALVSCS   !<
+      real, dimension(:), allocatable :: ALIRCS   !<
+      real, dimension(:), allocatable :: ALVSSN   !<
+      real, dimension(:), allocatable :: ALIRSN   !<
+      real, dimension(:), allocatable :: ALVSGC   !<
+      real, dimension(:), allocatable :: ALIRGC   !<
+      real, dimension(:), allocatable :: ALVSSC   !<
+      real, dimension(:), allocatable :: ALIRSC   !<
+      real, dimension(:), allocatable :: TRVSCN   !<
+      real, dimension(:), allocatable :: TRIRCN   !<
+      real, dimension(:), allocatable :: TRVSCS   !<
+      real, dimension(:), allocatable :: TRIRCS   !<
+      real, dimension(:), allocatable :: RC       !<
+      real, dimension(:), allocatable :: RCS      !<
+      real, dimension(:), allocatable :: FRAINC   !<
+      real, dimension(:), allocatable :: FSNOWC   !<
+      real, dimension(:), allocatable :: FRAICS   !<
+      real, dimension(:), allocatable :: FSNOCS   !<
+      real, dimension(:), allocatable :: CMASSC   !<
+      real, dimension(:), allocatable :: CMASCS   !<
+      real, dimension(:), allocatable :: DISP     !<
+      real, dimension(:), allocatable :: DISPS    !<
+      real, dimension(:), allocatable :: ZOMLNC   !<
+      real, dimension(:), allocatable :: ZOELNC   !<
+      real, dimension(:), allocatable :: ZOMLNG   !<
+      real, dimension(:), allocatable :: ZOELNG   !<
+      real, dimension(:), allocatable :: ZOMLCS   !<
+      real, dimension(:), allocatable :: ZOELCS   !<
+      real, dimension(:), allocatable :: ZOMLNS   !<
+      real, dimension(:), allocatable :: ZOELNS   !<
+      real, dimension(:), allocatable :: TRSNOWC  !<
+      real, dimension(:), allocatable :: CHCAP    !<
+      real, dimension(:), allocatable :: CHCAPS   !<
+      real, dimension(:), allocatable :: GZEROC   !<
+      real, dimension(:), allocatable :: GZEROG   !<
+      real, dimension(:), allocatable :: GZROCS   !<
+      real, dimension(:), allocatable :: GZROGS   !<
+      real, dimension(:), allocatable :: G12C     !<
+      real, dimension(:), allocatable :: G12G     !<
+      real, dimension(:), allocatable :: G12CS    !<
+      real, dimension(:), allocatable :: G12GS    !<
+      real, dimension(:), allocatable :: G23C     !<
+      real, dimension(:), allocatable :: G23G     !<
+      real, dimension(:), allocatable :: G23CS    !<
+      real, dimension(:), allocatable :: G23GS    !<
+      real, dimension(:), allocatable :: QFREZC   !<
+      real, dimension(:), allocatable :: QFREZG   !<
+      real, dimension(:), allocatable :: QMELTC   !<
+      real, dimension(:), allocatable :: QMELTG   !<
+      real, dimension(:), allocatable :: EVAPC    !<
+      real, dimension(:), allocatable :: EVAPCG   !<
+      real, dimension(:), allocatable :: EVAPG    !<
+      real, dimension(:), allocatable :: EVAPCS   !<
+      real, dimension(:), allocatable :: EVPCSG   !<
+      real, dimension(:), allocatable :: EVAPGS   !<
+      real, dimension(:), allocatable :: TCANO    !<
+      real, dimension(:), allocatable :: TCANS    !<
+      real, dimension(:), allocatable :: RAICAN   !<
+      real, dimension(:), allocatable :: SNOCAN   !<
+      real, dimension(:), allocatable :: RAICNS   !<
+      real, dimension(:), allocatable :: SNOCNS   !<
+      real, dimension(:), allocatable :: CWLCAP   !<
+      real, dimension(:), allocatable :: CWFCAP   !<
+      real, dimension(:), allocatable :: CWLCPS   !<
+      real, dimension(:), allocatable :: CWFCPS   !<
+      real, dimension(:), allocatable :: TSNOCS   !<
+      real, dimension(:), allocatable :: TSNOGS   !<
+      real, dimension(:), allocatable :: RHOSCS   !<
+      real, dimension(:), allocatable :: RHOSGS   !<
+      real, dimension(:), allocatable :: WSNOCS   !<
+      real, dimension(:), allocatable :: WSNOGS   !<
+      real, dimension(:), allocatable :: TPONDC   !<
+      real, dimension(:), allocatable :: TPONDG   !<
+      real, dimension(:), allocatable :: TPNDCS   !<
+      real, dimension(:), allocatable :: TPNDGS   !<
+      real, dimension(:), allocatable :: ZPLMCS   !<
+      real, dimension(:), allocatable :: ZPLMGS   !<
+      real, dimension(:), allocatable :: ZPLIMC   !<
+      real, dimension(:), allocatable :: ZPLIMG   !<
+C
+      real, dimension(:,:), allocatable :: ALTG    !<
+      real, dimension(:,:), allocatable :: ALSNO   !<
+      real, dimension(:,:), allocatable :: TRSNOWG !<
 C
 C     * DIAGNOSTIC ARRAYS USED FOR CHECKING ENERGY AND WATER
 C     * BALANCES.
 C
-      REAL CTVSTP(ILG) !<
-      REAL CTSSTP(ILG) !<
-      REAL CT1STP(ILG) !<
-      REAL CT2STP(ILG) !<
-      REAL CT3STP(ILG) !<
-      REAL WTVSTP(ILG) !<
-      REAL WTSSTP(ILG) !<
-      REAL WTGSTP(ILG) !<
+      real, dimension(:), allocatable :: CTVSTP !<
+      real, dimension(:), allocatable :: CTSSTP !<
+      real, dimension(:), allocatable :: CT1STP !<
+      real, dimension(:), allocatable :: CT2STP !<
+      real, dimension(:), allocatable :: CT3STP !<
+      real, dimension(:), allocatable :: WTVSTP !<
+      real, dimension(:), allocatable :: WTSSTP !<
+      real, dimension(:), allocatable :: WTGSTP !<
 C
 C     * CONSTANTS AND TEMPORARY VARIABLES.
 C
@@ -920,56 +926,57 @@ C
      5     CLHVAP,PI,ZOLNG,ZOLNS,ZOLNI,ZORATG,ALVSI,ALIRI,ALVSO,ALIRO,
      6     ALBRCK,DELTA,CGRAV,CKARM,CPD,AS,ASX,CI,BS,BETA,FACTN,HMIN,
      7     ANGMAX,A,B
-
+C
 C==============The additional parameters and Variables for Interflow========================
 C===================Added by Stefan Sauer, July 2017=================================
-
-      REAL XDRAINH(ILG)   !The Fractional change in horizontal conductivity in a depth change of h0, Calculated as a Parameter 
-      REAL MANNING_N(ILG)  !Manning's Roughness Coefficient, Calculated as an input Parameter
-      REAL DD (ILG)        !Drainage Density, [M^2/M^3]
-      REAL KSAT (ILG)      !Vertical Hydraulic Conductivity at Saturation at the Bottom of the Soil Layer, Used in WATROF
+C
+      real, dimension(:), allocatable :: XDRAINH    !The Fractional change in horizontal conductivity in a depth change of h0, Calculated as a Parameter 
+      real, dimension(:), allocatable :: MANNING_N  !Manning's Roughness Coefficient, Calculated as an input Parameter
+      real, dimension(:), allocatable :: DD         !Drainage Density, [M^2/M^3]
+      real, dimension(:), allocatable :: KSAT       !Vertical Hydraulic Conductivity at Saturation at the Bottom of the Soil Layer, Used in WATROF
       INTEGER  NA          !Some INTEGER Parameter
-     
-      REAL FRZC(ILG)       !Some Unused Variable for SNINFLM
-      REAL T0_ACC          !Some Unused Variable for SNINFLM
-      REAL SI(ILG)         !Some Unused Variable for SNINFLM
-      REAL TSI(ILG)        !Some Unused Variable for SNINFLM
-      INTEGER INFILTYPE(ILG)!Some Unused Variable for SNINFLM
-      REAL SNOWMELTD(ILG)  !Some Unused Variable for SNINFLM
-      REAL SNOWMELTD_LAST(ILG) !Some Unused Variable for SNINFLM
-      REAL MELTRUNOFF(ILG) !Some Unused Variable for SNINFLM
-      REAL SNOWINFIL(ILG)  !Some Unused Variable for SNINFLM
-      REAL CUMSNOWINFILCS(ILG) !Some Unused Variable for SNINFLM
-      REAL CUMSNOWINFILGS(ILG) !Some Unused Variable for SNINFLM
-      REAL SOIL_POR_MAX    !Some Unused Variable for SNINFLM
-      REAL SOIL_DEPTH      !Soil Depth Variable used only for SNINFLM
-      REAL S0              !Soil Depth Variable used only for SNINFLM
-      REAL T_ICE_LENS      !Some Unused Variable used only for SNINFLM
-      REAL CMIN(ILG),CMAX(ILG) !PDMROF Variables (Not used in new CLASSW.f)
-      REAL ZPNDPRECS(ILG), ZPONDPREC(ILG), ZPONDPREG(ILG),ZPNDPREGS(ILG) !Latflow Variables
-      REAL UM1CS(ILG), UM1C(ILG), UM1G(ILG), UM1GS(ILG) !For PDMROF
-      REAL QM1CS(ILG), QM1C(ILG), QM1G(ILG), QM1GS(ILG) !For PDMROF
-      REAL QM2CS(ILG), QM2C(ILG), QM2G(ILG), QM2GS(ILG) !For PDMROF
-      REAL UMQ(ILG)        !For PDMROF and LATFLOW
-      REAL FSTRCS(ILG), FSTRC(ILG), FSTRGS(ILG), FSTRG(ILG) !Used for PDMROF
-
-      REAL ZPONDC(ILG),   ZPONDG(ILG),   ZPNDCS(ILG),   ZPNDGS(ILG)
-      REAL XSNOWC(ILG),   XSNOWG(ILG),   XSNOCS(ILG),   XSNOGS(ILG)
-      REAL ZSNOWC(ILG),   ZSNOWG(ILG),   ZSNOCS(ILG),   ZSNOGS(ILG)
-      REAL RHOSC (ILG),   RHOSG (ILG)
-      REAL HCPSC (ILG),   HCPSG (ILG),   HCPSCS(ILG),   HCPSGS(ILG)
-
-      REAL TSNOWC(ILG),   TSNOWG(ILG)
-
-      REAL,DIMENSION (NTYPE,IGND) :: BULK_FC  !Some Unused Variable for WATDRN3
-      REAL,DIMENSION (NTYPE,IGND) :: BTC  !Some Unused Variable for WATDRN3
-      REAL,DIMENSION (NTYPE,IGND) :: DCOEFF !Some Unused Variable for WATDRN3
-      REAL,DIMENSION (NTYPE,IGND) :: BFCAP !Some Unused Variable for WATDRN3
-      REAL,DIMENSION (NTYPE,IGND) :: BCAP !Some Unused Variable for WATDRN3
-      REAL,DIMENSION (NTYPE,IGND) :: BFCOEFF !Some Unused Variable for WATDRN3
-      REAL,DIMENSION (NTYPE,IGND) :: BFMIN !Some Unused Variable for WATDRN3
-      REAL,DIMENSION (NTYPE,IGND) :: BQMAX !Some Unused Variable for WATDRN3
-      
+      INTEGER  NTYPE       !Some INTEGER Parameter
+C
+      real, dimension(:), allocatable :: FRZC           !Some Unused Variable for SNINFLM
+      real T0_ACC          !Some Unused Variable for SNINFLM
+      real, dimension(:), allocatable :: SI             !Some Unused Variable for SNINFLM
+      real, dimension(:), allocatable :: TSI            !Some Unused Variable for SNINFLM
+      integer, dimension(:), allocatable :: INFILTYPE   !Some Unused Variable for SNINFLM
+      real, dimension(:), allocatable :: SNOWMELTD      !Some Unused Variable for SNINFLM
+      real, dimension(:), allocatable :: SNOWMELTD_LAST !Some Unused Variable for SNINFLM
+      real, dimension(:), allocatable :: MELTRUNOFF     !Some Unused Variable for SNINFLM
+      real, dimension(:), allocatable :: SNOWINFIL      !Some Unused Variable for SNINFLM
+      real, dimension(:), allocatable :: CUMSNOWINFILCS !Some Unused Variable for SNINFLM
+      real, dimension(:), allocatable :: CUMSNOWINFILGS !Some Unused Variable for SNINFLM
+      real SOIL_POR_MAX    !Some Unused Variable for SNINFLM
+      real SOIL_DEPTH      !Soil Depth Variable used only for SNINFLM
+      real S0              !Soil Depth Variable used only for SNINFLM
+      real T_ICE_LENS      !Some Unused Variable used only for SNINFLM
+      real, dimension(:), allocatable :: CMIN,CMAX !PDMROF Variables (Not used in new CLASSW.f)
+      real, dimension(:), allocatable :: ZPNDPRECS, ZPONDPREC !For PDMROF
+      real, dimension(:), allocatable :: ZPONDPREG, ZPNDPREGS !For PDMROF
+      real, dimension(:), allocatable :: UM1CS, UM1C, UM1G, UM1GS !For PDMROF
+      real, dimension(:), allocatable :: QM1CS, QM1C, QM1G, QM1GS !For PDMROF
+      real, dimension(:), allocatable :: QM2CS, QM2C, QM2G, QM2GS !For PDMROF
+      real, dimension(:), allocatable :: UMQ !For PDMROF
+      real, dimension(:), allocatable :: FSTRCS, FSTRC, FSTRGS, FSTRG !Used for PDMROF
+C
+      real, dimension(:), allocatable :: ZPONDC, ZPONDG, ZPNDCS, ZPNDGS
+      real, dimension(:), allocatable :: XSNOWC, XSNOWG, XSNOCS, XSNOGS
+      real, dimension(:), allocatable :: ZSNOWC, ZSNOWG, ZSNOCS, ZSNOGS
+      real, dimension(:), allocatable :: RHOSC, RHOSG
+      real, dimension(:), allocatable :: HCPSC, HCPSG, HCPSCS, HCPSGS
+C
+      real, dimension(:), allocatable :: TSNOWC, TSNOWG
+C
+      real, dimension(:,:), allocatable :: BULK_FC  !Some Unused Variable for WATDRN3
+      real, dimension(:,:), allocatable :: BTC  !Some Unused Variable for WATDRN3
+      real, dimension(:,:), allocatable :: DCOEFF !Some Unused Variable for WATDRN3
+      real, dimension(:,:), allocatable :: BFCAP !Some Unused Variable for WATDRN3
+      real, dimension(:,:), allocatable :: BCAP !Some Unused Variable for WATDRN3
+      real, dimension(:,:), allocatable :: BFCOEFF !Some Unused Variable for WATDRN3
+      real, dimension(:,:), allocatable :: BFMIN !Some Unused Variable for WATDRN3
+      real, dimension(:,:), allocatable :: BQMAX !Some Unused Variable for WATDRN3
 
 C======================================================================================
 
@@ -993,28 +1000,37 @@ c
      7           climiyear,   popcycleyr,    cypopyr, lucyr,
      8           cylucyr, endyr,bigpftc(1), obswetyr,
      9           cywetldyr, trans_startyr, jmosty, obslghtyr,
-     +          curlatno(ilg), lath, testyr,altotcount_ctm(nlat),
-     +           lghtdy
+     +           lath, testyr, lghtdy
+        integer, dimension(:), allocatable :: curlatno
+        integer, dimension(:), allocatable :: altotcount_ctm
 
       real      co2concin,    setco2conc, sumfare,
-     1           temp_var, barefrac,  todfrac(ilg,icc),
-     2           ch4concin, setch4conc,barf(nlat,nmos)
+     1           temp_var, barefrac,
+     2           ch4concin, setch4conc
+        real, dimension(:,:), allocatable :: todfrac
+        real, dimension(:,:), allocatable :: barf
 
-      real      currlat(ilg),            wl(lat),    grclarea(ilg),
-     1             radl(lat),          wossl(lat),        sl(lat),
-     2               cl(lat),             ml(ilg)
+        real, dimension(:), allocatable ::
+     1          currlat,             wl,  grclarea,
+     2             radl,          wossl,        sl,
+     3               cl,             ml
 
-       real fsinacc_gat(ilg), flutacc_gat(ilg), flinacc_gat(ilg),
-     1      alswacc_gat(ilg), allwacc_gat(ilg), pregacc_gat(ilg),
-     2      altotacc_gat(ilg),        fsstar_gat,       flstar_gat,
-     3      netrad_gat(ilg),  preacc_gat(ilg)
+        real fsstar_gat, flstar_gat
+        real, dimension(:), allocatable ::
+     1      fsinacc_gat, flutacc_gat, flinacc_gat,
+     2      alswacc_gat, allwacc_gat, pregacc_gat,
+     3      altotacc_gat,
+     4      netrad_gat,  preacc_gat
 
 !     For these below, the corresponding ROWs are defined by CLASS
 
-      real  sdepgat(ilg),       orgmgat(ilg,ignd),
-     1      sandgat(ilg,ignd),  claygat(ilg,ignd),
-     2      xdiffusgat(ilg), ! the corresponding ROW is CLASS's XDIFFUS
-     3      faregat(ilg) ! the ROT is FAREROT
+       real, dimension(:), allocatable ::
+     1      sdepgat,
+     2      xdiffusgat, ! the corresponding ROW is CLASS's XDIFFUS
+     3      faregat ! the ROT is FAREROT
+       real, dimension(:,:), allocatable ::
+     1      orgmgat,
+     2      sandgat, claygat
 
       ! Model switches:
       logical, pointer :: ctem_on
@@ -1602,30 +1618,759 @@ C
         use FLAGS
 
 
-       !Declaration of the MESH variables used to pass information
+        !Declaration of the MESH variables used to pass information
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(clim_info) :: cm
 
         !Here we need to use the NLAT and NMOS values (from ctem_params)
-	 !and transform them into the usable parameters of NLTEST and NMTEST
-	 !Note that NLAT and NMOS is CTEM, NLTEST and NMTEST is CLASS and 
-	 NLTEST=NLAT
-	 NMTEST=NMOS
+        !and transform them into the usable parameters of NLTEST and NMTEST
+        !Note that NLAT and NMOS is CTEM, NLTEST and NMTEST is CLASS and 
+        NLTEST = shd%NA
+        NMTEST = shd%lc%NTYPE
+        NA = shd%NA
+        NTYPE = shd%lc%NTYPE
+        NML = shd%lc%NML
+        NMW = shd%wc%NML
 
-	!Sanity check to make sure that the ILG from MESH equals the number of tiles from the ctem_params
-	 IF(ILG.ne.NLAT) THEN	
-	  WRITE(*,*) 'MESH ILG value does not equal the CTEM NMOS value'
- 	  WRITE(*,*) ' '
-         WRITE(*,*) 'ILG:'
-	  WRITE(*,*) ILG
-         WRITE(*,*) '  '
-	  WRITE(*,*) 'NLAT:'
-	  WRITE(*,*) NLAT	
-	  stop
-	END IF
+        !ctem_params
+        nlat = shd%NA
+        nmos = shd%lc%NTYPE
+        ilg = shd%NA*shd%lc%NTYPE
+        ignd = shd%lc%IGND
 
+        !Sanity check to make sure that the ILG from MESH equals the number of tiles from the ctem_params
+!-        IF(ILG.ne.NLAT) THEN
+!-            WRITE(*,*) 'MESH ILG value does not equal the CTEM NMOS value'
+!-            WRITE(*,*) ' '
+!-            WRITE(*,*) 'ILG:'
+!-            WRITE(*,*) ILG
+!-            WRITE(*,*) '  '
+!-            WRITE(*,*) 'NLAT:'
+!-            WRITE(*,*) NLAT
+!-            stop
+!-        END IF
 
+        !Allocate vectors.
+        allocate(PAICAN(ILG))
+        allocate(ALBSGAT(ILG))
+        allocate(ALBSROT(NLAT,NMOS))
+        allocate(CMAIGAT(ILG))
+        allocate(CMAIROT(NLAT,NMOS))
+        allocate(GROGAT(ILG))
+        allocate(GROROT(NLAT,NMOS))
+        allocate(QACGAT(ILG))
+        allocate(QACROT(NLAT,NMOS))
+        allocate(RCANGAT(ILG))
+        allocate(RCANROT(NLAT,NMOS))
+        allocate(RHOSGAT(ILG))
+        allocate(RHOSROT(NLAT,NMOS))
+        allocate(SCANGAT(ILG))
+        allocate(SCANROT(NLAT,NMOS))
+        allocate(SNOGAT(ILG))
+        allocate(SNOROT(NLAT,NMOS))
+        allocate(TACGAT(ILG))
+        allocate(TACROT(NLAT,NMOS))
+        allocate(TBARGAT(ILG,IGND))
+        allocate(TBARROT(NLAT,NMOS,IGND))
+        allocate(TBASGAT(ILG))
+        allocate(TBASROT(NLAT,NMOS))
+        allocate(TCANGAT(ILG))
+        allocate(TCANROT(NLAT,NMOS))
+        allocate(THICGAT(ILG,IGND))
+        allocate(THICROT(NLAT,NMOS,IGND))
+        allocate(THLQGAT(ILG,IGND))
+        allocate(THLQROT(NLAT,NMOS,IGND))
+        allocate(TPNDGAT(ILG))
+        allocate(TPNDROT(NLAT,NMOS))
+        allocate(TSFSGAT(ILG,4))
+        allocate(TSFSROT(NLAT,NMOS,4))
+        allocate(TSNOGAT(ILG))
+        allocate(TSNOROT(NLAT,NMOS))
+        allocate(WSNOGAT(ILG))
+        allocate(WSNOROT(NLAT,NMOS))
+        allocate(ZPNDGAT(ILG))
+        allocate(ZPNDROT(NLAT,NMOS))
+
+        allocate(REFROT(NLAT,NMOS))
+        allocate(BCSNROT(NLAT,NMOS))
+        allocate(REFGAT(ILG))
+        allocate(BCSNGAT(ILG))
+
+        allocate(ILMOS(ILG))
+        allocate(JLMOS(ILG))
+        allocate(IWMOS(ILG))
+        allocate(JWMOS(ILG))
+
+        allocate(ACIDGAT(ILG,ICAN))
+        allocate(ACIDROT(NLAT,NMOS,ICAN))
+        allocate(ACVDGAT(ILG,ICAN))
+        allocate(ACVDROT(NLAT,NMOS,ICAN))
+        allocate(AGIDGAT(ILG))
+        allocate(AGIDROT(NLAT,NMOS))
+        allocate(AGVDGAT(ILG))
+        allocate(AGVDROT(NLAT,NMOS))
+        allocate(ALGDGAT(ILG))
+        allocate(ALGDROT(NLAT,NMOS))
+        allocate(ALGWGAT(ILG))
+        allocate(ALGWROT(NLAT,NMOS))
+        allocate(ALICGAT(ILG,ICP1))
+        allocate(ALICROT(NLAT,NMOS,ICP1))
+        allocate(ALVCGAT(ILG,ICP1))
+        allocate(ALVCROT(NLAT,NMOS,ICP1))
+        allocate(ASIDGAT(ILG))
+        allocate(ASIDROT(NLAT,NMOS))
+        allocate(ASVDGAT(ILG))
+        allocate(ASVDROT(NLAT,NMOS))
+        allocate(BIGAT(ILG,IGND))
+        allocate(BIROT(NLAT,NMOS,IGND))
+        allocate(CLAYROT(NLAT,NMOS,IGND))
+        allocate(CMASGAT(ILG,ICAN))
+        allocate(CMASROT(NLAT,NMOS,ICAN))
+        allocate(DDGAT(ILG))
+        allocate(DDROT(NLAT,NMOS))
+        allocate(DLZWGAT(ILG,IGND))
+        allocate(DLZWROT(NLAT,NMOS,IGND))
+        allocate(DRNGAT(ILG))
+        allocate(DRNROT(NLAT,NMOS))
+        allocate(FAREROT(NLAT,NMOS))
+        allocate(FCANGAT(ILG,ICP1))
+        allocate(FCANROT(NLAT,NMOS,ICP1))
+        allocate(GRKFGAT(ILG))
+        allocate(GRKFROT(NLAT,NMOS))
+        allocate(GRKSGAT(ILG,IGND))
+        allocate(GRKSROT(NLAT,NMOS,IGND))
+        allocate(HCPSGAT(ILG,IGND))
+        allocate(HCPSROT(NLAT,NMOS,IGND))
+        allocate(HGTDGAT(ILG,ICAN))
+        allocate(HGTDROT(NLAT,NMOS,ICAN))
+        allocate(IGDRGAT(ILG))
+        allocate(IGDRROT(NLAT,NMOS))
+        allocate(ISNDGAT(ILG,IGND))
+        allocate(ISNDROT(NLAT,NMOS,IGND))
+        allocate(LNZ0GAT(ILG,ICP1))
+        allocate(LNZ0ROT(NLAT,NMOS,ICP1))
+        allocate(MIDROT(NLAT,NMOS))
+        allocate(ORGMROT(NLAT,NMOS,IGND))
+        allocate(PAIDGAT(ILG,ICAN))
+        allocate(PAIDROT(NLAT,NMOS,ICAN))
+        allocate(PAMNGAT(ILG,ICAN))
+        allocate(PAMNROT(NLAT,NMOS,ICAN))
+        allocate(PAMXGAT(ILG,ICAN))
+        allocate(PAMXROT(NLAT,NMOS,ICAN))
+        allocate(PSGAGAT(ILG,ICAN))
+        allocate(PSGAROT(NLAT,NMOS,ICAN))
+        allocate(PSGBGAT(ILG,ICAN))
+        allocate(PSGBROT(NLAT,NMOS,ICAN))
+        allocate(PSISGAT(ILG,IGND))
+        allocate(PSISROT(NLAT,NMOS,IGND))
+        allocate(PSIWGAT(ILG,IGND))
+        allocate(PSIWROT(NLAT,NMOS,IGND))
+        allocate(QA50GAT(ILG,ICAN))
+        allocate(QA50ROT(NLAT,NMOS,ICAN))
+        allocate(ROOTGAT(ILG,ICAN))
+        allocate(ROOTROT(NLAT,NMOS,ICAN))
+        allocate(RSMNGAT(ILG,ICAN))
+        allocate(RSMNROT(NLAT,NMOS,ICAN))
+        allocate(SANDROT(NLAT,NMOS,IGND))
+        allocate(SDEPROT(NLAT,NMOS))
+        allocate(TCSGAT(ILG,IGND))
+        allocate(TCSROT(NLAT,NMOS,IGND))
+        allocate(THFCGAT(ILG,IGND))
+        allocate(THFCROT(NLAT,NMOS,IGND))
+        allocate(THMGAT(ILG,IGND))
+        allocate(THMROT(NLAT,NMOS,IGND))
+        allocate(THPGAT(ILG,IGND))
+        allocate(THPROT(NLAT,NMOS,IGND))
+        allocate(THRGAT(ILG,IGND))
+        allocate(THRROT(NLAT,NMOS,IGND))
+        allocate(THRAGAT(ILG,IGND))
+        allocate(THRAROT(NLAT,NMOS,IGND))
+        allocate(VPDAGAT(ILG,ICAN))
+        allocate(VPDAROT(NLAT,NMOS,ICAN))
+        allocate(VPDBGAT(ILG,ICAN))
+        allocate(VPDBROT(NLAT,NMOS,ICAN))
+        allocate(WFCIGAT(ILG))
+        allocate(WFCIROT(NLAT,NMOS))
+        allocate(WFSFGAT(ILG))
+        allocate(WFSFROT(NLAT,NMOS))
+        allocate(XSLPGAT(ILG))
+        allocate(XSLPROT(NLAT,NMOS))
+        allocate(ZBTWGAT(ILG,IGND))
+        allocate(ZBTWROT(NLAT,NMOS,IGND))
+        allocate(ZPLGGAT(ILG))
+        allocate(ZPLGROT(NLAT,NMOS))
+        allocate(ZPLSGAT(ILG))
+        allocate(ZPLSROT(NLAT,NMOS))
+        allocate(ZSNLGAT(ILG))
+        allocate(ZSNLROT(NLAT,NMOS))
+C
+        allocate(THLWROT(NLAT,NMOS,IGND))
+        allocate(ZSNOROT(NLAT,NMOS))
+        allocate(ALGWVROT(NLAT,NMOS))
+        allocate(ALGWNROT(NLAT,NMOS))
+        allocate(ALGDVROT(NLAT,NMOS))
+        allocate(ALGDNROT(NLAT,NMOS))
+        allocate(EMISROT(NLAT,NMOS))
+        allocate(SALBROT(NLAT,NMOS,NBS))
+        allocate(CSALROT(NLAT,NMOS,NBS))
+        allocate(FSDBROL(NLAT,NBS))
+        allocate(FSFBROL(NLAT,NBS))
+        allocate(FSSBROL(NLAT,NBS))
+C
+        allocate(THLWGAT(ILG,IGND))
+        allocate(ALGWVGAT(ILG))
+        allocate(ALGWNGAT(ILG))
+        allocate(ALGDVGAT(ILG))
+        allocate(ALGDNGAT(ILG))
+        allocate(EMISGAT(ILG))
+        allocate(SOCIROT(NLAT,NMOS))
+C
+        allocate(FSDBGAT(ILG,NBS))
+        allocate(FSFBGAT(ILG,NBS))
+        allocate(FSSBGAT(ILG,NBS))
+        allocate(SALBGAT(ILG,NBS))
+        allocate(CSALGAT(ILG,NBS))
+C
+!-        THPORG(3)
+!-        THRORG(3)
+!-        THMORG(3)
+!-        BORG(3)
+!-        PSISORG(3)
+!-        GRKSORG(3)
+C
+!-        CANEXT(ICAN)
+!-        XLEAF(ICAN)
+!-        ZORAT(ICAN)
+        allocate(DELZ(IGND))
+        allocate(ZBOT(IGND))
+!-        GROWYR(18,4,2)
+C
+!A lot of variable dimensions of ROW were changed to NMOS instead of NLAT for MESH (since NLAT is always 1)
+!DAN  Reverted this because NLAT is not always 1
+        allocate(CSZGAT(ILG))
+        allocate(CSZROW(NLAT))
+        allocate(DLONGAT(ILG))
+        allocate(DLONROW(NLAT))
+        allocate(FCLOGAT(ILG))
+        allocate(FCLOROW(NLAT))
+        allocate(FDLGAT(ILG))
+        allocate(FDLROW(NLAT))
+        allocate(FSIHGAT(ILG))
+        allocate(FSIHROW(NLAT))
+        allocate(FSVHGAT(ILG))
+        allocate(FSVHROW(NLAT))
+        allocate(GCROW(NLAT))
+        allocate(GGEOGAT(ILG))
+        allocate(GGEOROW(NLAT))
+        allocate(PADRGAT(ILG))
+        allocate(PADRROW(NLAT))
+        allocate(PREGAT(ILG))
+        allocate(PREROW(NLAT))
+        allocate(PRESGAT(ILG))
+        allocate(PRESROW(NLAT))
+        allocate(QAGAT(ILG))
+        allocate(QAROW(NLAT))
+        allocate(RADJGAT(ILG))
+        allocate(RADJROW(NLAT))
+        allocate(RHOAGAT(ILG))
+        allocate(RHOAROW(NLAT))
+        allocate(RHSIGAT(ILG))
+        allocate(RHSIROW(NLAT))
+        allocate(RPCPGAT(ILG))
+        allocate(RPCPROW(NLAT))
+        allocate(RPREROW(NLAT))
+        allocate(SPCPGAT(ILG))
+        allocate(SPCPROW(NLAT))
+        allocate(SPREROW(NLAT))
+        allocate(TAGAT(ILG))
+        allocate(TAROW(NLAT))
+        allocate(TADPGAT(ILG))
+        allocate(TADPROW(NLAT))
+        allocate(TRPCGAT(ILG))
+        allocate(TRPCROW(NLAT))
+        allocate(TSPCGAT(ILG))
+        allocate(TSPCROW(NLAT))
+        allocate(ULGAT(ILG))
+        allocate(ULROW(NLAT))
+        allocate(VLGAT(ILG))
+        allocate(VLROW(NLAT))
+        allocate(VMODGAT(ILG))
+        allocate(VMODROW(NLAT))
+        allocate(VPDGAT(ILG))
+        allocate(VPDROW(NLAT))
+        allocate(Z0ORGAT(ILG))
+        allocate(ZBLDGAT(ILG))
+        allocate(ZBLDROW(NLAT))
+        allocate(ZDHGAT(ILG))
+        allocate(ZDHROW(NLAT))
+        allocate(ZDMGAT(ILG))
+        allocate(ZDMROW(NLAT))
+        allocate(ZRFHGAT(ILG))
+        allocate(ZRFHROW(NLAT))
+        allocate(ZRFMGAT(ILG))
+        allocate(ZRFMROW(NLAT))
+C
+        allocate(UVROW(NLAT))
+        allocate(XDIFFUS(NLAT))
+        allocate(Z0ORROW(NLAT))
+C
+        allocate(DLATROW(NLAT))
+        allocate(FSSROW(NLAT))
+        allocate(PRENROW(NLAT))
+        allocate(CLDTROW(NLAT))
+        allocate(FSGROL(NLAT))
+        allocate(FLGROL(NLAT))
+        allocate(GUSTROL(NLAT))
+        allocate(DEPBROW(NLAT))
+C
+        allocate(FSGGAT(ILG))
+        allocate(FLGGAT(ILG))
+        allocate(GUSTGAT(ILG))
+        allocate(DEPBGAT(ILG))
+        allocate(GTBS(ILG))
+        allocate(SFCUBS(ILG))
+        allocate(SFCVBS(ILG))
+        allocate(USTARBS(ILG))
+        allocate(TCSNOW(ILG))
+        allocate(GSNOW(ILG))
+C
+        allocate(ALIRGAT(ILG))
+        allocate(ALIRROT(NLAT,NMOS))
+        allocate(ALIRROW(NLAT))
+        allocate(ALVSGAT(ILG))
+        allocate(ALVSROT(NLAT,NMOS))
+        allocate(ALVSROW(NLAT))
+        allocate(CDHGAT(ILG))
+        allocate(CDHROT(NLAT,NMOS))
+        allocate(CDHROW(NLAT))
+        allocate(CDMGAT(ILG))
+        allocate(CDMROT(NLAT,NMOS))
+        allocate(CDMROW(NLAT))
+        allocate(DRGAT(ILG))
+        allocate(DRROT(NLAT,NMOS))
+        allocate(DRROW(NLAT))
+        allocate(EFGAT(ILG))
+        allocate(EFROT(NLAT,NMOS))
+        allocate(EFROW(NLAT))
+        allocate(FLGGGAT(ILG))
+        allocate(FLGGROT(NLAT,NMOS))
+        allocate(FLGGROW(NLAT))
+        allocate(FLGSGAT(ILG))
+        allocate(FLGSROT(NLAT,NMOS))
+        allocate(FLGSROW(NLAT))
+        allocate(FLGVGAT(ILG))
+        allocate(FLGVROT(NLAT,NMOS))
+        allocate(FLGVROW(NLAT))
+        allocate(FSGGGAT(ILG))
+        allocate(FSGGROT(NLAT,NMOS))
+        allocate(FSGGROW(NLAT))
+        allocate(FSGSGAT(ILG))
+        allocate(FSGSROT(NLAT,NMOS))
+        allocate(FSGSROW(NLAT))
+        allocate(FSGVGAT(ILG))
+        allocate(FSGVROT(NLAT,NMOS))
+        allocate(FSGVROW(NLAT))
+        allocate(FSNOGAT(ILG))
+        allocate(FSNOROT(NLAT,NMOS))
+        allocate(FSNOROW(NLAT))
+        allocate(GAGAT(ILG))
+        allocate(GAROT(NLAT,NMOS))
+        allocate(GAROW(NLAT))
+        allocate(GFLXGAT(ILG,IGND))
+        allocate(GFLXROT(NLAT,NMOS,IGND))
+        allocate(GFLXROW(NLAT,IGND))
+        allocate(GTGAT(ILG))
+        allocate(GTROT(NLAT,NMOS))
+        allocate(GTROW(NLAT))
+        allocate(HBLGAT(ILG))
+        allocate(HBLROT(NLAT,NMOS))
+        allocate(HBLROW(NLAT))
+        allocate(HEVCGAT(ILG))
+        allocate(HEVCROT(NLAT,NMOS))
+        allocate(HEVCROW(NLAT))
+        allocate(HEVGGAT(ILG))
+        allocate(HEVGROT(NLAT,NMOS))
+        allocate(HEVGROW(NLAT))
+        allocate(HEVSGAT(ILG))
+        allocate(HEVSROT(NLAT,NMOS))
+        allocate(HEVSROW(NLAT))
+        allocate(HFSGAT(ILG))
+        allocate(HFSROT(NLAT,NMOS))
+        allocate(HFSROW(NLAT))
+        allocate(HFSCGAT(ILG))
+        allocate(HFSCROT(NLAT,NMOS))
+        allocate(HFSCROW(NLAT))
+        allocate(HFSGGAT(ILG))
+        allocate(HFSGROT(NLAT,NMOS))
+        allocate(HFSGROW(NLAT))
+        allocate(HFSSGAT(ILG))
+        allocate(HFSSROT(NLAT,NMOS))
+        allocate(HFSSROW(NLAT))
+        allocate(HMFCGAT(ILG))
+        allocate(HMFCROT(NLAT,NMOS))
+        allocate(HMFCROW(NLAT))
+        allocate(HMFGGAT(ILG,IGND))
+        allocate(HMFGROT(NLAT,NMOS,IGND))
+        allocate(HMFGROW(NLAT,IGND))
+        allocate(HMFNGAT(ILG))
+        allocate(HMFNROT(NLAT,NMOS))
+        allocate(HMFNROW(NLAT))
+        allocate(HTCGAT(ILG,IGND))
+        allocate(HTCROT(NLAT,NMOS,IGND))
+        allocate(HTCROW(NLAT,IGND))
+        allocate(HTCCGAT(ILG))
+        allocate(HTCCROT(NLAT,NMOS))
+        allocate(HTCCROW(NLAT))
+        allocate(HTCSGAT(ILG))
+        allocate(HTCSROT(NLAT,NMOS))
+        allocate(HTCSROW(NLAT))
+        allocate(ILMOGAT(ILG))
+        allocate(ILMOROT(NLAT,NMOS))
+        allocate(ILMOROW(NLAT))
+        allocate(ISUM(6))
+        allocate(ITCTGAT(ILG,6,50))
+        allocate(ITCTROT(NLAT,NMOS,6,50))
+        allocate(PCFCGAT(ILG))
+        allocate(PCFCROT(NLAT,NMOS))
+        allocate(PCFCROW(NLAT))
+        allocate(PCLCGAT(ILG))
+        allocate(PCLCROT(NLAT,NMOS))
+        allocate(PCLCROW(NLAT))
+        allocate(PCPGGAT(ILG))
+        allocate(PCPGROT(NLAT,NMOS))
+        allocate(PCPGROW(NLAT))
+        allocate(PCPNGAT(ILG))
+        allocate(PCPNROT(NLAT,NMOS))
+        allocate(PCPNROW(NLAT))
+        allocate(PETGAT(ILG))
+        allocate(PETROT(NLAT,NMOS))
+        allocate(PETROW(NLAT))
+        allocate(QEVPGAT(ILG))
+        allocate(QEVPROT(NLAT,NMOS))
+        allocate(QEVPROW(NLAT))
+        allocate(QFCGAT(ILG,IGND))
+        allocate(QFCROT(NLAT,NMOS,IGND))
+        allocate(QFCROW(NLAT,IGND))
+        allocate(QFCFGAT(ILG))
+        allocate(QFCFROT(NLAT,NMOS))
+        allocate(QFCFROW(NLAT))
+        allocate(QFCLGAT(ILG))
+        allocate(QFCLROT(NLAT,NMOS))
+        allocate(QFCLROW(NLAT))
+        allocate(QFGGAT(ILG))
+        allocate(QFGROT(NLAT,NMOS))
+        allocate(QFGROW(NLAT))
+        allocate(QFNGAT(ILG))
+        allocate(QFNROT(NLAT,NMOS))
+        allocate(QFNROW(NLAT))
+        allocate(QFSGAT(ILG))
+        allocate(QFSROT(NLAT,NMOS))
+        allocate(QFSROW(NLAT))
+        allocate(QFXGAT(ILG))
+        allocate(QFXROT(NLAT,NMOS))
+        allocate(QFXROW(NLAT))
+        allocate(QGGAT(ILG))
+        allocate(QGROT(NLAT,NMOS))
+        allocate(QGROW(NLAT))
+        allocate(ROFGAT(ILG))
+        allocate(ROFROT(NLAT,NMOS))
+        allocate(ROFROW(NLAT))
+        allocate(ROFBGAT(ILG))
+        allocate(ROFBROT(NLAT,NMOS))
+        allocate(ROFBROW(NLAT))
+        allocate(ROFCGAT(ILG))
+        allocate(ROFCROT(NLAT,NMOS))
+        allocate(ROFCROW(NLAT))
+        allocate(ROFNGAT(ILG))
+        allocate(ROFNROT(NLAT,NMOS))
+        allocate(ROFNROW(NLAT))
+        allocate(ROFOGAT(ILG))
+        allocate(ROFOROT(NLAT,NMOS))
+        allocate(ROFOROW(NLAT))
+        allocate(ROFSGAT(ILG))
+        allocate(ROFSROT(NLAT,NMOS))
+        allocate(ROFSROW(NLAT))
+        allocate(ROVGGAT(ILG))
+        allocate(ROVGROT(NLAT,NMOS))
+        allocate(ROVGROW(NLAT))
+        allocate(SFCQGAT(ILG))
+        allocate(SFCQROT(NLAT,NMOS))
+        allocate(SFCQROW(NLAT))
+        allocate(SFCTGAT(ILG))
+        allocate(SFCTROT(NLAT,NMOS))
+        allocate(SFCTROW(NLAT))
+        allocate(SFCUGAT(ILG))
+        allocate(SFCUROT(NLAT,NMOS))
+        allocate(SFCUROW(NLAT))
+        allocate(SFCVGAT(ILG))
+        allocate(SFCVROT(NLAT,NMOS))
+        allocate(SFCVROW(NLAT))
+        allocate(TFXGAT(ILG))
+        allocate(TFXROT(NLAT,NMOS))
+        allocate(TFXROW(NLAT))
+        allocate(TROBGAT(ILG))
+        allocate(TROBROT(NLAT,NMOS))
+        allocate(TROFGAT(ILG))
+        allocate(TROFROT(NLAT,NMOS))
+        allocate(TROOGAT(ILG))
+        allocate(TROOROT(NLAT,NMOS))
+        allocate(TROSGAT(ILG))
+        allocate(TROSROT(NLAT,NMOS))
+        allocate(UEGAT(ILG))
+        allocate(UEROT(NLAT,NMOS))
+        allocate(UEROW(NLAT))
+        allocate(WTABGAT(ILG))
+        allocate(WTABROT(NLAT,NMOS))
+        allocate(WTABROW(NLAT))
+        allocate(WTRCGAT(ILG))
+        allocate(WTRCROT(NLAT,NMOS))
+        allocate(WTRCROW(NLAT))
+        allocate(WTRGGAT(ILG))
+        allocate(WTRGROT(NLAT,NMOS))
+        allocate(WTRGROW(NLAT))
+        allocate(WTRSGAT(ILG))
+        allocate(WTRSROT(NLAT,NMOS))
+        allocate(WTRSROW(NLAT))
+C
+        allocate(QLWOGAT(ILG))
+        allocate(SFRHGAT(ILG))
+        allocate(SFRHROT(NLAT,NMOS))
+        allocate(SFRHROW(NLAT))
+C
+        allocate(FTEMP(ILG))
+        allocate(FVAP(ILG))
+        allocate(RIB(ILG))
+C
+        allocate(ALIRACC(NLAT))
+        allocate(ALVSACC(NLAT))
+        allocate(EVAPACC(NLAT))
+        allocate(FLINACC(NLAT))
+        allocate(FLUTACC(NLAT))
+        allocate(FSINACC(NLAT))
+        allocate(GROACC(NLAT))
+        allocate(GTACC(NLAT))
+        allocate(HFSACC(NLAT))
+        allocate(HMFNACC(NLAT))
+        allocate(OVRACC(NLAT))
+        allocate(PREACC(NLAT))
+        allocate(PRESACC(NLAT))
+        allocate(QAACC(NLAT))
+        allocate(QEVPACC(NLAT))
+        allocate(RCANACC(NLAT))
+        allocate(RHOSACC(NLAT))
+        allocate(ROFACC(NLAT))
+        allocate(SCANACC(NLAT))
+        allocate(SNOACC(NLAT))
+        allocate(TAACC(NLAT))
+        allocate(TBARACC(NLAT,IGND))
+        allocate(THALACC(NLAT,IGND))
+        allocate(THICACC(NLAT,IGND))
+        allocate(THLQACC(NLAT,IGND))
+        allocate(TCANACC(NLAT))
+        allocate(TSNOACC(NLAT))
+        allocate(UVACC(NLAT))
+        allocate(WSNOACC(NLAT))
+        allocate(WTBLACC(NLAT))
+        allocate(ALTOTACC(NLAT))
+C
+        allocate(CANARE(NLAT))
+        allocate(SNOARE(NLAT))
+C
+C     * ARRAYS DEFINED TO PASS INFORMATION BETWEEN THE THREE MAJOR
+C     * SUBSECTIONS OF CLASS ("CLASSA", "CLASST" AND "CLASSW").
+C
+        allocate(TBARC(ILG,IGND))
+        allocate(TBARG(ILG,IGND))
+        allocate(TBARCS(ILG,IGND))
+        allocate(TBARGS(ILG,IGND))
+        allocate(THLIQC(ILG,IGND))
+        allocate(THLIQG(ILG,IGND))
+        allocate(THICEC(ILG,IGND))
+        allocate(THICEG(ILG,IGND))
+        allocate(FROOT(ILG,IGND))
+        allocate(HCPC(ILG,IGND))
+        allocate(HCPG(ILG,IGND))
+        allocate(FROOTS(ILG,IGND))
+        allocate(TCTOPC(ILG,IGND))
+        allocate(TCBOTC(ILG,IGND))
+        allocate(TCTOPG(ILG,IGND))
+        allocate(TCBOTG(ILG,IGND))
+C
+        allocate(FC(ILG))
+        allocate(FG(ILG))
+        allocate(FCS(ILG))
+        allocate(FGS(ILG))
+        allocate(RBCOEF(ILG))
+        allocate(ZSNOW(ILG))
+        allocate(FSVF(ILG))
+        allocate(FSVFS(ILG))
+        allocate(ALVSCN(ILG))
+        allocate(ALIRCN(ILG))
+        allocate(ALVSG(ILG))
+        allocate(ALIRG(ILG))
+        allocate(ALVSCS(ILG))
+        allocate(ALIRCS(ILG))
+        allocate(ALVSSN(ILG))
+        allocate(ALIRSN(ILG))
+        allocate(ALVSGC(ILG))
+        allocate(ALIRGC(ILG))
+        allocate(ALVSSC(ILG))
+        allocate(ALIRSC(ILG))
+        allocate(TRVSCN(ILG))
+        allocate(TRIRCN(ILG))
+        allocate(TRVSCS(ILG))
+        allocate(TRIRCS(ILG))
+        allocate(RC(ILG))
+        allocate(RCS(ILG))
+        allocate(FRAINC(ILG))
+        allocate(FSNOWC(ILG))
+        allocate(FRAICS(ILG))
+        allocate(FSNOCS(ILG))
+        allocate(CMASSC(ILG))
+        allocate(CMASCS(ILG))
+        allocate(DISP(ILG))
+        allocate(DISPS(ILG))
+        allocate(ZOMLNC(ILG))
+        allocate(ZOELNC(ILG))
+        allocate(ZOMLNG(ILG))
+        allocate(ZOELNG(ILG))
+        allocate(ZOMLCS(ILG))
+        allocate(ZOELCS(ILG))
+        allocate(ZOMLNS(ILG))
+        allocate(ZOELNS(ILG))
+        allocate(TRSNOWC(ILG))
+        allocate(CHCAP(ILG))
+        allocate(CHCAPS(ILG))
+        allocate(GZEROC(ILG))
+        allocate(GZEROG(ILG))
+        allocate(GZROCS(ILG))
+        allocate(GZROGS(ILG))
+        allocate(G12C(ILG))
+        allocate(G12G(ILG))
+        allocate(G12CS(ILG))
+        allocate(G12GS(ILG))
+        allocate(G23C(ILG))
+        allocate(G23G(ILG))
+        allocate(G23CS(ILG))
+        allocate(G23GS(ILG))
+        allocate(QFREZC(ILG))
+        allocate(QFREZG(ILG))
+        allocate(QMELTC(ILG))
+        allocate(QMELTG(ILG))
+        allocate(EVAPC(ILG))
+        allocate(EVAPCG(ILG))
+        allocate(EVAPG(ILG))
+        allocate(EVAPCS(ILG))
+        allocate(EVPCSG(ILG))
+        allocate(EVAPGS(ILG))
+        allocate(TCANO(ILG))
+        allocate(TCANS(ILG))
+        allocate(RAICAN(ILG))
+        allocate(SNOCAN(ILG))
+        allocate(RAICNS(ILG))
+        allocate(SNOCNS(ILG))
+        allocate(CWLCAP(ILG))
+        allocate(CWFCAP(ILG))
+        allocate(CWLCPS(ILG))
+        allocate(CWFCPS(ILG))
+        allocate(TSNOCS(ILG))
+        allocate(TSNOGS(ILG))
+        allocate(RHOSCS(ILG))
+        allocate(RHOSGS(ILG))
+        allocate(WSNOCS(ILG))
+        allocate(WSNOGS(ILG))
+        allocate(TPONDC(ILG))
+        allocate(TPONDG(ILG))
+        allocate(TPNDCS(ILG))
+        allocate(TPNDGS(ILG))
+        allocate(ZPLMCS(ILG))
+        allocate(ZPLMGS(ILG))
+        allocate(ZPLIMC(ILG))
+        allocate(ZPLIMG(ILG))
+C
+        allocate(ALTG(ILG,NBS))
+        allocate(ALSNO(ILG,NBS))
+        allocate(TRSNOWG(ILG,NBS))
+C
+        allocate(CTVSTP(ILG))
+        allocate(CTSSTP(ILG))
+        allocate(CT1STP(ILG))
+        allocate(CT2STP(ILG))
+        allocate(CT3STP(ILG))
+        allocate(WTVSTP(ILG))
+        allocate(WTSSTP(ILG))
+        allocate(WTGSTP(ILG))
+C
+        allocate(XDRAINH(ILG))
+        allocate(MANNING_N(ILG))
+        allocate(DD(ILG))
+        allocate(KSAT(ILG))
+C
+        allocate(FRZC(ILG))
+        allocate(SI(ILG))
+        allocate(TSI(ILG))
+        allocate(INFILTYPE(ILG))
+        allocate(SNOWMELTD(ILG))
+        allocate(SNOWMELTD_LAST(ILG))
+        allocate(MELTRUNOFF(ILG))
+        allocate(SNOWINFIL(ILG))
+        allocate(CUMSNOWINFILCS(ILG))
+        allocate(CUMSNOWINFILGS(ILG))
+        allocate(CMIN(ILG), CMAX(ILG))
+        allocate(ZPNDPRECS(ILG), ZPONDPREC(ILG),
+     1           ZPONDPREG(ILG), ZPNDPREGS(ILG))
+        allocate(UM1CS(ILG), UM1C(ILG), UM1G(ILG), UM1GS(ILG))
+        allocate(QM1CS(ILG), QM1C(ILG), QM1G(ILG), QM1GS(ILG))
+        allocate(QM2CS(ILG), QM2C(ILG), QM2G(ILG), QM2GS(ILG))
+        allocate(UMQ(ILG))
+        allocate(FSTRCS(ILG), FSTRC(ILG), FSTRGS(ILG), FSTRG(ILG))
+C
+        allocate(ZPONDC(ILG), ZPONDG(ILG), ZPNDCS(ILG), ZPNDGS(ILG))
+        allocate(XSNOWC(ILG), XSNOWG(ILG), XSNOCS(ILG), XSNOGS(ILG))
+        allocate(ZSNOWC(ILG), ZSNOWG(ILG), ZSNOCS(ILG), ZSNOGS(ILG))
+        allocate(RHOSC(ILG), RHOSG(ILG))
+        allocate(HCPSC(ILG), HCPSG(ILG), HCPSCS(ILG), HCPSGS(ILG))
+C
+        allocate(TSNOWC(ILG), TSNOWG(ILG))
+C
+        allocate(BULK_FC(NMOS,IGND))
+        allocate(BTC(NMOS,IGND))
+        allocate(DCOEFF(NMOS,IGND))
+        allocate(BFCAP(NMOS,IGND))
+        allocate(BCAP(NMOS,IGND))
+        allocate(BFCOEFF(NMOS,IGND))
+        allocate(BFMIN(NMOS,IGND))
+        allocate(BQMAX(NMOS,IGND))
+C
+c================= CTEM array declaration ===============================\
+c
+        allocate(curlatno(ilg), altotcount_ctm(nlat))
+        allocate(todfrac(ilg,icc), barf(nlat,nmos))
+        allocate(currlat(ilg), wl(lat), grclarea(ilg),
+     1           radl(lat), wossl(lat), sl(lat),
+     2           cl(lat), ml(ilg))
+
+        allocate(fsinacc_gat(ilg), flutacc_gat(ilg), flinacc_gat(ilg),
+     1           alswacc_gat(ilg), allwacc_gat(ilg), pregacc_gat(ilg),
+     2           altotacc_gat(ilg),
+     3           netrad_gat(ilg), preacc_gat(ilg))
+
+        allocate(sdepgat(ilg), orgmgat(ilg,ignd),
+     1           sandgat(ilg,ignd), claygat(ilg,ignd),
+     2           xdiffusgat(ilg), faregat(ilg))
+
+        call veg_rot_allocate(vrot)
+        call veg_gat_allocate(vgat)
+        call class_moyr_output_allocate(class_out)
+        call ctem_gridavg_allocate(ctem_grd)
+        call ctem_tile_level_allocate(ctem_tile)
+        call ctem_monthly_allocate()
+        call ctem_gridavg_monthly_allocate()
+        call ctem_tileavg_monthly_allocate()
+        call ctem_annual_allocate()
+        call ctem_gridavg_annual_allocate()
+        call ctem_tileavg_annual_allocate()
 C
 C===================== CTEM ==============================================\
 
@@ -2674,7 +3419,7 @@ C===================== CTEM =============================================== /
 
 
 
-
+!DAN     there's some overlap here with what's done in MESH
       DO 100 I=1,NLTEST
       DO 100 M=1,NMTEST
 
@@ -3622,11 +4367,14 @@ c
 c
 117   continue
 c
-	  
-      CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,
-     1             NML,NMW,GCROW,FAREROT,MIDROT,
-     2             NLAT,NMOS,ILG,1,NLTEST,NMTEST)
-	
+!DAN    this has already been done by MESH
+!-      CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,
+!-     1             NML,NMW,GCROW,FAREROT,MIDROT,
+!-     2             NLAT,NMOS,ILG,1,NLTEST,NMTEST)
+        ILMOS = shd%lc%ILMOS
+        JLMOS = shd%lc%JLMOS
+        IWMOS = shd%wc%ILMOS
+        JWMOS = shd%wc%JLMOS
 
       call ctemg1(gleafmasgat,bleafmasgat,stemmassgat,rootmassgat,
      1      fcancmxgat,zbtwgat,dlzwgat,sdepgat,ailcggat,ailcbgat,
@@ -3745,7 +4493,7 @@ C     **** LAUNCH RUN. ****
       SUBROUTINE RUNCLASS36CTEM_within_tile(shd, fls, cm)
 
 
-	  use mpi_module
+         use mpi_module
          use model_files_variables
          use sa_mesh_shared_variables
          use model_dates
@@ -3758,12 +4506,12 @@ C     **** LAUNCH RUN. ****
         !We don't need to add the module init or config because we already have the init subroutine/module in this module.
 
 
-	 type(ShedGridParams) :: shd
+         type(ShedGridParams) :: shd
          type(fl_ids) :: fls
          type(clim_info) :: cm
 
-	  !Not sure if I need this but comment out for now as we already have these variables in ctem_params
-	  !NA = shd%NA
+         !Not sure if I need this but comment out for now as we already have these variables in ctem_params
+         !NA = shd%NA
          !NTYPE = shd%lc%NTYPE
          !NML = shd%lc%NML
          !IGND = shd%lc%IGND
@@ -3773,52 +4521,56 @@ C     **** LAUNCH RUN. ****
 	  !The variables names were changed so that they are compatible with runclass36ctem below
 	  !Note that the varibales here are long, because il1 and il2 represent the number of active grids
 
-	DO M=1,NLAT !The number of avtive tiles, or equivelent to the number of MOSAIC tiles
-	
-	!Since runclass36ctem still uses CLASSG, we will be putting using the ROW variables for the MET data
+!DAN    MESH runs in terms of tiles, CTEM doesn't seem to implement il1:il2 (from CLASS),
+!DAN    which means it should run 1:NML.
+
+       !Since runclass36ctem still uses CLASSG, we will be putting using the ROW variables for the MET data
        !Note that the current year, day, hour and minute will also be defined here,
 
-	
-         iyear= ic%now%year    !Current Year
-         iday= ic%now%jday     !Current Day of the Year 
-         ihour= ic%now%hour     !Current Minute of the hour
-         imin= ic%now%mins    !Current hour of Day	
-         FSSROW(M) = cm%dat(ck%FB)%GAT(M) !Eliminated the /2.0 from the MESH as we didn't need it	
-         FDLROW(M) = cm%dat(ck%FI)%GAT(M) !Incoming Longwave
-         PREROW(M) = cm%dat(ck%RT)%GAT(M) !Precipitation Rate
-         TAROW(M) = cm%dat(ck%TT)%GAT(M) -273.16   !Add the -273.16 because runclass36ctem assumes that it is in [C], while MESH has this data in [K] (Air Temperature)
-         UVROW(M) = cm%dat(ck%UV)%GAT(M) !Wind Speed
-         PRESROW(M) = cm%dat(ck%P0)%GAT(M) !Pressure
-         QAROW(M) = cm%dat(ck%HU)%GAT(M) !Specific Humidity
+         iyear = ic%now%year    !Current Year
+         iday = ic%now%jday     !Current Day of the Year 
+         ihour = ic%now%hour    !Current Minute of the hour
+         imin = ic%now%mins     !Current hour of Day	
 
-	ENDDO
+       !Now use the updated variables from the .INI file.
+       !Note that these variables have dimension ILG, which in our case is the same as NMOS/NMTEST
+!DAN    ILG is the total number of active tiles (which increment by the number of active NMOS inside each grid NLAT).
+!DAN    Must convert from tile indexing using ILMOS=NLAT and JLMOS=NMOS.
 
-         !Now use the updated variables from the .INI file.
-	  !Note that these variables have dimension ILG, which in our case is the same as NMOS/NMTEST
+      DO k = 1, NML
 
-	DO I=1,NLAT
-	 DO M=1,NMOS	
-         QACROT(I,M) = stas%cnpy%qac(M)
-	  RCANROT(I,M) = stas%cnpy%rcan(M)
-         SCANROT(I,M) = stas%cnpy%sncan(M)
-         TACROT(I,M) = stas%cnpy%tac(M)
-         TCANROT(I,M) = stas%cnpy%tcan(M)
-         CMAIROT(I,M) = stas%cnpy%cmai(M)
-         GROROT(I,M) = stas%cnpy%gro(M)
-         SNOROT(I,M) = stas%sno%sno(M)
-         ALBSROT(I,M) = stas%sno%albs(M)
-         RHOSROT(I,M) = stas%sno%rhos(M)
-         TSNOROT(I,M) = stas%sno%tsno(M)
-         WSNOROT(I,M) = stas%sno%wsno(M)
-         TPNDROT(I,M) = stas%sfc%tpnd(M)
-         ZPNDROT(I,M) = stas%sfc%zpnd(M)
-         TSFSROT(I,M, :) = stas%sfc%tsfs(M, :)
-         TBASROT(I,M) = stas%sl%tbas(M)
-         THICROT(I,M, :) = stas%sl%thic(M, :)
-         THLQROT(I,M, :) = stas%sl%thlq(M, :)
-         TBARROT(I,M, :) = stas%sl%tbar(M, :)
-	 ENDDO
-	ENDDO
+         !Get the grid and GRU
+         I = ILMOS(k)
+         M = JLMOS(k)
+
+         !Assign the values
+         FSSROW(I) = cm%dat(ck%FB)%GAT(k)   !Eliminated the /2.0 from the MESH as we didn't need it
+         FDLROW(I) = cm%dat(ck%FI)%GAT(k)   !Incoming Longwave
+         PREROW(I) = cm%dat(ck%RT)%GAT(k)   !Precipitation Rate
+         TAROW(I) = cm%dat(ck%TT)%GAT(k) - TFREZ   !Add the -273.16 because runclass36ctem assumes that it is in [C], while MESH has this data in [K] (Air Temperature)
+         UVROW(I) = cm%dat(ck%UV)%GAT(k)    !Wind Speed
+         PRESROW(I) = cm%dat(ck%P0)%GAT(k)  !Pressure
+         QAROW(I) = cm%dat(ck%HU)%GAT(k)    !Specific Humidity
+         QACROT(I,M) = stas%cnpy%qac(k)
+         RCANROT(I,M) = stas%cnpy%rcan(k)
+         SCANROT(I,M) = stas%cnpy%sncan(k)
+         TACROT(I,M) = stas%cnpy%tac(k)
+         TCANROT(I,M) = stas%cnpy%tcan(k)
+         CMAIROT(I,M) = stas%cnpy%cmai(k)
+         GROROT(I,M) = stas%cnpy%gro(k)
+         SNOROT(I,M) = stas%sno%sno(k)
+         ALBSROT(I,M) = stas%sno%albs(k)
+         RHOSROT(I,M) = stas%sno%rhos(k)
+         TSNOROT(I,M) = stas%sno%tsno(k)
+         WSNOROT(I,M) = stas%sno%wsno(k)
+         TPNDROT(I,M) = stas%sfc%tpnd(k)
+         ZPNDROT(I,M) = stas%sfc%zpnd(k)
+         TSFSROT(I,M,:) = stas%sfc%tsfs(k, :)
+         TBASROT(I,M) = stas%sl%tbas(k)
+         THICROT(I,M,:) = stas%sl%thic(k, :)
+         THLQROT(I,M,:) = stas%sl%thlq(k, :)
+         TBARROT(I,M,:) = stas%sl%tbar(k, :)
+      ENDDO
 
 
 
@@ -3890,6 +4642,7 @@ C         THE END OF FILE IT WILL GO TO 999.
 
           end if
         end if
+250   CONTINUE
 
 
 C===================== CTEM ============================================ \
@@ -3915,6 +4668,11 @@ C===================== CTEM ============================================ /
 
 
 !This was all moved to above as we need to loop around NLTEST and not NMTEST
+!DAN    This doesn't seem right; closed NMOS loop above, opened NLAT loop here.
+!DAN    What happens in the multiple grid case with only 1 GRU is that it applies
+!DAN    transformations to only grid 1; results in TSOLVE errors where TA is still in
+!DAN    degrees C in all other grids (because the transformations haven't been applied).
+      DO I=1,NLAT
           FSVHROW(I)=0.5*FSSROW(I)
           FSIHROW(I)=0.5*FSSROW(I)
           TAROW(I)=TAROW(I)+TFREZ
@@ -3927,7 +4685,7 @@ C===================== CTEM ============================================ /
           FSSBROL(I,1)=FSVHROW(I)
           FSSBROL(I,2)=FSIHROW(I)
 
-250   CONTINUE
+      ENDDO
 
 
  	WRITE(*,*) 'runclass36ctem line 3933:'
@@ -4108,9 +4866,10 @@ C===================== CTEM ============================================ /
 C
       CUMSNO=CUMSNO+SPCPROW(1)*RHSIROW(1)*DELT
 C
-      CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,
-     1             NML,NMW,GCROW,FAREROT,MIDROT,
-     2             NLAT,NMOS,ILG,1,NLTEST,NMTEST)
+!DAN    I don't think GATPREP should be called more than once??
+!?      CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,
+!?     1             NML,NMW,GCROW,FAREROT,MIDROT,
+!?     2             NLAT,NMOS,ILG,1,NLTEST,NMTEST)
 
 C
 
@@ -6191,12 +6950,10 @@ C
             NCOUNT=1
         ENDIF
 
+!DAN    Must again convert from NLAT/NMOS to tile indexing to transfer values back to MESH.
+      DO I=IL1,IL2
 
-	
-
-	DO I=IL1,IL2
- 
-	 stas%cnpy%rcan(I) = RCANGAT(I)
+        stas%cnpy%rcan(I) = RCANGAT(I)
         stas%cnpy%sncan(I) = SCANGAT(I) !Remember : SNCAN is in MESH, while CTEM uses SCAN
         stas%cnpy%cmai(I) = CMAIGAT(I)
         stas%cnpy%tac(I) = TACGAT(I)
@@ -6228,7 +6985,7 @@ C
         stas%sl%tbar(I, :) = TBARGAT(I, :)
         stas%sl%gflx(I, :) = GFLXGAT(I, :)
         stas%lzs%rofb(I) = ROFBGAT(I)
-	ENDDO
+      ENDDO
 
 
 	IF(IDAY.eq.270 .AND. IHOUR.eq.13 .AND. IMIN.eq.0) THEN
