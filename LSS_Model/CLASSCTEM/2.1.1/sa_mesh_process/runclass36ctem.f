@@ -158,7 +158,7 @@ C
       INTEGER IZREF  !<Flag governing treatment of surface roughness length
       INTEGER ISLFD  !<Flag governing options for surface stability functions and diagnostic calculations
       INTEGER IPCP   !<Flag selecting algorithm for dividing precipitation between rainfall and snowfall
-      INTEGER IWF    !<Flag governing lateral soil water flow calculations
+      integer, dimension(:), allocatable :: IWF !<Flag governing lateral soil water flow calculations
       INTEGER IPAI   !<Flag to enable use of user-specified plant area index
       INTEGER IHGT   !<Flag to enable use of user-specified vegetation height
       INTEGER IALC   !<Flag to enable use of user-specified canopy albedo
@@ -321,7 +321,7 @@ C
       real, dimension(:,:), allocatable :: FAREROT      !<Fractional coverage of mosaic tile on modelled area
       real, dimension(:,:), allocatable :: FCANGAT      !<Maximum fractional coverage of modelled area by vegetation category [ ]
       real, dimension(:,:,:), allocatable :: FCANROT    !<
-      real, dimension(:), allocatable :: GRKFGAT        !<WATROF parameter used when running MESH code [ ]
+      real, dimension(:), allocatable :: GRKFGAT        !<The Fractional change in horizontal conductivity in a depth change of h0, Calculated as a Parameter, Used in WATROF [ ]
       real, dimension(:,:), allocatable :: GRKFROT      !<
       real, dimension(:,:), allocatable :: GRKSGAT      !<Saturated hydraulic conductivity of soil layers \f$[m s^{-1} ]\f$ Note that this should be registered as WFCINT
       real, dimension(:,:,:), allocatable :: GRKSROT    !<
@@ -375,9 +375,9 @@ C
       real, dimension(:,:,:), allocatable :: VPDAROT    !<
       real, dimension(:,:), allocatable :: VPDBGAT      !<Vapour pressure deficit coefficient for vegetation category (used in stomatal resistance calculation) [ ]
       real, dimension(:,:,:), allocatable :: VPDBROT    !<
-      real, dimension(:), allocatable :: WFCIGAT        !<WATROF parameter used when running MESH code [ ], this is suppose to be equivelant to GRKSGAT or the saturated hydraulic Conductivity KSAT for use in WATROF.
+      real, dimension(:), allocatable :: WFCIGAT        !<Vertical Hydraulic Conductivity at Saturation at the Bottom of the Soil Layer, Used in WATROF [ ]
       real, dimension(:,:), allocatable :: WFCIROT      !<
-      real, dimension(:), allocatable :: WFSFGAT        !<WATROF parameter used when running MESH code [ ]
+      real, dimension(:), allocatable :: WFSFGAT        !<Manning's n for overland flow, Used in WATROF [ ]
       real, dimension(:,:), allocatable :: WFSFROT      !<
       real, dimension(:), allocatable :: XSLPGAT        !<Surface slope (used when running MESH code) [degrees]
       real, dimension(:,:), allocatable :: XSLPROT      !<
@@ -930,54 +930,10 @@ C
 C==============The additional parameters and Variables for Interflow========================
 C===================Added by Stefan Sauer, July 2017=================================
 C
-      real, dimension(:), allocatable :: XDRAINH    !The Fractional change in horizontal conductivity in a depth change of h0, Calculated as a Parameter 
-      real, dimension(:), allocatable :: MANNING_N  !Manning's Roughness Coefficient, Calculated as an input Parameter
-      real, dimension(:), allocatable :: DD         !Drainage Density, [M^2/M^3]
-      real, dimension(:), allocatable :: KSAT       !Vertical Hydraulic Conductivity at Saturation at the Bottom of the Soil Layer, Used in WATROF
-      INTEGER  NA          !Some INTEGER Parameter
-      INTEGER  NTYPE       !Some INTEGER Parameter
+      real, dimension(:), allocatable :: MANNING_N  !<Manning's Roughness Coefficient, Calculated as an input Parameter
+      real, dimension(:), allocatable :: DD         !<Drainage Density, [M^2/M^3]
+      real, dimension(:,:), allocatable :: BULK_FC  !<
 C
-      real, dimension(:), allocatable :: FRZC           !Some Unused Variable for SNINFLM
-      real T0_ACC          !Some Unused Variable for SNINFLM
-      real, dimension(:), allocatable :: SI             !Some Unused Variable for SNINFLM
-      real, dimension(:), allocatable :: TSI            !Some Unused Variable for SNINFLM
-      integer, dimension(:), allocatable :: INFILTYPE   !Some Unused Variable for SNINFLM
-      real, dimension(:), allocatable :: SNOWMELTD      !Some Unused Variable for SNINFLM
-      real, dimension(:), allocatable :: SNOWMELTD_LAST !Some Unused Variable for SNINFLM
-      real, dimension(:), allocatable :: MELTRUNOFF     !Some Unused Variable for SNINFLM
-      real, dimension(:), allocatable :: SNOWINFIL      !Some Unused Variable for SNINFLM
-      real, dimension(:), allocatable :: CUMSNOWINFILCS !Some Unused Variable for SNINFLM
-      real, dimension(:), allocatable :: CUMSNOWINFILGS !Some Unused Variable for SNINFLM
-      real SOIL_POR_MAX    !Some Unused Variable for SNINFLM
-      real SOIL_DEPTH      !Soil Depth Variable used only for SNINFLM
-      real S0              !Soil Depth Variable used only for SNINFLM
-      real T_ICE_LENS      !Some Unused Variable used only for SNINFLM
-      real, dimension(:), allocatable :: CMIN,CMAX !PDMROF Variables (Not used in new CLASSW.f)
-      real, dimension(:), allocatable :: ZPNDPRECS, ZPONDPREC !For PDMROF
-      real, dimension(:), allocatable :: ZPONDPREG, ZPNDPREGS !For PDMROF
-      real, dimension(:), allocatable :: UM1CS, UM1C, UM1G, UM1GS !For PDMROF
-      real, dimension(:), allocatable :: QM1CS, QM1C, QM1G, QM1GS !For PDMROF
-      real, dimension(:), allocatable :: QM2CS, QM2C, QM2G, QM2GS !For PDMROF
-      real, dimension(:), allocatable :: UMQ !For PDMROF
-      real, dimension(:), allocatable :: FSTRCS, FSTRC, FSTRGS, FSTRG !Used for PDMROF
-C
-      real, dimension(:), allocatable :: ZPONDC, ZPONDG, ZPNDCS, ZPNDGS
-      real, dimension(:), allocatable :: XSNOWC, XSNOWG, XSNOCS, XSNOGS
-      real, dimension(:), allocatable :: ZSNOWC, ZSNOWG, ZSNOCS, ZSNOGS
-      real, dimension(:), allocatable :: RHOSC, RHOSG
-      real, dimension(:), allocatable :: HCPSC, HCPSG, HCPSCS, HCPSGS
-C
-      real, dimension(:), allocatable :: TSNOWC, TSNOWG
-C
-      real, dimension(:,:), allocatable :: BULK_FC  !Some Unused Variable for WATDRN3
-      real, dimension(:,:), allocatable :: BTC  !Some Unused Variable for WATDRN3
-      real, dimension(:,:), allocatable :: DCOEFF !Some Unused Variable for WATDRN3
-      real, dimension(:,:), allocatable :: BFCAP !Some Unused Variable for WATDRN3
-      real, dimension(:,:), allocatable :: BCAP !Some Unused Variable for WATDRN3
-      real, dimension(:,:), allocatable :: BFCOEFF !Some Unused Variable for WATDRN3
-      real, dimension(:,:), allocatable :: BFMIN !Some Unused Variable for WATDRN3
-      real, dimension(:,:), allocatable :: BQMAX !Some Unused Variable for WATDRN3
-
 C======================================================================================
 
 
@@ -1631,8 +1587,6 @@ C
 !DAN    Doing this solves problems in CTEM where values in cell NA are sometimes zero.
         NLTEST = shd%NAA
         NMTEST = shd%lc%NTYPE
-        NA = shd%NA
-        NTYPE = shd%lc%NTYPE
         NML = shd%lc%NML
         NMW = shd%wc%NML
 
@@ -1655,6 +1609,7 @@ C
 !-        END IF
 
         !Allocate vectors.
+        allocate(IWF(ILG))
         allocate(PAICAN(ILG))
         allocate(ALBSGAT(ILG))
         allocate(ALBSROT(NLAT,NMOS))
@@ -2305,46 +2260,9 @@ C
         allocate(WTSSTP(ILG))
         allocate(WTGSTP(ILG))
 C
-        allocate(XDRAINH(ILG))
         allocate(MANNING_N(ILG))
         allocate(DD(ILG))
-        allocate(KSAT(ILG))
-C
-        allocate(FRZC(ILG))
-        allocate(SI(ILG))
-        allocate(TSI(ILG))
-        allocate(INFILTYPE(ILG))
-        allocate(SNOWMELTD(ILG))
-        allocate(SNOWMELTD_LAST(ILG))
-        allocate(MELTRUNOFF(ILG))
-        allocate(SNOWINFIL(ILG))
-        allocate(CUMSNOWINFILCS(ILG))
-        allocate(CUMSNOWINFILGS(ILG))
-        allocate(CMIN(ILG), CMAX(ILG))
-        allocate(ZPNDPRECS(ILG), ZPONDPREC(ILG),
-     1           ZPONDPREG(ILG), ZPNDPREGS(ILG))
-        allocate(UM1CS(ILG), UM1C(ILG), UM1G(ILG), UM1GS(ILG))
-        allocate(QM1CS(ILG), QM1C(ILG), QM1G(ILG), QM1GS(ILG))
-        allocate(QM2CS(ILG), QM2C(ILG), QM2G(ILG), QM2GS(ILG))
-        allocate(UMQ(ILG))
-        allocate(FSTRCS(ILG), FSTRC(ILG), FSTRGS(ILG), FSTRG(ILG))
-C
-        allocate(ZPONDC(ILG), ZPONDG(ILG), ZPNDCS(ILG), ZPNDGS(ILG))
-        allocate(XSNOWC(ILG), XSNOWG(ILG), XSNOCS(ILG), XSNOGS(ILG))
-        allocate(ZSNOWC(ILG), ZSNOWG(ILG), ZSNOCS(ILG), ZSNOGS(ILG))
-        allocate(RHOSC(ILG), RHOSG(ILG))
-        allocate(HCPSC(ILG), HCPSG(ILG), HCPSCS(ILG), HCPSGS(ILG))
-C
-        allocate(TSNOWC(ILG), TSNOWG(ILG))
-C
-        allocate(BULK_FC(NMOS,IGND))
-        allocate(BTC(NMOS,IGND))
-        allocate(DCOEFF(NMOS,IGND))
-        allocate(BFCAP(NMOS,IGND))
-        allocate(BCAP(NMOS,IGND))
-        allocate(BFCOEFF(NMOS,IGND))
-        allocate(BFMIN(NMOS,IGND))
-        allocate(BQMAX(NMOS,IGND))
+        allocate(BULK_FC(ILG,IGND))
 C
 c================= CTEM array declaration ===============================\
 c
@@ -2914,15 +2832,17 @@ C===================== CTEM ==============================================\
 
 
 c     all model switches are read in from a namelist file
+      i = 0
       call read_from_job_options(argbuff,transient_run,
      1             trans_startyr,ctemloop,ctem_on,ncyear,lnduseon,
      2             spinfast,cyclemet,nummetcylyrs,metcylyrst,co2on,
      3             setco2conc,ch4on,setch4conc,popdon,popcycleyr,
      4             parallelrun,dofire,dowetlands,obswetf,compete,
      5             inibioclim,start_bare,rsfile,start_from_rs,leap,
-     6             jmosty,idisp,izref,islfd,ipcp,itc,itcg,itg,iwf,ipai,
+     6             jmosty,idisp,izref,islfd,ipcp,itc,itcg,itg,i,ipai,
      7             ihgt,ialc,ials,ialg,isnoalb,igralb,jhhstd,jhhendd,
      8             jdstd,jdendd,jhhsty,jhhendy,jdsty,jdendy)
+      iwf = i
 
 	!Here we will be reading the CLASS Logical parameters from MESH
 	!Note that read_from_job_options still has these as arguments but the read in the subroutine above is commented out
@@ -3415,6 +3335,7 @@ C======================= CTEM ========================================== /
 !DAN    This variable is special, it seems to have no ROT counterpart, so transfer directly.
 !DAN    The CTEM variable is declared to ILG, where the MESH might be declared to NML -- NML can be less than ILG;
 !DAN    in this case, transfer using explicitly NML notation.
+        IWF(1:NML) = pm%tp%iwf(1:NML)
         MANNING_N(1:NML) = pm%hp%mann(1:NML)
 
 !Now we must provide the MESH model with the constant variables
@@ -3577,6 +3498,27 @@ c     initialize accumulated array for monthly & yearly output for class
      3            SANDROT,CLAYROT,ORGMROT,SOCIROT,DELZ,ZBOT,
      4            SDEPROT,ISNDROT,IGDRROT,
      5            NLAT,NMOS,1,NLTEST,NMTEST,IGND,IGRALB)
+
+!DAN    Pulled from MESH-CLASS WPREP.
+!DAN    Using ILMOS/JLMOS and ROT variables because GAT hasn't been populated yet.
+c       Calculate BULK_FC, make sure we don't divide by 0 (for slope = 0 or bedrock i.e. %sand = -2)
+        DO J=1,IGND
+        DO K=1,NML
+        I=ILMOS(K)
+        M=JLMOS(K)
+        IF(XSLPROT(I,M).gt.0.0 .AND. THPROT(I,M,J).gt.0.0)THEN
+            BULK_FC(K,J)=
+     +    (THPROT(I,M,J)/(BIROT(I,M,J)-1.))*
+     +    ((2.*DDROT(I,M)*PSISROT(I,M,J)*BIROT(I,M,J)/XSLPROT(I,M))**
+     +    (1./BIROT(I,M,J)))*
+     +    ((3.*BIROT(I,M,J)+2.)**((BIROT(I,M,J)-1.)/BIROT(I,M,J))-
+     +    (2.*BIROT(I,M,J)+2.)**((BIROT(I,M,J)-1.)/BIROT(I,M,J)))
+        ELSE
+c       make sure that BULK_FC is high to shut off interflow
+            BULK_FC(K,J)=2.0
+        ENDIF
+        ENDDO
+        ENDDO
 
 5010  FORMAT(2X,6A4)
 5020  FORMAT(5F10.2,F7.1,3I5)
@@ -5236,7 +5178,7 @@ C          * ADAPTED TO COUPLING OF CLASS3.6 AND CTEM
 
           CALL CLASSW  (THLQGAT,THICGAT,TBARGAT,TCANGAT,RCANGAT,SCANGAT,
      1                  ROFGAT, TROFGAT,SNOGAT, TSNOGAT,RHOSGAT,ALBSGAT,
-     2                  WSNOGAT,ZPNDGAT,TPNDGAT,GROGAT, FRZC,   TBASGAT,
+     2                  WSNOGAT,ZPNDGAT,TPNDGAT,GROGAT, TBASGAT,
      3                  GFLXGAT,
      4                  PCFCGAT,PCLCGAT,PCPNGAT,PCPGGAT,QFCFGAT,QFCLGAT,
      5                  QFNGAT, QFGGAT, QFCGAT, HMFCGAT,HMFGGAT,HMFNGAT,
@@ -5263,24 +5205,8 @@ C          * ADAPTED TO COUPLING OF CLASS3.6 AND CTEM
      Q                  ISNDGAT,IGDRGAT,
      R                  IWF,    ILG,    1,      NML,    N,
      S                  JLAT,   ICAN,   IGND,   IGND+1, IGND+2,
-     T                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI, 
-     U                  MANNING_N, DDGAT,  NCOUNT, T0_ACC,
-     V                  SI, TSI, INFILTYPE, SNOWMELTD, SNOWMELTD_LAST,
-     W                  MELTRUNOFF, SNOWINFIL,
-     X                  CUMSNOWINFILCS, CUMSNOWINFILGS,
-     Y                  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,
-     Z                  NA, NTYPE, ILMOS, JLMOS,
-     1                  BTC, BCAP, DCOEFF, BFCAP, BFCOEFF, BFMIN, BQMAX,
-     2                  CMIN,  CMAX,    B,      K1,     K2,
-     3                  ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS,
-     4                  UM1CS,     UM1C,      UM1G,      UM1GS,
-     5                  QM1CS,     QM1C,      QM1G,      QM1GS,
-     6                  QM2CS,     QM2C,      QM2G,      QM2GS,  UMQ,
-     7                  FSTRCS,    FSTRC,     FSTRG,     FSTRGS,
-     8                  ZSNOCS,    ZSNOGS,    ZSNOWC,    ZSNOWG,
-     9                  HCPSCS,    HCPSGS,    HCPSC,     HCPSG,
-     A                  TSNOWC,    TSNOWG,    RHOSC,     RHOSG,
-     B                  XSNOWC,    XSNOWG,    XSNOCS,    XSNOGS) 
+     T                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI,
+     U                  MANNING_N, DDGAT, BULK_FC)
 
 
 ! 	WRITE(*,*) 'runclass36ctem line 4500:'

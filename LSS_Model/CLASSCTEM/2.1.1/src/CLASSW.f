@@ -3,7 +3,7 @@
 !!
       SUBROUTINE CLASSW(THLIQ,  THICE,  TBAR,   TCAN,   RCAN,   SNCAN,
      1                  RUNOFF, TRUNOF, SNO,    TSNOW,  RHOSNO, ALBSNO, 
-     2                  WSNOW,  ZPOND,  TPOND,  GROWTH, FRZC,   TBASE,
+     2                  WSNOW,  ZPOND,  TPOND,  GROWTH, TBASE,
      3                  GFLUX,
      4                  PCFC,   PCLC,   PCPN,   PCPG,   QFCF,   QFCL,
      5                  QFN,    QFG,    QFC,    HMFC,   HMFG,   HMFN,
@@ -31,24 +31,9 @@
      R                  IWF,    ILG,    IL1,    IL2,    N,
      S                  JL,     IC,     IG,     IGP1,   IGP2,
      T                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI, 
-     U                  MANNING_N, DD,  NCOUNT, T0_ACC,
-     V                  SI, TSI, INFILTYPE, SNOWMELTD, SNOWMELTD_LAST,
-     W                  MELTRUNOFF, SNOWINFIL,
-     X                  CUMSNOWINFILCS, CUMSNOWINFILGS,
-     Y                  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,
-     Z                  NA, NTYPE, ILMOS, JLMOS,
-     1                  BTC, BCAP, DCOEFF, BFCAP, BFCOEFF, BFMIN, BQMAX,
-     2                  CMIN,  CMAX,    B,      K1,     K2,
-     3                  ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS,
-     4                  UM1CS,     UM1C,      UM1G,      UM1GS,
-     5                  QM1CS,     QM1C,      QM1G,      QM1GS,
-     6                  QM2CS,     QM2C,      QM2G,      QM2GS,  UMQ,
-     7                  FSTRCS,    FSTRC,     FSTRG,     FSTRGS,
-     8                  ZSNOCS,    ZSNOGS,    ZSNOWC,    ZSNOWG,
-     9                  HCPSCS,    HCPSGS,    HCPSC,     HCPSG,
-     A                  TSNOWC,    TSNOWG,    RHOSC,     RHOSG,
-     B                  XSNOWC,    XSNOWG,    XSNOCS,    XSNOGS)
+     S                  MANNING_N, DD, BULK_FC)
 
+C     * JUL    17 - S.SAUER.    ADDED CALLS TO WATROF. (CTEM).
 C     * AUG 04/15 - M.LAZARE.   SPLIT FROOT INTO TWO ARRAYS, FOR CANOPY
 C     *                         AREAS WITH AND WITHOUT SNOW.
 C     * OCT 03/14 - D.VERSEGHY. CHANGE LIMITING VALUE OF SNOW PACK
@@ -67,6 +52,7 @@ C     *                         CALCULATION).
 C     * APR 04/11 - D.VERSEGHY. ADD DELZ TO GRINFL CALL.
 C     * DEC 07/09 - D.VERSEGHY. ADD RADD AND SADD TO WPREP CALL.
 C     * JAN 06/09 - D.VERSEGHY. INCREASE LIMITING SNOW AMOUNT.
+C     * JUN    08 - C.THOMPSON. ADDED CALLS TO WATROF. (CLASS).
 C     * FEB 25/08 - D.VERSEGHY. MODIFICATIONS REFLECTING CHANGES
 C     *                         ELSEWHERE IN CODE.
 C     * MAR 23/06 - D.VERSEGHY. CHANGES TO ADD MODELLING OF WSNOW;
@@ -142,7 +128,7 @@ C
 
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IWF   !<Flag governing lateral soil water flow calculations
+      INTEGER IWF(ILG)  !<Flag governing lateral soil water flow calculations
       INTEGER ILG,IL1,IL2,JL,IC,IG,IGP1,IGP2,I,J
       INTEGER NLANDCS   !<Number of modelled areas that contain subareas of canopy over snow
       INTEGER NLANDGS   !<Number of modelled areas that contain subareas of snow
@@ -337,9 +323,9 @@ C
       REAL ZBOTW (ILG,IG)   !<Depth to permeable bottom of soil layer [m]
       REAL XDRAIN(ILG)      !<Drainage index at bottom of soil profile [ ]   
       REAL XSLOPE(ILG)      !<Surface slope (used when running MESH code) [degrees]
-      REAL GRKFAC(ILG)      !<WATROF parameter used when running MESH code [ ]
-      REAL WFSURF(ILG)      !<WATROF parameter used when running MESH code [ ]
-      REAL WFCINT(ILG)      !<WATROF parameter used when running MESH code [ ]
+      REAL GRKFAC(ILG)      !<The Fractional change in horizontal conductivity in a depth change of h0, Calculated as a Parameter, Used in WATROF [ ]
+      REAL WFSURF(ILG)      !<Manning's n for overland flow, Used in WATROF [ ]
+      REAL WFCINT(ILG)      !<Vertical Hydraulic Conductivity at Saturation at the Bottom of the Soil Layer, Used in WATROF [ ]
       REAL DELZ  (IG)       !<Overall thickness of soil layer [m]
 C
       INTEGER ISAND(ILG,IG) !<Sand content flag
@@ -466,51 +452,13 @@ C
       COMMON /CLASS4/ HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
      2                TCGLAC,CLHMLT,CLHVAP
-
-C==============The additional parameters and Variables for Interflow========================
-C===================Added by Stefan Sauer, July 2017=================================
-
-
-
-      REAL XDRAINH(ILG)   !The Fractional change in horizontal conductivity in a depth change of h0, Calculated as a Parameter 
+C
+C==============The additional parameters and Variables for Interflow====
+C===================Added by Stefan Sauer, July 2017====================
+C
       REAL MANNING_N(ILG)  !Manning's Roughness Coefficient, Calculated as an input Parameter
       REAL DD (ILG)        !Drainage Density, [M^2/M^3]
-      REAL KSAT (ILG)      !Vertical Hydraulic Conductivity at Saturation at the Bottom of the Soil Layer, Used in WATROF
       REAL BULK_FC(ILG,IG) !Bulk Field Capacity, but THFCGAT is field Capacity in runclass36ctem.f (Not the Same)
-      INTEGER :: NA,NTYPE  !Some Integer Parameter,
-      REAL ILMOS(ILG)      !Some Unused variable for WATDRN3
-      REAL JLMOS(ILG)      !Some unused variable for WATDRN3
-      REAL BTC(NTYPE,IG)   !Some Unused Variable for WATDRN3
-      REAL BCAP(NTYPE,IG)  !Some Unused Variable for WATDRN3
-      REAL DCOEFF(NTYPE,IG)!Some Unused Variable for WATDRN3
-      REAL BFCAP(NTYPE,IG) !Some Unused Variable for WATDRN3
-      REAL BFCOEFF(NTYPE,IG)!Some Unused Variable for WATDRN3
-      REAL BFMIN(NTYPE,IG) !Some Unused Variable for WATDRN3
-      REAL BQMAX(NTYPE,IG) !Some Unused Variable for WATDRN3
-      REAL FRZC(ILG)       !Some Unused Variable for SNINFLM
-      INTEGER NCOUNT(ILG)  !Some Unused Variable for SNINFLM
-      REAL T0_ACC          !Some Unused Variable for SNINFLM
-      REAL SI(ILG)         !Some Unused Variable for SNINFLM
-      REAL TSI(ILG)        !Some Unused Variable for SNINFLM
-      INTEGER INFILTYPE(ILG)!Some Unused Variable for SNINFLM
-      REAL SNOWMELTD(ILG)  !Some Unused Variable for SNINFLM
-      REAL SNOWMELTD_LAST(ILG) !Some Unused Variable for SNINFLM
-      REAL MELTRUNOFF(ILG) !Some Unused Variable for SNINFLM
-      REAL SNOWINFIL(ILG)  !Some Unused Variable for SNINFLM
-      REAL CUMSNOWINFILCS(ILG) !Some Unused Variable for SNINFLM
-      REAL CUMSNOWINFILGS(ILG) !Some Unused Variable for SNINFLM
-      REAL SOIL_POR_MAX    !Some Unused Variable for SNINFLM
-      REAL SOIL_DEPTH      !Soil Depth Variable used only for SNINFLM
-      REAL S0              !Soil Depth Variable used only for SNINFLM
-      REAL T_ICE_LENS      !Some Unused Variable used only for SNINFLM
-      REAL CMIN(ILG),CMAX(ILG), B(ILG), K1(ILG), K2(ILG) !PDMROF Variables (Not used in new CLASSW.f)
-      REAL ZPNDPRECS(ILG), ZPONDPREC(ILG), ZPONDPREG(ILG),ZPNDPREGS(ILG) !Latflow Variables
-      REAL UM1CS(ILG), UM1C(ILG), UM1G(ILG), UM1GS(ILG) !For PDMROF
-      REAL QM1CS(ILG), QM1C(ILG), QM1G(ILG), QM1GS(ILG) !For PDMROF
-      REAL QM2CS(ILG), QM2C(ILG), QM2G(ILG), QM2GS(ILG) !For PDMROF
-      REAL UMQ(ILG)        !For PDMROF and LATFLOW
-      REAL FSTRCS(ILG), FSTRC(ILG), FSTRGS(ILG), FSTRG(ILG) !Used for PDMROF
-
 C
 C-----------------------------------------------------------------------
       !>
@@ -544,9 +492,7 @@ C-----------------------------------------------------------------------
       !!\end{tabular}
       !!\f]
 C     * PREPARATION.
-
-	  
-
+C
       CALL WPREP(THLQCO, THLQGO, THLQCS, THLQGS, THICCO, THICGO,
      1           THICCS, THICGS, HCPCO,  HCPGO,  HCPCS,  HCPGS,
      2           GRKSC,  GRKSG,  GRKSCS, GRKSGS,
@@ -635,13 +581,11 @@ C
      4                BI,PSISAT,GRKSCS,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
      6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
-         CALL WATROF(THLQCS,THICCS,ZPNDCS,TPNDCS,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFCS,TRNFCS,FCS,ZPLMCS,
-     2                XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,TBRWCS,
-     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
-     6                NA,NTYPE,ILMOS,JLMOS,
-     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
+          CALL WATROF(THLQCS, THICCS, ZPNDCS, TPNDCS, OVRFLW, TOVRFL,
+     1                SUBFLW, TSUBFL, RUNFCS, TRNFCS, FCS, ZPLMCS,
+     2                XSLOPE, GRKFAC, MANNING_N, DD, WFCINT, TBRWCS,
+     3                DELZW, THPOR, THLMIN, BI, DODRN, DOVER, DIDRN,
+     4                ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC)
           CALL TMCALC(TBARCS,THLQCS,THICCS,HCPCS,TPNDCS,ZPNDCS,
      1                TSNOCS,ZSNOCS,ALBSCS,RHOSCS,HCPSCS,TBASCS,
      2                OVRFLW,TOVRFL,RUNFCS,TRNFCS,HMFG,HTC,HTCS,
@@ -711,15 +655,11 @@ C
      4                BI,PSISAT,GRKSGS,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
      6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
-
-          CALL WATROF(THLQGS,THICGS,ZPNDGS,TPNDGS,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFGS,TRNFGS,FGS,ZPLMGS,
-     2                XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,TBRWGS,
-     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
-     6                NA,NTYPE,ILMOS,JLMOS,
-     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
-
+          CALL WATROF(THLQGS, THICGS, ZPNDGS, TPNDGS, OVRFLW, TOVRFL,
+     1                SUBFLW, TSUBFL, RUNFGS, TRNFGS, FGS, ZPLMGS,
+     2                XSLOPE, GRKFAC, MANNING_N, DD, WFCINT, TBRWGS,
+     3                DELZW, THPOR, THLMIN, BI, DODRN, DOVER, DIDRN,
+     4                ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC)
           CALL TMCALC(TBARGS,THLQGS,THICGS,HCPGS,TPNDGS,ZPNDGS,
      1                TSNOGS,ZSNOGS,ALBSGS,RHOSGS,HCPSGS,TBASGS,
      2                OVRFLW,TOVRFL,RUNFGS,TRNFGS,HMFG,HTC,HTCS,
@@ -738,18 +678,13 @@ C
       ENDIF                                                               
 C
 C     * CALCULATIONS FOR CANOPY OVER BARE GROUND.
-
-
-	
 C
       IF(NLANDC.GT.0)                                               THEN
-
           CALL CANVAP(EVAPC,SUBLC,RAICAN,SNOCAN,TCANO,THLQCO,
      1                TBARC,ZSNOWC,WLOSTC,CHCAP,QFCF,QFCL,QFN,QFC,
      2                HTCC,HTCS,HTC,FC,CMASSC,TSNOWC,HCPSC,RHOSC,
      3                FROOT,THPOR,THLMIN,DELZW,EVLOST,RLOST,IROOT,
      4                IG,ILG,IL1,IL2,JL,N  )
-
           CALL CANADD(1,RPCC,TRPCC,SPCC,TSPCC,RAICAN,SNOCAN,
      1                TCANO,CHCAP,HTCC,ROFC,ROVG,PCPN,PCPG,
      2                FC,FSVF,CWLCAP,CWFCAP,CMASSC,RHOSNI,
@@ -758,11 +693,9 @@ C
      1                HMFC,HTCC,FC,CMASSC,ILG,IL1,IL2,JL)
           CALL SUBCAN(1,RPCC,TRPCC,SPCC,TSPCC,RHOSNI,EVAPCG,
      1                QFN,QFG,PCPN,PCPG,FC,ILG,IL1,IL2,JL)
-
           CALL TWCALC(TBARC,THLQCO,THICCO,HCPCO,TBARWC,HMFG,HTC,
      1                FC,EVAPCG,THPOR,THLMIN,HCPS,DELZW,DELZZ,
      2                ISAND,IG,ILG,IL1,IL2,JL)
-
           CALL SNOVAP(RHOSC,ZSNOWC,HCPSC,TSNOWC,EVAPCG,QFN,QFG,
      1                HTCS,WLOSTC,TRUNFC,RUNFC,TOVRFL,OVRFLW,
      2                FC,RPCC,SPCC,RHOSNI,ZERO,ILG,IL1,IL2,JL)
@@ -773,8 +706,6 @@ C
           CALL SNOADD(ALBSC,TSNOWC,RHOSC,ZSNOWC,
      1                HCPSC,HTCS,FC,SPCC,TSPCC,RHOSNI,ZERO,
      2                ILG,IL1,IL2,JL)
-
-
           CALL GRINFL(3,THLQCO,THICCO,TBARWC,BASFLW,TBASFL,RUNFC,
      1                TRUNFC,ZFAV,LZFAV,THLINV,QFG,WLOSTC,
      2                FC,EVAPCG,RPCC,TRPCC,TPONDC,ZPONDC,
@@ -789,7 +720,6 @@ C
      B                IGRN,IGRD,IFILL,IZERO,LZF,NINF,IFIND,ITER,
      C                NEND,ISIMP,IGDR,
      D                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
-
           CALL GRDRAN(3,THLQCO,THICCO,TBARWC,FDUMMY,TDUMMY,
      1                BASFLW,TBASFL,RUNFC,TRUNFC,
      2                QFG,WLOSTC,FC,EVAPCG,RPCC,ZPONDC,
@@ -797,15 +727,11 @@ C
      4                BI,PSISAT,GRKSC,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
      6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
-
-          CALL WATROF(THLQCO,THICCO,ZPONDC,TPONDC,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFC,TRUNFC,FC,ZPLIMC,
-     2                XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,TBARWC,
-     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
-     6                NA,NTYPE,ILMOS,JLMOS,
-     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
-
+          CALL WATROF(THLQCO, THICCO, ZPONDC, TPONDC, OVRFLW, TOVRFL,
+     1                SUBFLW, TSUBFL, RUNFC, TRUNFC, FC, ZPLIMC,
+     2                XSLOPE, GRKFAC, MANNING_N, DD, WFCINT, TBARWC,
+     3                DELZW, THPOR, THLMIN, BI, DODRN, DOVER, DIDRN,
+     4                ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC)
           CALL TMCALC(TBARC,THLQCO,THICCO,HCPCO,TPONDC,ZPONDC,
      1                TSNOWC,ZSNOWC,ALBSC,RHOSC,HCPSC,TBASC,
      2                OVRFLW,TOVRFL,RUNFC,TRUNFC,HMFG,HTC,HTCS,
@@ -867,6 +793,11 @@ C
      4                BI,PSISAT,GRKSG,THFC,DELZW,XDRAIN,ISAND,
      5                IZERO,IGRN,IGRD,IGDR,
      6                IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+          CALL WATROF(THLQGO, THICGO, ZPONDG, TPONDG, OVRFLW, TOVRFL,
+     1                SUBFLW, TSUBFL, RUNFG, TRUNFG, FG, ZPLIMG,
+     2                XSLOPE, GRKFAC, MANNING_N, DD, WFCINT, TBARWG,
+     3                DELZW, THPOR, THLMIN, BI, DODRN, DOVER, DIDRN,
+     4                ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC)
           CALL TMCALC(TBARG,THLQGO,THICGO,HCPGO,TPONDG,ZPONDG,
      1                TSNOWG,ZSNOWG,ALBSG,RHOSG,HCPSG,TBASG,
      2                OVRFLW,TOVRFL,RUNFG,TRUNFG,HMFG,HTC,HTCS,
@@ -874,13 +805,6 @@ C
      4                G23G,GGEO,TA,ZERO,TCTOPG,TCBOTG,GFLXG,
      5                ZPLIMG,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
      6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N)
-          CALL WATROF(THLQGO,THICGO,ZPONDG,TPONDG,OVRFLW,TOVRFL,
-     1                SUBFLW,TSUBFL,RUNFG,TRUNFG,FG,ZPLIMG,
-     2                XSLOPE,GRKFAC,MANNING_N,DD,WFCINT,TBARWG,
-     3                DELZW,THPOR,THLMIN,BI,DODRN,DOVER,DIDRN,
-     4                ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC,
-     6                NA,NTYPE,ILMOS,JLMOS,
-     7                BTC,BCAP,DCOEFF,BFCAP,BFCOEFF,BFMIN,BQMAX)
           CALL CHKWAT(4,PCPR,EVPIG,RUNFG,WLOSTG,RAICAN,SNOCAN,
      1                RAC,SNC,ZPONDG,ZPOND,THLQGO,THICGO,
      2                THLIQG,THICEG,ZSNOWG,RHOSG,XSNOWG,SNO,
@@ -933,8 +857,6 @@ C
       JPTBAD=0
       KPTBAD=0
       LPTBAD=0
-
-
       DO 600 I=IL1,IL2 
           TBASE (I)=FCS(I)*(TBASCS(I)+TFREZ) + 
      1              FGS(I)*(TBASGS(I)+TFREZ) +
@@ -1179,7 +1101,7 @@ C
       IPTBAD=0
       DO 700 J=1,IG
       DO 700 I=IL1,IL2
-          IF(IG.EQ. 3 .AND. J.EQ.IG .AND. ISAND(I,1).GT.-4)    THEN
+          IF(IG.EQ.3. .AND. J.EQ.IG .AND. ISAND(I,1).GT.-4)    THEN
               TBAR(I,J)=((FCS(I)*(TBARCS(I,J)+TFREZ)*HCPCS(I,J) +
      1                   FGS(I)*(TBARGS(I,J)+TFREZ)*HCPGS(I,J) +
      2                   FC (I)*(TBARC (I,J)+TFREZ)*HCPCO(I,J) +             
@@ -1207,10 +1129,6 @@ C
      E                   FG (I)*(DELZW(I,J)*HCPGO(I,J)+
      F                   (DELZ(J)-DELZW(I,J))*HCPSND))              
           ENDIF
-
-
-
-
           THLIQ(I,J)=FCS(I)*THLQCS(I,J)+FGS(I)*THLQGS(I,J)+
      1               FC (I)*THLQCO(I,J)+FG (I)*THLQGO(I,J)                                   
           THICE(I,J)=FCS(I)*THICCS(I,J)+FGS(I)*THICGS(I,J)+
@@ -1241,9 +1159,5 @@ C
       !!
       CALL CGROW(GROWTH,TBAR,TA,FC,FCS,ILG,IG,IL1,IL2,JL)
 C                                                                                  
-      RETURN  
-	WRITE(*,*) 'THLQCO in 1232:'
-	WRITE(*,*) THLQCO
-
-                                                                    
+      RETURN                                                                      
       END        
