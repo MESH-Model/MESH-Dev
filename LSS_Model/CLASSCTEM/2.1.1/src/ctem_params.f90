@@ -82,18 +82,19 @@ real, parameter, dimension(lat+1) :: edgelat = &
                                     78.13125,80.91925,83.7047,86.48015,90.0 ]
 ! ----
 ! Model state
-!Because of MESH, nlat,nmos,ilg,ican,icp1 and ignd will not be defined here instead their values are taken from MESH
+!Note that NLAT,NMOS,ILG and IGND is already taken from MESH, so got rid of the variable assignments here to avoid confusion
 
-integer :: nlat                     !<Number of grid tile
-integer :: nmos                     !< Number of mosaic tiles (keep as 1 for MESH)
-integer :: ilg                      !
+integer :: nlat                        !<Number of grid tile
+integer :: nmos                        !< Number of mosaic tiles (keep as 1 for MESH)
+integer :: ilg                         !
 integer, parameter :: nmon = 12        !< Number of months in a year
 !-integer :: ntype = 0                   !Parameter not used now, only for WATDRN3
 ! ----
 ! Plant-related
-integer :: ican                               !< Number of CLASS pfts
+
+integer,parameter :: ican  =4                          !< Number of CLASS pfts
 integer :: ignd                              !< Number of soil layers
-integer :: icp1         
+integer :: icp1   =ican +1        !
 integer,parameter  :: icc         = 9        !< Number of CTEM pfts
 integer,parameter  :: iccp1       = icc + 1  !
 integer, parameter :: l2max       = 3        !
