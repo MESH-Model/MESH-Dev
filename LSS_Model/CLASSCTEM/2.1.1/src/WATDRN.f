@@ -272,29 +272,6 @@ c        Sanity check: bulk saturation should not increase with time
 c        Obtain interflow from the difference in bulk saturation
          subflw(i) = (asat00(i)-asat1(i))*thpora(i)*delzw(i)
 
-C======================Check Interflow amounts==========================
-!         WRITE (*,*) 'Subflow/Interflow:'
-!         WRITE (*,*) subflw(i)
-!         WRITE (*,*) 'asat00:'
-!         WRITE (*,*) asat00(i)
-!         WRITE (*,*) 'asat1:'
-!         WRITE (*,*) asat1(i)
-!         WRITE (*,*) 'thpora:'
-!         WRITE (*,*) thpora(i)
-!         WRITE (*,*) 'delzw (Layer Thickness:'
-!         WRITE (*,*) delzw(i)
-!         WRITE (*,*) 'C paramter:'
-!         WRITE (*,*) c(i)
-!         WRITE (*,*) 'Ratiot:'
-!         WRITE (*,*) ratiot(i)
-!         WRITE (*,*) 'DElt:'
-!         WRITE (*,*) delt
-!         WRITE (*,*) 'GRKEFF:'
-!         WRITE (*,*) GRKEFF(i)
-!         WRITE (*,*) 'TC(I):'
-!         WRITE (*,*) tc(i)
-C=======================================================================
-
       ENDDO
 *
       RETURN

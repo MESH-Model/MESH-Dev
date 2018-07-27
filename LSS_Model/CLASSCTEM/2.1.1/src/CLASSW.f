@@ -327,6 +327,9 @@ C
       REAL WFSURF(ILG)      !<Manning's n for overland flow, Used in WATROF [ ]
       REAL WFCINT(ILG)      !<Vertical Hydraulic Conductivity at Saturation at the Bottom of the Soil Layer, Used in WATROF [ ]
       REAL DELZ  (IG)       !<Overall thickness of soil layer [m]
+      REAL MANNING_N(ILG)   !Manning's Roughness Coefficient, Calculated as an input Parameter
+      REAL DD (ILG)         !Drainage Density, [M^2/M^3]
+      REAL BULK_FC(ILG,IG)  !Bulk Field Capacity, but THFCGAT is field Capacity in runclass36ctem.f (Not the Same)
 C
       INTEGER ISAND(ILG,IG) !<Sand content flag
       INTEGER IGDR  (ILG)   !<Index of soil layer in which bedrock is encountered
@@ -452,15 +455,7 @@ C
       COMMON /CLASS4/ HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,
      1                SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,
      2                TCGLAC,CLHMLT,CLHVAP
-C
-C==============The additional parameters and Variables for Interflow====
-C===================Added by Stefan Sauer, July 2017====================
-C
-      REAL MANNING_N(ILG)  !Manning's Roughness Coefficient, Calculated as an input Parameter
-      REAL DD (ILG)        !Drainage Density, [M^2/M^3]
-      REAL BULK_FC(ILG,IG) !Bulk Field Capacity, but THFCGAT is field Capacity in runclass36ctem.f (Not the Same)
-C
-C-----------------------------------------------------------------------
+
       !>
       !!First, subroutine WPREP is called to initialize various arrays 
       !!and produce parameters for the four subareas of canopy over snow 

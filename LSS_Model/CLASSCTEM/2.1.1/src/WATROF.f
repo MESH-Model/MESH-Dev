@@ -125,14 +125,6 @@ C     coefficients
       c1 = 2.0/3.0
       c2 = 1.5 !3.0/2.0
 
-C======================Hard-coded Manning N and DD==========================================
-
-      !Note that I think I need to add this value to every .INI file
-      !A 0.05 N value is usually what we find in high grass floodplains
-      !But this number doesn't really need to be used unless it's overland flow or Something
-
-C==========================================================================
-
 C-----------------------------------------------------------------------------------------
 C     parameter - will be used to compute xdrainh (the fractional change in horizontal
 C     conductivity in a depth change h0) in Vincent's new formula.
@@ -259,26 +251,6 @@ c*       Integration of k across the layer -> kl
             grkeff(i) = kl*xslope(i)*2.0*dd(i)/(1+xslope(i)**2)
             thpor_avail(i) = max(thlmin(i,j),thpor_avail(i))
 
-C==================Verification of Variables============================
-!            WRITE (*,*) 'XSlope in WATROF:'
-!            WRITE (*,*) XSLOPE(i)
-!            WRITE (*,*) 'KSAT(i)in WATROF:'
-!            WRITE (*,*) ksat(i)
-!            WRITE (*,*) 'Drainage Density in WATROF:'
-!            WRITE (*,*) dd(i)
-!            WRITE (*,*) 'delzw 2:'
-!            WRITE (*,*) DELZW(i,2)
-!            WRITE (*,*) 'thpor in WATROF:'
-!            WRITE (*,*) thpor(i,1)
-!            WRITE (*,*) 'xdrainh in WATORF:'
-!            WRITE (*,*) xdrainh(i)
-!            WRITE (*,*) 'grkeff in WATROF:'
-!            WRITE (*,*) grkeff(i)
-!            WRITE (*,*) 'Hornberger Parameters:'
-!            WRITE (*,*) BI(i,1)
-!            WRITE (*,*) BI(i,2)
-C==================End of Variable Verification=========================
-
          enddo
 
 C        ---------------------------------------------------------------------------------
@@ -330,12 +302,6 @@ C                 remove the lateral flow from the layer
 C                 ------------------------------------------------------------------------
                   thliq(i,j) = thliq(i,j)-didrn(i,j)/delzw(i,j)
 
-!                  WRITE (*,*) 'DIDRN:'
-!                  WRITE (*,*) didrn(i,j)
-!                  WRITE (*,*) 'DELZW:'
-!                  WRITE (*,*) delzw(i,j)
-!                  WRITE (*,*) 'THLIQ:'
-!                  WRITE (*,*) thliq(i,j)
                endif
             endif
          enddo

@@ -84,16 +84,16 @@ real, parameter, dimension(lat+1) :: edgelat = &
 ! Model state
 !Note that NLAT,NMOS,ILG and IGND is already taken from MESH, so got rid of the variable assignments here to avoid confusion
 
-integer :: nlat                        !<Number of grid tile
-integer :: nmos                        !< Number of mosaic tiles (keep as 1 for MESH)
-integer :: ilg                         !
+integer :: nlat                        !<Number of grid tile, taken from MESH
+integer :: nmos                        !< Number of mosaic tiles, taken in from MESH
+integer :: ilg                         !Taken in from MESH
 integer, parameter :: nmon = 12        !< Number of months in a year
 !-integer :: ntype = 0                   !Parameter not used now, only for WATDRN3
 ! ----
 ! Plant-related
 
-integer,parameter :: ican  =4                          !< Number of CLASS pfts
-integer :: ignd                              !< Number of soil layers
+integer,parameter :: ican  =4                !< Number of CLASS pfts
+integer :: ignd                              !< Number of soil layers, taking in from MESH
 integer :: icp1   =ican +1        !
 integer,parameter  :: icc         = 9        !< Number of CTEM pfts
 integer,parameter  :: iccp1       = icc + 1  !

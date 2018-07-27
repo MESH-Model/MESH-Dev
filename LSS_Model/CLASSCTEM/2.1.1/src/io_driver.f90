@@ -356,8 +356,9 @@ close(11)
 !>we need to transfer some initial parameterization info to all mosaics, so set all values to that of the first mosaic.
 
 
-         do i=1,1 !We need to change this value later once we get a good .CTM file, eventually change the 1 here to "nltest" once we have a good .CTM file
-          do m=1,nmtest
+!>we need to transfer some initial parameterization info to all mosaics, so set all values to that of the first mosaic.
+         do i=1,nltest
+          do m=nmtest+1,nmos
 
            do j=1,ican
              RSMNROT(i,m,j)=RSMNROT(i,1,j)
@@ -369,19 +370,19 @@ close(11)
            enddo
 
            DRNROT(i,m)=DRNROT(i,1)
-!           SDEPROT(i,m)=SDEPROT(i,1)
+           SDEPROT(i,m)=SDEPROT(i,1)
            FAREROT(i,m)=FAREROT(i,1)
            DDROT(i,m)  =DDROT(i,1)
            XSLPROT(i,m)=XSLPROT(i,1)
            GRKFROT(i,m)=GRKFROT(i,1)
            WFSFROT(i,m)=WFSFROT(i,1)
            WFCIROT(i,m)=WFCIROT(i,1)
-!           MIDROT(i,m)=MIDROT(i,1)
+           MIDROT(i,m)=MIDROT(i,1)
 
            do j=1,3
-!            SANDROT(i,m,j)=SANDROT(i,1,j)
-!            CLAYROT(i,m,j)=CLAYROT(i,1,j)
-!            ORGMROT(i,m,j)=ORGMROT(i,1,j)
+            SANDROT(i,m,j)=SANDROT(i,1,j)
+            CLAYROT(i,m,j)=CLAYROT(i,1,j)
+            ORGMROT(i,m,j)=ORGMROT(i,1,j)
             TBARROT(i,m,j)=TBARROT(i,1,j)
             THLQROT(i,m,j)=THLQROT(i,1,j)
             THICROT(i,m,j)=THICROT(i,1,j)
@@ -670,7 +671,6 @@ slopefrac         => vrot%slopefrac
       
 ! -----------------      
 ! Begin
-
 
 
 open(unit=101,file=argbuff(1:strlen(argbuff))//'.CTM_RS')

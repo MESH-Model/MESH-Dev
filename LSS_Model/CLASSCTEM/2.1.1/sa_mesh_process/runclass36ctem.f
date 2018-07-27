@@ -11,6 +11,9 @@
       MODULE RUNCLASS36CTEM
 C
 C     REVISION HISTORY:
+
+C     * JUL 2018 : Code here editied heavily by Daniel Princz and Stefan Sauer for Module use in MESH
+C
 C
 C     * Dec 1 2016 : Code can now handle leap years in the input MET
 C       Jean-Sebastien Landry
@@ -99,10 +102,6 @@ C=======================================================================
 
 
 
-!Use these two files for now but replace with INI file later
-!use RUNCLASS36_constants
-!use RUNCLASS36_variables
-
 
 !Some constants here were cut out because they already exist within MESH (NTYPE,IGND)
 
@@ -149,8 +148,6 @@ C=======================================================================
       REAL INI2 !This will save the name of the file with the INI file name, as we already need to reference it in " " when using Open
       CHARACTER(8) INI3
 
-
-      REAL,DIMENSION(192864) :: VWC_Test
 C
 C     * INTEGER CONSTANTS.
 C
@@ -170,11 +167,6 @@ C
       INTEGER ITCG   !<Flag to select iteration scheme for surface under canopy
       INTEGER isnoalb!<
       INTEGER igralb !<
-
-      !INTEGER NLAT   !<Number of grids
-      !INTEGER NMOS   !<Number of Mosaic grids
-      !INTEGER ILG    !<NLAT*NMOS
-      !INTEGER :: IGND   !<Number of soil layer
 
 
       INTEGER NLTEST  !<Number of grid cells being modelled for this run
@@ -270,8 +262,6 @@ C
 
 
 
-
-
 C
 C     * LAND SURFACE PROGNOSTIC VARIABLES.
 C
@@ -293,6 +283,13 @@ C     * (THE LAST DIMENSION OF MOST OF THESE ARRAYS IS GIVEN BY
 C     * THE NUMBER OF SOIL LAYERS (IGND), THE NUMBER OF BROAD
 C     * VEGETATION CATEGORIES (ICAN), OR ICAN+1.
 C
+
+
+      !Additional variables for IWF and WATROF
+      real, dimension(:), allocatable :: MANNING_N  !<Manning's Roughness Coefficient, Calculated as an input Parameter
+      real, dimension(:), allocatable :: DD         !<Drainage Density, [M^2/M^3]
+      real, dimension(:,:), allocatable :: BULK_FC  !<
+
       real, dimension(:,:), allocatable :: ACIDGAT      !<Optional user-specified value of canopy near-infrared albedo to override CLASS-calculated value [ ]
       real, dimension(:,:,:), allocatable :: ACIDROT    !<
       real, dimension(:,:), allocatable :: ACVDGAT      !<Optional user-specified value of canopy visible albedo to override CLASS-calculated value [ ]
@@ -932,15 +929,6 @@ C
      5     CLHVAP,PI,ZOLNG,ZOLNS,ZOLNI,ZORATG,ALVSI,ALIRI,ALVSO,ALIRO,
      6     ALBRCK,DELTA,CGRAV,CKARM,CPD,AS,ASX,CI,BS,BETA,FACTN,HMIN,
      7     ANGMAX,A,B
-C
-C==============The additional parameters and Variables for Interflow========================
-C===================Added by Stefan Sauer, July 2017=================================
-C
-      real, dimension(:), allocatable :: MANNING_N  !<Manning's Roughness Coefficient, Calculated as an input Parameter
-      real, dimension(:), allocatable :: DD         !<Drainage Density, [M^2/M^3]
-      real, dimension(:,:), allocatable :: BULK_FC  !<
-C
-C======================================================================================
 
 
 C
@@ -1603,18 +1591,6 @@ C
         ilg = nlat*nmos
         ignd = shd%lc%IGND
 
-
-        !Sanity check to make sure that the ILG from MESH equals the number of tiles from the ctem_params
-!-        IF(ILG.ne.NLAT) THEN
-!-            WRITE(*,*) 'MESH ILG value does not equal the CTEM NMOS value'
-!-            WRITE(*,*) ' '
-!-            WRITE(*,*) 'ILG:'
-!-            WRITE(*,*) ILG
-!-            WRITE(*,*) '  '
-!-            WRITE(*,*) 'NLAT:'
-!-            WRITE(*,*) NLAT
-!-            stop
-!-        END IF
 
         !Allocate vectors.
         allocate(IWF(ILG))
@@ -4458,7 +4434,7 @@ C     **** LAUNCH RUN. ****
 
       N=0
       NCOUNT=1
-      NDAY=86400/NINT(DELT)
+      NDAY=86400/NINT(DELT) !Based on number of simulations in a single year
 
 	WRITE(*,*) ' '
 	WRITE(*,*) 'Successful: RUNCLASS36CTEM_init() is done'
@@ -4486,12 +4462,6 @@ C     **** LAUNCH RUN. ****
          type(ShedGridParams) :: shd
          type(fl_ids) :: fls
          type(clim_info) :: cm
-
-         !Need to define these variables here again as they were defined in the previous subroutine and not in a module.
-         !NA = shd%NA
-         !NTYPE = shd%lc%NTYPE
-         !NML = shd%lc%NML
-         IGND = shd%lc%IGND
 
 
 	  !> Grab climate data for this MESH Loop
@@ -4642,7 +4612,6 @@ c
 C===================== CTEM ============================================ /
 
 
-!This was all moved to above as we need to loop around NLTEST and not NMTEST
 !DAN    This doesn't seem right; closed NMOS loop above, opened NLAT loop here.
 !DAN    What happens in the multiple grid case with only 1 GRU is that it applies
 !DAN    transformations to only grid 1; results in TSOLVE errors where TA is still in
@@ -4837,14 +4806,6 @@ C===================== CTEM ============================================ /
 
 C
       CUMSNO=CUMSNO+SPCPROW(1)*RHSIROW(1)*DELT
-C
-!DAN    I don't think GATPREP should be called more than once??
-!?      CALL GATPREP(ILMOS,JLMOS,IWMOS,JWMOS,
-!?     1             NML,NMW,GCROW,FAREROT,MIDROT,
-!?     2             NLAT,NMOS,ILG,1,NLTEST,NMTEST)
-
-C
-
 
 
       CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT,
@@ -4976,8 +4937,7 @@ C
 336           CONTINUE
 338       CONTINUE
 340   CONTINUE
-C
-C========================================================================
+
 C
       CALL CLASSZ (0,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP,
      1             WTVSTP, WTSSTP, WTGSTP,
@@ -4993,8 +4953,6 @@ C
      B             1,      NML,    ILG,    IGND,   N    )
 
 
-C
-C========================================================================
 C
 C===================== CTEM ============================================ \
 C
@@ -6091,29 +6049,12 @@ c
           SFCVROT_g(i) =SFCVROT_g(i) + SFCVROT(i,m)*FAREROT(i,m)
 
 
-	    
-
-C
-C======================== CTEM =====================================/
 425    CONTINUE
-C===================== CTEM =====================================\
-C      WRITE CTEM OUTPUT FILES
-       
-
-C
-C===================== CTEM =====================================/
 450   CONTINUE
 
 
-C===================== CTEM =====================================\
-
       endif ! not parallelrun
-C===================== CTEM =====================================/
-C
-C=======================================================================
-C     * CALCULATE GRID CELL AVERAGE DIAGNOSTIC FIELDS.
-C
-C===================== CTEM =====================================\
+
 
       if(.not.parallelrun) then ! stand alone mode, includes
 c                               ! diagnostic fields
@@ -6713,11 +6654,6 @@ C     OPEN AND WRITE TO THE RESTART FILES
        IF ((leapnow .and.IDAY.EQ.366.AND.NCOUNT.EQ.NDAY) .OR. 
      &  (.not. leapnow .and.IDAY.EQ.365.AND.NCOUNT.EQ.NDAY)) THEN
 
-!No need to write this when running MESH
-
-!        WRITE(*,*) !'(6A,5I,13A,5I,9A,5I,6A,5I)')
-!     1     'IYEAR=',IYEAR,'CLIMATE YEAR=',CLIMIYEAR,
-!     2     'CO2YEAR =',co2yr,'LUCYR=',lucyr
 
         IF (RSFILE) THEN
 C       WRITE .INI_RS FOR CLASS RESTART DATA
@@ -6938,18 +6874,12 @@ C
       ENDDO
 
 
-
-      END SUBROUTINE !Since this is the end of the subroutine, this part will essentially be the end of one run_within_tile simulation
+          END SUBROUTINE !Since this is the end of the subroutine, this part will essentially be the end of one run_within_tile simulation
       
 
 !      ENDDO !MAIN MODEL LOOP Don't need the main loop 
 
-	
-
       SUBROUTINE RUNCLASS36CTEM_finalize()
-
-
-
 
 
 C     MODEL RUN HAS COMPLETED SO NOW CLOSE OUTPUT FILES AND EXIT

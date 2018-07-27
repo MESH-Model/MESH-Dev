@@ -383,9 +383,6 @@ integer :: argcount, iargc
 
 argcount = iargc()
 
-	WRITE(*,*) 'argcount'
-	WRITE(*,*) argcount
-
        if(argcount .ne. 2)then
          write(*,*)'usage is as follows'
          write(*,*)' '
