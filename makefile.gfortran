@@ -31,7 +31,7 @@ FC=gfortran
 #   -O2: Default optimization.
 #   -O3 -ffast-math: faster optimization (for GCC/gfortran only).
 #   -g: For debugging.
-LFLAG=-c -O2
+LFLAG=-c -O2 -g
 #LFLAG=-c -O3 -ffast-math
 #LFLAG=-c -g
 

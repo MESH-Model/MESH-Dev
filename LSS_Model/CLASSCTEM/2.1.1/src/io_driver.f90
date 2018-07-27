@@ -210,7 +210,8 @@ read (11,7010) titlec3
 
 !>Read from CTEM initialization file (.CTM)
 
-  do 71 i=1,1 !This is going to have a value of the # of tiles specified in the MESH file, this needs to be changed once we have a good .CTM file for our simulations
+
+  do 71 i=1,nltest !This will loop over all of the Mosaic tiles (Or MESH grids)
     do 72 m=1,nmtest 
 !>
 !>The following three variables are needed to run CTEM. 1) min & 2) max leaf area index are needed to break

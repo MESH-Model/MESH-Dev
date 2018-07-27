@@ -4576,8 +4576,6 @@ C===================== CTEM ============================================ \
 
 C===================== CTEM ============================================ /
 
-
-! 	WRITE(*,*) 'runclass36ctem line 3859:'
 C
       N=N+1 !Extend the iteration
 
@@ -4655,9 +4653,6 @@ C===================== CTEM ============================================ /
           FSSBROL(I,2)=FSIHROW(I)
 
       ENDDO
-
-
-! 	WRITE(*,*) 'runclass36ctem line 3933:'
 
 C
       DAY=REAL(IDAY)+(REAL(IHOUR)+REAL(IMIN)/60.)/24.
@@ -4842,8 +4837,6 @@ C
 
 C
 
-
-! 	WRITE(*,*) 'runclass36ctem line 4118:'
 
 
       CALL CLASSG (TBARGAT,THLQGAT,THICGAT,TPNDGAT,ZPNDGAT,
@@ -5174,8 +5167,6 @@ C          * ADAPTED TO COUPLING OF CLASS3.6 AND CTEM
 
 
 
-! 	WRITE(*,*) 'runclass36ctem line 4449:'
-
           CALL CLASSW  (THLQGAT,THICGAT,TBARGAT,TCANGAT,RCANGAT,SCANGAT,
      1                  ROFGAT, TROFGAT,SNOGAT, TSNOGAT,RHOSGAT,ALBSGAT,
      2                  WSNOGAT,ZPNDGAT,TPNDGAT,GROGAT, TBASGAT,
@@ -5208,8 +5199,6 @@ C          * ADAPTED TO COUPLING OF CLASS3.6 AND CTEM
      T                  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI,
      U                  MANNING_N, DDGAT, BULK_FC)
 
-
-! 	WRITE(*,*) 'runclass36ctem line 4500:'
 	                          
 C=======================================================================
 
@@ -6940,13 +6929,6 @@ C
         stas%lzs%rofb(I) = ROFBGAT(I)
       ENDDO
 
-
-	IF(IDAY.eq.270 .AND. IHOUR.eq.13 .AND. IMIN.eq.0) THEN
-	  IF(IYEAR.eq.2003) THEN
-             	WRITE(*,*) 'QFSGAT on DAY 270:'
-	       WRITE(*,*) QFSGAT
-	  ENDIF	
-	ENDIF
 
 
       END SUBROUTINE !Since this is the end of the subroutine, this part will essentially be the end of one run_within_tile simulation
