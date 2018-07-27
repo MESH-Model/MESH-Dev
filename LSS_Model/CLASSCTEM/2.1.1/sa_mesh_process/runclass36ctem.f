@@ -106,12 +106,12 @@ C=======================================================================
 
 !Some constants here were cut out because they already exist within MESH (NTYPE,IGND)
 
-      use ctem_params,        only : initpftpars,nlat,nmos,ilg,nmon,
+      use ctem_params,        only : initpftpars,nmon,ILG, nlat, nmos,
      1                               ican,icp1, icc, iccp1, IGND,
      2                               monthend, mmday,modelpft, l2max,
-     3                                deltat, abszero, monthdays,seed,
-     4                                crop, NBS, lat, edgelat,earthrad,
-     5                                lon
+     3                               deltat, abszero, monthdays,seed,
+     4                               crop, NBS, lat, edgelat,earthrad,
+     5                               lon
 
       use landuse_change,     only : initialize_luc, readin_luc
 
@@ -170,6 +170,12 @@ C
       INTEGER ITCG   !<Flag to select iteration scheme for surface under canopy
       INTEGER isnoalb!<
       INTEGER igralb !<
+
+      !INTEGER NLAT   !<Number of grids
+      !INTEGER NMOS   !<Number of Mosaic grids
+      !INTEGER ILG    !<NLAT*NMOS
+      !INTEGER :: IGND   !<Number of soil layer
+
 
       INTEGER NLTEST  !<Number of grid cells being modelled for this run
       INTEGER NMTEST  !<Number of mosaic tiles per grid cell being modelled for this run
@@ -1590,11 +1596,13 @@ C
         NML = shd%lc%NML
         NMW = shd%wc%NML
 
+
         !ctem_params
         nlat = shd%NA
         nmos = shd%lc%NTYPE
-        ilg = shd%NA*shd%lc%NTYPE
+        ilg = nlat*nmos
         ignd = shd%lc%IGND
+
 
         !Sanity check to make sure that the ILG from MESH equals the number of tiles from the ctem_params
 !-        IF(ILG.ne.NLAT) THEN
@@ -2820,7 +2828,6 @@ C===================== CTEM ==============================================\
       rmlcsvga_t        => ctem_tile%rmlcsvga_t
       rmlcgvga_t        => ctem_tile%rmlcgvga_t
 
-
       
       CALL CLASSD
 
@@ -2833,6 +2840,9 @@ C===================== CTEM ==============================================\
 
 c     all model switches are read in from a namelist file
       i = 0
+
+
+
       call read_from_job_options(argbuff,transient_run,
      1             trans_startyr,ctemloop,ctem_on,ncyear,lnduseon,
      2             spinfast,cyclemet,nummetcylyrs,metcylyrst,co2on,
@@ -4327,6 +4337,7 @@ c
 c
 115   continue
 	
+
 c
       do 117 i = 1,nltest
         do 117 m = 1,nmtest
@@ -4454,7 +4465,6 @@ C     **** LAUNCH RUN. ****
 	WRITE(*,*) ' '  
 
 
-
 !Now we close the initialization subroutine
       END SUBROUTINE            !RUNCLASS36CTEM_init
 
@@ -4470,8 +4480,6 @@ C     **** LAUNCH RUN. ****
          use model_output_variabletypes
          use FLAGS
 
-
-
         !We don't need to add the module init or config because we already have the init subroutine/module in this module.
 
 
@@ -4479,11 +4487,11 @@ C     **** LAUNCH RUN. ****
          type(fl_ids) :: fls
          type(clim_info) :: cm
 
-         !Not sure if I need this but comment out for now as we already have these variables in ctem_params
+         !Need to define these variables here again as they were defined in the previous subroutine and not in a module.
          !NA = shd%NA
          !NTYPE = shd%lc%NTYPE
          !NML = shd%lc%NML
-         !IGND = shd%lc%IGND
+         IGND = shd%lc%IGND
 
 
 	  !> Grab climate data for this MESH Loop

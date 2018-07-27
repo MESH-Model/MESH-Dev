@@ -1149,6 +1149,7 @@ contains
 !>Allocate CTEM's 'rot' vars
 subroutine veg_rot_allocate()
 
+
     allocate(vrot%ailcmin(nlat,nmos,icc))
     allocate(vrot%ailcmax(nlat,nmos,icc))
     allocate(vrot%dvdfcan(nlat,nmos,icc))
