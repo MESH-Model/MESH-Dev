@@ -2338,7 +2338,6 @@ C===================== CTEM ==============================================\
 
 
 c     all model switches are read in from a namelist file
-      i = 0
 
       call read_from_job_options(argbuff,transient_run,
      1             trans_startyr,ctemloop,ctem_on,ncyear,lnduseon,
@@ -2349,7 +2348,6 @@ c     all model switches are read in from a namelist file
      6             jmosty,idisp,izref,islfd,ipcp,itc,itcg,itg,i,ipai,
      7             ihgt,ialc,ials,ialg,isnoalb,igralb,jhhstd,jhhendd,
      8             jdstd,jdendd,jhhsty,jhhendy,jdsty,jdendy)
-      iwf = i
 
 	!Here we will be reading the CLASS Logical parameters from MESH
 	!Note that read_from_job_options still has these as arguments but the read in the subroutine above is commented out
@@ -2784,9 +2782,9 @@ C======================= CTEM ========================================== /
 
 !DAN    Changed to use IGND so it'll match the number of active soil layers
         DO J=1,IGND
-          SANDROT(I,M,J) = pm%slp%sand(K,J) !Check the soil ones as they don't seem to be used in the original MESH module
+          SANDROT(I,M,J) = pm%slp%sand(K,J)
           CLAYROT(I,M,J) = pm%slp%clay(K,J)
-          ORGMROT(I,M,J) = pm%slp%orgm(K,J) !This is only used in CTEM so double check later
+          ORGMROT(I,M,J) = pm%slp%orgm(K,J)
           TBARROT(I,M,J) = stas%sl%tbar(K,J) - TFREZ
         ENDDO
 
@@ -2799,6 +2797,7 @@ C======================= CTEM ========================================== /
           THLQROT(I,M,J) = stas%sl%thlq(K,J)
           THICROT(I,M,J) = stas%sl%thic(K,J)
         ENDDO
+
 
 !DAN    These are calculated by the call to 'CLASSB'.
 !DAN    Should double-check if the 'pm' values have already been populated by MESH, in which
@@ -3579,7 +3578,6 @@ C
 c     ctem initializations.
 c
 
-
       if (ctem_on) then
 
 c
@@ -3596,7 +3594,6 @@ c
 101   continue
 
 
-c
       do 110 i=1,nltest
        do 110 m=1,nmtest
         do 111 j = 1, icc
@@ -3622,7 +3619,6 @@ c
 128      continue
 
 
-c
          do 112 j = 1,ignd       !soil temperature and moisture over different subareas
             tbarcacc_t (i,j)=0.0
             tbarcsacc_t(i,j)=0.0
@@ -3678,7 +3674,7 @@ c
 113   continue
 
 
-!     Now make sure that you arenÂ´t over 1.0 for a tile (i.e. with a negative
+!     Now make sure that you aren´t over 1.0 for a tile (i.e. with a negative
 !     bare ground fraction due to the seed fractions being added in.) JM Mar 9 2016
       do i=1,nltest
        do m = 1,nmtest
@@ -3750,24 +3746,6 @@ c
 
       iyear=-99999  ! initialization, forces entry to loop below
 
-
-!Comment all of this out for now, don't worry about ihour, imin and iday for now.
-c     find the first year of met data
-!       do while (iyear .lt. metcylyrst)
-!
-!    
-
-!Don't need the following lines because we are reading from the MESH Met file
-!Comment out this piece of code since we're getting all of the other values from the MESH cm file
-!        do i=1,nltest
-!          read(12,5300) ihour,imin,iday,iyear,FSSROW(I),FDLROW(i),
-!     1         PREROW(i),TAROW(i),QAROW(i),UVROW(i),PRESROW(i)
-!        enddo	
-!       enddo
-!
-!      If you are not cycling over the MET, you can still specify to end on a
-!      year that is shorter than the total climate file length.
-!       if (.not. cyclemet) endyr = iyear + ncyear - 1
 
       if (ctem_on) then
 
@@ -4006,7 +3984,6 @@ C     **** LAUNCH RUN. ****
          imin = ic%now%mins     !Current hour of Day	
 
 
-
        !Now use the updated variables from the .INI file.
        !Note that these variables have dimension ILG, which in our case is the same as NMOS/NMTEST
 !DAN    ILG is the total number of active tiles (which increment by the number of active NMOS inside each grid NLAT).
@@ -4019,7 +3996,7 @@ C     **** LAUNCH RUN. ****
          M = JLMOS(k)
 
          !Assign the values
-         FSSROW(I) = cm%dat(ck%FB)%GAT(k)   !Eliminated the /2.0 from the MESH as we didn't need it
+         FSSROW(I) = cm%dat(ck%FB)%GAT(k)   !Incoming Shortwave Radiation
          FDLROW(I) = cm%dat(ck%FI)%GAT(k)   !Incoming Longwave
          PREROW(I) = cm%dat(ck%RT)%GAT(k)   !Precipitation Rate
          TAROW(I) = cm%dat(ck%TT)%GAT(k) - TFREZ   !Add the -273.16 because runclass36ctem assumes that it is in [C], while MESH has this data in [K] (Air Temperature)
@@ -4180,8 +4157,7 @@ C
           FCLOROW(I)=XDIFFUS(I)
 300   CONTINUE
 C
-	
-	
+		
 
 C===================== CTEM ============================================ \
 C
@@ -5501,7 +5477,7 @@ c
 7200      format(1x,i2,1x,i2,i5,i5,9f11.3,9f11.3,2(a6,i2))
 
  
-          !fsstar_g(i)    =fsstar_g(i) + fsstar*FAREROT(i,m)
+          fsstar_g(i)    =fsstar_g(i) + fsstar*FAREROT(i,m)
           flstar_g(i)    =flstar_g(i) + flstar*FAREROT(i,m)
           qh_g(i)        =qh_g(i)     + qh*FAREROT(i,m)
           qe_g(i)        =qe_g(i)     + qe*FAREROT(i,m)
@@ -5510,7 +5486,7 @@ c
           gtout_g(i)     =gtout_g(i)  + gtout*FAREROT(i,m)
           tcn_g(i)       =tcn_g(i)    + tcn*FAREROT(i,m)
           tsn_g(i)       =tsn_g(i)    + tsn*FAREROT(i,m)
-          !zsn_g(i)       =zsn_g(i)    + zsn*FAREROT(i,m) Commented this out for now because of a segmentation fault, so we won't use it now
+          zsn_g(i)       =zsn_g(i)    + zsn*FAREROT(i,m)
           altot_g(i)     =altot_g(i)  + altot*FAREROT(i,m)
           tpn_g(i)       =tpn_g(i)    + tpn*FAREROT(i,m)
 
