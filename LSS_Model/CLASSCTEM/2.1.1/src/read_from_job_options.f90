@@ -383,21 +383,6 @@ integer :: argcount, iargc
 
 argcount = iargc()
 
-       if(argcount .ne. 2)then
-         write(*,*)'usage is as follows'
-         write(*,*)' '
-         write(*,*)'CLASS36CTEM joboptions_file site_name'
-         write(*,*)' '
-         write(*,*)'- joboptions_file - an example can be found '
-         write(*,*)'  in the src folder - template_job_options_file.txt.'
-         write(*,*)'  descriptions of the various variables '
-         write(*,*)'  can be found in read_from_job_options.f90 '
-         write(*,*)' '
-         write(*,*)'- site_name is the prefix of your input files '
-         write(*,*)' '
-         !stop
-      end if
-
 
 !call getarg(1,jobfile)
 

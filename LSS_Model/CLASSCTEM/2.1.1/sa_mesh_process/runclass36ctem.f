@@ -148,6 +148,7 @@ C=======================================================================
       REAL INI2 !This will save the name of the file with the INI file name, as we already need to reference it in " " when using Open
       CHARACTER(8) INI3
 
+
 C
 C     * INTEGER CONSTANTS.
 C
@@ -931,6 +932,7 @@ C
      7     ANGMAX,A,B
 
 
+
 C
 c================= CTEM array declaration ===============================\
 c
@@ -939,6 +941,8 @@ c
 
       character*80   titlec1
       character*80   argbuff
+      character*15  Site
+      character*15   OutputFolder
       character*160  command
 
        integer   lopcount,  isumc,     k1c,       k2c,
@@ -1569,6 +1573,8 @@ C
 
 
         !Declaration of the MESH variables used to pass information
+
+
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
         type(clim_info) :: cm
@@ -2833,7 +2839,18 @@ c     all model switches are read in from a namelist file
 	!Here we will be reading the CLASS Logical parameters from MESH
 	!Note that read_from_job_options still has these as arguments but the read in the subroutine above is commented out
 
- 
+
+       !To do: ask Dan how to access specific variables from MESH_input_run_options.ini
+       !We want to be saving the outputs using the specific directory 
+         open(UNIT=11,file='MESH_input_run_options.ini')
+
+         !Skip a few lines so we can read in the folder for out output which will serve as Argbuff
+         DO i=1,22
+	  read(11,*)      
+	  ENDDO
+         read(11,*) Argbuff
+         Site='/CLASSCTEM_Out'
+         ARGBUFF=argbuff(1:strlen(argbuff))//Site
 
 c     Initialize the CTEM parameters
       call initpftpars(compete)
@@ -2919,6 +2936,8 @@ c         we move the original RS files into place and start from them.
           end if
 
 
+
+
 !The name of the file here was changed for MESH purposes
 
 
@@ -2954,10 +2973,7 @@ c
         !We need to save the string CTEM_OUT here. 
         !To do: change the output directory so we can change it in the Makefile directly
 
-         ARGBUFF='CLASSCTEMOUT1/Site-Name'
-
          
-
       if (.not. parallelrun) then ! stand alone mode, includes half-hourly and daily output
        OPEN(UNIT=61,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF1_G')  ! GRID-LEVEL DAILY OUTPUT FROM CLASS
        OPEN(UNIT=62,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF2_G')
@@ -4478,6 +4494,8 @@ C     **** LAUNCH RUN. ****
          iday = ic%now%jday     !Current Day of the Year 
          ihour = ic%now%hour    !Current Minute of the hour
          imin = ic%now%mins     !Current hour of Day	
+
+
 
        !Now use the updated variables from the .INI file.
        !Note that these variables have dimension ILG, which in our case is the same as NMOS/NMTEST
