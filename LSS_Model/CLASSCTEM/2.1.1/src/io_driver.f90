@@ -217,6 +217,8 @@ read (11,7010) titlec3
 !>The following three variables are needed to run CTEM. 1) min & 2) max leaf area index are needed to break
 !>class lai into dcd and evg for trees (for crops and grasses it doesn't matter much). 3) dvdfcanrow is 
 !>needed to divide needle & broad leaf into dcd and evg, and crops & grasses into c3 and c4 fractions.
+      
+
 
         read(11,*) (ailcminrow(i,m,j),j=1,icc)
         read(11,*) (ailcmaxrow(i,m,j),j=1,icc)
