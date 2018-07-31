@@ -17,32 +17,34 @@ module solar_adjust_module
     !>
     !> Variables:
     !*  Trans: Mean transmissivity of the atmosphere.
-    !*  Time_Offset: Solar time offset from local time.
+    !*  Time_Zone: The time zone of the study area.
     !*  CalcFreq: Iterations per day (must divide the day into equal increments of minutes). [--].
-    !*  elev: Elevation. [m].
-    !*  slope: Slope of surface (1: grid; 2: GRU). [degrees].
-    !*  aspect: Aspect of surface (1: grid; 2: GRU). [degrees].
+    !*  gru_elev: Weighted average elevation of GRUs. [m].
+    !*  gru_delta: Weighted average elevation difference between high (MESH) and low (GEM) resolution elevation. [m].
+    !*  gru_slope: Weighted average slope of surface (1: grid; 2: GRU). [degrees].
+    !*  gru_aspect: Weighted average aspect of surface (1: grid; 2: GRU). [degrees].
     type solar_adjust_parameters
         real :: Trans = 0.818
-        real :: Time_Offset = 0.67
+        real :: Time_Zone = -6.0
         integer :: CalcFreq = 288
-        real, dimension(:, :), allocatable :: elev, slope, aspect
+        real, dimension(:, :), allocatable :: elev, slope, aspect, delta
     end type
 
     !> Description:
-    !>  Type for variables/constants.
+    !> Type for variables/constants.
     !>
     !> Variables:
-    !*  elev: Elevation. [m].
+    !*  xlng: Longitude. [degrees].
     !*  ylat: Latitude. [degrees].
-    !*  slope: Slope of surface. [degrees].
-    !*  aspect: Aspect of surface. [degrees].
+    !*  gru_elev: Weighted average elevation. [m].
+    !*  gru_slope: Weighted average slope of the surface. [degrees].
+    !*  gru_aspect: Weighted average aspect of the surface. [degrees].
     type solar_adjust_variables
-        real, dimension(:), allocatable :: elev, ylat, slope, aspect
+        real, dimension(:), allocatable :: elev, xlng, ylat, slope, aspect, delta
     end type
 
     !> Description:
-    !>  Type for 'solar_adjust' parameters and variables.
+    !> Type for 'solar_adjust' parameters and variables.
     !>
     !> Variables:
     !*  pm: Parameters and options.
@@ -90,8 +92,8 @@ module solar_adjust_module
         select case (lowercase(args(1)))
             case ('trans')
                 call value(args(2), rsrd_adj%pm%Trans, ierr)
-            case ('time_offset')
-                call value(args(2), rsrd_adj%pm%Time_Offset, ierr)
+            case ('time_zone')
+                call value(args(2), rsrd_adj%pm%Time_Zone, ierr)
             case ('calcfreq')
                 call value(args(2), rsrd_adj%pm%CalcFreq, ierr)
         end select
@@ -137,9 +139,9 @@ module solar_adjust_module
                     rsrd_adj%PROCESS_ACTIVE = .false.
                     exit
 
-                !> Options.
-                case default
-                    call solar_adjust_extract_value(args(i), ierr)
+            !> Options.
+            case default
+                call solar_adjust_extract_value(args(i), ierr)
             end select
         end do
 
@@ -175,38 +177,46 @@ module solar_adjust_module
         if (.not. rsrd_adj%PROCESS_ACTIVE) then
             if (allocated(rsrd_adj%pm%slope)) deallocate(rsrd_adj%pm%slope)
             if (allocated(rsrd_adj%pm%aspect)) deallocate(rsrd_adj%pm%aspect)
+            if (allocated(rsrd_adj%pm%delta)) deallocate(rsrd_adj%pm%delta)
             return
         end if
 
         !> Allocate variables.
         allocate( &
-            rsrd_adj%vs%elev(il1:il2), rsrd_adj%vs%ylat(il1:il2), rsrd_adj%vs%slope(il1:il2), &
-            rsrd_adj%vs%aspect(il1:il2))
+            rsrd_adj%vs%elev(il1:il2), rsrd_adj%vs%xlng(il1:il2), &
+            rsrd_adj%vs%ylat(il1:il2), rsrd_adj%vs%slope(il1:il2), &
+            rsrd_adj%vs%aspect(il1:il2), rsrd_adj%vs%delta(il1:il2))
         rsrd_adj%vs%slope = 0.0
         rsrd_adj%vs%aspect = 0.0
+        rsrd_adj%vs%delta = 0.0
 
         !> Assign values.
         do k = il1, il2
 
             !> Pull generic values from drainage_database.r2c
             rsrd_adj%vs%elev(k) = shd%ELEV(shd%lc%ILMOS(k))
+            rsrd_adj%vs%xlng(k) = shd%XLNG(shd%lc%ILMOS(k))
             rsrd_adj%vs%ylat(k) = shd%YLAT(shd%lc%ILMOS(k))
 
             !> Overwrite with values provided by GRU (e.g., parameters.r2c).
+            if (allocated(rsrd_adj%pm%elev)) then
+                rsrd_adj%vs%elev(k) = rsrd_adj%pm%elev(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
             if (allocated(rsrd_adj%pm%slope)) then
                 rsrd_adj%vs%slope(k) = rsrd_adj%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             end if
             if (allocated(rsrd_adj%pm%aspect)) then
                 rsrd_adj%vs%aspect(k) = rsrd_adj%pm%aspect(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             end if
-            if (allocated(rsrd_adj%pm%elev)) then
-                rsrd_adj%vs%elev(k) = rsrd_adj%pm%elev(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            if (allocated(rsrd_adj%pm%delta)) then
+                rsrd_adj%vs%delta(k) = rsrd_adj%pm%delta(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             end if
         end do
 
         !> De-allocate 'ROW' based fields (from parameters file).
         if (allocated(rsrd_adj%pm%slope)) deallocate(rsrd_adj%pm%slope)
         if (allocated(rsrd_adj%pm%aspect)) deallocate(rsrd_adj%pm%aspect)
+        if (allocated(rsrd_adj%pm%delta)) deallocate(rsrd_adj%pm%delta)
 
         !> Print summary and remark that the process is active.
         !> Print configuration information to file if 'DIAGNOSEMODE' is active.
@@ -215,7 +225,7 @@ module solar_adjust_module
         if (write_out) write(iun, 1100)
         if (write_out .and. ro%DIAGNOSEMODE > 0) then
             write(iun, 1110) 'Trans', rsrd_adj%pm%Trans
-            write(iun, 1110) 'Time_Offset', rsrd_adj%pm%Time_Offset
+            write(iun, 1110) 'Time_Zone', rsrd_adj%pm%Time_Zone
             write(iun, 1110) 'CalcFreq', rsrd_adj%pm%CalcFreq
             write(iun, *)
         end if
@@ -276,31 +286,66 @@ module solar_adjust_module
 
         !> Local variables.
         integer k
-        real, dimension(il1:il2) :: rsrd_direct, rsrd_diffuse, rsrd_adjusted
+        real, dimension(il1:il2) :: rsrd_adjusted
+        real, dimension(il1:il2) :: rlds_adjusted
+        real, dimension(il1:il2) :: temp_adjusted
+        real, dimension(il1:il2) :: pres_adjusted
+        real, dimension(il1:il2) :: humd_adjusted
 
         !> Return if module is not enabled.
         if (.not. rsrd_adj%PROCESS_ACTIVE) return
 
         !> Call routine to calculate adjusted radiation value.
         call calc_rsrd_adjusted( &
-            rsrd_adj%vs%elev(il1:il2), rsrd_adj%vs%ylat(il1:il2), &
-            rsrd_adj%vs%slope(il1:il2), rsrd_adj%vs%aspect(il1:il2), iln, &
-            rsrd_adj%pm%Trans, rsrd_adj%pm%Time_Offset, rsrd_adj%pm%CalcFreq, &
+            rsrd_adj%vs%elev(il1:il2), rsrd_adj%vs%xlng(il1:il2), &
+            rsrd_adj%vs%ylat(il1:il2), &
+            rsrd_adj%vs%slope(il1:il2), rsrd_adj%vs%aspect(il1:il2), &
+            rsrd_adj%vs%delta(il1:il2), iln, rsrd_adj%pm%Trans, &
+            rsrd_adj%pm%Time_Zone, rsrd_adj%pm%CalcFreq, &
             cm%dat(ck%FB)%hf, &
+            cm%dat(ck%FI)%hf, &
+            cm%dat(ck%TT)%hf, &
+            cm%dat(ck%P0)%hf, &
+            cm%dat(ck%HU)%hf, &
             cm%dat(ck%FB)%GAT(il1:il2), &
-            rsrd_direct(il1:il2), rsrd_diffuse(il1:il2), rsrd_adjusted(il1:il2), &
-            ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, ic%dtmins)
+            cm%dat(ck%FI)%GAT(il1:il2), &
+            cm%dat(ck%TT)%GAT(il1:il2), &
+            cm%dat(ck%P0)%GAT(il1:il2), &
+            cm%dat(ck%HU)%GAT(il1:il2), &
+            rsrd_adjusted(il1:il2), &
+            rlds_adjusted(il1:il2), &
+            temp_adjusted(il1:il2), &
+            pres_adjusted(il1:il2), &
+            humd_adjusted(il1:il2), &
+            ic%now%year, ic%now%jday, ic%now%hour, &
+            ic%now%mins, ic%dtmins)
 
-        !> Update radiation.
-        !> Must update 'GRD' separately for output (e.g., energy_balance.csv).
-        cm%dat(ck%FB)%GAT(il1:il2) = rsrd_adjusted(il1:il2)
-        cm%dat(ck%FB)%GRD = 0.0
-        do k = il1, il2
-            cm%dat(ck%FB)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%FB)%GRD(shd%lc%ILMOS(k)) + &
-                rsrd_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-        end do
+            !> Update radiation.
+            !> Must update 'GRD' separately for output (e.g., energy_balance.csv).
+            cm%dat(ck%FB)%GAT(il1:il2) = rsrd_adjusted(il1:il2)
+            cm%dat(ck%FI)%GAT(il1:il2) = rlds_adjusted(il1:il2)
+            cm%dat(ck%TT)%GAT(il1:il2) = temp_adjusted(il1:il2)
+            cm%dat(ck%P0)%GAT(il1:il2) = pres_adjusted(il1:il2)
+            cm%dat(ck%HU)%GAT(il1:il2) = humd_adjusted(il1:il2)
+            cm%dat(ck%FB)%GRD = 0.0
+            cm%dat(ck%FI)%GRD = 0.0
+            cm%dat(ck%TT)%GRD = 0.0
+            cm%dat(ck%P0)%GRD = 0.0
+            cm%dat(ck%HU)%GRD = 0.0
+            do k = il1, il2
+                cm%dat(ck%FB)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%FB)%GRD(shd%lc%ILMOS(k)) + &
+                    rsrd_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+                cm%dat(ck%FI)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%FI)%GRD(shd%lc%ILMOS(k)) + &
+                    rlds_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+                cm%dat(ck%TT)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%TT)%GRD(shd%lc%ILMOS(k)) + &
+                    temp_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+                cm%dat(ck%P0)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%P0)%GRD(shd%lc%ILMOS(k)) + &
+                    pres_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+                cm%dat(ck%HU)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%HU)%GRD(shd%lc%ILMOS(k)) + &
+                    humd_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end do
 
-        !> Update output variables.
+            !> Update output variables.
 
     end subroutine
 

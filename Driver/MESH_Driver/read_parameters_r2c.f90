@@ -205,6 +205,17 @@ subroutine read_parameters_r2c(shd, iun, fname)
                 if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Distrib = ffield
 
             !> Solar_Adjust.
+            case ('elevation')
+                if (.not. allocated(rsrd_adj%pm%elev)) allocate(rsrd_adj%pm%elev(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        rsrd_adj%pm%elev(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    rsrd_adj%pm%elev(:, ilvl) = ffield
+                else if (verbose) then
+                    print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
+                end if
             case ('slope')
                 if (.not. allocated(rsrd_adj%pm%slope)) allocate(rsrd_adj%pm%slope(shd%NA, shd%lc%NTYPE))
                 if (ilvl == 0) then
@@ -227,14 +238,14 @@ subroutine read_parameters_r2c(shd, iun, fname)
                 else if (verbose) then
                     print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
                 end if
-            case ('elevation')
-                if (.not. allocated(rsrd_adj%pm%elev)) allocate(rsrd_adj%pm%elev(shd%NA, shd%lc%NTYPE))
+            case ('delta')
+                if (.not. allocated(rsrd_adj%pm%delta)) allocate(rsrd_adj%pm%delta(shd%NA, shd%lc%NTYPE))
                 if (ilvl == 0) then
                     do ilvl = 1, shd%lc%NTYPE
-                        rsrd_adj%pm%elev(:, ilvl) = ffield
+                        rsrd_adj%pm%delta(:, ilvl) = ffield
                     end do
                 else if (ilvl <= shd%lc%NTYPE) then
-                    rsrd_adj%pm%elev(:, ilvl) = ffield
+                    rsrd_adj%pm%delta(:, ilvl) = ffield
                 else if (verbose) then
                     print 1130, adjustl(fname), trim(adjustl(vattr(iattr)%attr))
                 end if
