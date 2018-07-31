@@ -98,7 +98,7 @@ module save_basin_output
     subroutine run_save_basin_output_init(fls, shd, cm)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use FLAGS
         use climate_forcing
 
@@ -107,7 +107,7 @@ module save_basin_output
         type(clim_info) :: cm
 
         !> Local variables.
-        integer NA, NSL, ikey, n, ii, i, j, iun, ierr
+        integer NA, NSL, ikey, n, ii, i, iun, ierr
         character(len = 3) nc
 
         !> Return if basin output has been disabled.
@@ -261,13 +261,9 @@ module save_basin_output
         !> Calculate initial storage and aggregate through neighbouring cells.
         do ikey = 1, NKEY
             bno%wb(ikey)%STG_INI = &
-                out%grid%rcan%ts*shd%FRAC + out%grid%sncan%ts*shd%FRAC + &
-                out%grid%sno%ts*shd%FRAC + out%grid%wsno%ts*shd%FRAC + out%grid%pndw%ts*shd%FRAC + &
-                out%grid%lzs%ts*shd%FRAC + out%grid%dzs%ts*shd%FRAC
-            do j = 1, shd%lc%IGND
-                bno%wb(ikey)%STG_INI = bno%wb(ikey)%STG_INI + &
-                    out%grid%lqws(j)%ts*shd%FRAC + out%grid%fzws(j)%ts*shd%FRAC
-            end do
+                (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
+                 out%ts%grid%lzs + out%ts%grid%dzs + &
+                 sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC
         end do
         do i = 1, shd%NAA
             ii = shd%NEXT(i)
@@ -368,7 +364,7 @@ module save_basin_output
     subroutine run_save_basin_output(fls, shd, cm)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use FLAGS
         use model_dates
         use climate_forcing
@@ -389,10 +385,10 @@ module save_basin_output
         call update_water_balance(shd, cm)
 
         !> For PEVP-EVAP and EVPB output
-        bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%grid%evap%ts*ic%dts*shd%FRAC)/sum(shd%FRAC)
-        bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%grid%pevp%ts*ic%dts*shd%FRAC)/sum(shd%FRAC)
-        bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(out%grid%evpb%ts*shd%FRAC)/sum(shd%FRAC)
-        bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(out%grid%arrd%ts*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%ts%grid%evap*ic%dts*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%ts%grid%pevp*ic%dts*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(out%ts%grid%evpb*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(out%ts%grid%arrd*shd%FRAC)/sum(shd%FRAC)
 
         !> Update the energy balance.
         call update_energy_balance(shd, cm)
@@ -502,7 +498,7 @@ module save_basin_output
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use FLAGS
         use climate_forcing
 
@@ -592,7 +588,7 @@ module save_basin_output
     !>
     subroutine parse_basin_output_flag(shd, in_line, flg)
 
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use strings
 
         implicit none
@@ -702,7 +698,7 @@ module save_basin_output
     subroutine update_water_balance(shd, cm)
 
         !> For 'shd' variable type and output variables.
-        use sa_mesh_shared_variables
+        use sa_mesh_common
 
         !> For 'cm' variable type.
         use climate_forcing
@@ -727,23 +723,23 @@ module save_basin_output
                  LQWS(NA, NSL), FRWS(NA, NSL), LZS(NA), DZS(NA))
 
         !> Accumulate variables and aggregate through neighbouring cells.
-        PRE = out%grid%pre%ts*ic%dts*shd%FRAC
-        EVAP = out%grid%evap%ts*ic%dts*shd%FRAC
-        ROF = out%grid%rof%ts*ic%dts*shd%FRAC
-        ROFO = out%grid%rofo%ts*ic%dts*shd%FRAC
-        ROFS = out%grid%rofs%ts*ic%dts*shd%FRAC
-        ROFB = out%grid%rofb%ts*ic%dts*shd%FRAC
-        RCAN = out%grid%rcan%ts*shd%FRAC
-        SNCAN = out%grid%sncan%ts*shd%FRAC
-        SNO = out%grid%sno%ts*shd%FRAC
-        WSNO = out%grid%wsno%ts*shd%FRAC
-        PNDW = out%grid%pndw%ts*shd%FRAC
+        PRE = out%ts%grid%prec*ic%dts*shd%FRAC
+        EVAP = out%ts%grid%evap*ic%dts*shd%FRAC
+        ROF = out%ts%grid%rof*ic%dts*shd%FRAC
+        ROFO = out%ts%grid%rofo*ic%dts*shd%FRAC
+        ROFS = out%ts%grid%rofs*ic%dts*shd%FRAC
+        ROFB = out%ts%grid%rofb*ic%dts*shd%FRAC
+        RCAN = out%ts%grid%rcan*shd%FRAC
+        SNCAN = out%ts%grid%sncan*shd%FRAC
+        SNO = out%ts%grid%sno*shd%FRAC
+        WSNO = out%ts%grid%wsno*shd%FRAC
+        PNDW = out%ts%grid%pndw*shd%FRAC
         do j = 1, shd%lc%IGND
-            LQWS(:, j) = out%grid%lqws(j)%ts*shd%FRAC
-            FRWS(:, j) = out%grid%fzws(j)%ts*shd%FRAC
+            LQWS(:, j) = out%ts%grid%lqws(:, j)*shd%FRAC
+            FRWS(:, j) = out%ts%grid%fzws(:, j)*shd%FRAC
         end do
-        LZS = out%grid%lzs%ts*shd%FRAC
-        DZS = out%grid%dzs%ts*shd%FRAC
+        LZS = out%ts%grid%lzs*shd%FRAC
+        DZS = out%ts%grid%dzs*shd%FRAC
 
         !> Aggregate through neighbouring cells.
         do i = 1, shd%NAA
@@ -790,7 +786,7 @@ module save_basin_output
 
     subroutine save_water_balance(shd, dts, ikdts)
 
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
 
         !> Input variables.
@@ -832,7 +828,7 @@ module save_basin_output
     subroutine write_water_balance_header(fls, shd, fik, dts)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
 
         !> Input variables.
         type(fl_ids) :: fls
@@ -869,7 +865,7 @@ module save_basin_output
     subroutine write_water_balance(fls, shd, fik, dts, ina, ikdts)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
 
         !> Input variables.
@@ -906,9 +902,8 @@ module save_basin_output
             bno%wb(ikdts)%SNCAN(ina)/dnar, bno%wb(ikdts)%RCAN(ina)/dnar, &
             bno%wb(ikdts)%SNO(ina)/dnar, bno%wb(ikdts)%WSNO(ina)/dnar, &
             bno%wb(ikdts)%PNDW(ina)/dnar, &
-            (bno%wb(ikdts)%LQWS(ina, j)/dnar, &
-            bno%wb(ikdts)%FRWS(ina, j)/dnar, &
-            (bno%wb(ikdts)%LQWS(ina, j) + bno%wb(ikdts)%FRWS(ina, j))/dnar, j = 1, NSL), &
+            (bno%wb(ikdts)%LQWS(ina, j)/dnar, bno%wb(ikdts)%FRWS(ina, j)/dnar, &
+             (bno%wb(ikdts)%LQWS(ina, j) + bno%wb(ikdts)%FRWS(ina, j))/dnar, j = 1, NSL), &
             sum(bno%wb(ikdts)%LQWS(ina, :))/dnar, &
             sum(bno%wb(ikdts)%FRWS(ina, :))/dnar, &
             (sum(bno%wb(ikdts)%LQWS(ina, :)) + sum(bno%wb(ikdts)%FRWS(ina, :)))/dnar, &
@@ -948,7 +943,7 @@ module save_basin_output
     subroutine update_evp(fls, shd, fik, dts, ikdts)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
 
         !> Input variables.
@@ -959,7 +954,6 @@ module save_basin_output
         integer dts, ikdts
 
         !> Local variables.
-        integer IGND, j
         real dnts
 
         !> Denominator for time-step averaged variables.
@@ -975,7 +969,6 @@ module save_basin_output
         if (dts < 3600) write(fik, 1010, advance = 'no') ic%now%mins
 
         !> Write the water balance to file.
-        IGND = shd%lc%IGND
         write(fik, 1010) bno%evpdts(ikdts)%EVAP, bno%evpdts(ikdts)%PEVP, bno%evpdts(ikdts)%EVPB, bno%evpdts(ikdts)%ARRD
 
         !> Reset the accumulation for time-averaged output.
@@ -991,7 +984,7 @@ module save_basin_output
     subroutine update_evp_header(fls, shd, fik, dts)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
 
         !> Input variables.
         type(fl_ids) :: fls
@@ -1015,7 +1008,7 @@ module save_basin_output
     subroutine update_energy_balance(shd, cm)
 
         !> For 'shd' variable type and output variables.
-        use sa_mesh_shared_variables
+        use sa_mesh_common
 
         !> For 'cm' variable type.
         use climate_forcing
@@ -1049,40 +1042,40 @@ module save_basin_output
         TA = 0.0; TCAN = 0.0; CMAS = 0.0; TSNOW = 0.0; TPOND = 0.0; TBAR = 0.0
 
         !> Time-averaged variables and averaging counters.
-        where (out%grid%fsin%ts > 0.0)
-            ALBT = out%grid%albt%ts*shd%FRAC
+        where (out%ts%grid%fsin > 0.0)
+            ALBT = out%ts%grid%albt*shd%FRAC
             IFS = 1
         end where
-        where (out%grid%gte%ts > 0.0) GTE = (out%grid%gte%ts - TFREZ)*shd%FRAC
-        where (out%grid%ta%ts > 0.0) TA = (out%grid%ta%ts - TFREZ)*shd%FRAC
-        where (out%grid%tcan%ts > 0.0)
-            CMAS = out%grid%cmas%ts*shd%FRAC
-            TCAN = (out%grid%tcan%ts - TFREZ)*shd%FRAC
+        where (out%ts%grid%gte > 0.0) GTE = (out%ts%grid%gte - TFREZ)*shd%FRAC
+        where (out%ts%grid%ta > 0.0) TA = (out%ts%grid%ta - TFREZ)*shd%FRAC
+        where (out%ts%grid%tcan > 0.0)
+            CMAS = out%ts%grid%cmas*shd%FRAC
+            TCAN = (out%ts%grid%tcan - TFREZ)*shd%FRAC
             ICAN = 1
         end where
-        where (out%grid%sno%ts > 0.0)
-            TSNOW = (out%grid%tsno%ts - TFREZ)*shd%FRAC
+        where (out%ts%grid%sno > 0.0)
+            TSNOW = (out%ts%grid%tsno - TFREZ)*shd%FRAC
             ISNOW = 1
         end where
-        where (out%grid%zpnd%ts > 0.0)
-            TPOND = (out%grid%tpnd%ts - TFREZ)*shd%FRAC
+        where (out%ts%grid%zpnd > 0.0)
+            TPOND = (out%ts%grid%tpnd - TFREZ)*shd%FRAC
             IPOND = 1
         end where
         do j = 1, shd%lc%IGND
-            where (out%grid%tbar(j)%ts > 0.0) TBAR(:, j) = (out%grid%tbar(j)%ts - TFREZ)*shd%FRAC
+            where (out%ts%grid%tbar(:, j) > 0.0) TBAR(:, j) = (out%ts%grid%tbar(:, j) - TFREZ)*shd%FRAC
         end do
 
         !> Accumulated fluxes.
         !> Converted from (W m-2 = J m-2 s-1) to J m-2 for accumulation.
-        FSIN = out%grid%fsin%ts*ic%dts*shd%FRAC
+        FSIN = out%ts%grid%fsin*ic%dts*shd%FRAC
         where (ALBT > 0.0)
-            FSOUT = out%grid%fsout%ts*ic%dts*shd%FRAC
+            FSOUT = out%ts%grid%fsout*ic%dts*shd%FRAC
         end where
-        FLIN = out%grid%flin%ts*ic%dts*shd%FRAC
-        where (out%grid%gte%ts > 0.0) FLOUT = out%grid%flout%ts*ic%dts*shd%FRAC
-        QH = out%grid%qh%ts*ic%dts*shd%FRAC
-        QE = out%grid%qe%ts*ic%dts*shd%FRAC
-        GZERO = out%grid%gzero%ts*ic%dts*shd%FRAC
+        FLIN = out%ts%grid%flin*ic%dts*shd%FRAC
+        where (out%ts%grid%gte > 0.0) FLOUT = out%ts%grid%flout*ic%dts*shd%FRAC
+        QH = out%ts%grid%qh*ic%dts*shd%FRAC
+        QE = out%ts%grid%qe*ic%dts*shd%FRAC
+        GZERO = out%ts%grid%gzero*ic%dts*shd%FRAC
 
         !> Propagate through basin cells (by flow direction).
         !> Variables are weighted by FRAC during accumulation.
@@ -1148,7 +1141,7 @@ module save_basin_output
 
     subroutine save_energy_balance(shd, dts, ikdts)
 
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
 
         !> Input variables.
@@ -1195,7 +1188,7 @@ module save_basin_output
     subroutine write_energy_balance_header(fls, shd, fik, dts)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
 
         !> Input variables.
         type(fl_ids) :: fls
@@ -1230,7 +1223,7 @@ module save_basin_output
     subroutine write_energy_balance(fls, shd, fik, dts, ina, ikdts)
 
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
 
         !> Input variables.

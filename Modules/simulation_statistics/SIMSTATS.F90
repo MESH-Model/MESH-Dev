@@ -191,7 +191,7 @@ module SIMSTATS
     !>
     subroutine stats_init(fls)
 
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_files_variables
 
     !> Input variables.
@@ -205,17 +205,15 @@ module SIMSTATS
 
         if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
-!todo: replace unit number with variable.
-        write(6, *) '================================================='
-        write(6, *)
-        write(6, *) '     SA_MESH IS RUNNING IN AUTOCALIBRATION MODE'
-
-!todo: separate out pre-emption.
-        if (mtsflg%PREEMPTIONFLAG >= 1) write(6, *) '                USING PRE-EMPTION'
-
-        write(6, *)
-        write(6, *) '================================================='
-        write(6, *)
+        if (mtsflg%PREEMPTIONFLAG == 1) then
+            call print_message('=================================================')
+            call print_message('')
+            call print_message('     SA_MESH IS RUNNING IN AUTOCALIBRATION MODE')
+            call print_message('                USING PRE-EMPTION')
+            call print_message('')
+            call print_message('=================================================')
+            call print_message('')
+        end if
 
 !todo: split into stats_state_resume().
         if (mtsflg%PREEMPTIONFLAG >= 1) then
@@ -249,7 +247,7 @@ module SIMSTATS
     !>
     subroutine stats_update_stfl_daily(fls)
 
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_files_variables
 
         !> Input variables.
@@ -289,24 +287,23 @@ module SIMSTATS
 
         !> Copy measured and simulated values to local arrays.
         qobs(ncal, :) = fms%stmg%qomeas%val
-        qsim(ncal, :) = out%grid%qo%d(fms%stmg%meta%rnk(:))
+        qsim(ncal, :) = out%d%grid%qo(fms%stmg%meta%rnk(:))
 
-        if (objfnflag == 0) then
-            ftest = sae_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
-        elseif (objfnflag == 1) then
-            ftest = saesrt_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
-        elseif (objfnflag == 2) then
-            write(6, *) &
-                'THE SAEMSRT (OBJECTIVE FUNCTION = 2) IS NOT ', &
-                'CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE'
-        elseif (objfnflag == 3) then
-            write(6, *) &
-                'THE NSE (OBJECTIVE FUNCTION = 3) IS NOT ', &
-                'CURRENTLY FUNCTIONAL FOR PRE-EMPTION CASE' , &
-                'TRY NEGNSE (OBJECTIVE FUNCTION = 4)'
-        elseif (objfnflag == 4) then
-            ftest = nse_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
-            ftest = -1.0 * ftest
+        if (mtsflg%PREEMPTIONFLAG == 1) then
+            if (OBJFNFLAG == 0) then
+                ftest = sae_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+            elseif (OBJFNFLAG == 1) then
+                ftest = saesrt_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+            elseif (OBJFNFLAG == 2) then
+                call print_warning('SAEMSRT (OBJFNFLAG 2) does not support pre-emption.')
+            elseif (OBJFNFLAG == 3) then
+                call print_error( &
+                    'NSE (OBJFNFLAG 3) does not support pre-emption. Disable pre-emption or use NegNSE (OBJFNFLAG 4) instead.')
+                call program_abort()
+            elseif (OBJFNFLAG == 4) then
+                ftest = nse_calc(qobs(1:ncal, :), qsim(1:ncal, :), ncal, size(qobs, 2), mtsflg%AUTOCALIBRATIONFLAG)
+                ftest = -1.0 * ftest
+            end if
         end if
 
 !        if (mtsflg%AUTOCALIBRATIONFLAG >= 1 .and. mtsflg%PREEMPTIONFLAG == 1) then
@@ -417,7 +414,7 @@ module SIMSTATS
         if (.not. allocated(mtsfl%fl)) call init_metricsout_files()
 
         !> Write the output function for pre-emption.
-        if (mtsfl%fl(mtsk%fo)%init) then
+        if (mtsflg%PREEMPTIONFLAG == 1 .and. mtsfl%fl(mtsk%fo)%init) then
             iun = mtsfl%fl(mtsk%fo)%iun
             open(iun, file = trim(adjustl(mtsfl%fl(mtsk%fo)%fn)))
             if (mtsflg%PREEMPTIONFLAG >= 1) ftest = ftest*ic%iter%jday/ncal
@@ -437,9 +434,9 @@ module SIMSTATS
             inquire(file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)), exist = exists)
             iun = mtsfl%fl(mtsk%MC)%iun
             if (exists) then
-                open(iun, file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)), position = 'append', status = 'old')
+                open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%MC)%fn), position = 'append', status = 'old')
             else
-                open(iun, file = trim(adjustl(mtsfl%fl(mtsk%MC)%fn)))
+                open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%MC)%fn))
                 write(iun, "(9999(g15.7e2, ' '))") "BIAS ", "NSD ", "NSW ", "TPD "
             end if
             write(iun, "(9999(g15.7e2, ' '))") (bias(j), nsd(j), nsw(j), int(tpd(j)), j = 1, size(qobs, 2))
@@ -450,7 +447,7 @@ module SIMSTATS
 !todo: there's probably a better way to store a set of multiple statistics in one file.
         if (mtsfl%fl(mtsk%NSE)%init) then
             iun = mtsfl%fl(mtsk%NSE)%iun
-            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%NSE)%fn)))
+            open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%NSE)%fn))
             write(iun, "(9999(g15.7e2, ' '))") (nsd(j), j = 1, size(qobs, 2)), sum(nsd)/size(qobs, 2)
             close(iun)
         end if
@@ -458,7 +455,7 @@ module SIMSTATS
         !> Write Nash-Sutcliffe coefficient of weekly streamflow values.
         if (mtsfl%fl(mtsk%NSW)%init) then
             iun = mtsfl%fl(mtsk%NSW)%iun
-            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%NSW)%fn)))
+            open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%NSW)%fn))
             write(iun, "(9999(g15.7e2, ' '))") (nsw(j), j = 1, size(qobs, 2))
             close(iun)
         end if
@@ -466,7 +463,7 @@ module SIMSTATS
         !> Write daily root mean squared error.
         if (mtsfl%fl(mtsk%RMSE)%init) then
             iun = mtsfl%fl(mtsk%RMSE)%iun
-            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%RMSE)%fn)))
+            open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%RMSE)%fn))
             write(iun, "(9999(g15.7e2, ' '))") st_drms%value_gauge, st_drms%value_gauge_avg
             close(iun)
         end if
@@ -474,7 +471,7 @@ module SIMSTATS
         !> Write mean absolute error.
         if (mtsfl%fl(mtsk%ABSE)%init) then
             iun = mtsfl%fl(mtsk%ABSE)%iun
-            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%ABSE)%fn)))
+            open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%ABSE)%fn))
             write(iun, "(9999(g15.7e2, ' '))") st_abserr%value_gauge, st_abserr%value_gauge_avg
             close(iun)
         end if
@@ -482,7 +479,7 @@ module SIMSTATS
         !> Write the summary of the metrics to file.
         if (mtsfl%fl(mtsk%out)%init) then
             iun = mtsfl%fl(mtsk%out)%iun
-            open(iun, file = trim(adjustl(mtsfl%fl(mtsk%out)%fn)))
+            open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%out)%fn))
             write(iun, "(9999(g15.7e2, ' '))") &
                 "Gauge", "MAE", "RMSE", "BIAS", "AbsBIAS", "NSD", "NegNSD", "lnNSD", "NeglnNSD", "TPD"
             do j = 1, size(qobs, 2)

@@ -1,7 +1,6 @@
       SUBROUTINE CLASSW(THLIQ,  THICE,  TBAR,   TCAN,   RCAN,   SNCAN,
      1                  RUNOFF, TRUNOF, SNO,    TSNOW,  RHOSNO, ALBSNO, 
-     2                  WSNOW,  ZPOND,  TPOND,  GROWTH, FRZC,   TBASE,
-     +                  GFLUX,
+     2                  WSNOW,  ZPOND,  TPOND,  GROWTH, TBASE,  GFLUX,
      3                  PCFC,   PCLC,   PCPN,   PCPG,   QFCF,   QFCL,
      4                  QFN,    QFG,    QFC,    HMFC,   HMFG,   HMFN,
      5                  HTCC,   HTCS,   HTC,    ROFC,   ROFN,   ROVG, 
@@ -32,7 +31,7 @@
      4                  SI,TSI,INFILTYPE,SNOWMELTD,SNOWMELTD_LAST,
      5                  MELTRUNOFF,SNOWINFIL,
      6                  CUMSNOWINFILCS,CUMSNOWINFILGS,
-     7                  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS,
+     7                  SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, FRZC,
      +                  CMIN,      CMAX,      B,         K1,        K2,
      1                  ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, 
      2                  UM1CS,     UM1C,      UM1G,      UM1GS, 
@@ -314,7 +313,6 @@ C
       UMQC  = 0.0
       UMQG  = 0.0
       UMQGS = 0.0
-
 C
 C-----------------------------------------------------------------------
 C     * PREPARATION.

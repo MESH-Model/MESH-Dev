@@ -1,15 +1,15 @@
 !>
 !> Description:
 !>  Subroutine to read input parameters from file. Parameters shared
-!>  by SA_MESH are accessible by sa_mesh_shared_variables module. Other
+!>  by SA_MESH are accessible by 'sa_mesh_variables'. Other
 !>  parameters are accessible by their respecitve process module(s).
 !>
-subroutine read_parameters(fls, shd, cm, ierr)
+subroutine read_parameters(fls, shd, cm)
 
     use strings
     use mpi_module
     use model_files_variables
-    use sa_mesh_shared_variables
+    use sa_mesh_common
     use FLAGS
     use climate_forcing_variabletypes
 
@@ -28,16 +28,13 @@ subroutine read_parameters(fls, shd, cm, ierr)
     type(ShedGridParams) :: shd
     type(CLIM_INFO) :: cm
 
-    !> Output variables.
-    integer, intent(out), optional :: ierr
-
     !> Local variables for parsing INPUTPARAMSFORM.
-    character(len = 20), dimension(100) :: out_args
+    character(len = DEFAULT_LINE_LENGTH) line
+    character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
     integer nargs
-    character(1) :: delim = ' '
 
     !> Local variables.
-    integer NA, NAA, NTYPE, NRVR, NML, NSL, k, i, n
+    integer NA, NAA, NTYPE, NRVR, NML, NSL, k, j, ignd, i, n, ierr
 
     !> Assign commonly used indices to local variables.
     NA = shd%NA
@@ -142,9 +139,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> Parse the INPUTPARAMSFORM control flag to get INPUTPARAMSFORMFLAG.
     !> Default behaviour is to read the 'ini' format files.
     INPUTPARAMSFORMFLAG = radix(INPUTPARAMSFORMFLAG)**0
-    call parse(INPUTPARAMSFORM, delim, out_args, nargs)
+    call parse(INPUTPARAMSFORM, ' ', args, nargs)
     do n = 2, nargs
-        select case (out_args(n))
+        select case (args(n))
             case ('only')
                 INPUTPARAMSFORMFLAG = 0
             case ('r2c')
@@ -156,18 +153,16 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     !> Check for a bad value of INPUTPARAMSFORMFLAG.
     if (INPUTPARAMSFORMFLAG == 0) then
-        if (ipid == 0) then
-            print "(1x, 'ERROR: Bad or unsupported input parameter file format.')"
-            print "(3x, 'Revise INPUTPARAMSFORMFLAG in ', (a), '.')", trim(adjustl(fls%fl(mfk%f53)%fn))
-        end if
-        stop
+        line = 'Unsupported parameter file format. Revise INPUTPARAMSFORMFLAG in ' // trim(adjustl(fls%fl(mfk%f53)%fn)) // '.'
+        call print_error(line)
+        call program_abort()
     end if
 
     !> Read from the 'ini' files.
     if (btest(INPUTPARAMSFORMFLAG, 0)) then
         call READ_PARAMETERS_CLASS(shd, fls, cm)
         call READ_PARAMETERS_HYDROLOGY(shd, fls)
-        call READ_SOIL_INI(shd, fls)
+        call READ_SOIL_INI(fls, shd)
     end if
 
     !> Read from the 'csv' file.
@@ -321,21 +316,6 @@ subroutine read_parameters(fls, shd, cm, ierr)
         end do !k = il1, il2
     end if
 
-!todo: Formally change these to grid parameters, remove from shd
-    !> RUNCLASS36 and RUNSVS113.
-    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
-        if (allocated(shd%SLOPE_INT)) then
-            do k = il1, il2
-                pm%tp%xslp(k) = shd%SLOPE_INT(shd%lc%ILMOS(k))
-            end do
-        end if
-        if (allocated(shd%DRDN)) then
-            do k = il1, il2
-                pm%hp%dd(k) = shd%DRDN(shd%lc%ILMOS(k))
-            end do
-        end if
-    end if
-
     !> From grid.
     if (btest(INPUTPARAMSFORMFLAG, 1)) then
         do k = il1, il2
@@ -348,6 +328,8 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
             !> RUNCLASS36 and RUNSVS113.
             if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                if (shd%SLOPE_INT(i) /= 0.0) pm%tp%xslp(k) = shd%SLOPE_INT(i)
+                if (shd%DRDN(i) /= 0.0) pm%hp%dd(k) = shd%DRDN(i)
                 if (any(pm_grid%cp%fcan(i, :) /= 0.0)) pm%cp%fcan(k, :) = pm_grid%cp%fcan(i, :)
                 if (any(pm_grid%cp%lnz0(i, :) /= 0.0)) pm%cp%lnz0(k, :) = pm_grid%cp%lnz0(i, :)
                 if (pm_grid%slp%sdep(i) /= 0.0) pm%slp%sdep(k) = pm_grid%slp%sdep(i)
@@ -379,6 +361,44 @@ subroutine read_parameters(fls, shd, cm, ierr)
             end if
 
         end do !k = il1, il2
+    end if
+
+    !> Distribute soil variables to layers lower than the "last configured layer" and check for impermeable soils.
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+
+        !> Check the first layer for impermeable soils.
+        where (pm%slp%sdep == 0.0 .and. pm%slp%sand(:, 1) > -2.5)
+            pm%slp%sand(:, 1) = -3.0
+            pm%slp%clay(:, 1) = -3.0
+            pm%slp%orgm(:, 1) = -3.0
+        end where
+
+        !> Determine the "last configured layer" read from file (CLASS default: 3).
+        if (NRSOILAYEREADFLAG > 3) then
+            ignd = min(NRSOILAYEREADFLAG, NSL)
+        else if (NRSOILAYEREADFLAG == 1) then
+            ignd = 0
+        else
+            ignd = 3
+        end if
+
+        !> Loop from layer 2 to check for impermeable soils.
+        do j = 2, shd%lc%IGND
+
+            !> Assign properties to layers lower than the "last configured layer" read from file.
+            if (j > ignd .and. ignd > 0) then
+                pm%slp%sand(:, j) = pm%slp%sand(:, ignd)
+                pm%slp%clay(:, j) = pm%slp%clay(:, ignd)
+                pm%slp%orgm(:, j) = pm%slp%orgm(:, ignd)
+            end if
+
+            !> Check for impermeable soils.
+            where (pm%slp%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm%slp%sand(:, j) > -2.5)
+                pm%slp%sand(:, j) = -3.0
+                pm%slp%clay(:, j) = -3.0
+                pm%slp%orgm(:, j) = -3.0
+            end where
+        end do
     end if
 
 end subroutine

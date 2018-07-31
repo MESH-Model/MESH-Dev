@@ -1,11 +1,11 @@
-!>
-!> Module to read configuration information for the climate forcing
-!> module from file.
-!>
+!> Description:
+!>  Module to read configuration information for the climate forcing
+!>  module from file.
 module climate_forcing_config
 
     use climate_forcing_constants
     use climate_forcing_variabletypes
+    use print_routines
 
     implicit none
 
@@ -15,13 +15,12 @@ module climate_forcing_config
 
         use strings
         use EF_ParseUtilities
-        use control_variables
 
         type(clim_info) :: cm
 
         integer i, iun, ios
-        character*256 fname, key, attr, ver_in
-        character*4096 ln_in
+        character(len = DEFAULT_FIELD_LENGTH) fname, key, attr, ver_in
+        character(len = DEFAULT_LINE_LENGTH) line
         logical is_exist, is_climInfo
 
         !> Open the file if one exists.
@@ -35,8 +34,8 @@ module climate_forcing_config
 
             !> First uncommented line contains the tag and version of the file.
             !> :clim_info 1.0
-            call readline(iun, ln_in, ios)
-            ios = SplitLine(ln_in, key, attr)
+            call readline(iun, line, ios)
+            ios = SplitLine(line, key, attr)
             if (lowercase(key) == ':clim_info') then
                 is_climInfo = .true.
                 ver_in = lowercase(attr)
@@ -52,29 +51,11 @@ module climate_forcing_config
 
         end if
 
-        !> Print summary of climate file information.
-        if (ro%VERBOSEMODE > 0 .and. ro%DIAGNOSEMODE > 0) then
-            do i = 1, cm%nclim
-                print 1071, cm%dat(i)%id_var, cm%dat(i)%fname, cm%dat(i)%ffmt, cm%dat(i)%fiun, &
-                    cm%dat(i)%hf, cm%dat(i)%nblocks, cm%dat(i)%nseries
-            end do
-        end if
-
-1071    format( &
-            1x, 'Climate Variable: ', (a), /, &
-            3x, 'Name: ', (a), /, &
-            3x, 'File format: ', i5, /, &
-            3x, 'File unit (input): ', i8, /, &
-            3x, 'Record interval (mins): ', i5, /, &
-            3x, 'Timesteps to read into memory: ', i5, /, &
-            3x, 'Series count: ', i5)
-
     end subroutine
 
-    !>
-    !> This subroutine aligns with the 'climate_info.ini' file that has
-    !> ':1.0' in its header.
-    !>
+    !> Description:
+    !>  This subroutine aligns with the 'climate_info.ini' file that has
+    !>  ':1.0' in its header.
     subroutine parse_config_1_0(iun, cm)
 
         use strings
@@ -84,8 +65,8 @@ module climate_forcing_config
         type(clim_info) :: cm
 
         integer ios, i, j, jj, n, nn, vid, nlines, nargs
-        character*4096, dimension(:), allocatable :: lines, args
-        character*256 key, attr, mark
+        character(len = DEFAULT_LINE_LENGTH), dimension(:), allocatable :: lines, args
+        character(len = DEFAULT_FIELD_LENGTH) key, attr, mark
 
         !> Extract the sections of the file.
 !        call parse_seek_section(iun, 'filenames', lines, nlines)
@@ -186,15 +167,15 @@ module climate_forcing_config
         use strings
 
         integer, intent(in) :: iun
-        character(len=*), intent(in) :: name
-        character*4096, intent(out), dimension(:), allocatable :: lines
+        character(len = *), intent(in) :: name
+        character(len = DEFAULT_LINE_LENGTH), intent(out), dimension(:), allocatable :: lines
         integer, intent(out) :: nlines
         logical, intent(in), optional :: preserveCasing
 
         integer :: ios = 0
         integer i, posln_end, posln_start
-        character(len=len_trim(name)) lname
-        character*4096 ln_in
+        character(len = len_trim(name)) lname
+        character(len = DEFAULT_LINE_LENGTH) line
         logical :: lpreserveCasing = .false.
 
         !> Remove casing from the name.
@@ -207,13 +188,13 @@ module climate_forcing_config
         !> Identify the end of the section using the header.
         posln_end = 1
         do while (ios == 0)
-            call readline(iun, ln_in, ios)
+            call readline(iun, line, ios)
 !            if (ios /= 0) then
 !todo: Fix this.
 !print *, 'error: end of file before end token', lname
 !stop
 !            end if
-            if (lowercase(ln_in) == ':end' // lname) exit
+            if (lowercase(line) == ':end' // lname) exit
             posln_end = posln_end + 1
         end do
 
@@ -223,21 +204,21 @@ module climate_forcing_config
         !> Identify the start of the section using the header.
         posln_start = 1
         do while (ios == 0)
-            call readline(iun, ln_in, ios)
+            call readline(iun, line, ios)
 !            if (ios /= 0) then
 !todo: Fix this.
 !print *, 'error: end of file before start token', lname
 !stop
 !            end if
-            if (lowercase(ln_in) == ':start' // lname) then
+            if (lowercase(line) == ':start' // lname) then
                 nlines = posln_end - posln_start + 1
                 allocate(lines(nlines))
-                if (.not. lpreserveCasing) ln_in = lowercase(ln_in)
-                lines(1) = ln_in
+                if (.not. lpreserveCasing) line = lowercase(line)
+                lines(1) = line
                 do i = 2, nlines
-                    call readline(iun, ln_in, ios)
-                    if (.not. lpreserveCasing) ln_in = lowercase(ln_in)
-                    lines(i) = ln_in
+                    call readline(iun, line, ios)
+                    if (.not. lpreserveCasing) line = lowercase(line)
+                    lines(i) = line
                 end do
                 exit
             end if
@@ -252,13 +233,13 @@ module climate_forcing_config
 
         use strings
 
-        character(len=*), intent(in) :: line
+        character(len = *), intent(in) :: line
         character, intent(in) :: delim
-        character(len=len(line)), dimension(:), allocatable, intent(out) :: args
+        character(len = len(line)), dimension(:), allocatable, intent(out) :: args
         integer, intent(out) :: nargs
 
         integer i
-        character(len=len_trim(adjustl(line))) lline
+        character(len = len_trim(adjustl(line))) lline
 
         lline = adjustl(line)
         nargs = 0
@@ -279,10 +260,10 @@ module climate_forcing_config
 
         use strings
 
-        character(len=*), intent(in) :: arg
-        character*256, intent(out) :: key, mark, attr
+        character(len = *), intent(in) :: arg
+        character(len = DEFAULT_FIELD_LENGTH), intent(out) :: key, mark, attr
 
-        character(len=len(arg)) :: llead, ltail
+        character(len = len(arg)) :: llead, ltail
 
         llead = arg
         call split(llead, '=', ltail)

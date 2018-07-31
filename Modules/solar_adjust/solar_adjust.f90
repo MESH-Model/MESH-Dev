@@ -177,9 +177,9 @@ subroutine calc_rsrd_adjusted( &
         rsrd_adjusted = 0.0
     end where
 
-    rlds_adjusted = rlds + (delta*-2.9/100.0)                           ! change 2.9 W/m^2 / 100 m is lapse rate (Marty et al. 2002) and should be moved into MESH run file for calibration.
+    rlds_adjusted = rlds + (delta*(-2.9)/100.0)                         ! change 2.9 W/m^2 / 100 m is lapse rate (Marty et al. 2002) and should be moved into MESH run file for calibration.
 
-    temp_adjusted = temp + (delta*-6.0/1000.0)                          ! change 6.0 K/km is lapse rate (Bernier et al. 2011) and should be moved into MESH run file for calibration.
+    temp_adjusted = temp + (delta*(-6.0)/1000.0)                        ! change 6.0 K/km is lapse rate (Bernier et al. 2011) and should be moved into MESH run file for calibration.
 
     pres_adjusted = pres*exp(-(delta*GCons)/(RCons*temp_adjusted))
 

@@ -64,8 +64,8 @@ module SA_RTE_module
 !todo: as flags as a part of the model_output module.
     subroutine SA_RTE(shd)
 
-        !> For: type(ShedGridParams) :: shd; cops
-        use sa_mesh_shared_variables
+        !> For: type(ShedGridParams) :: shd
+        use sa_mesh_common
 
         !> For: type(iter_counter) :: ic
         !* ic: Active counter.
@@ -128,8 +128,8 @@ module SA_RTE_module
 
     subroutine SA_RTE_init(shd)
 
-        !> For: type(ShedGridParams) :: shd, ro%, cops%
-        use sa_mesh_shared_variables
+        !> For: type(ShedGridParams) :: shd
+        use sa_mesh_common
 
         !> For: type(iter_counter) :: ic
         use model_dates
@@ -139,21 +139,20 @@ module SA_RTE_module
 
         !> Local variables.
         integer ierr
+        character(len = DEFAULT_LINE_LENGTH) line
 
         !> Return if the process is not active.
         if (.not. SA_RTE_flgs%PROCESS_ACTIVE) return
 
-        if (ro%VERBOSEMODE > 0) then
-            print 1000
-            print 1001
-        end if
+        !> Print that the module is active.
+        call print_message('SA_RTE component ACTIVATED')
 
         !> Allocate and initialize the appropriate variables.
         if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
             allocate(RFF(shd%yCount, shd%xCount), stat = ierr)
             if (ierr /= 0) then
-                print 1004, 'RFF', shd%yCount, shd%xCount
-                stop
+                call print_error('Unable to allocate RFF variable.')
+                call program_abort()
             end if
             RFF = 0.0
         end if
@@ -161,8 +160,8 @@ module SA_RTE_module
         if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
             allocate(RCH(shd%yCount, shd%xCount), stat = ierr)
             if (ierr /= 0) then
-                print 1004, 'RCH', shd%yCount, shd%xCount
-                stop
+                call print_error('Unable to allocate RCH variable.')
+                call program_abort()
             end if
             RCH = 0.0
         end if
@@ -185,7 +184,7 @@ module SA_RTE_module
                            RFF, &
 !todo: replace source with LSS flag
                            'channel_inflow', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-            if (ro%VERBOSEMODE > 0) print 1002, 'RFF', adjustl(trim(SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn))
+            call print_message_detail('Writing RFF output to: ' // trim(adjustl(SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn)))
         end if
 
         !> For: Recharge (MODELFLG = r).
@@ -195,19 +194,8 @@ module SA_RTE_module
                            RCH, &
 !todo: replace source with LSS flag
                            'recharge', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-            if (ro%VERBOSEMODE > 0) print 1002, 'RCH', adjustl(trim(SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn))
+            call print_message_detail('Writing RCH output to: ' // trim(adjustl(SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn)))
         end if
-
-        if (ro%VERBOSEMODE > 0) print 1000
-
-1000    format(/1x, '*****************************************************************', /)
-1001    format(1x, 'Standalone Routing is active.')
-1002    format(3x, 'Writing output for ', (a), ' to: ', (a))
-
-1004    format(/1x, "ERROR: Allocating: '", (a), "'", &
-               /3x, 'Using:', &
-               /5x, 'yCount=', i10, &
-               /5x, 'xCount=', i10, /)
 
     end subroutine
 

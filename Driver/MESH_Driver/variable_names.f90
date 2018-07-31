@@ -1,4 +1,4 @@
-module variablename_constants
+module variable_names
 
     !> Meteorological forcing.
     character(len = 10), parameter :: VN_PRE = 'PRE'
@@ -18,11 +18,11 @@ module variablename_constants
 
     !> Water balance.
     character(len = 10), parameter :: VN_PREC = 'PREC'
-    character(len = 10), parameter :: VN_GRO = 'GRO'
     character(len = 10), parameter :: VN_EVAP = 'EVAP'
     character(len = 10), parameter :: VN_PEVP = 'PEVP'
     character(len = 10), parameter :: VN_EVPB = 'EVPB'
     character(len = 10), parameter :: VN_ARRD = 'ARRD'
+    character(len = 10), parameter :: VN_GRO = 'GRO'
     character(len = 10), parameter :: VN_ROF = 'ROF'
     character(len = 10), parameter :: VN_ROFO = 'ROFO'
     character(len = 10), parameter :: VN_ROFS = 'ROFS'

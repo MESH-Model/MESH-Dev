@@ -43,6 +43,11 @@ C    along with FLOWINIT.  If not, see <http://www.gnu.org/licenses/>.
 !     rev. 9.4.09  Jun.  19/07  - NK: added lake_area as a variable for iso
 !     rev. 9.4.10  Jun.  19/07  - NK: adjusted frac for channel water area
 !     rev. 9.4.13  Jul.  09/07  - NK: modified lzs to account for lake area (flowinit)
+!     rev.         May.  2018  - dgp: Modified to allow a gauge at the outlet
+!                                   where 'nnx' is zero,
+!                                   though resulting flow will be zero if its 'da' is zero.
+!                                   Added a check for 'da' /= zero for the case
+!                                   when 'nnx' is the outlet (where 'qda' is calculated).
 !
 !     changes made to include c&g model stuff  nk  April. 26/07
 !
@@ -740,7 +745,7 @@ c      stop 'program aborted in flowinit @ 164'
 !     rev. 9.04    Jan    16/01 - fixed grid diagnosis in flowinit
 !!1111111111111                     STOP 'program stopped in flowinit @65'
 !mesh_io                  endif
-                  nxtbasin(nhyd(i,j))=nhyd(inx,jnx)
+                  if (nhyd(i,j).gt.0) nxtbasin(nhyd(i,j))=nhyd(inx,jnx)
 !mesh_io                  write(53,6043)n,i,j,nhyd(i,j),nxtbasin(nhyd(i,j))
                endif
             endif
@@ -872,6 +877,7 @@ c      stop 'program aborted in flowinit @ 164'
 !        FLOW MAY HAVE BEEN ROUTED DOWN A TRIBUTARY OR
 !        THERE IS A GAUGE DOWNSTREAM
             nnx=next(n)
+            if(nnx.eq.0) cycle
 
             msg1='a'
             if(iopt.ge.2)then
@@ -896,7 +902,12 @@ c      stop 'program aborted in flowinit @ 164'
                   iset(nnx)=2
 !            IF ISET=2 flow can be modified by tributary
                   msg1='b'
-               else
+!dgp:   Having the check for 'iset' in the 'do' is insufficient
+!       because 'nnx' is set inside the loop.
+!       Without adding this check to the conditional statement below,
+!       'iset' of 'nnx' will be set to '2',
+!       regardless of its existing value.
+               elseif(iset(nnx).ne.1)then
 !            FLOW HAS TO BE COMBINED WITH FLOW FROM ANOTHER TRIBUTARY
 !            SUM DRAINAGE AREAS AND FLOWS
 !                  if (iset(nnx).ne.2) print *,
@@ -975,12 +986,12 @@ c      stop 'program aborted in flowinit @ 164'
 !         WHICH SHOULD HAVE BEEN DEFINED BY NOW IF THERE IS AT
 !         LEAST ONE GAUGE IN THE WATERSHED
 !         FIRST TIME IN THIS ELEMENT
-            if(qda(nnx).gt.0.0)then
+            if(qda(nnx).gt.0.0 .and. da(nnx).gt.0.0)then
 !     rev. 9.2.18  Oct.  27/05  - NK: Fixed bug in flowinit (init spike)
 !           qda(n)=qda(nnx)*da(n)/datemp(nnx)
                qda(n)=qda(nnx)*da(n)/da(nnx)
-            else
-               qda(n)=0.1       ! ok Jul. 11/02
+!dgp            else
+!dgp               qda(n)=0.1       ! ok Jul. 11/02
             endif
             qbase(n)=qda(n)
          endif

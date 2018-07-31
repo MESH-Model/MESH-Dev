@@ -151,9 +151,8 @@ module solar_adjust_module
 
         !> Required for MESH variables and options.
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use climate_forcing
-        use FLAGS
 
         !> Required for 'il1', 'il2', and 'iln'.
         !> Because 'il1' and 'il2' are not passed to the subroutine, the
@@ -167,8 +166,7 @@ module solar_adjust_module
 
         !> Local variables.
         integer k, ierr
-        integer :: iun = 58
-        logical print_out, write_out
+        character(len = DEFAULT_LINE_LENGTH) line
 
         !> Parse options.
         call solar_adjust_parse_options(rsrd_adj%RUNOPTIONSFLAG, ierr)
@@ -219,49 +217,40 @@ module solar_adjust_module
         if (allocated(rsrd_adj%pm%delta)) deallocate(rsrd_adj%pm%delta)
 
         !> Print summary and remark that the process is active.
+        call print_message('SOLARADJUSTFLAG is ACTIVE.')
+
         !> Print configuration information to file if 'DIAGNOSEMODE' is active.
-        print_out = (ro%VERBOSEMODE > 0)
-        write_out = (ro%VERBOSEMODE > 0 .and. MODELINFOOUTFLAG > 0)
-        if (write_out) write(iun, 1100)
-        if (write_out .and. ro%DIAGNOSEMODE > 0) then
-            write(iun, 1110) 'Trans', rsrd_adj%pm%Trans
-            write(iun, 1110) 'Time_Zone', rsrd_adj%pm%Time_Zone
-            write(iun, 1110) 'CalcFreq', rsrd_adj%pm%CalcFreq
-            write(iun, *)
+        if (DIAGNOSEMODE) then
+            write(line, FMT_GEN) 'Trans', rsrd_adj%pm%Trans
+            call print_message_detail(line)
+            write(line, FMT_GEN) 'Time_Zone', rsrd_adj%pm%Time_Zone
+            call print_message_detail(line)
+            write(line, FMT_GEN) 'CalcFreq', rsrd_adj%pm%CalcFreq
+            call print_message_detail(line)
         end if
 
         !> Check values, print error messages for invalid values.
         !> The check is of 'GAT'-based variables, for which all tiles should have valid values.
         ierr = 0
         if (mod(24*60, rsrd_adj%pm%CalcFreq) /= 0) then
-            if (print_out) print 1120, rsrd_adj%pm%CalcFreq
-            if (write_out) write(iun, 1120) rsrd_adj%pm%CalcFreq
+            write(line, FMT_GEN) rsrd_adj%pm%CalcFreq
+            call print_message_detail( &
+                'ERROR: CalcFreq must evenly divide into minutes in the day. 1440 mod ' // trim(adjustl(line)) // ' /= 0.')
             ierr = 1
         end if
         if (any(rsrd_adj%vs%elev < 0.0)) then
-            if (print_out) print 1130, 'ELEVATION'
-            if (write_out) write(iun, 1130) 'ELEVATION'
+            call print_message_detail('ERROR: Values of ELEVATION are less than zero.')
             ierr = 1
         end if
         if (any(rsrd_adj%vs%slope < 0.0)) then
-            if (print_out) print 1130, 'SLOPE'
-            if (write_out) write(iun, 1130) 'SLOPE'
+            call print_message_detail('ERROR: Values of SLOPE are less than zero.')
             ierr = 1
         end if
         if (any(rsrd_adj%vs%aspect < 0.0)) then
-            if (print_out) print 1130, 'ASPECT'
-            if (write_out) write(iun, 1130) 'ASPECT'
+            call print_message_detail('ERROR: Values of ASPECT are less than zero.')
             ierr = 1
         end if
-        if (ierr /= 0) stop
-
-        !> Format statements.
-1100    format(1x, "SOLAR_ADJUST is ACTIVE.")
-1110    format(999(1x, g16.9))
-1120    format( &
-            1x, "ERROR: CalcFreq must evenly divide into minutes in the day.", &
-            /3x, "1440 mod ", i4, " /= 0")
-1130    format(1x, "ERROR: Values of ", (a), " are less than zero.")
+        if (ierr /= 0) call program_abort()
 
     end subroutine
 
@@ -269,7 +258,7 @@ module solar_adjust_module
 
         !> Required for MESH variables.
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use climate_forcing
 
         !> Required for 'il1', 'il2', and 'iln'.

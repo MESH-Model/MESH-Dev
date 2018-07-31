@@ -18,7 +18,7 @@ module model_files
 
         use model_files_variabletypes
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use SIMSTATS_config, only: mtsfl, mtsk, init_metricsout_files
         use WF_ROUTE_config
         use SA_RTE_module, only: SA_RTE_fls, SA_RTE_flkeys, SA_RTE_init_fls

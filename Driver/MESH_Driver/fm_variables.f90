@@ -5,7 +5,7 @@
 !>  lake, and reservoir locations.
 !>
 !> Instances of these types are accessible by the
-!> 'sa_mesh_shared_variables' module: fms%
+!> 'sa_mesh_variables' module: fms%
 !>
 !> Types:
 !*  outlet_location: Location of an outlet location.
@@ -81,7 +81,7 @@ module fm_variables
         real(kind = 4), dimension(:), allocatable :: &
             b1, b2, b3, b4, b5, &
             b6, b7, &
-            area
+            area, zlvl0
     end type
 
     !> Type: streamflow_gauge_location
@@ -176,12 +176,12 @@ module fm_variables
             rls%cfn(n), &
             rls%b1(n), rls%b2(n), rls%b3(n), rls%b4(n), rls%b5(n), &
             rls%b6(n), rls%b7(n), &
-            rls%area(n), stat = ierr)
+            rls%area(n), rls%zlvl0(n), stat = ierr)
         if (ierr == 0) then
             rls%cfn = 0
             rls%b1 = 0.0; rls%b2 = 0.0; rls%b3 = 0.0; rls%b4 = 0.0; rls%b5 = 0.0
             rls%b6 = 0.0; rls%b7 = 0.0
-            rls%area = 0.0
+            rls%area = 0.0; rls%zlvl0 = 0.0
         end if
     end subroutine
 

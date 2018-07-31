@@ -78,7 +78,7 @@ module RUNCLASS36_config
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
         use FLAGS
@@ -108,6 +108,7 @@ module RUNCLASS36_config
         NTYPE = shd%lc%NTYPE
         NSL = shd%lc%IGND
         NML = shd%lc%NML
+        DELT = ic%dts
 
         !> ALLOCATE ALL VARIABLES
 
@@ -331,7 +332,7 @@ module RUNCLASS36_config
 
         !> Initialize PBSM or allocate and initialize variables used in CLASS even if PBSM is not enabled.
         if (pbsm%PROCESS_ACTIVE) then
-            call PBSM_init(shd, fls, cm)
+            call PBSM_init(fls, shd, cm)
         else
 
             !> Variables used in CLASSZ.
@@ -569,17 +570,8 @@ module RUNCLASS36_config
         stas%sl%delzw = csfv%DELZW
         stas%sl%zbotw = csfv%ZBTW
 
-        if (WF_NUM_POINTS > 0) then
-
-            print *, 'Found these output locations:'
-            print *, 'Output Directory, grid number, land class number'
-            do i = 1, WF_NUM_POINTS
-                print *, op%DIR_OUT(i), op%N_OUT(i), op%II_OUT(i)
-            end do
-            print *
-
-            call CLASSOUT_open_files(shd)
-        end if
+        !> CLASS output files.
+        if (WF_NUM_POINTS > 0) call CLASSOUT_open_files(shd)
 
         do k = il1, il2
             ik = shd%lc%ILMOS(k)
@@ -597,7 +589,7 @@ module RUNCLASS36_config
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
         use FLAGS

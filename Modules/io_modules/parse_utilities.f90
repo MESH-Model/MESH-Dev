@@ -1,99 +1,93 @@
-!>
 !> Description:
 !>  Module that contains subroutines and functions for parsing lines
-!>  read from file for simple text and CSV format.
-!>
+!>  read from simple text and/or CSV format files.
 module parse_utilities
 
     implicit none
 
-    private assign_parameters_fval, assign_parameters_ival
+    private assign_line_args_fval, assign_line_args_ival
 
     !> Description:
     !>  Assign the arguments provided from a string to the given field.
     !>
-    !> Arguments:
-    !*  - field: Field of size 'nfield'.
-    !*  - nfield: Size of 'field'.
-    !*  - in_line: Original line parsed to 'args'.
-    !*  - args: Fields extracted from 'in_line' of size 'nargs'.
-    !*  - nargs: Size of 'args'.
-    !*  - ipid: Index of current node, used in printing output (0: print; 1: don't print).
-    !*  - istat: Status of conversion error(s) (0: no error; 1: error(s)).
-    !*  - verbose: Verbosity of non-critical output (.true.: print warnings; .false.: ignore warnings).
-    interface assign_parameters
-        module procedure assign_parameters_fval
-        module procedure assign_parameters_ival
+    !> Input/output variables:
+    !*  field: Field of size 'nfield' (allocated), assigned values from 'args'.
+    !*  nfield: Size of 'field'.
+    !*  args: Values to assign to 'field'.
+    !*  nargs: Size of 'args'.
+    !*  ierr: Conversion/error status.
+    interface assign_line_args_vector
+        module procedure assign_line_args_fval
+        module procedure assign_line_args_ival
     end interface
+
+    !> Description:
+    !>  Type for error keys (to be interpreted by called routines).
+    !>
+    !> Variables:
+    !*  COUNT_MISMATCH: When the number of values in 'args' does not match the expected number.
+    !*  BAD_ASSIGN: When an error occured converting the type of the variable to assign to the value.
+    type error_keys
+        integer :: COUNT_MISMATCH = 1
+        integer :: BAD_ASSIGN = 2
+    end type
+
+    !* pserr: Instance of error keys.
+    type(error_keys), save :: pserr
 
     contains
 
-    subroutine assign_parameters_fval(field, nfield, in_line, args, nargs, ipid, istat, verbose)
+    subroutine assign_line_args_fval(field, nfield, args, nargs, ierr)
 
-        !> For: 'value'.
+        !> strings: For 'value' function.
         use strings
 
-        !> Arguments.
-        integer, intent(in) :: nfield, nargs, ipid
-        character(len = *), intent(in) :: in_line
+        !> Input/output variables.
+        integer, intent(in) :: nfield, nargs
         character(len = *), dimension(nargs), intent(in) :: args
         real, dimension(nfield) :: field
-        integer istat
-        logical, intent(in) :: verbose
+        integer ierr
 
         !> Local variables.
         integer i
         real fval
 
+        !> Check dimensions.
+        if (nargs < nfield) then
+            ierr = pserr%COUNT_MISMATCH
+            return
+        end if
+
         !> Extract the fields.
-        istat = 0
-        if (nargs == 2) then
+        ierr = 0
+        do i = 1, nfield
+            call value(args(i), field(i), ierr)
+            if (ierr /= 0) exit
+        end do
 
-            !> Assign to all 'nfield' if only one value.
-            call value(args(2), fval, istat)
-            field = fval
-        else if (nargs > nfield) then
-
-            !> Assign values.
-            do i = 1, nfield
-                call value(args(i + 1), field(i), istat)
-            end do
-        else
-
-            !> Bad number of arguments.
-            if (verbose) print 1020, trim(adjustl(args(1))), nargs
-        end if
-
-        !> Check for conversion error.
-        if (istat /= 0) then
-            if (ipid == 0) print 1010, trim(adjustl(in_line))
-        end if
+        !> Check error status.
+        if (ierr /= 0) ierr = pserr%BAD_ASSIGN
 
         return
 
-1010    format(1x, 'ERROR: Assigning parameter ', (a))
-1020    format(3x, 'WARNING: The parameter ', (a), ' contains no values. NARGS =', i2)
-
     end subroutine
 
-    subroutine assign_parameters_ival(field, nfield, in_line, args, nargs, ipid, istat, verbose)
+    subroutine assign_line_args_ival(field, nfield, args, nargs, ierr)
 
-        !> Arguments.
-        integer, intent(in) :: nfield, nargs, ipid
-        character(len = *), intent(in) :: in_line
+        !> Input/output variables.
+        integer, intent(in) :: nfield, nargs
         character(len = *), dimension(nargs), intent(in) :: args
         integer, dimension(nfield) :: field
-        integer istat
-        logical, intent(in) :: verbose
+        integer ierr
 
         !> Local variables.
         real, dimension(nfield) :: fval
 
         !> Call subroutine for type real.
-        call assign_parameters_fval(fval, nfield, in_line, args, nargs, ipid, istat, verbose)
+        call assign_line_args_fval(fval, nfield, args, nargs, ierr)
 
         !> Assign field.
-        if (istat == 0) field = int(fval)
+        if (ierr == 0) field = int(fval)
 
         return
 

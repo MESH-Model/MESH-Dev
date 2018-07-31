@@ -1,13 +1,10 @@
 subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
-    !> Required for 'ipid'.
-    use mpi_module
-
     !> Required for file object and CLASS.ini file index.
     use model_files_variables
 
-    !> For the 'ShedGridParams' type, 'ro%' run options type, and SA_MESH parameters.
-    use sa_mesh_shared_variables
+    !> For the 'ShedGridParams' type and SA_MESH parameters.
+    use sa_mesh_common
 
     !> Required for 'NRSOILAYEREADFLAG'.
     use FLAGS
@@ -27,28 +24,20 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
     !> Local variables.
     integer NA, NTYPE, NSL, iun, ierr, k, ignd, i, m, j
+    character(len = DEFAULT_LINE_LENGTH) line
 
     !> Local variables (read from file).
     real DEGLAT, DEGLON
     integer JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
 
     !> Open the file.
+    call print_screen('READING: ' // trim(adjustl(fls%fl(mfk%f50)%fn)))
+    call print_echo_txt(fls%fl(mfk%f50)%fn)
     iun = fls%fl(mfk%f50)%iun
-    open(iun, &
-         file = trim(adjustl(fls%fl(mfk%f50)%fn)), &
-         status = 'old', &
-         action = 'read', &
-         iostat = ierr)
-
-    !> Check for errors from opening the file.
-    if (ierr /= 0 .and. ipid == 0) then
-        print *
-        print *, &
-            'MESH_parameters_CLASS.ini could not be opened.', &
-            'Ensure that the file exists and restart the program.'
-        stop
-    else if (ro%VERBOSEMODE > 0) then
-        write(6, "(1x, 'READING: ', (a))", advance = 'no') trim(adjustl(fls%fl(mfk%f50)%fn))
+    open(iun, file = fls%fl(mfk%f50)%fn, status = 'old', action = 'read', iostat = ierr)
+    if (ierr /= 0) then
+        call print_error('Unable to open file. Check if the file exists.')
+        call program_abort()
     end if
 
     NA = shd%NA
@@ -64,23 +53,28 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
     read(iun, *) DEGLAT, DEGLON, pm_gru%sfp%zrfm(1), pm_gru%sfp%zrfh(1), pm_gru%sfp%zbld(1), pm_gru%tp%gc(1), shd%wc%ILG, i, m
 
     !> Check that the number of GRUs matches the drainage database value.
-    if (NTYPE /= m .and. NTYPE > 0 .and. ipid == 0) then
-        print *
-        print *, 'GRUs from MESH_parameters_CLASS.ini: ', m
-        print *, 'GRUs from basin watershed file: ', NTYPE
-        print *, 'These values must be equal.'
-	    stop
+    ierr = 0
+    if (NTYPE /= m .and. NTYPE > 0) then
+        call print_error('The number of GRUs does not match the drainage database.')
+        write(line, 1001) NTYPE
+        call print_message_detail('Drainage database: ' // trim(adjustl(line)))
+        write(line, 1001) m
+        call print_message_detail(trim(adjustl(fls%fl(mfk%f50)%fn)) // ': ' // trim(adjustl(line)))
+        ierr = 1
     end if
 
     !> Check that the number of grid cells matches the drainage database value.
-    if (i /= NA .and. ipid == 0) then
-        print *
-        print *, &
-            'ERROR: The number of grid squares in the class ', &
-            'parameters file does not match the number of grid squares ', &
-            'from the shed file.'
-        stop
+    if (i /= NA) then
+        call print_error('The number of grid cells does not match the drainage database.')
+        write(line, 1001) NA
+        call print_message_detail('Drainage database: ' // trim(adjustl(line)))
+        write(line, 1001) i
+        call print_message_detail(trim(adjustl(fls%fl(mfk%f50)%fn)) // ': ' // trim(adjustl(line)))
+        ierr = 1
     end if
+
+    !> Stop if an error has occurred.
+    if (ierr /= 0) call program_abort()
 
     JLAT = nint(DEGLAT)
 
@@ -122,45 +116,16 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm)
 
     !> Close the file.
     close(iun)
-    if (ro%VERBOSEMODE > 0) print *, 'READ: SUCCESSFUL, FILE: CLOSED'
-
-    !> Distribute soil variables to additional layers.
-!todo: Change this so that soil.ini can take more than 3 layers.
-    if (NRSOILAYEREADFLAG > 3) then
-        ignd = min(NRSOILAYEREADFLAG, NSL)
-    else if (NRSOILAYEREADFLAG == 1) then
-        ignd = 0
-    else
-        ignd = 3
-    end if
-    do j = 4, NSL
-        do m = 1, NTYPE
-
-            !> Distribute parameters and initial states to lower layers whose values might not be defined.
-            if (ignd > 0) then
-                stas_gru%sl%tbar(m, j) = stas_gru%sl%tbar(m, ignd) !note333 see read_s_temperature_txt.f for more TBAR information
-                stas_gru%sl%thlq(m, j) = stas_gru%sl%thlq(m, ignd) !note444 see read_s_moisture_txt.f for more THLQ information
-                stas_gru%sl%thic(m, j) = stas_gru%sl%thic(m, ignd)
-                pm_gru%slp%sand(m, j) = pm_gru%slp%sand(m, ignd)
-                pm_gru%slp%clay(m, j) = pm_gru%slp%clay(m, ignd)
-                pm_gru%slp%orgm(m, j) = pm_gru%slp%orgm(m, ignd)
-            end if !if (NRSOILAYEREADFLAG == 0) then
-
-            !> Impermeable soils.
-            if (pm_gru%slp%sdep(m) < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm_gru%slp%sand(m, j) > -2.5) then
-                pm_gru%slp%sand(m, j) = -3.0
-                pm_gru%slp%clay(m, j) = -3.0
-                pm_gru%slp%orgm(m, j) = -3.0
-            end if
-        end do
-    end do
 
     !> Assign DEGLAT and DEGLON if running a point run where no shed file exists.
-    if (SHDFILEFLAG == 2) then
+    if (SHDFILEFMT == 2) then
         shd%ylat = DEGLAT
         shd%xlng = DEGLON
     end if
 
     return
+
+    !> Format statements.
+1001    format(9999(g15.6, 1x))
 
 end subroutine
