@@ -1,42 +1,36 @@
+module reservoir
 
-module reservoir! Variable declarations
-
-    use model_dates
+!-    use model_dates
 
     implicit none
 
     type reservoir_f
-        integer :: id                              !# Reservoir ID
-        integer :: rank                            !# Rank value to identify the grid cell as a reservoir
-        integer :: modeltype                       !# Model type (reservoir storage zone release)
-        real    :: lat                             !# Lat location of the reservoir (decimal degrees)
-        real    :: long                            !# Lon location of the reservoir (decimal degrees)
-        real    :: SMAX                            !# Max reservoir capacity (m3)
-        real    :: flowO1                          !# Initial discharge (m3 s-1)
-        real    :: Intstor1                        !# Initial storage (m3)
-        real    :: qmaxmax                         !# Downstream channel capacity
-        real    :: inflowcorr                      !# Inflow correction factor for evaporation
-        real    :: deadst                          !# Dead storage fraction of maximum storage ( 0.1 means 10% of max storage)
-        real    :: RXN                             !# Random term variance or range
-        real    :: dsto(12)                        !# Monthly min storage 12 values one per month (m3)
-        real    :: nsto(12)                        !# Monthly normal upper storage (m3)
-        real    :: ndsto(12)                       !# Monthly upper storage (m3)
-        real    :: Qmin(12)                        !# Monthly min release (m3 s-1)
-        real    :: Qnor(12)                        !# Monthly normal upper release (m3 s-1)
-        real    :: Qnd(12)                         !# Monthly upper release (m3 s-1)
-        real    :: stoSIM(2)                       !# storage time series of the reservoir
-        real    :: flowSIM(2)                      !# storage time series of the reservoir
-        real    :: flowINF(2)                      !# inflow time series of the reservoir
+        integer :: id           ! Reservoir ID
+        integer :: rank         ! Rank value to identify the grid cell as a reservoir
+        integer :: modeltype    ! Model type (reservoir storage zone release)
+        real :: lat             ! Lat location of the reservoir (decimal degrees)
+        real :: long            ! Lon location of the reservoir (decimal degrees)
+        real :: SMAX            ! Max reservoir capacity (m3)
+        real :: flowO1          ! Initial discharge (m3 s-1)
+        real :: Intstor1        ! Initial storage (m3)
+        real :: qmaxmax         ! Downstream channel capacity
+        real :: inflowcorr      ! Inflow correction factor for evaporation
+        real :: deadst          ! Dead storage fraction of maximum storage ( 0.1 means 10% of max storage)
+        real :: RXN             ! Random term variance or range
+        real :: dsto(12)        ! Monthly min storage 12 values one per month (m3)
+        real :: nsto(12)        ! Monthly normal upper storage (m3)
+        real :: ndsto(12)       ! Monthly upper storage (m3)
+        real :: Qmin(12)        ! Monthly min release (m3 s-1)
+        real :: Qnor(12)        ! Monthly normal upper release (m3 s-1)
+        real :: Qnd(12)         ! Monthly upper release (m3 s-1)
+        real :: stoSIM(2)       ! storage time series of the reservoir
+        real :: flowSIM(2)      ! storage time series of the reservoir
+        real :: flowINF(2)      ! inflow time series of the reservoir
     end type
 
     type reservoirs
-
-        integer :: nreserv                         !# numer of the reservoirs
-        type(reservoir_f),allocatable,dimension(:) :: rsvr
-
-!        contains
-!        procedure :: init => init_reservoirs
-
+        integer :: nreserv      ! number of the reservoirs
+        type(reservoir_f), dimension(:), allocatable :: rsvr
     end type reservoirs
 
     type(reservoirs), save :: resrvs
@@ -45,69 +39,70 @@ module reservoir! Variable declarations
 
     subroutine init_reservoirs(flIn)
 
-        !> Derived-type variable.
-!        class(reservoirs)         :: resrvs
-!        integer, intent(in)       :: nr_timeStep
+        !> Input variables.
         character(len = *), intent(in) :: flIn
-        !Internals
-        integer :: i, j
-        open(unit   = 75                    , &
-             file   = trim(adjustl(flIn))   , &
-             status = 'old'                 , &
-             action = 'read'                )
 
+        !> Local variables.
+        integer iun, i, j
 
-        read(75,*) resrvs%nreserv
+        !> Use a dummy unit.
+        iun = 100
+
+        !> Open the file.
+        open(100, file = flIn, status = 'old', action = 'read')
+
+        !> Read number of reservoirs and allocate the reservoir object to the number of reservoirs.
+        read(100, *) resrvs%nreserv
         allocate(resrvs%rsvr(resrvs%nreserv))
 
+        !> Read data.
         do i = 1, resrvs%nreserv
 
-            read(75,*) resrvs%rsvr(i)%id
-            read(75,*) resrvs%rsvr(i)%rank
-            read(75,*) resrvs%rsvr(i)%modeltype
-            read(75,*) resrvs%rsvr(i)%lat, resrvs%rsvr(i)%long
-            read(75,*) resrvs%rsvr(i)%SMAX
-            read(75,*) resrvs%rsvr(i)%flowO1
-            read(75,*) resrvs%rsvr(i)%Intstor1
-            read(75,*) resrvs%rsvr(i)%qmaxmax
-            read(75,*) resrvs%rsvr(i)%inflowcorr
-            read(75,*) resrvs%rsvr(i)%deadst
-            read(75,*) resrvs%rsvr(i)%RXN
+            !> Read attributes.
+            read(100, *) resrvs%rsvr(i)%id
+            read(100, *) resrvs%rsvr(i)%rank
+            read(100, *) resrvs%rsvr(i)%modeltype
+            read(100, *) resrvs%rsvr(i)%lat, resrvs%rsvr(i)%long
+            read(100, *) resrvs%rsvr(i)%SMAX
+            read(100, *) resrvs%rsvr(i)%flowO1
+            read(100, *) resrvs%rsvr(i)%Intstor1
+            read(100, *) resrvs%rsvr(i)%qmaxmax
+            read(100, *) resrvs%rsvr(i)%inflowcorr
+            read(100, *) resrvs%rsvr(i)%deadst
+            read(100, *) resrvs%rsvr(i)%RXN
+            read(100, *) (resrvs%rsvr(i)%dsto(j), j = 1, 12)
+            read(100, *) (resrvs%rsvr(i)%nsto(j), j = 1, 12)
+            read(100, *) (resrvs%rsvr(i)%ndsto(j), j = 1, 12)
+            read(100, *) (resrvs%rsvr(i)%Qmin(j), j = 1, 12)
+            read(100, *) (resrvs%rsvr(i)%Qnor(j), j = 1, 12)
+            read(100, *) (resrvs%rsvr(i)%Qnd(j), j = 1, 12)
 
-            read(75,*) (resrvs%rsvr(i)%dsto(j)   , j= 1,12)
-            read(75,*) (resrvs%rsvr(i)%nsto(j)   , j= 1,12)
-            read(75,*) (resrvs%rsvr(i)%ndsto(j)  , j= 1,12)
-            read(75,*) (resrvs%rsvr(i)%Qmin(j)   , j= 1,12)
-            read(75,*) (resrvs%rsvr(i)%Qnor(j)   , j= 1,12)
-            read(75,*) (resrvs%rsvr(i)%Qnd(j)    , j= 1,12)
-
-!            allocate(resrvs%rsvr(i)%stoSIM(2))
-!            allocate(resrvs%rsvr(i)%flowSIM(2))
-
-            ! We set the initial values
+            !> Set initial values.
             resrvs%rsvr(i)%stoSIM(1)  = resrvs%rsvr(i)%Intstor1
             resrvs%rsvr(i)%flowSIM(1) = resrvs%rsvr(i)%flowO1
             resrvs%rsvr(i)%flowINF(1) = resrvs%rsvr(i)%flowO1
 
         end do
 
-        close(75)
+        !> Close the file to free the unit.
+        close(100)
 
     end subroutine init_reservoirs
 
     subroutine get_reservoir(rank, irsv)
-    ! Get reservoir id from rank value
-    !Iputs
-!    class(reservoirs)        :: resrvs
-        integer, intent(in) :: rank
-    !Outputs
-        integer, intent(out) :: irsv
-    !Internals
-    integer    :: i
 
-    ! identy reservoir using rank
+        !> Input variables.
+        integer, intent(in) :: rank
+        
+        !> Output variables.
+        integer, intent(out) :: irsv
+
+        !> Local variables.
+        integer i
+
+        !> Identify reservoir using RANK.
         do i = 1, resrvs%nreserv
-            if (rank .eq. resrvs%rsvr(i)%rank) then
+            if (rank == resrvs%rsvr(i)%rank) then
                 irsv = i
                 exit
             end if
@@ -191,23 +186,26 @@ module reservoir! Variable declarations
 
     end subroutine
 
-    subroutine compute_reservoir(resrv,flowIn,t,dt,mId)
+    subroutine compute_reservoir(resrv, flowIn, t, dt, mId)
 
-        class(reservoir_f)     :: resrv
-        real   , intent(in)  :: flowIn          !flow from downstream gridcell from routing
-        integer, intent(in)  :: mId             !month to idenfy monthly variable parameters
-        integer, intent(in)  :: t               !current time step
-        real, intent(in)     :: dt
+        !> Input variables.
+        real, intent(in) :: flowIn  ! flow from downstream grid cell from routing
+        integer, intent(in) :: mId  ! month to idenfy monthly variable parameters
+        integer, intent(in) :: t    ! current time step
+        real, intent(in) :: dt      ! time-step length/duration
 
-        !internals
+        !> Input/output variables.
+        type(reservoir_f) :: resrv  ! reservoir object
+
+        !> Local variables.
 !-        integer            :: irsv, MT, i
 !-        real               :: FU, LD, LC, LN, LF, RX, ICORR
-        real     :: rnd
-        !> get random number
-        call random_number(rnd)
-        !rnd sould be between 0.0 and 1.0
+        real rnd
 
-        ! Water Balance computation S_t-S_t-1 = I - O
+        !> Get random number.
+        call random_number(rnd)         ! rnd sould be between 0.0 and 1.0
+
+        !> Water Balance computation S_t-S_t-1 = I - O.
 !-        ICORR = resrv%inflowcorr
 !-        resrv%flowINF(2) = flowIn
 !-        resrv%stoSIM(t) = resrv%stoSIM(t-1) + &
@@ -221,7 +219,7 @@ module reservoir! Variable declarations
 !-        LD = resrv%deadst
 !-        RX = 2*resrv%RXN*rnd + resrv%RXN
 
-        ! Determine release and storage at current time step
+        !> Determine release and storage at current time step.
 !-        if (FU <= LD) then
 !-            resrv%flowSIM(t) = 0.0
 !-        else if (FU > LD .and. FU <= LC) then
@@ -245,7 +243,7 @@ module reservoir! Variable declarations
 !-            resrv%flowSIM(t) = max((min((max(((FU-LF)*resrv%SMAX/DT),resrv%Qnd(mId)) + RX),resrv%qmaxmax)),0.0)
 !-        end if
 
-        !Update storage estimation and loop to reach stable release and storage
+        !> Update storage estimation and loop to reach stable release and storage.
 !-        do i = 1, 40
 !-            resrv%stoSIM(t) = resrv%stoSIM(t-1) + &
 !-                                      (DT/2)*(resrv%flowINF(2)*ICORR + resrv%flowINF(1)*ICORR - &
@@ -309,7 +307,7 @@ module reservoir! Variable declarations
         !> Because a time-series is not preserved, assign the current value to the previous time-step in the local variables.
         resrv%stoSIM(t - 1)  = resrv%stoSIM(t)
         resrv%flowSIM(t - 1) = resrv%flowSIM(t)
-        resrv%flowINF(1) = resrv%flowINF(2)
+        resrv%flowINF(t - 1) = resrv%flowINF(t)
 
     end subroutine compute_reservoir
 
