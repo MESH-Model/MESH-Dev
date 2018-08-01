@@ -26,6 +26,7 @@ module reservoir! Variable declarations
         real    :: Qnd(12)                         !# Monthly upper release (m3 s-1)
         real    :: stoSIM(2)                       !# storage time series of the reservoir
         real    :: flowSIM(2)                      !# storage time series of the reservoir
+        real    :: flowINF(2)                      !# inflow time series of the reservoir
     end type
 
     type reservoirs
@@ -86,6 +87,7 @@ module reservoir! Variable declarations
             ! We set the initial values
             resrvs%rsvr(i)%stoSIM(1)  = resrvs%rsvr(i)%Intstor1
             resrvs%rsvr(i)%flowSIM(1) = resrvs%rsvr(i)%flowO1
+            resrvs%rsvr(i)%flowINF(1) = resrvs%rsvr(i)%flowO1
 
         enddo
 
@@ -122,7 +124,7 @@ module reservoir! Variable declarations
         real, intent(in)     :: dt
 
         !internals
-        integer  :: irsv, MT
+        integer  :: irsv, MT, i
         real     :: FU, LD, LC, LN, LF, RX, ICORR
         real     :: rnd
         !> get random number
@@ -131,9 +133,10 @@ module reservoir! Variable declarations
 
         ! Water Balance computation S_t-S_t-1 = I - O
         ICORR = resrv%inflowcorr
+        resrv%flowINF(2) = flowIn
         resrv%stoSIM(t) = resrv%stoSIM(t-1) + &
-                                      DT*(flowIn*ICORR - resrv%flowSIM(t-1))
-
+                                      (DT/2)*(resrv%flowINF(2)*ICORR + resrv%flowINF(1)*ICORR - &
+                                      resrv%flowSIM(t-1))
         FU = resrv%stoSIM(t)/resrv%SMAX
         LC = resrv%dsto(mId)/resrv%SMAX
         LN = resrv%nsto(mId)/resrv%SMAX
@@ -142,41 +145,65 @@ module reservoir! Variable declarations
         LD = resrv%deadst
         RX = 2*resrv%RXN*rnd + resrv%RXN
 
+        ! Determine release and storage at current time step
         if (FU <= LD) then
-
             resrv%flowSIM(t) = 0.0
-
         else if (FU > LD .and. FU <= LC) then
-
             resrv%flowSIM(t) = max((min(resrv%Qmin(mId),((FU-LD)*resrv%SMAX/DT))+RX),0.0)
-
         else if (FU > LC .and. FU <= LN) then
-
             resrv%flowSIM(t) = max((resrv%Qmin(mId) + &
                 (resrv%Qnor(mId) - resrv%Qmin(mId))*((FU-LC)/(LN-LC)) + RX),0.0)
-
         else if (FU > LN .and. FU <= LF) then
-
             if (MT==1) then
-
                 resrv%flowSIM(t) = max((resrv%Qnor(mId) + &
                                             ((FU-LN)/(LF-LN))*(resrv%Qnd(mId)-resrv%Qnor(mId)) + RX),0.0)
-
             else
-
-                resrv%flowSIM(t) = max((resrv%Qnor(mId) + &
-                                            ((FU-LN)/(LF-LN))*max((flowIn-resrv%Qnor(mId)), &
-                                            (resrv%Qnd(mId)-resrv%Qnor(mId))) + RX),0.0)
+           !     resrv%flowSIM(t) = max(min(((resrv%Qnor(mId) + &
+           !                               ((FU-LN)/(LF-LN))*max((resrv%flowINF(t)-resrv%Qnor(mId)), &
+           !                                 (resrv%Qnd(mId)-resrv%Qnor(mId)))) + RX),resrv%qmaxmax),0.0)
+                resrv%flowSIM(t) = max(((resrv%Qnor(mId) + &
+                                            ((FU-LN)/(LF-LN))*max((resrv%flowINF(2)-resrv%Qnor(mId)), &
+                                            (resrv%Qnd(mId)-resrv%Qnor(mId)))) + RX),0.0)
             end if
-
         else
-
-            resrv%flowSIM(t) = max((min(max(((FU-LF)*resrv%SMAX/DT),resrv%Qnd(mId)),resrv%qmaxmax) + RX),0.0)
-
+            resrv%flowSIM(t) = max((min((max(((FU-LF)*resrv%SMAX/DT),resrv%Qnd(mId)) + RX),resrv%qmaxmax)),0.0)
         end if
 
+        !Update storage estimation and loop to reach stable release and storage
+        do i = 1, 40
+            resrv%stoSIM(t) = resrv%stoSIM(t-1) + &
+                                      (DT/2)*(resrv%flowINF(2)*ICORR + resrv%flowINF(1)*ICORR - &
+                                      resrv%flowSIM(t-1) - resrv%flowSIM(t))
+            FU = resrv%stoSIM(t)/resrv%SMAX
+            if (FU <= LD) then
+                resrv%flowSIM(t) = 0.0
+            else if (FU > LD .and. FU <= LC) then
+                resrv%flowSIM(t) = max((min(resrv%Qmin(mId),((FU-LD)*resrv%SMAX/DT))+RX),0.0)
+            else if (FU > LC .and. FU <= LN) then
+                resrv%flowSIM(t) = max((resrv%Qmin(mId) + &
+                    (resrv%Qnor(mId) - resrv%Qmin(mId))*((FU-LC)/(LN-LC)) + RX),0.0)
+            else if (FU > LN .and. FU <= LF) then
+                if (MT==1) then
+                    resrv%flowSIM(t) = max((resrv%Qnor(mId) + &
+                                                ((FU-LN)/(LF-LN))*(resrv%Qnd(mId)-resrv%Qnor(mId)) + RX),0.0)
+                else
+               !     resrv%flowSIM(t) = max(min(((resrv%Qnor(mId) + &
+               !                                 ((FU-LN)/(LF-LN))*max((resrv%flowINF(t)-resrv%Qnor(mId)), &
+               !                                (resrv%Qnd(mId)-resrv%Qnor(mId)))) + RX),resrv%qmaxmax),0.0)
+                    resrv%flowSIM(t) = max(((resrv%Qnor(mId) + &
+                                                ((FU-LN)/(LF-LN))*max((resrv%flowINF(2)-resrv%Qnor(mId)), &
+                                                (resrv%Qnd(mId)-resrv%Qnor(mId)))) + RX),0.0)
+                end if
+            else
+                    resrv%flowSIM(t) = max((min((max(((FU-LF)*resrv%SMAX/DT),resrv%Qnd(mId)) + RX),resrv%qmaxmax)),0.0)
+            end if
+        end do
+        if (resrv%stoSIM(t)>resrv%SMAX) then
+            resrv%flowSIM(t) = resrv%flowSIM(t) + ((resrv%stoSIM(t) - resrv%SMAX)/DT)
+        end if
         resrv%stoSIM(t-1)  = resrv%stoSIM(t)
         resrv%flowSIM(t-1) = resrv%flowSIM(t)
+        resrv%flowINF(1) = resrv%flowINF(2)
 
     end subroutine compute_reservoir
 
