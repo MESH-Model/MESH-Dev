@@ -1091,10 +1091,10 @@ program RUNMESH
     if (ENDDATA) call print_message('Reached end of forcing data.')
     if (ENDDATE) call print_message('Reached simulation end date.')
 
+    if (ISHEADNODE .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
+
     !> PREEMPTIONFLAG (FTEST) termination point.
 98  continue
-
-    if (ISHEADNODE .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
 
     !> Call finalization routines.
     if (ro%RUNTILE) then
