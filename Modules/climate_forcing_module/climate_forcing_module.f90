@@ -227,9 +227,7 @@ module climate_forcing
             if (iskip > 0) then
                 write(line, FMT_GEN) iskip
                 call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
-                do i = 1, iskip
-                    if (update_data(shd, cm, vid, .true.)) goto 999
-                end do
+                if (update_data(shd, cm, vid, iskip)) goto 999
             end if
         end do
 
@@ -288,7 +286,7 @@ module climate_forcing
 
                     !> INTERPOLATIONFLAG 1 requires an additional frame be read from the next time-step.
                     if (cm%dat(vid)%itimestep == 0) then
-                        if (update_data(shd, cm, vid, .false.)) goto 999
+                        if (update_data(shd, cm, vid, 0)) goto 999
                         cm%dat(vid)%ipdat(:, 2) = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
                     end if
                 end if
@@ -355,7 +353,7 @@ module climate_forcing
 
                 !> INTERPOLATIONFLAG 1 requires an additional frame be read in the first time-step.
                 if (ic%ts_count == 1 .and. cm%dat(vid)%ipflg == 1) then
-                    if (update_data(shd, cm, vid, .false.)) goto 999
+                    if (update_data(shd, cm, vid, 0)) goto 999
                     cm%dat(vid)%ipdat(:, 2) = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
                 end if
 
@@ -363,7 +361,7 @@ module climate_forcing
                 if (cm%dat(vid)%itimestep == 0) then
 
                     !> Update the input forcing data.
-                    if (update_data(shd, cm, vid, .false.)) goto 999
+                    if (update_data(shd, cm, vid, 0)) goto 999
 
                     !> Apply conditions to the series of data is such conditions exist.
                     if (cm%dat(vid)%nseries > 0) then
@@ -441,6 +439,14 @@ module climate_forcing
                 cm%dat(vid)%itimestep = cm%dat(vid)%itimestep + ic%dtmins
                 if (cm%dat(vid)%itimestep >= cm%dat(vid)%hf) then
                     cm%dat(vid)%itimestep = 0
+                end if
+
+                !> Update the count of the current block.
+                if (cm%dat(vid)%nblocks > 1 .and. cm%dat(vid)%itimestep == 0) then
+                    cm%dat(vid)%iblock = cm%dat(vid)%iblock + 1
+                    if (cm%dat(vid)%iblock > cm%dat(vid)%nblocks) then
+                        cm%dat(vid)%iblock = 1
+                    end if
                 end if
             end if
         end do
