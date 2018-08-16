@@ -209,57 +209,62 @@ read (11,7010) titlec3
 7010  FORMAT(A80)
 
 !>Read from CTEM initialization file (.CTM)
+!The file was modified in order to assume that each MESH GRU has the same initial values
+!So it will read over each GRU first(nmtest) then spread the values of the GRU to each grid (nltest)
 
+ 
+    do m=1,nmtest !This will loop over all of the MOSAIC tiles (number of GRUs)
 
-  do 71 i=1,nltest !This will loop over all of the Mosaic tiles (Or MESH grids)
-    do 72 m=1,nmtest 
-!>
 !>The following three variables are needed to run CTEM. 1) min & 2) max leaf area index are needed to break
 !>class lai into dcd and evg for trees (for crops and grasses it doesn't matter much). 3) dvdfcanrow is 
 !>needed to divide needle & broad leaf into dcd and evg, and crops & grasses into c3 and c4 fractions.
       
 
-
-        read(11,*) (ailcminrow(i,m,j),j=1,icc)
-        read(11,*) (ailcmaxrow(i,m,j),j=1,icc)
-        read(11,*) (dvdfcanrow(i,m,j),j=1,icc)
+        read(11,*) (ailcminrow(1,m,j),j=1,icc)
+        read(11,*) (ailcmaxrow(1,m,j),j=1,icc)
+        read(11,*) (dvdfcanrow(1,m,j),j=1,icc)
 
 !>
 !>Rest of the initialization variables are needed to run CTEM but if starting from bare ground initialize all 
 !>live and dead c pools from zero. suitable values of extnprobgrd and prbfrhucgrd would still be required. set 
 !>stdaln to 1 for operation in non-gcm stand alone mode, in the CTEM initialization file.
 !>
-        read(11,*) (gleafmasrow(i,m,j),j=1,icc)
-        read(11,*) (bleafmasrow(i,m,j),j=1,icc)
-        read(11,*) (stemmassrow(i,m,j),j=1,icc)
-        read(11,*) (rootmassrow(i,m,j),j=1,icc)
+        read(11,*) (gleafmasrow(1,m,j),j=1,icc)
+        read(11,*) (bleafmasrow(1,m,j),j=1,icc)
+        read(11,*) (stemmassrow(1,m,j),j=1,icc)
+        read(11,*) (rootmassrow(1,m,j),j=1,icc)
 !>
 !>If fire and competition are on, save the stemmass and rootmass for use in burntobare subroutine on the first timestep.
         if (dofire .and. compete) then
             do j =1,icc
-            pstemmassrow(i,m,j)=stemmassrow(i,m,j)
-            pgleafmassrow(i,m,j)=rootmassrow(i,m,j)    
+            pstemmassrow(1,m,j)=stemmassrow(1,m,j)
+            pgleafmassrow(1,m,j)=rootmassrow(1,m,j)    
             end do           
         end if
 
-        read(11,*) (litrmassrow(i,m,j),j=1,iccp1)
-        read(11,*) (soilcmasrow(i,m,j),j=1,iccp1)
-        read(11,*) (lfstatusrow(i,m,j),j=1,icc)
-        read(11,*) (pandaysrow(i,m,j),j=1,icc)
+        read(11,*) (litrmassrow(1,m,j),j=1,iccp1)
+        read(11,*) (soilcmasrow(1,m,j),j=1,iccp1)
+        read(11,*) (lfstatusrow(1,m,j),j=1,icc)
+        read(11,*) (pandaysrow(1,m,j),j=1,icc)
 
-72      continue
+     ENDDO !End reading over each MOSAIC TILE
+!End Reading each MOSAIC tile/GRU (nmtest)
 
-        read(11,*) (mlightng(i,1,j),j=1,6)  !mean monthly lightning frequency
-        read(11,*) (mlightng(i,1,j),j=7,12) !flashes/km2.year, this is spread over other tiles below
-        read(11,*) extnprob(i,1)
-        read(11,*) prbfrhuc(i,1)
-        read(11,*) stdaln(i,1)
 
+!Now start reading the last lines of the .CTM file
+     read(11,*) (mlightng(1,1,j),j=1,6)  !mean monthly lightning frequency
+     read(11,*) (mlightng(1,1,j),j=7,12) !flashes/km2.year, this is spread over other tiles below
+     read(11,*) extnprob(1,1)
+     read(11,*) prbfrhuc(1,1)
+     read(11,*) stdaln(1,1)
+
+
+!Not sure if this is needed, will eliminate later
+      DO I=1,NLTEST
         if (compete .and. inibioclim) then  !read in the bioclimatic parameters
         ! read them into the first tile of each grid cell.
         read(11,*) twarmm(i,1), tcoldm(i,1), gdd5(i,1), aridity(i,1),srplsmon(i,1)
         read(11,*) defctmon(i,1), anndefct(i,1), annsrpls(i,1), annpcp(i,1), dry_season_length(i,1)
-
         else if (compete .and. .not. inibioclim) then ! set them to zero
             twarmm(i,1)=0.0
             tcoldm(i,1)=0.0
@@ -272,9 +277,8 @@ read (11,7010) titlec3
             annpcp(i,1)=0.0
             dry_season_length(i,1) = 0.0
         endif
-
-
-!>Take the first tile value now and put it over the other tiles, other not needed for MESH as we have MESH tiles, and not CTEM tiles
+!>Take the first tile value now and put it over the other tiles
+!These are not initial values but rather information that should be the same for al MOSAIC tiles
         if (nmtest > 1) then
             do m = 2,nmtest
                 twarmm(i,m)=twarmm(i,1)
@@ -291,19 +295,27 @@ read (11,7010) titlec3
                 extnprob(i,m) = extnprob(i,1)
                 prbfrhuc(i,m) = prbfrhuc(i,1)
                 stdaln(i,m) = stdaln(i,1)
+            end do
+        end if
+      END DO !NLTEST
 
-	   	!This lower part of the loop was added so that the first tile value is spread over every tile
-		!Don't forget to change the condition of loop 72 btw
+
+      !Place the initial conditions of the GRU across the different grids (NLTEST)
+      !After this, each grid will have all of the data of each GRU/MOSAIC
+        IF (NLTEST > 1) THEN
+	    DO I=2,NLTEST
+             DO M=1,NMTEST !Give grid I all GRUs/MOSAICs information that we read before
+
 		DO J=1,icc
-	 	  ailcminrow(i,m,j) = ailcminrow(i,1,j)
-        	  ailcmaxrow(i,m,j) = ailcmaxrow(i,1,j)
-        	  dvdfcanrow(i,m,j) = dvdfcanrow(i,1,j)
-        	  gleafmasrow(i,m,j) = gleafmasrow(i,1,j)
-        	  bleafmasrow(i,m,j) = bleafmasrow(i,1,j)
-        	  stemmassrow(i,m,j) = stemmassrow(i,1,j)
-        	  rootmassrow(i,m,j) = rootmassrow(i,1,j)
-		  lfstatusrow(i,m,j) = lfstatusrow(i,1,j)
-        	  pandaysrow(i,m,j) = pandaysrow(i,1,j)
+	 	  ailcminrow(i,m,j) = ailcminrow(1,m,j)
+        	  ailcmaxrow(i,m,j) = ailcmaxrow(1,m,j)
+        	  dvdfcanrow(i,m,j) = dvdfcanrow(1,m,j)
+        	  gleafmasrow(i,m,j) = gleafmasrow(1,m,j)
+        	  bleafmasrow(i,m,j) = bleafmasrow(1,m,j)
+        	  stemmassrow(i,m,j) = stemmassrow(1,m,j)
+        	  rootmassrow(i,m,j) = rootmassrow(1,m,j)
+		  lfstatusrow(i,m,j) = lfstatusrow(1,m,j)
+        	  pandaysrow(i,m,j) = pandaysrow(1,m,j)
 		END DO
 	
 		DO J=1,iccp1
@@ -311,17 +323,13 @@ read (11,7010) titlec3
         	   soilcmasrow(i,m,j) = soilcmasrow(i,1,j)
 		END DO
 
-            end do
-        end if
-        if (dowetlands) then !if true then read wetland fractions into the first tile position
-          read(11,*) (slopefrac(i,1,j),j=1,8)
-          if (nmtest > 1) then ! if more tiles then just put the first tile across the rest
-            do m = 2,nmtest
-              slopefrac(i,m,:) = slopefrac(i,1,:)
-            end do
-          end if
-        endif
-71    continue
+       
+          END DO !NMTEST
+        END DO !NLTEST
+     END IF !NLTEST > 1
+
+      !Sanity check to make sure parameters and stuff is fine:
+
 
 close(11)
     

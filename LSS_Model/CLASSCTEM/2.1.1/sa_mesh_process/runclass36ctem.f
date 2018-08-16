@@ -1186,15 +1186,15 @@ c
       integer, pointer, dimension(:) :: stdalngat
       real, pointer, dimension(:) :: lightng
 
-      real, pointer, dimension(:,:) :: ailcmingat         !
-      real, pointer, dimension(:,:) :: ailcmaxgat         !
-      real, pointer, dimension(:,:) :: dvdfcangat         !
-      real, pointer, dimension(:,:) :: gleafmasgat        !
-      real, pointer, dimension(:,:) :: bleafmasgat        !
-      real, pointer, dimension(:,:) :: stemmassgat        !
-      real, pointer, dimension(:,:) :: rootmassgat        !
-      real, pointer, dimension(:,:) :: pstemmassgat       !
-      real, pointer, dimension(:,:) :: pgleafmassgat      !
+      real, pointer, dimension(:,:) :: ailcmingat      
+      real, pointer, dimension(:,:) :: ailcmaxgat         
+      real, pointer, dimension(:,:) :: dvdfcangat         
+      real, pointer, dimension(:,:) :: gleafmasgat        
+      real, pointer, dimension(:,:) :: bleafmasgat        
+      real, pointer, dimension(:,:) :: stemmassgat        
+      real, pointer, dimension(:,:) :: rootmassgat        
+      real, pointer, dimension(:,:) :: pstemmassgat       
+      real, pointer, dimension(:,:) :: pgleafmassgat      
       real, pointer, dimension(:,:) :: fcancmxgat
       real, pointer, dimension(:) :: gavglaigat
       real, pointer, dimension(:,:) :: zolncgat
