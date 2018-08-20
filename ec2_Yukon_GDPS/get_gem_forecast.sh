@@ -12,6 +12,7 @@ awk_file_path=$home_dir'scripts/'
 grib_file_path=$home_dir'GRIB/'
 temp_file_path=$home_dir'TempFiles/'
 run_file_path=$home_dir'gem_forecasts/'
+    minhours=5
     maxhours=54
 
 namess[1]="humidity"
@@ -22,7 +23,8 @@ namess[5]="shortwave"
 namess[6]="temperature"
 namess[7]="wind"
 
-FILESS[1]="*SPFH_TGL_2*"  # kg/kg
+#FILESS[1]="*SPFH_TGL_2*"  # kg/kg
+FILESS[1]="*SPFH_SFC_0*"  # kg/kg
 FILESS[2]="*DLWRF_SFC*" # J/m2
 FILESS[3]="*PRES_SFC*"  # Pa
 #FILESS[4]="*PRATE_SFC*" # kg/m2 
@@ -31,14 +33,19 @@ FILESS[5]="*DSWRF_SFC*" # J/m2 accumulated
 FILESS[6]="*TMP_TGL_2*"   # K
 FILESS[7]="*WIND_TGL_40*"  # m/s at 40 m
 
+let hours=$maxhours-$minhours+1
+F=$(($hours*${#FILESS[*]})) #number of files to be downloaded. Used in a condition to check whether all necessary RDPS files have been downloaded.
+
+#F=350 #number of files to be downloaded. Used in a condition to check whether all necessary RDPS files have been downloaded.
+
 runtimes[1]='18'
 maxhours[1]=54
 
 watersheds[1]="09AB001"
 stations[1]="09AB001"
-lats[1]=58.70
-lons[1]=-135.85
-ycounts[1]=20
+lats[1]=58.7380
+lons[1]=-135.8320
+ycounts[1]=19
 xcounts[1]=24
 watersheds[2]="09BC002"
 stations[2]="09BA001"
@@ -86,21 +93,42 @@ echo $dt
 
 echo $yest, $endt
 
+cd $grib_file_path
+rm download_attempts_RDPS.txt -f
+touch download_attempts_RDPS.txt 
+
+F_temp=0
+counter2=0
+while [[ $F_temp -lt F && $counter2 -lt 5 ]] 
+do
     # DOWNLOAD the GEM grib2 files from remote_location
     cd $grib_file_path
-    for hour in `seq -f %03.0f 5 1 $maxhours`
+    for hour in `seq -f %03.0f $minhours 1 $maxhours`
     do
         for variable in ${!FILESS[*]}
         do
             fvariable=${FILESS[$variable]}
             wget -r -l1 --no-parent -c -nd -A $fvariable$yest'*' $remote_location'/'$run_time'/'$hour'/'
         done
-        echo "boo"
+       #echo "boo"
     done
+    #Counting number of files downloaded and restarting download if files are missing. Pausing 1 minute before start of download.
+    F_temp=$( (find . -type f -name "*reg*"$yest"*" | wc -l) )
+    let counter2=counter2+1
+    
+    #if there were more than 4 download attempts, the information is temporarily     written to this file and is overwritten the next day.
+    if [ counter2 -ne 5 ]; then
+    echo stations[i,1] >> download_attempts_RDPS.txt
+    echo counter2 >> download_attempts_RDPS.txt
+    fi
+
+    #sleep 1m
+done
+
 
 # LOOP over the basins/watersheds
 for basin in ${!lats[*]}
-#for basin in `seq 3 3`
+#for basin in `seq 1 1`
 do
 
     # Remove temporary files if they exist
