@@ -198,7 +198,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !
   DO I=1,N
      !
-    IF(VEGH(I)>0.) THEN
+    IF(VEGH(I).GE.EPSILON_SVS) THEN
 
      IF (SVM(I).GE.CRITSNOWMASS)THEN
         !                                  There is snow on the ground, remove evaporation
@@ -229,7 +229,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
     ENDIF
      !
 
-    IF(VEGL(I)>0.) THEN
+    IF(VEGL(I)*(1-PSN(I)).GE.EPSILON_SVS) THEN
 
      IF (SNM(I).GE.CRITSNOWMASS)THEN
         !                                  There is snow on the ground, remove evaporation
@@ -258,7 +258,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
         RVEG_VL(I) = 0.
     ENDIF
 
-    IF ( (VEGH(I) + VEGL(I)) .GT. 0.0 ) THEN
+    IF ( (VEGH(I) + VEGL(I)*(1-PSN(I))) .GE. EPSILON_SVS ) THEN
        WRT(I) = (VEGL(I)*WRT_VL(I)+VEGH(I)*WRT_VH(I))/(VEGL(I)+VEGH(I))
     ELSE
        WRT(I) = 0.0
@@ -266,41 +266,55 @@ SUBROUTINE HYDRO_SVS ( DT, &
      !
   END DO
   !
-  !                                  Compute precipitation reaching the ground PG
-  !                                  as a weighted average of RVEG and RR
-  !                                  if there is no snow on bare ground,
-  !                                  otherwise PG is just from RVEG since RR goes
-  !                                  through the snowpack
-  !           
-  DO I=1,N
-     !  
-     IF(1.-VEGH(I)>0.) THEN
-      IF (SNM(I).GE.CRITSNOWMASS)THEN
-          PG(I) = VEGL(I)*RVEG_VL(I) + VEGH(I) * RVEG_VH(I)
-      ELSE
-          PG(I) = VEGL(I)*RVEG_VL(I) + VEGH(I) * RVEG_VH(I)  &
-             + (1. - VEGL(I) - VEGH(I) ) * (1. - PSN(I)) * RR(I)
-      ENDIF
-    ELSE
-         PG(I) =  VEGH(I) * RVEG_VH(I)
-    ENDIF
-     !
-  END DO
-  !
-  !
+  !        2.     CALCULATE PRECIPITATION and VEGETATION+SNOW RUNOFF REACHING THE GROUND 
+  !               ------------------------------------------
 
   !
-  !        2.     ADD EFFECT OF SNOWPACK RUNOFF 
-  !               ------------------------------------------
-  !
-  !                               Include the effect of runoff from the
-  !                               snowpack as a source for water reaching
-  !                               the ground
+  !                                  Have vegetation runoff only if vegetation present
+  !                                  Precipitation reaches ground directly only if no snow
+  !                                  otherwise goes to snowpack, and reaches ground as snow runoff
   !
   DO I=1,N
-     PG(I) = PG(I) + (1.-VEGH(I)) * RSNOW(I) &   
-          +    VEGH(I) * RSNOWV(I)
-  END DO
+      IF(VEGH(I)+VEGL(I)*(1.-PSN(I)).ge.EPSILON_SVS) THEN
+         ! have vegetation -- have vegetation runoff 
+
+         IF( SNM(I).GE.CRITSNOWMASS .AND. SVM(I).GE. CRITSNOWMASS ) THEN
+            !both snow packs exists, rain falls directly to snow, consider runoff from vegetation also.
+            PG(I) = (1.-VEGH(I)) * RSNOW(I) + VEGH(I) * RSNOWV(I) &
+                 + VEGL(I)*(1.-PSN(I))*RVEG_VL(I) + VEGH(I) * RVEG_VH(I)
+
+
+         ELSE IF ( SNM(I).GE.CRITSNOWMASS .AND. SVM(I).LT.CRITSNOWMASS ) THEN
+            ! only low vegetation snow pack present, rain for low vegetation portion
+            ! falls through to snow. No rain reaches bare ground because snowpack on low veg. and bare ground exists
+            PG(I) = (1.-VEGH(I)) * RSNOW(I) + &
+                 + VEGL(I)*(1-PSN(I))*RVEG_VL(I) + VEGH(I) * RVEG_VH(I)
+
+
+         ELSE IF ( SNM(I).LT.CRITSNOWMASS .AND. SVM(I).GE.CRITSNOWMASS ) THEN
+            !only high vegetation snow pack present, rain for high vegetation portion
+            ! falls through to snow. No snow on low veg. and bare ground, so rain can reach bare ground directly
+            PG(I) = VEGH(I) * RSNOWV(I) + &
+               + VEGL(I)*(1.-PSN(I))*RVEG_VL(I) + VEGH(I) * RVEG_VH(I) &
+               + (1. - PSN(I)) * (1. -VEGL(I) - VEGH(I) ) * RR(I)
+         ELSE 
+            ! no snow present, rain can reach bare ground directly
+            PG(I) = VEGL(I)*(1.-PSN(I))*RVEG_VL(I) + VEGH(I) * RVEG_VH(I) &
+                 + (1 - PSN(I)) * (1. -VEGL(I) - VEGH(I) ) * RR(I)           
+         ENDIF
+
+      ELSE
+         ! bare ground only
+         IF ( SNM(I).GE.CRITSNOWMASS) THEN
+            ! have snow on bare ground, only consider snow runoff
+            PG(I) = RSNOW(I)
+         ELSE
+            ! have 100% bare ground and now snow, all rain reaches surface
+            PG(I) = RR(I)
+         ENDIF
+      ENDIF    
+
+  ENDDO
 
   !
   !

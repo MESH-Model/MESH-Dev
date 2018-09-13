@@ -195,9 +195,6 @@ include "isbapar.cdk"
       REAL ADRYSAND, AWETSAND, ADRYCLAY, AWETCLAY
       REAL EDRYSAND, EWETSAND, EDRYCLAY, EWETCLAY
 
-      REAL PETIT
-      DATA PETIT/1.E-7/
-
       real, dimension(n) :: a, b, cnoleaf, cva, laivp, lams, lamsv, &
            psnground, psnlowveg, zcs, zcsv, z0_snow_low, z0_snow_high
 
@@ -284,7 +281,7 @@ include "isbapar.cdk"
 
 
 !                        average snow cover fraction of bare ground and low veg
-         IF(SNM(I).GT.CRITSNOWMASS ) THEN
+         IF(SNM(I).GE.CRITSNOWMASS ) THEN
 
             ! use z0=0.03m for bare ground, 0.1m for low veg
              z0_snow_low(i) = exp (  (  (1-VEGH(I) -VEGL(I)) * log( 0.03) &
@@ -302,7 +299,7 @@ include "isbapar.cdk"
        
 
 
-         IF(SVM(I).GT.CRITSNOWMASS ) THEN
+         IF(SVM(I).GE.CRITSNOWMASS ) THEN
 !
 !                       SNOW FRACTION AS SEEN FROM THE GROUND
 !
@@ -339,34 +336,37 @@ include "isbapar.cdk"
 !                        is taken into account
       DO I=1,N
 
-         IF((VEGH(I)+VEGL(I)*(1-PSNGRVL(I))).GT.0.0)THEN
+         IF((VEGH(I)+VEGL(I)*(1-PSNGRVL(I))).GE.EPSILON_SVS)THEN
 !
 !                        LEAF AREA INDEX
 !
             LAIVA(I) = MAX(   ( VEGH(I) * LAIVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * LAIVL(I))  & 
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))) , PETIT)
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))) , EPSILON_SVS)
 
 !
 !                        LEAF AREA INDEX CONSIDERING WOODY PART
 !
-            LAIVP(I) = ( VEGH(I)*MAX(LAIVH(I),0.1)+ VEGL(I)*(1.-PSNGRVL(I))*LAIVL(I)) &     
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I)))
+            LAIVP(I) = MAX( ( VEGH(I)*MAX(LAIVH(I),0.1)+ VEGL(I)*(1.-PSNGRVL(I))*LAIVL(I)) &     
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))), EPSILON_SVS )
 !
 !                        THERMAL COEFFICIENT 
+!                        -- Impose min. of 1.0E-5 consistent with look-up table in inicove_svs
 !
-            CVA(I) = ( VEGH(I) * CVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * CVL(I)) &     
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I)))
+            CVA(I) = MAX( ( VEGH(I) * CVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * CVL(I)) &     
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))), 1.0E-5 )
 !
 !                        ALBEDO
+!                        -- Impose min. of 0.12 consistent with look-up table in inicove_svs
 !
-            ALVA(I) = ( VEGH(I) * ALVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * ALVL(I)) &     
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I)))
+            ALVA(I) = MAX( ( VEGH(I) * ALVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * ALVL(I)) &     
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))), 0.12 )
 !
 ! 
 !                        PARAMETER STOMATAL RESISTANCE
+!                        -- Impose min. of 30. consistent with look-up table in inicove_svs
 !
-            RGLA(I) = ( VEGH(I) * RGLVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * RGLVL(I)) &     
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I)))
+            RGLA(I) = MAX( ( VEGH(I) * RGLVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * RGLVL(I)) &     
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))), 30. )
 !
 !                        LOCAL ROUGHNESS
 !
@@ -377,9 +377,10 @@ include "isbapar.cdk"
             Z0HA(I) = EXP(Z0HA(I))
 !
 !                        MINIMUM STOMATAL RESISTANCE
+!                        -- Impose min. of 100. consistent with look-up table in inicove_svs
 !
-            STOMRA(I) = ( VEGH(I) * STOMRVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * STOMRVL(I))  &    
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I)))
+            STOMRA(I) = MAX( ( VEGH(I) * STOMRVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * STOMRVL(I))  &    
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))), 100.0 )
 !
 !                        STOMATAL RESISTANCE PARAMETER
 !
@@ -388,17 +389,19 @@ include "isbapar.cdk"
 !
          ELSE
 
-!                       Set the coefficients to 1.0 as default to avoid division by zero...
-!                       CHECK IF THIS MAKES SENSE TO DO !! OR SHOULD I DEFINE THOSE TO
-!                       !PHYSICAL VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!
-            LAIVA(I) = 1.E-6
-            LAIVP(I) = 1.E-6
-            CVA(I)   = 1.E-6
-            ALVA(I)  = 1.E-6
-            RGLA(I)  = 1.E-6
+!                       Set the coefficients parameters to lowest physical values found in look-up table
+!                       to have physical values and not bogus values. Use "EPSILON" instead of 0.0 below.
+!
+!               
+            LAIVA(I) = EPSILON_SVS
+            LAIVP(I) = EPSILON_SVS
+            CVA(I)   = 1.0E-5
+            ALVA(I)  = 0.12
+            RGLA(I)  = 30.
             Z0HA(I) = Z0M_TO_Z0H * Z0(I)  
-            STOMRA(I)= 1.E-6
-            GAMVA(I) = 1.E-6
+            STOMRA(I)= 100.
+            GAMVA(I) = EPSILON_SVS
+
          ENDIF
 !                        
       END DO
@@ -408,7 +411,7 @@ include "isbapar.cdk"
 !               ----------------------------------
       DO I=1,N
 !
-        IF((VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))).GT.0.0)THEN
+        IF((VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))).GE.EPSILON_SVS) THEN
 !
 !
 !                       CNOLEAF = thermal coefficient for the leafless   
@@ -432,11 +435,11 @@ include "isbapar.cdk"
              
           ELSE
 
-!         
-!                       Set the coefficients to 1.0 as default to avoid division by zero
+!                       Set the coefficients to lowest physical values found in look-up table 
+!                       to avoid division by zero
 !
-             CVPA(I)=1.E-6
-             CNOLEAF(I)=1.E-6
+             CVPA(I)=1.0E-5
+             CNOLEAF(I)=1.0E-5
 !     
           ENDIF
 !      
@@ -547,12 +550,12 @@ include "isbapar.cdk"
 !
 !                      AGGREGATED VEG. EMISSIVITY  (VEGETATION NOT COVERED BY SNOW)
 !
-            IF((VEGH(I)+VEGL(I)*(1-PSNGRVL(I))).GT.0.0)  THEN
+            IF((VEGH(I)+VEGL(I)*(1-PSNGRVL(I))).GE.EPSILON_SVS)  THEN
                EVA(I) = ( VEGH(I) * EMISVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * EMISVL(I)) &     
                     / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I)))
 !
             ELSE
-               EVA(I) = 1.E-6
+               EVA(I) = 1.0
             ENDIF
 !
 !                      BARE GROUND EMISSIVITY

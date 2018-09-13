@@ -15,7 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------------------
       SUBROUTINE VEGI_SVS ( RG, T, TVEG, HU, PS, &
            WD , RGL, LAI, LAIH, RSMIN, GAMMA, WWILT, WFC, &   
-           SUNCOS, DRZ, D50, D95, RS, SKYVIEW, VTR, &    
+           SUNCOS, DRZ, D50, D95, PSNGRVL, VEGH, VEGL, RS, SKYVIEW, VTR, &    
            FCD, ACROOT, WRMAX, N  )
 !
         use svs_configs
@@ -25,7 +25,7 @@
       INTEGER N 
       REAL WD(N,NL_SVS), FCD(N, NL_SVS)
       REAL RG(N), T(N), HU(N), PS(N), TVEG(N)
-      REAL SUNCOS(N), LAIH(N)
+      REAL SUNCOS(N), LAIH(N), PSNGRVL(N), VEGH(N), VEGL(N)
       REAL RGL(N), LAI(N), RSMIN(N), GAMMA(N), WWILT(N,NL_SVS)
       REAL WFC(N,NL_SVS), RS(N), SKYVIEW(N), VTR(N), DRZ(N)
       REAL D50(N), D95(N), ACROOT(N,NL_SVS) , WRMAX(N)  
@@ -62,6 +62,9 @@
 ! D50      depth above which 50% of roots are located [m]
 ! D95      depth above whihch 95% of the roots are located [m]
 ! WD(NL_SVS)   soil volumetric water content in soil layer (NL_SVS soil layers)
+! PSNGRVL  fraction of the bare soil or low veg. covered by snow
+! VEGH     fraction of HIGH vegetation
+! VEGL     fraction of LOW vegetation
 !      
 !          - Output -
 ! RS       Surface or stomatal resistance
@@ -75,7 +78,6 @@ include "thermoconsts.inc"
 !
       INTEGER I, K
       REAL CSHAPE, f2_k(nl_svs)
-     
       real, dimension(n) :: extinct, f, f1, f2, f3, f4, qsat
 
 !
@@ -87,6 +89,9 @@ include "fintern.inc"
 !
 !
 !
+	DO I=1,N      
+          IF ( (VEGH(I)+VEGL(I)*(1-PSNGRVL(I))).GE.EPSILON_SVS ) THEN
+             ! VEGETATION PRESENT
 !
 !*       1.     THE 'ZF1' FACTOR
 !               ---------------
@@ -94,11 +99,9 @@ include "fintern.inc"
 !                      of the photosynthetically active radiation
 !
 !
-      DO I=1,N
-         F(I)  = 0.55*2.*RG(I) / (RGL(I)+1.E-6) /  &
-             ( LAI(I)+1.E-6 )
-         F1(I) = ( F(I) + RSMIN(I)/5000. ) / ( 1. + F(I) )
-      END DO
+             F(I)  = 0.55*2.*RG(I) / (RGL(I)+1.E-6) /  &
+                 ( LAI(I)+1.E-6 )
+             F1(I) = ( F(I) + RSMIN(I)/5000. ) / ( 1. + F(I) )
 !
 !
 !
@@ -120,66 +123,44 @@ include "fintern.inc"
 !
 !                 
 !        
-      DO I=1,N
-        
-         ! IF VEGETATION PRESENT...
-         if(D50(i).gt.0.0) then
+      
              ! Shape parameter CSHAPE
-            CSHAPE=LOG10(0.05/0.95)/LOG10(D95(I)/D50(I))       
+             CSHAPE=LOG10(0.05/0.95)/LOG10(D95(I)/D50(I))       
 !        
 !                 Root fractions at different depths
 !                 The equation has depths in cm, but ratio, so leave in meters                 
-            DO K=1,NL_SVS-1
-               if(DL_SVS(K).lt.DRZ(I)) then
-                  FCD(I,K) = 1./ (1.+ (DL_SVS(K)/D50(I))**CSHAPE)
-               else
-                  FCD(I,K) = 1.
-               endif
-            ENDDO
-            FCD(I,NL_SVS)=1.
-         else
-            ! IF NO VEGETATION --- SET ROOT FRACTION TO ZERO 
-            DO K=1,NL_SVS            
-               FCD(I,K) = 0.0 
-            ENDDO
-         endif
+             DO K=1,NL_SVS-1
+                if(DL_SVS(K).lt.DRZ(I)) then
+                   FCD(I,K) = 1./ (1.+ (DL_SVS(K)/D50(I))**CSHAPE)
+                else
+                   FCD(I,K) = 1.
+                endif
+             ENDDO
+             FCD(I,NL_SVS)=1.
 !
 !                 Calculate f2 -- weighted mean using root fraction above
 !                 1.E-5 (dry soil--> large resistance) < f2 < 1.0 (humid soil --> no impact on resistance)
 
-         ! f2 for each layer
+             ! f2 for each layer
                
-         DO K=1,NL_SVS
-            ! calculate moisture stress on roots
-            f2_k(k) =  min( 1.0,  max( 1.E-5  ,  &
+             DO K=1,NL_SVS
+             ! calculate moisture stress on roots
+             f2_k(k) =  min( 1.0,  max( 1.E-5  ,  &
                  max( wd(i,k) - wwilt(i,k) , 0.0) / (wfc(i,k) - wwilt(i,k)) ) )
-         ENDDO
-         ! root fraction weighted mean
-         ! k=1
-         f2(i) = f2_k(1) * FCD(I,1)
-         DO K=2,NL_SVS
-            f2(i) = f2(i) +   f2_k(k) *  ( FCD(I,K) - FCD(I,K-1) ) 
-         ENDDO
+             ENDDO
+             ! root fraction weighted mean
+             ! k=1
+             f2(i) = f2_k(1) * FCD(I,1)
+             DO K=2,NL_SVS
+                f2(i) = f2(i) +   f2_k(k) *  ( FCD(I,K) - FCD(I,K-1) ) 
+             ENDDO
 
-         ! IF VEGETATION PRESENT...
-         if(D50(i).gt.0.0) then
-            ! active fraction of roots
-            acroot(i,1)=f2_k(1)*FCD(I,1)/f2(i)
-            DO K=2,NL_SVS
-               acroot(i,k)= f2_k(k) *  ( FCD(I,K) - FCD(I,K-1) ) /f2(i)
-            ENDDO
-         else
-            ! no vegetation
-            ! set active roots to zero
-            do k=1,nl_svs
-               acroot(i,k)=0.0
-            enddo
-         endif
-            
-      END DO
-
-
-
+             ! active fraction of roots
+	     ! k=2
+             acroot(i,1)=f2_k(1)*FCD(I,1)/f2(i)
+             DO K=2,NL_SVS
+                acroot(i,k)= f2_k(k) *  ( FCD(I,K) - FCD(I,K-1) ) /f2(i)
+             ENDDO
 !
 !
 !
@@ -192,13 +173,9 @@ include "fintern.inc"
 !                           air becomes drier.
 !
 !
-      DO I=1,N
+             QSAT(I) = FOQST( TVEG(I), PS(I) )
 !
-       QSAT(I) = FOQST( TVEG(I), PS(I) )
-!
-       F3(I) = MAX( 1. - GAMMA(I)*( QSAT(I) - HU(I) )*1000. , 1.E-3 )
-!
-      END DO
+             F3(I) = MAX( 1. - GAMMA(I)*( QSAT(I) - HU(I) )*1000. , 1.E-3 )
 !
 !
 !
@@ -207,74 +184,72 @@ include "fintern.inc"
 !                  This factor introduces an air temperature
 !                  dependance on the surface stomatal resistance
 !
-      DO I=1,N
-        F4(I) = MAX( 1.0 - 0.0016*(298.15-T(I))**2, 1.E-3 )
-      END DO
+             F4(I) = MAX( 1.0 - 0.0016*(298.15-T(I))**2, 1.E-3 )
 !
 !
 !*       5.     THE SURFACE STOMATAL RESISTANCE
 !               -------------------------------
 !
-      DO I=1,N
-         ! IF VEGETATION PRESENT
-         if(d50(i).gt.0.0) then
-            RS(I) = RSMIN(I) / ( LAI(I)+1.E-6 ) & 
+             RS(I) = RSMIN(I) / ( LAI(I)+1.E-6 ) & 
                  / F1(I) / F2(I) / F3(I) / F4(I)
 !
-            RS(I) = MIN( RS(I),5000.  )
-            RS(I) = MAX( RS(I), 1.E-4 )
-         else
-            ! IF NO VEGETATION i.e. NO ROOTS
-            ! SET RESISTANCE TO MAXIMAL VALUE (to avoid division by zero...)
-            RS(I) = 5000.
-         endif
-      END DO
+             RS(I) = MIN( RS(I),5000.  )
+             RS(I) = MAX( RS(I), 1.E-4 )
 !
 !
 !*       6.     TRANSMISSIVITY OF CANOPY (HIGH VEG ONLY)
 !               ----------------------------------------
 !
-!
-      DO I=1,N
 !                 Calculate the extinction coefficient... 
 !                 the constant 0.5 is a first approximation
 !                 based on Sicart et al. (2004), the calculation
 !                 of the coefficient of extinction could/should
 !                 be refined according to vegetation type
 !
-         EXTINCT(I)   =  0.5  / SUNCOS(I)
+             EXTINCT(I)   =  0.5  / SUNCOS(I)
 !
 !                 Calculate the transmissivity
 !
-         VTR(I) = EXP( -1.0 * EXTINCT(I) * LAIH(I) )
-!
-      END DO
-!
+             VTR(I) = EXP( -1.0 * EXTINCT(I) * LAIH(I) )
 !
 !
 !*       7.     SKYVIEW FACTOR (HIGH VEG ONLY)
 !               ------------------------------
 !
 !
-      DO I=1,N
 !                 According to Verseghy et al. (1993), the skyview
 !                 factor for NEEDLELEAF is exp(-0.5*LAI) and
 !                 exp(-1.5*LAI) for BROADLEAF (and exp(-0.8*LAI) for 
 !                 crops). Here as a first approximation, we take the
 !                 skyview factor for tall/high vegetation to be exp(-1*LAI).
 !
-         SKYVIEW(I) = EXP( -1.0 * LAIH(I) )
+             SKYVIEW(I) = EXP( -1.0 * LAIH(I) )
 !
-      END DO
 !
 !
 !*       8.     MAXIMUM VOLUMETRIC WATER CONTENT RETAINED ON VEGETATION (m3/m3)
 !               ------------------------------
-!
-       DO I=1,N
-          
-          WRMAX(I) = 0.2 * LAI(I)
+!         
+             WRMAX(I) = 0.2 * LAI(I)
 
+          ELSE
+          !  NO VEGETATION
+             f1(i)=0.0
+             f2(i)=0.0
+             f3(i)=0.0
+             f4(i)=0.0
+             qsat(i) = 0.0
+             do K=1,NL_SVS      
+                ! set root and active root fraction to zero 
+                FCD(I,K) = 0.0 
+                acroot(i,k) = 0.0
+             enddo
+             RS(I) = 5000.
+             EXTINCT(I) = 0.0
+             VTR(I) = 1.0
+             SKYVIEW(i) = 1.0
+             WRMAX(I)=EPSILON_SVS  ! To avoid division by zero
+          ENDIF
        ENDDO
 !
 !

@@ -186,6 +186,13 @@ module sfc_options
    logical           :: tdiaglim    = .false.
    namelist /surface_cfgs/ tdiaglim
 
+   !# OPTION FOR CALCULATION of AVERAGE LAND SURFACE TEMPERATURE AND HUMIDITY IN SVS
+   !# .FALSE. :  Area-average only calculation for sfc T and Hum.
+   !# .TRUE.  :  Option that uses effective surface temperature  and specific humidity instead
+   !             of composite (area-averaged only) counterparts in surface flux calculations (D. Deacu)
+   logical           :: use_eff_surf_tq    = .false.
+   namelist /surface_cfgs/ use_eff_surf_tq
+
    !# OPTION TO USE PHOTOSYNTHESIS CODE FOR STOMATAL RESISTANCE in SVS
    logical           :: use_photo = .false.
    namelist /surface_cfgs/ use_photo

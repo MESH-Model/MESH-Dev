@@ -16,7 +16,7 @@
 
 subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
      lat, ni, nclass)
-  use svs_configs, only : ntypel, vl_type, ntypeh, vh_type, furb_vl, imp_urb
+  use svs_configs, only : ntypel, vl_type, ntypeh, vh_type, furb_vl, imp_urb, epsilon_svs
    implicit none
 #include <arch_specific.hf>
 
@@ -53,9 +53,6 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
       integer i, m, k, type
 
       REAL totfract, table_val
-      REAL petit
-      DATA petit /1.E-7/
-   
 !
 !
       DO i=1,ni
@@ -74,7 +71,7 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
           totfract = totfract + fcover(i,m)
         END DO
 !
-        IF (totfract.GE.PETIT) THEN
+        IF (totfract.GE.EPSILON_SVS) THEN
 
           DO k=1,ntypel  
            type=vl_type(k)  ! loop on LOW vegetation classes
@@ -137,7 +134,7 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
 !              decidous: type: 6,7,8,9, half of 25,26
 !              evergreen:type: 4,5,  half of 25,26
 !              ** plus fraction of urban... ***
-        IF(high(i).gt.PETIT)THEN
+        IF(high(i).ge.EPSILON_SVS)THEN
 !
            if (lat(i).ge.0.0) then    
 !              northern hemisphere

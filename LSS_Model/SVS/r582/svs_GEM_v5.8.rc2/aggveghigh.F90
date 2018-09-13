@@ -15,7 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------------------
 
 subroutine aggveghigh(fcover, tablen, tables, aggf, lat, ni, nclass)
-  use svs_configs, only : ntypeh, vh_type, furb_vl
+  use svs_configs, only : ntypeh, vh_type, furb_vl, epsilon_svs
    implicit none
 #include <arch_specific.hf>
 
@@ -49,9 +49,6 @@ subroutine aggveghigh(fcover, tablen, tables, aggf, lat, ni, nclass)
 !
       REAL totfract, table_val
 !
-      real petit
-      DATA petit /1.E-7/
-!
       DO i=1,ni
         aggf(i) = 0.0
       END DO
@@ -70,7 +67,7 @@ subroutine aggveghigh(fcover, tablen, tables, aggf, lat, ni, nclass)
         type=21
         totfract = totfract + (1. - furb_vl ) * fcover(i,type)   
 !
-        IF (totfract.GE.PETIT) THEN
+        IF (totfract.GE.EPSILON_SVS) THEN
 
           DO m=1,ntypeh
            type=vh_type(m)  ! loop on high vegetation classes

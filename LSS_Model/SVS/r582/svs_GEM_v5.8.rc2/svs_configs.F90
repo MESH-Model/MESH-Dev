@@ -71,7 +71,7 @@ module svs_configs
   !---------------------------------------------------------
   ! OPTION FOR CALCULATION of AVERAGE LAND SURFACE TEMPERATURE AND HUMIDITY
   ! D. Deacu 06/2018
-  logical, parameter :: use_eff_surf_tq = .FALSE.
+  !!!!! logical, parameter :: use_eff_surf_tq = .FALSE. moved to sfc_options
   ! use_eff_surf_tq=.FALSE. :  Area-average only calculation for sfc T and Hum.
   ! use_eff_surf_tq=.TRUE.  :  NEW OPTION that uses effective surface temperature
   !                            and specific humidity instead of composite (area-averaged only) 
@@ -106,6 +106,10 @@ module svs_configs
   REAL, PARAMETER :: CRITSNOWMASS_E=0.5  ! Entry snow mass criteria... need to be more stringent...
   REAL, PARAMETER :: CRITSNOWMASS=0.01 ! model integration snow mass criteria
   REAL, PARAMETER :: LAI0 = 1.0  ! DEFAULT LAI VALUE
+  ! espilon to be used to avoid division by zero/testing on zero (defined here 
+  ! so that consistent between subroutines
+  REAL, PARAMETER :: EPSILON_SVS = 1.00E-7
+
   private :: weights_soil_texture
 
 
@@ -324,16 +328,24 @@ contains
     INTEGER I, NI
     REAL, dimension(ni) :: FVH,FVL,FSNVH,FSN
     REAL, dimension(ni,indx_svs_ag) :: WT
-     
+    REAL, parameter ::  min_wt=0.001 ! [1.=100%] minimum value of weight, otherwise set to zero.     
+
     DO I=1,NI
       
-       WT(i,indx_svs_bg)  =  (1. - FVH(i) - FVL(i) ) * (1. - FSN(i) ) 
        WT(i,indx_svs_sn)  =  (1. - FVH(i)          ) *       FSN(i)
+       if( WT(i,indx_svs_sn) .lt. min_wt )  WT(i,indx_svs_sn) = 0.0
+       
        WT(i,indx_svs_sv)  =        FVH(i)            *       FSNVH(i)
+       if( WT(i,indx_svs_sv) .lt. min_wt )  WT(i,indx_svs_sv) = 0.0
 
        WT(i,indx_svs_vg)  =        FVH(i)            * (1. - FSNVH(i)) &
-                                 + FVL(i)            * (1. - FSN(i)  )  
+                                 + FVL(i)            * (1. - FSN(i)  )
+       if( WT(i,indx_svs_vg) .lt. min_wt )  WT(i,indx_svs_vg) = 0.0  
        
+       !
+       !WT(i,indx_svs_bg)  =  (1. - FVH(i) - FVL(i) ) * (1. - FSN(i) )
+       WT(i,indx_svs_bg) = 1.0 - WT(i,indx_svs_sn) -  WT(i,indx_svs_sv) - WT(i,indx_svs_vg)
+
        ! CLEANUP -- NOT DONE FOR NOW ...
 
        ! Aggregate

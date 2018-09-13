@@ -16,7 +16,7 @@
       SUBROUTINE DRAG_SVS ( TGRS, TVGS, WD1, &
                               WR, THETAA, VMOD, VDIR, HU,  &  
                               PS, RS, Z0, WFC,  &
-                              LAI, ZUSL, ZTSL, LAT, & 
+                              LAI, WRMAX, ZUSL, ZTSL, LAT, & 
                               FCOR, Z0HA, Z0MBG, Z0M_TO_Z0H, & 
                               RESAGR, RESAVG, &  
                               HUSURF, & 
@@ -33,7 +33,7 @@
       REAL Z0MBG,  Z0M_TO_Z0H
       REAL TGRS(N), TVGS(N), WR(N), THETAA(N), VMOD(N), VDIR(N), HU(N)
       REAL PS(N), RS(N), Z0(N), WFC(N,NL_SVS)
-      REAL LAI(N), ZUSL(N), ZTSL(N), LAT(N)
+      REAL LAI(N), WRMAX(N), ZUSL(N), ZTSL(N), LAT(N)
       REAL FCOR(N), Z0HA(N)
       REAL RESAGR(N), RESAVG(N)
       REAL HUSURF(N), HV(N), DEL(N)
@@ -83,6 +83,7 @@
 ! Z0        momentum roughness length (no snow)
 ! WFC       volumetric water content at the field capacity
 ! LAI       AVERAGED leaf area index
+! WRMAX     Max volumetric water content retained on vegetation
 ! ZTSL      reference height for temperature and humidity input
 ! ZUSL      reference height for wind input
 ! LAT       latitude
@@ -107,7 +108,7 @@ include "thermoconsts.inc"
 !
       INTEGER I
 
-      real, dimension(n) :: temp, coef, wrmax, qsatgr, qsatvg, &
+      real, dimension(n) :: temp, coef, qsatgr, qsatvg, &
            zqsvg, ctugr, ctuvg, z0hg 
            
 !
@@ -249,7 +250,6 @@ include "fintern.inc"
 !                          equivalent water content in the
 !                          vegetation canopy
 !
-         WRMAX(I) = 0.2 * LAI(I)
 !
 !                          calculate DEL
 !

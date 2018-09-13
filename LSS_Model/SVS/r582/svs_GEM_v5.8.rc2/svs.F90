@@ -313,7 +313,9 @@ integer ptr, x, j, k
            GAMVA, bus(x(WWILT   ,1,1)),      &
            bus(x(WFC     ,1,1)), SUNCOSA,     &
            bus(x(ROOTDP     ,1,1)),  bus(x(D50   ,1,1)),    &
-           bus(x(D95   ,1,1)), bus(x(RST     ,1,1)),     &
+           bus(x(D95   ,1,1)),  BUS(x(PSNGRVL,1,1)), &
+           BUS(x(VEGH   ,1,1)), BUS(x(VEGL   ,1,1)), &
+           bus(x(RST     ,1,1)),     &
            bus(x(SKYVIEW ,1,1)), bus(x(VEGTRANS,1,1)),   &   
            bus(x(frootd   ,1,1)), bus(x(acroot ,1,1)), WRMAX, N)
 
@@ -344,7 +346,7 @@ integer ptr, x, j, k
            VMOD, VDIR,  bus(x(humoins,1,nk)),     &
            bus(x(pmoins ,1,1)), STOM_RS,   &  
            bus(x(z0    ,1,indx_soil)), bus(x(WFC,1,1)),      &
-           bus(x(LAIVA,1,1)), bus(x(zusl,1,1)), bus(x(ztsl,1,1)),    & 
+           bus(x(LAIVA,1,1)), WRMAX, bus(x(zusl,1,1)), bus(x(ztsl,1,1)),    & 
            bus(x (DLAT,1,1)), &
            bus(x(FCOR,1,1)),bus(x(Z0HA ,1,1)),Z0MBG,  Z0M_TO_Z0H,  &  
            bus(x(RESAGR,1,1)), bus(x(RESAVG,1,1)), &    
@@ -416,7 +418,8 @@ integer ptr, x, j, k
                      bus(x(HUMOINS   ,1,nk)), rainrate_mm,  &  
                      snowrate_mm, bus(x(TMOINS  ,1,NK)),  &  
                      bus(x(TDIAG     ,1,1)),     &
-                     bus(x(UDIAG     ,1,1)), bus(x(VDIAG   ,1,1)),   & 
+                     bus(x(UDIAG     ,1,1)), bus(x(VDIAG   ,1,1)),   &
+		     bus(x(VEGH   ,1,1)) ,   & 
                      bus(x(SKYVIEW   ,1,1)), bus(x(VEGTRANS,1,1)),   & 
                      bus(x(TVEGE     ,1,2)), bus(x(EMISVH ,1,1)),    &
                      bus(x(WVEG      ,1,1)), bus(x(TSVAVG,1,1)), &

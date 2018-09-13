@@ -15,7 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------------------
 
 subroutine aggveglow(fcover, tablen, tables, aggf, lat, ni, nclass)
-  use svs_configs, only : ntypel, vl_type, furb_vl
+  use svs_configs, only : ntypel, vl_type, furb_vl, epsilon_svs
    implicit none
 #include <arch_specific.hf>
 
@@ -50,9 +50,6 @@ subroutine aggveglow(fcover, tablen, tables, aggf, lat, ni, nclass)
 
       REAL totfract, table_val
       
-      REAL petit
-      DATA petit /1.E-7/
-!
       DO i=1,ni
         aggf(i) = 0.0
       END DO
@@ -71,7 +68,7 @@ subroutine aggveglow(fcover, tablen, tables, aggf, lat, ni, nclass)
         type=21
         totfract = totfract + furb_vl  * fcover(i,type)   
 !
-        IF (totfract.GE.PETIT) THEN
+        IF (totfract.GE.EPSILON_SVS) THEN
 
           DO m=1,ntypel  
            type=vl_type(m)  ! loop on low vegetation classes
