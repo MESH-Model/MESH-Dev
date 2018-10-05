@@ -2201,88 +2201,9 @@ do 80 i=1,nltest
    do 90 m=1,nmtest
 
         barefrac = 1.0
-
-  !>First the per PFT values to file .CT01D
-        do j=1,icc
-
-            if (fcancmxrow(i,m,j) .gt. seed) then
-
-                barefrac = barefrac - fcancmxrow(i,m,j)
-
-                !>File: .CT01D
-                write(72,8200)iday,iyear,gppvegrow(i,m,j),nppvegrow(i,m,j), &
-                nepvegrow(i,m,j),nbpvegrow(i,m,j),autoresvegrow(i,m,j), &
-                hetroresvegrow(i,m,j),litresvegrow(i,m,j),soilcresvegrow(i,m,j), &
-                (dstcemlsrow(i,m)+dstcemls3row(i,m)), &   ! FLAG at present dstcemls are only per tile values
-                litrfallrow(i,m),humiftrsrow(i,m), & ! same with litrfall and humiftrs.
-                ' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
-
-                !>File .CT02D
-                write(73,8300)iday,iyear,rmlvegaccrow(i,m,j), &
-                rmsvegrow(i,m,j),rmrvegrow(i,m,j),rgvegrow(i,m,j), &
-                leaflitrrow(i,m,j),tltrleafrow(i,m,j), &
-                tltrstemrow(i,m,j),tltrrootrow(i,m,j), &
-                ' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
-
-                !>File *.CT03D
-                write(74,8401)iday,iyear,vgbiomas_vegrow(i,m,j), &
-                ailcgrow(i,m,j),gleafmasrow(i,m,j), &
-                bleafmasrow(i,m,j), stemmassrow(i,m,j), &
-                rootmassrow(i,m,j), litrmassrow(i,m,j),  &
-                soilcmasrow(i,m,j), &
-                ' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
-
-                !>File .CT04D
-                write(75,8500)iday,iyear, ailcgrow(i,m,j),  &
-                ailcbrow(i,m,j),(rmatctemrow(i,m,j,k),k=1,3), &
-                veghghtrow(i,m,j),rootdpthrow(i,m,j), &
-                roottemprow(i,m,j),slairow(i,m,j), &
-                ' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
-
-                ! File .CT05D
-                !write(76,8600)iday,iyear, afrleafrow(i,m,j),  &
-                !afrstemrow(i,m,j),afrrootrow(i,m,j),  &
-                !tcanoaccrow_out(i,m), lfstatusrow(i,m,j), &
-                !' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
-
-                !>File *.CT06D
-                if (dofire .or. lnduseon) then
-                    write(77,8800)iday,iyear, &
-                    emit_co2row(i,m,j),emit_corow(i,m,j),emit_ch4row(i,m,j), &
-                    emit_nmhcrow(i,m,j),emit_h2row(i,m,j),emit_noxrow(i,m,j), &
-                    emit_n2orow(i,m,j),emit_pm25row(i,m,j), &
-                    emit_tpmrow(i,m,j),emit_tcrow(i,m,j),emit_ocrow(i,m,j), &
-                    emit_bcrow(i,m,j),burnvegfrow(i,m,j)*100., &
-                    smfuncvegrow(i,m,j),lucemcom_g(i), &  !FLAG only per grid values for these last ones.
-                    lucltrin_g(i), lucsocin_g(i), &
-                    grclarea(i), btermrow(i,m,j), lterm_g(i), mtermrow(i,m,j), &
-                    ' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
-                endif
-
-            end if !fcancmx
-
-        end do !icc
-
-        !>Now write out the bare fraction values ( only needed if you have vars that are affected by barefrac values)
-        if (barefrac .gt. seed) then
-
-            !>File: .CT01D
-            write(72,8200)iday,iyear,0.0,0.0, &
-            nepvegrow(i,m,iccp1),nbpvegrow(i,m,iccp1),0.0, &
-            hetroresvegrow(i,m,iccp1),litresvegrow(i,m,iccp1),soilcresvegrow(i,m,iccp1), &
-            (dstcemlsrow(i,m)+dstcemls3row(i,m)), &   ! FLAG at present dstcemls are only per tile values
-            litrfallrow(i,m),humiftrsrow(i,m), & ! same with litrfall and humiftrs.
-            ' TILE ',m,' PFT ',iccp1,' FRAC ',barefrac
-
-            !>File *.CT03D
-            write(74,8401)iday,iyear,0.0, &
-            0.0,0.0, &
-            0.0, 0.0, &
-            0.0, litrmassrow(i,m,iccp1),  &
-            soilcmasrow(i,m,iccp1), &
-            ' TILE ',m,' PFT ',iccp1,' FRAC ',barefrac
-
-        end if
+!==============================================
+!Eliminated here an icc loop which wrote for each MOSAIC and each GRID (not needed for MESH-CTEM for now)
+!=================================================
 
         !>Now write out the tile average values for each tile if the tile number
         !>is greater than 1 (nmtest > 1).

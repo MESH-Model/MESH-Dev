@@ -5455,14 +5455,16 @@ c
               endif
 760         continue
 c
-          if ((iyear .ge. jhhsty) .and. (iyear .le. jhhendy)) then
-           if ((iday .ge. jhhstd) .and. (iday .le. jhhendd)) then
 
-              write(71,7200)ihour,imin,iday,iyear,(anvegrow(i,m,j),
-     1                    j=1,icc),(rmlvegrow(i,m,j),j=1,icc),
-     2                    ' TILE ',m
-            endif
-           end if
+!Comment this out for MESH-CTEM has this will take up too much memory
+!          if ((iyear .ge. jhhsty) .and. (iyear .le. jhhendy)) then
+!           if ((iday .ge. jhhstd) .and. (iday .le. jhhendd)) then
+!
+!              write(71,7200)ihour,imin,iday,iyear,(anvegrow(i,m,j),
+!     1                    j=1,icc),(rmlvegrow(i,m,j),j=1,icc),
+!     2                    ' TILE ',m
+!            endif
+!           end if
 
            do j = 1,icc
               anvegrow_g(i,j)=anvegrow_g(i,j)+anvegrow(i,m,j)
