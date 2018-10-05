@@ -2354,15 +2354,14 @@ c     all model switches are read in from a namelist file
 
 
        !To do: ask Dan how to access specific variables from MESH_input_run_options.ini
-       !We want to be saving the outputs using the specific directory 
-         open(UNIT=11,file='MESH_input_run_options.ini')
+       !Can't figure it out from here unfortunately
 
-         !Skip a few lines so we can read in the folder for out output which will serve as Argbuff
-         DO i=1,22
-	  read(11,*)      
-	  ENDDO
-         read(11,*) Argbuff
+
+         Argbuff = 'CLASSOUT1'
          ARGBUFF=argbuff(1:strlen(argbuff))//'/CLASSCTEM_Out'
+
+
+
 
 c     Initialize the CTEM parameters
       call initpftpars(compete)
@@ -6384,6 +6383,14 @@ C
 !      ENDDO !MAIN MODEL LOOP Don't need the main loop 
 
       SUBROUTINE RUNCLASS36CTEM_finalize()
+
+
+        use mpi_module
+        use model_files_variables
+        use sa_mesh_shared_variables
+        use model_dates
+        use climate_forcing
+        use FLAGS
 
 
 C     MODEL RUN HAS COMPLETED SO NOW CLOSE OUTPUT FILES AND EXIT

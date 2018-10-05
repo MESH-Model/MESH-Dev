@@ -21,6 +21,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     integer NA, NAA, NTYPE, NML, NSL, ierr, k, n, i, m, j
     character(len = 100), dimension(:), allocatable :: list_errors, list_warnings
 
+
     !>
     !> RUN OPTIONS.
     !>  Run options are read at the beginning of the run from

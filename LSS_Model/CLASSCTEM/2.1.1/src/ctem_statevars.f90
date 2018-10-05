@@ -2722,7 +2722,6 @@ integer, intent(in) :: nmtest
 
 integer :: i,m,j
 
-WRITE (*,*) NLTEST
 
 do i=1,nltest
     ! Grid avg
