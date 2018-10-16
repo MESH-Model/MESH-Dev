@@ -808,18 +808,19 @@ end subroutine write_ctm_rs
 !>@{
 
 subroutine create_outfiles(argbuff,title1, title2, title3, title4, title5, title6, name1, name2, name3, &
-                           name4, name5, name6, place1 ,place2, place3, place4, place5, place6)
+                           name4, name5, name6, place1 ,place2, place3, place4, place5, place6,BasinFile)
 
 use ctem_statevars,     only : c_switch,vrot,vgat
 
 implicit none
 
 ! arguments:
-character(80), intent(in) :: argbuff
+character(80), intent(in) :: argbuff, BasinFile
 character(4), intent(in) :: title1, title2, title3, title4, &
                             title5, title6, name1, name2, name3, &
                             name4, name5, name6, place1 ,place2, &
                             place3, place4, place5, place6
+
 
 ! pointers:
 logical, pointer :: dofire
@@ -867,6 +868,8 @@ if (.not. parallelrun .and. ctem_on) then !>stand alone mode, includes half-hour
     open(unit=74,file=argbuff(1:strlen(argbuff))//'.CT03D')
     open(unit=75,file=argbuff(1:strlen(argbuff))//'.CT04D')
     !open(unit=76,file=argbuff(1:strlen(argbuff))//'.CT05D') !FLAG. this one is turned off for now. You can turn on but go through the vars to make sure all is ok.
+    open(unit=300,file=BasinFile) !Creates the MESH-specific basin averaged output file
+
 
     if (dofire .or. lnduseon) then
     open(unit=77,file=argbuff(1:strlen(argbuff))//'.CT06D') ! disturbance vars
@@ -887,7 +890,16 @@ endif ! parallelrun & ctem_on
 !
 !     CTEM FILE TITLES
 !
+
+    write(300,6001) title1,title2,title3,title4,title5,title6
+    write(300,6002) name1,name2,name3,name4,name5,name6
+    write(300,6003) place1,place2,place3,place4,place5,place6
+    write(300,7020)
+    write(300,7030)
+
 if (ctem_on .and. .not. parallelrun) then
+
+
     write(71,6001) title1,title2,title3,title4,title5,title6
     write(71,6002) name1,name2,name3,name4,name5,name6
     write(71,6003) place1,place2,place3,place4,place5,place6
@@ -1592,6 +1604,14 @@ integer, intent(in) :: jdendy
 real, intent(in), dimension(:) :: grclarea
 logical, intent(in) :: onetile_perPFT
 
+
+
+!Basin Averaged variables
+real :: NEP_Basin(nmtest) !The grided-average for the whole basin, but each GRU seperately
+real :: GPP_Basin(nmtest) !The grided-average for the whole basin, but each GRU seperately
+
+
+
 ! pointers
 
 logical, pointer :: dofire
@@ -2071,6 +2091,11 @@ if ((iyear .ge. jdsty).and.(iyear.le.jdendy))then
 10 continue
 
 
+!Initialized the basin averaged variables
+      NEP_Basin=0.0
+
+
+
     !>Aggregate to the tile avg vars:
     do 60 i=1,nltest
       do 70 m=1,nmtest
@@ -2192,8 +2217,34 @@ if ((iyear .ge. jdsty).and.(iyear.le.jdendy))then
             rmatctem_g(i,k)=rmatctem_g(i,k)+rmatctem_t(i,m,k)*FAREROT(i,m)
         end do
 
+
+
+!Here we will calculate the BasinAveraged values for the .csv file, these basin averaged values will be simple for now
+!The file will have 1 row for every day, then 9 columns for each NPP ctem variable.
+!Remember that nltest is for every grid while nmtest is for every GRU/Mosaic Tile
+
+
+      !In the end, NEP_Basin will only have m variables, 
+      NEP_Basin(m)= NEP_Basin(m) + neprow(i,m)
+      GPP_Basin(m)= GPP_Basin(m) + gpprow(i,m)
+
+
 70 continue !nmtest
 60 continue !nltest
+
+
+!Write Basin Averaged values -- New and Added for MESH
+
+   DO m= 1,nmtest
+
+      write(300,*)iday,iyear,GPP_Basin(m),NEP_Basin(m), 'GRU:', m
+
+
+   ENDDO
+
+
+
+
 
 !>Write daily ctem results
 
@@ -2204,10 +2255,16 @@ do 80 i=1,nltest
 !==============================================
 !Eliminated here an icc loop which wrote for each MOSAIC and each GRID (not needed for MESH-CTEM for now)
 !=================================================
+       
+
+
 
         !>Now write out the tile average values for each tile if the tile number
         !>is greater than 1 (nmtest > 1).
         if (nmtest > 1) then
+
+
+
 
             !>File: .CT01D
             write(72,8200)iday,iyear,gpprow(i,m),npprow(i,m), &
@@ -2977,22 +3034,11 @@ do 862 i=1,nltest
                 barefrac=1.0
 
                 !> First the per PFT values:
-                do j=1,icc
 
-                    barefrac=barefrac-fcancmxrow(i,m,j)
 
-                    if (fcancmxrow(i,m,j) .gt. seed) then
-                        write(84,8104)imonth,iyear,laimaxg_mo(i,m,j),&
-                        vgbiomas_mo(i,m,j),litrmass_mo(i,m,j),&
-                        soilcmas_mo(i,m,j),npp_mo(i,m,j),&
-                        gpp_mo(i,m,j),nep_mo(i,m,j),&
-                        nbp_mo(i,m,j),hetrores_mo(i,m,j),&
-                        autores_mo(i,m,j),litres_mo(i,m,j),&
-                        soilcres_mo(i,m,j),litrfallveg_mo(i,m,j),humiftrsveg_mo(i,m,j),&
-                        ' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
-                    end if
-
-                end do !icc
+!==========================================================================
+!Eliminated an icc loop in order to simplify the CTEM outputs for MESH-CTEM
+!===========================================================================
 
                 !> Now write out the bare fraction values:
                 if (barefrac .gt. seed) then
@@ -3716,20 +3762,10 @@ do 882 i=1,nltest
         do m=1,nmtest
 
             barefrac=1.0
-            do j=1,icc
-                barefrac=barefrac-fcancmxrow(i,m,j)
-                if (fcancmxrow(i,m,j) .gt. seed) then
-                    write(86,8105)iyear,laimaxg_yr(i,m,j), &
-                    vgbiomas_yr(i,m,j),stemmass_yr(i,m,j), &
-                    rootmass_yr(i,m,j),litrmass_yr(i,m,j), &
-                    soilcmas_yr(i,m,j),totcmass_yr(i,m,j), &
-                    npp_yr(i,m,j),gpp_yr(i,m,j),nep_yr(i,m,j), &
-                    nbp_yr(i,m,j),hetrores_yr(i,m,j), &
-                    autores_yr(i,m,j),litres_yr(i,m,j), &
-                    soilcres_yr(i,m,j),veghght_yr(i,m,j),' TILE ',m,' PFT ',j,' FRAC ' &
-                    ,fcancmxrow(i,m,j)
-                end if
-            end do !j
+
+!=======================================================================
+!Eliminated an icc loop which caused the seperation of the MOSAIC grids
+!=======================================================================
 
     !>Now do the bare fraction of the grid cell. Only soil c, hetres
     !>and litter are relevant so the rest are set to 0.

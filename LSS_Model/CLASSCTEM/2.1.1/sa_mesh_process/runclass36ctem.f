@@ -743,6 +743,11 @@ C
      1              NAME4*4,      NAME5*4,      NAME6*4
       CHARACTER     PLACE1*4,     PLACE2*4,     PLACE3*4,
      1              PLACE4*4,     PLACE5*4,     PLACE6*4
+
+!File name for the BasinAveraged File
+
+      CHARACTER    BasinFile*80
+
 C
       real, dimension(:), allocatable :: ALIRACC    !<Diagnosed total near-infrared albedo of land surface [ ]
       real, dimension(:), allocatable :: ALVSACC    !<Diagnosed total visible albedo of land surface [ ]
@@ -2336,6 +2341,8 @@ C===================== CTEM ==============================================\
       NTLD=NMOS
       CUMSNO = 0.0
 
+!Create the basin averaged file for the basin averaged CTEM outputs
+      BasinFile=trim(fls%GENDIR_OUT)//'/CTEM_Basin_Output.csv'
 
 c     all model switches are read in from a namelist file
 
@@ -2354,12 +2361,9 @@ c     all model switches are read in from a namelist file
 
 
        !To do: ask Dan how to access specific variables from MESH_input_run_options.ini
-       !Can't figure it out from here unfortunately
-
-
+       !Can't figure it out from here unfortunately (fls% are able to be used from here)
          Argbuff = 'CLASSOUT1'
          ARGBUFF=argbuff(1:strlen(argbuff))//'/CLASSCTEM_Out'
-
 
 
 
@@ -2520,7 +2524,7 @@ C     * FIRST, MODEL RUN SPECIFICATIONS.
        call create_outfiles(argbuff,title1, title2, title3, title4,
      1                     title5,title6,name1, name2, name3, name4,
      2                     name5, name6, place1,place2, place3,
-     3                     place4, place5, place6)
+     3                     place4, place5, place6,BasinFile)
 
       IF(CTEM_ON) THEN
 
