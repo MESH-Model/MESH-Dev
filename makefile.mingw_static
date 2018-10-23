@@ -36,7 +36,11 @@ LFLAG=-c -O2
 #LFLAG=-c -g
 
 # Libraries for Random_fields
-LIBS = -lfftw3
+#GCC
+#apt-get install fftw3 libfftw3-dev libblas-dev liblapack-dev
+LIBS =  -llapack -lblas -lfftw3
+#Intel
+#LIBS = -mkl -lfftw3
 
 # ======================================================================
 # Rules for MPI
@@ -84,6 +88,9 @@ RUNSVS113_config.o: RUNSVS113_config.f90
 
 RUNSVS113_module.o: RUNSVS113_module.f90
 	$(FC) $(FTN90PP) $(LFLAG) -I$(CHANGES2PHY) -I$(PHY) -I$(SVS) $<
+
+random_fields2.o: random_fields2.f90
+	$(FC)            $(LFLAG) -I/usr/include                     $<
 
 # ======================================================================
 # General rules

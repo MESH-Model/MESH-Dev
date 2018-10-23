@@ -179,13 +179,16 @@ module random_fields2
     lambda_x, lambda_y, sqrt_spectrum_2d )
 
         use file_variables, only : MY_PI
+!DAN
+        use, intrinsic :: iso_c_binding
 
         real, intent(in) :: variance, dkx, dky, lambda_x, lambda_y
 
         integer, intent(in) :: N_x_fft, N_y_fft
 
         ! Ala Bahrami changed this
-        double complex, intent(out), dimension(N_x_fft , N_y_fft) :: sqrt_spectrum_2d
+!DAN        double complex, intent(out), dimension(N_x_fft , N_y_fft) :: sqrt_spectrum_2d
+        complex(C_DOUBLE_COMPLEX), dimension(N_x_fft, N_y_fft) :: sqrt_spectrum_2d
 
         ! -------------------------------------
         ! local variables
@@ -304,8 +307,10 @@ module random_fields2
     subroutine rfg2d_fft(rseed, variance, N_x, N_y, dx, dy, lambda_x, lambda_y, &
     field1, field2)
 
-        use file_variables, only : MY_PI, plan_forward
+        use file_variables, only : MY_PI!, plan_forward
 
+!DAN
+        use, intrinsic :: iso_c_binding
         ! ----------------------------------------------------------------
         implicit none
 
@@ -313,7 +318,8 @@ module random_fields2
         ! include 'CXMLDEF.FOR'
 
         ! Added by Ala Bahrami
-        include "fftw3.f90"
+!DAN        include "fftw3.f90"
+        include 'fftw3.f03'
 
         integer, intent(in) :: N_x, N_y
 
@@ -335,13 +341,20 @@ module random_fields2
 
         !integer (kind = 8) plan_forward
 
+!DAN    Only way I could get the FFTW calls to work with Intel
+!DAN    compiler/libraries on plato/ComputeCanada clusters was to
+!DAN    switch the "modern" Fortran implementation
+!DAN    (See FFTW manual for details).
+        type(C_PTR) plan
+
         ! Ala Bahrami changed this
         !real, dimension(:,:), allocatable :: field1_fft, field2_fft
-        double complex, dimension(:,:), allocatable :: field1_fft, field2_fft
+!DAN        double complex, dimension(:,:), allocatable :: field1_fft, field2_fft
+        complex(C_DOUBLE_COMPLEX), dimension(:, :), allocatable :: field1_fft, field2_fft
 
         ! Ala Bahrami added this
-        double complex, dimension(:,:), allocatable :: field1_fft_inv, field2_fft_inv
-
+!DAN        double complex, dimension(:,:), allocatable :: field1_fft_inv, field2_fft_inv
+        complex(C_DOUBLE_COMPLEX), dimension(:, :), allocatable :: field1_fft_inv, field2_fft_inv
         !-------------------------------------------------------------------
         ! Calculation dkx and dky calculation
 
@@ -452,8 +465,9 @@ module random_fields2
         ! Applying FFT inverse in order to obtian the pseudo random fields
         !
         ! field 1
-        call dfftw_plan_dft_2d_ ( plan_forward, N_x_fft, N_y_fft, field1_fft, &
-        field1_fft_inv, FFTW_FORWARD ,FFTW_ESTIMATE )
+!DAN        call dfftw_plan_dft_2d_ ( plan_forward, N_x_fft, N_y_fft, field1_fft, &
+!DAN        field1_fft_inv, FFTW_FORWARD ,FFTW_ESTIMATE )
+        plan = fftw_plan_dft_2d(N_x_fft, N_y_fft, field1_fft, field1_fft_inv, FFTW_FORWARD, FFTW_ESTIMATE)
 
         ! if call dfftw_plan_dft_c2r_2d_ is used half of the first dimension is returned
         !(See Evensen pseudo random generation).
@@ -461,25 +475,34 @@ module random_fields2
         ! !                             field1_fft_inv, FFTW_ESTIMATE )
 
 
-        call dfftw_execute_ ( plan_forward )
+!DAN    If "old" style is to be enabled, 'execute' call which
+!DAN    passes the arguments is preferred, per notes from manual.
+!!      call dfftw_execute_ ( plan_forward )
+!DAN        call dfftw_execute_dft_ ( plan_forward, field1_fft, field1_fft_inv )
+        call fftw_execute_dft(plan, field1_fft, field1_fft_inv)
 
         !
         ! Discard the information assosicated with the plans
         !
-        call dfftw_destroy_plan_ ( plan_forward )
+!DAN        call dfftw_destroy_plan_ ( plan_forward )
+        call fftw_destroy_plan(plan)
 
         !
         ! field 2
-        call dfftw_plan_dft_2d_ ( plan_forward, N_x_fft, N_y_fft, field2_fft, &
-        field2_fft_inv, FFTW_FORWARD ,FFTW_ESTIMATE )
+!DAN        call dfftw_plan_dft_2d_ ( plan_forward, N_x_fft, N_y_fft, field2_fft, &
+!DAN        field2_fft_inv, FFTW_FORWARD ,FFTW_ESTIMATE )
+        plan = fftw_plan_dft_2d(N_x_fft, N_y_fft, field2_fft, field2_fft_inv, FFTW_FORWARD, FFTW_ESTIMATE)
 
 
-        call dfftw_execute_ ( plan_forward )
+!DAN        call dfftw_execute_dft_ ( plan_forward, field2_fft, field2_fft_inv )
+!!      call dfftw_execute_ ( plan_forward )
+        call fftw_execute_dft(plan, field2_fft, field2_fft_inv)
 
         !
         ! Discard the information assosicated with the plans
         !
-        call dfftw_destroy_plan_ ( plan_forward )
+!DAN        call dfftw_destroy_plan_ ( plan_forward )
+        call fftw_destroy_plan(plan)
 
 
 

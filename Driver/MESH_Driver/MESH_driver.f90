@@ -1,25 +1,5 @@
 program MESH_Assimilate
 
-!> =====================================================================
-!> Modified by: Ala Bahrami
-!> I have applied these modification as a part of my Ph.D thesis in order to implement
-!> The MESH Data Assimilation(MESH_DA) structure.
-!>
-!> Bahrami, 21/03/2017 - Adding using land_force_perturb, forcepert_types, file_variables modules
-!>                     - Adding local variables tt, N_t, n2
-!>                     - Adding three forcing data perturbation fields precip_pert, sw_pert, lw_pert
-!>                     - Adding reading input variables of the Input2.ini file
-!>                     - Adding ensemble loop
-!>                     - Adding the section of Initialize random_fields variables
-!>                     - Adding the section of generate random fields for initialization
-!>                     - Adding the section of assigning variables related to perturbation fields
-!>                     - Adding the section of perturbing input forcing data for every time step
-!>                          by considering the spatial-temporal and cross correlation.
-!>                     - Modifying the gridded data variables for output
-!>                     - Adding closure of opened-forcing data for every ensemble loop
-!>          03/05/2017 - Deallocate all variables which were been allocated before
-!> =====================================================================
-
 !>       MESH_Assimilate
 !>
 !>       NOV 2015 - DGP. Moved incrementing the counters to
@@ -50,18 +30,18 @@ program MESH_Assimilate
 !>                - INCORPORATE OPTIONAL COUPLING OF CLASS WITH CTEM
 !>                - MOVE SOME INITIALIZATION AND SCATTER OF CLASS
 !>                  DIAGNOSTIC VARIABLES IN TO MESH_DRIVER
-!>       JUN 2010 - F. SEGLENIEKS. 
-!>                - ADDED CODE TO HAVE MESH ONLY RUN ON BASINS LISTED IN 
+!>       JUN 2010 - F. SEGLENIEKS.
+!>                - ADDED CODE TO HAVE MESH ONLY RUN ON BASINS LISTED IN
 !>                  THE STREAMFLOW FILE, CALLED THE SUBBASIN FEATURE
-!>       JUN 2010 - M.A.MEKONNEN/B.DAVIDSON/M.MacDONALD. 
-!>                - BUG FIX FOR READING FORCING DATA IN CSV FORMAT 
+!>       JUN 2010 - M.A.MEKONNEN/B.DAVIDSON/M.MacDONALD.
+!>                - BUG FIX FOR READING FORCING DATA IN CSV FORMAT
 !>                  WITH 1 HOUR INTERVAL
 !>                - READING FORCING DATA WITH VARIOUS TIME STEPS
 !>                - FORCING DATA INTERPOLATION TO 30 MINUTE INTERVALS
 !>                  (CLASS MODEL TIME STEP)
 !>                - PRE-EMPTION OPTION FOR AUTOCALIBRATION
 !>                - CHECKING FOR PARAMETER MINIMUM AND MAXIMUM LIMITS
-!>                - PATH SPECIFICATION THAT WORKS FOR BOTH WINDOWS AND 
+!>                - PATH SPECIFICATION THAT WORKS FOR BOTH WINDOWS AND
 !>                  UNIX SYSTEMS
 !>
 !>       AUG 2009 - B.DAVISON. CHANGES TO UPDATE TO SA_MESH 1.3
@@ -97,22 +77,85 @@ program MESH_Assimilate
 !>       THE PRODUCT OF THE FIRST TWO DIMENSION ELEMENTS IN THE
 !>       "ROW" VARIABLES.
 
-!> Note, the internal comments are to be organised with 
+!> Note, the internal comments are to be organised with
 !> the following symbols:
-!>  -the symbols "!>" at the beginning of the line means that the 
+!>  -the symbols "!>" at the beginning of the line means that the
 !>  following comments are descriptive documentation.
 !>  -the symbols "!*" means that the following comment is a variable
 !>  definition.
-!>  -the symbols "!+" means that the following comment contains code 
+!>  -the symbols "!+" means that the following comment contains code
 !>  that may be useful in the future and should not be deleted.
 !>  -the symbols "!-" means that the following comment contains code
 !>  that is basically garbage, and can be deleted safely at any time.
 !>  -the symbol "!" or any number of exclamation marks can be used
 !>  by the developers for various temporary code commenting.
-!>  -the symbol "!todo" refers to places where the developers would 
+!>  -the symbol "!todo" refers to places where the developers would
 !>  like to work on.
 !>  -the symbol "!futuredo" refers to places where the developers
 !>  would like to work on with a low priority.
+!>=======================================================================
+!> MESH_Assimilate
+!>
+!> Modified by: Ala Bahrami
+!> I have applied these modification as a part of my Ph.D thesis in order to implement
+!> the MESH Data Assimilation(MESH_DA) structure.
+!>
+!> Bahrami, 21/03/2017 - Adding using land_force_perturb, forcepert_types, file_variables modules
+!>                     - Adding local variables tt, N_t, n2
+!>                     - Adding three forcing data perturbation fields precip_pert, sw_pert, lw_pert
+!>                     - Adding reading input variables of the Input2.ini file
+!>                     - Adding ensemble loop
+!>                     - Adding the section of Initialize random_fields variables
+!>                     - Adding the section of generate random fields for initialization
+!>                     - Adding the section of assigning variables related to perturbation fields
+!>                     - Adding the section of perturbing input forcing data for every time step
+!>                          by considering the spatial-temporal and cross correlation.
+!>                     - Modifying the gridded data variables for output
+!>                     - Adding closure of opened-forcing data for every ensemble loop
+!>          03/05/2017 - Deallocate all variables which were been allocated before
+!>          11/08/2017 - Adding perturbaiton of model states (SNO, THLQ)
+!>          30/10/2017 - (DA) Reading perturbed GRACE observations
+!>          09/01/2018 - Reading and writing the resume files in different folders for each ensemble member
+!>          12/01/2018 - Allocating data assimilation variable
+!>                     - Reading measurement operator H
+!>          16/01/2018 - (DA)
+!>                     - Constructing the model state matrix
+!>                     - Calculating Ensemble Perturbations
+!>                     - Calculating the background error covariance
+!>                     - Calculating Kalman Gain Matrix
+!>          18/01/2018 -
+!>                     - Storing the random_fields variables at the beginning of the month
+!>                     - (DA) Adding the capability of running the program in the assimilation mode (second run)
+!>          19/01/2018 - (DA)
+!>                     - Calculating the analysis increment
+!>                     - Storing daily storage value
+!>                     - Applying the analysis increment and update the TWS model states
+!>          22/01/2018 - (DA)
+!>                     - Updating the model states at the beginning of the month
+!>          27/02/2018 - (DA)
+!>                     - Adding the condition to calculate the Kalman Gain matrix
+!>                     - and the Analysis increment and activate the assimilate mode from January 2009.
+!>                     -
+!>          26/03/2018 - (DA)
+!>                     - Adding the capability to run the code month by month
+!>                     - (DA)
+!>          04/04/2018 - Updating the start time in run_option.ini file by adding number of the days from the previous
+!>                     - month to the start time.
+!>
+!>          09/04/2018 - (DA)
+!>                     - Constraining updating sno(i) when its value before update is zero
+!>                     - or it value after update becomes less than 0.1.
+!>                     -
+!>          18/04/2018 -
+!>                     - Modifying the code to update ic%start%jday when the OL/OLDA code runs for the
+!>                     - the next month in order to read the appropriate input forcing.
+!>                     - Adding a condition to update ic%start%jday and ic%start%year when
+!>                     - ic%start%jday exceeds 366 or 367.
+!>                     - (DA) Adding the variable month_n to avoid allocating GR_Pert varible manually
+!>         24/07/2018  -
+!>                     - Changing name of OLDA  to DA
+!>                     - Changing name of the resume input folder
+!>=======================================================================
 
     use mpi_module
     use model_files
@@ -127,7 +170,7 @@ program MESH_Assimilate
     use MODEL_OUTPUT
     use SIMSTATS
 
-    !> Ala Bahrami added this
+    !> Ala Bahrami added this.
     !> Random fields.
     use land_force_perturb
     use forcepert_types
@@ -177,16 +220,6 @@ program MESH_Assimilate
 
     integer i, j, k, l, m, u
 
-    !> Added by Ala Bahrami
-    !> Variables for forcing data.
-    integer tt, N_t, n2
-
-    !> Added by Ala Bahrami
-    !> Perturbation_GAT.
-    real, dimension(:, :), allocatable :: precip_pert
-    real, dimension(:, :), allocatable :: sw_pert
-    real, dimension(:, :), allocatable :: lw_pert
-
     integer FRAME_NO_NEW
 
     !> MAM - logical variables to control simulation runs:
@@ -216,7 +249,6 @@ program MESH_Assimilate
     type(dates_model) :: ts
     type(INFO_OUT) :: ifo
     type(CLIM_INFO) :: cm
-    type(CLIM_INFO) :: cm_pert
     type(met_data) :: md_grd
     type(water_balance) :: wb_grd, wb_acc
     type(energy_balance) :: eb_grd, eb_acc
@@ -247,6 +279,11 @@ program MESH_Assimilate
 
     real startprog, endprog
     integer narg
+
+    !> Data assimilation variables.
+    !* RUN_DA: .true. for DA, .false. for OL.
+    logical :: RUN_DA = .true.
+
 !+    real alpharain
 !+    character(50) alphCh
 
@@ -284,76 +321,214 @@ program MESH_Assimilate
     !> Reset verbose flag for worker nodes.
     if (ipid > 0) ro%VERBOSEMODE = 0
 
-    !> Added by Ala Bahrami
-    !> Reading the input_file random_fields.
-!todo: I should implement this part inside the MESH, READ_INITIAL_INPUTS
+    !> Added by Ala Bahrami.
+    !> Reading the random_fields input file.
+    iun = 960
+    open(iun, file = 'Inputs/Assimilation_parameters_perturbation.ini')
+    read(iun, *) dx
+    read(iun, *) dy
+    read(iun, *) N_x
+    read(iun, *) N_y
+    read(iun, *) lambda_x
+    read(iun, *) lambda_y
+    read(iun, *) variance
+    read(iun, *) RSEEDCONST
+    read(iun, *) NRANDSEED2
+    read(iun, *) N_forcepert
+    read(iun, *) N_ens
+    read(iun, *) dtstep
+    read(iun, *) tcorr
+    read(iun, *) GR_er
+    read(iun, *) RESUMEFLAG_per
+    read(iun, *) SAVERESUMEFLAG_per
+    read(iun, *) month_n
+    close(iun)
 
-    open (10, file = 'Input2.ini')
-    read(10, *) dx
-    read(10, *) dy
-    read(10, *) N_x
-    read(10, *) N_y
-    read(10, *) lambda_x
-    read(10, *) lambda_y
-    read(10, *) variance
-    read(10, *) RSEEDCONST
-    read(10, *) NRANDSEED2
-    read(10, *) N_forcepert
-    read(10, *) N_ens
-    read(10, *) dtstep
-    read(10, *) tcorr
-    close (10)
+    !> Added by Ala Bahrami.
+    if (RUN_DA) then
 
-    !> Added by Ala Bahrami
+        !> Reading perturbed GRACE observations.
+        if (allocated(GR_Pert)) deallocate(GR_Pert)
+        allocate(GR_Pert(N_ens, month_n))
+        open(10, file = 'Inputs/Assimilation_GRACETWS_perturbed.dat')
+        do i = 1, N_ens
+            read(10, *) (GR_Pert(i, j), j = 1, month_n)
+        end do
+        close (10)
+
+        !> Reading Measurement Operator.
+        if (allocated(H)) deallocate(H)
+        if (allocated(HT)) deallocate(HT)
+        allocate(H(1, 13*10173))
+        allocate(HT(13*10173, 1))
+        open(10, file = 'Inputs/Assimilation_Measurement_Operator.ini')
+        read(10, *) (H(1, j), j = 1 , 13*10173)
+        close(10)
+
+        !> HT. Fortran cannot transpose of array of rank 1.
+        HT = reshape(H, shape = (/13*10173 ,1/))
+
+        !> Allocate model state matrix.
+        if (allocated(X)) deallocate(X)
+        allocate(X(13*10173, N_ens))
+
+        !> Allocate model predicted TWS variables and analysis increments.
+        if(allocated(HX)) deallocate(HX)
+        allocate(HX(1, N_ens))
+        if(allocated(D)) deallocate(D)
+        allocate(D(1, N_ens))
+
+        !> Allocate the analysis increment.
+        if (allocated(AI)) deallocate(AI)
+        allocate(AI(13*10173, N_ens))
+        if(allocated(stg_accum)) deallocate(stg_accum)
+        allocate(stg_accum(1, N_ens))
+
+        !> Initialize.
+        stg_accum(1, :) = 0
+
+    end if
+
+    !> Added by Ala Bahrami.
     !> Initialize random_fields variables.
     call assemble_forcepert_param(N_x, N_y, N_forcepert, forcepert_param)
 
-    !> Deallocate the random_fields variables if they are been allocated before.
-    if (allocated(ens_id)) deallocate (ens_id)
-    if (allocated(Forcepert_rseed)) deallocate (Forcepert_rseed)
-    if (allocated(Forcepert_ntrmdt)) deallocate (Forcepert_ntrmdt)
-    if (allocated(Forcepert)) deallocate (Forcepert)
+    !> Deallocate the random_fields variables if they have been allocated before.
+    if (allocated(ens_id)) deallocate(ens_id)
+    if (allocated(Forcepert_rseed)) deallocate(Forcepert_rseed)
+    if (allocated(rseed_store)) deallocate(rseed_store)
+    if (allocated(Forcepert_ntrmdt)) deallocate(Forcepert_ntrmdt)
+    if (allocated(ntrmdt_store)) deallocate(ntrmdt_store)
+    if (allocated(Forcepert)) deallocate(Forcepert)
 
-    !> Allocating the the random_fields variables.
+    !> Allocate Forcepert_ntrmdt_store if SAVERESUMEFLAG_per is active.
+    if (SAVERESUMEFLAG_per == 1 .or. RESUMEFLAG_per == 1) then
+        allocate(Forcepert_ntrmdt_store(N_forcepert, N_x*N_y*N_ens))
+        allocate(Forcepert_rseed_store(NRANDSEED2*N_ens, 1))
+    end if
+
+    !> Allocate the the random_fields variables.
     allocate(ens_id(N_ens))
     allocate(Forcepert_rseed(NRANDSEED2, N_ens))
+    allocate(rseed_store(NRANDSEED2, N_ens))
     allocate(Forcepert_ntrmdt(N_forcepert, N_x, N_y, N_ens))
+    allocate(ntrmdt_store(N_forcepert, N_x, N_y, N_ens))
     allocate(Forcepert(N_forcepert, N_x, N_y, N_ens))
 
-    Forcepert_ntrmdt = 0.0
-    Forcepert = 0.0
+    it_counter = 1
+!Note: Don't forget to bring it back to its original value when the code is crashed.
+    month_counter = 1
+    days_n = 0
 
-    initialize = .true.
+400 continue
 
-    do n = 1, N_ens
-        ens_id(n) = n
-    end do
+    !> Added by Ala Bahrami.
+    select case (RESUMEFLAG_per)
 
-    !> Addded by Ala Bahrami
-    !> Generate random fields for initialization
-    call get_forcepert( &
-       N_forcepert, N_ens, N_x, N_y, &
-       dx, dy, dtstep, &
-       initialize, &
-       forcepert_param, &
-       ens_id, &
-       Forcepert_rseed, &
-       Forcepert_ntrmdt, &
-       Forcepert)
+        !> RESUMEFLAG_per 0
+        case (0)
+            write(*, *) ''
+            write(*, *) 'Initializing Forcing Perturbations'
+            write(*, *) ''
 
-    !> Added by Ala Bahrami
-    !> Starting main ensemble loop.
+            !> Initialize.
+            Forcepert_ntrmdt = 0.0
+            Forcepert = 0.0
+            initialize = .true.
+            do n = 1, N_ens
+                ens_id(n) = n
+            end do
+
+            !> Generate random fields for initialization.
+            call get_forcepert( &
+                N_forcepert, N_ens, N_x, N_y, &
+                dx, dy, dtstep, &
+                initialize, &
+                forcepert_param, &
+                ens_id, &
+                Forcepert_rseed, &
+                Forcepert_ntrmdt, &
+                Forcepert)
+
+        !> RESUMEFLAG_per 1
+        case (1)
+            write(*, *) ''
+            write(*, *) 'Reading Forcing Perturbations resume files'
+            write(*, *) ''
+
+            !> Initialize.
+            do n = 1, N_ens
+                ens_id(n) = n
+            end do
+
+            !> Read and assign Forcepert_ntrmdt_store.
+            iun = 963
+            open(iun, file = 'Inputs/Forcepert_ntrmdt.seq', action = 'read', form = 'unformatted', access = 'sequential')
+            read(iun) Forcepert_ntrmdt_store(1, :)
+            read(iun) Forcepert_ntrmdt_store(2, :)
+            read(iun) Forcepert_ntrmdt_store(3, :)
+!todo: Reading the other field members.
+!+            read(iun) Forcepert_ntrmdt_store(4, :)
+!+            read(iun) Forcepert_ntrmdt_store(5, :)
+!+            read(iun) Forcepert_ntrmdt_store(6, :)
+!+            read(iun) Forcepert_ntrmdt_store(7, :)
+!+            read(iun) Forcepert_ntrmdt_store(8, :)
+            close(iun)
+            Forcepert_ntrmdt = reshape(Forcepert_ntrmdt_store, (/N_forcepert, N_x, N_y, N_ens/))
+
+            !> Read and assign Forcepert_rseed store.
+            iun = 963
+            open(iun, file = 'Inputs/Forcepert_rseed.seq', action = 'read', form = 'unformatted', access = 'sequential')
+            read(iun) Forcepert_rseed_store
+            close(iun)
+            Forcepert_rseed = reshape(Forcepert_rseed_store, (/NRANDSEED2, N_ens/))
+
+    end select
+
+    !> Store random field variable to be used in ensemble loop iteration.
+    rseed_store = Forcepert_rseed
+    ntrmdt_store = Forcepert_ntrmdt
+
+500 continue
+
+    !> Added by Ala Bahrami.
+    !> Starting main ensemble run.
+    if (RUN_DA) then
+        if (it_counter == 1) then
+            write(*, *) ''
+            write(*, *) 'The Data Assimilation (Forecast) Mode is Active'
+            write(*, *) ''
+        else if (it_counter == 2) then
+            write(*, *) ''
+            write(*, *) 'The Data Assimilation (Analysis) Mode is Active'
+            write(*, *) ''
+        end if
+    else
+        if (it_counter == 1) then
+            write(*, *) ''
+            write(*, *) 'The Open_Loop (Forecast) Mode is Active '
+            write(*, *) ''
+        end if
+    end if
 
     !> *********************************************************************
     !> Start of the ensemble loop.
     !> *********************************************************************
 
-    do tt = 1, N_ens
+    !> Added by Ala Bahrami.
+    !> Starting main ensemble loop.
+!todo: Check the condition of the program for the second run for each ensemble to update model states
+    tt = 1
+505 continue
 
 !TODO: UPDATE THIS (RELEASE(*)) WITH VERSION CHANGE
     if (ro%VERBOSEMODE > 0) print 951, trim(RELEASE), trim(VERSION)
 
 951 format(1x, 'MESH ', a, ' ---  (', a, ')', /)
+
+    write(*, '(a)') ''
+    write(*, "('Ensemble ', i5, ' of ', i5, ' (Pass ', i5, ')')") tt, N_ens, it_counter
+    write(*, '(a)') ''
 
     !> Check if any command line arguments are found.
     narg = command_argument_count()
@@ -382,6 +557,15 @@ program MESH_Assimilate
         !> At the moment only class, hydro parameters and some outputs
 !todo: Call this anyway, make loading values from file an alternate subroutine of module_files
         call Init_fls(fls)
+
+        !> Added by Ala Bahrami.
+        !> Changing location of the input resume file.
+        write(strens, '(i5)') tt
+        if (.not. assim_mode .or. .not. RUN_DA) then
+            fls%fl(mfk%f883)%fn = 'resume_ens/' // 'forecast/' // 'ens' // trim(adjustl(strens)) // '/' // fls%fl(mfk%f883)%fn
+        else
+            fls%fl(mfk%f883)%fn = 'resume_ens/' // 'analysis/' // 'ens' // trim(adjustl(strens)) // '/' // fls%fl(mfk%f883)%fn
+        end if
     end if !(narg > 0) then
 
 !-    call counter_init()
@@ -395,50 +579,22 @@ program MESH_Assimilate
                              ts, cm, &
                              fls)
 
+    !> Added by Ala Bahrami.
+    !> Updating the time counter starting date after one month simulation.
+    if (month_counter > 1) then
+        ic%start%jday = ic%start%jday + days_n
+        if (ic%start%jday == 366 .or. ic%start%jday == 367) then
+            ic%start%jday = 1
+            ic%start%year = ic%start%year + 1
+            days_n = 0
+        end if
+    end if
+
     !> Assign shed values to local variables.
     NA = shd%NA
     NTYPE = shd%lc%NTYPE
     NSL = shd%lc%IGND
 
-    !> Added by Ala Bahrami
-    !> Initialize random_fields variables.
-!-    call assemble_forcepert_param(N_x, N_y, N_forcepert, forcepert_param)
-
-    !> Deallocate the random_fields variables if they are been allocated before.
-!-    if (allocated(ens_id)) deallocate (ens_id)
-!-    if (allocated(Forcepert_rseed)) deallocate (Forcepert_rseed)
-!-    if (allocated(Forcepert_ntrmdt)) deallocate (Forcepert_ntrmdt)
-!-    if (allocated(Forcepert)) deallocate (Forcepert)
-    if (allocated(Forcepert_vect)) deallocate (Forcepert_vect)
-
-    !> Allocating the the random_fields variables.
-!-    allocate(ens_id(N_ens))
-!-    allocate(Forcepert_rseed(NRANDSEED2, N_ens))
-!-    allocate(Forcepert_ntrmdt(N_forcepert, N_x, N_y, N_ens))
-!-    allocate(Forcepert(N_forcepert, N_x, N_y, N_ens))
-
-    !> Allocate and initialize Forcepert_vect.
-    allocate (Forcepert_vect(N_forcepert, NA, N_ens))
-!-    Forcepert_ntrmdt = 0.0
-!-    Forcepert = 0.0
-
-!-    initialize = .true.
-
-!-    do n = 1, N_ens
-!-        ens_id(n) = n
-!-    end do
-
-    !> Addded by Ala Bahrami
-    !> Generate random fields for initialization
-!-    call get_forcepert( &
-!-       N_forcepert, N_ens, N_x, N_y, &
-!-       dx, dy, dtstep, &
-!-       initialize, &
-!-       forcepert_param, &
-!-       ens_id, &
-!-       Forcepert_rseed, &
-!-       Forcepert_ntrmdt, &
-!-       Forcepert)
 
     !> Initialize output fields.
     call init_water_balance(wb_grd, shd)
@@ -1164,26 +1320,25 @@ program MESH_Assimilate
 
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls, stfl)
 
-    !> Added by Ala Bahrami
-    !> Assigning variable related to perturbation fields
-
-    !> Settinng initialize of random_fields.
+    !> Added by Ala Bahrami.
+    !> Assigning variable related to perturbation fields.
     initialize = .false.
-
     n2 = 1
-
-    !> Number of forcing data which are read.
-    N_t = (ic%stop%jday - ic%start%jday )*48
 
 !    NML = shd%lc%NML
 
+    if (allocated(Forcepert_vect)) deallocate(Forcepert_vect)
     if (allocated(precip_pert)) deallocate(precip_pert)
     if (allocated(sw_pert)) deallocate(sw_pert)
     if (allocated(lw_pert)) deallocate(lw_pert)
-
+    if (allocated(swe_pert)) deallocate(swe_pert)
+    if (allocated(thlq_pert)) deallocate(thlq_pert)
+    allocate(Forcepert_vect(N_forcepert, NA, N_ens))
     allocate(precip_pert(NML, 1))
     allocate(sw_pert(NML, 1))
     allocate(lw_pert(NML, 1))
+    allocate(swe_pert(NML, 1))
+    allocate(thlq_pert(NML, 4))
 
     !> *********************************************************************
     !> End of Initialization
@@ -1203,11 +1358,26 @@ program MESH_Assimilate
     !> *********************************************************************
 
     !> MAM - Initialize ENDDATE and ENDDATA.
-    !> Here MESH runs based on time step (30 min) until ENDDATE becomes .TRUE..
-!todo: I should implement for N_ens by using a loop and change the number of basin average outputs.
+    !> Here MESH runs based on time step (30 min) until ENDDATE or ENDDATA becomes .TRUE..
     ENDDATE = .false.
     ENDDATA = .false.
     RUNSTATE = 0
+
+    if (RUN_DA) then
+
+        !> Variable to switch the program in forecast or assimilation mode.
+        !> Note: If the program is in the assimilation mode this variable should be changed!
+        if (it_counter >= 2) then
+            it_counter = 3
+
+            !> Reset the accumulated storage variable.
+            stg_accum = 0
+        else if (it_counter < 2) then
+            assim_mode = .false.
+        end if
+    end if
+
+    N_t = 0
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
@@ -1228,7 +1398,8 @@ program MESH_Assimilate
 
         if (RUNSTATE /= 0) exit
 
-!todo: write a program to read a forcing data for every time (30 min)
+        N_t = N_t + 1
+
         !> Load or update climate forcing input.
         if (ro%RUNCLIM) then
             !> Three main functions in the climate_forcing_module_io:
@@ -1244,51 +1415,234 @@ program MESH_Assimilate
             !>   cm%dat(ck%P0)%fname = 'basin_pres'
             !>   cm%dat(ck%HU)%fname = 'basin_humidity'
             ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
-
-            !> Added by Ala Bahrami
-            !> Perturbing the input forcing data for every time step by considering
-            !> the spatial-temporal and cross correlaiton
-            call get_forcepert( &
-                N_forcepert, N_ens, N_x, N_y, &
-                dx, dy, dtstep, &
-                initialize, &
-                forcepert_param, &
-                ens_id, &
-                Forcepert_rseed, &
-                Forcepert_ntrmdt, &
-                Forcepert)
-
-            !> Extracting Forcepert based on Rank
-            !> Note: I have modified the shd%yyy to be consitent with MATLAB code
-            !> and the direction is considered up to down
-            do i = 1, NA
-                Forcepert_vect(:, i, :) = Forcepert(:,(shd%yCount - shd%yyy(i) + 1), shd%xxx(i), :)
-            end do
-            cm_pert = cm
-
-            !> Convert from the Gridded value to GRU
-            do k = 1, NML
-
-                !> Get the perturbation.
-                precip_pert(k, 1) = Forcepert_vect(1, (shd%lc%ILMOS(k)), tt)
-                sw_pert(k, 1) = Forcepert_vect(2, (shd%lc%ILMOS(k)), tt)
-                lw_pert(k, 1) = Forcepert_vect(3, (shd%lc%ILMOS(k)), tt)
-
-                !> Apply the perturbation to the value.
-!todo: Replace hard-coded indices with keys.
-                cm_pert%dat(3)%GAT(k) = cm%dat(3)%GAT(k)*precip_pert(k, 1)
-                cm_pert%dat(1)%GAT(k) = cm%dat(1)%GAT(k)*sw_pert(k, 1)
-                cm_pert%dat(2)%GAT(k) = cm%dat(2)%GAT(k) + lw_pert(k, 1)
-            end do
-
-            !> End of perturbation for every time step (30 min).
-
             if (ENDDATA) then
                 RUNSTATE = 1
                 cycle
             end if
-
         end if
+
+        !> Added by Ala Bahrami.
+        if (RUN_DA) then
+
+            !> Construct the model state matrix.
+            if (.not. assim_mode) then
+                call Julian2MonthDay(ic%now%jday, ic%now%year, nmth, ndy)
+                if(ndy == 1) then
+                    if (ic%now%hour .eq. 0 .and. ic%now%mins .eq. 0) then
+                        X(1:NML, tt) = stas%cnpy%sncan
+                        X((1*NML + 1):2*NML, tt) = stas%cnpy%rcan
+                        X((2*NML + 1):3*NML, tt) = stas%sno%sno
+                        X((3*NML + 1):4*NML, tt) = stas%sno%wsno
+                        X((4*NML + 1):5*NML, tt) = stas%sfc%zpnd
+!todo: Should consider the true number of soil layers (user-configurable).
+                        X((5*NML + 1):6*NML, tt) = stas%sl%thlq(:, 1)
+                        X((6*NML + 1):7*NML, tt) = stas%sl%thlq(:, 2)
+                        X((7*NML + 1):8*NML, tt) = stas%sl%thlq(:, 3)
+                        X((8*NML + 1):9*NML, tt) = stas%sl%thlq(:, 4)
+                        X((9*NML + 1):10*NML, tt) = stas%sl%thic(:, 1)
+                        X((10*NML + 1):11*NML, tt) = stas%sl%thic(:, 2)
+                        X((11*NML + 1):12*NML, tt) = stas%sl%thic(:, 3)
+                        X((12*NML + 1):13*NML, tt) = stas%sl%thic(:, 4)
+
+                        !> Calculate the Kalman Gain Matrix.
+                        if (tt .eq. N_ens) then
+                            if (allocated(X2)) deallocate(X2)
+                            if (allocated(X_ave)) deallocate(X_ave)
+                            if (allocated(A)) deallocate(A)
+                            if (allocated(X3)) deallocate(X3)
+                            if (allocated(X4)) deallocate(X4)
+                            if (allocated(KG)) deallocate(KG)
+                            if (allocated(X5)) deallocate(X5)
+                            allocate(X2(size(X, 1)))
+                            allocate(X_ave(size(X, 1), N_ens))
+                            allocate(A(size(X, 1), N_ens))
+                            allocate(X3(N_ens, 1))
+                            allocate(X4(size(X, 1), 1))
+                            allocate(KG(size(X, 1), 1))
+                            allocate(X5(1, 1))
+
+                            !> Calculate ensemble average from ensemble members.
+                            X2 = sum(X, 2)/N_ens
+                            X_ave = spread(X2, 2, N_ens)
+
+                            !> Calculate Ensemble Perturbations.
+                            A = X - X_ave
+
+                            !> Calculate the background error covariance indirectly.
+                            !> Calculate local variable X3.
+                            X3 = matmul(transpose(A), HT)
+
+                            !> Calculate PHT which is assigned as X4.
+                            X4 = matmul(A, X3)/(N_ens - 1)
+
+                            !> Calculate X5.
+                            X5 = 1.0/((matmul(H, X4) + GR_er**2.0))
+!                            X6 = spread(X5, 1, size(X, 1))
+
+                            !> Calculate Kalman Gain Matrix.
+                            write(*, *) ''
+                            write(*, *) 'Calculating Kalman Gain Matrix'
+                            write(*, *) ''
+                            KG = matmul(X4, X5)
+                            open(10, file = 'Outputs/KG_20new.dat', action = 'write')
+                            write(10, *) KG
+                            close(10)
+                            it_counter = it_counter + 1
+!                            deallocate(X)
+                        end if
+                    end if
+                end if
+            end if
+
+            !> Update the model states in the assimilation mode.
+            if (assim_mode .and. ic%ts_daily == 48) then
+                !write(*, *) ''
+                !write(*, *) 'Model states are reinitialized in this stage'
+                !write(*, *) ''
+                stas%cnpy%sncan = stas%cnpy%sncan + AI(1:NML, tt)
+                stas%cnpy%rcan = stas%cnpy%rcan + AI((1*NML + 1):2*NML, tt)
+
+                !> Avoid updating SNO and WSNO for some problematic elements which create crashing problem in CLASSZ.
+                do i = 1, NML
+                    if (stas%sno%sno(i) <= 0.0) then
+                        stas%sno%sno(i) = 0.0
+                    else
+                        stas%sno%sno(i) = stas%sno%sno(i) + AI((2*NML + i), tt)
+                        if (stas%sno%sno(i) < 0.1) then
+                            stas%sno%sno(i) = stas%sno%sno(i) - AI((2*NML + i), tt)
+                        end if
+                    end if
+                    if (stas%sno%wsno(i) <= 0) then
+                        stas%sno%wsno(i) = 0.0
+                    else
+                        stas%sno%wsno(i) = stas%sno%wsno(i) + AI((3*NML + i), tt)
+                        if (stas%sno%wsno(i) < 0.0) then
+                            stas%sno%wsno(i) = stas%sno%wsno(i) - AI((3*NML + i), tt)
+                        end if
+                    end if
+
+                    !> Bring it back to the value before update.
+!                    if (stas%sno%sno(i) < 0) then
+!                        stas%sno%sno(i) = stas%sno%sno(i) - AI((2*NML + i), tt)
+!                    end if
+!                    if (stas%sno%wsno(i) < 0) then
+!                        stas%sno%wsno(i) = stas%sno%wsno(i) - AI((3*NML + i), tt)
+!                    end if
+!todo: Should consider the true number of soil layers (user-configurable).
+!                    if (stas%sl%thlq(i, 1) < 0) then
+!                        stas%sl%thlq(i, 1) = stas%sl%thlq(i, 1) - AI((5*NML + i), tt)
+!                    end if
+!                    if (stas%sl%thlq(i, 2) < 0) then
+!                        stas%sl%thlq(i, 2) = stas%sl%thlq(i, 2) - AI((6*NML + i), tt)
+!                    end if
+!                    if (stas%sl%thlq(i, 3) < 0) then
+!                        stas%sl%thlq(i, 3) = stas%sl%thlq(i, 3) - AI((7*NML + i), tt)
+!                    end if
+!                    if (stas%sl%thlq(i, 4) < 0) then
+!                        stas%sl%thlq(i, 4) = stas%sl%thlq(i, 4) - AI((8*NML + i), tt)
+!                    end if
+!                    if (stas%sl%thlc(i, 1) < 0) then
+!                        stas%sl%thlc(i, 1) = stas%sl%thlc(i, 1) - AI((9*NML + i), tt)
+!                    end if
+!                    if (stas%sl%thlc(i, 2) < 0) then
+!                        stas%sl%thlc(i, 2) = stas%sl%thlc(i, 2) - AI((10*NML + i), tt)
+!                    end if
+!                    if (stas%sl%thlc(i, 3) < 0) then
+!                        stas%sl%thlc(i, 3) = stas%sl%thlc(i, 3) - AI((11*NML + i), tt)
+!                    end if
+!                    if (stas%sl%thlc(i, 4) < 0) then
+!                        stas%sl%thlc(i, 4) = stas%sl%thlc(i, 4) - AI((12*NML + i), tt)
+!                    end if
+                end do
+!                stas%sfc%zpnd = stas%sfc%zpnd + AI((4*NML + 1):5*NML, tt)
+                stas%sl%thlq(:, 1) = stas%sl%thlq(:, 1) + AI((5*NML + 1):6*NML, tt)
+                stas%sl%thlq(:, 2) = stas%sl%thlq(:, 2) + AI((6*NML + 1):7*NML, tt)
+                stas%sl%thlq(:, 3) = stas%sl%thlq(:, 3) + AI((7*NML + 1):8*NML, tt)
+                stas%sl%thlq(:, 4) = stas%sl%thlq(:, 4) + AI((8*NML + 1):9*NML, tt)
+                stas%sl%thic(:, 1) = stas%sl%thic(:, 1) + AI((9*NML + 1):10*NML, tt)
+                stas%sl%thic(:, 2) = stas%sl%thic(:, 2) + AI((10*NML + 1):11*NML, tt)
+                stas%sl%thic(:, 3) = stas%sl%thic(:, 3) + AI((11*NML + 1):12*NML, tt)
+                stas%sl%thic(:, 4) = stas%sl%thic(:, 4) + AI((12*NML + 1):13*NML, tt)
+            end if
+        end if
+
+        !> Added by Ala Bahrami.
+        !> Perturbing the input forcing data for every time step by considering
+        !> the spatial-temporal and cross correlation.
+        !> Note (Program speed): I see inside the sa_mesh_assimilate.f90 the get_forcepert()
+        !> calculates Forcepert_rseed, Forcepert_ntrmdt, Forcepert for N_ens members for each time step,
+        !> while sa_mesh_assimilate program use these variables for one only ensemble member.
+        !> So, the number of calculation are multiplied by N_ens for each run of the program.
+        !> This implementation slows down the process of running.
+
+        !> Restoring the random field variables in the assimilation mode (analysis)
+        !> similar perturbation fields of forecast.
+        if (N_t == 1) then
+            Forcepert_rseed = rseed_store
+            Forcepert_ntrmdt = ntrmdt_store
+        end if
+        call get_forcepert( &
+            N_forcepert, N_ens, N_x, N_y, &
+            dx, dy, dtstep, &
+            initialize, &
+            Forcepert_param, &
+            ens_id, &
+            Forcepert_rseed, &
+            Forcepert_ntrmdt, &
+            Forcepert)
+
+        !> Extracting Forcepert based on Rank.
+        !> Note: I have modified the shd%yyy to be consistent with MATLAB code (the direction is considered up to down).
+        do i = 1, NA
+            Forcepert_vect(:, i, tt) = Forcepert(:, (shd%yCount - shd%yyy(i) + 1), shd%xxx(i), tt)
+        end do
+
+        !> Convert from the gridded value to tile.
+        do k = 1, NML
+!todo: Consider the cross correlation between different soil moisture layers. See Kumar article for more info.
+!todo: Set up a condition to perturb model states based on temperature. See Forman et al. 2012 for more info.
+
+            !> Forcing data perturbation fields.
+!todo: Replace hard-coded indices with keys.
+            precip_pert(k, 1) = Forcepert_vect(1, (shd%lc%ILMOS(k)), tt)
+            sw_pert(k, 1) = Forcepert_vect(2, (shd%lc%ILMOS(k)), tt)
+            lw_pert(k, 1) = Forcepert_vect(3, (shd%lc%ILMOS(k)), tt)
+
+            !> Model states perturbation fields.
+            swe_pert(k, 1) = Forcepert_vect(4, (shd%lc%ILMOS(k)), tt)
+!todo: Should consider the true number of soil layers (user-configurable).
+!+            thlq_pert(k, 1) = Forcepert_vect(5, (shd%lc%ILMOS(k)), tt)
+!+            thlq_pert(k, 2) = Forcepert_vect(6, (shd%lc%ILMOS(k)), tt)
+!+            thlq_pert(k, 3) = Forcepert_vect(7, (shd%lc%ILMOS(k)), tt)
+!+            thlq_pert(k, 4) = Forcepert_vect(8, (shd%lc%ILMOS(k)), tt)
+
+            !> Here the problematic days of any ensemble members are excluded from perturbation.
+            !> A same methodology implemented to update model states should be applied.
+!todo: Find out the reason of code crashing because of perturbation.
+            if (ic%now%jday == 9 .or. ic%now%jday == 23 .or. ic%now%jday == 1) then
+                if (tt == 6 .or. tt == 9 .or. tt == 15) then
+                    cm%dat(3)%GAT(k) = cm%dat(3)%GAT(k)
+                    cm%dat(1)%GAT(k) = cm%dat(1)%GAT(k)
+                    cm%dat(2)%GAT(k) = cm%dat(2)%GAT(k)
+                    stas%sno%sno(k) = stas%sno%sno(k)
+                end if
+            else
+!todo: Replace hard-coded indices with keys.
+                cm%dat(3)%GAT(k) = cm%dat(3)%GAT(k)*precip_pert(k, 1)
+                cm%dat(1)%GAT(k) = cm%dat(1)%GAT(k)*sw_pert(k, 1)
+                cm%dat(2)%GAT(k) = cm%dat(2)%GAT(k) + lw_pert(k, 1)
+                stas%sno%sno(k) = stas%sno%sno(k)*swe_pert(k, 1)
+!todo: Should consider the true number of soil layers (user-configurable).
+!+                stas%sl%thlq(k, 1) = stas%sl%thlq(k, 1) + thlq_pert(k, 1)
+!+                stas%sl%thlq(k, 2) = stas%sl%thlq(k, 2) + thlq_pert(k, 2)
+!+                stas%sl%thlq(k, 3) = stas%sl%thlq(k, 3) + thlq_pert(k, 3)
+!+                stas%sl%thlq(k, 4) = stas%sl%thlq(k, 4) + thlq_pert(k, 4)
+            end if
+        end do
+
+        !> *********************************************************************
+        !> End of perturbation for every time step (30 min).
+        !> *********************************************************************
 
         !> Reset variables that accumulate on the daily time-step.
         if (ipid == 0 .and. ic%ts_daily == 1) then
@@ -1313,14 +1667,14 @@ program MESH_Assimilate
             wb_acc%PNDW = 0.0
         end if
 
-        cstate = run_within_tile(shd, fls, cm_pert)
+        cstate = run_within_tile(shd, fls, cm)
         cstate = ''
 !        if (len_trim(cstate) > 0) then
 !            RUNSTATE = 1
 !            cycle
 !        end if
 
-        call run_within_grid(shd, fls, cm_pert)
+        call run_within_grid(shd, fls, cm)
 
         !> Initialize grid-based accumulators for output.
         if (ipid == 0) then
@@ -1417,15 +1771,15 @@ program MESH_Assimilate
 
             !> Grid data for output.
             if (ro%RUNCLIM) then
-                md_grd%fsdown = cm_pert%dat(ck%FB)%GRD
-                md_grd%fsvh = cm_pert%dat(ck%FB)%GRD/2.0
-                md_grd%fsih = cm_pert%dat(ck%FB)%GRD/2.0
-                md_grd%fdl = cm_pert%dat(ck%FI)%GRD
-                md_grd%ul = cm_pert%dat(ck%UV)%GRD
-                md_grd%ta = cm_pert%dat(ck%TT)%GRD
-                md_grd%qa = cm_pert%dat(ck%HU)%GRD
-                md_grd%pres = cm_pert%dat(ck%P0)%GRD
-                md_grd%pre = cm_pert%dat(ck%RT)%GRD
+                md_grd%fsdown = cm%dat(ck%FB)%GRD
+                md_grd%fsvh = cm%dat(ck%FB)%GRD/2.0
+                md_grd%fsih = cm%dat(ck%FB)%GRD/2.0
+                md_grd%fdl = cm%dat(ck%FI)%GRD
+                md_grd%ul = cm%dat(ck%UV)%GRD
+                md_grd%ta = cm%dat(ck%TT)%GRD
+                md_grd%qa = cm%dat(ck%HU)%GRD
+                md_grd%pres = cm%dat(ck%P0)%GRD
+                md_grd%pre = cm%dat(ck%RT)%GRD
             end if
 
             !> Update output data.
@@ -1499,9 +1853,70 @@ program MESH_Assimilate
 
         end if !(ipid == 0) then
 
-        if (ipid == 0) call run_between_grid(shd, fls, ts, cm_pert, wb_grd, eb_grd, spv_grd, stfl, rrls)
+        if (ipid == 0) call run_between_grid(shd, fls, ts, cm, wb_grd, eb_grd, spv_grd, stfl, rrls)
 
         if (ipid == 0) then
+
+            !> Added by Ala Bahrami.
+            !> Calculate statistics of the run.
+            if (RUN_DA) then
+
+                !> Accumulate the daily storage value.
+!todo: Check why the output storage does not correspond with saved CSV file.
+                if (ic%ts_daily == 48 .and. .not. assim_mode) then
+                    !write(*, *) ''
+                    !write(*, *) 'ic', ic%now%jday, ic%now%hour, ic%now%mins
+                    !write(*, *) ''
+                    stg_accum(1, tt) =  stg_accum(1, tt) + sum(wb_grd%stg)/wb_grd%basin_area
+                    !write(*, *) ''
+                    !write(*, *) 'stg_accum(1,tt)', stg_accum(1, tt)
+                    !write(*, *) ''
+                end if
+
+                !> Calculate and save the ensemble innovation vector if the next day will be a new month.
+                if (ic%ts_daily == 48 .and. .not. assim_mode) then
+                    call Julian2MonthDay((ic%now%jday + 1), ic%now%year, nmth, ndy)
+                    if (ndy == 1) then
+                        call Julian2MonthDay(ic%now%jday, ic%now%year, nmth, ndy)
+                        HX(1, tt) = stg_accum(1, tt)/ndy
+                        !write(*, *) ''
+                        !write(*, *) 'HX(1,tt)', HX(1, tt)
+                        !write(*, *) ''
+                        D(1, tt) = GR_Pert(tt, month_counter) - HX(1, tt)
+                        open(11, file = 'Outputs/Innovation_20_Monthly_new.ini')
+                        write(11, *) D(1, tt)
+                        close(11)
+                    end if
+                end if
+            end if
+
+            !> Added by Ala Bahrami.
+            !> Calculate the analysis increment and activate the assimilation (analysis) mode.
+            if (tt == N_ens .and. it_counter == 2) then
+
+                !> Activate the assimilation mode if the next day will be a new month.
+                call Julian2MonthDay((ic%now%jday + 1), ic%now%year, nmth, ndy)
+                if (ndy == 1 .and. ic%ts_daily == 48) then
+
+                    !> Change to assimilation mode.
+                    assim_mode = .true.
+
+                    !> Calculate the analysis increment.
+                    write(*, *) ''
+                    write(*, *) 'Calculating Analysis Increment'
+                    write(*, *) ''
+                    AI = matmul(KG, D)
+
+                    !> Calculate and write the fraction of analysis increment for each day of the month.
+                    call Julian2MonthDay(ic%now%jday, ic%now%year, nmth, ndy)
+                    AI = AI/ndy
+                    open(13, file = 'Outputs/AI_20_new.ini')
+                    do i = 1, 13*NML
+                        write(13, *) (AI(i, j), j = 1, N_ens)
+                    end do
+                    close(13)
+                end if
+            end if
 
             !> Write output to the console.
             if (ic%now%hour*3600 + ic%now%mins*60 + ic%dts == 86400) then
@@ -1529,6 +1944,13 @@ program MESH_Assimilate
         end if !(ipid == 0) then
 
 5176    format(2i5, 999(f10.3))
+
+        !> Added by Ala Bahrami.
+        !> Limit running the code to a period of one month.
+        call Julian2MonthDay((ic%now%jday + 1), ic%now%year, nmth, ndy)
+        if (ndy == 1 .and. ic%ts_daily == 48) then
+            ENDDATE = .true.
+        end if
 
         !> Update the current time-step and counter.
         call counter_update()
@@ -1910,11 +2332,82 @@ program MESH_Assimilate
                /1x, 'INTEGER VALUES OF EITHER 0 OR 1,', &
                /1x, 'AND 3 COLUMNS CONTAINING INFORMATION ABOUT THE VARIABLES.', /)
 
+    !> Added by Ala Bahrami.
+    !> Closing forcing files after one ensemble loop.
+    do i = 1, 7
+        close(cm%dat(i)%fiun)
+    end do
+
+    if (RUN_DA) then
+        if (assim_mode .and. it_counter .eq. 2) then
+            goto 500
+        end if
+
+        !> Added by Ala Bahrami.
+        !> Copying DA resume files into OL folder for the next month run.
+        if (assim_mode) then
+            write(strens, '(i5)') tt
+            fl_ens = 'cp -R' // ' resume_ens/analysis/' // 'ens' // trim(adjustl(strens)) // ' resume_ens/forecast'
+            call system(trim(fl_ens))
+        end if
+    end if
+
+    if ((assim_mode .or. .not. RUN_DA) .and. tt .eq. N_ens) then
+
+        !> Update counters.
+        if (RUN_DA) then
+            it_counter = 1
+            assim_mode = .false.
+        end if
+        month_counter = month_counter + 1
+
+        !> Extract the number of days of the previous month to update the start date.
+        call Julian2MonthDay((ic%now%jday - 1), ic%now%year, nmth, ndy)
+
+        !> Accumulate the number of days passed from the beginning of the program.
+        days_n = days_n + ndy
+
+        if (SAVERESUMEFLAG_per == 1) then
+
+            !> Reshape and write Forcepert_ntrmdt.
+            Forcepert_ntrmdt_store = reshape(Forcepert_ntrmdt, (/N_forcepert, N_x*N_y*N_ens/))
+            iun = 963
+            open(iun, file = 'Inputs/Forcepert_ntrmdt.seq', action = 'write', form = 'unformatted', access = 'sequential')
+            write(iun) Forcepert_ntrmdt_store(1, :)
+            write(iun) Forcepert_ntrmdt_store(2, :)
+            write(iun) Forcepert_ntrmdt_store(3, :)
+!todo: Writing the other field members.
+!+            write(iun) Forcepert_ntrmdt_store(4, :)
+!+            write(iun) Forcepert_ntrmdt_store(5, :)
+!+            write(iun) Forcepert_ntrmdt_store(6, :)
+!+            write(iun) Forcepert_ntrmdt_store(7, :)
+!+            write(iun) Forcepert_ntrmdt_store(8, :)
+            close(iun)
+
+            !> Reshape and write Forcepert_rseed.
+            Forcepert_rseed_store = reshape(Forcepert_rseed, (/NRANDSEED2*N_ens, 1/))
+            iun = 963
+            open(iun, file = 'Inputs/Forcepert_rseed.seq', action = 'write', form = 'unformatted', access = 'sequential')
+            write(iun) Forcepert_rseed_store
+            close(iun)
+        end if
+
+        if (.not. RUN_DA) then
+            RESUMEFLAG_per = 1
+        end if
+        if (ic%now%jday /= ic%stop%jday) then
+            goto 400
+        end if
+    end if
+
     !> *********************************************************************
     !> End of the ensemble loop.
     !> *********************************************************************
 
-    end do
+    tt = tt + 1
+    if (tt <= N_ens) then
+        goto 505
+    end if
 
     call mpi_finalize(ierr)
 

@@ -1,54 +1,3 @@
-! +-======-+
-!  Copyright (c) 2003-2007 United States Government as represented by
-!  the Admistrator of the National Aeronautics and Space Administration.
-!  All Rights Reserved.
-!
-!  THIS OPEN  SOURCE  AGREEMENT  ("AGREEMENT") DEFINES  THE  RIGHTS  OF USE,
-!  REPRODUCTION,  DISTRIBUTION,  MODIFICATION AND REDISTRIBUTION OF CERTAIN
-!  COMPUTER SOFTWARE ORIGINALLY RELEASED BY THE UNITED STATES GOVERNMENT AS
-!  REPRESENTED BY THE GOVERNMENT AGENCY LISTED BELOW ("GOVERNMENT AGENCY").
-!  THE UNITED STATES GOVERNMENT, AS REPRESENTED BY GOVERNMENT AGENCY, IS AN
-!  INTENDED  THIRD-PARTY  BENEFICIARY  OF  ALL  SUBSEQUENT DISTRIBUTIONS OR
-!  REDISTRIBUTIONS  OF THE  SUBJECT  SOFTWARE.  ANYONE WHO USES, REPRODUCES,
-!  DISTRIBUTES, MODIFIES  OR REDISTRIBUTES THE SUBJECT SOFTWARE, AS DEFINED
-!  HEREIN, OR ANY PART THEREOF,  IS,  BY THAT ACTION, ACCEPTING IN FULL THE
-!  RESPONSIBILITIES AND OBLIGATIONS CONTAINED IN THIS AGREEMENT.
-!
-!  Government Agency: National Aeronautics and Space Administration
-!  Government Agency Original Software Designation: GSC-15354-1
-!  Government Agency Original Software Title:  GEOS-5 GCM Modeling Software
-!  User Registration Requested.  Please Visit http://opensource.gsfc.nasa.gov
-!  Government Agency Point of Contact for Original Software:
-!           Dale Hithon, SRA Assistant, (301) 286-2691
-!
-! +-======-+
-
-! subroutines to perturb precipitation and radiation
-! for EnKF application to Tskin analysis in GEOS5
-!
-! MUST initialize random seed and Forcepert_ntrmdt by calling
-!  get_forcepert() with initialize=.true. start of the driver program
-!  (otherwise set initialize=.false.)
-!
-! f90 -cpp prop_global_parameters.f90 nr_ran2_gasdev.f90 forcepert_types.f90 random_fields.f90 land_force_perturb.f90
-!
-! reichle, 24 Jan 2005
-! reichle, 11 Feb 2005
-!
-! +-======-+
-! =========================================================================
-!
-! modified by : Ala Bahrami
-!
-! Bahrami, 21/03/2017 - Changing allocation of the pointer forcepert_param variable
-!                     - Changing parameter xcorr and ycorr from 0 to 176499.2
-!                     - Changing parameter std_pcp  = .3 to std_pcp  = .5
-!                     - Changing parameter std_sw    = .15 to std_sw    = .2
-!                     - Changing parameter :: typ_lw    = 0 to 1
-!                     - Changing parameter std_lw    from 0.15 to  40
-!                     - removed the program test in the module
-! =========================================================================
-
 module land_force_perturb
 
     use forcepert_types
@@ -91,10 +40,11 @@ module land_force_perturb
     implicit none
 
     ! N_forcepert is the number independent forcing perturbations
-    ! (e.g. generate N_forcepert=3 perturbations for precip,
+    ! (e.g. generate N_forcepert=4 perturbations for precip,
     ! shortwave radiation, and longwave radiation that will then be
     ! applied to various precip fields (incl large-scale & convective precip
-    ! and snow) and to radiation fields accordingly.
+    ! and snow) and to radiation fields accordingly. I have added the other perturbation
+    ! field in order to perturb SWE.
 
     integer, intent(in) :: N_forcepert   ! # different forcing perturb's
 
@@ -124,8 +74,6 @@ module land_force_perturb
     ! Parameter structure for forcing perturbations (see type definition
     ! for details).
 
-    ! Ala Bahrami changed from pointer to allocatable
-    ! type(forcepert_param_type), dimension(:), pointer :: forcepert_param
     type(forcepert_param_type), dimension(:), allocatable :: forcepert_param
 
     ! Forcepert_ntrmdt are intermediate perturbation fields
@@ -485,12 +433,12 @@ module land_force_perturb
 
           if (white_in_time) then
 
-             Forcepert_ntrmdt(m,:,:,n) = rfield
+             Forcepert_ntrmdt(m,:,:,n) = real(rfield)
 
           else
 
              Forcepert_ntrmdt(m,:,:,n) = &
-                  cc * Forcepert_ntrmdt(m,:,:,n) + dd * rfield
+                  cc * Forcepert_ntrmdt(m,:,:,n) + dd * real(rfield)
           end if
 
        end do
@@ -678,24 +626,43 @@ module land_force_perturb
 
         integer              :: i, j, k, l
         real                 :: tmpreal
-        real, dimension(3,3) :: tmpmat
+        !real, dimension(3,3) :: tmpmat
+        real, dimension(8,8) :: tmpmat
 
         ! -----------------------------------------------------------------
 
         ! forcing perturbation parameters
 
         ! # of forcing variables that are perturbed
-        ! (currently pcp, sw, lw)
+        ! (currently pcp, sw, lw,sno)
+        ! 11/08/2017:
+        ! I have added the model states perturbation fields.
+        ! In order to test how this perturbation field work,
+        ! I have considered SWE and THLQ of four layers
 
-        integer, parameter :: N_force = 3
+        integer, parameter :: N_force   = 8   ! 3
 
-        integer, parameter :: ind_pcp = 1
-        integer, parameter :: ind_sw  = 2
-        integer, parameter :: ind_lw  = 3
+        integer, parameter :: ind_pcp   = 1
+        integer, parameter :: ind_sw    = 2
+        integer, parameter :: ind_lw    = 3
+        integer, parameter :: ind_swe   = 4
+        integer, parameter :: ind_thlq1 = 5
+        integer, parameter :: ind_thlq2 = 6
+        integer, parameter :: ind_thlq3 = 7
+        integer, parameter :: ind_thlq4 = 8
+
+
+
 
         character(40), parameter :: descr_pcp = 'pcp'
         character(40), parameter :: descr_sw  = 'sw'
         character(40), parameter :: descr_lw  = 'lw'
+        character(40), parameter :: descr_swe   = 'swe'
+        character(40), parameter :: descr_thlq1 = 'thlq1'
+        character(40), parameter :: descr_thlq2 = 'thlq2'
+        character(40), parameter :: descr_thlq3 = 'thlq3'
+        character(40), parameter :: descr_thlq4 = 'thlq4'
+
 
         ! limit on range of random numbers:
         !  specify max absolute value allowed to be drawn from a standard
@@ -714,10 +681,6 @@ module land_force_perturb
 
         ! horizontal correlation scales
 
-        ! Ala Bahrami changed this
-        !real, parameter :: xcorr = 0.
-        !real, parameter :: ycorr = 0.
-
         real, parameter :: xcorr = 176499.2
         real, parameter :: ycorr = 176499.2
 
@@ -726,27 +689,64 @@ module land_force_perturb
         !   typ=0: additive, mean=0
         !   typ=1: multiplicative and lognormal, mean=1
 
-        ! Ala Bahrami changed this
-        ! real,    parameter :: std_pcp  = .3, 0.5
-        integer, parameter :: typ_pcp  = 1
-        real,    parameter :: std_pcp  = .3
+        integer, parameter :: typ_pcp    = 1
+        real,    parameter :: std_pcp    = .5 ! .3, 0.5
 
-        ! Ala Bahrami changed this
-        !real,    parameter :: std_sw    = .15
-        integer, parameter :: typ_sw    = 1
-        real,    parameter :: std_sw    = .2
+        integer, parameter :: typ_sw     = 1
+        real,    parameter :: std_sw     = .2 ! .2
 
-        ! Ala Bahrami changed this
-        ! integer, parameter :: typ_lw    = 1
-        ! real,    parameter :: std_lw    = .15, 40
-        integer, parameter :: typ_lw    = 0
-        real,    parameter :: std_lw    = 30
+        integer, parameter :: typ_lw     = 0
+        real,    parameter :: std_lw     = 30 !40 ! .4 30
+
+        integer, parameter :: typ_swe    = 1
+        real,    parameter :: std_swe    = 0.0004
+
+        integer, parameter :: typ_thlq1  = 0
+        !real,    parameter :: std_thlq1  = 0.001
+        real,    parameter :: std_thlq1  = 0.0001
+
+        integer, parameter :: typ_thlq2  = 0
+        !real,    parameter :: std_thlq2  = 0.0005
+        real,    parameter :: std_thlq2  = 0.0001
+
+        integer, parameter :: typ_thlq3  = 0
+        real,    parameter :: std_thlq3  = 0.00005
+
+        integer, parameter :: typ_thlq4  = 0
+        real,    parameter :: std_thlq4  = 0.00005
+
 
         ! correlation coefficients -1 <= rho <= 1
 
-        real, parameter :: rho_pcp_sw = -.8
-        real, parameter :: rho_pcp_lw =  .5
-        real, parameter :: rho_sw_lw   = -.5
+        real, parameter :: rho_pcp_sw       = -.8
+        real, parameter :: rho_pcp_lw       =  .5
+        real, parameter :: rho_pcp_swe      =   0
+        real, parameter :: rho_pcp_thlq1    =   0
+        real, parameter :: rho_pcp_thlq2    =   0
+        real, parameter :: rho_pcp_thlq3    =   0
+        real, parameter :: rho_pcp_thlq4    =   0
+        real, parameter :: rho_sw_lw        = -.5
+        real, parameter :: rho_sw_swe       =   0
+        real, parameter :: rho_sw_thlq1     =   0
+        real, parameter :: rho_sw_thlq2     =   0
+        real, parameter :: rho_sw_thlq3     =   0
+        real, parameter :: rho_sw_thlq4     =   0
+        real, parameter :: rho_lw_swe       =   0
+        real, parameter :: rho_lw_thlq1     =   0
+        real, parameter :: rho_lw_thlq2     =   0
+        real, parameter :: rho_lw_thlq3     =   0
+        real, parameter :: rho_lw_thlq4     =   0
+        real, parameter :: rho_swe_thlq1    =   0
+        real, parameter :: rho_swe_thlq2    =   0
+        real, parameter :: rho_swe_thlq3    =   0
+        real, parameter :: rho_swe_thlq4    =   0
+        real, parameter :: rho_thlq1_thlq2  =   0
+        real, parameter :: rho_thlq1_thlq3  =   0
+        real, parameter :: rho_thlq1_thlq4  =   0
+        real, parameter :: rho_thlq2_thlq3  =   0
+        real, parameter :: rho_thlq2_thlq4  =   0
+        real, parameter :: rho_thlq3_thlq4  =   0
+
 
         ! ---------------------------------------------------------------------
         !
@@ -781,6 +781,12 @@ module land_force_perturb
         forcepert_param(ind_pcp)%ccorr(1,:,:)   = 1.
         forcepert_param(ind_pcp)%ccorr(2,:,:)   = rho_pcp_sw
         forcepert_param(ind_pcp)%ccorr(3,:,:)   = rho_pcp_lw
+        forcepert_param(ind_pcp)%ccorr(4,:,:)   = rho_pcp_swe
+        forcepert_param(ind_pcp)%ccorr(5,:,:)   = rho_pcp_thlq1
+        forcepert_param(ind_pcp)%ccorr(6,:,:)   = rho_pcp_thlq2
+        forcepert_param(ind_pcp)%ccorr(7,:,:)   = rho_pcp_thlq3
+        forcepert_param(ind_pcp)%ccorr(8,:,:)   = rho_pcp_thlq4
+
 
 
         ! shortwave perturbations
@@ -798,6 +804,11 @@ module land_force_perturb
         forcepert_param(ind_sw)%ccorr(1,:,:)   = rho_pcp_sw
         forcepert_param(ind_sw)%ccorr(2,:,:)   = 1.
         forcepert_param(ind_sw)%ccorr(3,:,:)   = rho_sw_lw
+        forcepert_param(ind_sw)%ccorr(4,:,:)   = rho_sw_swe
+        forcepert_param(ind_sw)%ccorr(5,:,:)   = rho_sw_thlq1
+        forcepert_param(ind_sw)%ccorr(6,:,:)   = rho_sw_thlq2
+        forcepert_param(ind_sw)%ccorr(7,:,:)   = rho_sw_thlq3
+        forcepert_param(ind_sw)%ccorr(8,:,:)   = rho_sw_thlq4
 
 
         ! longwave perturbations
@@ -815,6 +826,125 @@ module land_force_perturb
         forcepert_param(ind_lw)%ccorr(1,:,:)   = rho_pcp_lw
         forcepert_param(ind_lw)%ccorr(2,:,:)   = rho_sw_lw
         forcepert_param(ind_lw)%ccorr(3,:,:)   = 1.
+        forcepert_param(ind_lw)%ccorr(4,:,:)   = rho_lw_swe
+        forcepert_param(ind_lw)%ccorr(5,:,:)   = rho_lw_thlq1
+        forcepert_param(ind_lw)%ccorr(6,:,:)   = rho_lw_thlq2
+        forcepert_param(ind_lw)%ccorr(7,:,:)   = rho_lw_thlq3
+        forcepert_param(ind_lw)%ccorr(8,:,:)   = rho_lw_thlq4
+
+
+        ! swe perturbations
+
+        forcepert_param(ind_swe)%descr          = descr_swe
+        forcepert_param(ind_swe)%typ            = typ_swe
+        forcepert_param(ind_swe)%std_normal_max = std_normal_max
+        forcepert_param(ind_swe)%zeromean       = zeromean
+        forcepert_param(ind_swe)%tcorr          = tcorr
+        forcepert_param(ind_swe)%xcorr          = xcorr
+        forcepert_param(ind_swe)%ycorr          = ycorr
+
+        forcepert_param(ind_swe)%std            = std_swe
+
+        forcepert_param(ind_swe)%ccorr(1,:,:)   = rho_pcp_swe
+        forcepert_param(ind_swe)%ccorr(2,:,:)   = rho_sw_swe
+        forcepert_param(ind_swe)%ccorr(3,:,:)   = rho_lw_swe
+        forcepert_param(ind_swe)%ccorr(4,:,:)   = 1.
+        forcepert_param(ind_swe)%ccorr(5,:,:)   = rho_swe_thlq1
+        forcepert_param(ind_swe)%ccorr(6,:,:)   = rho_swe_thlq2
+        forcepert_param(ind_swe)%ccorr(7,:,:)   = rho_swe_thlq3
+        forcepert_param(ind_swe)%ccorr(8,:,:)   = rho_swe_thlq4
+
+        ! soil moisture layer1
+        forcepert_param(ind_thlq1)%descr          = descr_thlq1
+        forcepert_param(ind_thlq1)%typ            = typ_thlq1
+        forcepert_param(ind_thlq1)%std_normal_max = std_normal_max
+        forcepert_param(ind_thlq1)%zeromean       = zeromean
+        forcepert_param(ind_thlq1)%tcorr          = tcorr
+        forcepert_param(ind_thlq1)%xcorr          = xcorr
+        forcepert_param(ind_thlq1)%ycorr          = ycorr
+
+        forcepert_param(ind_thlq1)%std            = std_thlq1
+
+        forcepert_param(ind_thlq1)%ccorr(1,:,:)   = rho_pcp_thlq1
+        forcepert_param(ind_thlq1)%ccorr(2,:,:)   = rho_sw_thlq1
+        forcepert_param(ind_thlq1)%ccorr(3,:,:)   = rho_lw_thlq1
+        forcepert_param(ind_thlq1)%ccorr(4,:,:)   = rho_swe_thlq1
+        forcepert_param(ind_thlq1)%ccorr(5,:,:)   = 1.
+        forcepert_param(ind_thlq1)%ccorr(6,:,:)   = rho_thlq1_thlq2
+        forcepert_param(ind_thlq1)%ccorr(7,:,:)   = rho_thlq1_thlq3
+        forcepert_param(ind_thlq1)%ccorr(8,:,:)   = rho_thlq1_thlq4
+
+        ! soil moisture layer2
+        forcepert_param(ind_thlq2)%descr          = descr_thlq2
+        forcepert_param(ind_thlq2)%typ            = typ_thlq2
+        forcepert_param(ind_thlq2)%std_normal_max = std_normal_max
+        forcepert_param(ind_thlq2)%zeromean       = zeromean
+        forcepert_param(ind_thlq2)%tcorr          = tcorr
+        forcepert_param(ind_thlq2)%xcorr          = xcorr
+        forcepert_param(ind_thlq2)%ycorr          = ycorr
+
+        forcepert_param(ind_thlq2)%std            = std_thlq2
+
+        forcepert_param(ind_thlq2)%ccorr(1,:,:)   = rho_pcp_thlq2
+        forcepert_param(ind_thlq2)%ccorr(2,:,:)   = rho_sw_thlq2
+        forcepert_param(ind_thlq2)%ccorr(3,:,:)   = rho_lw_thlq2
+        forcepert_param(ind_thlq2)%ccorr(4,:,:)   = rho_swe_thlq2
+        forcepert_param(ind_thlq2)%ccorr(5,:,:)   = rho_thlq1_thlq2
+        forcepert_param(ind_thlq2)%ccorr(6,:,:)   = 1.
+        forcepert_param(ind_thlq2)%ccorr(7,:,:)   = rho_thlq2_thlq3
+        forcepert_param(ind_thlq2)%ccorr(8,:,:)   = rho_thlq2_thlq4
+
+        ! soil moisture layer3
+        forcepert_param(ind_thlq3)%descr          = descr_thlq3
+        forcepert_param(ind_thlq3)%typ            = typ_thlq3
+        forcepert_param(ind_thlq3)%std_normal_max = std_normal_max
+        forcepert_param(ind_thlq3)%zeromean       = zeromean
+        forcepert_param(ind_thlq3)%tcorr          = tcorr
+        forcepert_param(ind_thlq3)%xcorr          = xcorr
+        forcepert_param(ind_thlq3)%ycorr          = ycorr
+
+        forcepert_param(ind_thlq3)%std            = std_thlq3
+
+        forcepert_param(ind_thlq3)%ccorr(1,:,:)   = rho_pcp_thlq3
+        forcepert_param(ind_thlq3)%ccorr(2,:,:)   = rho_sw_thlq3
+        forcepert_param(ind_thlq3)%ccorr(3,:,:)   = rho_lw_thlq3
+        forcepert_param(ind_thlq3)%ccorr(4,:,:)   = rho_swe_thlq3
+        forcepert_param(ind_thlq3)%ccorr(5,:,:)   = rho_thlq1_thlq3
+        forcepert_param(ind_thlq3)%ccorr(6,:,:)   = rho_thlq2_thlq3
+        forcepert_param(ind_thlq3)%ccorr(7,:,:)   = 1.
+        forcepert_param(ind_thlq3)%ccorr(8,:,:)   = rho_thlq3_thlq4
+
+        ! soil moisture layer4
+        forcepert_param(ind_thlq4)%descr          = descr_thlq4
+        forcepert_param(ind_thlq4)%typ            = typ_thlq4
+        forcepert_param(ind_thlq4)%std_normal_max = std_normal_max
+        forcepert_param(ind_thlq4)%zeromean       = zeromean
+        forcepert_param(ind_thlq4)%tcorr          = tcorr
+        forcepert_param(ind_thlq4)%xcorr          = xcorr
+        forcepert_param(ind_thlq4)%ycorr          = ycorr
+
+        forcepert_param(ind_thlq4)%std            = std_thlq4
+
+        forcepert_param(ind_thlq4)%ccorr(1,:,:)   = rho_pcp_thlq4
+        forcepert_param(ind_thlq4)%ccorr(2,:,:)   = rho_sw_thlq4
+        forcepert_param(ind_thlq4)%ccorr(3,:,:)   = rho_lw_thlq4
+        forcepert_param(ind_thlq4)%ccorr(4,:,:)   = rho_swe_thlq4
+        forcepert_param(ind_thlq4)%ccorr(5,:,:)   = rho_thlq1_thlq4
+        forcepert_param(ind_thlq4)%ccorr(6,:,:)   = rho_thlq2_thlq4
+        forcepert_param(ind_thlq4)%ccorr(7,:,:)   = rho_thlq3_thlq4
+        forcepert_param(ind_thlq4)%ccorr(8,:,:)   = 1.
+
+
+
+        !--------------------------------------------------------------
+        ! Constructing the correlation matrix
+        ! Added by Ala Bahrami 14/08/2017
+
+        do i = 1 , N_forcepert
+            do j = 1 , N_forcepert
+                tmpmat(i , j) = forcepert_param(i)%ccorr(j,1,1)
+            end do
+        end do
 
         ! -------------------------------------------------------------
         !
@@ -863,6 +993,8 @@ module land_force_perturb
         ! -------------------------------------------------------------
         !
         ! compute sqrt of correlation matrix for each grid point
+        ! here I modified the code to consider the correlation matrix
+        ! which its size is more than 3*3
 
         do i = 1, N_x
            do j = 1 , N_y
@@ -873,11 +1005,17 @@ module land_force_perturb
 
               else
 
-                 call get_sqrt_corr_matrix( N_forcepert, &
-                      forcepert_param(1)%ccorr(2,i,j),   &
-                      forcepert_param(1)%ccorr(3,i,j),   &
-                      forcepert_param(2)%ccorr(3,i,j),   &
-                      tmpmat )
+                 ! call get_sqrt_corr_matrix( N_forcepert, &
+                      ! forcepert_param(1)%ccorr(2,i,j),   &
+                      ! forcepert_param(1)%ccorr(3,i,j),   &
+                      ! forcepert_param(2)%ccorr(3,i,j),   &
+                      ! tmpmat )
+
+                ! calling the cholesky_decomposition
+                ! Added by Ala Bahrami on 14/08/2017
+
+                call choldc(N_forcepert , tmpmat)
+
 
                  ! overwrite cross-correlations in forcepert_param with square
                  ! root of cross-correlation matrix
@@ -897,6 +1035,82 @@ module land_force_perturb
 
     ! -------------------------------------------------------------
     end subroutine assemble_forcepert_param
+
+    subroutine choldc(n,B)
+    !
+    ! Modified and added by Ala Bahrami: 14/08/2017
+    !
+    ! The purpsoe of this function is to generate lower triangular matrix
+    ! based on the cholessky factorization (decomposition). We assume that the correlation matrix
+    ! is (complex Hermitian) symmetric. .What I found that is that the rank of matrix
+    ! be 3 if the size of the matrix is 3*3 or all the eigenvalues should be positive
+    ! (positive definite). In Matlab we can use chol(R,'lower')
+    ! The cholesky decomposition is about a factor of two faster than alternative method for
+    ! solving equations.
+    ! Reference : (Numerical Recipes, Cholesky decomposition , pp. 89)
+
+
+            implicit none
+
+            integer :: n
+            integer :: i, j, k
+            real :: sum
+            !integer :: j
+
+            real, dimension(n) :: p
+            real, intent(inout), dimension(n , n) :: B
+
+            do i = 1 , n
+                do j = i , n
+
+                    sum = B(i,j)
+
+                    do k = i-1 , 1 , -1
+
+                        sum = sum - B( i , k) * B( j , k)
+
+                    end do
+
+                    if(i.eq.j) then
+
+                        if(sum.le.0.) pause 'choldc failed'
+                        p(i) = sqrt(sum)
+
+                    else
+
+                        B(j,i) = sum/p(i)
+
+                    endif
+
+                end do
+            end do
+
+            ! Substitude the diagonal value with vector p
+            do i = 1 , n
+
+                B(i , i) = p(i)
+
+            end do
+
+            ! Substitude the upper diagonal values with zero
+            do i = 1 , n
+
+                if (i.lt.n) then
+
+                    do j = i + 1 , n
+
+                        B(i , j) = .0
+
+                    end do
+
+                else
+                        return
+                endif
+
+            end do
+
+
+    end subroutine choldc
 
 
     subroutine get_sqrt_corr_matrix( N, rho12, rho13, rho23, A )
@@ -918,13 +1132,7 @@ module land_force_perturb
     !
     ! reichle, 25 Jan 2005
     !
-    ! Note : The purpsoe of this function is to generate lower triangular matrix
-    ! based on the cholessky factorization (decomposition). We assume that the correlation matrix
-    ! is (complex Hermitian) symmetric. .What I found that is that the rank of matrix
-    ! be 3 if the size of the matrix is 3*3 or all the eigenvalues should be positive
-    ! (positive definite). In Matlab we can use chol(R,'lower')
-    ! The cholesky decomposition is about a factor of two faster than alternative method for
-    ! solving equations. (See also, Cholesky decomposition , pp. 89 Numerical Recipes)
+
 
 
     implicit none

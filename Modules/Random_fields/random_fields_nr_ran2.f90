@@ -85,6 +85,13 @@ contains
         integer :: j, k
 
         ! -------------------------------------------------------
+        ! Note : According to explanation on page 271 of Numerical Recipes, the The reason of using two different
+        ! sequence with different periods, is to extends number of calls. The new generared period is product of
+        ! two periods. When number of calls starts become order of m ~ m/20 the statistical test fails.
+        ! Based on L'Ecuyer recommends, two moduli are slightly less than 2^31. The period of IM1-1 = 2*3*7*631*81031
+        ! and the period of IM2-1 = 2*19*31*1019*1789. Both of them has the factor of 2, so the period of combined generator
+        ! is ~ 2.3 * 10^18.
+
 
         idum  = rseed(1)
         idum2 = rseed(2)
@@ -95,7 +102,27 @@ contains
         k = idum / IQ1
 
         !Compute idum = mod (IA1*idum,IM1) without overflows by Scharge's method.
+        !
+        ! Note Explained by Ala Bahrami: As it was explained on page 269 of Numerical Recipes, in order to generate
+        ! a squence of random number, the random number on time (j+1) is produced by this equation
+        ! I(j+1) = aI(j) (mod m). (7.1.2)
+        ! m is usually is close to the machine's largest representable integer, e.g., 2^31 - 1 and a = 7^5 = 16807
+        ! In the implementation of the equation (7.1.2) it's is impossible to implement because of the fact that the
+        ! the product a and m-1 exceeds the maximum value of a 32-bit integer. So, Scharge proposed a trick which can be
+        ! implemented on any programming language on any machine. He propossed that if r < q then ,  0 < z < m-1, it can be
+        ! be shown that both a(z mod q) and r[z/q] lie in the range of the 0,...,m-1.
+        !
+        ! Ala's  explanation :
+        !
+        ! m = aq + r
+        ! in order to calcuate az mod m, here z means the idum, instead of using the mod fucntion we can use the :
+        !
+        ! az mod m equal : az -km = az - k (aq + r) = az - kaq -kr = a(z -kq) - kr which can  be translated to :
+        ! a * (z mod q) - r[z/q]. Here it was supposed that if r < q then k = [z/q] = [az/m] , m = aq + r.
+        ! az / m = az /(aq+r) = z / (q + r/q). Therefore, we can assume that k = [z/q] = [az/m]
+
         idum = IA1 * (idum - k*IQ1) - k*IR1
+        ! preventing idum becomes zero
         if (idum.lt.0) idum = idum + IM1
         k = idum2/IQ2
 
@@ -193,9 +220,15 @@ contains
 
     1   call nr_ran2(rseed, v1)
         call nr_ran2(rseed, v2)
+
+        ! Note : pick two uniform numbers in the square extending from -1 to +1 in each direction
         v1=2.*v1-1.
         v2=2.*v2-1.
+        ! see if they are in the unit circle
+
         rsq=v1**2+v2**2
+
+        ! checking if it's inside the unit circle, if not generate again
         if(rsq.ge.1..or.rsq.eq.0.)goto 1
         fac=sqrt(-2.*log(rsq)/rsq)
         gasdev(1)=v1*fac
