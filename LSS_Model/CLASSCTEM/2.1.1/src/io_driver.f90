@@ -808,18 +808,26 @@ end subroutine write_ctm_rs
 !>@{
 
 subroutine create_outfiles(argbuff,title1, title2, title3, title4, title5, title6, name1, name2, name3, &
-                           name4, name5, name6, place1 ,place2, place3, place4, place5, place6,BasinFile)
+                           name4, name5, name6, place1 ,place2, place3, place4, place5, place6,BasinFile,&
+                           WF_NUM_POINTS, N_OUT, II_OUT, DIR_OUT)
 
 use ctem_statevars,     only : c_switch,vrot,vgat
 
 implicit none
 
 ! arguments:
-character(80), intent(in) :: argbuff, BasinFile
+character(80) :: argbuff, BasinFile
 character(4), intent(in) :: title1, title2, title3, title4, &
                             title5, title6, name1, name2, name3, &
                             name4, name5, name6, place1 ,place2, &
                             place3, place4, place5, place6
+
+!MESH variables used for GRID/GRU printing
+integer :: WF_NUM_POINTS
+integer :: N_OUT(10)
+integer :: II_OUT(10)
+integer :: k
+character*15 :: DIR_OUT(10)
 
 
 ! pointers:
@@ -856,19 +864,28 @@ parallelrun       => c_switch%parallelrun
 6002  FORMAT('#RESEARCHER:         ',6A4)
 6003  FORMAT('#INSTITUTION:        ',6A4)
 
+
+
+
+DO K=1,WF_NUM_POINTS !Create a DO loop for each folder
+
+!Initialize Argbuff again
+       ARGBUFF = DIR_OUT(k)
+       ARGBUFF=argbuff(1:strlen(argbuff))//'/CLASSCTEM_Out'
+
 if (.not. parallelrun .and. ctem_on) then !>stand alone mode, includes half-hourly and daily output
 
     !>ctem half hourly output files
-    open(unit=71, file=argbuff(1:strlen(argbuff))//'.CT01H_M')  
-    open(unit=711,file=argbuff(1:strlen(argbuff))//'.CT01H_G')
+    open(unit=71*k, file=argbuff(1:strlen(argbuff))//'.CT01H_M')  
+    open(unit=711*k,file=argbuff(1:strlen(argbuff))//'.CT01H_G')
 
     !>ctem daily output files
-    open(unit=72,file=argbuff(1:strlen(argbuff))//'.CT01D')
-    open(unit=73,file=argbuff(1:strlen(argbuff))//'.CT02D')
-    open(unit=74,file=argbuff(1:strlen(argbuff))//'.CT03D')
-    open(unit=75,file=argbuff(1:strlen(argbuff))//'.CT04D')
-    !open(unit=76,file=argbuff(1:strlen(argbuff))//'.CT05D') !FLAG. this one is turned off for now. You can turn on but go through the vars to make sure all is ok.
-    open(unit=300,file=BasinFile) !Creates the MESH-specific basin averaged output file
+    open(unit=72*k,file=argbuff(1:strlen(argbuff))//'.CT01D')
+    open(unit=73*k,file=argbuff(1:strlen(argbuff))//'.CT02D')
+    open(unit=74*k,file=argbuff(1:strlen(argbuff))//'.CT03D')
+    open(unit=75*k,file=argbuff(1:strlen(argbuff))//'.CT04D')
+    !open(unit=76*k,file=argbuff(1:strlen(argbuff))//'.CT05D') !FLAG. this one is turned off for now. You can turn on but go through the vars to make sure all is ok.
+
 
 
     if (dofire .or. lnduseon) then
@@ -885,6 +902,9 @@ if (.not. parallelrun .and. ctem_on) then !>stand alone mode, includes half-hour
 
 endif ! parallelrun & ctem_on
 
+ENDDO !End the K DO Loop
+
+    open(unit=300,file=BasinFile) !Creates the MESH-specific basin averaged output file
 
 !===========================
 !
@@ -900,41 +920,41 @@ endif ! parallelrun & ctem_on
 if (ctem_on .and. .not. parallelrun) then
 
 
-    write(71,6001) title1,title2,title3,title4,title5,title6
-    write(71,6002) name1,name2,name3,name4,name5,name6
-    write(71,6003) place1,place2,place3,place4,place5,place6
-    write(71,7020)
-    write(71,7030)
+    write(71*k,6001) title1,title2,title3,title4,title5,title6
+    write(71*k,6002) name1,name2,name3,name4,name5,name6
+    write(71*k,6003) place1,place2,place3,place4,place5,place6
+    write(71*k,7020)
+    write(71*k,7030)
     
-    write(72,6001) title1,title2,title3,title4,title5,title6
-    write(72,6002) name1,name2,name3,name4,name5,name6
-    write(72,6003) place1,place2,place3,place4,place5,place6
-    write(72,7020)
-    write(72,7040)
+    write(72*k,6001) title1,title2,title3,title4,title5,title6
+    write(72*k,6002) name1,name2,name3,name4,name5,name6
+    write(72*k,6003) place1,place2,place3,place4,place5,place6
+    write(72*k,7020)
+    write(72*k,7040)
 
-    write(73,6001) title1,title2,title3,title4,title5,title6
-    write(73,6002) name1,name2,name3,name4,name5,name6
-    write(73,6003) place1,place2,place3,place4,place5,place6
-    write(73,7020)
-    write(73,7050)
+    write(73*k,6001) title1,title2,title3,title4,title5,title6
+    write(73*k,6002) name1,name2,name3,name4,name5,name6
+    write(73*k,6003) place1,place2,place3,place4,place5,place6
+    write(73*k,7020)
+    write(73*k,7050)
 
-    write(74,6001) title1,title2,title3,title4,title5,title6
-    write(74,6002) name1,name2,name3,name4,name5,name6
-    write(74,6003) place1,place2,place3,place4,place5,place6
-    write(74,7020)
-    write(74,7061)
+    write(74*k,6001) title1,title2,title3,title4,title5,title6
+    write(74*k,6002) name1,name2,name3,name4,name5,name6
+    write(74*k,6003) place1,place2,place3,place4,place5,place6
+    write(74*k,7020)
+    write(74*k,7061)
 
-    write(75,6001) title1,title2,title3,title4,title5,title6
-    write(75,6002) name1,name2,name3,name4,name5,name6
-    write(75,6003) place1,place2,place3,place4,place5,place6
-    write(75,7020)
-    write(75,7070)
+    write(75*k,6001) title1,title2,title3,title4,title5,title6
+    write(75*k,6002) name1,name2,name3,name4,name5,name6
+    write(75*k,6003) place1,place2,place3,place4,place5,place6
+    write(75*k,7020)
+    write(75*k,7070)
 
-    !write(76,6001) title1,title2,title3,title4,title5,title6
-    !write(76,6002) name1,name2,name3,name4,name5,name6
-    !write(76,6003) place1,place2,place3,place4,place5,place6
-    !write(76,7020)
-    !write(76,7080)
+    !write(76*k,6001) title1,title2,title3,title4,title5,title6
+    !write(76*k,6002) name1,name2,name3,name4,name5,name6
+    !write(76*k,6003) place1,place2,place3,place4,place5,place6
+    !write(76*k,7020)
+    !write(76*k,7080)
 
     if (dofire .or. lnduseon) then
         write(77,6001) title1,title2,title3,title4,title5,title6
@@ -945,11 +965,11 @@ if (ctem_on .and. .not. parallelrun) then
         write(77,7111)
     end if
 
-    write(711,6001) title1,title2,title3,title4,title5,title6
-    write(711,6002) name1,name2,name3,name4,name5,name6
-    write(711,6003) place1,place2,place3,place4,place5,place6
-    write(711,7020)
-    write(711,7030)
+    write(711*k,6001) title1,title2,title3,title4,title5,title6
+    write(711*k,6002) name1,name2,name3,name4,name5,name6
+    write(711*k,6003) place1,place2,place3,place4,place5,place6
+    write(711*k,7020)
+    write(711*k,7030)
 
     if (compete .or. lnduseon) then
         write(78,6001) title1,title2,title3,title4,title5,title6
@@ -1003,77 +1023,83 @@ end if !>ctem_on & not parallelrun
 
 !> CLASS MONTHLY FOR BOTH PARALLEL MODE AND STAND ALONE MODE
 
-OPEN(UNIT=81,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF1M')
-WRITE(81,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-WRITE(81,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-WRITE(81,6003) PLACE1,PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
-WRITE(81,6021)'MONTH','YEAR','SW','LW','QH','QE','SNOACC','WSNOACC','ROFACC','PCP',&
+!MESH-CTEM Loop
+DO K=1,WF_NUM_POINTS !Create a DO loop for each folder
+!Initialize Argbuff again
+       ARGBUFF = DIR_OUT(k)
+       ARGBUFF=argbuff(1:strlen(argbuff))//'/CLASSCTEM_Out'
+
+OPEN(UNIT=81*k,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF1M')
+WRITE(81*k,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+WRITE(81*k,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+WRITE(81*k,6003) PLACE1,PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
+WRITE(81*k,6021)'MONTH','YEAR','SW','LW','QH','QE','SNOACC','WSNOACC','ROFACC','PCP',&
               'EVAP','TAIR','TRANSP','T/E','GROUNDEVAP','CANOPYEVAP','ALTOT'
-WRITE(81,6021)'#','','W/m2','W/m2','W/m2','W/m2','kg/m2','kg/m2','mm.mon','mm.mon',&
+WRITE(81*k,6021)'#','','W/m2','W/m2','W/m2','W/m2','kg/m2','kg/m2','mm.mon','mm.mon',&
               'mm.mon','degC','mm.mon','ratio','kg/m2/mon','kg/m2/mon',' '
 
-OPEN(UNIT=82,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF2M')
-WRITE(82,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-WRITE(82,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-WRITE(82,6003) PLACE1,PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
-WRITE(82,6022)'MONTH','YEAR','TG1','THL1','THI1','TG2','THL2','THI2','TG3','THL3','THI3'
-WRITE(82,6022)'#','','deg','m3/m3','m3/m3','deg','m3/m3','m3/m3','deg','m3/m3','m3/m3'
+OPEN(UNIT=82*k,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF2M')
+WRITE(82*k,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+WRITE(82*k,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+WRITE(82*k,6003) PLACE1,PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
+WRITE(82*k,6022)'MONTH','YEAR','TG1','THL1','THI1','TG2','THL2','THI2','TG3','THL3','THI3'
+WRITE(82*k,6022)'#','','deg','m3/m3','m3/m3','deg','m3/m3','m3/m3','deg','m3/m3','m3/m3'
 
 !> CLASS YEARLY OUTPUT FILES
 
 OPEN(UNIT=83,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF1Y')
-WRITE(83,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-WRITE(83,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-WRITE(83,6003) PLACE1,PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
-WRITE(83,6023)'YEAR','SW','LW','QH','QE','ROFACC','PCP','EVAP','TRANSP','T/E','ALTOT'
-WRITE(83,6023)'#','W/m2','W/m2','W/m2','W/m2','mm.yr','mm.yr','mm.yr','mm.yr','ratio',' '
+WRITE(83*k,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+WRITE(83*k,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+WRITE(83*k,6003) PLACE1,PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
+WRITE(83*k,6023)'YEAR','SW','LW','QH','QE','ROFACC','PCP','EVAP','TRANSP','T/E','ALTOT'
+WRITE(83*k,6023)'#','W/m2','W/m2','W/m2','W/m2','mm.yr','mm.yr','mm.yr','mm.yr','ratio',' '
 
 if (ctem_on) then
 
     open(unit=84,file=argbuff(1:strlen(argbuff))//'.CT01M') !> CTEM monthly output files
-    write(84,6001) title1,title2,title3,title4,title5,title6
-    write(84,6002) name1,name2,name3,name4,name5,name6
-    write(84,6003) place1,place2,place3,place4,place5,place6
-    write(84,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) MONTHLY RESULTS'
-    write(84,6124)'MONTH','YEAR','LAIMAXG','VGBIOMAS','LITTER','SOIL_C','NPP','GPP','NEP','NBP','HETRES',&
+    write(84*k,6001) title1,title2,title3,title4,title5,title6
+    write(84*k,6002) name1,name2,name3,name4,name5,name6
+    write(84*k,6003) place1,place2,place3,place4,place5,place6
+    write(84*k,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) MONTHLY RESULTS'
+    write(84*k,6124)'MONTH','YEAR','LAIMAXG','VGBIOMAS','LITTER','SOIL_C','NPP','GPP','NEP','NBP','HETRES',&
              'AUTORES','LITRES','SOILCRES','LITRFALL','HUMIFTRS'
-    write(84,6124)'#','','m2/m2','Kg C/m2','Kg C/m2','Kg C/m2','gC/m2.mon','gC/m2.mon','gC/m2.mon',&
+    write(84*k,6124)'#','','m2/m2','Kg C/m2','Kg C/m2','Kg C/m2','gC/m2.mon','gC/m2.mon','gC/m2.mon',&
              'g/m2.mon','g/m2.mon','gC/m2.mon','gC/m2.mon','gC/m2.mon','gC/m2.mon','gC/m2.mon'
     
     if (dofire .or. lnduseon) then
-        open(unit=85,file=argbuff(1:strlen(argbuff))//'.CT06M') !> Monthly disturbance
-        write(85,6001) title1,title2,title3,title4,title5,title6
-        write(85,6002) name1,name2,name3,name4,name5,name6
-        write(85,6003) place1,place2,place3,place4,place5,place6
-        write(85,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) MONTHLY RESULTS FOR DISTURBANCES'
-        write(85,6125)'MONTH','YEAR','CO2','CO','CH4','NMHC','H2','NOX','N2O','PM25','TPM','TC','OC','BC',&
+        open(unit=85*k,file=argbuff(1:strlen(argbuff))//'.CT06M') !> Monthly disturbance
+        write(85*k,6001) title1,title2,title3,title4,title5,title6
+        write(85*k,6002) name1,name2,name3,name4,name5,name6
+        write(85*k,6003) place1,place2,place3,place4,place5,place6
+        write(85*k,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) MONTHLY RESULTS FOR DISTURBANCES'
+        write(85*k,6125)'MONTH','YEAR','CO2','CO','CH4','NMHC','H2','NOX','N2O','PM25','TPM','TC','OC','BC',&
             'SMFUNCVEG','LUC_CO2_E','LUC_LTRIN','LUC_SOCIN','BURNFRAC','BTERM','LTERM','MTERM','WIND'
-        write(85,6125)'#','','g/m2.mon','g/m2.mon','g/m2.mon','g/m2.mon','g/m2.mon','g/m2.mon','g/m2.mon', &
+        write(85*k,6125)'#','','g/m2.mon','g/m2.mon','g/m2.mon','g/m2.mon','g/m2.mon','g/m2.mon','g/m2.mon', &
             'g/m2.mon','g/m2.mon','g/m2.mon','g/m2.mon','g/m2.mon','prob/mon','g C/m2','g C/m2','g C/m2', &
             '%','prob/mon','prob/mon','prob/mon','km/h'
     end if
 
-    open(unit=86,file=argbuff(1:strlen(argbuff))//'.CT01Y') !> CTEM yearly output files
-    write(86,6001) title1,title2,title3,title4,title5,title6
-    write(86,6002) name1,name2,name3,name4,name5,name6
-    write(86,6003) place1,place2,place3,place4,place5,place6
-    write(86,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) YEARLY RESULTS'
-    write(86,6126)'YEAR','LAIMAXG','VGBIOMAS','STEMMASS','ROOTMASS','LITRMASS','SOILCMAS','TOTCMASS', &
+    open(unit=86*k,file=argbuff(1:strlen(argbuff))//'.CT01Y') !> CTEM yearly output files
+    write(86*k,6001) title1,title2,title3,title4,title5,title6
+    write(86*k,6002) name1,name2,name3,name4,name5,name6
+    write(86*k,6003) place1,place2,place3,place4,place5,place6
+    write(86*k,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) YEARLY RESULTS'
+    write(86*k,6126)'YEAR','LAIMAXG','VGBIOMAS','STEMMASS','ROOTMASS','LITRMASS','SOILCMAS','TOTCMASS', &
                   'ANNUALNPP','ANNUALGPP','ANNUALNEP','ANNUALNBP','ANNHETRSP','ANAUTORSP','ANNLITRES', &
                   'ANSOILCRES','VEGHGHT'
-    write(86,6126)'#','m2/m2','Kg C/m2','Kg C/m2','Kg C/m2','Kg C/m2','Kg C/m2','Kg C/m2','gC/m2.yr',&
+    write(86*k,6126)'#','m2/m2','Kg C/m2','Kg C/m2','Kg C/m2','Kg C/m2','Kg C/m2','Kg C/m2','gC/m2.yr',&
                   'gC/m2.yr','gC/m2.yr','gC/m2.yr','gC/m2.yr','gC/m2.yr','gC/m2.yr','gC/m2.yr','m'
 
     if (dofire .or. lnduseon) then
         open(unit=87,file=argbuff(1:strlen(argbuff))//'.CT06Y') !> Annual disturbance
-        write(87,6001) title1,title2,title3,title4,title5,title6
-        write(87,6002) name1,name2,name3,name4,name5,name6
-        write(87,6003) place1,place2,place3,place4,place5,place6
-        write(87,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) YEARLY RESULTS FOR DISTURBANCES'
-        write(87,6127)'YEAR','ANNUALCO2','ANNUALCO','ANNUALCH4','ANN_NMHC','ANNUAL_H2','ANNUALNOX','ANNUALN2O',&
+        write(87*k,6001) title1,title2,title3,title4,title5,title6
+        write(87*k,6002) name1,name2,name3,name4,name5,name6
+        write(87*k,6003) place1,place2,place3,place4,place5,place6
+        write(87*k,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) YEARLY RESULTS FOR DISTURBANCES'
+        write(87*k,6127)'YEAR','ANNUALCO2','ANNUALCO','ANNUALCH4','ANN_NMHC','ANNUAL_H2','ANNUALNOX','ANNUALN2O',&
                       'ANN_PM25','ANNUALTPM','ANNUAL_TC','ANNUAL_OC','ANNUAL_BC','ASMFUNCVEG',&
                       'ANNLUCCO2','ANNLUCLTR','ANNLUCSOC','ABURNFRAC','ANNBTERM','ANNLTERM','ANNMTERM'
-        write(87,6127)'#','g/m2.yr','g/m2.yr','g/m2.yr','g/m2.yr','g/m2.yr','g/m2.yr','g/m2.yr','g/m2.yr',&
+        write(87*k,6127)'#','g/m2.yr','g/m2.yr','g/m2.yr','g/m2.yr','g/m2.yr','g/m2.yr','g/m2.yr','g/m2.yr',&
                       'g/m2.yr','g/m2.yr','g/m2.yr','g/m2.yr','prob/yr ','  g/m2.yr','g/m2.yr','g/m2.yr',&
                       '%','prob/yr','prob/yr','prob/yr'
     end if
@@ -1081,46 +1107,48 @@ if (ctem_on) then
     if (compete .or. lnduseon) then
 
         open(unit=88,file=argbuff(1:strlen(argbuff))//'.CT07M')!> ctem pft fractions MONTHLY
-        write(88,6001) title1,title2,title3,title4,title5,title6
-        write(88,6002) name1,name2,name3,name4,name5,name6
-        write(88,6003) place1,place2,place3,place4,place5,place6
-        write(88,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) MONTHLY RESULTS'
-        write(88,6128)'MONTH','YEAR','FRAC#1','FRAC#2','FRAC#3','FRAC#4','FRAC#5','FRAC#6','FRAC#7',&
+        write(88*k,6001) title1,title2,title3,title4,title5,title6
+        write(88*k,6002) name1,name2,name3,name4,name5,name6
+        write(88*k,6003) place1,place2,place3,place4,place5,place6
+        write(88*k,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) MONTHLY RESULTS'
+        write(88*k,6128)'MONTH','YEAR','FRAC#1','FRAC#2','FRAC#3','FRAC#4','FRAC#5','FRAC#6','FRAC#7',&
                       'FRAC#8','FRAC#9','FRAC#10','SUMCHECK','PFT existence for each of the 9 pfts'
-        write(88,6128)'#','','%','%','%','%','%','%','%','%','%','%','%'
+        write(88*k,6128)'#','','%','%','%','%','%','%','%','%','%','%','%'
 
-        open(unit=89,file=argbuff(1:strlen(argbuff))//'.CT07Y')!> ctem pft fractions YEARLY
-        write(89,6001) title1,title2,title3,title4,title5,title6
-        write(89,6002) name1,name2,name3,name4,name5,name6
-        write(89,6003) place1,place2,place3,place4,place5,place6
-        write(89,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) YEARLY RESULTS'
-        write(89,6129)'YEAR','FRAC#1','FRAC#2','FRAC#3','FRAC#4','FRAC#5','FRAC#6','FRAC#7',&
+        open(unit=89*k,file=argbuff(1:strlen(argbuff))//'.CT07Y')!> ctem pft fractions YEARLY
+        write(89*k,6001) title1,title2,title3,title4,title5,title6
+        write(89*k,6002) name1,name2,name3,name4,name5,name6
+        write(89*k,6003) place1,place2,place3,place4,place5,place6
+        write(89*k,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) YEARLY RESULTS'
+        write(89*k,6129)'YEAR','FRAC#1','FRAC#2','FRAC#3','FRAC#4','FRAC#5','FRAC#6','FRAC#7',&
                       'FRAC#8','FRAC#9','FRAC#10','SUMCHECK','PFT existence for each of the 9 pfts'
-        write(89,6129)'#','','%','%','%','%','%','%','%','%','%','%','%'
+        write(89*k,6129)'#','','%','%','%','%','%','%','%','%','%','%','%'
 
     end if !compete
 
     if (dowetlands .or. obswetf) then
 
         open(unit=91,file=argbuff(1:strlen(argbuff))//'.CT08M') !>Methane(wetland) MONTHLY
-        write(91,6001) title1,title2,title3,title4,title5,title6
-        write(91,6002) name1,name2,name3,name4,name5,name6
-        write(91,6003) place1,place2,place3,place4,place5,place6
-        write(91,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) MONTHLY RESULTS'
-        write(91,6230)'MONTH','YEAR','CH4WET1','CH4WET2','WETFDYN','CH4DYN1','CH4DYN2','SOILUPTAKE'
-        write(91,6230)'#','','gCH4/M2.MON','gCH4/M2.MON','fraction','gCH4/M2.MON','gCH4/M2.MON','gCH4/M2.MON'
+        write(91*k,6001) title1,title2,title3,title4,title5,title6
+        write(91*k,6002) name1,name2,name3,name4,name5,name6
+        write(91*k,6003) place1,place2,place3,place4,place5,place6
+        write(91*k,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) MONTHLY RESULTS'
+        write(91*k,6230)'MONTH','YEAR','CH4WET1','CH4WET2','WETFDYN','CH4DYN1','CH4DYN2','SOILUPTAKE'
+        write(91*k,6230)'#','','gCH4/M2.MON','gCH4/M2.MON','fraction','gCH4/M2.MON','gCH4/M2.MON','gCH4/M2.MON'
 
         open(unit=92,file=argbuff(1:strlen(argbuff))//'.CT08Y')  !>Methane(wetland) YEARLY
-        write(92,6001) title1,title2,title3,title4,title5,title6
-        write(92,6002) name1,name2,name3,name4,name5,name6
-        write(92,6003) place1,place2,place3,place4,place5,place6
-        write(92,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) YEARLY RESULTS'
-        write(92,6232)'YEAR','CH4WET1','CH4WET2','WETFDYN','CH4DYN1','CH4DYN2','SOILUPTAKE'
-        write(92,6232)'#','gCH4/M2.YR','gCH4/M2.YR','fraction','gCH4/M2.YR','gCH4/M2.YR','gCH4/M2.YR'
+        write(92*k,6001) title1,title2,title3,title4,title5,title6
+        write(92*k,6002) name1,name2,name3,name4,name5,name6
+        write(92*k,6003) place1,place2,place3,place4,place5,place6
+        write(92*k,*)'#CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM) YEARLY RESULTS'
+        write(92*k,6232)'YEAR','CH4WET1','CH4WET2','WETFDYN','CH4DYN1','CH4DYN2','SOILUPTAKE'
+        write(92*k,6232)'#','gCH4/M2.YR','gCH4/M2.YR','fraction','gCH4/M2.YR','gCH4/M2.YR','gCH4/M2.YR'
 
     end if 
     
 end if !>ctem_on & parallelrun
+
+ENDDO !End the DO K loop
 
 6021  FORMAT(A5,A5,5(A8,1X),A8,A12,8(A12,1X))
 6022  FORMAT(A5,A5,3(A8,1X,2A6,1X))
@@ -1581,7 +1609,8 @@ end subroutine class_annual_aw
 !>\ingroup io_driver_ctem_daily_aw
 !>@{
 
-subroutine ctem_daily_aw(nltest,nmtest,iday,FAREROT,iyear,jdstd,jdsty,jdendd,jdendy,grclarea,onetile_perPFT)
+subroutine ctem_daily_aw(nltest,nmtest,iday,FAREROT,iyear,jdstd,jdsty,jdendd,jdendy,grclarea,&
+                         onetile_perPFT,WF_NUM_POINTS,N_OUT,II_OUT)
 
 ! J. Melton Feb 2016.
 
@@ -1604,12 +1633,10 @@ integer, intent(in) :: jdendy
 real, intent(in), dimension(:) :: grclarea
 logical, intent(in) :: onetile_perPFT
 
-
-
-!Basin Averaged variables
-real :: NEP_Basin(nmtest) !The grided-average for the whole basin, but each GRU seperately
-real :: GPP_Basin(nmtest) !The grided-average for the whole basin, but each GRU seperately
-
+!The MESH-CTEM GRID/GRU integers
+integer :: WF_NUM_POINTS
+integer :: N_OUT(10)
+integer :: II_OUT(10)
 
 
 ! pointers
@@ -2091,9 +2118,6 @@ if ((iyear .ge. jdsty).and.(iyear.le.jdendy))then
 10 continue
 
 
-!Initialized the basin averaged variables
-      NEP_Basin=0.0
-
 
 
     !>Aggregate to the tile avg vars:
@@ -2219,37 +2243,25 @@ if ((iyear .ge. jdsty).and.(iyear.le.jdendy))then
 
 
 
-!Here we will calculate the BasinAveraged values for the .csv file, these basin averaged values will be simple for now
-!The file will have 1 row for every day, then 9 columns for each NPP ctem variable.
-!Remember that nltest is for every grid while nmtest is for every GRU/Mosaic Tile
-
-
-      !In the end, NEP_Basin will only have m variables, 
-      NEP_Basin(m)= NEP_Basin(m) + neprow(i,m)
-      GPP_Basin(m)= GPP_Basin(m) + gpprow(i,m)
-
-
 70 continue !nmtest
 60 continue !nltest
-
-
-!Write Basin Averaged values -- New and Added for MESH
-
-   DO m= 1,nmtest
-
-      write(300,*)iday,iyear,GPP_Basin(m),NEP_Basin(m), 'GRU:', m
-
-
-   ENDDO
-
 
 
 
 
 !>Write daily ctem results
 
+
+
+
+
 do 80 i=1,nltest
    do 90 m=1,nmtest
+
+
+          DO K=1,WF_NUM_POINTS !Create a DO loop for each folder     
+            if(I .eq. N_OUT(K) .and. M .eq. II_out(K) ) THEN
+            !IF there is no combination, then the entire writing process will be skipped
 
         barefrac = 1.0
 !==============================================
@@ -2257,52 +2269,48 @@ do 80 i=1,nltest
 !=================================================
        
 
-
-
         !>Now write out the tile average values for each tile if the tile number
         !>is greater than 1 (nmtest > 1).
         if (nmtest > 1) then
 
 
-
-
             !>File: .CT01D
-            write(72,8200)iday,iyear,gpprow(i,m),npprow(i,m), &
-                neprow(i,m),nbprow(i,m),autoresrow(i,m), &
-                hetroresrow(i,m),litresrow(i,m),socresrow(i,m), &
-                (dstcemlsrow(i,m)+dstcemls3row(i,m)), &
-                litrfallrow(i,m),humiftrsrow(i,m), &
-                ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
+            !write(72*k,8200)iday,iyear,gpprow(i,m),npprow(i,m), &
+            !    neprow(i,m),nbprow(i,m),autoresrow(i,m), &
+            !    hetroresrow(i,m),litresrow(i,m),socresrow(i,m), &
+            !    (dstcemlsrow(i,m)+dstcemls3row(i,m)), &
+            !    litrfallrow(i,m),humiftrsrow(i,m), &
+            !    ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
 
             !>File .CT02D
-            write(73,8300)iday,iyear,rmlrow(i,m),rmsrow(i,m), &
-                rmrrow(i,m),rgrow(i,m),leaflitr_t(i,m),tltrleaf_t(i,m), &
-                tltrstem_t(i,m),tltrroot_t(i,m), &
-                ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
+            !write(73*k,8300)iday,iyear,rmlrow(i,m),rmsrow(i,m), &
+            !    rmrrow(i,m),rgrow(i,m),leaflitr_t(i,m),tltrleaf_t(i,m), &
+            !    tltrstem_t(i,m),tltrroot_t(i,m), &
+            !    ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
 
             !>File .CT03D
-            write(74,8401)iday,iyear,vgbiomasrow(i,m), &
-                ailcg_t(i,m), gleafmas_t(i,m), &
-                bleafmas_t(i,m), stemmass_t(i,m), &
-                rootmass_t(i,m), litrmass_t(i,m), &
-                soilcmas_t(i,m),&
-                ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
+            !write(74*k,8401)iday,iyear,vgbiomasrow(i,m), &
+            !    ailcg_t(i,m), gleafmas_t(i,m), &
+            !    bleafmas_t(i,m), stemmass_t(i,m), &
+            !    rootmass_t(i,m), litrmass_t(i,m), &
+            !    soilcmas_t(i,m),&
+            !    ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
 
             !>File .CT04D
-            write(75,8500)iday,iyear,ailcg_t(i,m), &
-                ailcb_t(i,m),(rmatctem_t(i,m,k),k=1,3), &
-                veghght_t(i,m),rootdpth_t(i,m), &
-                roottemp_t(i,m),slai_t(i,m), &
-                ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
+            !write(75*k,8500)iday,iyear,ailcg_t(i,m), &
+               ! ailcb_t(i,m),(rmatctem_t(i,m,k),k=1,3), &
+                !veghght_t(i,m),rootdpth_t(i,m), &
+                !roottemp_t(i,m),slai_t(i,m), &
+                !' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
 
             ! File .CT05D
-            !write(76,8601)iday,iyear, afrleaf_t(i,m), &
+            !write(76*k,8601)iday,iyear, afrleaf_t(i,m), &
             !    afrstem_t(i,m),afrroot_t(i,m),  &
             !    tcanoaccrow_out(i,m), -999,   & ! lfstatus is kinda meaningless grid avg so set to -999
             !    ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
 
             if (dofire .or. lnduseon) then
-                write(77,8800)iday,iyear,  &
+                write(77*k,8800)iday,iyear,  &
                     emit_co2_t(i,m), emit_co_t(i,m), emit_ch4_t(i,m), &
                     emit_nmhc_t(i,m), emit_h2_t(i,m), emit_nox_t(i,m), &
                     emit_n2o_t(i,m), emit_pm25_t(i,m), emit_tpm_t(i,m), &
@@ -2315,43 +2323,50 @@ do 80 i=1,nltest
 
         end if !nmtest>1
 
+    ENDIF !The check of I and M for grid/GRU
+    ENDDO !The K loop for MESH
+
 90  continue !nmtest
 
     !>Finally do the grid avg values:
 
+          DO k=1,WF_NUM_POINTS !Create a DO loop for each folder     
+            if(I .eq. N_OUT(K)) THEN
+            !IF there is no combination, then the entire writing process will be skipped
+
     !>File: .CT01D
-    write(72,8200)iday,iyear,gpp_g(i),npp_g(i), &
+    write(72*k,8200)iday,iyear,gpp_g(i),npp_g(i), &
             nep_g(i),nbp_g(i),autores_g(i), &
             hetrores_g(i),litres_g(i),socres_g(i), &
             (dstcemls_g(i)+dstcemls3_g(i)), &
             litrfall_g(i),humiftrs_g(i),' GRDAV'
 
     !>File .CT02D
-    write(73,8300)iday,iyear,rml_g(i),rms_g(i), &
+    write(73*k,8300)iday,iyear,rml_g(i),rms_g(i), &
             rmr_g(i),rg_g(i),leaflitr_g(i),tltrleaf_g(i), &
             tltrstem_g(i),tltrroot_g(i),' GRDAV'
 
     !>File .CT03D
-    write(74,8401)iday,iyear,vgbiomas_g(i), &
+    write(74*k,8401)iday,iyear,vgbiomas_g(i), &
             gavglai_g(i), &
             gleafmas_g(i), bleafmas_g(i), stemmass_g(i), &
             rootmass_g(i), litrmass_g(i), soilcmas_g(i),' GRDAV'
 
     !>File .CT04D
-    write(75,8500)iday,iyear, ailcg_g(i),  &
-            ailcb_g(i),(rmatctem_g(i,k),k=1,3), &
+    write(75*k,8500)iday,iyear, ailcg_g(i),  &
+            ailcb_g(i),(rmatctem_g(i,m),m=1,3), &
             veghght_g(i),rootdpth_g(i),roottemp_g(i),&
             slai_g(i),' GRDAV'
 
     ! File .CT05D
-    !write(76,8601)iday,iyear, afrleaf_t(i,m), &
+    !write(76*k,8601)iday,iyear, afrleaf_t(i,m), &
     !    afrstem_t(i,m),afrroot_t(i,m),  &
     !    tcanoaccrow_out(i,m), -999,   & ! lfstatus is kinda meaningless grid avg so set to -999
     !    ' GRDAV'
 
     !>File *.CT06D
     if (dofire .or. lnduseon) then
-        write(77,8800)iday,iyear,  &
+        write(77*k,8800)iday,iyear,  &
             emit_co2_g(i), emit_co_g(i), emit_ch4_g(i), &
             emit_nmhc_g(i), emit_h2_g(i), emit_nox_g(i), &
             emit_n2o_g(i), emit_pm25_g(i), emit_tpm_g(i), &
@@ -2364,7 +2379,7 @@ do 80 i=1,nltest
 
     !>File .CT08D
     if (dowetlands .or. obswetf) then
-    write(79,8810)iday,iyear, ch4wet1_g(i),  &
+    write(79*k,8810)iday,iyear, ch4wet1_g(i),  &
                  ch4wet2_g(i), wetfdyn_g(i),  &
                  ch4dyn1_g(i), ch4dyn2_g(i),  &
                  ch4soills_g(i),' GRDAV'
@@ -2376,19 +2391,24 @@ do 80 i=1,nltest
             do m=1,nmos
                 sumfare=sumfare+FAREROT(i,m)
             enddo
-            write(78,8200)iday,iyear,(FAREROT(i,m)*100.,m=1,nmos),sumfare
+            write(78*k,8200)iday,iyear,(FAREROT(i,m)*100.,m=1,nmos),sumfare
         else !composite
             do m=1,nmos
                 sumfare=0.0
                 do j=1,icc  !m = 1
                     sumfare=sumfare+fcancmxrow(i,m,j)
                 enddo !j
-                write(78,8200)iday,iyear,(fcancmxrow(i,m,j)*100.,j=1,icc),(1.0-sumfare)*100.,sumfare,' TILE ',m
+                write(78*k,8200)iday,iyear,(fcancmxrow(i,m,j)*100.,j=1,icc),(1.0-sumfare)*100.,sumfare,' TILE ',m
             end do !m
         endif !mosaic/composite
     endif !compete/lnduseon
 
+    ENDIF !The check of I and M for grid/GRU
+    ENDDO !The K loop for MESH
+
+
 80 continue ! nltest
+
 
   end if !if write daily
 endif !if write daily
@@ -2431,6 +2451,12 @@ real, intent(in), dimension(:,:) :: FAREROT
 integer, intent(in) :: iyear
 integer, intent(in) :: nday
 logical, intent(in) :: onetile_perPFT
+
+
+!Basin Averaged variables
+real :: NEP_Basin_m(nmtest) !The grided-average for the whole basin each month, but each GRU seperately
+real :: GPP_Basin_m(nmtest) !The grided-average for the whole basin each month, but each GRU seperately
+
 
 ! pointers
 
@@ -2808,6 +2834,14 @@ ch4soills_mo_g      =>ctem_grd_mo%ch4soills_mo_g
 
 !> Accumulate monthly outputs
 
+DO m=1,nmtest
+!Initialized the basin averaged variables for each GRU for each GRU the Monthly average
+!This must be outside of the i Loop as it's GRID independent
+      NEP_Basin_m(m)=0.0
+      GPP_Basin_m(m)=0.0
+ENDDO
+
+
 do 862 i=1,nltest
 
     do 863 m = 1,nmtest
@@ -2923,6 +2957,8 @@ do 862 i=1,nltest
 
         endif ! mmday (mid-month instantaneous value)
 
+
+!Finish using the daily values, now calculate and write the Monthly values
         if(iday.eq.monthend(nt+1))then
 
             !> Do the end of month variables
@@ -3023,7 +3059,29 @@ do 862 i=1,nltest
                 litrfall_mo_g(i)=litrfall_mo_g(i)+litrfall_mo_t(i,m)*FAREROT(i,m)
                 humiftrs_mo_g(i)=humiftrs_mo_g(i)+humiftrs_mo_t(i,m)*FAREROT(i,m)
 
-900         continue
+!Here we will calculate the BasinAveraged values for the .csv file, these basin averaged values will be simple for now
+!The file will have 1 row for every month (there is currently a bug for the daily outputs), then 9 columns for each NPP ctem variable.
+!Remember that nltest is for every grid while nmtest is for every GRU/Mosaic Tile
+      !In the end, NEP_Basin will only have m variables,
+
+!It is multiplied by Farerot because some grids have larger fractions than others (it is not total it's averaged in m^{-2})
+!If there wasn't FAREROT, each rate will be equivelent no matter the arial fraction, we need FAREROT to keep that in control
+!If a GRU of a grid has FAREROT=1.00 then the GRU takes up the entire grid
+
+
+      NEP_Basin_m(m)= NEP_Basin_m(m) + nep_mo_t(i,m)*FAREROT(i,m)
+      GPP_Basin_m(m)= GPP_Basin_m(m) + gpp_mo_t(i,m)*FAREROT(i,m)
+
+
+      IF(i.eq.nltest) THEN
+	!Write Basin Averaged values -- New and Added for MESH -- Outside of the GRIDED Loop
+	!This will only occur after we have reached the end of the grid loop
+     		 write(300,*)imonth,iyear,GPP_Basin_m(m),NEP_Basin_m(m), 'GRU:', m
+      ENDIF
+
+
+900         continue !nmtest
+
 
             imonth=nt
 
@@ -3039,6 +3097,7 @@ do 862 i=1,nltest
 !==========================================================================
 !Eliminated an icc loop in order to simplify the CTEM outputs for MESH-CTEM
 !===========================================================================
+
 
                 !> Now write out the bare fraction values:
                 if (barefrac .gt. seed) then
@@ -3165,10 +3224,21 @@ do 862 i=1,nltest
                                 ch4soills_mo_g(i),' GRDAV '
             endif
 
-    end if ! end of month
 
+
+
+
+
+
+    end if ! end of month
 865   continue ! nmon
 862  continue ! i
+
+
+
+
+
+
 
 !> Prepare the monthly vars for the next month:
 do nt=1,nmon

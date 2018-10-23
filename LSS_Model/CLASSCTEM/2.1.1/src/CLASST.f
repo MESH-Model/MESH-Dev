@@ -793,6 +793,8 @@ C     * CALCULATIONS IN CLASST/CLASSW.
           IF(FGS(I).GT.0.)            NLANDGS=NLANDGS+1
           IF(ISAND(I,1).EQ.-4)        NLANDI =NLANDI +1
 70    CONTINUE
+
+
 C
 C     * CALCULATIONS FOR CANOPY OVER SNOW.
 C                                                                                           

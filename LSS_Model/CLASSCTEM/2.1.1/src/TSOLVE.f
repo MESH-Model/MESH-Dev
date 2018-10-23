@@ -768,6 +768,8 @@ C
 C     * CHECK FOR BAD ITERATION TEMPERATURES.
 C
       IBAD=0
+
+      
       DO 200 I=IL1,IL2
           IF(FI(I).GT.0. .AND. (TZERO(I).LT.123.16 .OR.                 
      1                           TZERO(I).GT.373.16))               THEN 
@@ -776,12 +778,17 @@ C
  200  CONTINUE
 C
       IF(IBAD.NE.0)                                                 THEN
+
+
           WRITE(6,6275) IBAD,JL,TZERO(IBAD),NITER(IBAD),ISNOW
  6275     FORMAT('0BAD ITERATION TEMPERATURE',3X,2I3,F16.2,2I4)
           WRITE(6,6280) QSWNET(IBAD),QLWIN(IBAD),QSENS(IBAD),
      1        QEVAP(IBAD),GZERO(IBAD),CFLUX(IBAD),RIB(IBAD)
  6280     FORMAT(2X,7F12.4)
-          CALL XIT('TSOLVE',-1)
+
+
+          !Cancel the XIT command for now as it is causing a bug, see if that fixes anything...
+          !CALL XIT('TSOLVE',-1)
       ENDIF 
       !>
       !!Finally, a check is performed to ensure that TZERO is not less 

@@ -143,6 +143,23 @@ C=======================================================================
       implicit none
 
 
+!This is MESH-SPECIFIC and is used to get the output from a single grid cell
+ !> GRID OUTPUT POINTS
+        !* N_OUT: GRID SQUARE TO OUTPUT
+        !* II_OUT: GRU TO OUTPUT
+        !* WF_NUM_POINTS: NUMBER OF GRID OUTPUTS
+        !Set dimension to 10 as this is the maximum size
+        integer :: N_OUT(10) 
+        integer :: II_OUT(10) 
+        integer :: K_OUT(10) 
+        integer :: WF_NUM_POINTS
+        integer :: CONFLAGS
+
+        !* DIR_OUT: OUTPUT DIRECTORY (10 CHARACTER STRING)
+        character*15 :: DIR_OUT(10)
+
+
+
 C
 C     * INTEGER CONSTANTS.
 C
@@ -1585,6 +1602,18 @@ C
         NLTEST = shd%NAA
         NMTEST = shd%lc%NTYPE
         NML = shd%lc%NML
+
+
+
+
+!==================================================
+!Temparary fix for CLASSZ bug, must remove later
+        IF(NML.gt.1000) THEN
+        NML=1142
+        ENDIF
+!=================================================
+
+
         NMW = shd%wc%NML
 
 
@@ -2360,10 +2389,32 @@ c     all model switches are read in from a namelist file
 	!Note that read_from_job_options still has these as arguments but the read in the subroutine above is commented out
 
 
+
        !To do: ask Dan how to access specific variables from MESH_input_run_options.ini
        !Can't figure it out from here unfortunately (fls% are able to be used from here)
-         Argbuff = 'CLASSOUT1'
-         ARGBUFF=argbuff(1:strlen(argbuff))//'/CLASSCTEM_Out'
+       !For now we will directly read it from here then try and get it from op% later
+         
+         OPEN(unit=2015,file='MESH_input_run_options.ini')
+         
+         read(2015,*)
+         read(2015,*) 
+         read(2015,*)
+
+!Read the number of control flags
+         read(2015,*) CONFLAGS
+
+
+      DO I=1,CONFLAGS
+         read(2015,*)
+      ENDDO
+
+      read(2015,*)
+      read(2015,*)
+      read (2015,*) WF_NUM_POINTS !The number of grids in question
+      read(2015,*)
+      read(2015,*) (N_OUT(i),i = 1,WF_NUM_POINTS)
+      read(2015,*) (II_OUT(i),i = 1,WF_NUM_POINTS)
+      read(2015,'(5a10)') (DIR_OUT(i),i = 1,WF_NUM_POINTS)
 
 
 
@@ -2483,30 +2534,36 @@ c
 c
 c     * CLASS daily and half-hourly output files (monthly and annual are done in io_driver)
 c
+     
 
+        DO I=1,WF_NUM_POINTS !Loop over the number of grids in question
+
+!Initialize Argbuff again
+       ARGBUFF = DIR_OUT(i)
+       ARGBUFF=argbuff(1:strlen(argbuff))//'/CLASSCTEM_Out'
          
       if (.not. parallelrun) then ! stand alone mode, includes half-hourly and daily output
-       OPEN(UNIT=61,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF1_G')  ! GRID-LEVEL DAILY OUTPUT FROM CLASS
-       OPEN(UNIT=62,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF2_G')
-       OPEN(UNIT=63,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF3_G')
+       OPEN(UNIT=61*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF1_G')  ! GRID-LEVEL DAILY OUTPUT FROM CLASS
+       OPEN(UNIT=62*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF2_G')
+       OPEN(UNIT=63*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF3_G')
 
-       OPEN(UNIT=611,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF1_M') ! MOSAIC DAILY OUTPUT FROM CLASS
-       OPEN(UNIT=621,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF2_M')
-       OPEN(UNIT=631,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF3_M')
+       OPEN(UNIT=611*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF1_M') ! MOSAIC DAILY OUTPUT FROM CLASS
+       OPEN(UNIT=621*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF2_M')
+       OPEN(UNIT=631*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF3_M')
 
-       OPEN(UNIT=64,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF4_M')  ! MOSAIC HALF-HOURLY OUTPUT FROM CLASS
-       OPEN(UNIT=65,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF5_M')
-       OPEN(UNIT=66,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF6_M')
-       OPEN(UNIT=67,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF7_M')
-       OPEN(UNIT=68,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF8_M')
-       OPEN(UNIT=69,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF9_M')
+       OPEN(UNIT=64*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF4_M')  ! MOSAIC HALF-HOURLY OUTPUT FROM CLASS
+       OPEN(UNIT=65*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF5_M')
+       OPEN(UNIT=66*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF6_M')
+       OPEN(UNIT=67*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF7_M')
+       OPEN(UNIT=68*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF8_M')
+       OPEN(UNIT=69*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF9_M')
 
-       OPEN(UNIT=641,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF4_G') ! GRID-LEVEL HALF-HOURLY OUTPUT FROM CLASS
-       OPEN(UNIT=651,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF5_G')
-       OPEN(UNIT=661,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF6_G')
-       OPEN(UNIT=671,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF7_G')
-       OPEN(UNIT=681,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF8_G')
-       OPEN(UNIT=691,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF9_G')
+       OPEN(UNIT=641*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF4_G') ! GRID-LEVEL HALF-HOURLY OUTPUT FROM CLASS
+       OPEN(UNIT=651*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF5_G')
+       OPEN(UNIT=661*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF6_G')
+       OPEN(UNIT=671*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF7_G')
+       OPEN(UNIT=681*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF8_G')
+       OPEN(UNIT=691*i,FILE=ARGBUFF(1:STRLEN(ARGBUFF))//'.OF9_G')
        end if
 
 C     * READ AND PROCESS INITIALIZATION AND BACKGROUND INFORMATION.
@@ -2524,7 +2581,9 @@ C     * FIRST, MODEL RUN SPECIFICATIONS.
        call create_outfiles(argbuff,title1, title2, title3, title4,
      1                     title5,title6,name1, name2, name3, name4,
      2                     name5, name6, place1,place2, place3,
-     3                     place4, place5, place6,BasinFile)
+     3                     place4, place5, place6,BasinFile,
+     4                     WF_NUM_POINTS,
+     5                     N_OUT,II_OUT,DIR_OUT)
 
       IF(CTEM_ON) THEN
 
@@ -2535,167 +2594,167 @@ C     * FIRST, MODEL RUN SPECIFICATIONS.
 C
       IF (.NOT. PARALLELRUN) THEN ! STAND ALONE MODE, INCLUDES HALF-HOURLY AND DAILY OUTPUT
 C
-       WRITE(61,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(61,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-       WRITE(61,6011)
+       WRITE(61*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(61*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(61*i,6011)
 6011  FORMAT(2X,'DAY  YEAR  K*  L*  QH  QE  SM  QG  ',
      1          'TR  SWE  DS  WS  AL  ROF  CUMS')
 
-       WRITE(62,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(62,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(62*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(62*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
 
        IF(IGND.GT.3) THEN
-          WRITE(62,6012)
+          WRITE(62*i,6012)
 6012      FORMAT(2X,'DAY  YEAR  TG1  THL1  THI1  TG2  THL2  THI2  ',
      1              'TG3  THL3  THI3  TG4  THL4  THI4  TG5  THL5  ',
      2              'THI5')
 
        ELSE
-          WRITE(62,6212)
+          WRITE(62*i,6212)
 6212      FORMAT(2X,'DAY  YEAR  TG1  THL1  THI1  TG2  THL2  THI2  ',
      1              'TG3  THL3  THI3  TCN  RCAN  SCAN  TSN  ZSN')
 
        ENDIF
 
-       WRITE(63,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(63,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(63*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(63*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
 
        IF(IGND.GT.3) THEN
-          WRITE(63,6013)
+          WRITE(63*i,6013)
 6013      FORMAT(2X,'DAY  YEAR  TG6  THL6  THI6  TG7  THL7  THI7  ',
      1              'TG8  THL8  THI8  TG9  THL9  THI9  TG10'  ,
      2              'THL10  THI10')
 
        ELSE
-          WRITE(63,6313)
+          WRITE(63*i,6313)
 6313      FORMAT(2X,'DAY YEAR KIN LIN TA UV PRES QA PCP EVAP')
 
        ENDIF
 C
-       WRITE(64,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(64,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-       WRITE(64,6014)
+       WRITE(64*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(64*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(64*i,6014)
 6014  FORMAT(2X,'HOUR  MIN  DAY  YEAR  K*  L*  QH  QE  SM  QG  ',
      1          'TR  SWE  DS  WS  AL  ROF  TPN  ZPN  CDH  CDM  ',
      2          'SFCU  SFCV  UV')
 
-       WRITE(65,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(65,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(65*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(65*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
 
        IF(IGND.GT.3) THEN
-          WRITE(65,6015)
+          WRITE(65*i,6015)
 6015      FORMAT(2X,'HOUR  MIN  DAY  YEAR  TG1  THL1  THI1  TG2  ',
      1          'THL2  THI2  TG3  THL3  THI3  TG4  THL4  THI4  ',
      2          'TG5  THL5  THI5')
 
        ELSE
-          WRITE(65,6515)
+          WRITE(65*i,6515)
 6515      FORMAT(2X,'HOUR  MIN  DAY  YEAR  TG1  THL1  THI1  TG2  ',
      1           'THL2  THI2  TG3  THL3  THI3  TCN  RCAN  SCAN  ',
      2           'TSN  ZSN  TCN-TA  TCANO  TAC  ACTLYR  FTABLE')
 
        ENDIF
 
-       WRITE(66,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(66,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(66*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(66*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
 
        IF(IGND.GT.3) THEN
-          WRITE(66,6016)
+          WRITE(66*i,6016)
 6016      FORMAT(2X,'HOUR  MIN  DAY  YEAR  TG6  THL6  THI6  TG7  ',
      1          'THL7  THI7  TG8  THL8  THI8  TG9  THL9  THI9  ',
      2          'TG10  THL10  THI10  G0  G1  G2  G3  G4  G5  G6  ',
      3          'G7  G8  G9')
 
        ELSE
-          WRITE(66,6616)
-          WRITE(66,6615)
+          WRITE(66*i,6616)
+          WRITE(66*i,6615)
 6616  FORMAT(2X,'HOUR  MIN  DAY  SWIN  LWIN  PCP  TA  VA  PA  QA')
 6615  FORMAT(2X,'IF IGND <= 3, THIS FILE IS EMPTY')
        ENDIF
 
-       WRITE(67,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(67,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-       WRITE(67,6017)
+       WRITE(67*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(67*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(67*i,6017)
 !     6017  FORMAT(2X,'WCAN SCAN CWLCAP CWFCAP FC FG FCS FGS CDH ', !runclass formatted.
 !     1          'TCANO TCANS ALBS')
 6017  FORMAT(2X,'HOUR  MIN  DAY  YEAR  ',
      1  'TROF     TROO     TROS     TROB      ROF     ROFO   ',
      2  '  ROFS        ROFB         FCS        FGS        FC       FG')
 
-       WRITE(68,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(68,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-       WRITE(68,6018)
+       WRITE(68*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(68*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(68*i,6018)
 6018  FORMAT(2X,'HOUR  MIN  DAY  YEAR  ',
      1          'FSGV FSGS FSGG FLGV FLGS FLGG HFSC HFSS HFSG ',
      2          'HEVC HEVS HEVG HMFC HMFS HMFG1 HMFG2 HMFG3 ',
      3          'HTCC HTCS HTC1 HTC2 HTC3')
 
-       WRITE(69,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(69,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-       WRITE(69,6019)
+       WRITE(69*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(69*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(69*i,6019)
 6019  FORMAT(2X,'HOUR  MIN  DAY  YEAR  ',
      1   'PCFC PCLC PCPN PCPG QFCF QFCL QFN QFG QFC1 ',
      2          'QFC2 QFC3 ROFC ROFN ROFO ROF WTRC WTRS WTRG')
 !       runclass also has: EVDF ','CTV CTS CT1 CT2 CT3')
 C
-       WRITE(611,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(611,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-       WRITE(611,6011)
-       WRITE(621,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(621,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(611*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(611*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(611*i,6011)
+       WRITE(621*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(621*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
 C
        IF(IGND.GT.3) THEN
-           WRITE(621,6012)
+           WRITE(621*i,6012)
        ELSE
-           WRITE(621,6212)
+           WRITE(621*i,6212)
        ENDIF
 C
-       WRITE(631,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(631,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(631*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(631*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
 C
        IF(IGND.GT.3) THEN
-          WRITE(631,6013)
+          WRITE(631*i,6013)
        ELSE
-          WRITE(631,6313)
+          WRITE(631*i,6313)
        ENDIF
 C
-       WRITE(641,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(641,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-       WRITE(641,6008)
-       WRITE(651,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(651,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(641*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(641*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(641*i,6008)
+       WRITE(651*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(651*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
 C
        IF(IGND.GT.3) THEN
-          WRITE(651,6015)
+          WRITE(651*i,6015)
        ELSE
-          WRITE(651,6515)
+          WRITE(651*i,6515)
        ENDIF
 C
-       WRITE(661,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(661,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(661*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(661*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
 C
        IF(IGND.GT.3) THEN
-          WRITE(661,6016)
+          WRITE(661*i,6016)
        ELSE
-          WRITE(661,6616)
+          WRITE(661*i,6616)
        ENDIF
 C
-       WRITE(671,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(671,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-       WRITE(671,6017)
-       WRITE(681,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(681,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-       WRITE(681,6018)
-       WRITE(691,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
-       WRITE(691,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
-       WRITE(691,6019)
+       WRITE(671*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(671*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(671*i,6017)
+       WRITE(681*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(681*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(681*i,6018)
+       WRITE(691*i,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+       WRITE(691*i,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+       WRITE(691*i,6019)
 C
 6008  FORMAT(2X,'HOUR  MIN  DAY  YEAR  K*  L*  QH  QE  SM  QG  ',
      1          'TR  SWE  DS  WS  AL  ROF  TPN  ZPN  CDH  CDM  ',
      2          'SFCU  SFCV  UV')
 
-C
        ENDIF !IF NOT PARALLELRUN
+      ENDDO !Looping around each grid folder
 
 C     CTEM FILE TITLES DONE
 C======================= CTEM ========================================== /
@@ -5285,12 +5344,17 @@ C
       if (.not. parallelrun) then ! stand alone mode, include half-hourly
 c                                 ! output for CLASS & CTEM
 C
-      DO 450 I=1,NLTEST
+
+
+!Because this is MESH-CTEM and getting all grids would be too consuming, we only write for the grid we want
+      DO 450 I=1,NLTEST  !1 to the number of grid output files
+
 
 c       initialization of various grid-averaged variables
         call resetgridavg(nltest)
 
        DO 425 M=1,NMTEST
+
           IF(FSSROW(I).GT.0.0) THEN
               ALTOT=(FSSROW(I)-(FSGVROT(I,M)+FSGSROT(I,M)
      1              +FSGGROT(I,M)))/FSSROW(I)
@@ -5343,12 +5407,7 @@ C              IF(ITA.GT.0.0) THEN
 C              ENDIF
 C          ENDIF     
           IF(FC(I).GT.0.1 .AND. RC(I).GT.1.0E5) NDRY=NDRY+1
-!           IF((ITCAN-ITA).GE.10) THEN
-!               WRITE(6,6070) IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,
-!      1                      BEG,TAROW(I)-TFREZ,TCN,TCN-(TAROW(I)-TFREZ),
-!      2                      PAICAN(I),FSVF(I),UVROW(I),RC(I)
-! 6070          FORMAT(2X,2I2,I4,I5,9F6.1,F6.3,F6.1,F8.1)
-!           ENDIF
+
 C
           IF(TSNOROT(I,M).GT.0.01) THEN
               TSN=TSNOROT(I,M)-TFREZ
@@ -5369,14 +5428,18 @@ C
 C
 !===================== CTEM =====================================\
 !         start writing output
+!         For MESH-CTEM Write Output within a loop as we may have multiple grids in question
 
-
-
+  
+          DO K=1,WF_NUM_POINTS !Create a DO loop for each folder     
+           if(I .eq. N_OUT(K) .and. M .eq. II_out(K) ) THEN
+            !IF there is no combination, then the entire writing process will be skipped
 c
           if ((iyear .ge. jhhsty) .and. (iyear .le. jhhendy)) then
            if ((iday .ge. jhhstd) .and. (iday .le. jhhendd)) then
+
 C===================== CTEM =====================================/
-          WRITE(64,6400) IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,
+          WRITE(64*k,6400) IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,
      1                   SNOMLT,BEG,GTOUT,SNOROT(I,M),RHOSROT(I,M),
      2                   WSNOROT(I,M),ALTOT,ROFROT(I,M),
      3                   TPN,ZPNDROT(I,M),CDHROT(I,M),CDMROT(I,M),
@@ -5387,18 +5450,18 @@ C===================== CTEM =====================================/
 C===================== CTEM =====================================\
 
 
-              write(65,6500) ihour,imin,iday,iyear,(TBARROT(i,m,j)-
+              write(65*k,6500) ihour,imin,iday,iyear,(TBARROT(i,m,j)-
      1                   tfrez,THLQROT(i,m,j),THICROT(i,m,j),j=1,3),
      2                  tcn,RCANROT(i,m),SCANROT(i,m),tsn,zsn,
      3                   TCN-(TAROW(I)-TFREZ),TCANO(I)-TFREZ,
      4                   TACGAT(I)-TFREZ,ACTLYR,FTABLE,' TILE ',m
-              write(66,6601) ihour,imin,iday,iyear,(TBARROT(i,m,j)-
+              write(66*k,6601) ihour,imin,iday,iyear,(TBARROT(i,m,j)-
      1                   tfrez,THLQROT(i,m,j),THICROT(i,m,j),j=4,10),
      2                   (GFLXROT(i,m,j),j=1,10),
      3                   ' TILE ',m
-          else
+         else
 
-              write(65,6500) ihour,imin,iday,iyear,(TBARROT(i,m,j)-
+              write(65*k,6500) ihour,imin,iday,iyear,(TBARROT(i,m,j)-
      1                   tfrez,THLQROT(i,m,j),THICROT(i,m,j),j=1,3),
      2                  tcn,RCANROT(i,m),SCANROT(i,m),tsn,zsn,
      3                   TCN-(TAROW(I)-TFREZ),TCANO(I)-TFREZ,
@@ -5407,12 +5470,12 @@ C===================== CTEM =====================================\
 C===================== CTEM =====================================/
           ENDIF
 C
-          WRITE(67,6700) IHOUR,IMIN,IDAY,IYEAR,
+          WRITE(67*k,6700) IHOUR,IMIN,IDAY,IYEAR,
      1                   TROFROT(I,M),TROOROT(I,M),TROSROT(I,M),
      2                   TROBROT(I,M),ROFROT(I,M),ROFOROT(I,M),
      3                   ROFSROT(I,M),ROFBROT(I,M),
      4                   FCS(M),FGS(M),FC(M),FG(M),' TILE ',M
-          WRITE(68,6800) IHOUR,IMIN,IDAY,IYEAR,
+          WRITE(68*k,6800) IHOUR,IMIN,IDAY,IYEAR,
      1                   FSGVROT(I,M),FSGSROT(I,M),FSGGROT(I,M),
      2                   FLGVROT(I,M),FLGSROT(I,M),FLGGROT(I,M),
      3                   HFSCROT(I,M),HFSSROT(I,M),HFSGROT(I,M),
@@ -5421,7 +5484,7 @@ C
      6                   (HMFGROT(I,M,J),J=1,3),
      7                   HTCCROT(I,M),HTCSROT(I,M),
      8                   (HTCROT(I,M,J),J=1,3),' TILE ',M
-          WRITE(69,6900) IHOUR,IMIN,IDAY,IYEAR,
+          WRITE(69*k,6900) IHOUR,IMIN,IDAY,IYEAR,
      1                   PCFCROT(I,M),PCLCROT(I,M),PCPNROT(I,M),
      2                   PCPGROT(I,M),QFCFROT(I,M),QFCLROT(I,M),
      3                   QFNROT(I,M),QFGROT(I,M),(QFCROT(I,M,J),J=1,3),
@@ -5434,6 +5497,8 @@ C===================== CTEM =====================================\
 C
          endif
         endif ! half hourly output loop.
+        endif ! Checking if this is a writable output
+        ENDDO ! End of K loop for each output folder
 c
 c         Write half-hourly CTEM results to file *.CT01H
 c
@@ -5460,15 +5525,15 @@ c
 760         continue
 c
 
-!Comment this out for MESH-CTEM has this will take up too much memory
-!          if ((iyear .ge. jhhsty) .and. (iyear .le. jhhendy)) then
-!           if ((iday .ge. jhhstd) .and. (iday .le. jhhendd)) then
-!
-!              write(71,7200)ihour,imin,iday,iyear,(anvegrow(i,m,j),
-!     1                    j=1,icc),(rmlvegrow(i,m,j),j=1,icc),
-!     2                    ' TILE ',m
-!            endif
-!           end if
+
+          if ((iyear .ge. jhhsty) .and. (iyear .le. jhhendy)) then
+           if ((iday .ge. jhhstd) .and. (iday .le. jhhendd)) then
+
+              write(71,7200)ihour,imin,iday,iyear,(anvegrow(i,m,j),
+     1                    j=1,icc),(rmlvegrow(i,m,j),j=1,icc),
+     2                    ' TILE ',m
+            endif
+           end if
 
            do j = 1,icc
               anvegrow_g(i,j)=anvegrow_g(i,j)+anvegrow(i,m,j)
@@ -6044,35 +6109,48 @@ C
 C
           GTOUT=GTACC_M(I,M)-TFREZ
 C 
+
+
+          DO K=1,WF_NUM_POINTS !Create a DO loop for each folder     
+           if(I .eq. N_OUT(K) .and. M .eq. II_out(K) ) THEN
+            !IF there is no combination, then the entire writing process will be skipped
+
           if ((iyear .ge. jdsty) .and. (iyear .le. jdendy)) then
            if ((iday .ge. jdstd) .and. (iday .le. jdendd)) then
 C
 C         WRITE TO OUTPUT FILES
-C
-          WRITE(611,6100) IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT,
+
+          WRITE(611*k,6100) IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT,
      1                    BEG,GTOUT,SNOACC_M(I,M),RHOSACC_M(I,M),
      2                    WSNOACC_M(I,M),ALTOTACC_M(I,M),ROFACC_M(I,M),
      3                    CUMSNO,' TILE ',M
             IF(IGND.GT.3) THEN
-               WRITE(621,6201) IDAY,IYEAR,(TBARACC_M(I,M,J)-TFREZ,
+               WRITE(621*k,6201) IDAY,IYEAR,(TBARACC_M(I,M,J)-TFREZ,
      1                  THLQACC_M(I,M,J),THICACC_M(I,M,J),J=1,5),
      2                  ' TILE ',M
-               WRITE(631,6201) IDAY,IYEAR,(TBARACC_M(I,M,J)-TFREZ,
+               WRITE(631*k,6201) IDAY,IYEAR,(TBARACC_M(I,M,J)-TFREZ,
      1                  THLQACC_M(I,M,J),THICACC_M(I,M,J),J=6,10),
      2                  ' TILE ',M
             ELSE
-               WRITE(621,6200) IDAY,IYEAR,(TBARACC_M(I,M,J)-TFREZ,
+               WRITE(621*k,6200) IDAY,IYEAR,(TBARACC_M(I,M,J)-TFREZ,
      1                  THLQACC_M(I,M,J),THICACC_M(I,M,J),J=1,3),
      2                  TCN,RCANACC_M(I,M),SCANACC_M(I,M),TSN,ZSN,
      3                  ' TILE ',M
-               WRITE(631,6300) IDAY,IYEAR,FSINACC_M(I,M),FLINACC_M(I,M),
-     1                  TAACC_M(I,M)-TFREZ,UVACC_M(I,M),PRESACC_M(I,M),
-     2                  QAACC_M(I,M),PREACC_M(I,M),EVAPACC_M(I,M),
-     3                  ' TILE ',M
+
+!There is a bug here, comment out for now need to fix later
+!               WRITE(631*k,6300) IDAY,IYEAR,FSINACC_M(I,M),FLINACC_M(I,M),
+!     1                  TAACC_M(I,M)-TFREZ,UVACC_M(I,M),PRESACC_M(I,M),
+!     2                  QAACC_M(I,M),PREACC_M(I,M),EVAPACC_M(I,M),
+!     3                  ' TILE ',M
             ENDIF
+
+
 C
            endif
           ENDIF ! IF write daily
+          ENDIF ! If we have the desired GRU/Grid
+          ENDDO !END the K loop
+
 C
 C          INITIALIZATION FOR MOSAIC TILE AND GRID VARIABLES
 C
@@ -6124,7 +6202,7 @@ c     calculate daily outputs from ctem
          if(ncount.eq.nday) then
           call ctem_daily_aw(nltest,nmtest,iday,FAREROT,
      1                      iyear,jdstd,jdsty,jdendd,jdendy,grclarea,
-     2                      onetile_perPFT)
+     2                      onetile_perPFT,WF_NUM_POINTS,N_OUT,II_OUT)
          endif ! if(ncount.eq.nday)
        endif ! if(ctem_on)
 

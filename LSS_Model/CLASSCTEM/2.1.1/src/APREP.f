@@ -676,11 +676,14 @@ C
           end do
           IF(FCANS(I,3).LT.1.0E-5) FCANS(I,3)=0.0
           IF(FCANS(I,4).LT.1.0E-5) FCANS(I,4)=0.0
-C                                                                                 
+C                    
+                                                                               
           FC (I)=FCAN(I,1)+FCAN(I,2)+FCAN(I,3)+FCAN(I,4)                
           FG (I)=1.0-FSNOW(I)-FC(I)                                     
           FCS(I)=FCANS(I,1)+FCANS(I,2)+FCANS(I,3)+FCANS(I,4)            
-          FGS(I)=FSNOW(I)-FCS(I)                                        
+          FGS(I)=FSNOW(I)-FCS(I)
+
+                                      
           IF(ABS(1.0-FCS(I)-FC(I)).LT.8.0E-5) THEN
               IF(FCS(I).LT.1.0E-5) THEN
                 FSNOW (I)=0.0 
@@ -751,6 +754,10 @@ C
               ZPLIMC(I)=ZPLMG0(I)
               ZPLIMG(I)=ZPLMG0(I)
           ENDIF
+
+
+
+
   175 CONTINUE                                                                    
 C                                                                                 
 C     * PARTITION INTERCEPTED LIQUID AND FROZEN MOISTURE BETWEEN
