@@ -876,7 +876,7 @@ DO K=1,WF_NUM_POINTS !Create a DO loop for each folder
 if (.not. parallelrun .and. ctem_on) then !>stand alone mode, includes half-hourly and daily output
 
     !>ctem half hourly output files
-    open(unit=71*k, file=argbuff(1:strlen(argbuff))//'.CT01H_M')  
+    !open(unit=71*k, file=argbuff(1:strlen(argbuff))//'.CT01H_M')  
     open(unit=711*k,file=argbuff(1:strlen(argbuff))//'.CT01H_G')
 
     !>ctem daily output files
@@ -1056,7 +1056,7 @@ WRITE(83*k,6023)'#','W/m2','W/m2','W/m2','W/m2','mm.yr','mm.yr','mm.yr','mm.yr',
 
 if (ctem_on) then
 
-    open(unit=84,file=argbuff(1:strlen(argbuff))//'.CT01M') !> CTEM monthly output files
+    open(unit=84*k,file=argbuff(1:strlen(argbuff))//'.CT01M') !> CTEM monthly output files
     write(84*k,6001) title1,title2,title3,title4,title5,title6
     write(84*k,6002) name1,name2,name3,name4,name5,name6
     write(84*k,6003) place1,place2,place3,place4,place5,place6
@@ -1106,7 +1106,7 @@ if (ctem_on) then
 
     if (compete .or. lnduseon) then
 
-        open(unit=88,file=argbuff(1:strlen(argbuff))//'.CT07M')!> ctem pft fractions MONTHLY
+        open(unit=88*k,file=argbuff(1:strlen(argbuff))//'.CT07M')!> ctem pft fractions MONTHLY
         write(88*k,6001) title1,title2,title3,title4,title5,title6
         write(88*k,6002) name1,name2,name3,name4,name5,name6
         write(88*k,6003) place1,place2,place3,place4,place5,place6
@@ -1128,7 +1128,7 @@ if (ctem_on) then
 
     if (dowetlands .or. obswetf) then
 
-        open(unit=91,file=argbuff(1:strlen(argbuff))//'.CT08M') !>Methane(wetland) MONTHLY
+        open(unit=91*k,file=argbuff(1:strlen(argbuff))//'.CT08M') !>Methane(wetland) MONTHLY
         write(91*k,6001) title1,title2,title3,title4,title5,title6
         write(91*k,6002) name1,name2,name3,name4,name5,name6
         write(91*k,6003) place1,place2,place3,place4,place5,place6
@@ -1136,7 +1136,7 @@ if (ctem_on) then
         write(91*k,6230)'MONTH','YEAR','CH4WET1','CH4WET2','WETFDYN','CH4DYN1','CH4DYN2','SOILUPTAKE'
         write(91*k,6230)'#','','gCH4/M2.MON','gCH4/M2.MON','fraction','gCH4/M2.MON','gCH4/M2.MON','gCH4/M2.MON'
 
-        open(unit=92,file=argbuff(1:strlen(argbuff))//'.CT08Y')  !>Methane(wetland) YEARLY
+        open(unit=92*k,file=argbuff(1:strlen(argbuff))//'.CT08Y')  !>Methane(wetland) YEARLY
         write(92*k,6001) title1,title2,title3,title4,title5,title6
         write(92*k,6002) name1,name2,name3,name4,name5,name6
         write(92*k,6003) place1,place2,place3,place4,place5,place6

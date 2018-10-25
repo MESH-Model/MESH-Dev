@@ -4616,6 +4616,7 @@ C     * ADAPTED TO COUPLING OF CLASS3.6 AND CTEM by including: zolnc,
 
 
 
+
 C
       CALL CLASSA    (FC,     FG,     FCS,    FGS,    ALVSCN, ALIRCN,
      1                ALVSG,  ALIRG,  ALVSCS, ALIRCS, ALVSSN, ALIRSN,
@@ -5438,6 +5439,7 @@ c
           if ((iyear .ge. jhhsty) .and. (iyear .le. jhhendy)) then
            if ((iday .ge. jhhstd) .and. (iday .le. jhhendd)) then
 
+
 C===================== CTEM =====================================/
           WRITE(64*k,6400) IHOUR,IMIN,IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,
      1                   SNOMLT,BEG,GTOUT,SNOROT(I,M),RHOSROT(I,M),
@@ -6108,7 +6110,7 @@ C
           ENDIF
 C
           GTOUT=GTACC_M(I,M)-TFREZ
-C 
+C
 
 
           DO K=1,WF_NUM_POINTS !Create a DO loop for each folder     
