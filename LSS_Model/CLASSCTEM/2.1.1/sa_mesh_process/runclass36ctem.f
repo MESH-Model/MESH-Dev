@@ -762,6 +762,7 @@ C
      1              PLACE4*4,     PLACE5*4,     PLACE6*4
 
 !File name for the BasinAveraged File
+!And the CTEM grided Output as well
 
       CHARACTER    BasinFile*80
 
@@ -2372,6 +2373,7 @@ C===================== CTEM ==============================================\
 
 !Create the basin averaged file for the basin averaged CTEM outputs
       BasinFile=trim(fls%GENDIR_OUT)//'/CTEM_Basin_Output.csv'
+
 
 c     all model switches are read in from a namelist file
 
@@ -5910,27 +5912,34 @@ C
               ENDIF
               GTOUT=GTACC(I)-TFREZ
 C
+             DO K=1,WF_NUM_POINTS !Create a DO loop for each folder     
+             if(I .eq. N_OUT(K) .and. M .eq. II_out(K) ) THEN
+            !IF there's is no combination, then the entire writing process will be skipped
+
+
              if ((iyear .ge. jdsty) .and. (iyear .le. jdendy)) then
               if ((iday .ge. jdstd) .and. (iday .le. jdendd)) then
 
-              WRITE(61,6100) IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT,
+              WRITE(61*k,6100) IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT,
      1                       BEG,GTOUT,SNOACC(I),RHOSACC(I),
      2                       WSNOACC(I),ALTOTACC(I),ROFACC(I),CUMSNO
               IF(IGND.GT.3) THEN
-                  WRITE(62,6201) IDAY,IYEAR,(TBARACC(I,J)-TFREZ,
+                  WRITE(62*k,6201) IDAY,IYEAR,(TBARACC(I,J)-TFREZ,
      1                       THLQACC(I,J),THICACC(I,J),J=1,5)
-                  WRITE(63,6201) IDAY,IYEAR,(TBARACC(I,J)-TFREZ,
+                  WRITE(63*k,6201) IDAY,IYEAR,(TBARACC(I,J)-TFREZ,
      1                       THLQACC(I,J),THICACC(I,J),J=6,10)
               ELSE
-                  WRITE(62,6200) IDAY,IYEAR,(TBARACC(I,J)-TFREZ,
+                  WRITE(62*k,6200) IDAY,IYEAR,(TBARACC(I,J)-TFREZ,
      1                       THLQACC(I,J),THICACC(I,J),J=1,3),
      2                       TCN,RCANACC(I),SCANACC(I),TSN,ZSN
-                  WRITE(63,6300) IDAY,IYEAR,FSINACC(I),FLINACC(I),
+                  WRITE(63*k,6300) IDAY,IYEAR,FSINACC(I),FLINACC(I),
      1                       TAACC(I)-TFREZ,UVACC(I),PRESACC(I),
      2                       QAACC(I),PREACC(I),EVAPACC(I)
-              ENDIF
+              ENDIF !IGND
              endif
             ENDIF
+            ENDIF !The if of N_OUT
+            ENDDO !End the DO of WF_Points
 C
 C     * RESET ACCUMULATOR ARRAYS.
 C

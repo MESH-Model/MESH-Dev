@@ -917,6 +917,13 @@ ENDDO !End the K DO Loop
     write(300,7020)
     write(300,7030)
 
+
+    write(301,6001) title1,title2,title3,title4,title5,title6
+    write(301,6002) name1,name2,name3,name4,name5,name6
+    write(301,6003) place1,place2,place3,place4,place5,place6
+    write(301,7020)
+    write(301,7030)
+
 if (ctem_on .and. .not. parallelrun) then
 
 
@@ -2252,9 +2259,6 @@ if ((iyear .ge. jdsty).and.(iyear.le.jdendy))then
 !>Write daily ctem results
 
 
-
-
-
 do 80 i=1,nltest
    do 90 m=1,nmtest
 
@@ -2264,9 +2268,69 @@ do 80 i=1,nltest
             !IF there is no combination, then the entire writing process will be skipped
 
         barefrac = 1.0
-!==============================================
-!Eliminated here an icc loop which wrote for each MOSAIC and each GRID (not needed for MESH-CTEM for now)
-!=================================================
+
+!>First the per PFT values to file .CT01D
+              do j=1,icc
+
+               if (fcancmxrow(i,m,j) .gt. seed) then
+
+                barefrac = barefrac - fcancmxrow(i,m,j)
+
+                !>File: .CT01D
+                write(72*k,8200)iday,iyear,gppvegrow(i,m,j),nppvegrow(i,m,j), &
+                nepvegrow(i,m,j),nbpvegrow(i,m,j),autoresvegrow(i,m,j), &
+                hetroresvegrow(i,m,j),litresvegrow(i,m,j),soilcresvegrow(i,m,j), &
+                (dstcemlsrow(i,m)+dstcemls3row(i,m)), &   ! FLAG at present dstcemls are only per tile values
+                litrfallrow(i,m),humiftrsrow(i,m), & ! same with litrfall and humiftrs.
+                ' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
+
+                !>File .CT02D
+                write(73*k,8300)iday,iyear,rmlvegaccrow(i,m,j), &
+                rmsvegrow(i,m,j),rmrvegrow(i,m,j),rgvegrow(i,m,j), &
+                leaflitrrow(i,m,j),tltrleafrow(i,m,j), &
+                tltrstemrow(i,m,j),tltrrootrow(i,m,j), &
+                ' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
+
+                !>File *.CT03D
+                write(74*k,8401)iday,iyear,vgbiomas_vegrow(i,m,j), &
+                ailcgrow(i,m,j),gleafmasrow(i,m,j), &
+                bleafmasrow(i,m,j), stemmassrow(i,m,j), &
+                rootmassrow(i,m,j), litrmassrow(i,m,j),  &
+                soilcmasrow(i,m,j), &
+                ' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
+
+!Comment this out for now since output is too complicated
+                !>File .CT04D
+                !write(75*k,8500)iday,iyear, ailcgrow(i,m,j),  &
+                !ailcbrow(i,m,j),(rmatctemrow(i,m,j,k),k=1,3), &
+                !veghghtrow(i,m,j),rootdpthrow(i,m,j), &
+                !roottemprow(i,m,j),slairow(i,m,j), &
+                !' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
+
+                ! File .CT05D
+                !write(76*k,8600)iday,iyear, afrleafrow(i,m,j),  &
+                !afrstemrow(i,m,j),afrrootrow(i,m,j),  &
+                !tcanoaccrow_out(i,m), lfstatusrow(i,m,j), &
+                !' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
+
+                !>File *.CT06D
+                if (dofire .or. lnduseon) then
+                    write(77*k,8800)iday,iyear, &
+                    emit_co2row(i,m,j),emit_corow(i,m,j),emit_ch4row(i,m,j), &
+                    emit_nmhcrow(i,m,j),emit_h2row(i,m,j),emit_noxrow(i,m,j), &
+                    emit_n2orow(i,m,j),emit_pm25row(i,m,j), &
+                    emit_tpmrow(i,m,j),emit_tcrow(i,m,j),emit_ocrow(i,m,j), &
+                    emit_bcrow(i,m,j),burnvegfrow(i,m,j)*100., &
+                    smfuncvegrow(i,m,j),lucemcom_g(i), &  !FLAG only per grid values for these last ones.
+                    lucltrin_g(i), lucsocin_g(i), &
+                    grclarea(i), btermrow(i,m,j), lterm_g(i), mtermrow(i,m,j), &
+                    ' TILE ',m,' PFT ',j,' FRAC ',fcancmxrow(i,m,j)
+                endif
+
+            end if !fcancmx
+
+        end do !icc
+
        
 
         !>Now write out the tile average values for each tile if the tile number
@@ -3840,32 +3904,35 @@ do 882 i=1,nltest
     !>Now do the bare fraction of the grid cell. Only soil c, hetres
     !>and litter are relevant so the rest are set to 0.
 
-            if (barefrac .gt. seed) then
-                write(86,8105)iyear,0.,  &
-                    0.,  &
-                    0.,0., &
-                    litrmass_yr(i,m,iccp1),soilcmas_yr(i,m,iccp1), &
-                    totcmass_yr(i,m,iccp1),0., &
-                    0.,nep_yr(i,m,iccp1), &
-                    nbp_yr(i,m,iccp1),hetrores_yr(i,m,iccp1), &
-                    0.,litres_yr(i,m,iccp1),soilcres_yr(i,m,iccp1),0.0, &
-                    ' TILE ',m,' PFT ',iccp1,' FRAC ',barefrac
-            end if
+!For simplicity purposes, only put grid average values into the yearly output
 
-            if (nmtest > 1) then
-
-                !> Write out the per tile values
-                write(86,8105)iyear,laimaxg_yr_t(i,m), &
-                    vgbiomas_yr_t(i,m),stemmass_yr_t(i,m), &
-                    rootmass_yr_t(i,m),litrmass_yr_t(i,m), &
-                    soilcmas_yr_t(i,m),totcmass_yr_t(i,m), &
-                    npp_yr_t(i,m),gpp_yr_t(i,m),nep_yr_t(i,m), &
-                    nbp_yr_t(i,m),hetrores_yr_t(i,m), &
-                    autores_yr_t(i,m),litres_yr_t(i,m), &
-                    soilcres_yr_t(i,m),veghght_yr_t(i,m),' TILE ',m,' OF ' &
-                    ,nmtest,' TFRAC ',FAREROT(i,m)
-            end if
+!            if (barefrac .gt. seed) then
+!                write(86,8105)iyear,0.,  &
+!                    0.,  &
+!                    0.,0., &
+!                    litrmass_yr(i,m,iccp1),soilcmas_yr(i,m,iccp1), &
+!                    totcmass_yr(i,m,iccp1),0., &
+!                    0.,nep_yr(i,m,iccp1), &
+!                    nbp_yr(i,m,iccp1),hetrores_yr(i,m,iccp1), &
+!                    0.,litres_yr(i,m,iccp1),soilcres_yr(i,m,iccp1),0.0, &
+!                    ' TILE ',m,' PFT ',iccp1,' FRAC ',barefrac
+!            end if
+!
+!            if (nmtest > 1) then
+!
+!                !> Write out the per tile values
+!                write(86,8105)iyear,laimaxg_yr_t(i,m), &
+!                    vgbiomas_yr_t(i,m),stemmass_yr_t(i,m), &
+!                    rootmass_yr_t(i,m),litrmass_yr_t(i,m), &
+!                    soilcmas_yr_t(i,m),totcmass_yr_t(i,m), &
+!                    npp_yr_t(i,m),gpp_yr_t(i,m),nep_yr_t(i,m), &
+!                    nbp_yr_t(i,m),hetrores_yr_t(i,m), &
+!                    autores_yr_t(i,m),litres_yr_t(i,m), &
+!                    soilcres_yr_t(i,m),veghght_yr_t(i,m),' TILE ',m,' OF ' &
+!                    ,nmtest,' TFRAC ',FAREROT(i,m)
+!            end if
         end do !m
+
 
         !> Finally write out the per gridcell values
         write(86,8105)iyear,laimaxg_yr_g(i),vgbiomas_yr_g(i), &
@@ -3965,6 +4032,8 @@ do 882 i=1,nltest
 
     endif ! if iday=365/366
 882     continue ! i
+
+
 
 if ((.not.leapnow .and.iday.eq.365).or.(leapnow .and.iday.eq.366)) then
 
