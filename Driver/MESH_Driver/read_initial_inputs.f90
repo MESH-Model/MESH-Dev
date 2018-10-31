@@ -276,6 +276,7 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> 'JLMOS' variables.
     shd%lc%NML = 0
     shd%wc%NML = 0
+
     do i = 1, NA
         if (shd%FRAC(i) > 0.0) then
             do m = 1, NTYPE

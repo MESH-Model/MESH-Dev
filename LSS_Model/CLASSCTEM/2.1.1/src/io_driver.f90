@@ -2339,33 +2339,33 @@ do 80 i=1,nltest
 
 
             !>File: .CT01D
-            !write(72*k,8200)iday,iyear,gpprow(i,m),npprow(i,m), &
-            !    neprow(i,m),nbprow(i,m),autoresrow(i,m), &
-            !    hetroresrow(i,m),litresrow(i,m),socresrow(i,m), &
-            !    (dstcemlsrow(i,m)+dstcemls3row(i,m)), &
-            !    litrfallrow(i,m),humiftrsrow(i,m), &
-            !    ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
+            write(72*k,8200)iday,iyear,gpprow(i,m),npprow(i,m), &
+                neprow(i,m),nbprow(i,m),autoresrow(i,m), &
+                hetroresrow(i,m),litresrow(i,m),socresrow(i,m), &
+                (dstcemlsrow(i,m)+dstcemls3row(i,m)), &
+                litrfallrow(i,m),humiftrsrow(i,m), &
+                ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
 
             !>File .CT02D
-            !write(73*k,8300)iday,iyear,rmlrow(i,m),rmsrow(i,m), &
-            !    rmrrow(i,m),rgrow(i,m),leaflitr_t(i,m),tltrleaf_t(i,m), &
-            !    tltrstem_t(i,m),tltrroot_t(i,m), &
-            !    ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
+            write(73*k,8300)iday,iyear,rmlrow(i,m),rmsrow(i,m), &
+                rmrrow(i,m),rgrow(i,m),leaflitr_t(i,m),tltrleaf_t(i,m), &
+                tltrstem_t(i,m),tltrroot_t(i,m), &
+                ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
 
             !>File .CT03D
-            !write(74*k,8401)iday,iyear,vgbiomasrow(i,m), &
-            !    ailcg_t(i,m), gleafmas_t(i,m), &
-            !    bleafmas_t(i,m), stemmass_t(i,m), &
-            !    rootmass_t(i,m), litrmass_t(i,m), &
-            !    soilcmas_t(i,m),&
-            !    ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
+            write(74*k,8401)iday,iyear,vgbiomasrow(i,m), &
+                ailcg_t(i,m), gleafmas_t(i,m), &
+                bleafmas_t(i,m), stemmass_t(i,m), &
+                rootmass_t(i,m), litrmass_t(i,m), &
+                soilcmas_t(i,m),&
+                ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
 
             !>File .CT04D
-            !write(75*k,8500)iday,iyear,ailcg_t(i,m), &
-               ! ailcb_t(i,m),(rmatctem_t(i,m,k),k=1,3), &
-                !veghght_t(i,m),rootdpth_t(i,m), &
-                !roottemp_t(i,m),slai_t(i,m), &
-                !' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
+           ! write(75*k,8500)iday,iyear,ailcg_t(i,m), &
+           !     ailcb_t(i,m),(rmatctem_t(i,m,k),k=1,3), &
+           !     veghght_t(i,m),rootdpth_t(i,m), &
+           !     roottemp_t(i,m),slai_t(i,m), &
+           !     ' TILE ',m,' OF ',nmtest,' TFRAC ',FAREROT(i,m)
 
             ! File .CT05D
             !write(76*k,8601)iday,iyear, afrleaf_t(i,m), &
