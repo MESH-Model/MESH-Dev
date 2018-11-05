@@ -78,8 +78,9 @@ c----------------------------------------------------------------------
 100   continue
 c
 
-      do 101 l=1,icc
-       do 101 k=1,nml
+
+      do 101 l=1,icc !Loop through each CTEM pft
+       do 101 k=1,nml !Loop through each Mosaic/GRU tile
           gleafmasgat(k,l) = gleafmasrow(ilmos(k),jlmos(k),l)
           bleafmasgat(k,l) = bleafmasrow(ilmos(k),jlmos(k),l)
           stemmassgat(k,l) = stemmassrow(ilmos(k),jlmos(k),l)
@@ -91,7 +92,14 @@ c
           bmasveggat(k,l)  = bmasvegrow(ilmos(k),jlmos(k),l)
           veghghtgat(k,l)  = veghghtrow(ilmos(k),jlmos(k),l)
           rootdpthgat(k,l) = rootdpthrow(ilmos(k),jlmos(k),l)
+
+
 101   continue
+
+
+
+
+
 c
       do 201 l=1,ican
        do 201 k=1,nml

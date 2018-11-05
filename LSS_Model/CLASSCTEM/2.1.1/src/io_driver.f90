@@ -233,6 +233,7 @@ read (11,7010) titlec3
         read(11,*) (bleafmasrow(1,m,j),j=1,icc)
         read(11,*) (stemmassrow(1,m,j),j=1,icc)
         read(11,*) (rootmassrow(1,m,j),j=1,icc)
+
 !>
 !>If fire and competition are on, save the stemmass and rootmass for use in burntobare subroutine on the first timestep.
         if (dofire .and. compete) then

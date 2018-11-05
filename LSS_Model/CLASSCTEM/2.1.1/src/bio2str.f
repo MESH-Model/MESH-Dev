@@ -405,12 +405,16 @@ c         for hydraulic redistrubution
           k1c = k1c + nol2pfts(j-1)
         endif
         k2c = k1c + nol2pfts(j) - 1
-        do 380 m = k1c, k2c
+
+
+        do 380 m = k1c, k2c !Loop over the CTEM PFTs
           do 390 i = il1, il2
 c
             useb(i,m)=b(m)
             usealpha(i,m)=alpha(sort(m))
             rootdpth(i,m) = (4.605*(rootmass(i,m)**alpha(sort(m))))/b(m)
+
+             
 
 !>
 !!if estimated rooting depth is greater than soil depth, or
@@ -449,9 +453,14 @@ c
 !!using parameter "a" we can find fraction of roots in each soil layer just like class
 !!
 
+           zroot=rootdpth(i,j)
+
            totala(i,j) = 1.0-exp(-a(i,j)*zroot)
+ 
 
            if(zroot.le.zbotw(i,1))then
+           
+
 !!if rootdepth is shallower than the bottom of the first layer
             rmatctem(i,j,1)=1.0
             do 414 k=2,ignd
@@ -512,7 +521,7 @@ c
             rmat_sum = rmat_sum + rmatctem(i,j,k)
 413       continue
 c
-          if( abs(rmat_sum-1.0).gt.1e-10) then
+          if( abs(rmat_sum-1.0).gt.1e-4) then
            write(6,2300) i,j,rmat_sum
 2300       format(' at (i) = (',i3,'), pft=',i2,' fractions of roots
      &not adding to one. sum  = ',f12.7)
@@ -559,6 +568,8 @@ c
 c
 460     continue
 450   continue
+
+
 !>
 !>-------------------  4. calculate storage lai  --------------------
 !>

@@ -1241,7 +1241,8 @@ C
 !!\f$C_{rb} = C_l \Lambda_{p,i}^{0.5} /0.75 \bullet [1 - exp(-0.75 \Lambda_{p,i}^{0.5} )]\f$
 !!where \f$C_l\f$ is a parameter that varies with the vegetation category. The aggregated value of \f$C_{rb}\f$ is obtained
 !!as a weighted average over the four vegetation categories over bare ground and snow cover.
-!!                                                                 
+!! 
+                                                                
       DO 450 J=1,IC                                                               
       DO 450 I=IL1,IL2                                                            
         IF (ctem_on) THEN
