@@ -1316,9 +1316,12 @@ DO 821 M=1,NMTEST
         WSNOACC_MO(I)=WSNOACC_MO(I)+WSNOROT(I,M)*FAREROT(I,M)
     ENDIF
 
+
     ROFACC_MO(I) =ROFACC_MO(I)+ROFROT(I,M)*FAREROT(I,M)*DELT
     PREACC_MO(I) =PREACC_MO(I)+PREROW(I)*FAREROT(I,M)*DELT
     EVAPACC_MO(I)=EVAPACC_MO(I)+QFSROT(I,M)*FAREROT(I,M)*DELT
+
+
 
     IF(FSSROW(I).GT.0.0) THEN
         ALTOTACC_MO(I)=ALTOTACC_MO(I) + ( (FSSROW(I)-(FSGVROT(I,M)+FSGSROT(I,M)+FSGGROT(I,M))) &
@@ -1343,6 +1346,7 @@ DO NT=1,NMON
         NDMONTH=(monthend(NT+1)-monthend(NT))*NDAY
 
         DO 824 I=1,NLTEST
+
 
               ! These are presently not being outputted but the code is kept in place if the need arises.
 !             IF(FSINACC_MO(I).GT.0.0) THEN
@@ -1403,7 +1407,8 @@ DO NT=1,NMON
                          ! ,' TILE ',m
             ENDIF   
 
-          call resetclassmon(nltest)
+          !Commented this out since it was creating a bug for writing monthly values for each grid
+          !call resetclassmon(nltest)
           
  826      CONTINUE   
 
