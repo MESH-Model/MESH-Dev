@@ -320,8 +320,8 @@ read (11,7010) titlec3
 		END DO
 	
 		DO J=1,iccp1
-        	   litrmassrow(i,m,j) = litrmassrow(i,1,j)
-        	   soilcmasrow(i,m,j) = soilcmasrow(i,1,j)
+        	   litrmassrow(i,m,j) = litrmassrow(1,m,j)
+        	   soilcmasrow(i,m,j) = soilcmasrow(1,m,j)
 		END DO
 
        
@@ -2503,6 +2503,7 @@ end subroutine ctem_daily_aw
 !>\ingroup io_driver_ctem_monthly_aw
 !>@{
 
+
 subroutine ctem_monthly_aw(nltest,nmtest,iday,FAREROT,iyear,nday,onetile_perPFT)
 
 ! J. Melton Feb 2016.
@@ -3167,6 +3168,7 @@ do 862 i=1,nltest
 !==========================================================================
 !Eliminated an icc loop in order to simplify the CTEM outputs for MESH-CTEM
 !===========================================================================
+
 
 
                 !> Now write out the bare fraction values:
