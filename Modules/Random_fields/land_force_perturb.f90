@@ -1,3 +1,54 @@
+! +-======-+
+!  Copyright (c) 2003-2007 United States Government as represented by
+!  the Admistrator of the National Aeronautics and Space Administration.
+!  All Rights Reserved.
+!
+!  THIS OPEN  SOURCE  AGREEMENT  ("AGREEMENT") DEFINES  THE  RIGHTS  OF USE,
+!  REPRODUCTION,  DISTRIBUTION,  MODIFICATION AND REDISTRIBUTION OF CERTAIN
+!  COMPUTER SOFTWARE ORIGINALLY RELEASED BY THE UNITED STATES GOVERNMENT AS
+!  REPRESENTED BY THE GOVERNMENT AGENCY LISTED BELOW ("GOVERNMENT AGENCY").
+!  THE UNITED STATES GOVERNMENT, AS REPRESENTED BY GOVERNMENT AGENCY, IS AN
+!  INTENDED  THIRD-PARTY  BENEFICIARY  OF  ALL  SUBSEQUENT DISTRIBUTIONS OR
+!  REDISTRIBUTIONS  OF THE  SUBJECT  SOFTWARE.  ANYONE WHO USES, REPRODUCES,
+!  DISTRIBUTES, MODIFIES  OR REDISTRIBUTES THE SUBJECT SOFTWARE, AS DEFINED
+!  HEREIN, OR ANY PART THEREOF,  IS,  BY THAT ACTION, ACCEPTING IN FULL THE
+!  RESPONSIBILITIES AND OBLIGATIONS CONTAINED IN THIS AGREEMENT.
+!
+!  Government Agency: National Aeronautics and Space Administration
+!  Government Agency Original Software Designation: GSC-15354-1
+!  Government Agency Original Software Title:  GEOS-5 GCM Modeling Software
+!  User Registration Requested.  Please Visit http://opensource.gsfc.nasa.gov
+!  Government Agency Point of Contact for Original Software:
+!           Dale Hithon, SRA Assistant, (301) 286-2691
+!
+! +-======-+
+
+! subroutines to perturb precipitation and radiation
+! for EnKF application to Tskin analysis in GEOS5
+!
+! MUST initialize random seed and Forcepert_ntrmdt by calling
+!  get_forcepert() with initialize=.true. start of the driver program
+!  (otherwise set initialize=.false.)
+!
+! f90 -cpp prop_global_parameters.f90 nr_ran2_gasdev.f90 forcepert_types.f90 random_fields.f90 land_force_perturb.f90
+!
+! reichle, 24 Jan 2005
+! reichle, 11 Feb 2005
+!
+! +-======-+
+! =========================================================================
+!
+! modified by : Ala Bahrami
+!
+! Bahrami, 21/03/2017 - Changing allocation of the pointer forcepert_param variable
+!                     - Changing parameter xcorr and ycorr from 0 to 176499.2
+!                     - Changing parameter std_pcp  = .3 to std_pcp  = .5
+!                     - Changing parameter std_sw    = .15 to std_sw    = .2
+!                     - Changing parameter :: typ_lw    = 0 to 1
+!                     - Changing parameter std_lw    from 0.15 to  40
+!                     - removed the program test in the module
+! =========================================================================
+
 module land_force_perturb
 
     use forcepert_types
@@ -40,11 +91,11 @@ module land_force_perturb
     implicit none
 
     ! N_forcepert is the number independent forcing perturbations
-    ! (e.g. generate N_forcepert=4 perturbations for precip,
+    ! (e.g. generate N_forcepert=3 perturbations for precip,
     ! shortwave radiation, and longwave radiation that will then be
     ! applied to various precip fields (incl large-scale & convective precip
-    ! and snow) and to radiation fields accordingly. I have added the other perturbation
-    ! field in order to perturb SWE.
+    ! and snow) and to radiation fields accordingly.
+    ! N_forcepert=4 to include SWE.
 
     integer, intent(in) :: N_forcepert   ! # different forcing perturb's
 
@@ -693,10 +744,10 @@ module land_force_perturb
         real,    parameter :: std_pcp    = .5 ! .3, 0.5
 
         integer, parameter :: typ_sw     = 1
-        real,    parameter :: std_sw     = .2 ! .2
+        real,    parameter :: std_sw     = .4 ! .2, .15
 
         integer, parameter :: typ_lw     = 0
-        real,    parameter :: std_lw     = 30 !40 ! .4 30
+        real,    parameter :: std_lw     = 40 ! 30, 40, 0.4
 
         integer, parameter :: typ_swe    = 1
         real,    parameter :: std_swe    = 0.0004
@@ -1005,6 +1056,8 @@ module land_force_perturb
 
               else
 
+!DAN    Only works with 3x3 matrix; must pass N_forcepert shape explicitly.
+!old style
                  ! call get_sqrt_corr_matrix( N_forcepert, &
                       ! forcepert_param(1)%ccorr(2,i,j),   &
                       ! forcepert_param(1)%ccorr(3,i,j),   &
@@ -1013,8 +1066,11 @@ module land_force_perturb
 
                 ! calling the cholesky_decomposition
                 ! Added by Ala Bahrami on 14/08/2017
-
-                call choldc(N_forcepert , tmpmat)
+!DAN    Added size of array in case N_forcepert read from input file is different
+!       from hard-coded size of 'tmpmat'.
+!DAN    Some of the hard-coded things could be replaced with additional I/O.
+!new style
+                call choldc(N_forcepert , tmpmat(1:N_forcepert, 1:N_forcepert))
 
 
                  ! overwrite cross-correlations in forcepert_param with square
@@ -1132,7 +1188,13 @@ module land_force_perturb
     !
     ! reichle, 25 Jan 2005
     !
-
+    ! Note : The purpsoe of this function is to generate lower triangular matrix
+    ! based on the cholessky factorization (decomposition). We assume that the correlation matrix
+    ! is (complex Hermitian) symmetric. .What I found that is that the rank of matrix
+    ! be 3 if the size of the matrix is 3*3 or all the eigenvalues should be positive
+    ! (positive definite). In Matlab we can use chol(R,'lower')
+    ! The cholesky decomposition is about a factor of two faster than alternative method for
+    ! solving equations. (See also, Cholesky decomposition , pp. 89 Numerical Recipes)
 
 
     implicit none

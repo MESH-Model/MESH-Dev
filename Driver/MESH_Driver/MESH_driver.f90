@@ -155,6 +155,8 @@ program MESH_Assimilate
 !>         24/07/2018  -
 !>                     - Changing name of OLDA  to DA
 !>                     - Changing name of the resume input folder
+!>         24/09/2018  -
+!>                     - Constraining the perturbation of longwave and shortwave radiation # 1389 to # 1396
 !>=======================================================================
 
     use mpi_module
@@ -1609,7 +1611,7 @@ program MESH_Assimilate
             lw_pert(k, 1) = Forcepert_vect(3, (shd%lc%ILMOS(k)), tt)
 
             !> Model states perturbation fields.
-            swe_pert(k, 1) = Forcepert_vect(4, (shd%lc%ILMOS(k)), tt)
+!+            swe_pert(k, 1) = Forcepert_vect(4, (shd%lc%ILMOS(k)), tt)
 !todo: Should consider the true number of soil layers (user-configurable).
 !+            thlq_pert(k, 1) = Forcepert_vect(5, (shd%lc%ILMOS(k)), tt)
 !+            thlq_pert(k, 2) = Forcepert_vect(6, (shd%lc%ILMOS(k)), tt)
@@ -1619,24 +1621,36 @@ program MESH_Assimilate
             !> Here the problematic days of any ensemble members are excluded from perturbation.
             !> A same methodology implemented to update model states should be applied.
 !todo: Find out the reason of code crashing because of perturbation.
-            if (ic%now%jday == 9 .or. ic%now%jday == 23 .or. ic%now%jday == 1) then
-                if (tt == 6 .or. tt == 9 .or. tt == 15) then
-                    cm%dat(3)%GAT(k) = cm%dat(3)%GAT(k)
-                    cm%dat(1)%GAT(k) = cm%dat(1)%GAT(k)
-                    cm%dat(2)%GAT(k) = cm%dat(2)%GAT(k)
-                    stas%sno%sno(k) = stas%sno%sno(k)
-                end if
-            else
+!-            if (ic%now%jday == 9 .or. ic%now%jday == 23 .or. ic%now%jday == 1) then
+!-                if (tt == 6 .or. tt == 9 .or. tt == 15) then
+!-                    cm%dat(3)%GAT(k) = cm%dat(3)%GAT(k)
+!-                    cm%dat(1)%GAT(k) = cm%dat(1)%GAT(k)
+!-                    cm%dat(2)%GAT(k) = cm%dat(2)%GAT(k)
+!-                    stas%sno%sno(k) = stas%sno%sno(k)
+!-                end if
+!-            else
 !todo: Replace hard-coded indices with keys.
                 cm%dat(3)%GAT(k) = cm%dat(3)%GAT(k)*precip_pert(k, 1)
                 cm%dat(1)%GAT(k) = cm%dat(1)%GAT(k)*sw_pert(k, 1)
                 cm%dat(2)%GAT(k) = cm%dat(2)%GAT(k) + lw_pert(k, 1)
-                stas%sno%sno(k) = stas%sno%sno(k)*swe_pert(k, 1)
+!+                stas%sno%sno(k) = stas%sno%sno(k)*swe_pert(k, 1)
 !todo: Should consider the true number of soil layers (user-configurable).
 !+                stas%sl%thlq(k, 1) = stas%sl%thlq(k, 1) + thlq_pert(k, 1)
 !+                stas%sl%thlq(k, 2) = stas%sl%thlq(k, 2) + thlq_pert(k, 2)
 !+                stas%sl%thlq(k, 3) = stas%sl%thlq(k, 3) + thlq_pert(k, 3)
 !+                stas%sl%thlq(k, 4) = stas%sl%thlq(k, 4) + thlq_pert(k, 4)
+!-            end if
+
+            !> Constrain perturbed longwave radiation.
+!todo: Replace hard-coded indices with keys.
+            if (cm%dat(2)%GAT(k) < 100.0) then
+                cm%dat(2)%GAT(k) = 100.0
+            end if
+
+            !> Constrain perturbed shortwave radiation.
+!todo: Replace hard-coded indices with keys.
+            if (cm%dat(1)%GAT(k) > 1500.0) then
+                cm%dat(1)%GAT(k) = 1500.0
             end if
         end do
 
