@@ -28,9 +28,9 @@ subroutine calc_rsrd_adjusted( &
     implicit none
 
     !> Constants and conversion factors.
-    real, parameter :: GCons = 9.81                 !gravitational constant in m s−2
-    real, parameter :: RCons = 287.05               !gas constant for dry air in J kg-1 K-1
-    real, parameter :: pi = dacos(-1.d0)
+    real, parameter :: GCons = 9.80616                 !gravitational constant in m s-2 taken from CLASS V3.6 Mannual Page 31
+    real, parameter :: RCons = 287.04                  !gas constant for dry air in J kg-1 K-1 taken from CLASS V3.6 Mannual Page 31
+    real, parameter :: pi = 3.14159265
     real, parameter :: DEGtoRAD = pi/180.0
     real, parameter :: DEGtoRAD365 = 2.0*pi/365.0
     real, parameter :: EQTCons = (pi/180.0)*(360.0/365.0) ! A constant that will be used for the calculation of the equation of time.
@@ -70,6 +70,10 @@ subroutine calc_rsrd_adjusted( &
     real, dimension(nvals), intent(in) :: elev, xlng, ylat, slope, &
                                           aspect, delta
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     integer, dimension(4) :: zkt = (/ 767, 768, 770, 773/)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     !> Output variables.
     !*  rsrd_adjusted, rlds_adjusted, temp_adjusted, pres_adjusted, humd_adjusted: Adjusted incoming shortwave radiation for slope and aspect. [W m-2].
     !*  Adjusted air temperature. [K],  Adjusted barometric pressure. [Pa] & Adjusted specific humidity. [kg kg-1] for elevation difference.
@@ -87,7 +91,7 @@ subroutine calc_rsrd_adjusted( &
         Czen, ACzen, oam, diff, &
         Iterr, cosxs0, cosxsL, Idir, Idiff, Sum_Idir, Sum_Diff, &
         Sum_Flatd, Sum_Flatf, Qdirect, Qdiffuse, Qflat, &
-        Tnew, Told, esnew, esold, eaold, eanew, rhold
+        Tnew, Told, esold, esnew, eaold, eanew, rhold
 
     !> Local variables.
     integer kk
@@ -123,6 +127,11 @@ subroutine calc_rsrd_adjusted( &
     elsewhere
         Hr_Ang = DEGtoRAD*(SH - 180.0)
     end where
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     write(9189,*)Hr_Ang(zkt)
+!     write(9189,'(1512(2x,f10.4))')Hr_Ang
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !> Time-stepping (for integral).
     MINS_int = NINT(24.0*60.0/REAL(CalcFreq))
@@ -177,9 +186,12 @@ subroutine calc_rsrd_adjusted( &
         rsrd_adjusted = 0.0
     end where
 
-    rlds_adjusted = rlds + (delta*(-2.9)/100.0)                         ! change 2.9 W/m^2 / 100 m is lapse rate (Marty et al. 2002) and should be moved into MESH run file for calibration.
+!!!!!!!! Other climate variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    temp_adjusted = temp + (delta*(-6.0)/1000.0)                        ! change 6.0 K/km is lapse rate (Bernier et al. 2011) and should be moved into MESH run file for calibration.
+    temp_adjusted = temp + (delta*(-6.0)/1000.0)                        !* Change 6.0 K/km is lapse rate (Bernier et al. 2011) and should be moved into MESH run file for calibration.
+
+    rlds_adjusted = rlds - (delta*2.9/100.0)                            !* Change 2.9 or 2.8 W/m^2 / 100 m is lapse rate (Marty et al. 2002) and shall be moved into MESH run file for calibration.
+!   rlds_adjusted = rlds*((temp_adjusted/temp)**4)                      !* Based on Temperature adjustment.
 
     pres_adjusted = pres*exp(-(delta*GCons)/(RCons*temp_adjusted))
 
@@ -188,23 +200,57 @@ subroutine calc_rsrd_adjusted( &
 
     eaold = humd*pres/(0.378*humd + 0.622)
 
-    where (Told > 0.0)
-        esold = 610.78*exp(17.27*Told / (Told + 237.3))                 ! Monteith and Unsworth (2008) provide Tetens' formula for temperatures above 0 ?C
+    where (Told < 0.0)
+        esold = 611.0*exp(21.874*Told / (Told + 265.5))                ! Used from CLASS V3.6 Mannual, page 79
     elsewhere
-        esold = 610.78*exp(21.875*Told / (Told + 265.5))                ! Murray (1967) for temperature less than or equal to zero
+        esold = 611.0*exp(17.269*Told / (Told + 237.3))                ! Used from CLASS V3.6 Mannual, page 79
     end where
 
     rhold = 100.0*eaold / esold
 
-    where (Tnew > 0.0)
-        esnew = 610.78*exp(17.27*Tnew / (Tnew + 237.3))
+    where (Tnew < 0.0)
+        esnew = 611.0*exp(21.874*Tnew / (Tnew + 265.5))                ! Used from CLASS V3.6 Mannual, page 79
     elsewhere
-        esnew = 610.78*exp(21.875*Tnew / (Tnew + 265.5))
+        esnew = 611.0*exp(17.269*Tnew / (Tnew + 237.3))                ! Used from CLASS V3.6 Mannual, page 79
     end where
 
     eanew = rhold*esnew / 100.0
 
     humd_adjusted = 0.622*eanew/(pres_adjusted - 0.378*eanew)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! added for check !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!         write(9190,*)elev(zkt)
+!         write(9191,*)aspect(zkt)
+!         write(9192,*)delta(zkt)
+!         write(9193,*)slope(zkt)
+!         write(9194,*)ylat(zkt)
+!         write(9195,*)xlng(zkt)
+
+!         write(9200,*)rsrd_adjusted(zkt)
+!         write(9201,*)rlds_adjusted(zkt)
+!         write(9202,*)temp_adjusted(zkt)
+!         write(9203,*)pres_adjusted(zkt)
+!         write(9204,*)humd_adjusted(zkt)
+!         write(9205,*)wind_adjusted(zkt)
+!         write(9206,*)rain_adjusted(zkt)
+!         write(9207,*)temp(zkt)
+!         write(9208,*)pres(zkt)
+!         write(9209,*)humd(zkt)
+!         write(9300,*)rlds(zkt)
+
+!         write(9207,*)now_month
+!         write(9208,*)tlapse(now_month)
+
+!         write(9191,'(332(2x,f10.4))')rsrd_adjusted
+!         write(9192,'(332(2x,f10.4))')elev
+!         write(9193,'(332(2x,f10.4))')aspect
+!         write(9194,'(332(2x,f10.4))')slope
+!         write(9195,'(332(2x,f10.4))')ylat
+!         write(9196,'(332(2x,f10.4))')xlng
+!         write(9197,'(332(2x,f10.4))')temp_adjusted
+!         write(9198,'(332(2x,f10.4))')pres_adjusted
+!         write(9199,'(332(2x,f10.4))')humd_adjusted
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     return
 
