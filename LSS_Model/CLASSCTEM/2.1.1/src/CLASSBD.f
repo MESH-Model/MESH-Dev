@@ -207,7 +207,7 @@ C     1       /  0.57,       2.24,       8.0,        2.5,        0.25   /
 C
       DATA ZORAT    /1.0,1.0,1.0,1.0/
       DATA CANEXT   /-0.5,-1.5,-0.8,-0.8/
-      DATA XLEAF    /0.0247,0.0204,0.0456,0.0456/
+      DATA XLEAF    /0.0843,0.0408,0.0912,0.0912/ !Changed by Stefan for Bug fix (Numbers recommended by P.Bartlett)
       DATA THPORG   /0.93,0.88,0.83/
       DATA THRORG   /0.275,0.620,0.705/
       DATA THMORG   /0.04,0.15,0.22/
