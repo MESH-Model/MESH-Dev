@@ -87,7 +87,7 @@ OBJECTS+=	forcepert_types.o\
 			file_variables.o \
 			random_fields_nr_ran2.o\
 			random_fields2.o \
-			land_force_perturb.o
+			land_force_perturb.o mesh_perturb.o
 
 #WF_ROUTE
 OBJECTS+=	WF_ROUTE_config.o WF_ROUTE.o WF_ROUTE_module.o
