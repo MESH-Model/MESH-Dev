@@ -1,6 +1,6 @@
-program MESH_Assimilate
+program RUNMESH
 
-!>       MESH_Assimilate
+!>       MESH DRIVER
 !>
 !>       NOV 2015 - DGP. Moved incrementing the counters to
 !>                  after routing has finished. This impacts when daily
@@ -30,18 +30,18 @@ program MESH_Assimilate
 !>                - INCORPORATE OPTIONAL COUPLING OF CLASS WITH CTEM
 !>                - MOVE SOME INITIALIZATION AND SCATTER OF CLASS
 !>                  DIAGNOSTIC VARIABLES IN TO MESH_DRIVER
-!>       JUN 2010 - F. SEGLENIEKS.
-!>                - ADDED CODE TO HAVE MESH ONLY RUN ON BASINS LISTED IN
+!>       JUN 2010 - F. SEGLENIEKS. 
+!>                - ADDED CODE TO HAVE MESH ONLY RUN ON BASINS LISTED IN 
 !>                  THE STREAMFLOW FILE, CALLED THE SUBBASIN FEATURE
-!>       JUN 2010 - M.A.MEKONNEN/B.DAVIDSON/M.MacDONALD.
-!>                - BUG FIX FOR READING FORCING DATA IN CSV FORMAT
+!>       JUN 2010 - M.A.MEKONNEN/B.DAVIDSON/M.MacDONALD. 
+!>                - BUG FIX FOR READING FORCING DATA IN CSV FORMAT 
 !>                  WITH 1 HOUR INTERVAL
 !>                - READING FORCING DATA WITH VARIOUS TIME STEPS
 !>                - FORCING DATA INTERPOLATION TO 30 MINUTE INTERVALS
 !>                  (CLASS MODEL TIME STEP)
 !>                - PRE-EMPTION OPTION FOR AUTOCALIBRATION
 !>                - CHECKING FOR PARAMETER MINIMUM AND MAXIMUM LIMITS
-!>                - PATH SPECIFICATION THAT WORKS FOR BOTH WINDOWS AND
+!>                - PATH SPECIFICATION THAT WORKS FOR BOTH WINDOWS AND 
 !>                  UNIX SYSTEMS
 !>
 !>       AUG 2009 - B.DAVISON. CHANGES TO UPDATE TO SA_MESH 1.3
@@ -77,19 +77,19 @@ program MESH_Assimilate
 !>       THE PRODUCT OF THE FIRST TWO DIMENSION ELEMENTS IN THE
 !>       "ROW" VARIABLES.
 
-!> Note, the internal comments are to be organised with
+!> Note, the internal comments are to be organised with 
 !> the following symbols:
-!>  -the symbols "!>" at the beginning of the line means that the
+!>  -the symbols "!>" at the beginning of the line means that the 
 !>  following comments are descriptive documentation.
 !>  -the symbols "!*" means that the following comment is a variable
 !>  definition.
-!>  -the symbols "!+" means that the following comment contains code
+!>  -the symbols "!+" means that the following comment contains code 
 !>  that may be useful in the future and should not be deleted.
 !>  -the symbols "!-" means that the following comment contains code
 !>  that is basically garbage, and can be deleted safely at any time.
 !>  -the symbol "!" or any number of exclamation marks can be used
 !>  by the developers for various temporary code commenting.
-!>  -the symbol "!todo" refers to places where the developers would
+!>  -the symbol "!todo" refers to places where the developers would 
 !>  like to work on.
 !>  -the symbol "!futuredo" refers to places where the developers
 !>  would like to work on with a low priority.
@@ -226,7 +226,6 @@ program MESH_Assimilate
 !so, make them local variables inside each read subroutine.
     RELEASE = '1.4'
 
-    !> Launching the program.
     call cpu_time(startprog)
 
     !> Initialize MPI.
@@ -302,20 +301,12 @@ program MESH_Assimilate
         end if
         call Init_fls(fls, trim(adjustl(fl_listMesh)))
     else
-
-        !> File handled for variable in/out names
-        !> At the moment only class, hydro parameters and some outputs
 !todo: Call this anyway, make loading values from file an alternate subroutine of module_files
         call Init_fls(fls)
     end if !(narg > 0) then
 
 !-    call counter_init()
 
-    !> Reading the initial inputs
-    !> Here mostly the shd file is read and all parameters related to it are
-    !> assigned. Soil layers and the other state variables are initialized.
-    !> The starting of forcing data (cm%start_date) is read in READ_PARAMETERS_CLASS
-    !> inside read_intial_inputs
     call READ_INITIAL_INPUTS(shd, &
                              ts, cm, &
                              fls)
@@ -969,7 +960,6 @@ program MESH_Assimilate
 !230     continue
 !+    end if !(RESUMEFLAG == 2) then
 
-    !> Initialize accumulation variables.
     if (ipid == 0) then
 
         !> Initialize accumulation variables.
@@ -1070,9 +1060,10 @@ program MESH_Assimilate
     !> *********************************************************************
 
     !> MAM - Initialize ENDDATE and ENDDATA.
-    !> Here MESH runs based on time step (30 min) until ENDDATE or ENDDATA becomes .TRUE..
     ENDDATE = .false.
     ENDDATA = .false.
+
+    !> Added by Ala Bahrami.
     RUNSTATE = 0
 
     do while (.not. ENDDATE .and. .not. ENDDATA)
@@ -1096,18 +1087,6 @@ program MESH_Assimilate
 
         !> Load or update climate forcing input.
         if (ro%RUNCLIM) then
-            !> Three main functions in the climate_forcing_module_io:
-            !>   open_data: Open the climate forcing input file
-            !>   update_data: load data for the climate forcing variable from file
-            !>   load_data: Load data for the climate forcing variable.
-            !> The order of reading forcing data are as follow:
-            !>   cm%dat(ck%FB)%fname = 'basin_shortwave'
-            !>   cm%dat(ck%FI)%fname = 'basin_longwave'
-            !>   cm%dat(ck%RT)%fname = 'basin_rain'
-            !>   cm%dat(ck%TT)%fname = 'basin_temperature'
-            !>   cm%dat(ck%UV)%fname = 'basin_wind'
-            !>   cm%dat(ck%P0)%fname = 'basin_pres'
-            !>   cm%dat(ck%HU)%fname = 'basin_humidity'
             ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
             if (ENDDATA) then
                 RUNSTATE = 1

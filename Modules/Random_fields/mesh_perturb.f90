@@ -103,104 +103,104 @@ module mesh_perturb
 
         integer iun, j, i
 
-    !> Added by Ala Bahrami.
-    !> Reading the random_fields input file.
-    iun = 960
-    open(iun, file = 'Inputs/Assimilation_parameters_perturbation.ini')
-    read(iun, *) dx
-    read(iun, *) dy
-    read(iun, *) N_x
-    read(iun, *) N_y
-    read(iun, *) lambda_x
-    read(iun, *) lambda_y
-    read(iun, *) variance
-    read(iun, *) RSEEDCONST
-    read(iun, *) NRANDSEED2
-    read(iun, *) N_forcepert
-    read(iun, *) N_ens
-    read(iun, *) dtstep
-    read(iun, *) tcorr
-    read(iun, *) GR_er
-    read(iun, *) RESUMEFLAG_per
-    read(iun, *) SAVERESUMEFLAG_per
-    read(iun, *) month_n
-    close(iun)
+        !> Added by Ala Bahrami.
+        !> Reading the random_fields input file.
+        iun = 960
+        open(iun, file = 'Inputs/Assimilation_parameters_perturbation.ini')
+        read(iun, *) dx
+        read(iun, *) dy
+        read(iun, *) N_x
+        read(iun, *) N_y
+        read(iun, *) lambda_x
+        read(iun, *) lambda_y
+        read(iun, *) variance
+        read(iun, *) RSEEDCONST
+        read(iun, *) NRANDSEED2
+        read(iun, *) N_forcepert
+        read(iun, *) N_ens
+        read(iun, *) dtstep
+        read(iun, *) tcorr
+        read(iun, *) GR_er
+        read(iun, *) RESUMEFLAG_per
+        read(iun, *) SAVERESUMEFLAG_per
+        read(iun, *) month_n
+        close(iun)
 
-    !> Added by Ala Bahrami.
-    if (RUN_DA) then
+        !> Added by Ala Bahrami.
+        if (RUN_DA) then
 
-        !> Reading perturbed GRACE observations.
-        if (allocated(GR_Pert)) deallocate(GR_Pert)
-        allocate(GR_Pert(N_ens, month_n))
-        open(10, file = 'Inputs/Assimilation_GRACETWS_perturbed.dat')
-        do i = 1, N_ens
-            read(10, *) (GR_Pert(i, j), j = 1, month_n)
-        end do
-        close (10)
+            !> Reading perturbed GRACE observations.
+            if (allocated(GR_Pert)) deallocate(GR_Pert)
+            allocate(GR_Pert(N_ens, month_n))
+            open(10, file = 'Inputs/Assimilation_GRACETWS_perturbed.dat')
+            do i = 1, N_ens
+                read(10, *) (GR_Pert(i, j), j = 1, month_n)
+            end do
+            close (10)
 
-        !> Reading Measurement Operator.
-        if (allocated(H)) deallocate(H)
-        if (allocated(HT)) deallocate(HT)
-        allocate(H(1, 13*10173))
-        allocate(HT(13*10173, 1))
-        open(10, file = 'Inputs/Assimilation_Measurement_Operator.ini')
-        read(10, *) (H(1, j), j = 1 , 13*10173)
-        close(10)
+            !> Reading Measurement Operator.
+            if (allocated(H)) deallocate(H)
+            if (allocated(HT)) deallocate(HT)
+            allocate(H(1, 13*10173))
+            allocate(HT(13*10173, 1))
+            open(10, file = 'Inputs/Assimilation_Measurement_Operator.ini')
+            read(10, *) (H(1, j), j = 1 , 13*10173)
+            close(10)
 
-        !> HT. Fortran cannot transpose of array of rank 1.
-        HT = reshape(H, shape = (/13*10173 ,1/))
+            !> HT. Fortran cannot transpose of array of rank 1.
+            HT = reshape(H, shape = (/13*10173 ,1/))
 
-        !> Allocate model state matrix.
-        if (allocated(X)) deallocate(X)
-        allocate(X(13*10173, N_ens))
+            !> Allocate model state matrix.
+            if (allocated(X)) deallocate(X)
+            allocate(X(13*10173, N_ens))
 
-        !> Allocate model predicted TWS variables and analysis increments.
-        if(allocated(HX)) deallocate(HX)
-        allocate(HX(1, N_ens))
-        if(allocated(D)) deallocate(D)
-        allocate(D(1, N_ens))
+            !> Allocate model predicted TWS variables and analysis increments.
+            if(allocated(HX)) deallocate(HX)
+            allocate(HX(1, N_ens))
+            if(allocated(D)) deallocate(D)
+            allocate(D(1, N_ens))
 
-        !> Allocate the analysis increment.
-        if (allocated(AI)) deallocate(AI)
-        allocate(AI(13*10173, N_ens))
-        if(allocated(stg_accum)) deallocate(stg_accum)
-        allocate(stg_accum(1, N_ens))
+            !> Allocate the analysis increment.
+            if (allocated(AI)) deallocate(AI)
+            allocate(AI(13*10173, N_ens))
+            if(allocated(stg_accum)) deallocate(stg_accum)
+            allocate(stg_accum(1, N_ens))
 
-        !> Initialize.
-        stg_accum(1, :) = 0
+            !> Initialize.
+            stg_accum(1, :) = 0
 
-    end if
+        end if
 
-    !> Added by Ala Bahrami.
-    !> Initialize random_fields variables.
-    call assemble_forcepert_param(N_x, N_y, N_forcepert, forcepert_param)
+        !> Added by Ala Bahrami.
+        !> Initialize random_fields variables.
+        call assemble_forcepert_param(N_x, N_y, N_forcepert, forcepert_param)
 
-    !> Deallocate the random_fields variables if they have been allocated before.
-    if (allocated(ens_id)) deallocate(ens_id)
-    if (allocated(Forcepert_rseed)) deallocate(Forcepert_rseed)
-    if (allocated(rseed_store)) deallocate(rseed_store)
-    if (allocated(Forcepert_ntrmdt)) deallocate(Forcepert_ntrmdt)
-    if (allocated(ntrmdt_store)) deallocate(ntrmdt_store)
-    if (allocated(Forcepert)) deallocate(Forcepert)
+        !> Deallocate the random_fields variables if they have been allocated before.
+        if (allocated(ens_id)) deallocate(ens_id)
+        if (allocated(Forcepert_rseed)) deallocate(Forcepert_rseed)
+        if (allocated(rseed_store)) deallocate(rseed_store)
+        if (allocated(Forcepert_ntrmdt)) deallocate(Forcepert_ntrmdt)
+        if (allocated(ntrmdt_store)) deallocate(ntrmdt_store)
+        if (allocated(Forcepert)) deallocate(Forcepert)
 
-    !> Allocate Forcepert_ntrmdt_store if SAVERESUMEFLAG_per is active.
-    if (SAVERESUMEFLAG_per == 1 .or. RESUMEFLAG_per == 1) then
-        allocate(Forcepert_ntrmdt_store(N_forcepert, N_x*N_y*N_ens))
-        allocate(Forcepert_rseed_store(NRANDSEED2*N_ens, 1))
-    end if
+        !> Allocate Forcepert_ntrmdt_store if SAVERESUMEFLAG_per is active.
+        if (SAVERESUMEFLAG_per == 1 .or. RESUMEFLAG_per == 1) then
+            allocate(Forcepert_ntrmdt_store(N_forcepert, N_x*N_y*N_ens))
+            allocate(Forcepert_rseed_store(NRANDSEED2*N_ens, 1))
+        end if
 
-    !> Allocate the the random_fields variables.
-    allocate(ens_id(N_ens))
-    allocate(Forcepert_rseed(NRANDSEED2, N_ens))
-    allocate(rseed_store(NRANDSEED2, N_ens))
-    allocate(Forcepert_ntrmdt(N_forcepert, N_x, N_y, N_ens))
-    allocate(ntrmdt_store(N_forcepert, N_x, N_y, N_ens))
-    allocate(Forcepert(N_forcepert, N_x, N_y, N_ens))
+        !> Allocate the the random_fields variables.
+        allocate(ens_id(N_ens))
+        allocate(Forcepert_rseed(NRANDSEED2, N_ens))
+        allocate(rseed_store(NRANDSEED2, N_ens))
+        allocate(Forcepert_ntrmdt(N_forcepert, N_x, N_y, N_ens))
+        allocate(ntrmdt_store(N_forcepert, N_x, N_y, N_ens))
+        allocate(Forcepert(N_forcepert, N_x, N_y, N_ens))
 
-    it_counter = 1
+        it_counter = 1
 !Note: Don't forget to bring it back to its original value when the code is crashed.
-    month_counter = 1
-    days_n = 0
+        month_counter = 1
+        days_n = 0
 
     end subroutine
 
@@ -208,72 +208,72 @@ module mesh_perturb
 
         integer iun, n
 
-    !> Added by Ala Bahrami.
-    select case (RESUMEFLAG_per)
+        !> Added by Ala Bahrami.
+        select case (RESUMEFLAG_per)
 
-        !> RESUMEFLAG_per 0
-        case (0)
-            write(*, *) ''
-            write(*, *) 'Initializing Forcing Perturbations'
-            write(*, *) ''
+            !> RESUMEFLAG_per 0
+            case (0)
+                write(*, *) ''
+                write(*, *) 'Initializing Forcing Perturbations'
+                write(*, *) ''
 
-            !> Initialize.
-            Forcepert_ntrmdt = 0.0
-            Forcepert = 0.0
-            initialize = .true.
-            do n = 1, N_ens
-                ens_id(n) = n
-            end do
+                !> Initialize.
+                Forcepert_ntrmdt = 0.0
+                Forcepert = 0.0
+                initialize = .true.
+                do n = 1, N_ens
+                    ens_id(n) = n
+                end do
 
-            !> Generate random fields for initialization.
-            call get_forcepert( &
-                N_forcepert, N_ens, N_x, N_y, &
-                dx, dy, dtstep, &
-                initialize, &
-                forcepert_param, &
-                ens_id, &
-                Forcepert_rseed, &
-                Forcepert_ntrmdt, &
-                Forcepert)
+                !> Generate random fields for initialization.
+                call get_forcepert( &
+                    N_forcepert, N_ens, N_x, N_y, &
+                    dx, dy, dtstep, &
+                    initialize, &
+                    forcepert_param, &
+                    ens_id, &
+                    Forcepert_rseed, &
+                    Forcepert_ntrmdt, &
+                    Forcepert)
 
-        !> RESUMEFLAG_per 1
-        case (1)
-            write(*, *) ''
-            write(*, *) 'Reading Forcing Perturbations resume files'
-            write(*, *) ''
+            !> RESUMEFLAG_per 1
+            case (1)
+                write(*, *) ''
+                write(*, *) 'Reading Forcing Perturbations resume files'
+                write(*, *) ''
 
-            !> Initialize.
-            do n = 1, N_ens
-                ens_id(n) = n
-            end do
+                !> Initialize.
+                do n = 1, N_ens
+                    ens_id(n) = n
+                end do
 
-            !> Read and assign Forcepert_ntrmdt_store.
-            iun = 963
-            open(iun, file = 'Inputs/Forcepert_ntrmdt.seq', action = 'read', form = 'unformatted', access = 'sequential')
-            read(iun) Forcepert_ntrmdt_store(1, :)
-            read(iun) Forcepert_ntrmdt_store(2, :)
-            read(iun) Forcepert_ntrmdt_store(3, :)
+                !> Read and assign Forcepert_ntrmdt_store.
+                iun = 963
+                open(iun, file = 'Inputs/Forcepert_ntrmdt.seq', action = 'read', form = 'unformatted', access = 'sequential')
+                read(iun) Forcepert_ntrmdt_store(1, :)
+                read(iun) Forcepert_ntrmdt_store(2, :)
+                read(iun) Forcepert_ntrmdt_store(3, :)
 !todo: Reading the other field members.
-!+            read(iun) Forcepert_ntrmdt_store(4, :)
-!+            read(iun) Forcepert_ntrmdt_store(5, :)
-!+            read(iun) Forcepert_ntrmdt_store(6, :)
-!+            read(iun) Forcepert_ntrmdt_store(7, :)
-!+            read(iun) Forcepert_ntrmdt_store(8, :)
-            close(iun)
-            Forcepert_ntrmdt = reshape(Forcepert_ntrmdt_store, (/N_forcepert, N_x, N_y, N_ens/))
+!+                read(iun) Forcepert_ntrmdt_store(4, :)
+!+                read(iun) Forcepert_ntrmdt_store(5, :)
+!+                read(iun) Forcepert_ntrmdt_store(6, :)
+!+                read(iun) Forcepert_ntrmdt_store(7, :)
+!+                read(iun) Forcepert_ntrmdt_store(8, :)
+                close(iun)
+                Forcepert_ntrmdt = reshape(Forcepert_ntrmdt_store, (/N_forcepert, N_x, N_y, N_ens/))
 
-            !> Read and assign Forcepert_rseed store.
-            iun = 963
-            open(iun, file = 'Inputs/Forcepert_rseed.seq', action = 'read', form = 'unformatted', access = 'sequential')
-            read(iun) Forcepert_rseed_store
-            close(iun)
-            Forcepert_rseed = reshape(Forcepert_rseed_store, (/NRANDSEED2, N_ens/))
+                !> Read and assign Forcepert_rseed store.
+                iun = 963
+                open(iun, file = 'Inputs/Forcepert_rseed.seq', action = 'read', form = 'unformatted', access = 'sequential')
+                read(iun) Forcepert_rseed_store
+                close(iun)
+                Forcepert_rseed = reshape(Forcepert_rseed_store, (/NRANDSEED2, N_ens/))
 
-    end select
+        end select
 
-    !> Store random field variable to be used in ensemble loop iteration.
-    rseed_store = Forcepert_rseed
-    ntrmdt_store = Forcepert_ntrmdt
+        !> Store random field variable to be used in ensemble loop iteration.
+        rseed_store = Forcepert_rseed
+        ntrmdt_store = Forcepert_ntrmdt
 
     end subroutine
 
@@ -283,30 +283,30 @@ module mesh_perturb
         type(ShedGridParams) shd
         type(CLIM_INFO) cm
 
-    !> Added by Ala Bahrami.
-    !> Starting main ensemble run.
-    if (RUN_DA) then
-        if (it_counter == 1) then
-            write(*, *) ''
-            write(*, *) 'The Data Assimilation (Forecast) Mode is Active'
-            write(*, *) ''
-        else if (it_counter == 2) then
-            write(*, *) ''
-            write(*, *) 'The Data Assimilation (Analysis) Mode is Active'
-            write(*, *) ''
+        !> Added by Ala Bahrami.
+        !> Starting main ensemble run.
+        if (RUN_DA) then
+            if (it_counter == 1) then
+                write(*, *) ''
+                write(*, *) 'The Data Assimilation (Forecast) Mode is Active'
+                write(*, *) ''
+            else if (it_counter == 2) then
+                write(*, *) ''
+                write(*, *) 'The Data Assimilation (Analysis) Mode is Active'
+                write(*, *) ''
+            end if
+        else
+            if (it_counter == 1) then
+                write(*, *) ''
+                write(*, *) 'The Open_Loop (Forecast) Mode is Active '
+                write(*, *) ''
+            end if
         end if
-    else
-        if (it_counter == 1) then
-            write(*, *) ''
-            write(*, *) 'The Open_Loop (Forecast) Mode is Active '
-            write(*, *) ''
-        end if
-    end if
 
-    !> Added by Ala Bahrami.
-    !> Starting main ensemble loop.
+        !> Added by Ala Bahrami.
+        !> Starting main ensemble loop.
 !todo: Check the condition of the program for the second run for each ensemble to update model states
-    tt = 1
+        tt = 1
 
     end subroutine
 
@@ -322,9 +322,9 @@ module mesh_perturb
         NML = shd%lc%NML
         NA = shd%NA
 
-    write(*, '(a)') ''
-    write(*, "('Ensemble ', i5, ' of ', i5, ' (Pass ', i5, ')')") tt, N_ens, it_counter
-    write(*, '(a)') ''
+        write(*, '(a)') ''
+        write(*, "('Ensemble ', i5, ' of ', i5, ' (Pass ', i5, ')')") tt, N_ens, it_counter
+        write(*, '(a)') ''
 
         !> Added by Ala Bahrami.
         !> Changing location of the input resume file.
@@ -335,52 +335,50 @@ module mesh_perturb
             fls%fl(mfk%f883)%fn = 'resume_ens/' // 'analysis/' // 'ens' // trim(adjustl(strens)) // '/' // fls%fl(mfk%f883)%fn
         end if
 
-    !> Added by Ala Bahrami.
-    !> Updating the time counter starting date after one month simulation.
-    if (month_counter > 1) then
-        ic%start%jday = ic%start%jday + days_n
-        if (ic%start%jday == 366 .or. ic%start%jday == 367) then
-            ic%start%jday = 1
-            ic%start%year = ic%start%year + 1
-            days_n = 0
+        !> Added by Ala Bahrami.
+        !> Updating the time counter starting date after one month simulation.
+        if (month_counter > 1) then
+            ic%start%jday = ic%start%jday + days_n
+            if (ic%start%jday == 366 .or. ic%start%jday == 367) then
+                ic%start%jday = 1
+                ic%start%year = ic%start%year + 1
+                days_n = 0
+            end if
         end if
-    end if
 
-    !> Added by Ala Bahrami.
-    !> Assigning variable related to perturbation fields.
-    initialize = .false.
-    n2 = 1
+        !> Added by Ala Bahrami.
+        !> Assigning variable related to perturbation fields.
+        initialize = .false.
+        n2 = 1
 
-!    NML = shd%lc%NML
+        if (allocated(Forcepert_vect)) deallocate(Forcepert_vect)
+        if (allocated(precip_pert)) deallocate(precip_pert)
+        if (allocated(sw_pert)) deallocate(sw_pert)
+        if (allocated(lw_pert)) deallocate(lw_pert)
+        if (allocated(swe_pert)) deallocate(swe_pert)
+        if (allocated(thlq_pert)) deallocate(thlq_pert)
+        allocate(Forcepert_vect(N_forcepert, NA, N_ens))
+        allocate(precip_pert(NML, 1))
+        allocate(sw_pert(NML, 1))
+        allocate(lw_pert(NML, 1))
+        allocate(swe_pert(NML, 1))
+        allocate(thlq_pert(NML, 4))
 
-    if (allocated(Forcepert_vect)) deallocate(Forcepert_vect)
-    if (allocated(precip_pert)) deallocate(precip_pert)
-    if (allocated(sw_pert)) deallocate(sw_pert)
-    if (allocated(lw_pert)) deallocate(lw_pert)
-    if (allocated(swe_pert)) deallocate(swe_pert)
-    if (allocated(thlq_pert)) deallocate(thlq_pert)
-    allocate(Forcepert_vect(N_forcepert, NA, N_ens))
-    allocate(precip_pert(NML, 1))
-    allocate(sw_pert(NML, 1))
-    allocate(lw_pert(NML, 1))
-    allocate(swe_pert(NML, 1))
-    allocate(thlq_pert(NML, 4))
+        if (RUN_DA) then
 
-    if (RUN_DA) then
+            !> Variable to switch the program in forecast or assimilation mode.
+            !> Note: If the program is in the assimilation mode this variable should be changed!
+            if (it_counter >= 2) then
+                it_counter = 3
 
-        !> Variable to switch the program in forecast or assimilation mode.
-        !> Note: If the program is in the assimilation mode this variable should be changed!
-        if (it_counter >= 2) then
-            it_counter = 3
-
-            !> Reset the accumulated storage variable.
-            stg_accum = 0
-        else if (it_counter < 2) then
-            assim_mode = .false.
+                !> Reset the accumulated storage variable.
+                stg_accum = 0
+            else if (it_counter < 2) then
+                assim_mode = .false.
+            end if
         end if
-    end if
 
-    N_t = 0
+        N_t = 0
 
     end subroutine
 
@@ -471,9 +469,9 @@ module mesh_perturb
 
             !> Update the model states in the assimilation mode.
             if (assim_mode .and. ic%ts_daily == 48) then
-                !write(*, *) ''
-                !write(*, *) 'Model states are reinitialized in this stage'
-                !write(*, *) ''
+!                write(*, *) ''
+!                write(*, *) 'Model states are reinitialized in this stage'
+!                write(*, *) ''
                 stas%cnpy%sncan = stas%cnpy%sncan + AI(1:NML, tt)
                 stas%cnpy%rcan = stas%cnpy%rcan + AI((1*NML + 1):2*NML, tt)
 
@@ -640,66 +638,66 @@ module mesh_perturb
 
         NML = shd%lc%NML
 
-            !> Added by Ala Bahrami.
-            !> Calculate statistics of the run.
-            if (RUN_DA) then
+        !> Added by Ala Bahrami.
+        !> Calculate statistics of the run.
+        if (RUN_DA) then
 
-                !> Accumulate the daily storage value.
+            !> Accumulate the daily storage value.
 !todo: Check why the output storage does not correspond with saved CSV file.
-                if (ic%ts_daily == 48 .and. .not. assim_mode) then
-                    !write(*, *) ''
-                    !write(*, *) 'ic', ic%now%jday, ic%now%hour, ic%now%mins
-                    !write(*, *) ''
-                    stg_accum(1, tt) =  stg_accum(1, tt) + sum(wb_grd%stg)/wb_grd%basin_area
-                    !write(*, *) ''
-                    !write(*, *) 'stg_accum(1,tt)', stg_accum(1, tt)
-                    !write(*, *) ''
-                end if
-
-                !> Calculate and save the ensemble innovation vector if the next day will be a new month.
-                if (ic%ts_daily == 48 .and. .not. assim_mode) then
-                    call Julian2MonthDay((ic%now%jday + 1), ic%now%year, nmth, ndy)
-                    if (ndy == 1) then
-                        call Julian2MonthDay(ic%now%jday, ic%now%year, nmth, ndy)
-                        HX(1, tt) = stg_accum(1, tt)/ndy
-                        !write(*, *) ''
-                        !write(*, *) 'HX(1,tt)', HX(1, tt)
-                        !write(*, *) ''
-                        D(1, tt) = GR_Pert(tt, month_counter) - HX(1, tt)
-                        open(11, file = 'Outputs/Innovation_20_Monthly_new.ini')
-                        write(11, *) D(1, tt)
-                        close(11)
-                    end if
-                end if
+            if (ic%ts_daily == 48 .and. .not. assim_mode) then
+!                write(*, *) ''
+!                write(*, *) 'ic', ic%now%jday, ic%now%hour, ic%now%mins
+!                write(*, *) ''
+                stg_accum(1, tt) =  stg_accum(1, tt) + sum(wb_grd%stg)/wb_grd%basin_area
+!                write(*, *) ''
+!                write(*, *) 'stg_accum(1,tt)', stg_accum(1, tt)
+!                write(*, *) ''
             end if
 
-            !> Added by Ala Bahrami.
-            !> Calculate the analysis increment and activate the assimilation (analysis) mode.
-            if (tt == N_ens .and. it_counter == 2) then
-
-                !> Activate the assimilation mode if the next day will be a new month.
+            !> Calculate and save the ensemble innovation vector if the next day will be a new month.
+            if (ic%ts_daily == 48 .and. .not. assim_mode) then
                 call Julian2MonthDay((ic%now%jday + 1), ic%now%year, nmth, ndy)
-                if (ndy == 1 .and. ic%ts_daily == 48) then
-
-                    !> Change to assimilation mode.
-                    assim_mode = .true.
-
-                    !> Calculate the analysis increment.
-                    write(*, *) ''
-                    write(*, *) 'Calculating Analysis Increment'
-                    write(*, *) ''
-                    AI = matmul(KG, D)
-
-                    !> Calculate and write the fraction of analysis increment for each day of the month.
+                if (ndy == 1) then
                     call Julian2MonthDay(ic%now%jday, ic%now%year, nmth, ndy)
-                    AI = AI/ndy
-                    open(13, file = 'Outputs/AI_20_new.ini')
-                    do i = 1, 13*NML
-                        write(13, *) (AI(i, j), j = 1, N_ens)
-                    end do
-                    close(13)
+                    HX(1, tt) = stg_accum(1, tt)/ndy
+!                    write(*, *) ''
+!                    write(*, *) 'HX(1,tt)', HX(1, tt)
+!                    write(*, *) ''
+                    D(1, tt) = GR_Pert(tt, month_counter) - HX(1, tt)
+                    open(11, file = 'Outputs/Innovation_20_Monthly_new.ini')
+                    write(11, *) D(1, tt)
+                    close(11)
                 end if
             end if
+        end if
+
+        !> Added by Ala Bahrami.
+        !> Calculate the analysis increment and activate the assimilation (analysis) mode.
+        if (tt == N_ens .and. it_counter == 2) then
+
+            !> Activate the assimilation mode if the next day will be a new month.
+            call Julian2MonthDay((ic%now%jday + 1), ic%now%year, nmth, ndy)
+            if (ndy == 1 .and. ic%ts_daily == 48) then
+
+                !> Change to assimilation mode.
+                assim_mode = .true.
+
+                !> Calculate the analysis increment.
+                write(*, *) ''
+                write(*, *) 'Calculating Analysis Increment'
+                write(*, *) ''
+                AI = matmul(KG, D)
+
+                !> Calculate and write the fraction of analysis increment for each day of the month.
+                call Julian2MonthDay(ic%now%jday, ic%now%year, nmth, ndy)
+                AI = AI/ndy
+                open(13, file = 'Outputs/AI_20_new.ini')
+                do i = 1, 13*NML
+                    write(13, *) (AI(i, j), j = 1, N_ens)
+                end do
+                close(13)
+            end if
+        end if
 
     end subroutine
 
@@ -711,50 +709,50 @@ module mesh_perturb
 
         integer iun
 
-    if ((assim_mode .or. .not. RUN_DA) .and. tt .eq. N_ens) then
+        if ((assim_mode .or. .not. RUN_DA) .and. tt .eq. N_ens) then
 
-        !> Update counters.
-        if (RUN_DA) then
-            it_counter = 1
-            assim_mode = .false.
-        end if
-        month_counter = month_counter + 1
+            !> Update counters.
+            if (RUN_DA) then
+                it_counter = 1
+                assim_mode = .false.
+            end if
+            month_counter = month_counter + 1
 
-        !> Extract the number of days of the previous month to update the start date.
-        call Julian2MonthDay((ic%now%jday - 1), ic%now%year, nmth, ndy)
+            !> Extract the number of days of the previous month to update the start date.
+            call Julian2MonthDay((ic%now%jday - 1), ic%now%year, nmth, ndy)
 
-        !> Accumulate the number of days passed from the beginning of the program.
-        days_n = days_n + ndy
+            !> Accumulate the number of days passed from the beginning of the program.
+            days_n = days_n + ndy
 
-        if (SAVERESUMEFLAG_per == 1) then
+            if (SAVERESUMEFLAG_per == 1) then
 
-            !> Reshape and write Forcepert_ntrmdt.
-            Forcepert_ntrmdt_store = reshape(Forcepert_ntrmdt, (/N_forcepert, N_x*N_y*N_ens/))
-            iun = 963
-            open(iun, file = 'Inputs/Forcepert_ntrmdt.seq', action = 'write', form = 'unformatted', access = 'sequential')
-            write(iun) Forcepert_ntrmdt_store(1, :)
-            write(iun) Forcepert_ntrmdt_store(2, :)
-            write(iun) Forcepert_ntrmdt_store(3, :)
+                !> Reshape and write Forcepert_ntrmdt.
+                Forcepert_ntrmdt_store = reshape(Forcepert_ntrmdt, (/N_forcepert, N_x*N_y*N_ens/))
+                iun = 963
+                open(iun, file = 'Inputs/Forcepert_ntrmdt.seq', action = 'write', form = 'unformatted', access = 'sequential')
+                write(iun) Forcepert_ntrmdt_store(1, :)
+                write(iun) Forcepert_ntrmdt_store(2, :)
+                write(iun) Forcepert_ntrmdt_store(3, :)
 !todo: Writing the other field members.
-!+            write(iun) Forcepert_ntrmdt_store(4, :)
-!+            write(iun) Forcepert_ntrmdt_store(5, :)
-!+            write(iun) Forcepert_ntrmdt_store(6, :)
-!+            write(iun) Forcepert_ntrmdt_store(7, :)
-!+            write(iun) Forcepert_ntrmdt_store(8, :)
-            close(iun)
+!+                write(iun) Forcepert_ntrmdt_store(4, :)
+!+                write(iun) Forcepert_ntrmdt_store(5, :)
+!+                write(iun) Forcepert_ntrmdt_store(6, :)
+!+                write(iun) Forcepert_ntrmdt_store(7, :)
+!+                write(iun) Forcepert_ntrmdt_store(8, :)
+                close(iun)
 
-            !> Reshape and write Forcepert_rseed.
-            Forcepert_rseed_store = reshape(Forcepert_rseed, (/NRANDSEED2*N_ens, 1/))
-            iun = 963
-            open(iun, file = 'Inputs/Forcepert_rseed.seq', action = 'write', form = 'unformatted', access = 'sequential')
-            write(iun) Forcepert_rseed_store
-            close(iun)
-        end if
+                !> Reshape and write Forcepert_rseed.
+                Forcepert_rseed_store = reshape(Forcepert_rseed, (/NRANDSEED2*N_ens, 1/))
+                iun = 963
+                open(iun, file = 'Inputs/Forcepert_rseed.seq', action = 'write', form = 'unformatted', access = 'sequential')
+                write(iun) Forcepert_rseed_store
+                close(iun)
+            end if
 
-        if (.not. RUN_DA) then
-            RESUMEFLAG_per = 1
+            if (.not. RUN_DA) then
+                RESUMEFLAG_per = 1
+            end if
         end if
-    end if
 
     end subroutine
 
