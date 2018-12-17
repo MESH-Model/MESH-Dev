@@ -49,9 +49,9 @@
 
       rewind(iun)
 
-      if (allocated (shd%lc%sl%DELZ)) deallocate (shd%lc%sl%DELZ)
-      if (allocated (shd%lc%sl%ZBOT)) deallocate (shd%lc%sl%ZBOT)
-
+      if (allocated(shd%lc%sl%DELZ)) then
+        deallocate(shd%lc%sl%DELZ, shd%lc%sl%ZBOT)
+      end if
       allocate(shd%lc%sl%DELZ(IGND), shd%lc%sl%ZBOT(IGND))
       if (ro%DIAGNOSEMODE > 0) print 1011
       do i = 1, IGND

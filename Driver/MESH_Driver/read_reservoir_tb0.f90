@@ -1,13 +1,13 @@
 !>
 !> Description:
 !>  Subroutine to read reservoir outlet information from
-!>  MESH_input_reservoir.tb0. Adapted from read_resv_ef.f.
+!>  MESH_input_reservoir.tb0.
 !>
 !> Input:
 !*  shd: Basin shed object, containing information about the grid
 !*      definition read from MESH_drainage_database.r2c.
 !*  iun: Unit of the input file (default: 100).
-!*  fname: Full path to the file (default: './MESH_input_reservoir.tb0').
+!*  fname: Full path to the file (default: 'MESH_input_reservoir.tb0').
 !>
 subroutine read_reservoir_tb0(shd, iun, fname)
 
@@ -15,7 +15,7 @@ subroutine read_reservoir_tb0(shd, iun, fname)
     use mpi_module
     use model_dates
     use sa_mesh_shared_variables
-    use EF_Module
+    use ensim_io
 
     implicit none
 
@@ -24,132 +24,66 @@ subroutine read_reservoir_tb0(shd, iun, fname)
     integer :: iun
     character(len = *) :: fname
 
-    !> EnSim variables.
-    type(ResvParam) :: header
-    type(ResvColumnMetaData) :: colHeader
-    character(len = 10000) in_line, subString
-    character(len = 128) keyword
-    integer KeyLen, wordCount
-    logical foundEndHeader, insideColMetaData
+    !> Local variables.
+    type(ensim_keyword), dimension(:), allocatable :: vkeyword
+    integer nkeyword, ierr
+    logical verbose
 
     !> Local variables.
-    integer NR, l, ierr
+    verbose = (ro%VERBOSEMODE > 0)
 
-    !> Open the file.
-    if (ro%VERBOSEMODE > 0) print 1000, trim(adjustl(fname))
-    open(iun, file = fname, status = 'old', action = 'read', err = 997)
+    !> Open the file and read the header.
+    call open_ensim_file(iun, fname, ierr, verbose)
+    call parse_header_ensim(iun, fname, vkeyword, nkeyword, ierr)
 
-    !> Read and parse the header.
-    call InitResvParam(header)
-    foundEndHeader = .false.
-    insideColMetaData = .false.
-    in_line(1:1) = '#'
-    do while ((.not. foundEndHeader) .and. ((in_line(1:1) == '#') .or. (in_line(1:1) == ':') .or. (len_trim(in_line) == 0)))
+    !> Get the number of outlet locations (i.e., columns) from the file.
+    call count_columns_tb0(iun, fname, vkeyword, nkeyword, fms%rsvr%n, ierr)
 
-        !> Read the line.
-        read(iun, "((a))", iostat = ierr) in_line
-        if (ierr == -1) then
-            if (ipid == 0) print "(/1x, 'ERROR: Premature end of file (EOF) encountered in: ', (a))", trim(adjustl(fname))
-            stop
-        end if
+    !> Return if no outlets are defined.
+    if (fms%rsvr%n == 0) return
 
-        !> Replace tabs with spaces and get rid of leading whitespace.
-        call compact(in_line)
-        in_line = adjustl(in_line)
-
-        !> Parse attributes (lines that start with ':').
-        if (in_line(1:1) == ':') then
-            wordCount = SplitLine(in_line, keyword, subString)
-            keyword = lowercase(keyword)
-            KeyLen = len_trim(keyword)
-
-            !> ':endheader' is the end of the header, otherwise this is an attribute.
-            if (keyword(1:KeyLen) == ':endheader') then
-                foundEndHeader = .true.
-            else if (keyword(1:KeyLen) == ':columnmetadata') then
-                insideColMetaData = .true.
-            else if (keyword(1:KeyLen) == ':endcolumnmetadata') then
-                insideColMetaData = .false.
-            else if (insideColMetaData) then
-                ierr = ParseResvColumnMetaData(colHeader, keyword, keyLen, subString)
-                if (ierr < 0) then
-                    if (ipid == 0) print "(1x, 'ERROR: Error parsing an attribute of the header in ', (a), ':'/, (a))", &
-                        trim(adjustl(fname)), trim(adjustl(in_line))
-                    stop
-                end if
-            else
-                ierr = ParseResvParam(header, keyword, keyLen, subString)
-                if (ierr < 0) then
-                    if (ipid == 0) print "(1x, 'ERROR: Error parsing an attribute of the header in ', (a), ':'/, (a))", &
-                        trim(adjustl(fname)), trim(adjustl(in_line))
-                    stop
-                else if (keyword(1:KeyLen) == ':starttime') then
-
-                    !> Start date of measured/observed values.
-                    call value(subString(1:4), fms%rsvr%qorls%iyear, ierr)
-                    call value(subString(6:7), fms%rsvr%qorls%imonth, ierr)
-                    call value(subString(9:10), fms%rsvr%qorls%iday, ierr)
-                    fms%rsvr%qorls%ijday = get_jday(fms%rsvr%qorls%imonth, fms%rsvr%qorls%iday, fms%rsvr%qorls%iyear)
-                    call value(subString(12:13), fms%rsvr%qorls%ihour, ierr)
-                else if (ierr == 0) then
-                    if (ro%DIAGNOSEMODE > 0 .and. ro%VERBOSEMODE > 0) then
-                        print "(1x, 'WARNING: Unrecognized attribute of header in ', (a), ': ', (a))", &
-                        trim(adjustl(fname)), trim(adjustl(keyword))
-                    end if
-                end if
-            end if
-        end if
-    end do
-
-    !> Return if no gauge locations are defined.
-    fms%rsvr%n = colHeader%tb0cmd%colCount
-    NR = fms%rsvr%n
-
-    !> Return if there are no reservoirs.
-    if (NR == 0) return
-
-    !> Reservoir attributes pulled from 'fms':
-    !*  rsvr: Reservoir outlet structure
-    !*  -   n: Number of elements dimensioned.
-    !*  -   name(n): ID printed to output files.
-    !*  -   y(n): Y-coordinate of outlet location.
-    !*  -   x(n): X-coordinate of outlet location.
-    !*  -   iy(n): Vertical index of the grid-cell containing the location.
-    !*  -   jx(n): Horizontal index of the grid-cell containing the location.
-    !*  -   n(n): Rank or index of the grid-cell containing the location.
-    !*  -   cfn(n): Type of release curve function.
-    !*  -   b(n, :): Release curve coefficients.
-
-    !> Allocate configuration variables for the driver.
-    call allocate_reservoir_outlet_location(fms%rsvr, NR, ierr)
+    !> Allocate attributes for the driver.
+    call allocate_reservoir_outlet_location(fms%rsvr, fms%rsvr%n, ierr)
     if (ierr /= 0) goto 998
 
-    !> Transfer values from the tb0 header, including ones which may optionally be omitted from the file.
-    fms%rsvr%qorls%dts = header%tb0p%deltaT
-    if (allocated(colHeader%tb0cmd%colName)) fms%rsvr%meta%name = colHeader%tb0cmd%colName
-    fms%rsvr%meta%y = colHeader%tb0cmd%colLocY
-    fms%rsvr%meta%x = colHeader%tb0cmd%colLocX
-    if (allocated(colHeader%colCoeff1)) fms%rsvr%rls%b1 = colHeader%colCoeff1
-    if (allocated(colHeader%colCoeff2)) fms%rsvr%rls%b2 = colHeader%colCoeff2
-    if (allocated(colHeader%colCoeff3)) fms%rsvr%rls%b3 = colHeader%colCoeff3
-    if (allocated(colHeader%colCoeff4)) fms%rsvr%rls%b4 = colHeader%colCoeff4
-    if (allocated(colHeader%colCoeff5)) fms%rsvr%rls%b5 = colHeader%colCoeff5
-    if (allocated(colHeader%colCoeff6)) fms%rsvr%rls%lvlz0 = colHeader%colCoeff6
-    if (allocated(colHeader%colCoeff7)) fms%rsvr%rls%area = colHeader%colCoeff7
+    !> Get the time-step of the records.
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':DeltaT', fms%rsvr%rlsmeas%dts, ierr, verbose)
+
+    !> Populate other attributes.
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ColumnName', fms%rsvr%meta%name, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ColumnLocationY', fms%rsvr%meta%y, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ColumnLocationX', fms%rsvr%meta%x, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff1', fms%rsvr%rls%b1, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff2', fms%rsvr%rls%b2, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff3', fms%rsvr%rls%b3, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff4', fms%rsvr%rls%b4, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff5', fms%rsvr%rls%b5, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ReachArea', fms%rsvr%rls%area, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff6', fms%rsvr%rls%b6, fms%rsvr%n, ierr, verbose)
+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':Coeff7', fms%rsvr%rls%b7, fms%rsvr%n, ierr, verbose)
+
+    !> Replace 'area' with 'b6' if available.
+    if (any(fms%rsvr%rls%b6 > 0.0)) fms%rsvr%rls%area = fms%rsvr%rls%b6
+
+    !> Get the start time of the first record in the file.
+    call parse_starttime( &
+        iun, fname, vkeyword, nkeyword, &
+        fms%rsvr%rlsmeas%iyear, fms%rsvr%rlsmeas%imonth, fms%rsvr%rlsmeas%iday, fms%rsvr%rlsmeas%ihour, fms%rsvr%rlsmeas%imins, &
+        ierr, verbose)
+    if (fms%rsvr%rlsmeas%iyear > 0 .and. fms%rsvr%rlsmeas%imonth > 0 .and. fms%rsvr%rlsmeas%iday > 0) then
+        fms%rsvr%rlsmeas%ijday = get_jday(fms%rsvr%rlsmeas%imonth, fms%rsvr%rlsmeas%iday, fms%rsvr%rlsmeas%iyear)
+    end if
 
     !> Position the file to the first record.
-    rewind iun
-    call GoToStartOfData(iun)
+    call advance_past_header(iun, fname, verbose, ierr)
 
     return
 
     !> File errors.
-997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(adjustl(fname))
-998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(adjustl(fname))
-999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(adjustl(fname))
+997 if (ipid == 0) print "(1x, 'ERROR: ', (a), ' may not exist.')", trim(fname)
+998 if (ipid == 0) print "(3x, 'ERROR allocating values based on ', (a), '.')", trim(fname)
+999 if (ipid == 0) print "(3x, 'ERROR reading from ', (a), '.')", trim(fname)
 
     stop
-
-1000    format(1x, 'READING: ', (a))
 
 end subroutine

@@ -99,6 +99,11 @@ module PBSM_module
 
         !> Allocate variables.
         NML = shd%lc%NML
+        if (allocated(pbsm%vs%DrySnow)) then
+            deallocate(pbsm%vs%DrySnow, pbsm%vs%SnowAge, &
+                       pbsm%vs%TSNOds, &
+                       pbsm%vs%Drift, pbsm%vs%Subl, pbsm%vs%Deposition)
+        end if
         allocate(pbsm%vs%DrySnow(NML), pbsm%vs%SnowAge(NML), &
                  pbsm%vs%TSNOds(NML), &
                  pbsm%vs%Drift(NML), pbsm%vs%Subl(NML), pbsm%vs%Deposition(NML))
@@ -108,6 +113,13 @@ module PBSM_module
 
         !> Allocate variables for CLASSW.
         !> These are initialized in WPREP.
+        if (allocated(ZSNOCS)) then
+            deallocate(ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
+                       HCPSCS, HCPSGS, HCPSC, HCPSG, &
+                       TSNOWC, TSNOWG, &
+                       RHOSC, RHOSG, &
+                       XSNOWC, XSNOWG, XSNOCS, XSNOGS)
+        end if
         allocate(ZSNOCS(NML), ZSNOGS(NML), ZSNOWC(NML), ZSNOWG(NML), &
                  HCPSCS(NML), HCPSGS(NML), HCPSC(NML), HCPSG(NML), &
                  TSNOWC(NML), TSNOWG(NML), &

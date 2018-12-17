@@ -80,7 +80,6 @@ module mesh_perturb
     use FLAGS
     use model_dates
     use climate_forcing
-    use model_output_variabletypes
     use MODEL_OUTPUT
 
     implicit none
@@ -627,12 +626,11 @@ module mesh_perturb
 
     end subroutine
 
-    subroutine perturb_run_post_ts(fls, shd, cm, wb_grd)
+    subroutine perturb_run_post_ts(fls, shd, cm)
 
         type(fl_ids) fls
         type(ShedGridParams) shd
         type(CLIM_INFO) cm
-        type(water_balance) wb_grd
 
         integer NML, j, i
 
@@ -648,7 +646,10 @@ module mesh_perturb
 !                write(*, *) ''
 !                write(*, *) 'ic', ic%now%jday, ic%now%hour, ic%now%mins
 !                write(*, *) ''
-                stg_accum(1, tt) =  stg_accum(1, tt) + sum(wb_grd%stg)/wb_grd%basin_area
+                stg_accum(1, tt) =  stg_accum(1, tt) + sum( &
+					(stas_grid%cnpy%rcan + stas_grid%cnpy%sncan + stas_grid%sno%sno + stas_grid%sno%wsno + stas_grid%sfc%pndw + &
+					 sum(stas_grid%sl%lqws, 2) + sum(stas_grid%sl%fzws, 2) + &
+					 stas_grid%lzs%ws + stas_grid%dzs%ws)*shd%FRAC)/sum(shd%FRAC)
 !                write(*, *) ''
 !                write(*, *) 'stg_accum(1,tt)', stg_accum(1, tt)
 !                write(*, *) ''

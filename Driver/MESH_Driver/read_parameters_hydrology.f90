@@ -122,6 +122,36 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     if (n > 0) then
         do i = 1, n
             call readline(iun, in_line, ierr)
+            if (index(in_line, '#') > 2) in_line = in_line(1:index(in_line, '#') - 1)
+            if (index(in_line, '!') > 2) in_line = in_line(1:index(in_line, '!') - 1)
+            call compact(in_line)
+            call parse(in_line, delim, out_args, nargs)
+            if (nargs < 2) cycle
+            select case (lowercase(out_args(1)))
+                case ('wf_route')
+                    do j = 2, nargs
+                        select case (lowercase(out_args(j)))
+                            case ('rl_shd')
+                                WF_RTE_flgs%RLFLAG = 1
+                            case ('cap_shd')
+                                WF_RTE_flgs%CAPFLAG = 1
+                        end select
+                    end do
+                case ('rte')
+                    do j = 2, nargs
+                        select case (lowercase(out_args(j)))
+                            case ('cap_shd')
+                                rteflg%cap_shd = 1
+                        end select
+                    end do
+                case ('controlled_reservoir')
+                    do j = 2, nargs
+                        select case (lowercase(out_args(j)))
+                            case ('allcols')
+                                fms%rsvr%rlsmeas%readmode = 'n'
+                        end select
+                    end do
+            end select
         end do
     end if
 
@@ -278,24 +308,24 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 end do
                             end if
 
-                        !> flz (RTE).
+                        !> flz (BASEFLOWFLAG 2).
                         case ('flz')
-                            if (.not. rteflg%PROCESS_ACTIVE) then
+                            if (bflm%BASEFLOWFLAG == 0) then
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), rtepm_iak%flz(j), ierr)
+                                    call value(out_args(j + 1), bflm%pm_iak%flz(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
 
-                        !> pwr (RTE).
+                        !> pwr (BASEFLOWFLAG 2).
                         case ('pwr')
-                            if (.not. rteflg%PROCESS_ACTIVE) then
+                            if (bflm%BASEFLOWFLAG == 0) then
                                 ikey = 1
                             else
                                 do j = 1, NRVR
-                                    call value(out_args(j + 1), rtepm_iak%pwr(j), ierr)
+                                    call value(out_args(j + 1), bflm%pm_iak%pwr(j), ierr)
                                     if (ierr /= 0) goto 911
                                 end do
                             end if
@@ -463,19 +493,19 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> WrchrgIni.
                         case ('wrchrgini')
-                            if (lzsp%BASEFLOWFLAG == 0) then
+                            if (bflm%BASEFLOWFLAG == 0) then
                                 ikey = 1
                             else
-                                call value(out_args(2), lzsp%WrchrgIni, ierr)
+                                call value(out_args(2), bflm%vs%WrchrgIni, ierr)
                                 if (ierr /= 0) goto 921
                             end if
 
                         !> QbIni.
                         case ('qbini')
-                            if (lzsp%BASEFLOWFLAG == 0) then
+                            if (bflm%BASEFLOWFLAG == 0) then
                                 ikey = 1
                             else
-                                call value(out_args(2), lzsp%QbIni, ierr)
+                                call value(out_args(2), bflm%vs%QbIni, ierr)
                                 if (ierr /= 0) goto 921
                             end if
 
@@ -524,9 +554,9 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                 end if
 
                 !> BASEFLOWFLAG > 0 (lower zone storage).
-                if (lzsp%BASEFLOWFLAG > 0) then
-                    lzsp%WrchrgIni = INDEPPARVAL(j + 1)
-                    lzsp%QbIni = INDEPPARVAL(j + 2)
+                if (bflm%BASEFLOWFLAG > 0) then
+                    bflm%vs%WrchrgIni = INDEPPARVAL(j + 1)
+                    bflm%vs%QbIni = INDEPPARVAL(j + 2)
                     j = j + 2
                 end if
 
@@ -563,20 +593,6 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
     !>
     !> GRU dependent parameters.
     !>
-
-    !> Allocate variables.
-!-    if (lzsp%BASEFLOWFLAG > 0) then
-!-        select case (lzsp%BASEFLOWFLAG)
-!-            case (1)
-!-                if (allocated (lzsp%dgwsh)) deallocate (lzsp%dgwsh)
-!-                if (allocated (lzsp%agwsh)) deallocate (lzsp%agwsh)
-!-                allocate(lzsp%dgwsh(NA, NTYPE), lzsp%agwsh(NA, NTYPE))
-!-            case (2)
-!-                if (allocated (lzsp%WF_LZFA)) deallocate (lzsp%WF_LZFA)
-!-                if (allocated (lzsp%WF_LZFPWR)) deallocate (lzsp%WF_LZFPWR)
-!-                allocate(lzsp%WF_LZFA(NA, NTYPE), lzsp%WF_LZFPWR(NA, NTYPE))
-!-        end select
-!-    end if
 
     !> Read variables from file.
     call readline(iun, in_line, ierr)
@@ -646,11 +662,18 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                                 end do
                             end if
 
+                        !> IWF.
+                        case ('iwf')
+                            do j = 1, NTYPE
+                                call value(out_args(j + 1), pm_gru%tp%iwf(j), ierr)
+                                if (ierr /= 0) goto 931
+                            end do
+
                         !> IWF == 2 (PDMROF).
 
                         !> CMAX.
                         case ('cmax')
-                            if (.not. (IWF == 2 .or. IWF == 3)) then
+                            if (.not. (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3))) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -662,7 +685,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> CMIN.
                         case ('cmin')
-                            if (.not. (IWF == 2 .or. IWF == 3)) then
+                            if (.not. (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3))) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -674,7 +697,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> B.
                         case ('b')
-                            if (.not. (IWF == 2 .or. IWF == 3)) then
+                            if (.not. (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3))) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -686,7 +709,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K1.
                         case ('k1')
-                            if (.not. (IWF == 2 .or. IWF == 3)) then
+                            if (.not. (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3))) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -698,7 +721,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> K2.
                         case ('k2')
-                            if (.not. (IWF == 2 .or. IWF == 3)) then
+                            if (.not. (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3))) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
@@ -769,51 +792,47 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                         !> dgwsh.
                         case ('dgwsh')
-                            if (lzsp%BASEFLOWFLAG /= 1) then
+                            if (bflm%BASEFLOWFLAG /= 1) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), lzsp%dgwsh(1, j), ierr)
+                                    call value(out_args(j + 1), bflm%pm_gru%dgw(j), ierr)
                                     if (ierr /= 0) goto 931
-                                    lzsp%dgwsh(:, j) = lzsp%dgwsh(1, j)
                                 end do
                             end if
 
                         !> agwsh.
                         case ('agwsh')
-                            if (lzsp%BASEFLOWFLAG /= 1) then
+                            if (bflm%BASEFLOWFLAG /= 1) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), lzsp%agwsh(1, j), ierr)
+                                    call value(out_args(j + 1), bflm%pm_gru%agw(j), ierr)
                                     if (ierr /= 0) goto 931
-                                    lzsp%agwsh(:, j) = lzsp%agwsh(1, j)
                                 end do
                             end if
 
                         !> BASEFLOWFLAG == 2 (lower zone storage).
 
-                        !> WF_LZFPWR.
-                        case ('wf_lzfpwr')
-                            if (lzsp%BASEFLOWFLAG /= 2) then
+                        !> pwr.
+                        case ('pwr')
+                            if (bflm%BASEFLOWFLAG /= 2) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), lzsp%WF_LZFPWR(1, j), ierr)
+                                    call value(out_args(j + 1), bflm%pm_gru%pwr(j), ierr)
                                     if (ierr /= 0) goto 931
-                                    lzsp%WF_LZFPWR(:, j) = lzsp%WF_LZFPWR(1, j)
                                 end do
                             end if
 
-                        !> WF_LZFA.
-                        case ('wf_lzfa')
-                            if (lzsp%BASEFLOWFLAG /= 2) then
+                        !> flz, flz2.
+                        case ('flz')
+                            if (bflm%BASEFLOWFLAG /= 2) then
                                 ikey = 1
                             else
                                 do j = 1, NTYPE
-                                    call value(out_args(j + 1), lzsp%WF_LZFA(1, j), ierr)
+                                    call value(out_args(j + 1), bflm%pm_gru%flz(j), ierr)
                                     if (ierr /= 0) goto 931
-                                    lzsp%WF_LZFA(:, j) = lzsp%WF_LZFA(1, j)
                                 end do
                             end if
 
@@ -951,7 +970,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                 end if
 
                 !> Check the number of parameters.
-                if ((IWF == 2 .or. IWF == 3) .and. n < 9) then
+                if ((any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3)) .and. n < 9) then
                     print 8330, 9, 'PDMROF or LATFLOW (IWF 2 or 3)'
                     stop
                 else if (FROZENSOILINFILFLAG == 1 .and. n < 4) then
@@ -987,8 +1006,8 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
 
                 !> Distribute the parameters.
 !todo: change this to il2, il2
-                do i = 1, NA
-                    do m = 1, NTYPE
+                do m = 1, NTYPE
+                    do i = 1, NA
 
                         !> FROZENSOILINFILFLAG == 1 (infiltration into frozen soils).
                         if (FROZENSOILINFILFLAG == 1) then
@@ -996,7 +1015,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                         end if
 
                         !> IWF == 2 (PDMROF) or IWF == 3 (LATFLOW).
-                        if (IWF == 2 .or. IWF == 3) then
+                        if (any(pm_gru%tp%iwf == 2) .or. any(pm_gru%tp%iwf == 3)) then
                             hp%CMAXROW(i, m) = DEPPARVAL(5, m)
                             hp%CMINROW(i, m) = DEPPARVAL(6, m)
                             hp%BROW(i, m) = DEPPARVAL(7, m)
@@ -1004,29 +1023,30 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls)
                             hp%K2ROW(i, m) = DEPPARVAL(9, m)
                         end if
 
-                        !> Count for active flags (read from run options).
-                        j = 9
-
-                        !> PBSM (blowing snow).
-                        if (pbsm%PROCESS_ACTIVE) then
-                            j = j + 5
-                        end if
-
-                        !> BASEFLOWFLAG 1 (Luo, 2012).
-                        if (lzsp%BASEFLOWFLAG == 1) then
-                            lzsp%dgwsh(i, m) = DEPPARVAL(j + 1, m)
-                            lzsp%agwsh(i, m) = DEPPARVAL(j + 2, m)
-                            j = j + 2
-                        end if
-
-                        !> BASEFLOWFLAG 2 (Watflood manual).
-                        if (lzsp%BASEFLOWFLAG == 2) then
-                            lzsp%WF_LZFPWR(i, m) = DEPPARVAL(j + 1, m)
-                            lzsp%WF_LZFA(i, m) = DEPPARVAL(j + 2, m)
-                            j = j + 2
-                        end if
-
                     end do
+
+                    !> Count for active flags (read from run options).
+                    j = 9
+
+                    !> PBSM (blowing snow).
+                    if (pbsm%PROCESS_ACTIVE) then
+                        j = j + 5
+                    end if
+
+                    !> BASEFLOWFLAG 1 (Luo, 2012).
+                    if (bflm%BASEFLOWFLAG == 1) then
+                        bflm%pm_gru%dgw(m) = DEPPARVAL(j + 1, m)
+                        bflm%pm_gru%agw(m) = DEPPARVAL(j + 2, m)
+                        j = j + 2
+                    end if
+
+                    !> BASEFLOWFLAG == 2 (lower zone storage).
+                    if (bflm%BASEFLOWFLAG == 2) then
+                        bflm%pm_gru%pwr(m) = DEPPARVAL(j + 1, m)
+                        bflm%pm_gru%flz(m) = DEPPARVAL(j + 2, m)
+                        j = j + 2
+                    end if
+
                 end do
 
                 !> Clean-up/deallocate the variable.

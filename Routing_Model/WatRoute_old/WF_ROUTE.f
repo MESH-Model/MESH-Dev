@@ -310,7 +310,7 @@ c        Cap is the volume of water in a reach for the mean annual flow
          rl=wf_al*wf_a1(ii)
          if (wf_RLFLAG == 1) rl = wf_CHNL_LEN(n)
          cap=(wf_a2(ii)+wf_a3(ii)*wf_da(n)**wf_a4(ii))*rl
-         if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)
+         if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)*rl
          qch=(cap/rl)**1.33*SQRT(wf_channelSlope(n))/wf_r2(ii)
 
          over=0.0
@@ -457,8 +457,8 @@ C Are we at the outlet of a natural reservoir
               if(wf_r(l).eq.i) then
 C yes we are at the outlet, use the big storage term to determine wf_qo2
 
-                  wf_qi1(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
-                  wf_store2(i)=wf_store2(i)+wf_qi1(i)
+                  wf_qi2(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
+                  wf_store2(i)=wf_store2(i)+wf_qi2(i)
                 if (wf_b3(l) == 0.0) then
                   wf_qo2(i)=wf_b1(l)*wf_store2(i)**wf_b2(l)
                 else
@@ -476,7 +476,7 @@ C storage reservoir and give fake value to outflow and storage
 c                  wf_resstore(l)=wf_resstore(l)+qadd(i)*div
                   wf_resstore(l)=wf_resstore(l)+qadd(i)+wf_qi2(i)
                   wf_qo2(i)=0.0
-                  wf_store2(i)=1000.0
+                  wf_store2(i)=0.0
 
               endif !if(wf_ires(l).eq.wf_yy(i).and.wf_jres(l).eq.wf_xx(i)) then
 
@@ -485,23 +485,20 @@ C are we at the outlet of the controlled reservoir
               if(wf_r(l).eq.i) then
 C yes we are at the outlet
                   wf_qo2(i)=wf_qrel(l)
-                  wf_qi1(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
+                  wf_qi2(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
                   if( wf_qo2(i).lt.0.0 ) wf_qo2(i)=wf_qo2(i)
-                  wf_store2(i)=wf_store2(i)+wf_qi1(i)-wf_qo2(i)
+                  wf_store2(i)=wf_store2(i)+wf_qi2(i)-wf_qo2(i)
                   wf_resstore(l)=0.0
 c                  wf_store2(i)=wf_store1(i)+(wf_qi1(i)+wf_qi2(i)-
 c     +wf_qo1(i)-wf_qo2(i))*div+qadd(i)*div*2.0
-C           write(708+l,'(2(I6,A1),7(G12.5,A1))') l, z, wf_r(l), z,
-C      +     wf_resstore(l), z, qadd(i), z, wf_qi2(i), z,
-C      +      wf_qi1(i), z, wf_store1(i), z, wf_store2(i), z, wf_qo2(i),z
                else
 c no we are in the reservoir
 c don't really know what to do here, the flow doesn't really matter
 c as it will be overwritten later, just for something keep adding the
 c flow to the big reservoir stoage
                   wf_resstore(l)=wf_resstore(l)+qadd(i)+wf_qi2(i)
-                  wf_qo2(i)=1.0
-                  wf_store2(i)=1000.0
+                  wf_qo2(i)=0.0
+                  wf_store2(i)=0.0
 
                endif !are we at the outlet of controlled reservoir
 
@@ -531,7 +528,7 @@ c                          for the mean annual flow
                            if (wf_RLFLAG == 1) rl = wf_CHNL_LEN(i)
                            cap=
      +(wf_a2(ii)+wf_a3(ii)*wf_da(i)**wf_a4(ii))*rl
-                           if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)
+                           if (wf_CAPFLAG == 1) cap = wf_bnkfll(n)*rl
                            over=(wf_store2(i)-cap)/rl
                            if( over.le.0.0 ) then
 c                             Channel flow only

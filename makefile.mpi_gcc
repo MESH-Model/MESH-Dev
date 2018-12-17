@@ -34,6 +34,7 @@ FC=mpifort
 LFLAG=-c -O2
 #LFLAG=-c -O3 -ffast-math
 #LFLAG=-c -g
+LFLAG=-c -g -fbacktrace -fbounds-check -ffpe-trap=invalid,zero,overflow
 
 # Libraries for Random_fields
 #GCC

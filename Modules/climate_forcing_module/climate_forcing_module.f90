@@ -85,39 +85,64 @@ module climate_forcing
         !> Preparation for CLASS format MET file.
         if (cm%dat(ck%MET)%factive) then
             if (.not. cm%dat(ck%FB)%factive) then
+                if (allocated(cm%dat(ck%FB)%blocks)) then
+                    deallocate(cm%dat(ck%FB)%GRD, cm%dat(ck%FB)%GAT, cm%dat(ck%FB)%GRU)
+                    deallocate(cm%dat(ck%FB)%blocks)
+                end if
                 allocate(cm%dat(ck%FB)%GRD(shd%NA), cm%dat(ck%FB)%GAT(shd%lc%NML), cm%dat(ck%FB)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%FB)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%FI)%factive) then
+                if (allocated(cm%dat(ck%FI)%blocks)) then
+                    deallocate(cm%dat(ck%FI)%GRD, cm%dat(ck%FI)%GAT, cm%dat(ck%FI)%GRU)
+                    deallocate(cm%dat(ck%FI)%blocks)
+                end if
                 allocate(cm%dat(ck%FI)%GRD(shd%NA), cm%dat(ck%FI)%GAT(shd%lc%NML), cm%dat(ck%FI)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%FI)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%RT)%factive) then
+                if (allocated(cm%dat(ck%RT)%blocks)) then
+                    deallocate(cm%dat(ck%RT)%GRD, cm%dat(ck%RT)%GAT, cm%dat(ck%RT)%GRU)
+                    deallocate(cm%dat(ck%RT)%blocks)
+                end if
                 allocate(cm%dat(ck%RT)%GRD(shd%NA), cm%dat(ck%RT)%GAT(shd%lc%NML), cm%dat(ck%RT)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%RT)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%TT)%factive) then
+                if (allocated(cm%dat(ck%TT)%blocks)) then
+                    deallocate(cm%dat(ck%TT)%GRD, cm%dat(ck%TT)%GAT, cm%dat(ck%TT)%GRU)
+                    deallocate(cm%dat(ck%TT)%blocks)
+                end if
                 allocate(cm%dat(ck%TT)%GRD(shd%NA), cm%dat(ck%TT)%GAT(shd%lc%NML), cm%dat(ck%TT)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%TT)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%UV)%factive) then
+                if (allocated(cm%dat(ck%UV)%blocks)) then
+                    deallocate(cm%dat(ck%UV)%GRD, cm%dat(ck%UV)%GAT, cm%dat(ck%UV)%GRU)
+                    deallocate(cm%dat(ck%UV)%blocks)
+                end if
                 allocate(cm%dat(ck%UV)%GRD(shd%NA), cm%dat(ck%UV)%GAT(shd%lc%NML), cm%dat(ck%UV)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%UV)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%P0)%factive) then
+                if (allocated(cm%dat(ck%P0)%blocks)) then
+                    deallocate(cm%dat(ck%P0)%GRD, cm%dat(ck%P0)%GAT, cm%dat(ck%P0)%GRU)
+                    deallocate(cm%dat(ck%P0)%blocks)
+                end if
                 allocate(cm%dat(ck%P0)%GRD(shd%NA), cm%dat(ck%P0)%GAT(shd%lc%NML), cm%dat(ck%P0)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%P0)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
             if (.not. cm%dat(ck%HU)%factive) then
+                if (allocated(cm%dat(ck%HU)%blocks)) then
+                    deallocate(cm%dat(ck%HU)%GRD, cm%dat(ck%HU)%GAT, cm%dat(ck%HU)%GRU)
+                    deallocate(cm%dat(ck%HU)%blocks)
+                end if
                 allocate(cm%dat(ck%HU)%GRD(shd%NA), cm%dat(ck%HU)%GAT(shd%lc%NML), cm%dat(ck%HU)%GRU(shd%lc%NTYPE))
                 allocate(cm%dat(ck%HU)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
             end if
         end if
 
         !> Initialize climate variables.
-        !> Here print the number of days (stop - start) which forcing data are read
-        !> this number is print to console as NRS
-        !> Name of forcing data are printed in console by calling open_data
         do vid = 1, cm%nclim
 
             !> Cycle if the variable is not active.
@@ -183,9 +208,9 @@ module climate_forcing
             cm%dat(vid)%fiun = cm%basefileunit + vid
 
             !> Allocate the gridded series.
-            if (allocated(cm%dat(vid)%GRD)) deallocate (cm%dat(vid)%GRD)
-            if (allocated(cm%dat(vid)%GAT)) deallocate (cm%dat(vid)%GAT)
-            if (allocated(cm%dat(vid)%GRU)) deallocate (cm%dat(vid)%GRU)
+            if (allocated(cm%dat(vid)%GRD)) then
+                deallocate(cm%dat(vid)%GRD, cm%dat(vid)%GAT, cm%dat(vid)%GRU)
+            end if
             allocate(cm%dat(vid)%GRD(shd%NA), cm%dat(vid)%GAT(shd%lc%NML), cm%dat(vid)%GRU(shd%lc%NTYPE))
 
             !> Open the forcing files.

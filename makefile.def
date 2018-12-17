@@ -37,6 +37,7 @@ VPATH=	$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/Modules/climate_forcing_module: \
 		$(DIR_REPO)/Modules/simulation_statistics: \
 		$(DIR_REPO)/Modules/cropland_irrigation: \
+		$(DIR_REPO)/Modules/permafrost_active_layer: \
 		$(DIR_REPO)/Modules/io_modules: \
 		$(DIR_REPO)/Modules/Random_fields: \
 		$(DIR_REPO)/Driver/MESH_Driver: \
@@ -61,9 +62,12 @@ OBJECTS=	mpi_flags.o mpi_shared_variables.o mpi_utilities.o \
 
 #Strings
 OBJECTS+=	precmod.o stringmod.o \
-			txt_io.o
+			txt_io.o ensim_io.o
 
 #SA_MESH flags, parameters, and variables
+
+#permafrost_active_layer
+OBJECTS+=	permafrost_active_layer.o
 
 #Modules
 OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
@@ -76,7 +80,6 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			output_variables.o \
 			variablename_constants.o parametername_constants.o \
 			sa_mesh_shared_variables.o \
-			sa_mesh_shared_output_variables.o \
 			RUNCLASS36_constants.o RUNCLASS36_variables.o RUNCLASS36_save_output.o \
 			climate_forcing_module_config.o \
 			climate_forcing_module_io.o climate_forcing_module.o \
@@ -156,8 +159,7 @@ OBJECTS+=	RUNSVS113_config.o RUNSVS113_module.o
 OBJECTS+=	tile_connector.o 
 
 #RTE
-OBJECTS+=	area_watflood.o \
-			rerout.o baseflow.o route.o \
+OBJECTS+=	area_watflood.o rerout.o route.o flowinit.o \
 			rte_module.o
 
 #Init field state variables for init cond for class

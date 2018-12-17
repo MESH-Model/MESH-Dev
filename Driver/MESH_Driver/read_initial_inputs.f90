@@ -41,19 +41,19 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     if (SHDFILEFLAG == 1) then
 
         open(fls%fl(mfk%f20)%iun, file=adjustl(trim(fls%fl(mfk%f20)%fn)), status='old', iostat=ierr)
-        if (ierr == 0) then
-            close(fls%fl(mfk%f20)%iun)
-            if (ro%VERBOSEMODE > 0) then
-                print *, 'Reading Drainage Database from MESH_drainage_database.r2c'
+            if (ierr == 0) then
+                close(fls%fl(mfk%f20)%iun)
+                if (ro%VERBOSEMODE > 0) then
+                    print *, 'Reading Drainage Database from MESH_drainage_database.r2c'
+                end if
+                call READ_SHED_EF(fls, mfk%f20, shd)
+                if (ro%VERBOSEMODE > 0) then
+                    print *, ' READ: SUCCESSFUL, FILE: CLOSED'
+                end if
+            else
+                print "(1x, 'ERROR: Opening ', (a))", adjustl(trim(fls%fl(mfk%f20)%fn))
+                stop
             end if
-            call READ_SHED_EF(fls, mfk%f20, shd)
-            if (ro%VERBOSEMODE > 0) then
-                print *, ' READ: SUCCESSFUL, FILE: CLOSED'
-            end if
-        else
-            print *, 'ERROR with event.evt or new_shd.r2c'
-            stop
-        end if
 
     else if (SHDFILEFLAG == 0) then
 
@@ -151,12 +151,12 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
                 shd%lc%ACLASS)
         end if
         allocate( &
-            shd%xxx(shd%NA), shd%yyy(shd%NA), &
+            shd%xxx(shd%NA), shd%yyy(shd%NA), shd%RNKGRD(shd%yCount, shd%xCount), &
             shd%NEXT(shd%NA), &
             shd%SLOPE_INT(shd%NA), &
             shd%AREA(shd%NA), shd%FRAC(shd%NA), &
             shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1), stat=ierr)
-        shd%xxx = 1; shd%yyy = 1
+        shd%xxx = 1; shd%yyy = 1; shd%RNKGRD = 1
         shd%NEXT = 0
         shd%SLOPE_INT = 1.0E-5
         shd%AREA = 1.0; shd%FRAC=shd%AREA/shd%AL/shd%AL
@@ -168,12 +168,28 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     end if
 
+    !> Check maximum number of cells and outlets, and print a warning if an adjustment is made.
+    if (ro%RUNCHNL) then
+        if (shd%NA /= maxval(shd%NEXT)) then
+            print 172
+            shd%NA = maxval(shd%NEXT)
+        end if
+        if (shd%NAA /= (maxval(shd%NEXT) - count(shd%NEXT == 0))) then
+            print 173
+            shd%NAA = maxval(shd%NEXT) - count(shd%NEXT == 0)
+        end if
+    end if
+
+172     format(1x, 'WARNING: Total number of grid adjusted to maximum of RANK. Consider adjusting the input files.')
+173     format(1x, 'WARNING: The number of outlets is adjusted to the number of grids where NEXT is zero.', &
+               /3x, 'Consider adjusting the input files.')
+
     !> Assign shd values to local variables.
     NA = shd%NA
     NAA = shd%NAA
 
     !> Allocate temporary message variables.
-    allocate(list_errors(4*NAA), list_warnings(1*NAA))
+    allocate(list_errors(6*NAA), list_warnings(1*NAA))
     list_errors = ''; list_warnings = ''
 
     !> Check for values that might be incorrect, but are unlikely to stop the model.
@@ -197,6 +213,8 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
         forall (n = 1:NAA, shd%AREA(n) <= 0.0) list_errors(2*NAA + n) = 'Invalid or negative grid area'
         forall (n = 1:NAA, shd%DA(n) <= 0.0) list_errors(3*NAA + n) = 'Invalid or negative drainage area'
     end if
+    forall (n = 1:NA, shd%xxx(n) == 0) list_errors(4*NAA + n) = 'Invalid x-direction placement'
+    forall (n = 1:NA, shd%yyy(n) == 0) list_errors(5*NAA + n) = 'Invalid y-direction placement'
 !+   forall (n = 1:NAA, shd%SLOPE_INT(n) <= 0.0) list_errors(4*NAA + n) = 'Invalid or negative interior slope'
 
     !> Write error messages to screen.
@@ -233,7 +251,9 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> after that Diana uses RADJGRD (the value of latitude in radians) so
     !> after DEGLAT is used to calculate RADJGRD is it no longer used.  This
     !> is how it was in the original CLASS code.
-    if (allocated (shd%ylat)) deallocate (shd%ylat, shd%xlng)
+    if (allocated(shd%ylat)) then
+        deallocate(shd%ylat, shd%xlng)
+    end if
     allocate(shd%ylat(NA), shd%xlng(NA))
     do i = 1, NA
         !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
@@ -353,9 +373,9 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     NSL = shd%lc%IGND
 
     !> Allocate and initialize SA_MESH states.
-    call stas_init(stas, 'tile', NML, NSL, ierr)
-    call stas_init(stas_grid, 'grid', NA, NSL, ierr)
-    call stas_init(stas_gru, 'gru', NTYPE, NSL, ierr)
+    call stas_tile_init(stas, NML, NSL, ierr)
+    call stas_tile_init(stas_gru, NTYPE, NSL, ierr)
+    call stas_grid_init(stas_grid, NA, NSL, ierr)
 
     !> Call 'CLASSD' to initialize constants.
 !todo: replace this with a non-CLASS/generic version.
@@ -363,9 +383,6 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
 
     !> Read parameters from file.
     call read_parameters(fls, shd, cm, ierr)
-
-    !> Read variable states from file.
-    call read_initial_states(fls, shd, ierr)
 
     !> Check the grid output points.
 !todo: fix this.
@@ -439,6 +456,12 @@ subroutine READ_INITIAL_INPUTS(shd, ts, cm, fls)
     !> READ BASIN STRUCTURES.
     !>
 
-!-    call read_basin_structures(shd)
+    if (ro%RUNGRID) call read_basin_structures(shd)
+
+    !> Allocate and initialize SA_MESH states.
+    call stas_fms_init(stas_fms, fms%stmg%n, 0, fms%rsvr%n, ierr)
+
+    !> Read variable states from file.
+    call read_initial_states(fls, shd, ierr)
 
 end subroutine

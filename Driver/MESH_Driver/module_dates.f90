@@ -212,11 +212,11 @@ module model_dates
         fyear = ic%stop%year
         year = ic%start%year
 
-        if (allocated (days_inyear)) deallocate (days_inyear)
-        if (allocated (ts%years)) deallocate (ts%years)
-        if (allocated (ts%daysINyears)) deallocate (ts%daysINyears)
-        if (allocated (ts%daysINseasons)) deallocate (ts%daysINseasons)
         allocate(days_inyear(ts%nyears))
+
+        if (allocated (ts%years)) deallocate(ts%years)
+        if (allocated (ts%daysINyears)) deallocate(ts%daysINyears)
+        if (allocated (ts%daysINseasons)) deallocate(ts%daysINseasons)
         allocate(ts%years(ts%nyears))
         allocate(ts%daysINyears(ts%nyears))
         allocate(ts%daysINseasons(12))
@@ -237,7 +237,7 @@ module model_dates
 
         ts%nr_days = nr_days
 
-        if (allocated(ts%dates)) deallocate (ts%dates)
+        if (allocated(ts%dates)) deallocate(ts%dates)
         allocate(ts%dates(nr_days, 4))
 
         ts%nr_timeStep = ts%nr_days*48
@@ -406,7 +406,7 @@ module model_dates
 
         ts%nmonths = n_months
 
-        if (allocated(ts%mnthyears)) deallocate (ts%mnthyears)
+        if (allocated(ts%mnthyears)) deallocate(ts%mnthyears)
         allocate(ts%mnthyears(n_months, 2))
 
         mth = ts%dates(1, 2)
@@ -422,7 +422,7 @@ module model_dates
             end if
         end do
 
-        if (allocated (ts%daysInmonths)) deallocate (ts%daysInmonths)
+        if (allocated (ts%daysInmonths)) deallocate(ts%daysInmonths)
         allocate(ts%daysInmonths(ts%nmonths))
 
     end subroutine !get_nr_months

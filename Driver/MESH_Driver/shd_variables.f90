@@ -110,6 +110,8 @@ module shd_variables
         !* xlng: Longitude of the grid in the x-direction. [-]
         real, dimension(:), allocatable :: xlng
 
+        integer, dimension(:, :), allocatable :: RNKGRD
+
     end type
 
     !> This type extends GridParams so it includes all the same
@@ -141,9 +143,6 @@ module shd_variables
 
         !* wc: Information about contributing water bodies.
         type(ContribElemsParams) :: wc
-
-        !> RANK: Rank of the grid by order of elevation and streamflow direction. [-]
-        integer, dimension(:), allocatable :: RANK
 
         !> NEXT: Rank of the grid that is immediately downstream of this grid. [-]
         integer, dimension(:), allocatable :: NEXT

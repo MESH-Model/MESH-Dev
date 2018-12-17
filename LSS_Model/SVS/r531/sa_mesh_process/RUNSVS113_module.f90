@@ -78,6 +78,9 @@ module RUNSVS113_module
         !> Read CLASS-style INI file.
 !        call read_ini_file(bus, bussiz)
 
+        !> MPI: Return if running in parallel and not the head node.
+        if (.not. (ipid /= 0 .or. izero == 0)) return
+
         !> Time loop.
 
         !> Convert start date/hour to CMC datestamp.
@@ -111,20 +114,20 @@ module RUNSVS113_module
 !            end if
 
         do k = 0, NG - 1
-            if(cm%dat(ck%TT)%GAT(k + 1) > tcdk) then
-                bus(rainrate + k) = cm%dat(ck%RT)%GAT(k + 1)/1000.0
+            if(cm%dat(ck%TT)%GAT(il1 + k) > tcdk) then
+                bus(rainrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
                 bus(snowrate + k) = 0.0
             else
                 bus(rainrate + k) = 0.0
-                bus(snowrate + k) = cm%dat(ck%RT)%GAT(k + 1)/1000.0
+                bus(snowrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
             end if
-            bus(flusolis + k) = cm%dat(ck%FB)%GAT(k + 1)
-            bus(fdsi + k) = cm%dat(ck%FI)%GAT(k + 1)
-            bus(tmoins + k) = cm%dat(ck%TT)%GAT(k + 1)
-            bus(humoins + k) = cm%dat(ck%HU)%GAT(k + 1)
-            bus(umoins + k) = cm%dat(ck%UV)%GAT(k + 1)
+            bus(flusolis + k) = cm%dat(ck%FB)%GAT(il1 + k)
+            bus(fdsi + k) = cm%dat(ck%FI)%GAT(il1 + k)
+            bus(tmoins + k) = cm%dat(ck%TT)%GAT(il1 + k)
+            bus(humoins + k) = cm%dat(ck%HU)%GAT(il1 + k)
+            bus(umoins + k) = cm%dat(ck%UV)%GAT(il1 + k)
             bus(vmoins + k) = 0.0
-            bus(pmoins + k) = cm%dat(ck%P0)%GAT(k + 1)
+            bus(pmoins + k) = cm%dat(ck%P0)%GAT(il1 + k)
         end do
 
                 call compvirttemp(sigma_t, bus, bussiz)
@@ -153,55 +156,57 @@ module RUNSVS113_module
 !        do k = 0, NG - 1
 !            bus(runofftotaf + k) = bus(runofftotaf + k) + bus(runofftot + k)
 !            if (hour_v == 0) then
-!                write (fid_out, '(i8, a1, i8.8, i5, 10(f10.4))') date_v, '.', hour_v, (k + 1), &
+!                write (fid_out, '(i8, a1, i8.8, i5, 10(f10.4))') date_v, '.', hour_v, (il1 + k), &
 !                    (bus(wdsoil + j*NG + k), j = 0, 6), bus(runofftotaf + k), bus(latflaf + k), bus(drainaf + k)
 !            end if
 !        end do
 
         !> Transfer variables.
         do k = 0, NG - 1
-            stas%cnpy%qac(k + 1) = bus(qsurf + k)
-            stas%cnpy%rcan(k + 1) = bus(wveg + k)
-!-            stas%cnpy%sncan(k + 1) =
-            stas%cnpy%tac(k + 1) = bus(tsurf + k)
-            stas%cnpy%tcan(k + 1) = (bus(tvege + k) + bus(tvege + NG + k) + bus(tsnowveg + k) + bus(tsnowveg + NG + k))/4.0
-!-            stas%cnpy%cmai(k + 1) =
-!-            stas%cnpy%gro(k + 1) =
-!-            stas%cnpy%pevp(k + 1) =
-            stas%sno%sno(k + 1) = bus(snoma + k)
-            stas%sno%albs(k + 1) = (bus(snoal + k) + bus(snval + k))/2.0
-!-            stas%sno%fsno(k + 1) =
-            stas%sno%rhos(k + 1) = ((bus(snoro + k) + bus(snvro + k))/2.0)*900.0
-            stas%sno%tsno(k + 1) = (bus(tsnow + k) + bus(tsnow + NG + k))/2.0
+            stas%cnpy%rcan(il1 + k) = bus(wveg + k)
+!-            stas%cnpy%sncan(il1 + k) =
+!-            stas%cnpy%cmas(il1 + k) =
+            stas%cnpy%tac(il1 + k) = bus(tsurf + k)
+            stas%cnpy%tcan(il1 + k) = (bus(tvege + k) + bus(tvege + NG + k) + bus(tsnowveg + k) + bus(tsnowveg + NG + k))/4.0
+            stas%cnpy%qac(il1 + k) = bus(qsurf + k)
+!-            stas%cnpy%gro(il1 + k) =
+            stas%sno%sno(il1 + k) = bus(snoma + k)
+            stas%sno%albs(il1 + k) = (bus(snoal + k) + bus(snval + k))/2.0
+!-            stas%sno%fsno(il1 + k) =
+            stas%sno%rhos(il1 + k) = ((bus(snoro + k) + bus(snvro + k))/2.0)*900.0
             if (bus(snoma + k) > 0.0) then
-                stas%sno%wsno(k + 1) = bus(wsnow + k)
+                stas%sno%wsno(il1 + k) = bus(wsnow + k)
+                stas%sno%tsno(il1 + k) = (bus(tsnow + k) + bus(tsnow + NG + k))/2.0
             else
-                stas%sno%wsno(k + 1) = 0.0
+                stas%sno%wsno(il1 + k) = 0.0
+                stas%sno%tsno(il1 + k) = 0.0
             end if
-!-            stas%sfc%tpnd(k + 1) =
-!-            stas%sfc%zpnd(k + 1) =
-!-            stas%sfc%pndw(k + 1) =
-            stas%sfc%evap(k + 1) = bus(fvap + k)
-            stas%sfc%qevp(k + 1) = bus(fv + k)
-            stas%sfc%hfs(k + 1) = bus(fc + k)
-            stas%sfc%rofo(k + 1) = max(0.0, bus(runofftot + k))/ic%dts
-!-            stas%sfc%tsfs(k + 1, :) =
-!-            stas%sl%tbas(k + 1) =
-            stas%sl%rofs(k + 1) = max(0.0, bus(latflw + k))/ic%dts
-            stas%sl%thic(k + 1, 1) = bus(isoil + k)
-!-            stas%sl%fzws(k + 1, :) =
-            stas%sl%thlq(k + 1, 1) = bus(wdsoil + k)
-            stas%sl%thlq(k + 1, 2) = bus(wdsoil + NG + k)
+!-            stas%sfc%zpnd(il1 + k) =
+!-            stas%sfc%tpnd(il1 + k) =
+!-            stas%sfc%pevp(il1 + k) =
+            stas%sfc%evap(il1 + k) = bus(fvap + k)
+            stas%sfc%qevp(il1 + k) = bus(fv + k)
+            stas%sfc%hfs(il1 + k) = bus(fc + k)
+            stas%sfc%rofo(il1 + k) = max(0.0, bus(runofftot + k))/ic%dts
+!-            stas%sfc%tsfs(il1 + k, :) =
+!-            stas%sl%tbas(il1 + k) =
+!EG_MOD add lateral flow from all layers
+            stas%sl%rofs(il1 + k) = 0.0
+            do j = 0, 6
+                stas%sl%rofs(il1 + k) = stas%sl%rofs(il1 + k) + max(0.0, bus(latflw + j*NG + k))/ic%dts
+            end do
+            stas%sl%thic(il1 + k, 1) = bus(isoil + k)
+            stas%sl%thlq(il1 + k, 1) = bus(wdsoil + k)
+            stas%sl%thlq(il1 + k, 2) = bus(wdsoil + NG + k)
             do j = 3, shd%lc%IGND
-                stas%sl%thlq(k + 1, j) = bus(wdsoil + j*NG + k)
+                stas%sl%thlq(il1 + k, j) = bus(wdsoil + j*NG + k)
             end do
-!-            stas%sl%lqws(k + 1, :) =
-            stas%sl%tbar(k + 1, 1) = bus(tsoil + k)
+            stas%sl%tbar(il1 + k, 1) = bus(tsoil + k)
             do j = 2, shd%lc%IGND
-                stas%sl%tbar(k + 1, j) = bus(tsoil + NG + k)
+                stas%sl%tbar(il1 + k, j) = bus(tsoil + NG + k)
             end do
-!-            stas%sl%gflx(k + 1, :) =
-            stas%lzs%rofb(k + 1) = max(0.0, bus(watflow + 6*NG + k))/ic%dts
+!-            stas%sl%gflx(il1 + k, :) =
+            stas%lzs%rofb(il1 + k) = max(0.0, bus(watflow + 6*NG + k))/ic%dts
         end do
 
             !> Read meteorological forcing data.

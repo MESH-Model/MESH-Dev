@@ -364,6 +364,7 @@ CDAN      print*,'avant calling program flg,328'
         allocate(s(shd%yCount, shd%xCount),
 !     *    dummy(shd%yCount, shd%xCount),
      *    shd%xxx(shd%NA), shd%yyy(shd%NA),
+     *    shd%RNKGRD(shd%yCount, shd%xCount),
 !     *    flz2(na), pwr2(na),
 !     *    sl2(na),
      *    shd%IROUGH(shd%NA),
@@ -473,6 +474,7 @@ C  do yi=yCount,1,-1
           end do
         end if
       end do
+      shd%RNKGRD = int(s)
 !      end if
 
 !C// Copy attribute data (not classes yet) over to global attributes
@@ -482,7 +484,7 @@ C  do yi=yCount,1,-1
       do yi = 1, shd%yCount
         do xi = 1, shd%xCount
           vi = vi + 1
-          rank = s(yi, xi)
+          rank = shd%RNKGRD(yi, xi)
           if (rank > 0) then
     !    do ai=1,attCount-ntype
     !c    do ai=1,attCount-(ntype+1)
@@ -579,7 +581,7 @@ c reverse the direction of the yi loop
 C   do yi=yCount,1,-1
         do xi = 1, shd%xCount
           vi = vi + 1
-          rank = s(yi, xi)
+          rank = shd%RNKGRD(yi, xi)
           if (rank > 0) then
             do ai = attCount - shd%lc%NTYPE, attCount
               val = header%r2cp%ep%attList(ai)%val(vi)
@@ -604,7 +606,7 @@ C// I'm not sure if we need this...check with Nick
       do yi = 1, shd%yCount
         do xi = 1, shd%xCount
           vi = vi + 1
-          rank = s(yi, xi)
+          rank = shd%RNKGRD(yi, xi)
           if (rank > 0) then
             shd%xxx(rank) = xi
             shd%yyy(rank) = yi

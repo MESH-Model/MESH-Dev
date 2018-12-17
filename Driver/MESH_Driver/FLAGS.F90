@@ -27,13 +27,8 @@
 !> NOV 18/14 -GSA- Variable in/out file names
       INTEGER VARIABLEFILESFLAG
 
-!-      INTEGER BASINBALANCEOUTFLAG
-      integer :: BASINAVGEBFILEFLAG = 0
       integer :: BASINAVGEVPFILEFLAG = 0
       INTEGER MODELINFOOUTFLAG
       INTEGER :: BASINSWEOUTFLAG = 0
-
-    character(len = 4) :: STREAMFLOWFILEFLAG = ''
-    character(len = 4) :: RESERVOIRFILEFLAG = ''
 
       END

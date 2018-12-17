@@ -12,7 +12,7 @@ module RUNCLASS36_variables
 
     integer JLAT
 
-    integer IDISP, IZREF, ISLFD, IPCP, IWF, IPAI, IHGT, IALC, &
+    integer IDISP, IZREF, ISLFD, IPCP, IPAI, IHGT, IALC, &
         IALS, IALG, ITG, ITC, ITCG
 
     !> CLASS diagnostic output starting and stopping dates.
@@ -58,8 +58,8 @@ module RUNCLASS36_variables
 
     !> PDMROF.
 !todo: isolate PDMROF from CLASS code
-    real ZPND, FSTR
-    real, dimension(:), allocatable   :: CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
+    real, dimension(:), allocatable :: &
+        CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
         ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
         UM1CS, UM1C, UM1G, UM1GS, &
         QM1CS, QM1C, QM1G, QM1GS, &
@@ -89,8 +89,9 @@ module RUNCLASS36_variables
 
         !> Dimension: NML
         real, dimension(:), allocatable :: &
-            AGID, AGVD, ALGD, ALGW, ASID, ASVD, DRN, FARE, GRKF, MID, &
+            AGID, AGVD, ALGD, ALGW, ASID, ASVD, DRN, FARE, GRKF, &
             SDEP, WFCI, WFSF, XSLP, ZPLG, ZPLS, ZSNL
+        integer, dimension(:), allocatable :: MID, IWF
 
         !> Dimension: NML, IGND
         integer, dimension(:), allocatable :: IGDR
@@ -149,8 +150,10 @@ module RUNCLASS36_variables
 
     !> Type: RUNCLASS36_Flags
     !* PROCESS_ACTIVE: Flag to enable CLASS.
+    !* INTERFLOWFLAG: IWF flag (global).
     type RUNCLASS36_flags
         logical :: PROCESS_ACTIVE = .true.
+        integer :: INTERFLOWFLAG = 1
     end type
 
 !todo: may need to move these.

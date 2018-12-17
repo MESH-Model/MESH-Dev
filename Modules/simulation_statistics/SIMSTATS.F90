@@ -191,8 +191,8 @@ module SIMSTATS
     !>
     subroutine stats_init(fls, stfl)
 
+        use sa_mesh_shared_variables
         use model_files_variables
-        use model_output_variabletypes
 
     !> Input variables.
         type(fl_ids) :: fls
@@ -234,16 +234,13 @@ module SIMSTATS
         ncal = 0
         ns = stfl%ns
 
-        if (allocated(qobs)) deallocate (qobs)
-        if (allocated(qsim)) deallocate (qsim)
-        if (allocated(bias)) deallocate (bias)
-        if (allocated(nsd)) deallocate (nsd)
-        if (allocated(lnsd)) deallocate (lnsd)
-        if (allocated(nsw)) deallocate (nsw)
-        if (allocated(tpd)) deallocate (tpd)
-        if (allocated(tpw)) deallocate (tpw)
-
+        if (allocated(qobs)) then
+            deallocate(qobs, qsim)
+        end if
         allocate(qobs(leap_year(ic%now%year), ns), qsim(leap_year(ic%now%year), ns))
+        if (allocated(bias)) then
+            deallocate(bias, nsd, lnsd, nsw, tpd, tpw)
+        end if
         allocate(bias(ns), nsd(ns), lnsd(ns), nsw(ns), tpd(ns), tpw(ns))
 
         qobs = 0.0
@@ -260,8 +257,8 @@ module SIMSTATS
     !>
     subroutine stats_update_stfl_daily(fls, stfl)
 
+        use sa_mesh_shared_variables
         use model_files_variables
-        use model_output_variabletypes
 
         !> Input variables.
         type(fl_ids) :: fls

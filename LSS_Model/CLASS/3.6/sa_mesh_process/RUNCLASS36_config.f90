@@ -115,8 +115,9 @@ module RUNCLASS36_config
             /1x, 'Check that these bounds are within an acceptable range.', /)
 1118 format(3x, a, ': ', i6)
 
-        if (allocated(XDGAT)) deallocate(XDGAT)
-        if (allocated(KSGAT)) deallocate(KSGAT)
+        if (allocated(XDGAT)) then
+            deallocate(XDGAT, KSGAT)
+        end if
         allocate(XDGAT(NML), KSGAT(NML), stat = ierr)
 
         if (ierr /= 0) then
@@ -131,8 +132,9 @@ module RUNCLASS36_config
         end if
 
         !> WATROF FLAGS AND VARIABLES:
-        if (allocated(DDGAT)) deallocate(DDGAT)
-        if (allocated(MANNGAT)) deallocate(MANNGAT)
+        if (allocated(DDGAT)) then
+            deallocate(DDGAT, MANNGAT)
+        end if
         allocate(DDGAT(NML), MANNGAT(NML), stat = ierr)
         if (ierr /= 0) then
             print 1114, 'WATROF'
@@ -143,28 +145,17 @@ module RUNCLASS36_config
         end if
 
         !> ATMOSPHERIC AND GRID-CONSTANT INPUT VARIABLES:
-        if (allocated(ZDMGRD)) deallocate (ZDMGRD)
-        if (allocated(ZDHGRD)) deallocate (ZDHGRD)
-        if (allocated(RADJGRD)) deallocate (RADJGRD)
-        if (allocated(CSZGRD)) deallocate (CSZGRD)
-        if (allocated(PADRGRD)) deallocate (PADRGRD)
-        if (allocated(VPDGRD)) deallocate (VPDGRD)
-        if (allocated(TADPGRD)) deallocate (TADPGRD)
-        if (allocated(RHOAGRD)) deallocate (RHOAGRD)
-        if (allocated(RPCPGRD)) deallocate (RPCPGRD)
-        if (allocated(TRPCGRD)) deallocate (TRPCGRD)
-        if (allocated(SPCPGRD)) deallocate (SPCPGRD)
-        if (allocated(TSPCGRD)) deallocate (TSPCGRD)
-        if (allocated(RHSIGRD)) deallocate (RHSIGRD)
-        if (allocated(FCLOGRD)) deallocate (FCLOGRD)
-        if (allocated(DLONGRD)) deallocate (DLONGRD)
-        if (allocated(Z0ORGRD)) deallocate (Z0ORGRD)
-        if (allocated(GGEOGRD)) deallocate (GGEOGRD)
-        if (allocated(UVGRD)) deallocate (UVGRD)
-        if (allocated(XDIFFUS)) deallocate (XDIFFUS)
-        if (allocated(RPREGRD)) deallocate (RPREGRD)
-        if (allocated(SPREGRD)) deallocate (SPREGRD)
-        if (allocated(VMODGRD)) deallocate (VMODGRD)
+        if (allocated(ZDMGRD)) then
+            deallocate(ZDMGRD, &
+                       ZDHGRD, RADJGRD, &
+                       CSZGRD, &
+                       PADRGRD, VPDGRD, &
+                       TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
+                       SPCPGRD, TSPCGRD, RHSIGRD, &
+                       FCLOGRD, DLONGRD, Z0ORGRD, GGEOGRD, UVGRD, &
+                       XDIFFUS, &
+                       RPREGRD, SPREGRD, VMODGRD)
+        end if
         allocate(ZDMGRD(NA), &
                  ZDHGRD(NA), RADJGRD(NA), &
                  CSZGRD(NA), &
@@ -184,74 +175,30 @@ module RUNCLASS36_config
         end if
 
         !> LAND SURFACE DIAGNOSTIC VARIABLES:
-        if (allocated(SFRHGAT)) deallocate(SFRHGAT)
-        if (allocated(QLWOGAT)) deallocate(QLWOGAT)
-        if (allocated(FTEMP)) deallocate(FTEMP)
-        if (allocated(FVAP)) deallocate(FVAP)
-        if (allocated(RIB)) deallocate(RIB)
-        if (allocated(CDHGRD)) deallocate(CDHGRD)
-        if (allocated(CDMGRD)) deallocate(CDMGRD)
-        if (allocated(HFSGRD)) deallocate(HFSGRD)
-        if (allocated(TFXGRD)) deallocate(TFXGRD)
-        if (allocated(QEVPGRD)) deallocate(QEVPGRD)
-        if (allocated(QFSGRD)) deallocate(QFSGRD)
-        if (allocated(QFXGRD)) deallocate(QFXGRD)
-        if (allocated(PETGRD)) deallocate(PETGRD)
-        if (allocated(GAGRD)) deallocate(GAGRD)
-        if (allocated(EFGRD)) deallocate(EFGRD)
-        if (allocated(GTGRD)) deallocate(GTGRD)
-        if (allocated(QGGRD)) deallocate(QGGRD)
-        if (allocated(TSFGRD)) deallocate(TSFGRD)
-        if (allocated(ALVSGRD)) deallocate(ALVSGRD)
-        if (allocated(ALIRGRD)) deallocate(ALIRGRD)
-        if (allocated(FSNOGRD)) deallocate(FSNOGRD)
-        if (allocated(SFCTGRD)) deallocate(SFCTGRD)
-        if (allocated(SFCUGRD)) deallocate(SFCUGRD)
-        if (allocated(SFCVGRD)) deallocate(SFCVGRD)
-        if (allocated(SFCQGRD)) deallocate(SFCQGRD)
-        if (allocated(FSGVGRD)) deallocate(FSGVGRD)
-        if (allocated(FSGSGRD)) deallocate(FSGSGRD)
-        if (allocated(FSGGGRD)) deallocate(FSGGGRD)
-        if (allocated(FLGVGRD)) deallocate(FLGVGRD)
-        if (allocated(FLGSGRD)) deallocate(FLGSGRD)
-        if (allocated(FLGGGRD)) deallocate(FLGGGRD)
-        if (allocated(HFSCGRD)) deallocate(HFSCGRD)
-        if (allocated(HFSSGRD)) deallocate(HFSSGRD)
-        if (allocated(HFSGGRD)) deallocate(HFSGGRD)
-        if (allocated(HEVCGRD)) deallocate(HEVCGRD)
-        if (allocated(HEVSGRD)) deallocate(HEVSGRD)
-        if (allocated(HEVGGRD)) deallocate(HEVGGRD)
-        if (allocated(HMFCGRD)) deallocate(HMFCGRD)
-        if (allocated(HMFNGRD)) deallocate(HMFNGRD)
-        if (allocated(HTCCGRD)) deallocate(HTCCGRD)
-        if (allocated(HTCSGRD)) deallocate(HTCSGRD)
-        if (allocated(PCFCGRD)) deallocate(PCFCGRD)
-        if (allocated(PCLCGRD)) deallocate(PCLCGRD)
-        if (allocated(PCPNGRD)) deallocate(PCPNGRD)
-        if (allocated(PCPGGRD)) deallocate(PCPGGRD)
-        if (allocated(QFGGRD)) deallocate(QFGGRD)
-        if (allocated(QFNGRD)) deallocate(QFNGRD)
-        if (allocated(QFCLGRD)) deallocate(QFCLGRD)
-        if (allocated(QFCFGRD)) deallocate(QFCFGRD)
-        if (allocated(ROFGRD)) deallocate(ROFGRD)
-        if (allocated(ROFOGRD)) deallocate(ROFOGRD)
-        if (allocated(ROFSGRD)) deallocate(ROFSGRD)
-        if (allocated(ROFBGRD)) deallocate(ROFBGRD)
-        if (allocated(ROFCGRD)) deallocate(ROFCGRD)
-        if (allocated(ROFNGRD)) deallocate(ROFNGRD)
-        if (allocated(ROVGGRD)) deallocate(ROVGGRD)
-        if (allocated(WTRCGRD)) deallocate(WTRCGRD)
-        if (allocated(WTRSGRD)) deallocate(WTRSGRD)
-        if (allocated(WTRGGRD)) deallocate(WTRGGRD)
-        if (allocated(DRGRD)) deallocate(DRGRD)
-        if (allocated(WTABGRD)) deallocate(WTABGRD)
-        if (allocated(ILMOGRD)) deallocate(ILMOGRD)
-        if (allocated(UEGRD)) deallocate(UEGRD)
-        if (allocated(HBLGRD)) deallocate(HBLGRD)
-        if (allocated(HMFGGRD)) deallocate(HMFGGRD)
-        if (allocated(HTCGRD)) deallocate(HTCGRD)
-        if (allocated(QFCGRD)) deallocate(QFCGRD)
-        if (allocated(GFLXGRD)) deallocate(GFLXGRD)
+        if (allocated(SFRHGAT)) then
+            deallocate(SFRHGAT, &
+                       QLWOGAT, &
+                       FTEMP, FVAP, RIB, &
+                       CDHGRD, CDMGRD, HFSGRD, &
+                       TFXGRD, QEVPGRD, QFSGRD, QFXGRD, PETGRD, &
+                       GAGRD, EFGRD, GTGRD, &
+                       QGGRD, TSFGRD, ALVSGRD, ALIRGRD, FSNOGRD, &
+                       SFCTGRD, SFCUGRD, &
+                       SFCVGRD, SFCQGRD, FSGVGRD, FSGSGRD, &
+                       FSGGGRD, FLGVGRD, FLGSGRD, &
+                       FLGGGRD, HFSCGRD, HFSSGRD, HFSGGRD, &
+                       HEVCGRD, HEVSGRD, HEVGGRD, &
+                       HMFCGRD, HMFNGRD, HTCCGRD, HTCSGRD, &
+                       PCFCGRD, PCLCGRD, PCPNGRD, &
+                       PCPGGRD, QFGGRD, QFNGRD, QFCLGRD, QFCFGRD, &
+                       ROFGRD, ROFOGRD, &
+                       ROFSGRD, ROFBGRD, ROFCGRD, ROFNGRD, &
+                       ROVGGRD, WTRCGRD, WTRSGRD, &
+                       WTRGGRD, DRGRD, WTABGRD, ILMOGRD, UEGRD, &
+                       HBLGRD, &
+                       HMFGGRD, HTCGRD, QFCGRD, &
+                       GFLXGRD)
+        end if
         allocate(SFRHGAT(NML), &
                  QLWOGAT(NML), &
                  FTEMP(NML), FVAP(NML), RIB(NML), &
@@ -284,108 +231,50 @@ module RUNCLASS36_config
         end if
 
         !> CROSS-CLASS VARIABLES (CLASS):
-        if (allocated(TBARC)) deallocate(TBARC)
-        if (allocated(TBARG)) deallocate(TBARG)
-        if (allocated(TBARCS)) deallocate(TBARCS)
-        if (allocated(TBARGS)) deallocate(TBARGS)
-        if (allocated(THLIQC)) deallocate(THLIQC)
-        if (allocated(THLIQG)) deallocate(THLIQG)
-        if (allocated(THICEC)) deallocate(THICEC)
-        if (allocated(THICEG)) deallocate(THICEG)
-        if (allocated(FROOT)) deallocate(FROOT)
-        if (allocated(HCPC)) deallocate(HCPC)
-        if (allocated(HCPG)) deallocate(HCPG)
-        if (allocated(TCTOPC)) deallocate(TCTOPC)
-        if (allocated(TCBOTC)) deallocate(TCBOTC)
-        if (allocated(TCTOPG)) deallocate(TCTOPG)
-        if (allocated(TCBOTG)) deallocate(TCBOTG)
-        if (allocated(RBCOEF)) deallocate(RBCOEF)
-        if (allocated(ZSNOW)) deallocate(ZSNOW)
-        if (allocated(FSVF)) deallocate(FSVF)
-        if (allocated(FSVFS)) deallocate(FSVFS)
-        if (allocated(ALVSCN)) deallocate(ALVSCN)
-        if (allocated(ALIRCN)) deallocate(ALIRCN)
-        if (allocated(ALVSG)) deallocate(ALVSG)
-        if (allocated(ALIRG)) deallocate(ALIRG)
-        if (allocated(ALVSCS)) deallocate(ALVSCS)
-        if (allocated(ALIRCS)) deallocate(ALIRCS)
-        if (allocated(ALVSSN)) deallocate(ALVSSN)
-        if (allocated(ALIRSN)) deallocate(ALIRSN)
-        if (allocated(ALVSGC)) deallocate(ALVSGC)
-        if (allocated(ALIRGC)) deallocate(ALIRGC)
-        if (allocated(ALVSSC)) deallocate(ALVSSC)
-        if (allocated(ALIRSC)) deallocate(ALIRSC)
-        if (allocated(TRVSCN)) deallocate(TRVSCN)
-        if (allocated(TRIRCN)) deallocate(TRIRCN)
-        if (allocated(TRVSCS)) deallocate(TRVSCS)
-        if (allocated(TRIRCS)) deallocate(TRIRCS)
-        if (allocated(RC)) deallocate(RC)
-        if (allocated(RCS)) deallocate(RCS)
-        if (allocated(FRAINC)) deallocate(FRAINC)
-        if (allocated(FSNOWC)) deallocate(FSNOWC)
-        if (allocated(FRAICS)) deallocate(FRAICS)
-        if (allocated(FSNOCS)) deallocate(FSNOCS)
-        if (allocated(CMASSC)) deallocate(CMASSC)
-        if (allocated(CMASCS)) deallocate(CMASCS)
-        if (allocated(DISP)) deallocate(DISP)
-        if (allocated(DISPS)) deallocate(DISPS)
-        if (allocated(ZOMLNC)) deallocate(ZOMLNC)
-        if (allocated(ZOELNC)) deallocate(ZOELNC)
-        if (allocated(ZOMLNG)) deallocate(ZOMLNG)
-        if (allocated(ZOELNG)) deallocate(ZOELNG)
-        if (allocated(ZOMLCS)) deallocate(ZOMLCS)
-        if (allocated(ZOELCS)) deallocate(ZOELCS)
-        if (allocated(ZOMLNS)) deallocate(ZOMLNS)
-        if (allocated(ZOELNS)) deallocate(ZOELNS)
-        if (allocated(TRSNOW)) deallocate(TRSNOW)
-        if (allocated(CHCAP)) deallocate(CHCAP)
-        if (allocated(CHCAPS)) deallocate(CHCAPS)
-        if (allocated(GZEROC)) deallocate(GZEROC)
-        if (allocated(GZEROG)) deallocate(GZEROG)
-        if (allocated(GZROCS)) deallocate(GZROCS)
-        if (allocated(GZROGS)) deallocate(GZROGS)
-        if (allocated(G12C)) deallocate(G12C)
-        if (allocated(G12G)) deallocate(G12G)
-        if (allocated(G12CS)) deallocate(G12CS)
-        if (allocated(G12GS)) deallocate(G12GS)
-        if (allocated(G23C)) deallocate(G23C)
-        if (allocated(G23G)) deallocate(G23G)
-        if (allocated(G23CS)) deallocate(G23CS)
-        if (allocated(G23GS)) deallocate(G23GS)
-        if (allocated(QFREZC)) deallocate(QFREZC)
-        if (allocated(QFREZG)) deallocate(QFREZG)
-        if (allocated(QMELTC)) deallocate(QMELTC)
-        if (allocated(QMELTG)) deallocate(QMELTG)
-        if (allocated(EVAPC)) deallocate(EVAPC)
-        if (allocated(EVAPCG)) deallocate(EVAPCG)
-        if (allocated(EVAPG)) deallocate(EVAPG)
-        if (allocated(EVAPCS)) deallocate(EVAPCS)
-        if (allocated(EVPCSG)) deallocate(EVPCSG)
-        if (allocated(EVAPGS)) deallocate(EVAPGS)
-        if (allocated(TCANO)) deallocate(TCANO)
-        if (allocated(TCANS)) deallocate(TCANS)
-        if (allocated(RAICAN)) deallocate(RAICAN)
-        if (allocated(SNOCAN)) deallocate(SNOCAN)
-        if (allocated(RAICNS)) deallocate(RAICNS)
-        if (allocated(SNOCNS)) deallocate(SNOCNS)
-        if (allocated(CWLCAP)) deallocate(CWLCAP)
-        if (allocated(CWFCAP)) deallocate(CWFCAP)
-        if (allocated(CWLCPS)) deallocate(CWLCPS)
-        if (allocated(CWFCPS)) deallocate(CWFCPS)
-        if (allocated(TSNOCS)) deallocate(TSNOCS)
-        if (allocated(TSNOGS)) deallocate(TSNOGS)
-        if (allocated(RHOSCS)) deallocate(RHOSCS)
-        if (allocated(RHOSGS)) deallocate(RHOSGS)
-        if (allocated(WSNOCS)) deallocate(WSNOCS)
-        if (allocated(WSNOGS)) deallocate(WSNOGS)
-        if (allocated(TPONDC)) deallocate(TPONDC)
-        if (allocated(TPONDG)) deallocate(TPONDG)
-        if (allocated(TPNDCS)) deallocate(TPNDCS)
-        if (allocated(TPNDGS)) deallocate(TPNDGS)
-        if (allocated(ZPLMCS)) deallocate(ZPLMCS)
-        if (allocated(ZPLMGS)) deallocate(ZPLMGS)
-        if (allocated(ZPLIMC)) deallocate(ZPLIMC)
-        if (allocated(ZPLIMG)) deallocate(ZPLIMG)
+        if (allocated(TBARC)) then
+            deallocate(TBARC, TBARG, &
+                       TBARCS, &
+                       TBARGS, THLIQC, &
+                       THLIQG, THICEC, &
+                       THICEG, FROOT, &
+                       HCPC, HCPG, &
+                       TCTOPC, TCBOTC, &
+                       TCTOPG, TCBOTG, &
+                       RBCOEF, &
+                       ZSNOW, &
+                       FSVF, FSVFS, ALVSCN, &
+                       ALIRCN, ALVSG, &
+                       ALIRG, ALVSCS, ALIRCS, &
+                       ALVSSN, ALIRSN, ALVSGC, &
+                       ALIRGC, ALVSSC, &
+                       ALIRSC, TRVSCN, TRIRCN, &
+                       TRVSCS, TRIRCS, RC, &
+                       RCS, FRAINC, &
+                       FSNOWC,FRAICS,FSNOCS, &
+                       CMASSC, CMASCS, &
+                       DISP, DISPS, ZOMLNC, &
+                       ZOELNC, ZOMLNG, &
+                       ZOELNG, ZOMLCS, ZOELCS, &
+                       ZOMLNS, ZOELNS, TRSNOW, &
+                       CHCAP, CHCAPS, &
+                       GZEROC, GZEROG, GZROCS, &
+                       GZROGS, G12C, G12G, &
+                       G12CS, G12GS, G23C, &
+                       G23G, G23CS, G23GS, &
+                       QFREZC, QFREZG, QMELTC, &
+                       QMELTG, EVAPC, &
+                       EVAPCG, EVAPG, EVAPCS, &
+                       EVPCSG, EVAPGS, TCANO, &
+                       TCANS, RAICAN, &
+                       SNOCAN, RAICNS, SNOCNS, &
+                       CWLCAP, CWFCAP, CWLCPS, &
+                       CWFCPS, TSNOCS, &
+                       TSNOGS, RHOSCS, RHOSGS, &
+                       WSNOCS, WSNOGS, TPONDC, &
+                       TPONDG, TPNDCS, &
+                       TPNDGS, ZPLMCS, ZPLMGS, &
+                       ZPLIMC, ZPLIMG)
+        end if
         allocate(TBARC(NML, NSL), TBARG(NML, NSL), &
                  TBARCS(NML, NSL), &
                  TBARGS(NML, NSL), THLIQC(NML, NSL), &
@@ -438,14 +327,12 @@ module RUNCLASS36_config
         end if
 
         !> BALANCE ERRORS (CLASS):
-        if (allocated(CTVSTP)) deallocate(CTVSTP)
-        if (allocated(CTSSTP)) deallocate(CTSSTP)
-        if (allocated(CT1STP)) deallocate(CT1STP)
-        if (allocated(CT2STP)) deallocate(CT2STP)
-        if (allocated(CT3STP)) deallocate(CT3STP)
-        if (allocated(WTVSTP)) deallocate(WTVSTP)
-        if (allocated(WTSSTP)) deallocate(WTSSTP)
-        if (allocated(WTGSTP)) deallocate(WTGSTP)
+        if (allocated(CTVSTP)) then
+            deallocate(CTVSTP, CTSSTP, &
+                       CT1STP, &
+                       CT2STP, CT3STP, WTVSTP, &
+                       WTSSTP, WTGSTP)
+        end if
         allocate(CTVSTP(NML), CTSSTP(NML), &
                  CT1STP(NML), &
                  CT2STP(NML), CT3STP(NML), WTVSTP(NML), &
@@ -459,32 +346,15 @@ module RUNCLASS36_config
         end if
 
         !> CTEM ERRORS (CLASS):
-        if (allocated(CO2CONC)) deallocate(CO2CONC)
-        if (allocated(COSZS)) deallocate(COSZS)
-        if (allocated(XDIFFUSC)) deallocate(XDIFFUSC)
-        if (allocated(CFLUXCG)) deallocate(CFLUXCG)
-        if (allocated(CFLUXCS)) deallocate(CFLUXCS)
-        if (allocated(AILCG)) deallocate(AILCG)
-        if (allocated(AILCGS)) deallocate(AILCGS)
-        if (allocated(FCANC)) deallocate(FCANC)
-        if (allocated(FCANCS)) deallocate(FCANCS)
-        if (allocated(CO2I1CG)) deallocate(CO2I1CG)
-        if (allocated(CO2I1CS)) deallocate(CO2I1CS)
-        if (allocated(CO2I2CG)) deallocate(CO2I2CG)
-        if (allocated(CO2I2CS)) deallocate(CO2I2CS)
-        if (allocated(SLAI)) deallocate(SLAI)
-        if (allocated(FCANCMX)) deallocate(FCANCMX)
-        if (allocated(ANCSVEG)) deallocate(ANCSVEG)
-        if (allocated(ANCGVEG)) deallocate(ANCGVEG)
-        if (allocated(RMLCSVEG)) deallocate(RMLCSVEG)
-        if (allocated(RMLCGVEG)) deallocate(RMLCGVEG)
-        if (allocated(AILC)) deallocate(AILC)
-        if (allocated(PAIC)) deallocate(PAIC)
-        if (allocated(FIELDSM)) deallocate(FIELDSM)
-        if (allocated(WILTSM)) deallocate(WILTSM)
-        if (allocated(RMATCTEM)) deallocate(RMATCTEM)
-        if (allocated(RMATC)) deallocate(RMATC)
-        if (allocated(NOL2PFTS)) deallocate(NOL2PFTS)
+        if (allocated(CO2CONC)) then
+            deallocate(CO2CONC, COSZS, XDIFFUSC, CFLUXCG, CFLUXCS, &
+                       AILCG, AILCGS, FCANC, FCANCS, &
+                       CO2I1CG, CO2I1CS, CO2I2CG, CO2I2CS, &
+                       SLAI, FCANCMX, ANCSVEG, ANCGVEG, &
+                       RMLCSVEG, RMLCGVEG, &
+                       AILC, PAIC, FIELDSM, WILTSM, &
+                       RMATCTEM, RMATC, NOL2PFTS)
+        end if
         allocate(CO2CONC(NML), COSZS(NML), XDIFFUSC(NML), CFLUXCG(NML), CFLUXCS(NML), &
                  AILCG(NML, ICTEM), AILCGS(NML, ICTEM), FCANC(NML, ICTEM), FCANCS(NML, ICTEM), &
                  CO2I1CG(NML, ICTEM), CO2I1CS(NML, ICTEM), CO2I2CG(NML, ICTEM), CO2I2CS(NML, ICTEM), &
@@ -504,217 +374,94 @@ module RUNCLASS36_config
         end if
 
         !> Forcing input.
-        if (allocated(cfi%FDL)) deallocate(cfi%FDL)
-        if (allocated(cfi%FSIH)) deallocate(cfi%FSIH)
-        if (allocated(cfi%FSVH)) deallocate(cfi%FSVH)
-        if (allocated(cfi%PRE)) deallocate(cfi%PRE)
-        if (allocated(cfi%PRES)) deallocate(cfi%PRES)
-        if (allocated(cfi%QA)) deallocate(cfi%QA)
-        if (allocated(cfi%TA)) deallocate(cfi%TA)
-        if (allocated(cfi%UL)) deallocate(cfi%UL)
-        if (allocated(cfi%VL)) deallocate(cfi%VL)
-        if (allocated(cfi%VMOD)) deallocate(cfi%VMOD)
+        if (allocated(cfi%FDL)) then
+            deallocate(cfi%FDL, cfi%FSIH, cfi%FSVH, cfi%PRE, cfi%PRES, cfi%QA, cfi%TA, cfi%UL, &
+                       cfi%VL, cfi%VMOD)
+        end if
         allocate(cfi%FDL(NML), cfi%FSIH(NML), cfi%FSVH(NML), cfi%PRE(NML), cfi%PRES(NML), cfi%QA(NML), cfi%TA(NML), cfi%UL(NML), &
                  cfi%VL(NML), cfi%VMOD(NML))
 
         !> Prognostic variables.
-        if (allocated(cpv%ALBS)) deallocate (cpv%ALBS)
-        if (allocated(cpv%CMAI)) deallocate (cpv%CMAI)
-        if (allocated(cpv%GRO)) deallocate (cpv%GRO)
-        if (allocated(cpv%QAC)) deallocate (cpv%QAC)
-        if (allocated(cpv%RCAN)) deallocate (cpv%RCAN)
-        if (allocated(cpv%RHOS)) deallocate (cpv%RHOS)
-        if (allocated(cpv%SNCAN)) deallocate (cpv%SNCAN)
-        if (allocated(cpv%SNO)) deallocate (cpv%SNO)
-        if (allocated(cpv%TAC)) deallocate (cpv%TAC)
-        if (allocated(cpv%TBAS)) deallocate (cpv%TBAS)
-        if (allocated(cpv%TCAN)) deallocate (cpv%TCAN)
-        if (allocated(cpv%TPND)) deallocate (cpv%TPND)
-        if (allocated(cpv%TSNO)) deallocate (cpv%TSNO)
-        if (allocated(cpv%WSNO)) deallocate (cpv%WSNO)
-        if (allocated(cpv%ZPND)) deallocate (cpv%ZPND)
-        if (allocated(cpv%TBAR)) deallocate (cpv%TBAR)
-        if (allocated(cpv%THIC)) deallocate (cpv%THIC)
-        if (allocated(cpv%THLQ)) deallocate (cpv%THLQ)
-        if (allocated(cpv%TSFS)) deallocate (cpv%TSFS)
+        if (allocated(cpv%ALBS)) then
+            deallocate(cpv%ALBS, cpv%CMAI, cpv%GRO, cpv%QAC, cpv%RCAN, cpv%RHOS, cpv%SNCAN, &
+                       cpv%SNO, cpv%TAC, cpv%TBAS, cpv%TCAN, cpv%TPND, cpv%TSNO, cpv%WSNO, &
+                       cpv%ZPND)
+        end if
         allocate(cpv%ALBS(NML), cpv%CMAI(NML), cpv%GRO(NML), cpv%QAC(NML), cpv%RCAN(NML), cpv%RHOS(NML), cpv%SNCAN(NML), &
                  cpv%SNO(NML), cpv%TAC(NML), cpv%TBAS(NML), cpv%TCAN(NML), cpv%TPND(NML), cpv%TSNO(NML), cpv%WSNO(NML), &
                  cpv%ZPND(NML))
+        if (allocated(cpv%TBAR)) then
+            deallocate(cpv%TBAR, cpv%THIC, cpv%THLQ)
+        end if
         allocate(cpv%TBAR(NML, NSL), cpv%THIC(NML, NSL), cpv%THLQ(NML, NSL))
+        if (allocated(cpv%TSFS)) deallocate(cpv%TSFS)
         allocate(cpv%TSFS(NML, 4))
 
         !> Land-surface variables.
-        if (allocated(csfv%AGID)) deallocate (csfv%AGID)
-        if (allocated(csfv%AGVD)) deallocate (csfv%AGVD)
-        if (allocated(csfv%ALGD)) deallocate (csfv%ALGD)
-        if (allocated(csfv%ALGW)) deallocate (csfv%ALGW)
-        if (allocated(csfv%ASID)) deallocate (csfv%ASID)
-        if (allocated(csfv%ASVD)) deallocate (csfv%ASVD)
-        if (allocated(csfv%DRN)) deallocate (csfv%DRN)
-        if (allocated(csfv%FARE)) deallocate (csfv%FARE)
-        if (allocated(csfv%GRKF)) deallocate (csfv%GRKF)
-        if (allocated(csfv%MID)) deallocate (csfv%MID)
-        if (allocated(csfv%SDEP)) deallocate (csfv%SDEP)
-        if (allocated(csfv%WFCI)) deallocate (csfv%WFCI)
-        if (allocated(csfv%WFSF)) deallocate (csfv%WFSF)
-        if (allocated(csfv%XSLP)) deallocate (csfv%XSLP)
-        if (allocated(csfv%ZPLG)) deallocate (csfv%ZPLG)
-        if (allocated(csfv%ZPLS)) deallocate (csfv%ZPLS)
-        if (allocated(csfv%ZSNL)) deallocate (csfv%ZSNL)
-        if (allocated(csfv%IGDR)) deallocate (csfv%IGDR)
-        if (allocated(csfv%IORG)) deallocate (csfv%IORG)
-        if (allocated(csfv%ISND)) deallocate (csfv%ISND)
-        if (allocated(csfv%BI)) deallocate (csfv%BI)
-        if (allocated(csfv%CLAY)) deallocate (csfv%CLAY)
-        if (allocated(csfv%DELZW)) deallocate (csfv%DELZW)
-        if (allocated(csfv%GRKS)) deallocate (csfv%GRKS)
-        if (allocated(csfv%HCPS)) deallocate (csfv%HCPS)
-        if (allocated(csfv%ORGM)) deallocate (csfv%ORGM)
-        if (allocated(csfv%PSIS)) deallocate (csfv%PSIS)
-        if (allocated(csfv%PSIW)) deallocate (csfv%PSIW)
-        if (allocated(csfv%SAND)) deallocate (csfv%SAND)
-        if (allocated(csfv%TCS)) deallocate (csfv%TCS)
-        if (allocated(csfv%THFC)) deallocate (csfv%THFC)
-        if (allocated(csfv%THM)) deallocate (csfv%THM)
-        if (allocated(csfv%THP)) deallocate (csfv%THP)
-        if (allocated(csfv%THR)) deallocate (csfv%THR)
-        if (allocated(csfv%THRA)) deallocate (csfv%THRA)
-        if (allocated(csfv%ZBTW)) deallocate (csfv%ZBTW)
-        if (allocated(csfv%ACID)) deallocate (csfv%ACID)
-        if (allocated(csfv%ACVD)) deallocate (csfv%ACVD)
-        if (allocated(csfv%CMAS)) deallocate (csfv%CMAS)
-        if (allocated(csfv%HGTD)) deallocate (csfv%HGTD)
-        if (allocated(csfv%PAID)) deallocate (csfv%PAID)
-        if (allocated(csfv%PAMN)) deallocate (csfv%PAMN)
-        if (allocated(csfv%PAMX)) deallocate (csfv%PAMX)
-        if (allocated(csfv%PSGA)) deallocate (csfv%PSGA)
-        if (allocated(csfv%PSGB)) deallocate (csfv%PSGB)
-        if (allocated(csfv%QA50)) deallocate (csfv%QA50)
-        if (allocated(csfv%ROOT)) deallocate (csfv%ROOT)
-        if (allocated(csfv%RSMN)) deallocate (csfv%RSMN)
-        if (allocated(csfv%VPDA)) deallocate (csfv%VPDA)
-        if (allocated(csfv%VPDB)) deallocate (csfv%VPDB)
-        if (allocated(csfv%ALIC)) deallocate (csfv%ALIC)
-        if (allocated(csfv%ALVC)) deallocate (csfv%ALVC)
-        if (allocated(csfv%FCAN)) deallocate (csfv%FCAN)
-        if (allocated(csfv%LNZ0)) deallocate (csfv%LNZ0)
+        if (allocated(csfv%AGID)) then
+            deallocate(csfv%AGID, csfv%AGVD, csfv%ALGD, csfv%ALGW, csfv%ASID, csfv%ASVD, csfv%DRN, &
+                       csfv%FARE, csfv%GRKF, csfv%MID, csfv%IWF, csfv%SDEP, csfv%WFCI, csfv%WFSF, &
+                       csfv%XSLP, csfv%ZPLG, csfv%ZPLS, csfv%ZSNL)
+        end if
         allocate(csfv%AGID(NML), csfv%AGVD(NML), csfv%ALGD(NML), csfv%ALGW(NML), csfv%ASID(NML), csfv%ASVD(NML), csfv%DRN(NML), &
-                 csfv%FARE(NML), csfv%GRKF(NML), csfv%MID(NML), csfv%SDEP(NML), csfv%WFCI(NML), csfv%WFSF(NML), csfv%XSLP(NML), &
-                 csfv%ZPLG(NML), csfv%ZPLS(NML), csfv%ZSNL(NML))
+                 csfv%FARE(NML), csfv%GRKF(NML), csfv%MID(NML), csfv%IWF(NML), csfv%SDEP(NML), csfv%WFCI(NML), csfv%WFSF(NML), &
+                 csfv%XSLP(NML), csfv%ZPLG(NML), csfv%ZPLS(NML), csfv%ZSNL(NML))
+        if (allocated(csfv%IGDR)) deallocate(csfv%IGDR)
         allocate(csfv%IGDR(NML))
+        if (allocated(csfv%IORG)) then
+            deallocate(csfv%IORG, csfv%ISND)
+        end if
         allocate(csfv%IORG(NML, NSL), csfv%ISND(NML, NSL))
+        if (allocated(csfv%BI)) then
+            deallocate(csfv%BI, csfv%CLAY, csfv%DELZW, csfv%GRKS, csfv%HCPS, &
+                       csfv%ORGM, csfv%PSIS, csfv%PSIW, csfv%SAND, csfv%TCS, &
+                       csfv%THFC, csfv%THM, csfv%THP, csfv%THR, csfv%THRA, &
+                       csfv%ZBTW)
+        end if
         allocate(csfv%BI(NML, NSL), csfv%CLAY(NML, NSL), csfv%DELZW(NML, NSL), csfv%GRKS(NML, NSL), csfv%HCPS(NML, NSL), &
                  csfv%ORGM(NML, NSL), csfv%PSIS(NML, NSL), csfv%PSIW(NML, NSL), csfv%SAND(NML, NSL), csfv%TCS(NML, NSL), &
                  csfv%THFC(NML, NSL), csfv%THM(NML, NSL), csfv%THP(NML, NSL), csfv%THR(NML, NSL), csfv%THRA(NML, NSL), &
                  csfv%ZBTW(NML, NSL))
+        if (allocated(csfv%ACID)) then
+            deallocate(csfv%ACID, csfv%ACVD, csfv%CMAS, csfv%HGTD, csfv%PAID, &
+                       csfv%PAMN, csfv%PAMX, csfv%PSGA, csfv%PSGB, csfv%QA50, &
+                       csfv%ROOT, csfv%RSMN, csfv%VPDA, csfv%VPDB)
+        end if
         allocate(csfv%ACID(NML, ICAN), csfv%ACVD(NML, ICAN), csfv%CMAS(NML, ICAN), csfv%HGTD(NML, ICAN), csfv%PAID(NML, ICAN), &
                  csfv%PAMN(NML, ICAN), csfv%PAMX(NML, ICAN), csfv%PSGA(NML, ICAN), csfv%PSGB(NML, ICAN), csfv%QA50(NML, ICAN), &
                  csfv%ROOT(NML, ICAN), csfv%RSMN(NML, ICAN), csfv%VPDA(NML, ICAN), csfv%VPDB(NML, ICAN))
+        if (allocated(csfv%ALIC)) then
+            deallocate(csfv%ALIC, csfv%ALVC, csfv%FCAN, csfv%LNZ0)
+        end if
         allocate(csfv%ALIC(NML, ICP1), csfv%ALVC(NML, ICP1), csfv%FCAN(NML, ICP1), csfv%LNZ0(NML, ICP1))
 
         !> Atmospheric variables.
-        if (allocated(catv%CSZ)) deallocate (catv%CSZ)
-        if (allocated(catv%DLON)) deallocate (catv%DLON)
-        if (allocated(catv%FCLO)) deallocate (catv%FCLO)
-        if (allocated(catv%GC)) deallocate (catv%GC)
-        if (allocated(catv%GGEO)) deallocate (catv%GGEO)
-        if (allocated(catv%PADR)) deallocate (catv%PADR)
-        if (allocated(catv%RADJ)) deallocate (catv%RADJ)
-        if (allocated(catv%RHOA)) deallocate (catv%RHOA)
-        if (allocated(catv%RHSI)) deallocate (catv%RHSI)
-        if (allocated(catv%RPCP)) deallocate (catv%RPCP)
-        if (allocated(catv%RPRE)) deallocate (catv%RPRE)
-        if (allocated(catv%SPCP)) deallocate (catv%SPCP)
-        if (allocated(catv%SPRE)) deallocate (catv%SPRE)
-        if (allocated(catv%TADP)) deallocate (catv%TADP)
-        if (allocated(catv%TRPC)) deallocate (catv%TRPC)
-        if (allocated(catv%TSPC)) deallocate (catv%TSPC)
-        if (allocated(catv%VPD)) deallocate (catv%VPD)
-        if (allocated(catv%Z0OR)) deallocate (catv%Z0OR)
-        if (allocated(catv%ZBLD)) deallocate (catv%ZBLD)
-        if (allocated(catv%ZDH)) deallocate (catv%ZDH)
-        if (allocated(catv%ZDM)) deallocate (catv%ZDM)
-        if (allocated(catv%ZRFH)) deallocate (catv%ZRFH)
-        if (allocated(catv%ZRFM)) deallocate (catv%ZRFM)
+        if (allocated(catv%CSZ)) then
+            deallocate(catv%CSZ, catv%DLON, catv%FCLO, catv%GC, catv%GGEO, catv%PADR, catv%RADJ, &
+                       catv%RHOA, catv%RHSI, catv%RPCP, catv%RPRE, catv%SPCP, catv%SPRE, catv%TADP, &
+                       catv%TRPC, catv%TSPC, catv%VPD, catv%Z0OR, catv%ZBLD, catv%ZDH, catv%ZDM, &
+                       catv%ZRFH, catv%ZRFM)
+        end if
         allocate(catv%CSZ(NML), catv%DLON(NML), catv%FCLO(NML), catv%GC(NML), catv%GGEO(NML), catv%PADR(NML), catv%RADJ(NML), &
                  catv%RHOA(NML), catv%RHSI(NML), catv%RPCP(NML), catv%RPRE(NML), catv%SPCP(NML), catv%SPRE(NML), catv%TADP(NML), &
                  catv%TRPC(NML), catv%TSPC(NML), catv%VPD(NML), catv%Z0OR(NML), catv%ZBLD(NML), catv%ZDH(NML), catv%ZDM(NML), &
                  catv%ZRFH(NML), catv%ZRFM(NML))
 
         !> Diagnostic variables.
-        if (allocated(cdv%ITCT)) deallocate (cdv%ITCT)
-        if (allocated(cdv%ALIR)) deallocate (cdv%ALIR)
-        if (allocated(cdv%ALVS)) deallocate (cdv%ALVS)
-        if (allocated(cdv%CDH)) deallocate (cdv%CDH)
-        if (allocated(cdv%CDM)) deallocate (cdv%CDM)
-        if (allocated(cdv%DR)) deallocate (cdv%DR)
-        if (allocated(cdv%EF)) deallocate (cdv%EF)
-        if (allocated(cdv%FCS)) deallocate (cdv%FCS)
-        if (allocated(cdv%FGS)) deallocate (cdv%FGS)
-        if (allocated(cdv%FC)) deallocate (cdv%FC)
-        if (allocated(cdv%FG)) deallocate (cdv%FG)
-        if (allocated(cdv%FLGG)) deallocate (cdv%FLGG)
-        if (allocated(cdv%FLGS)) deallocate (cdv%FLGS)
-        if (allocated(cdv%FLGV)) deallocate (cdv%FLGV)
-        if (allocated(cdv%FSGG)) deallocate (cdv%FSGG)
-        if (allocated(cdv%FSGS)) deallocate (cdv%FSGS)
-        if (allocated(cdv%FSGV)) deallocate (cdv%FSGV)
-        if (allocated(cdv%FSNO)) deallocate (cdv%FSNO)
-        if (allocated(cdv%GA)) deallocate (cdv%GA)
-        if (allocated(cdv%GTE)) deallocate (cdv%GTE)
-        if (allocated(cdv%HBL)) deallocate (cdv%HBL)
-        if (allocated(cdv%HEVC)) deallocate (cdv%HEVC)
-        if (allocated(cdv%HEVG)) deallocate (cdv%HEVG)
-        if (allocated(cdv%HEVS)) deallocate (cdv%HEVS)
-        if (allocated(cdv%HFS)) deallocate (cdv%HFS)
-        if (allocated(cdv%HFSC)) deallocate (cdv%HFSC)
-        if (allocated(cdv%HFSG)) deallocate (cdv%HFSG)
-        if (allocated(cdv%HFSS)) deallocate (cdv%HFSS)
-        if (allocated(cdv%HMFC)) deallocate (cdv%HMFC)
-        if (allocated(cdv%HMFN)) deallocate (cdv%HMFN)
-        if (allocated(cdv%HTCC)) deallocate (cdv%HTCC)
-        if (allocated(cdv%HTCS)) deallocate (cdv%HTCS)
-        if (allocated(cdv%ILMO)) deallocate (cdv%ILMO)
-        if (allocated(cdv%PCFC)) deallocate (cdv%PCFC)
-        if (allocated(cdv%PCLC)) deallocate (cdv%PCLC)
-        if (allocated(cdv%PCPG)) deallocate (cdv%PCPG)
-        if (allocated(cdv%PCPN)) deallocate (cdv%PCPN)
-        if (allocated(cdv%PET)) deallocate (cdv%PET)
-        if (allocated(cdv%QEVP)) deallocate (cdv%QEVP)
-        if (allocated(cdv%QFCF)) deallocate (cdv%QFCF)
-        if (allocated(cdv%QFCL)) deallocate (cdv%QFCL)
-        if (allocated(cdv%QFG)) deallocate (cdv%QFG)
-        if (allocated(cdv%QFN)) deallocate (cdv%QFN)
-        if (allocated(cdv%QFS)) deallocate (cdv%QFS)
-        if (allocated(cdv%QFX)) deallocate (cdv%QFX)
-        if (allocated(cdv%QG)) deallocate (cdv%QG)
-        if (allocated(cdv%ROF)) deallocate (cdv%ROF)
-        if (allocated(cdv%ROFB)) deallocate (cdv%ROFB)
-        if (allocated(cdv%ROFC)) deallocate (cdv%ROFC)
-        if (allocated(cdv%ROFN)) deallocate (cdv%ROFN)
-        if (allocated(cdv%ROFO)) deallocate (cdv%ROFO)
-        if (allocated(cdv%ROFS)) deallocate (cdv%ROFS)
-        if (allocated(cdv%ROVG)) deallocate (cdv%ROVG)
-        if (allocated(cdv%SFCQ)) deallocate (cdv%SFCQ)
-        if (allocated(cdv%SFCT)) deallocate (cdv%SFCT)
-        if (allocated(cdv%SFCU)) deallocate (cdv%SFCU)
-        if (allocated(cdv%SFCV)) deallocate (cdv%SFCV)
-        if (allocated(cdv%TFX)) deallocate (cdv%TFX)
-        if (allocated(cdv%TROB)) deallocate (cdv%TROB)
-        if (allocated(cdv%TROF)) deallocate (cdv%TROF)
-        if (allocated(cdv%TROO)) deallocate (cdv%TROO)
-        if (allocated(cdv%TROS)) deallocate (cdv%TROS)
-        if (allocated(cdv%TSF)) deallocate (cdv%TSF)
-        if (allocated(cdv%UE)) deallocate (cdv%UE)
-        if (allocated(cdv%WTAB)) deallocate (cdv%WTAB)
-        if (allocated(cdv%WTRC)) deallocate (cdv%WTRC)
-        if (allocated(cdv%WTRG)) deallocate (cdv%WTRG)
-        if (allocated(cdv%WTRS)) deallocate (cdv%WTRS)
-        if (allocated(cdv%GFLX)) deallocate (cdv%GFLX)
-        if (allocated(cdv%HMFG)) deallocate (cdv%HMFG)
-        if (allocated(cdv%HTC)) deallocate (cdv%HTC)
-        if (allocated(cdv%QFC)) deallocate (cdv%QFC)
+        if (allocated(cdv%ITCT)) deallocate(cdv%ITCT)
         allocate(cdv%ITCT(NML, 6, 50))
+        if (allocated(cdv%ALIR)) then
+            deallocate(cdv%ALIR, cdv%ALVS, cdv%CDH, cdv%CDM, cdv%DR, cdv%EF, cdv%FCS, cdv%FGS, &
+                       cdv%FC, cdv%FG, cdv%FLGG, cdv%FLGS, cdv%FLGV, cdv%FSGG, cdv%FSGS, &
+                       cdv%FSGV, cdv%FSNO, cdv%GA, cdv%GTE, cdv%HBL, cdv%HEVC, cdv%HEVG, &
+                       cdv%HEVS, cdv%HFS, cdv%HFSC, cdv%HFSG, cdv%HFSS, cdv%HMFC, cdv%HMFN, &
+                       cdv%HTCC, cdv%HTCS, cdv%ILMO, cdv%PCFC, cdv%PCLC, cdv%PCPG, cdv%PCPN, &
+                       cdv%PET, cdv%QEVP, cdv%QFCF, cdv%QFCL, cdv%QFG, cdv%QFN, cdv%QFS, &
+                       cdv%QFX, cdv%QG, cdv%ROF, cdv%ROFB, cdv%ROFC, cdv%ROFN, cdv%ROFO, &
+                       cdv%ROFS, cdv%ROVG, cdv%SFCQ, cdv%SFCT, cdv%SFCU, cdv%SFCV, cdv%TFX, &
+                       cdv%TROB, cdv%TROF, cdv%TROO, cdv%TROS, cdv%TSF, cdv%UE, cdv%WTAB, &
+                       cdv%WTRC, cdv%WTRG, cdv%WTRS)
+        end if
         allocate(cdv%ALIR(NML), cdv%ALVS(NML), cdv%CDH(NML), cdv%CDM(NML), cdv%DR(NML), cdv%EF(NML), cdv%FCS(NML), cdv%FGS(NML), &
                  cdv%FC(NML), cdv%FG(NML), cdv%FLGG(NML), cdv%FLGS(NML), cdv%FLGV(NML), cdv%FSGG(NML), cdv%FSGS(NML), &
                  cdv%FSGV(NML), cdv%FSNO(NML), cdv%GA(NML), cdv%GTE(NML), cdv%HBL(NML), cdv%HEVC(NML), cdv%HEVG(NML), &
@@ -725,6 +472,9 @@ module RUNCLASS36_config
                  cdv%ROFS(NML), cdv%ROVG(NML), cdv%SFCQ(NML), cdv%SFCT(NML), cdv%SFCU(NML), cdv%SFCV(NML), cdv%TFX(NML), &
                  cdv%TROB(NML), cdv%TROF(NML), cdv%TROO(NML), cdv%TROS(NML), cdv%TSF(NML), cdv%UE(NML), cdv%WTAB(NML), &
                  cdv%WTRC(NML), cdv%WTRG(NML), cdv%WTRS(NML))
+        if (allocated(cdv%GFLX)) then
+            deallocate(cdv%GFLX, cdv%HMFG, cdv%HTC, cdv%QFC)
+        end if
         allocate(cdv%GFLX(NML, NSL), cdv%HMFG(NML, NSL), cdv%HTC(NML, NSL), cdv%QFC(NML, NSL))
 
         !> Read an initial value for geothermal flux from file.
@@ -743,29 +493,21 @@ module RUNCLASS36_config
         else
 
             !> Variables used in CLASSZ.
-            if (allocated (pbsm%vs%Drift)) deallocate (pbsm%vs%Drift)
-            if (allocated (pbsm%vs%Subl)) deallocate (pbsm%vs%Subl)
+            if (allocated(pbsm%vs%Drift)) then
+                deallocate(pbsm%vs%Drift, pbsm%vs%Subl)
+            end if
             allocate(pbsm%vs%Drift(NML), pbsm%vs%Subl(NML))
             pbsm%vs%Drift = 0.0; pbsm%vs%Subl = 0.0
 
             !> Variables used in CLASSW.
             !> These are initialized in WPREP.
-            if (allocated (ZSNOCS)) deallocate (ZSNOCS)
-            if (allocated (ZSNOGS)) deallocate (ZSNOGS)
-            if (allocated (ZSNOWC)) deallocate (ZSNOWC)
-            if (allocated (ZSNOWG)) deallocate (ZSNOWG)
-            if (allocated (HCPSCS)) deallocate (HCPSCS)
-            if (allocated (HCPSGS)) deallocate (HCPSGS)
-            if (allocated (HCPSC)) deallocate (HCPSC)
-            if (allocated (HCPSG)) deallocate (HCPSG)
-            if (allocated (TSNOWC)) deallocate (TSNOWC)
-            if (allocated (TSNOWG)) deallocate (TSNOWG)
-            if (allocated (RHOSC)) deallocate (RHOSC)
-            if (allocated (RHOSG)) deallocate (RHOSG)
-            if (allocated (XSNOWC)) deallocate (XSNOWC)
-            if (allocated (XSNOWG)) deallocate (XSNOWG)
-            if (allocated (XSNOCS)) deallocate (XSNOCS)
-            if (allocated (XSNOGS)) deallocate (XSNOGS)
+            if (allocated(ZSNOCS)) then
+                deallocate(ZSNOCS, ZSNOGS, ZSNOWC, ZSNOWG, &
+                           HCPSCS, HCPSGS, HCPSC, HCPSG, &
+                           TSNOWC, TSNOWG, &
+                           RHOSC, RHOSG, &
+                           XSNOWC, XSNOWG, XSNOCS, XSNOGS)
+            end if
             allocate(ZSNOCS(NML), ZSNOGS(NML), ZSNOWC(NML), ZSNOWG(NML), &
                      HCPSCS(NML), HCPSGS(NML), HCPSC(NML), HCPSG(NML), &
                      TSNOWC(NML), TSNOWG(NML), &
@@ -824,7 +566,7 @@ module RUNCLASS36_config
 
                     !> Assign values.
                     stas%sno%albs(k) = ALBSROW(ik, jk)
-                    stas%cnpy%cmai(k) = CMAIROW(ik, jk)
+                    stas%cnpy%cmas(k) = CMAIROW(ik, jk)
                     stas%cnpy%gro(k) = GROROW(ik, jk)
                     stas%cnpy%qac(k) = QACROW(ik, jk)
                     stas%cnpy%rcan(k) = RCANROW(ik, jk)
@@ -868,6 +610,7 @@ module RUNCLASS36_config
         catv%GC = pm%tp%gc
         csfv%FARE = pm%tp%fare
         csfv%MID = pm%tp%mid
+        csfv%IWF = pm%tp%iwf
         csfv%FCAN = pm%cp%fcan
         csfv%LNZ0 = pm%cp%lnz0
         csfv%ALVC = pm%cp%alvc
@@ -892,7 +635,7 @@ module RUNCLASS36_config
         csfv%SAND = pm%slp%sand
         csfv%CLAY = pm%slp%clay
         csfv%ORGM = pm%slp%orgm
-        cpv%CMAI = stas%cnpy%cmai
+        cpv%CMAI = stas%cnpy%cmas
         cpv%WSNO = stas%sno%wsno
         cpv%QAC = stas%cnpy%qac
         cpv%TCAN = stas%cnpy%tcan
@@ -920,15 +663,11 @@ module RUNCLASS36_config
         !> FROZENSOILINFILFLAG 1.
         if (allocated(FRZCGAT)) deallocate(FRZCGAT)
         allocate(FRZCGAT(NML), stat = ierr)
-        if (allocated(INFILTYPE)) deallocate (INFILTYPE)
-        if (allocated(SI)) deallocate (SI)
-        if (allocated(TSI)) deallocate (TSI)
-        if (allocated(SNOWMELTD)) deallocate (SNOWMELTD)
-        if (allocated(SNOWMELTD_LAST)) deallocate (SNOWMELTD_LAST)
-        if (allocated(SNOWINFIL)) deallocate (SNOWINFIL)
-        if (allocated(CUMSNOWINFILCS)) deallocate (CUMSNOWINFILCS)
-        if (allocated(MELTRUNOFF)) deallocate (MELTRUNOFF)
-        if (allocated(CUMSNOWINFILGS)) deallocate (CUMSNOWINFILGS)
+        if (allocated(INFILTYPE)) then
+            deallocate(INFILTYPE, SI, TSI, &
+                       SNOWMELTD, SNOWMELTD_LAST, SNOWINFIL, &
+                       CUMSNOWINFILCS, MELTRUNOFF, CUMSNOWINFILGS)
+        end if
         allocate(INFILTYPE(NML), SI(NML), TSI(NML), &
                  SNOWMELTD(NML), SNOWMELTD_LAST(NML), SNOWINFIL(NML), &
                  CUMSNOWINFILCS(NML), MELTRUNOFF(NML), CUMSNOWINFILGS(NML))
@@ -948,65 +687,32 @@ module RUNCLASS36_config
             end do
         end if
 
-        if (allocated(CMINPDM)) deallocate (CMINPDM)
-        if (allocated(CMAXPDM)) deallocate (CMAXPDM)
-        if (allocated(BPDM)) deallocate (BPDM)
-        if (allocated(K1PDM)) deallocate (K1PDM)
-        if (allocated(K2PDM)) deallocate (K2PDM)
-        if (allocated(ZPNDPRECS)) deallocate (ZPNDPRECS)
-        if (allocated(ZPONDPREC)) deallocate (ZPONDPREC)
-        if (allocated(ZPONDPREG)) deallocate (ZPONDPREG)
-        if (allocated(ZPNDPREGS)) deallocate (ZPNDPREGS)
-        if (allocated(UM1CS)) deallocate (UM1CS)
-        if (allocated(UM1C)) deallocate (UM1C)
-        if (allocated(UM1G)) deallocate (UM1G)
-        if (allocated(UM1GS)) deallocate (UM1GS)
-        if (allocated(QM1CS)) deallocate (QM1CS)
-        if (allocated(QM1C)) deallocate (QM1C)
-        if (allocated(QM1G)) deallocate (QM1G)
-        if (allocated(QM1GS)) deallocate (QM1GS)
-        if (allocated(QM2CS)) deallocate (QM2CS)
-        if (allocated(QM2C)) deallocate (QM2C)
-        if (allocated(QM2G)) deallocate (QM2G)
-        if (allocated(QM2GS)) deallocate (QM2GS)
-        if (allocated(UMQ)) deallocate (UMQ)
-        if (allocated(FSTRCS)) deallocate (FSTRCS)
-        if (allocated(FSTRC)) deallocate (FSTRC)
-        if (allocated(FSTRG)) deallocate (FSTRG)
-        if (allocated(FSTRGS)) deallocate (FSTRGS)
-        allocate(CMINPDM(NML), CMAXPDM(NML), BPDM(NML), K1PDM(NML), &
-                 K2PDM(NML), ZPNDPRECS(NML), ZPONDPREC(NML), ZPONDPREG(NML), &
-                 ZPNDPREGS(NML), &
-                 UM1CS(NML), UM1C(NML), UM1G(NML), UM1GS(NML), &
-                 QM1CS(NML), QM1C(NML), QM1G(NML), QM1GS(NML), &
-                 QM2CS(NML), QM2C(NML), QM2G(NML), QM2GS(NML), &
-                 UMQ(NML), &
-                 FSTRCS(NML), FSTRC(NML), FSTRG(NML), FSTRGS(NML))
-!todo: move to read_parameters
-        if (IWF == 2 .or. IWF == 3) then
-            ZPNDPRECS = 0.0
-            ZPONDPREC = 0.0
-            ZPONDPREG = 0.0
-            ZPNDPREGS = 0.0
-            ZPND = 0.0
-            UM1CS = 0.0
-            UM1C = 0.0
-            UM1G = 0.0
-            UM1GS = 0.0
-            QM1CS = 0.0
-            QM1C = 0.0
-            QM1G = 0.0
-            QM1GS = 0.0
-            QM2CS = 0.0
-            QM2C = 0.0
-            QM2G = 0.0
-            QM2GS = 0.0
-            UMQ = 0.0
-            FSTRCS = 0.0
-            FSTRC = 0.0
-            FSTRG = 0.0
-            FSTRGS = 0.0
-            FSTR = 0.0
+        !> IWF 2 (PDMROF) and IWF 3 (LATFLOW).
+        if (allocated(CMINPDM)) then
+            deallocate( &
+                CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
+                ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
+                UM1CS, UM1C, UM1G, UM1GS, &
+                QM1CS, QM1C, QM1G, QM1GS, &
+                QM2CS, QM2C, QM2G, QM2GS, &
+                UMQ, &
+                FSTRCS, FSTRC, FSTRG, FSTRGS)
+        end if
+        allocate(&
+            CMINPDM(NML), CMAXPDM(NML), BPDM(NML), K1PDM(NML), K2PDM(NML), &
+            ZPNDPRECS(NML), ZPONDPREC(NML), ZPONDPREG(NML), ZPNDPREGS(NML), &
+            UM1CS(NML), UM1C(NML), UM1G(NML), UM1GS(NML), &
+            QM1CS(NML), QM1C(NML), QM1G(NML), QM1GS(NML), &
+            QM2CS(NML), QM2C(NML), QM2G(NML), QM2GS(NML), &
+            UMQ(NML), &
+            FSTRCS(NML), FSTRC(NML), FSTRG(NML), FSTRGS(NML))
+        ZPNDPRECS = 0.0; ZPONDPREC = 0.0; ZPONDPREG = 0.0; ZPNDPREGS = 0.0
+        UM1CS = 0.0; UM1C = 0.0; UM1G = 0.0; UM1GS = 0.0
+        QM1CS = 0.0; QM1C = 0.0; QM1G = 0.0; QM1GS = 0.0
+        QM2CS = 0.0; QM2C = 0.0; QM2G = 0.0; QM2GS = 0.0
+        UMQ = 0.0
+        FSTRCS = 0.0; FSTRC = 0.0; FSTRG = 0.0; FSTRGS = 0.0
+        if (any(csfv%IWF == 2) .or. any(csfv%IWF == 3)) then
             do k = il1, il2
                 ik = shd%lc%ILMOS(k)
                 jk = shd%lc%JLMOS(k)
@@ -1134,7 +840,7 @@ module RUNCLASS36_config
 
                     !> Assign values.
                     ALBSROW(ik, jk) = stas%sno%albs(k)
-                    CMAIROW(ik, jk) = stas%cnpy%cmai(k)
+                    CMAIROW(ik, jk) = stas%cnpy%cmas(k)
                     GROROW(ik, jk) = stas%cnpy%gro(k)
                     QACROW(ik, jk) = stas%cnpy%qac(k)
                     RCANROW(ik, jk) = stas%cnpy%rcan(k)

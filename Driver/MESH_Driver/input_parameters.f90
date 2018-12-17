@@ -18,25 +18,18 @@ module input_parameters
     !> Type: Tile parameters.
     !>  Physiographic parameters of the file.
     !>
-    !> Indices:
-    !*  n: Number of elements dimensioned.
-    !>
     !> Variables:
     !*  gc: Ground cover type. [--].
     !*  fare: Active fraction of the grid cell. [--].
     !*  xslp: Estimated average slope of the GRU. [--].
     !*  mid: Mosaic type of the tile. [--].
     type tile_parameters
-        integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: gc, fare, xslp
-        integer(kind = 4), dimension(:), allocatable :: mid
+        integer(kind = 4), dimension(:), allocatable :: mid, iwf
     end type
 
     !> Type: Canopy parameters.
     !>  Parameters of the vegetation canopy.
-    !>
-    !> Indices:
-    !*  n: Number of elements dimensioned.
     !>
     !> Variables:
     !*  fcan: Annual maximum fraction of the grid-cell occupied by vegetation category or land cover. [--].
@@ -55,7 +48,6 @@ module input_parameters
     !*  psga: Soil moisture suction coefficient 'A' used in the calculation of the stomatal resistance of the vegetation category. [--].
     !*  psgb: Soil moisture suction coefficient 'B' used in the calculation of the stomatal resistance of the vegetation category. [--].
     type canopy_parameters
-        integer(kind = 4) :: n
         real(kind = 4), dimension(:, :), allocatable :: fcan, z0or, lnz0, alvc, alic
         real(kind = 4), dimension(:, :), allocatable :: lamx, lamn, cmas, root, rsmn, qa50, vpda, vpdb, psga, psgb
     end type
@@ -63,38 +55,27 @@ module input_parameters
     !> Type: Surface parameters.
     !>  Parameters for the interface between the soil column and canopy or atmosphere.
     !>
-    !> Indices:
-    !*  n: Number of elements dimensioned.
-    !>
     !> Variables:
     !*  zbld: Height into the atmosphere for aggregating surface roughness (usually in the order of 50-100 m). [m].
     !*  zrfh: Reference height (measurement height) for temperature and humidity. [m].
     !*  zrfm: Reference height (measurement height) for wind speed. [m].
     !*  zplg: Maximum depth of liquid water allowed to be stored on the ground surface for snow-free areas. [m].
     type surface_parameters
-        integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: zbld, zrfh, zrfm, zplg
     end type
 
     !> Type: Snow parameters.
     !>  Parameters of the snow pack at the surface.
     !>
-    !> Indices:
-    !*  n: Number of elements dimensioned.
-    !>
     !> Variables:
     !*  zsnl: Minimum depth to consider 100% cover of snow on the ground surface. [m].
     !*  zpls: Maximum depth of liquid water allowed to be stored on the ground surface for snow-covered areas. [m].
     type snow_parameters
-        integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: zsnl, zpls
     end type
 
     !> Type: Soil parameters.
     !>  Parameters of soil layers in the column.
-    !>
-    !> Indices:
-    !*  n: Number of elements dimensioned.
     !>
     !> Variables:
     !*  sand: Percent content of sand in the mineral soil. [%].
@@ -126,9 +107,6 @@ module input_parameters
     !> Type: Hydraulic parameters.
     !>  Parameters for hydraulic processes.
     !>
-    !> Indices:
-    !*  n: Number of elements dimensioned.
-    !>
     !> Variables:
     !*  drn: Drainage index, set to 1.0 to allow the soil physics to model drainage or to a value between 0.0 and 1.0 to impede drainage. [--].
     !*  dd: Estimated drainage density of the GRU. [km km-2].
@@ -136,7 +114,6 @@ module input_parameters
     !*  mann: Manning's n. [s m-1/3].
     !*  ks: Saturated surface soil conductivity. [m s-1].
     type hydraulic_parameters
-        integer(kind = 4) :: n
         real(kind = 4), dimension(:), allocatable :: drn, dd, grkf, mann, ks
     end type
 
@@ -182,21 +159,7 @@ module input_parameters
         if (pm%inid) return
 
         !> Allocate elements in the parameter type.
-        if (allocated(pm%tp%gc)) then
-            deallocate(pm%tp%gc, pm%tp%fare, pm%tp%xslp, pm%tp%mid, &
-                       pm%cp%fcan, pm%cp%z0or, pm%cp%lnz0, pm%cp%alvc, pm%cp%alic, &
-                       pm%cp%lamx, pm%cp%lamn, pm%cp%cmas, pm%cp%root, pm%cp%rsmn, &
-                       pm%cp%qa50, pm%cp%vpda, pm%cp%vpdb, pm%cp%psga, pm%cp%psgb, &
-                       pm%sfp%zbld, pm%sfp%zrfh, pm%sfp%zrfm, pm%sfp%zplg, pm%snp%zsnl, pm%snp%zpls, &
-                       pm%slp%sdep, pm%slp%alwet, pm%slp%aldry, &
-                       pm%slp%delz, pm%slp%zbot, &
-                       pm%slp%sand, pm%slp%clay, pm%slp%orgm, &
-                       pm%slp%thpor, pm%slp%thlret, pm%slp%thlmin, pm%slp%thlrat, &
-                       pm%slp%bi, pm%slp%psisat, pm%slp%psiwlt, pm%slp%grksat, &
-                       pm%slp%thfc, pm%slp%hcps, pm%slp%tcs, &
-                       pm%hp%drn, pm%hp%dd, pm%hp%grkf, pm%hp%mann, pm%hp%ks)
-        end if
-        allocate(pm%tp%gc(n), pm%tp%fare(n), pm%tp%xslp(n), pm%tp%mid(n), &
+        allocate(pm%tp%gc(n), pm%tp%fare(n), pm%tp%xslp(n), pm%tp%mid(n), pm%tp%iwf(n), &
                  pm%cp%fcan(n, ncan1), pm%cp%z0or(n, ncan1), pm%cp%lnz0(n, ncan1), pm%cp%alvc(n, ncan1), pm%cp%alic(n, ncan1), &
                  pm%cp%lamx(n, ncan), pm%cp%lamn(n, ncan), pm%cp%cmas(n, ncan), pm%cp%root(n, ncan), pm%cp%rsmn(n, ncan), &
                  pm%cp%qa50(n, ncan), pm%cp%vpda(n, ncan), pm%cp%vpdb(n, ncan), pm%cp%psga(n, ncan), pm%cp%psgb(n, ncan), &
@@ -213,7 +176,7 @@ module input_parameters
 
         !> Initialize elements in the parameter type.
         if (pm%inid) then
-            pm%tp%gc = 0.0; pm%tp%fare = 0.0; pm%tp%xslp = 0.0; pm%tp%mid = 0.0
+            pm%tp%gc = 0.0; pm%tp%fare = 0.0; pm%tp%xslp = 0.0; pm%tp%mid = 0; pm%tp%iwf = -1
             pm%cp%fcan = 0.0; pm%cp%z0or = 0.0; pm%cp%lnz0 = 0.0; pm%cp%alvc = 0.0; pm%cp%alic = 0.0
             pm%cp%lamx = 0.0; pm%cp%lamn = 0.0; pm%cp%cmas = 0.0; pm%cp%root = 0.0; pm%cp%rsmn = 0.0
             pm%cp%qa50 = 0.0; pm%cp%vpda = 0.0; pm%cp%vpdb = 0.0; pm%cp%psga = 0.0; pm%cp%psgb = 0.0

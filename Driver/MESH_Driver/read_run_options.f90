@@ -8,12 +8,12 @@
         use climate_forcing
 
         use FLAGS
-        use save_basin_output, only: BASINAVGWBFILEFLAG
-!-        use RUNCLASS36_constants
+        use save_basin_output, only: &
+            BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
         use RUNCLASS36_variables
         use RUNCLASS36_save_output
         use RUNSVS113_variables
-        use baseflow_module, only: lzsp
+        use baseflow_module
         use cropland_irrigation_variables
         use WF_ROUTE_config
         use rte_module
@@ -94,7 +94,7 @@
         !>    * IF IWF = 2, SAME AS IWF = 0 EXCEPT THAT OVERLAND FLOW IS
         !>    * MODELLED AS FILL AND SPILL PROCESS FROM A SERIES OF POTHOLES.
         !>    * DEFAULT VALUE IS 1.
-        IWF = 1
+        RUNCLASS36_flgs%INTERFLOWFLAG = 1
 
         !>    * IF IPAI, IHGT, IALC, IALS AND IALG ARE ZERO, THE VALUES OF
         !>    * LEAF ARE INDEX, VEGETATION HEIGHT, CANOPY ALBEDO, SNOW ALBEDO
@@ -231,12 +231,6 @@
         !* If GGEOFLAG is GT 0,  READ UNIQUE VALUE FROM MESH_ggeo.INI FILE
         GGEOFLAG = 0
 
-        !> BASIN ENERGY BALANCE OUTPUT FLAG
-        !> If enabled, saves the energy balance output files.
-        !>     0 = Create no output.
-        !>     1 = Save the basin energy balance CSV files.
-        BASINAVGEBFILEFLAG = 0
-
         !> BASIN SWE OUTPUT FLAG
         !> If enabled, saves the SCA and SWE output files.
         !>     0 = Create no output.
@@ -325,7 +319,7 @@
                     case ('ITG')
                         call value(out_args(2), ITG, ierr)
                     case ('IWF')
-                        call value(out_args(2), IWF, ierr)
+                        call value(out_args(2), RUNCLASS36_flgs%INTERFLOWFLAG, ierr)
                     case ('IPAI')
                         call value(out_args(2), IPAI, ierr)
                     case ('IHGT')
@@ -528,10 +522,11 @@
                         end do
                     case ('BASINRUNOFFFLAG')
                     case ('BASINRECHARGEFLAG')
+
                     case ('STREAMFLOWFILEFLAG')
-                        STREAMFLOWFILEFLAG = adjustl(lowercase(out_args(2)))
+                        fms%stmg%qomeas%fls%ffmt = adjustl(out_args(2))
                     case ('RESERVOIRFILEFLAG')
-                        RESERVOIRFILEFLAG = adjustl(lowercase(out_args(2)))
+                        fms%rsvr%rlsmeas%fls%ffmt = adjustl(out_args(2))
 
                     case ('SHDFILEFLAG')
                         call value(out_args(2), SHDFILEFLAG, ierr)
@@ -539,11 +534,6 @@
                         call value(out_args(2), SOILINIFLAG, ierr)
                     case ('NRSOILAYEREADFLAG')
                         call value(out_args(2), NRSOILAYEREADFLAG, ierr)
-                    case ('STREAMFLOWFLAG')
-                        call value(out_args(2), j, ierr)
-                        if (j == 1) then
-                            WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
-                        end if
                     case ('PREEMPTIONFLAG')
                         call value(out_args(2), mtsflg%PREEMPTIONFLAG, ierr)
 
@@ -605,31 +595,20 @@
                         call value(out_args(2), OUTFIELDSFLAG, ierr)
                     case ('GGEOFLAG')
                         call value(out_args(2), GGEOFLAG, ierr)
-                    case ('BASINBALANCEOUTFLAG')
-                        call value(out_args(2), BASINAVGEBFILEFLAG, ierr)
-!                        BASINAVGWBFILEFLAG = BASINAVGEBFILEFLAG
-                        BASINAVGEVPFILEFLAG = BASINAVGEBFILEFLAG
-                    case ('BASINAVGEBFILEFLAG')
-                        BASINAVGEBFILEFLAG = 0
-                        do j = 2, nargs
-                            select case (lowercase(out_args(j)))
-                                case ('daily')
-                                    BASINAVGEBFILEFLAG = 1
-                                case ('all')
-                                    BASINAVGEBFILEFLAG = 1
-                                    exit
-                                case ('default')
-                                    BASINAVGEBFILEFLAG = 0
-                                    exit
-                                case ('none')
-                                    BASINAVGEBFILEFLAG = 0
-                                    exit
-                            end select
-                        end do
 
-                    !> Time-averaged basin water balance output.
+                    !> Basin output files.
+                    case ('BASINBALANCEOUTFLAG')
+                        BASINAVGEBFILEFLAG = 'none'
+                        BASINAVGWBFILEFLAG = 'none'
+                        BASINAVGEVPFILEFLAG = 0
+                    case ('BASINAVGEBFILEFLAG')
+                        BASINAVGEBFILEFLAG = adjustl(in_line)
                     case ('BASINAVGWBFILEFLAG')
                         BASINAVGWBFILEFLAG = adjustl(in_line)
+                    case ('STREAMFLOWOUTFLAG')
+                        STREAMFLOWOUTFLAG = adjustl(in_line)
+                    case ('REACHOUTFLAG')
+                        REACHOUTFLAG = adjustl(in_line)
 
                     !> Time-averaged basin PEVP-EVAP and EVPB output.
                     case ('BASINAVGEVPFILEFLAG')
@@ -662,69 +641,12 @@
                     case ('MODELINFOOUTFLAG')
                         call value(out_args(2), MODELINFOOUTFLAG, ierr)
 
-                    !> Streamflow output files.
-                    case ('STREAMFLOWOUTFLAG')
-                        WF_RTE_fstflout%freq = 0
-                        do j = 2, nargs
-                            select case (lowercase(out_args(j)))
-                                case ('daily')
-                                    WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
-                                case ('ts')
-                                    WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
-                                case ('bal')
-                                    WF_RTE_fstflout%fout_bal = .true.
-                                case ('acc')
-                                    WF_RTE_fstflout%fout_acc = .true.
-                                case ('default')
-                                    WF_RTE_fstflout%freq = radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
-                                    WF_RTE_fstflout%fout_hyd = .true.
-                                    WF_RTE_fstflout%fout_bal = .false.
-                                    WF_RTE_fstflout%fout_acc = .false.
-                                    WF_RTE_fstflout%fout_header = .true.
-                                    exit
-                                case ('no_header')
-                                    WF_RTE_fstflout%fout_header = .false.
-                                case ('all')
-                                    WF_RTE_fstflout%freq = radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
-                                    WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
-                                    WF_RTE_fstflout%fout_hyd = .true.
-                                    WF_RTE_fstflout%fout_bal = .true.
-                                    WF_RTE_fstflout%fout_acc = .true.
-                                    exit
-                                case ('none')
-                                    WF_RTE_fstflout%freq = 0
-                                    exit
-                            end select
-                        end do
-
-                    !> Reservoir output files.
-                    case ('REACHOUTFLAG')
-                        WF_RTE_frsvrout%freq = 0
-                        do j = 2, nargs
-                            select case (lowercase(out_args(j)))
-                                case ('ts')
-                                    WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
-                                case ('default')
-                                    WF_RTE_frsvrout%freq = 0
-                                    WF_RTE_frsvrout%fout_header = .true.
-                                    exit
-                                case ('no_header')
-                                    WF_RTE_frsvrout%fout_header = .false.
-                                case ('all')
-                                    WF_RTE_frsvrout%freq = radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
-                                    exit
-                                case ('none')
-                                    WF_RTE_frsvrout%freq = 0
-                                    exit
-                            end select
-                        end do
-
                     case ('BASINSWEOUTFLAG')
                         call value(out_args(2), BASINSWEOUTFLAG, ierr)
 
                     !> BASEFLOW routing.
                     case ('BASEFLOWFLAG')
-                        call value(out_args(2), lzsp%BASEFLOWFLAG, ierr)
+                        call bflm_parse_flag(in_line)
 
                     !> Reservoir Release function flag (Number of WF_B coefficients).
 !?                    case ('RESVRELSWFB')
@@ -836,10 +758,10 @@
         end do
 
         !> Output grid points.
-        if (allocated(op%DIR_OUT)) deallocate (op%DIR_OUT)
-        if (allocated(op%N_OUT)) deallocate (op%N_OUT)
-        if (allocated(op%II_OUT)) deallocate (op%II_OUT)
-        if (allocated(op%K_OUT)) deallocate (op%K_OUT)
+        if (allocated(op%DIR_OUT)) deallocate(op%DIR_OUT)
+        if (allocated(op%N_OUT)) deallocate(op%N_OUT)
+        if (allocated(op%II_OUT)) deallocate(op%II_OUT)
+        if (allocated(op%K_OUT)) deallocate(op%K_OUT)
         read(iun, '(i5)') WF_NUM_POINTS
         if (WF_NUM_POINTS > 10) then
             print *, 'WARNING: The number of grid output points is ', &
@@ -876,12 +798,12 @@
 !-                do j = i + 1, WF_NUM_POINTS
 !-                    if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
 !-                        print *
-!-	                    print *, 'Output for Grid ', op%N_OUT(i), ' and GRU ', &
+!-                      print *, 'Output for Grid ', op%N_OUT(i), ' and GRU ', &
 !-                            op%II_OUT(i), ' is repeated in grid output point: ', j
 !-                        print *, 'Please adjust this grid output ', &
 !-                            'point in MESH_input_run_options.ini.'
-!-	                    stop
-!-	                end if
+!-                      stop
+!-                  end if
 !-                end do
 !-            else
 !-                open(17, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/fort.17', status = 'unknown', iostat = ierr)
@@ -899,7 +821,7 @@
 !-            end if
 !-        end do
 
-	    !> Output folder for basin/high-level model output.
+        !> Output folder for basin/high-level model output.
         read(iun, *)
         read(iun, *)
         read(iun, '(a10)') GENDIR_OUT

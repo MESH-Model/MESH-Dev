@@ -55,7 +55,7 @@
 
         !> Read inital values from the file.
         read(iun) stas%sno%albs     !1 (NML)
-        read(iun) stas%cnpy%cmai    !2 (NML)
+        read(iun) stas%cnpy%cmas    !2 (NML)
         read(iun) stas%cnpy%gro     !3 (NML)
         read(iun) stas%cnpy%qac     !4 (NML)
         read(iun) stas%cnpy%rcan    !5 (NML)

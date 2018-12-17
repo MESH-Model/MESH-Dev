@@ -43,10 +43,23 @@ module cropland_irrigation_init
         NML = shd%lc%NML
 
         !> Allocate and initialize internal variables.
+        if (allocated(civ%icrop)) then
+            deallocate(&
+                civ%icrop, civ%jdini, civ%jddev, civ%jdmid, civ%jdlate, civ%jdend, &
+                civ%vars)
+        end if
         allocate(&
             civ%icrop(NML), civ%jdini(NML), civ%jddev(NML), civ%jdmid(NML), civ%jdlate(NML), civ%jdend(NML), &
             civ%vars(civ%fk%kmin:civ%fk%kmax))
         civ%icrop = 0; civ%jdini = 0; civ%jddev = 0; civ%jdmid = 0; civ%jdlate = 0; civ%jdend = 0
+        if (allocated(civ%vars)) then
+            do ikey = civ%fk%kmin, civ%fk%kmax
+                deallocate( &
+                    civ%vars(ikey)%lqws2_mm, civ%vars(ikey)%lqws1_mm, &
+                    civ%vars(ikey)%pre_mm, civ%vars(ikey)%pevp_mm, civ%vars(ikey)%icu_mm)
+            end do
+            deallocate(civ%vars)
+        end if
         do ikey = civ%fk%kmin, civ%fk%kmax
             allocate( &
                 civ%vars(ikey)%lqws2_mm(NML), civ%vars(ikey)%lqws1_mm(NML), &
