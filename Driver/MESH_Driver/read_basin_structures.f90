@@ -103,12 +103,14 @@ subroutine read_basin_structures(shd, ierr)
             fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, fms%stmg%qomeas%ihour, fms%stmg%qomeas%imins, fms%stmg%qomeas%dts*60)
         isteps2 = jday_to_tsteps(ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins, fms%stmg%qomeas%dts*60)
         if (isteps2 < isteps1) then
-            call print_warning('The first record occurs after the simulation start date.')
+            call print_error('The first record occurs after the simulation start date.')
             call print_message('This may cause channels to initialize with no storage.')
             write(line, "(i5, i4)") fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday
             call print_message('First record occurs on: ' // trim(line))
             write(line, "(i5, i4)") ic%start%year, ic%start%jday
             call print_message('Simulation start date: ' // trim(line))
+            ierr = 1
+            return
         end if
         iskip = (isteps2 - isteps1)
         if (iskip > 0) then
