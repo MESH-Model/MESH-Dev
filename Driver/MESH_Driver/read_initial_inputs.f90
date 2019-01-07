@@ -674,7 +674,4 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     !> Allocate and initialize SA_MESH states.
     call stas_fms_init(stas_fms, fms%stmg%n, 0, fms%rsvr%n, ierr)
 
-    !> Read variable states from file.
-    call read_initial_states(fls, shd)
-
 end subroutine

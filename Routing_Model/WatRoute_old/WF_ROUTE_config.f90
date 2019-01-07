@@ -118,7 +118,7 @@ module WF_ROUTE_config
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use FLAGS
+!-        use FLAGS
 
         type(fl_ids) :: fls
         type(ShedGridParams), intent(in) :: shd
@@ -134,8 +134,8 @@ module WF_ROUTE_config
         !* ierr: Error return from external calls.
         integer iun, ierr, i
 
-        !> Return if the process is inactive.
-        if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
         NA = shd%NA
         WF_NAA = NA - shd%NAA
@@ -200,50 +200,129 @@ module WF_ROUTE_config
         !* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
         JAN = 1
 
-        !> Read the state of these variables.
-        if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
+    end subroutine
 
-            !> Open the resume file.
-            iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'old', action = 'read', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
+    subroutine WF_ROUTE_resume_read(fls, shd)
+
+        use model_files_variables
+        use sa_mesh_common
+
+        type(fl_ids) :: fls
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Local variables.
+        integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. WF_RTE_flgs%PROCESS_ACTIVE) return
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
 !todo: condition for ierr.
 
-            !> Read inital values from the file.
-            if (RESUMEFLAG == 4) then
-                read(iun) JAN
-                read(iun) WF_TIMECOUNT
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun) stas_grid%chnl%qo
-                read(iun) stas_grid%chnl%stg
-                read(iun) stas_grid%chnl%qi
-                read(iun)
-                read(iun)
-            else
-                read(iun) JAN
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun) stas_grid%chnl%qo
-                read(iun) stas_grid%chnl%stg
-                read(iun) stas_grid%chnl%qi
-                read(iun)
-                read(iun)
-            end if
+        !> Read inital values from the file.
+        read(iun) JAN
+        read(iun) WF_TIMECOUNT
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun) stas_grid%chnl%qo
+        read(iun) stas_grid%chnl%stg
+        read(iun) stas_grid%chnl%qi
+        read(iun)
+        read(iun)
 
-            !> Close the file to free the unit.
-            close(iun)
+        !> Close the file to free the unit.
+        close(iun)
 
-        end if
+    end subroutine
+
+    subroutine WF_ROUTE_resume_read_nots(fls, shd)
+
+        use model_files_variables
+        use sa_mesh_common
+
+        type(fl_ids) :: fls
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Local variables.
+        integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. WF_RTE_flgs%PROCESS_ACTIVE) return
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+        !> Read inital values from the file.
+        read(iun) JAN
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun) stas_grid%chnl%qo
+        read(iun) stas_grid%chnl%stg
+        read(iun) stas_grid%chnl%qi
+        read(iun)
+        read(iun)
+
+        !> Close the file to free the unit.
+        close(iun)
+
+    end subroutine
+
+    subroutine WF_ROUTE_resume_save(fls, shd)
+
+        use mpi_module
+        use model_files_variables
+        use sa_mesh_common
+
+        type(fl_ids) :: fls
+        type(ShedGridParams) :: shd
+
+        !> Local variables.
+        integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. WF_RTE_flgs%PROCESS_ACTIVE) return
+
+        !> Return if not the head node.
+        if (ipid /= 0) return
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'replace', action = 'write', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+        !> Write the current state of these variables to the file.
+        write(iun) JAN
+        write(iun) WF_TIMECOUNT
+        write(iun)
+        write(iun)
+        write(iun)
+        write(iun)
+        write(iun)
+        write(iun)
+        write(iun) stas_grid%chnl%qo
+        write(iun) stas_grid%chnl%stg
+        write(iun) stas_grid%chnl%qi
+        write(iun)
+        write(iun)
+
+        !> Close the file to free the unit.
+        close(iun)
 
     end subroutine
 
@@ -252,48 +331,12 @@ module WF_ROUTE_config
         use mpi_module
         use model_files_variables
         use sa_mesh_common
-        use FLAGS
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
 
-        !> Local variables.
-        integer ierr, iun
-
-        !> Return in the process is inactive.
-        if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
-
-        !> Return if not the head node.
-        if (ipid /= 0) return
-
-        !> Save the state of these variables.
-        if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
-
-            !> Open the resume file.
-            iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'replace', action = 'write', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
-
-            !> Write the current state of these variables to the file.
-            write(iun) JAN
-            write(iun) WF_TIMECOUNT
-            write(iun)
-            write(iun)
-            write(iun)
-            write(iun)
-            write(iun)
-            write(iun)
-            write(iun) stas_grid%chnl%qo
-            write(iun) stas_grid%chnl%stg
-            write(iun) stas_grid%chnl%qi
-            write(iun)
-            write(iun)
-
-            !> Close the file to free the unit.
-            close(iun)
-
-        end if
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
     end subroutine
 

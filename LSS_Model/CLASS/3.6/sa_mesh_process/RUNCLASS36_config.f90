@@ -95,13 +95,7 @@ module RUNCLASS36_config
         integer NA, NTYPE, NML, NSL, l, k, ik, jk, m, j, i, iun, ierr
         real FRAC
 
-        !> For RESUMEFLAG 3
-        real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
-            RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
-            TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW
-        real(kind = 4), dimension(:, :, :), allocatable :: TBARROW, THICROW, THLQROW, TSFSROW
-
-        !> Return if the process is not marked active.
+        !> Return if the process is not active.
         if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
 
         NA = shd%NA
@@ -348,94 +342,6 @@ module RUNCLASS36_config
                      XSNOWC(NML), XSNOWG(NML), XSNOCS(NML), XSNOGS(NML))
         end if
 
-        !> Resume the state of prognostic variables from file.
-        select case (RESUMEFLAG)
-
-            !> RESUMEFLAG 3.
-            case (3)
-
-                !> Open the resume state file.
-                iun = fls%fl(mfk%f883)%iun
-                open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'old', action = 'read', &
-                     form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
-
-                !> Allocate temporary variables.
-                allocate(ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
-                         RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
-                         TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
-                         TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
-
-                !> Read inital values from the file.
-                read(iun) ALBSROW
-                read(iun) CMAIROW
-                read(iun) GROROW
-                read(iun) QACROW
-                read(iun) RCANROW
-                read(iun) RHOSROW
-                read(iun) SCANROW
-                read(iun) SNOROW
-                read(iun) TACROW
-                read(iun) TBARROW
-                read(iun) TBASROW
-                read(iun) TCANROW
-                read(iun) THICROW
-                read(iun) THLQROW
-                read(iun) TPNDROW
-                read(iun) TSFSROW
-                read(iun) TSNOROW
-                read(iun) WSNOROW
-                read(iun) ZPNDROW
-
-                !> Close the file to free the unit.
-                close(iun)
-
-                !> Scatter the temporary variables.
-                do k = il1, il2
-
-                    !> Grab the grid and GRU of the current tile.
-                    ik = shd%lc%ILMOS(k)
-                    jk = shd%lc%JLMOS(k)
-
-                    !> Assign values.
-                    stas%sno%albs(k) = ALBSROW(ik, jk)
-                    stas%cnpy%cmas(k) = CMAIROW(ik, jk)
-                    stas%cnpy%gro(k) = GROROW(ik, jk)
-                    stas%cnpy%qac(k) = QACROW(ik, jk)
-                    stas%cnpy%rcan(k) = RCANROW(ik, jk)
-                    stas%sno%rhos(k) = RHOSROW(ik, jk)
-                    stas%cnpy%sncan(k) = SCANROW(ik, jk)
-                    stas%sno%sno(k) = SNOROW(ik, jk)
-                    stas%cnpy%tac(k) = TACROW(ik, jk)
-                    stas%sl%tbar(k, :) = TBARROW(ik, jk, :)
-                    stas%sl%tbas(k) = TBASROW(ik, jk)
-                    stas%cnpy%tcan(k) = TCANROW(ik, jk)
-                    stas%sl%thic(k, :) = THICROW(ik, jk, :)
-                    stas%sl%thlq(k, :) = THLQROW(ik, jk, :)
-                    stas%sfc%tpnd(k) = TPNDROW(ik, jk)
-                    stas%sfc%tsfs(k, :) = TSFSROW(ik, jk, :)
-                    stas%sno%tsno(k) = TSNOROW(ik, jk)
-                    stas%sno%wsno(k) = WSNOROW(ik, jk)
-                    stas%sfc%zpnd(k) = ZPNDROW(ik, jk)
-
-                end do
-
-                !> Deallocate temporary variables.
-                deallocate(ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
-                           RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
-                           TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
-                           TBARROW, THICROW, THLQROW, TSFSROW)
-
-            !> RESUMEFLAG 4.
-            case (4)
-                call read_init_prog_variables_class(fls)
-
-            !> RESUMEFLAG 5.
-            case (5)
-                call read_init_prog_variables_class(fls)
-
-        end select !case (RESUMEFLAG)
-
         !> Distribute variables.
         catv%ZRFM = pm%sfp%zrfm
         catv%ZRFH = pm%sfp%zrfh
@@ -585,6 +491,212 @@ module RUNCLASS36_config
 
     end subroutine
 
+    subroutine read_init_prog_variables_class_row(fls, shd)
+
+        use mpi_module
+        use model_files_variables
+        use sa_mesh_common
+        use model_dates
+        use climate_forcing
+
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+
+        !> For SAVERESUMEFLAG 3
+        real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+            RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
+            TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW
+        real(kind = 4), dimension(:, :, :), allocatable :: TBARROW, THICROW, THLQROW, TSFSROW
+
+        integer NA, NTYPE, NSL, k, ik, jk, iun, ierr
+
+        !> Return if the process is not active.
+        if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
+
+        !> Local indices.
+        NA = shd%NA
+        NTYPE = shd%lc%NTYPE
+        NSL = shd%lc%IGND
+
+        !> Open the resume state file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+        !> Allocate temporary variables.
+        allocate(ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
+                 RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
+                 TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
+                 TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
+
+        !> Read inital values from the file.
+        read(iun) ALBSROW
+        read(iun) CMAIROW
+        read(iun) GROROW
+        read(iun) QACROW
+        read(iun) RCANROW
+        read(iun) RHOSROW
+        read(iun) SCANROW
+        read(iun) SNOROW
+        read(iun) TACROW
+        read(iun) TBARROW
+        read(iun) TBASROW
+        read(iun) TCANROW
+        read(iun) THICROW
+        read(iun) THLQROW
+        read(iun) TPNDROW
+        read(iun) TSFSROW
+        read(iun) TSNOROW
+        read(iun) WSNOROW
+        read(iun) ZPNDROW
+
+        !> Close the file to free the unit.
+        close(iun)
+
+        !> Scatter the temporary variables.
+        do k = il1, il2
+
+            !> Grab the grid and GRU of the current tile.
+            ik = shd%lc%ILMOS(k)
+            jk = shd%lc%JLMOS(k)
+
+            !> Assign values.
+            stas%sno%albs(k) = ALBSROW(ik, jk)
+            stas%cnpy%cmas(k) = CMAIROW(ik, jk)
+            stas%cnpy%gro(k) = GROROW(ik, jk)
+            stas%cnpy%qac(k) = QACROW(ik, jk)
+            stas%cnpy%rcan(k) = RCANROW(ik, jk)
+            stas%sno%rhos(k) = RHOSROW(ik, jk)
+            stas%cnpy%sncan(k) = SCANROW(ik, jk)
+            stas%sno%sno(k) = SNOROW(ik, jk)
+            stas%cnpy%tac(k) = TACROW(ik, jk)
+            stas%sl%tbar(k, :) = TBARROW(ik, jk, :)
+            stas%sl%tbas(k) = TBASROW(ik, jk)
+            stas%cnpy%tcan(k) = TCANROW(ik, jk)
+            stas%sl%thic(k, :) = THICROW(ik, jk, :)
+            stas%sl%thlq(k, :) = THLQROW(ik, jk, :)
+            stas%sfc%tpnd(k) = TPNDROW(ik, jk)
+            stas%sfc%tsfs(k, :) = TSFSROW(ik, jk, :)
+            stas%sno%tsno(k) = TSNOROW(ik, jk)
+            stas%sno%wsno(k) = WSNOROW(ik, jk)
+            stas%sfc%zpnd(k) = ZPNDROW(ik, jk)
+
+        end do
+
+        !> Deallocate temporary variables.
+        deallocate(ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+                   RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
+                   TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
+                   TBARROW, THICROW, THLQROW, TSFSROW)
+
+    end subroutine
+
+    subroutine save_init_prog_variables_class_row(fls, shd)
+
+        use mpi_module
+        use model_files_variables
+        use sa_mesh_common
+        use model_dates
+        use climate_forcing
+
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+
+        !> For SAVERESUMEFLAG 3
+        real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+            RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
+            TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW
+        real(kind = 4), dimension(:, :, :), allocatable :: TBARROW, THICROW, THLQROW, TSFSROW
+
+        integer NA, NTYPE, NSL, k, ik, jk, iun, ierr
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
+
+        !> Local indices.
+        NA = shd%NA
+        NTYPE = shd%lc%NTYPE
+        NSL = shd%lc%IGND
+
+        !> Open the resume state file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'replace', action = 'write', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+        !> Allocate and initialize temporary variables.
+        allocate(ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
+                 RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
+                 TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
+                 TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
+        ALBSROW = 0.0; CMAIROW = 0.0; GROROW = 0.0; QACROW = 0.0; RCANROW = 0.0; RHOSROW = 0.0
+        SCANROW = 0.0; SNOROW = 0.0; TACROW = 0.0; TBASROW = 0.0; TCANROW = 0.0; TPNDROW = 0.0
+        TSNOROW = 0.0; WSNOROW = 0.0; ZPNDROW = 0.0
+        TBARROW = 0.0; THICROW = 0.0; THLQROW = 0.0; TSFSROW = 0.0
+
+        !> Gather the temporary variables.
+        do k = 1, shd%lc%NML
+
+            !> Grab the grid and GRU of the current tile.
+            ik = shd%lc%ILMOS(k)
+            jk = shd%lc%JLMOS(k)
+
+            !> Assign values.
+            ALBSROW(ik, jk) = stas%sno%albs(k)
+            CMAIROW(ik, jk) = stas%cnpy%cmas(k)
+            GROROW(ik, jk) = stas%cnpy%gro(k)
+            QACROW(ik, jk) = stas%cnpy%qac(k)
+            RCANROW(ik, jk) = stas%cnpy%rcan(k)
+            RHOSROW(ik, jk) = stas%sno%rhos(k)
+            SCANROW(ik, jk) = stas%cnpy%sncan(k)
+            SNOROW(ik, jk) = stas%sno%sno(k)
+            TACROW(ik, jk) = stas%cnpy%tac(k)
+            TBARROW(ik, jk, :) = stas%sl%tbar(k, :)
+            TBASROW(ik, jk) = stas%sl%tbas(k)
+            TCANROW(ik, jk) = stas%cnpy%tcan(k)
+            THICROW(ik, jk, :) = stas%sl%thic(k, :)
+            THLQROW(ik, jk, :) = stas%sl%thlq(k, :)
+            TPNDROW(ik, jk) = stas%sfc%tpnd(k)
+            TSFSROW(ik, jk, :) = stas%sfc%tsfs(k, :)
+            TSNOROW(ik, jk) = stas%sno%tsno(k)
+            WSNOROW(ik, jk) = stas%sno%wsno(k)
+            ZPNDROW(ik, jk) = stas%sfc%zpnd(k)
+
+        end do
+
+        !> Read inital values from the file.
+        write(iun) ALBSROW
+        write(iun) CMAIROW
+        write(iun) GROROW
+        write(iun) QACROW
+        write(iun) RCANROW
+        write(iun) RHOSROW
+        write(iun) SCANROW
+        write(iun) SNOROW
+        write(iun) TACROW
+        write(iun) TBARROW
+        write(iun) TBASROW
+        write(iun) TCANROW
+        write(iun) THICROW
+        write(iun) THLQROW
+        write(iun) TPNDROW
+        write(iun) TSFSROW
+        write(iun) TSNOROW
+        write(iun) WSNOROW
+        write(iun) ZPNDROW
+
+        !> Close the file to free the unit.
+        close(iun)
+
+        !> Deallocate temporary variables.
+        deallocate(ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+                   RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
+                   TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
+                   TBARROW, THICROW, THLQROW, TSFSROW)
+
+    end subroutine
+
     subroutine RUNCLASS36_finalize(fls, shd, cm)
 
         use mpi_module
@@ -598,116 +710,8 @@ module RUNCLASS36_config
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
 
-        !> For SAVERESUMEFLAG 3
-        real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
-            RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
-            TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW
-        real(kind = 4), dimension(:, :, :), allocatable :: TBARROW, THICROW, THLQROW, TSFSROW
-
-        integer NA, NTYPE, NSL, k, ik, jk, iun, ierr
-
-        !> Return if the process is not marked active.
+        !> Return if the process is not active.
         if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
-
-        !> Only the head node writes CLASS output.
-        if (.not. ipid == 0) return
-
-        !> Local indices.
-        NA = shd%NA
-        NTYPE = shd%lc%NTYPE
-        NSL = shd%lc%IGND
-
-        !> Save the state of prognostic variables to file.
-        select case (SAVERESUMEFLAG)
-
-            !> SAVERESUMEFLAG 3.
-            case (3)
-
-                !> Open the resume state file.
-                iun = fls%fl(mfk%f883)%iun
-                open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'replace', action = 'write', &
-                     form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
-
-                !> Allocate and initialize temporary variables.
-                allocate(ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
-                         RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
-                         TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
-                         TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
-                ALBSROW = 0.0; CMAIROW = 0.0; GROROW = 0.0; QACROW = 0.0; RCANROW = 0.0; RHOSROW = 0.0
-                SCANROW = 0.0; SNOROW = 0.0; TACROW = 0.0; TBASROW = 0.0; TCANROW = 0.0; TPNDROW = 0.0
-                TSNOROW = 0.0; WSNOROW = 0.0; ZPNDROW = 0.0
-                TBARROW = 0.0; THICROW = 0.0; THLQROW = 0.0; TSFSROW = 0.0
-
-                !> Gather the temporary variables.
-                do k = 1, shd%lc%NML
-
-                    !> Grab the grid and GRU of the current tile.
-                    ik = shd%lc%ILMOS(k)
-                    jk = shd%lc%JLMOS(k)
-
-                    !> Assign values.
-                    ALBSROW(ik, jk) = stas%sno%albs(k)
-                    CMAIROW(ik, jk) = stas%cnpy%cmas(k)
-                    GROROW(ik, jk) = stas%cnpy%gro(k)
-                    QACROW(ik, jk) = stas%cnpy%qac(k)
-                    RCANROW(ik, jk) = stas%cnpy%rcan(k)
-                    RHOSROW(ik, jk) = stas%sno%rhos(k)
-                    SCANROW(ik, jk) = stas%cnpy%sncan(k)
-                    SNOROW(ik, jk) = stas%sno%sno(k)
-                    TACROW(ik, jk) = stas%cnpy%tac(k)
-                    TBARROW(ik, jk, :) = stas%sl%tbar(k, :)
-                    TBASROW(ik, jk) = stas%sl%tbas(k)
-                    TCANROW(ik, jk) = stas%cnpy%tcan(k)
-                    THICROW(ik, jk, :) = stas%sl%thic(k, :)
-                    THLQROW(ik, jk, :) = stas%sl%thlq(k, :)
-                    TPNDROW(ik, jk) = stas%sfc%tpnd(k)
-                    TSFSROW(ik, jk, :) = stas%sfc%tsfs(k, :)
-                    TSNOROW(ik, jk) = stas%sno%tsno(k)
-                    WSNOROW(ik, jk) = stas%sno%wsno(k)
-                    ZPNDROW(ik, jk) = stas%sfc%zpnd(k)
-
-                end do
-
-                !> Read inital values from the file.
-                write(iun) ALBSROW
-                write(iun) CMAIROW
-                write(iun) GROROW
-                write(iun) QACROW
-                write(iun) RCANROW
-                write(iun) RHOSROW
-                write(iun) SCANROW
-                write(iun) SNOROW
-                write(iun) TACROW
-                write(iun) TBARROW
-                write(iun) TBASROW
-                write(iun) TCANROW
-                write(iun) THICROW
-                write(iun) THLQROW
-                write(iun) TPNDROW
-                write(iun) TSFSROW
-                write(iun) TSNOROW
-                write(iun) WSNOROW
-                write(iun) ZPNDROW
-
-                !> Close the file to free the unit.
-                close(iun)
-
-                !> Deallocate temporary variables.
-                deallocate(ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
-                           RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
-                           TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
-                           TBARROW, THICROW, THLQROW, TSFSROW)
-
-            !> SAVERESUMEFLAG 4.
-            case (4)
-                call save_init_prog_variables_class(fls)
-
-            !> RESUMEFLAG 5.
-            case (5)
-                call save_init_prog_variables_class(fls)
-
-        end select !case (SAVERESUMEFLAG)
 
     end subroutine
 

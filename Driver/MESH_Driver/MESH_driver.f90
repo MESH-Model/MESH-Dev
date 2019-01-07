@@ -286,9 +286,6 @@ program RUNMESH
     if (ro%RUNGRID) call run_between_grid_init(fls, shd, cm)
     call print_message('')
 
-    !> Update output variables with initial states.
-    call output_variables_update(shd, cm)
-
     !> Initialize basin totals for the run.
     if (ipid == 0) then
         TOTAL_PRE = 0.0
@@ -304,6 +301,18 @@ program RUNMESH
         if (OUTFIELDSFLAG == 1) call output_files_init(fls, shd)
         call run_save_basin_output_init(fls, shd, cm)
     end if
+
+    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls)
+
+    !> Read resume configuration.
+    call resumerun_config(fls, shd, cm, ierr)
+    if (ierr /= 0) call program_abort()
+
+    !> Read resume files.
+    call resumerun_read(fls, shd, cm)
+
+    !> Update output variables with initial states.
+    call output_variables_update(shd, cm)
 
     FRAME_NO_NEW = 1
 
@@ -327,8 +336,8 @@ program RUNMESH
             write(ECHO_TXT_IUN, *) 'BASINWINDFLAG        = ', cm%dat(ck%UV)%ffmt
             write(ECHO_TXT_IUN, *) 'BASINPRESFLAG        = ', cm%dat(ck%P0)%ffmt
             write(ECHO_TXT_IUN, *) 'BASINHUMIDITYFLAG    = ', cm%dat(ck%HU)%ffmt
-            write(ECHO_TXT_IUN, *) 'RESUMEFLAG           = ', RESUMEFLAG
-            write(ECHO_TXT_IUN, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
+!-            write(ECHO_TXT_IUN, *) 'RESUMEFLAG           = ', RESUMEFLAG
+!-            write(ECHO_TXT_IUN, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
             write(ECHO_TXT_IUN, *) 'SHDFILEFLAG          = ', SHDFILEFMT
             write(ECHO_TXT_IUN, *) 'SOILINIFLAG          = ', SOILINIFLAG
             write(ECHO_TXT_IUN, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
@@ -484,12 +493,12 @@ program RUNMESH
     end if !(ipid == 0) then
 
     !> RESUME/SAVERESUME 1 or 2 are not supported.
-    if (RESUMEFLAG == 1 .or. SAVERESUMEFLAG == 1 .or. RESUMEFLAG == 2 .or. SAVERESUMEFLAG == 2) then
-        write(line, "('RESUMEFLAG ', i1, ' and SAVERESUMEFLAG ', i1, ' are not supported.')") RESUMEFLAG, SAVERESUMEFLAG
-        call print_error(line)
-        call print_message('Use RESUMEFLAG 4 and SAVERESUMEFLAG 4 instead.')
-        call program_abort()
-    end if
+!-    if (RESUMEFLAG == 1 .or. SAVERESUMEFLAG == 1 .or. RESUMEFLAG == 2 .or. SAVERESUMEFLAG == 2) then
+!-        write(line, "('RESUMEFLAG ', i1, ' and SAVERESUMEFLAG ', i1, ' are not supported.')") RESUMEFLAG, SAVERESUMEFLAG
+!-        call print_error(line)
+!-        call print_message('Use RESUMEFLAG 4 and SAVERESUMEFLAG 4 instead.')
+!-        call program_abort()
+!-    end if
 
 !> ********************************************************************
 !> RESUMEFLAG
@@ -802,7 +811,8 @@ program RUNMESH
     end if !(ipid == 0) then
 
     !> Read in existing basin states for RESUMEFLAG.
-    if (RESUMEFLAG == 4) then
+    if (btest(vs%flgs%resume%flo%ffmt, FFMT_SEQ) .and. &
+        index(vs%flgs%resume%bin, '+STASONLY') == 0 .and. index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
 
         !> Open the resume file for the driver.
         iun = fls%fl(mfk%f883)%iun
@@ -830,13 +840,12 @@ program RUNMESH
 
         !> Close the file to free the unit.
         close(iun)
-
-    end if !(RESUMEFLAG == 4) then
+    else
+        call run_save_basin_update_stg_ini(fls, shd, cm)
+    end if
 
     !> Update 'next' counter.
     call counter_init()
-
-    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls)
 
     !> *********************************************************************
     !> End of Initialization
@@ -998,6 +1007,9 @@ program RUNMESH
                     call print_screen(line)
                 end if
             end if
+
+            !> Save resume files.
+            call resumerun_save(fls, shd, cm)
         end if
 
         !> Update the current time-step and counter.
@@ -1125,6 +1137,11 @@ program RUNMESH
     if (ro%RUNGRID) call run_between_grid_finalize(fls, shd, cm)
     if (ro%RUNCLIM) call climate_module_finalize(fls, shd, cm)
 
+    !> Save resume files.
+    !> Force the save frequency to 'now' to force saving the files.
+    vs%flgs%save%freq = FREQ_NOW
+    call resumerun_save(fls, shd, cm)
+
     if (ipid == 0) then
 
         !> Basin totals for the run.
@@ -1142,7 +1159,8 @@ program RUNMESH
         end if
 
         !> Save the current state of the model for SAVERESUMEFLAG.
-        if (SAVERESUMEFLAG == 4) then
+        if (btest(vs%flgs%save%flo%ffmt, FFMT_SEQ) .and. &
+            index(vs%flgs%save%bin, '+STASONLY') == 0 .and. index(vs%flgs%save%bin, '+CLASSPROG') == 0) then
 
             !> Open the resume file for the driver.
             iun = fls%fl(mfk%f883)%iun
@@ -1166,7 +1184,7 @@ program RUNMESH
             !> Close the file to free the unit.
             close(iun)
 
-        end if !(SAVERESUMEFLAG == 4) then
+        end if
 
         !> Write data to the output summary file.
         if (ECHOTXTMODE) then

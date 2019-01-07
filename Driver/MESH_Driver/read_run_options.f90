@@ -115,18 +115,26 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
     !> DAN * MAY BE RESET).
     RELFLG = 1
 
-    !> set RESUMEFLAG to 0 just as a default
-    !> this will be set later by reading the run_options file
-    !* if RESUMEFLAG is 0, the user doesn't want to use the resume file
-    !* if RESUMEFLAG is 1, the user wants to run the resume file.
-    !* if RESUMEFLAG is 2, the user wants to run the r2c resume file.
-    RESUMEFLAG = 0
-
-    !* if SAVERESUMEFLAG is 0, the user doesn't want to make the resume file.
-    !* if SAVERESUMEFLAG is 1, the user wants to make the resume file.
-    !* if SAVERESUMEFLAG is 2, the user wants to make the r2c resume file.
-    !* if SAVERESUMEFLAG is 3, the user wants to make the only class prognostic variables resume file.
-    SAVERESUMEFLAG = 0
+    !* SAVE/RESUMEFLAG: Saves or resume states from file.
+    !>  Legacy options:
+    !>      - 0: Disabled (new option: none).
+    !>      - 1: Not supported.
+    !>      - 2: Not supported.
+    !>      - 3: CLASS prognostic states in binary sequential format (new option: seq only class).
+    !>      - 4: All resume variables in binary sequential format (new option: seq).
+    !>      - 5: All prognostic states in binary sequential format (new option: seq only states).
+    !>  Options:
+    !>      - none: Save and resume no states to and from file (default).
+    !>  File format options (enables SAVERESUMEFLAG):
+    !>      - txt: In text format.
+    !>      - seq: Sequential binary format.
+    !>      - csv: From CSV by GRU.
+    !>      - r2c: From r2c by grid.
+    !>  Output frequency options (default is only at the end of the run):
+    !>      - monthly: Before the beginning of the next month.
+    !>      - yearly: Before the beginning of the next year.
+    RESUMEFLAG = 'none'
+    SAVERESUMEFLAG = 'none'
 
     !> SOIL INITIALIZATION  FLAG - DEFAULT = STOP SIMULATION IF SUM OF SOIL PERCENTAGES EXCEEDS 100%
     !> If SOILINIFLAG is 0, stop simulation if the sum of soil percentages is greater than 100%
@@ -265,9 +273,9 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm)
                 case ('IALG')
                     call value(args(2), IALG, ierr)
                 case ('RESUMEFLAG')
-                    call value(args(2), RESUMEFLAG, ierr)
+                    RESUMEFLAG = adjustl(line)
                 case ('SAVERESUMEFLAG')
-                    call value(args(2), SAVERESUMEFLAG, ierr)
+                    SAVERESUMEFLAG = adjustl(line)
 
                 !> Basin forcing time-step flag.
                 case ('HOURLYFLAG')

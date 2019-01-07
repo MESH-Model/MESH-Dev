@@ -38,6 +38,7 @@ OBJECTS+=	mpi_flags.o mpi_shared_variables.o mpi_utilities.o \
 OBJECTS+=	precmod.o stringmod.o
 # I/O primitives.
 OBJECTS+=	print_routines.o program_end.o program_abort.o \
+			mesh_io_options.o \
 			txt_io.o ensim_io.o
 # Variables (common).
 OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
@@ -156,7 +157,6 @@ OBJECTS+=	read_initial_inputs.o \
 			read_basin_structures.o \
 			read_streamflow_txt.o read_streamflow_tb0.o read_reservoir_txt.o read_reservoir_tb0.o \
 			read_soil_ini.o \
-			read_initial_states.o \
 			module_files.o
 # Output routines.
 OBJECTS+=	WRITE_R2C_HEADER.o write_r2c.o \
@@ -164,4 +164,5 @@ OBJECTS+=	WRITE_R2C_HEADER.o write_r2c.o \
 # MESH driver.
 OBJECTS+=	read_run_options.o \
 			sa_mesh_run_within_tile.o sa_mesh_run_within_grid.o sa_mesh_run_between_grid.o \
+			resumerun_config.o resumerun_read.o resumerun_save.o \
 			MESH_driver.o
