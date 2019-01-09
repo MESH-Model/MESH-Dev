@@ -573,6 +573,12 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     call stas_tile_init(stas_gru, shd%lc%NTYPE, shd%lc%IGND, ierr)
     call stas_grid_init(stas_grid, shd%NA, shd%lc%IGND, ierr)
 
+    !> Read resume configuration.
+    call resumerun_config(fls, shd, cm, ierr)
+    if (ierr /= 0) then
+        call program_abort()
+    end if
+
     !> Call 'CLASSD' to initialize constants.
 !todo: replace this with a non-CLASS/generic version.
     call CLASSD

@@ -93,66 +93,73 @@ subroutine resumerun_read(fls, shd, cm)
         end if
     end if
 
-    !> Check for auto resume file.
-    if (vs%flgs%resume%state == FLAG_AUTO) then
-        fname = 'auto_resume.ini'
-!+        call reset_tab()
-        call print_message('READING: ' // trim(fname))
-!+        call increase_tab()
-        inquire(file = fname, exist = lstate)
-        if (lstate) then
-
-            !> Open the file.
-            iun = 100
-            open(iun, file = fname, status = 'old', action = 'read', iostat = z)
-            if (z /= 0) then
-                call print_error('Unable to open the file.')
-                call program_abort()
-            end if
-
-            !> Read the simulation start date from the file.
-            read(iun, *, iostat = z) ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
-            if (z /= 0) then
-                call print_error('An error occurred reading the simulation resume date from the file.')
-                call program_abort()
-            end if
-            write(line, "(i5, i4, i3.2, ':', i2.2)") ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
-            call print_message( &
-                'Simulation start revised to: ' // trim(adjustl(line)) // '. The previous run state will be resumed.')
-            close(iun)
-        else
-            call print_warning( &
-                'Auto-resume is active but ' // trim(fname) // ' cannot be found. No previous run state is resumed.')
-        end if
-    end if
+!?    !> Check for auto resume file.
+!?    if (vs%flgs%resume%state == FLAG_AUTO) then
+!?        fname = 'auto_resume.ini'
+!?!+        call reset_tab()
+!?        call print_message('READING: ' // trim(fname))
+!?!+        call increase_tab()
+!?        inquire(file = fname, exist = lstate)
+!?        if (lstate) then
+!?
+!?            !> Open the file.
+!?            iun = 100
+!?            open(iun, file = fname, status = 'old', action = 'read', iostat = z)
+!?            if (z /= 0) then
+!?                call print_error('Unable to open the file.')
+!?                call program_abort()
+!?            end if
+!?
+!?            !> Read the simulation start date from the file.
+!?            read(iun, *, iostat = z) ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
+!?            if (z /= 0) then
+!?                call print_error('An error occurred reading the simulation resume date from the file.')
+!?                call program_abort()
+!?            end if
+!?            write(line, "(i5, '/', i3.3, ' ', i2.2, ':', i2.2)") ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
+!?            call print_message( &
+!?                'Simulation start revised to: ' // trim(adjustl(line)) // '. The previous run state will be resumed.')
+!?            close(iun)
+!?        else
+!?
+!?            !> Print a warning if the resume file does not exist.
+!?            call print_warning( &
+!?                'Auto-resume is active but ' // trim(fname) // ' cannot be found. No previous run state is resumed.')
+!?
+!?            !> Override the resume functionality.
+!?            vs%flgs%resume%state = FLAG_OFF
+!?        end if
+!?    end if
 
     !> Read files.
+    if (.not. vs%flgs%resume%state == FLAG_OFF) then
 
-    !> txt: In text format.
+        !> txt: In text format.
 
-    !> seq: Sequential binary format.
-    if (btest(vs%flgs%resume%flo%ffmt, FFMT_SEQ)) then
-        if (index(vs%flgs%resume%bin, '+STASONLY') == 0 .and. index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
-            lstate = climate_module_resume_read(fls, shd, cm)
-            call read_init_prog_variables_class(fls)
-            call bflm_resume_read(fls, shd)
-            call WF_ROUTE_resume_read(fls, shd)
-            call run_rte_resume_read(fls, shd)
-            call run_save_basin_output_resume_read(fls, shd)
-            call stats_state_resume(fls)
-        else if (index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
-            call read_init_prog_variables_class(fls)
-            call bflm_resume_read(fls, shd)
-            call WF_ROUTE_resume_read_nots(fls, shd)
-            call run_rte_resume_read_nots(fls, shd)
-        else
-            call read_init_prog_variables_class_row(fls, shd)
+        !> seq: Sequential binary format.
+        if (btest(vs%flgs%resume%flo%ffmt, FFMT_SEQ)) then
+            if (index(vs%flgs%resume%bin, '+STASONLY') == 0 .and. index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
+                lstate = climate_module_resume_read(fls, shd, cm)
+                call read_init_prog_variables_class(fls)
+                call bflm_resume_read(fls, shd)
+                call WF_ROUTE_resume_read(fls, shd)
+                call run_rte_resume_read(fls, shd)
+                call run_save_basin_output_resume_read(fls, shd)
+                call stats_state_resume(fls)
+            else if (index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
+                call read_init_prog_variables_class(fls)
+                call bflm_resume_read(fls, shd)
+                call WF_ROUTE_resume_read_nots(fls, shd)
+                call run_rte_resume_read_nots(fls, shd)
+            else
+                call read_init_prog_variables_class_row(fls, shd)
+            end if
         end if
+
+        !> r2c: From r2c by grid.
+
+        !> csv: From CSV by GRU.
     end if
-
-    !> r2c: From r2c by grid.
-
-    !> csv: From CSV by GRU.
 
     !> Update derived values.
     call run_within_tile_stas_update(fls, shd, cm)

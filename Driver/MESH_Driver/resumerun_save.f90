@@ -34,7 +34,7 @@ subroutine resumerun_save(fls, shd, cm)
     logical now
 
     !> Return if not the head node.
-    if (.not. ISHEADNODE) return
+    if (.not. ISHEADNODE .or. vs%flgs%save%state == FLAG_OFF) return
 
     !> Check if now is the time for the I/O operation.
     now = .false.

@@ -305,8 +305,8 @@ program RUNMESH
     if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls)
 
     !> Read resume configuration.
-    call resumerun_config(fls, shd, cm, ierr)
-    if (ierr /= 0) call program_abort()
+!?    call resumerun_config(fls, shd, cm, ierr)
+!?    if (ierr /= 0) call program_abort()
 
     !> Read resume files.
     call resumerun_read(fls, shd, cm)
@@ -811,7 +811,7 @@ program RUNMESH
     end if !(ipid == 0) then
 
     !> Read in existing basin states for RESUMEFLAG.
-    if (btest(vs%flgs%resume%flo%ffmt, FFMT_SEQ) .and. &
+    if (.not. vs%flgs%resume%state == FLAG_OFF .and. btest(vs%flgs%resume%flo%ffmt, FFMT_SEQ) .and. &
         index(vs%flgs%resume%bin, '+STASONLY') == 0 .and. index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
 
         !> Open the resume file for the driver.
