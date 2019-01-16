@@ -395,11 +395,15 @@ module SIMSTATS
 
         use model_files_variables
 
+        !> External functions.
+        real, external :: KGE
+
         !> Input variables.
         type(fl_ids) :: fls
 
         !> Local variables.
         logical exists
+        real, dimension(:), allocatable :: fkge
         integer j, iun
 
         if (SAVERESUMEFLAG == 4) then
@@ -423,8 +427,11 @@ module SIMSTATS
         end if
 
         !> Calculate the metrics of the simulation.
+        allocate(fkge(size(qobs, 2)))
+        fkge = 0.0
         do j = 1, size(qobs, 2)
             call calc_stats(qobs(1:ncal, j), qsim(1:ncal, j), ncal, bias(j), nsd(j), lnsd(j), nsw(j), tpd(j))
+            fkge(j) = KGE(qobs(max(METRICSSPINUP,1):ncal, j), qsim(max(METRICSSPINUP,1):ncal, j), (ncal - max(METRICSSPINUP,1)) + 1)
         end do
         if (mtsfl%fl(mtsk%out)%init .or. mtsfl%fl(mtsk%RMSE)%init) st_drms = calc_drms_value(METRICSSPINUP, ncal, qobs, qsim)
         if (mtsfl%fl(mtsk%out)%init .or. mtsfl%fl(mtsk%RMSE)%init) st_abserr = calc_abserr_value(METRICSSPINUP, ncal, qobs, qsim)
@@ -481,11 +488,11 @@ module SIMSTATS
             iun = mtsfl%fl(mtsk%out)%iun
             open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%out)%fn))
             write(iun, "(9999(g15.7e2, ' '))") &
-                "Gauge", "MAE", "RMSE", "BIAS", "AbsBIAS", "NSD", "NegNSD", "lnNSD", "NeglnNSD", "TPD"
+                "Gauge", "MAE", "RMSE", "BIAS", "AbsBIAS", "NSD", "NegNSD", "lnNSD", "NeglnNSD", "TPD", "KGE", "NegKGE"
             do j = 1, size(qobs, 2)
                 write(iun, "(9999(g15.7e2, ' '))") &
                     j, st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), abs(bias(j)), &
-                    nsd(j), (-1.0*nsd(j)), lnsd(j), (-1.0*lnsd(j)), int(tpd(j))
+                    nsd(j), (-1.0*nsd(j)), lnsd(j), (-1.0*lnsd(j)), int(tpd(j)), fkge(j), (-1.0*fkge(j))
             end do
             close(iun)
         end if

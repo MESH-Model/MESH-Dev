@@ -63,7 +63,7 @@ OBJECTS+=	cropland_irrigation_variables.o \
 			calc_ET0.o
 OBJECTS+=	irrigation_demand_module.o
 OBJECTS+=	SIMSTATS_config.o \
-			NSE.o SAE.o SORT.o SAESRT.o calc_drms.o calc_abserr.o \
+			KGE.o NSE.o SAE.o SORT.o SAESRT.o calc_drms.o calc_abserr.o \
 			SIMSTATS.o
 #todo: fix dependency on RUNCLASS36_constants;
 OBJECTS+=	RUNCLASS36_constants.o
