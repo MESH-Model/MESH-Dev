@@ -434,4 +434,28 @@ subroutine read_parameters(fls, shd, cm)
         end do
     end if
 
+    !> Nudge SDEP to the nearest interface between soil layers in the profile.
+    if (NUDGESDEPFLAG == 1 .and. shd%lc%IGND > 0) then
+
+        !> Within the first layer, nudge to the first boundary and not to zero so it remains active.
+!todo: Double-check this is okay with SVS.
+        !> Hydrologically inactive layers should be identified with SAND flag <= -3.
+        !> Limit depths deeper than the soil profile to the last boundary for consistency.
+        where (pm%slp%sdep <= shd%lc%sl%zbot(1))
+            pm%slp%sdep = shd%lc%sl%zbot(1)
+        elsewhere (pm%slp%sdep > shd%lc%sl%zbot(shd%lc%IGND))
+            pm%slp%sdep = shd%lc%sl%zbot(shd%lc%IGND)
+        end where
+
+        !> Nudge in-between depths to the closest boundary.
+        do j = 2, shd%lc%IGND
+            where (pm%slp%sdep > shd%lc%sl%zbot(j - 1) .and. pm%slp%sdep <= (0.5*shd%lc%sl%delz(j) + shd%lc%sl%zbot(j - 1)))
+                pm%slp%sdep = shd%lc%sl%zbot(j - 1)
+            elsewhere (pm%slp%sdep > (0.5*shd%lc%sl%delz(j) + shd%lc%sl%zbot(j - 1)) .and. pm%slp%sdep <= shd%lc%sl%zbot(j))
+                pm%slp%sdep = shd%lc%sl%zbot(j)
+            end where
+        end do
+
+    end if
+
 end subroutine
