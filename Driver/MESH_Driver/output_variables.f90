@@ -35,6 +35,8 @@ module output_variables
         real, dimension(:), pointer :: rofb => null()
         real, dimension(:), pointer :: rcan => null()
         real, dimension(:), pointer :: sncan => null()
+        real, dimension(:), pointer :: zsno => null()
+        real, dimension(:), pointer :: rhosno => null()
         real, dimension(:), pointer :: sno => null()
         real, dimension(:), pointer :: fsno => null()
         real, dimension(:), pointer :: isno => null()
@@ -224,6 +226,10 @@ module output_variables
                 if (ro%RUNBALWB) call output_variables_allocate(fields%rcan, n, pntr)
             case (VN_SNCAN)
                 if (ro%RUNBALWB) call output_variables_allocate(fields%sncan, n, pntr)
+            case (VN_ZSNO)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%zsno, n, pntr)
+            case (VN_RHOSNO)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%rhosno, n, pntr)
             case (VN_SNO)
                 if (ro%RUNBALWB) call output_variables_allocate(fields%sno, n, pntr)
             case (VN_FSNO)
@@ -384,6 +390,8 @@ module output_variables
             call output_variables_allocate(group%rofb, n)
             call output_variables_allocate(group%rcan, n)
             call output_variables_allocate(group%sncan, n)
+            call output_variables_allocate(group%zsno, n)
+            call output_variables_allocate(group%rhosno, n)
             call output_variables_allocate(group%sno, n)
             call output_variables_allocate(group%fsno, n)
             call output_variables_allocate(group%wsno, n)
@@ -474,6 +482,8 @@ module output_variables
             group%rofb = out%NO_DATA
             group%rcan = out%NO_DATA
             group%sncan = out%NO_DATA
+            group%zsno = out%NO_DATA
+            group%rhosno = out%NO_DATA
             group%sno = out%NO_DATA
             group%fsno = out%NO_DATA
             group%wsno = out%NO_DATA
@@ -674,6 +684,8 @@ module output_variables
             where (group%rcan /= out%NO_DATA) group%stgw = group%stgw + group%rcan
             if (all(group%sncan == out%NO_DATA)) group%sncan = group_vs%sncan
             where (group%sncan /= out%NO_DATA) group%stgw = group%stgw + group%sncan
+            if (all(group%zsno == out%NO_DATA)) group%zsno = group_vs%zsno
+            if (all(group%rhosno == out%NO_DATA)) group%rhosno = group_vs%rhos
             if (all(group%sno == out%NO_DATA)) group%sno = group_vs%sno
             if (all(group%wsno == out%NO_DATA)) group%wsno = group_vs%wsno
             where (group%stgw /= out%NO_DATA) group%stgw = group%stgw + group%wsno
@@ -970,6 +982,12 @@ module output_variables
             end if
             if (associated(group%sncan)) then
                 call output_variables_field_update(group%sncan, group_ts%sncan, its, 'avg')
+            end if
+            if (associated(group%zsno)) then
+                call output_variables_field_update(group%zsno, group_ts%zsno, its, 'avg')
+            end if
+            if (associated(group%rhosno)) then
+                call output_variables_field_update(group%rhosno, group_ts%rhosno, its, 'avg')
             end if
             if (associated(group%sno)) then
                 call output_variables_field_update(group%sno, group_ts%sno, its, 'avg')

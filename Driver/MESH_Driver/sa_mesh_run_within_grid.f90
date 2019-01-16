@@ -233,6 +233,8 @@ module sa_mesh_run_within_grid
         vs%grid%cmas(i1:i2) = 0.0
         vs%grid%tcan(i1:i2) = 0.0
         vs%grid%gro(i1:i2) = 0.0
+        vs%grid%zsno(i1:i2) = 0.0
+        vs%grid%rhos(i1:i2) = 0.0
         vs%grid%sno(i1:i2) = 0.0
         vs%grid%wsno(i1:i2) = 0.0
         vs%grid%tsno(i1:i2) = 0.0
@@ -283,6 +285,7 @@ module sa_mesh_run_within_grid
             if (vs%tile%sno(k) > 0.0) then
                 vs%grid%wsno(ki) = vs%grid%wsno(ki) + vs%tile%wsno(k)*frac
                 vs%grid%tsno(ki) = vs%grid%tsno(ki) + vs%tile%tsno(k)*frac
+                vs%grid%rhos(ki) = vs%grid%rhos(ki) + vs%tile%rhos(k)*frac
                 fsno(ki) = fsno(ki) + frac
             end if
             vs%grid%albt(ki) = vs%grid%albt(ki) + vs%tile%albt(k)*frac
@@ -322,6 +325,10 @@ module sa_mesh_run_within_grid
         end where
         where (fsno(i1:i2) > 0.0)
             vs%grid%tsno(i1:i2) = vs%grid%tsno(i1:i2)/fsno(i1:i2)
+            vs%grid%rhos(i1:i2) = vs%grid%rhos(i1:i2)/fsno(i1:i2)
+        end where
+        where (vs%grid%rhos(i1:i2) > 0.0)
+            vs%grid%zsno(i1:i2) = vs%grid%sno(i1:i2)/vs%grid%rhos(i1:i2)
         end where
         where (fpnd(i1:i2) > 0.0) vs%grid%tpnd(i1:i2) = vs%grid%tpnd(i1:i2)/fpnd(i1:i2)
 

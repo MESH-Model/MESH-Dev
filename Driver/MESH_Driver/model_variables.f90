@@ -81,12 +81,14 @@ module model_variables
         real, dimension(:), pointer :: qac
         real, dimension(:), pointer :: gro
 
+        !* zsno: Snow depth. [m].
         !* sno: Mass of snow pack. [kg m-2].
         !* fsno: Diagnosed fractional snow coverage. [ ].
         !* albs: Snow albedo.
         !* rhos: Density of snow. [kg m-3].
         !* wsno: Liquid water content of snow pack. [kg m-2].
         !* tsno: Snowpack temperature. [K].
+        real, dimension(:), pointer :: zsno
         real, dimension(:), pointer :: sno
         real, dimension(:), pointer :: fsno
         real, dimension(:), pointer :: albs
@@ -229,6 +231,7 @@ module model_variables
         group%tcan = 0.0
         group%qac = 0.0
         group%gro = 0.0
+        group%zsno = 0.0
         group%sno = 0.0
         group%fsno = 0.0
         group%albs = 0.0
@@ -365,6 +368,7 @@ module model_variables
         allocate(group%tcan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qac(n), stat = z); if (z /= 0) ierr = z
         allocate(group%gro(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%zsno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%sno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%fsno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%albs(n), stat = z); if (z /= 0) ierr = z

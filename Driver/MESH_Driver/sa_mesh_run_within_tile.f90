@@ -387,6 +387,7 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
         !> Reset variables non-prognostic variables.
+        vs%tile%zsno(il1:il2) = 0.0
         vs%tile%fsno(il1:il2) = 0.0
         vs%tile%albt(il1:il2) = 0.0
         vs%tile%alvs(il1:il2) = 0.0
@@ -423,6 +424,11 @@ module sa_mesh_run_within_tile
             vs%tile%wsno(il1:il2) = 0.0
             vs%tile%tsno(il1:il2) = 0.0
         end where
+        if (all(vs%tile%zsno(il1:il2) == 0.0)) then
+            where (vs%tile%rhos(il1:il2) > 0.0)
+                vs%tile%zsno(il1:il2) = vs%tile%sno(il1:il2)/vs%tile%rhos(il1:il2)
+            end where
+        end if
         if (all(vs%tile%albt(il1:il2) == 0.0)) then
             where (vs%tile%alvs(il1:il2) > 0.0 .and. vs%tile%alir(il1:il2) > 0.0)
                 vs%tile%albt(il1:il2) = (vs%tile%alvs(il1:il2) + vs%tile%alir(il1:il2))/2.0
