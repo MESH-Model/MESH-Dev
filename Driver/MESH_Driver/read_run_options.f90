@@ -143,6 +143,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     !> If SOILINIFLAG is 5, directly read soil parameter values from soil.ini file.
     SOILINIFLAG = 0
 
+    !> NUDGESDEPFLAG: Nudge SDEP of the tile to the nearest boundary in the discretized soil profile.
+    !*  NUDGESDEPFLAG 0: No effect (default).
+    !*  NUDGESDEPFLAG 1: Nudge SDEP of the tile to the nearest boundary in the discretized soil profile.
+    NUDGESDEPFLAG = 0
+
     !> If OBJFNFLAG is 0 {DEFAULT} = SAE - SUM OF ABSOLUTE VALUE OF ERRORS
     !> If OBJFNFLAG is 1, SAESRT - SUM OF ABSOLUTE VALUE OF ERRORS AFTER SORTING
     !> If OBJFNFLAG is 2, SAEMSRT - SUM OF ABSOLUTE VALUE OF MOVING ERRORS AFTER SORTING
@@ -478,6 +483,9 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     call value(args(2), SOILINIFLAG, z)
                 case ('NRSOILAYEREADFLAG')
                     call value(args(2), NRSOILAYEREADFLAG, z)
+                case ('NUDGESDEPFLAG')
+                    call value(args(2), NUDGESDEPFLAG, ierr)
+
                 case ('PREEMPTIONFLAG')
                     call value(args(2), mtsflg%PREEMPTIONFLAG, z)
 
