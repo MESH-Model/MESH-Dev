@@ -58,6 +58,7 @@ module state_variables
     !>  State of snow at the surface.
     !>
     !> Variables:
+    !*  zsno: Snow depth. [m].
     !*  sno: Mass of snow pack. [kg m-2].
     !*  fsno: Diagnosed fractional snow coverage. [ ].
     !*  albs: Snow albedo.
@@ -66,6 +67,7 @@ module state_variables
     !*  tsno: Snowpack temperature. [K].
     type snow_balance
         real(kind = 4), dimension(:), allocatable :: &
+            zsno, &
             sno, fsno, albs, rhos, wsno, &
             tsno
     end type
@@ -234,6 +236,7 @@ module state_variables
             stas%cnpy%cmas(n), stas%cnpy%tac(n), stas%cnpy%tcan(n), stas%cnpy%qac(n), stas%cnpy%gro(n), &
 
             !> Snow.
+            stas%sno%zsno(n), &
             stas%sno%sno(n), stas%sno%albs(n), stas%sno%fsno(n), stas%sno%rhos(n), stas%sno%wsno(n), &
             stas%sno%tsno(n), &
 
@@ -269,6 +272,7 @@ module state_variables
             stas%cnpy%cmas = 0.0; stas%cnpy%tac = 0.0; stas%cnpy%tcan = 0.0; stas%cnpy%qac = 0.0; stas%cnpy%gro = 0.0
 
             !> Snow.
+            stas%sno%zsno = 0.0
             stas%sno%sno = 0.0; stas%sno%albs = 0.0; stas%sno%fsno = 0.0; stas%sno%rhos = 0.0; stas%sno%wsno = 0.0
             stas%sno%tsno = 0.0
 
@@ -318,6 +322,7 @@ module state_variables
             stas%cnpy%cmas(n), stas%cnpy%tac(n), stas%cnpy%tcan(n), stas%cnpy%qac(n), stas%cnpy%gro(n), &
 
             !> Snow.
+            stas%sno%zsno(n), &
             stas%sno%sno(n), stas%sno%albs(n), stas%sno%fsno(n), stas%sno%rhos(n), stas%sno%wsno(n), &
             stas%sno%tsno(n), &
 
@@ -358,6 +363,7 @@ module state_variables
             stas%cnpy%cmas = 0.0; stas%cnpy%tac = 0.0; stas%cnpy%tcan = 0.0; stas%cnpy%qac = 0.0; stas%cnpy%gro = 0.0
 
             !> Snow.
+            stas%sno%zsno = 0.0
             stas%sno%sno = 0.0; stas%sno%albs = 0.0; stas%sno%fsno = 0.0; stas%sno%rhos = 0.0; stas%sno%wsno = 0.0
             stas%sno%tsno = 0.0
 

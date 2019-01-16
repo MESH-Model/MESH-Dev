@@ -233,6 +233,8 @@ module sa_mesh_run_within_grid
         stas_grid%cnpy%cmas(i1:i2) = 0.0
         stas_grid%cnpy%tcan(i1:i2) = 0.0
         stas_grid%cnpy%gro(i1:i2) = 0.0
+        stas_grid%sno%zsno(i1:i2) = 0.0
+        stas_grid%sno%rhos(i1:i2) = 0.0
         stas_grid%sno%sno(i1:i2) = 0.0
         stas_grid%sno%wsno(i1:i2) = 0.0
         stas_grid%sno%tsno(i1:i2)  = 0.0
@@ -283,6 +285,7 @@ module sa_mesh_run_within_grid
             if (stas%sno%sno(k) > 0.0) then
                 stas_grid%sno%wsno(ki) = stas_grid%sno%wsno(ki) + stas%sno%wsno(k)*frac
                 stas_grid%sno%tsno(ki) = stas_grid%sno%tsno(ki) + stas%sno%tsno(k)*frac
+                stas_grid%sno%rhos(ki) = stas_grid%sno%rhos(ki) + stas%sno%rhos(k)*frac
                 fsno(ki) = fsno(ki) + frac
             end if
             stas_grid%sfc%albt(ki) = stas_grid%sfc%albt(ki) + stas%sfc%albt(k)*frac
@@ -322,6 +325,10 @@ module sa_mesh_run_within_grid
         end where
         where (fsno(i1:i2) > 0.0)
             stas_grid%sno%tsno(i1:i2) = stas_grid%sno%tsno(i1:i2)/fsno(i1:i2)
+            stas_grid%sno%rhos(i1:i2) = stas_grid%sno%rhos(i1:i2)/fsno(i1:i2)
+        end where
+        where (stas_grid%sno%rhos(i1:i2) > 0.0)
+            stas_grid%sno%zsno(i1:i2) = stas_grid%sno%sno(i1:i2)/stas_grid%sno%rhos(i1:i2)
         end where
         where (fpnd(i1:i2) > 0.0) stas_grid%sfc%tpnd(i1:i2) = stas_grid%sfc%tpnd(i1:i2)/fpnd(i1:i2)
 

@@ -29,6 +29,8 @@ module variable_names
     character(len = 10), parameter :: VN_ROFB = 'ROFB'
     character(len = 10), parameter :: VN_RCAN = 'RCAN'
     character(len = 10), parameter :: VN_SNCAN = 'SNCAN'
+    character(len = 10), parameter :: VN_ZSNO = 'ZSNO'
+    character(len = 10), parameter :: VN_RHOSNO = 'RHOSNO'
     character(len = 10), parameter :: VN_SNO = 'SNO'
     character(len = 10), parameter :: VN_FSNO = 'FSNO'
     character(len = 10), parameter :: VN_WSNO = 'WSNO'

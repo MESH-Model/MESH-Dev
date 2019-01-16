@@ -33,6 +33,8 @@ module output_variables
         real, dimension(:), pointer :: rofb => null()
         real, dimension(:), pointer :: rcan => null()
         real, dimension(:), pointer :: sncan => null()
+        real, dimension(:), pointer :: zsno => null()
+        real, dimension(:), pointer :: rhosno => null()
         real, dimension(:), pointer :: sno => null()
         real, dimension(:), pointer :: fsno => null()
         real, dimension(:), pointer :: wsno => null()
@@ -221,6 +223,10 @@ module output_variables
                 if (ro%RUNBALWB) call output_variables_allocate(fields%rcan, n, pntr)
             case (VN_SNCAN)
                 if (ro%RUNBALWB) call output_variables_allocate(fields%sncan, n, pntr)
+            case (VN_ZSNO)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%zsno, n, pntr)
+            case (VN_RHOSNO)
+                if (ro%RUNBALWB) call output_variables_allocate(fields%rhosno, n, pntr)
             case (VN_SNO)
                 if (ro%RUNBALWB) call output_variables_allocate(fields%sno, n, pntr)
             case (VN_FSNO)
@@ -354,6 +360,8 @@ module output_variables
                 if (allocated(stas%lzs%rofb) .and. allocated(stas%dzs%rofb)) allocate(series%tile%rofb(n))
                 if (allocated(stas%cnpy%rcan)) allocate(series%tile%rcan(n))
                 if (allocated(stas%cnpy%sncan)) allocate(series%tile%sncan(n))
+                if (allocated(stas%sno%zsno)) allocate(series%tile%zsno(n))
+                if (allocated(stas%sno%rhos)) allocate(series%tile%rhosno(n))
                 if (allocated(stas%sno%sno)) allocate(series%tile%sno(n))
                 if (allocated(stas%sno%fsno)) allocate(series%tile%fsno(n))
                 if (allocated(stas%sno%wsno)) allocate(series%tile%wsno(n))
@@ -420,6 +428,8 @@ module output_variables
                 if (allocated(stas_grid%lzs%rofb) .and. allocated(stas_grid%dzs%rofb)) allocate(series%grid%rofb(n))
                 if (allocated(stas_grid%cnpy%rcan)) allocate(series%grid%rcan(n))
                 if (allocated(stas_grid%cnpy%sncan)) allocate(series%grid%sncan(n))
+                if (allocated(stas_grid%sno%zsno)) allocate(series%grid%zsno(n))
+                if (allocated(stas_grid%sno%rhos)) allocate(series%grid%rhosno(n))
                 if (allocated(stas_grid%sno%sno)) allocate(series%grid%sno(n))
                 if (allocated(stas_grid%sno%fsno)) allocate(series%grid%fsno(n))
                 if (allocated(stas_grid%sno%wsno)) allocate(series%grid%wsno(n))
@@ -591,6 +601,12 @@ module output_variables
                 if (associated(out%ts%tile%sncan)) then
                     if (all(out%ts%tile%sncan == out%NO_DATA)) out%ts%tile%sncan = stas%cnpy%sncan
                 end if
+                if (associated(out%ts%tile%zsno)) then
+                    if (all(out%ts%tile%zsno == out%NO_DATA)) out%ts%tile%zsno = stas%sno%zsno
+                end if
+                if (associated(out%ts%tile%rhosno)) then
+                    if (all(out%ts%tile%rhosno == out%NO_DATA)) out%ts%tile%rhosno = stas%sno%rhos
+                end if
                 if (associated(out%ts%tile%sno)) then
                     if (all(out%ts%tile%sno == out%NO_DATA)) out%ts%tile%sno = stas%sno%sno
                 end if
@@ -761,6 +777,12 @@ module output_variables
                 end if
                 if (associated(out%ts%grid%sncan)) then
                     if (all(out%ts%grid%sncan == out%NO_DATA)) out%ts%grid%sncan = stas_grid%cnpy%sncan
+                end if
+                if (associated(out%ts%grid%zsno)) then
+                    if (all(out%ts%grid%zsno == out%NO_DATA)) out%ts%grid%zsno = stas_grid%sno%zsno
+                end if
+                if (associated(out%ts%grid%rhosno)) then
+                    if (all(out%ts%grid%rhosno == out%NO_DATA)) out%ts%grid%rhosno = stas_grid%sno%rhos
                 end if
                 if (associated(out%ts%grid%sno)) then
                     if (all(out%ts%grid%sno == out%NO_DATA)) out%ts%grid%sno = stas_grid%sno%sno
@@ -1010,6 +1032,12 @@ module output_variables
                 if (associated(series%tile%sncan)) then
                     call output_variables_update_values(series%tile%sncan, out%ts%tile%sncan, its, dnts, 'avg')
                 end if
+                if (associated(series%tile%zsno)) then
+                    call output_variables_update_values(series%tile%zsno, out%ts%tile%zsno, its, dnts, 'avg')
+                end if
+                if (associated(series%tile%rhosno)) then
+                    call output_variables_update_values(series%tile%rhosno, out%ts%tile%rhosno, its, dnts, 'avg')
+                end if
                 if (associated(series%tile%sno)) then
                     call output_variables_update_values(series%tile%sno, out%ts%tile%sno, its, dnts, 'avg')
                 end if
@@ -1173,6 +1201,12 @@ module output_variables
                 end if
                 if (associated(series%grid%sncan)) then
                     call output_variables_update_values(series%grid%sncan, out%ts%grid%sncan, its, dnts, 'avg')
+                end if
+                if (associated(series%grid%zsno)) then
+                    call output_variables_update_values(series%grid%zsno, out%ts%grid%zsno, its, dnts, 'avg')
+                end if
+                if (associated(series%grid%rhosno)) then
+                    call output_variables_update_values(series%grid%rhosno, out%ts%grid%rhosno, its, dnts, 'avg')
                 end if
                 if (associated(series%grid%sno)) then
                     call output_variables_update_values(series%grid%sno, out%ts%grid%sno, its, dnts, 'avg')
@@ -1398,6 +1432,8 @@ module output_variables
                 series%tile%rofb = out%NO_DATA
                 series%tile%rcan = out%NO_DATA
                 series%tile%sncan = out%NO_DATA
+                series%tile%zsno = out%NO_DATA
+                series%tile%rhosno = out%NO_DATA
                 series%tile%sno = out%NO_DATA
                 series%tile%fsno = out%NO_DATA
                 series%tile%wsno = out%NO_DATA
@@ -1462,6 +1498,8 @@ module output_variables
                 series%grid%rofb = out%NO_DATA
                 series%grid%rcan = out%NO_DATA
                 series%grid%sncan = out%NO_DATA
+                series%grid%zsno = out%NO_DATA
+                series%grid%rhosno = out%NO_DATA
                 series%grid%sno = out%NO_DATA
                 series%grid%fsno = out%NO_DATA
                 series%grid%wsno = out%NO_DATA
