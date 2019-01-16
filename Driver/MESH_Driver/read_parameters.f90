@@ -411,9 +411,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
             !> Assign properties to layers lower than the "last configured layer" read from file.
             if (j > ignd .and. ignd > 0) then
-                pm%slp%sand(:, j) = pm%slp%sand(:, ignd)
-                pm%slp%clay(:, j) = pm%slp%clay(:, ignd)
-                pm%slp%orgm(:, j) = pm%slp%orgm(:, ignd)
+                where (pm%slp%sand(:, j) == 0.0) pm%slp%sand(:, j) = pm%slp%sand(:, ignd)
+                where (pm%slp%clay(:, j) == 0.0) pm%slp%clay(:, j) = pm%slp%clay(:, ignd)
+                where (pm%slp%orgm(:, j) == 0.0) pm%slp%orgm(:, j) = pm%slp%orgm(:, ignd)
             end if
 
             !> Check for impermeable soils.
