@@ -31,8 +31,7 @@ subroutine resumerun_read(fls, shd, cm)
 
     !> Local variables.
     integer iun, ignd, k, j, i, m, z
-    character(len = DEFAULT_LINE_LENGTH) args(100), line
-    character(len = DEFAULT_FIELD_LENGTH) fname
+    character(len = DEFAULT_LINE_LENGTH) args(100), line, fname
     logical lstate
 
     !> Distribute GRU-based values.
@@ -138,6 +137,13 @@ subroutine resumerun_read(fls, shd, cm)
 
         !> seq: Sequential binary format.
         if (btest(vs%flgs%resume%flo%ffmt, FFMT_SEQ)) then
+
+            !> Append the date to the default resume filename for auto resume.
+            if (vs%flgs%resume%state == FLAG_AUTO) then
+                write(line, "(i4.4, '_', i3.3)") ic%start%year, ic%start%jday
+                fname = fls%fl(mfk%f883)%fn
+                fls%fl(mfk%f883)%fn = trim(fname(1:index(fname, '.'))) // trim(adjustl(line)) // trim(fname(index(fname, '.'):))
+            end if
             if (index(vs%flgs%resume%bin, '+STASONLY') == 0 .and. index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
                 lstate = climate_module_resume_read(fls, shd, cm)
                 call read_init_prog_variables_class(fls)
@@ -153,6 +159,9 @@ subroutine resumerun_read(fls, shd, cm)
                 call run_rte_resume_read_nots(fls, shd)
             else
                 call read_init_prog_variables_class_row(fls, shd)
+            end if
+            if (vs%flgs%resume%state == FLAG_AUTO) then
+                fls%fl(mfk%f883)%fn = fname
             end if
         end if
 

@@ -29,8 +29,7 @@ subroutine resumerun_save(fls, shd, cm)
 
     !> Local variables.
     integer iun, j, z
-    character(len = DEFAULT_LINE_LENGTH) args(100), line
-    character(len = DEFAULT_FIELD_LENGTH) fname
+    character(len = DEFAULT_LINE_LENGTH) args(100), line, fname
     logical now
 
     !> Return if not the head node.
@@ -205,6 +204,15 @@ subroutine resumerun_save(fls, shd, cm)
 
     !> seq: Sequential binary format.
     if (btest(vs%flgs%save%flo%ffmt, FFMT_SEQ)) then
+
+        !> Append the date to the default resume filename if auto resume is enabled.
+        if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+            write(line, "(i4.4, '_', i3.3)") ic%next%year, ic%next%jday
+            fname = fls%fl(mfk%f883)%fn
+            fls%fl(mfk%f883)%fn = trim(fname(1:index(fname, '.'))) // trim(adjustl(line)) // trim(fname(index(fname, '.'):))
+        end if
+
+        !> Save files.
         if (index(vs%flgs%save%bin, '+STASONLY') == 0 .and. index(vs%flgs%save%bin, '+CLASSPROG') == 0) then
             call climate_module_resume_save(fls, shd, cm)
             call save_init_prog_variables_class(fls)
@@ -221,6 +229,9 @@ subroutine resumerun_save(fls, shd, cm)
         else
             call save_init_prog_variables_class_row(fls, shd)
         end if
+        if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+            fls%fl(mfk%f883)%fn = fname
+        end if
     end if
 
     !> r2c: From r2c by grid.
@@ -228,19 +239,21 @@ subroutine resumerun_save(fls, shd, cm)
     !> csv: From CSV by GRU.
 
     !> Save the resume date ('next') to the auto resume file.
-    fname = 'auto_resume.ini'
-!+    call reset_tab()
-    call print_message('SAVING: ' // trim(fname))
-!+    call increase_tab()
-    iun = 100
-    open(iun, file = fname, action = 'write', iostat = z)
-    if (z /= 0) then
-        call print_error('Unable to open the file. States cannot be saved.')
-        call program_abort()
+    if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+        fname = 'auto_resume.ini'
+!+        call reset_tab()
+        call print_message('SAVING: ' // trim(fname))
+!+        call increase_tab()
+        iun = 100
+        open(iun, file = fname, action = 'write', iostat = z)
+        if (z /= 0) then
+            call print_error('Unable to open the file. States cannot be saved.')
+            call program_abort()
+        end if
+        write(iun, "(4i4, ' !< START_YEAR, START_JDAY, START_HOUR, START_MINS')") &
+            ic%next%year, ic%next%jday, ic%next%hour, ic%next%mins
+        write(iun, "(8x, 2i4, ' !< START_MONTH, START_DAY')") ic%next%month, ic%next%day
+        close(iun)
     end if
-    write(iun, "(4i4, ' !< START_YEAR, START_JDAY, START_HOUR, START_MINS')") &
-        ic%next%year, ic%next%jday, ic%next%hour, ic%next%mins
-    write(iun, "(8x, 2i4, ' !< START_MONTH, START_DAY')") ic%next%month, ic%next%day
-    close(iun)
 
 end subroutine
