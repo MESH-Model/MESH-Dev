@@ -6,17 +6,59 @@
 !>
 module state_variables
 
+    use mesh_io_options
+
     implicit none
 
-    !* SAVE/RESUMESTATES: Saves or resume states from file.
+    !* SAVE/RESUMEFLAG: Saves or resume states from file.
+    !>  Legacy options:
+    !>      - 0: Disabled (new option: none).
+    !>      - 1: Not supported.
+    !>      - 2: Not supported.
+    !>      - 3: CLASS prognostic states in binary sequential format (new option: seq only class).
+    !>      - 4: All resume variables in binary sequential format (new option: seq).
+    !>      - 5: All prognostic states in binary sequential format (new option: seq only states).
     !>  Options:
-    !>      - none: Save and resume no states to and from file (default).
-    !>      - txt:  In text format.
-    !>      - seq:  Sequential binary format.
-    !>      - csv:  From CSV by GRU (RESUMESTATES only).
-    !>      - r2c:  From r2c by grid (RESUMESTATES only).
-    character(len = 80), save :: RESUMESTATES = 'RESUMESTATES none'
-    character(len = 80), save :: SAVESTATES = 'SAVESTATES none'
+    !>      - FLAG_OFF: Do not save or resume the run state to and from file (default).
+    !>      - FLAG_ON: Save and resume run state to and from file.
+    !>      - FLAG_AUTO: Automatically resume the run state in the presence of auto_resume.ini (RESUMEFLAG only).
+    !>  File format options (enables SAVERESUMEFLAG):
+    !>      - FFMT_TXT: Plain text format (not implemented).
+    !>      - FFMT_SEQ: Sequential binary format.
+    !>      - FFMT_CSV: From CSV by GRU (not implemented).
+    !>      - FFMT_R2C: From r2c by grid (not implemented).
+    !>  Output frequency options (default is only at the end of the run):
+    !>      - FREQ_MLY: Before the beginning of the next month.
+    !>      - FREQ_YLY: Before the beginning of the next year.
+    character(len = 80), save :: RESUMEFLAG = 'none'
+    character(len = 80), save :: SAVERESUMEFLAG = 'none'
+
+    !> Type: io_state_flag
+    !>
+    !> Variables:
+    !*  active: .true. if active.
+    !*  freq: Frequency for I/O functions that are repeated.
+    !*  ffmt: File formats for output (default: 0).
+    !*  bin: Read/write directives.
+    type io_state_flag
+        integer :: state = FLAG_OFF
+        integer :: freq = FREQ_NUL
+        character(len = 80) :: bin = ''
+        type(io_file) flo
+    end type
+
+    !> Type: io_state_flags
+    !>  Container for types of 'io_state_flag'.
+    type io_state_flags
+        type(io_state_flag) save, resume, assim
+    end type
+
+    !> Type: stas_flgs
+    !>  (Temporary) Container for flags (until updated to code which implements 'vs').
+    type stas_flgs
+        type(io_state_flags) flgs
+    end type
+    type (stas_flgs), save :: vs
 
     !> Type: channel
     !>  States of channels and flow.

@@ -9,6 +9,7 @@ module save_basin_output
     private
 
     public run_save_basin_output_init, run_save_basin_output, run_save_basin_output_finalize
+    public run_save_basin_output_resume_read, run_save_basin_output_resume_save, run_save_basin_update_stg_ini
     public BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
 
     !> Global types.
@@ -107,11 +108,14 @@ module save_basin_output
         type(clim_info) :: cm
 
         !> Local variables.
-        integer NA, NSL, ikey, n, ii, i, iun, ierr
+        integer NA, NSL, ikey, n, iun, ierr
         character(len = 3) nc
 
         !> Return if basin output has been disabled.
 !-        if (BASINBALANCEOUTFLAG == 0) return
+
+        !> Return if not the head node.
+        if (.not. ISHEADNODE) return
 
         !> Parse output file flags.
         if (len_trim(BASINAVGWBFILEFLAG) > 0) call parse_basin_output_flag(shd, BASINAVGWBFILEFLAG, bnoflg%wb)
@@ -258,22 +262,6 @@ module save_basin_output
             call write_energy_balance_header(fls, shd, 907, ic%dts)
         end if
 
-        !> Calculate initial storage and aggregate through neighbouring cells.
-        do ikey = 1, NKEY
-            bno%wb(ikey)%STG_INI = &
-                (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
-                 out%ts%grid%lzs + out%ts%grid%dzs + &
-                 sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC
-        end do
-        do i = 1, shd%NAA
-            ii = shd%NEXT(i)
-            if (ii > 0) then
-                do ikey = 1, NKEY
-                    bno%wb(ikey)%STG_INI(ii) = bno%wb(ikey)%STG_INI(ii) + bno%wb(ikey)%STG_INI(i)
-                end do
-            end if
-        end do
-
         !> Allocate and zero variables for accumulations.
         allocate(bno%evpdts(NKEY))
         bno%evpdts(:)%EVAP = 0.0
@@ -305,59 +293,103 @@ module save_basin_output
             call update_evp_header(fls, shd, 913, ic%dts)
         end if
 
-        !> Read initial variables values from file.
-        if (RESUMEFLAG == 4) then
+1010    format(9999(g15.7e2, ','))
 
-            !> Open the resume file.
-            iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.basin_output', status = 'old', action = 'read', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
+    end subroutine
+
+    subroutine run_save_basin_output_resume_read(fls, shd)
+
+        use model_files_variables
+        use sa_mesh_common
+
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+
+        !> Local variables.
+        integer ikey, ierr, iun
+
+        !> Return if not the head node.
+        if (.not. ISHEADNODE) return
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.basin_output', status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
 !todo: condition for ierr.
 
-            !> Basin totals for the water balance (old accumulated).
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
-            read(iun)
+        !> Basin totals for the water balance (old accumulated).
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
 
-            !> Basin totals for the water balance (for all time-step intervals).
-            do ikey = 1, NKEY
-                read(iun) bno%wb(ikey)%PRE(shd%NAA)
-                read(iun) bno%wb(ikey)%EVAP(shd%NAA)
-                read(iun) bno%wb(ikey)%ROF(shd%NAA)
-                read(iun) bno%wb(ikey)%ROFO(shd%NAA)
-                read(iun) bno%wb(ikey)%ROFS(shd%NAA)
-                read(iun) bno%wb(ikey)%ROFB(shd%NAA)
-                read(iun) bno%wb(ikey)%RCAN(shd%NAA)
-                read(iun) bno%wb(ikey)%SNCAN(shd%NAA)
-                read(iun) bno%wb(ikey)%SNO(shd%NAA)
-                read(iun) bno%wb(ikey)%WSNO(shd%NAA)
-                read(iun) bno%wb(ikey)%PNDW(shd%NAA)
-                read(iun) bno%wb(ikey)%LQWS(shd%NAA, :)
-                read(iun) bno%wb(ikey)%FRWS(shd%NAA, :)
-                read(iun) bno%wb(ikey)%STG_INI(shd%NAA)
-            end do
+        !> Basin totals for the water balance (for all time-step intervals).
+        do ikey = 1, NKEY
+            read(iun) bno%wb(ikey)%PRE(shd%NAA)
+            read(iun) bno%wb(ikey)%EVAP(shd%NAA)
+            read(iun) bno%wb(ikey)%ROF(shd%NAA)
+            read(iun) bno%wb(ikey)%ROFO(shd%NAA)
+            read(iun) bno%wb(ikey)%ROFS(shd%NAA)
+            read(iun) bno%wb(ikey)%ROFB(shd%NAA)
+            read(iun) bno%wb(ikey)%RCAN(shd%NAA)
+            read(iun) bno%wb(ikey)%SNCAN(shd%NAA)
+            read(iun) bno%wb(ikey)%SNO(shd%NAA)
+            read(iun) bno%wb(ikey)%WSNO(shd%NAA)
+            read(iun) bno%wb(ikey)%PNDW(shd%NAA)
+            read(iun) bno%wb(ikey)%LQWS(shd%NAA, :)
+            read(iun) bno%wb(ikey)%FRWS(shd%NAA, :)
+            read(iun) bno%wb(ikey)%STG_INI(shd%NAA)
+        end do
 
-            !> Energy balance.
-!            read(iun) bno%eb%QEVP
-!            read(iun) bno%eb%QH
+        !> Energy balance.
+!        read(iun) bno%eb%QEVP
+!        read(iun) bno%eb%QH
 
-            !> Close the file to free the unit.
-            close(iun)
+        !> Close the file to free the unit.
+        close(iun)
 
-        end if !(RESUMEFLAG == 4) then
+    end subroutine
 
-1010    format(9999(g15.7e2, ','))
+    subroutine run_save_basin_update_stg_ini(fls, shd, cm)
+
+        use model_files_variables
+        use sa_mesh_common
+        use climate_forcing
+
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
+
+        integer ikey, ii, i
+
+        !> Return if not the head node.
+        if (.not. ISHEADNODE) return
+
+        !> Calculate initial storage and aggregate through neighbouring cells.
+        do ikey = 1, NKEY
+            bno%wb(ikey)%STG_INI = &
+                (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
+                 out%ts%grid%lzs + out%ts%grid%dzs + &
+                 sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC
+        end do
+        do i = 1, shd%NAA
+            ii = shd%NEXT(i)
+            if (ii > 0) then
+                do ikey = 1, NKEY
+                    bno%wb(ikey)%STG_INI(ii) = bno%wb(ikey)%STG_INI(ii) + bno%wb(ikey)%STG_INI(i)
+                end do
+            end if
+        end do
 
     end subroutine
 
@@ -380,6 +412,9 @@ module save_basin_output
 
         !> Return if basin output has been disabled.
 !-        if (BASINBALANCEOUTFLAG == 0) return
+
+        !> Return if not the head node.
+        if (.not. ISHEADNODE) return
 
         !> Update the water balance.
         call update_water_balance(shd, cm)
@@ -494,84 +529,92 @@ module save_basin_output
 
     end subroutine
 
+    subroutine run_save_basin_output_resume_save(fls, shd)
+
+        use mpi_module
+        use model_files_variables
+        use sa_mesh_common
+
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+
+        !> Local variables.
+        integer i, ierr, iun
+
+        !> Return if not the head node.
+        if (.not. ISHEADNODE) return
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.basin_output', status = 'replace', action = 'write', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+        !> Basin totals for the water balance.
+        write(iun) bno%wb(IKEY_ACC)%PRE(shd%NAA)
+        write(iun) bno%wb(IKEY_ACC)%EVAP(shd%NAA)
+        write(iun) bno%wb(IKEY_ACC)%ROF(shd%NAA)
+        write(iun) bno%wb(IKEY_ACC)%ROFO(shd%NAA)
+        write(iun) bno%wb(IKEY_ACC)%ROFS(shd%NAA)
+        write(iun) bno%wb(IKEY_ACC)%ROFB(shd%NAA)
+        write(iun) bno%wb(IKEY_ACC)%LQWS(shd%NAA, :)
+        write(iun) bno%wb(IKEY_ACC)%FRWS(shd%NAA, :)
+        write(iun) bno%wb(IKEY_ACC)%RCAN(shd%NAA)
+        write(iun) bno%wb(IKEY_ACC)%SNCAN(shd%NAA)
+        write(iun) bno%wb(IKEY_ACC)%SNO(shd%NAA)
+        write(iun) bno%wb(IKEY_ACC)%WSNO(shd%NAA)
+        write(iun) bno%wb(IKEY_ACC)%PNDW(shd%NAA)
+        write(iun) bno%wb(IKEY_ACC)%STG_INI(shd%NAA)
+
+        !> Other accumulators for the water balance.
+        do i = 1, NKEY
+            write(iun) bno%wb(i)%PRE(shd%NAA)
+            write(iun) bno%wb(i)%EVAP(shd%NAA)
+            write(iun) bno%wb(i)%ROF(shd%NAA)
+            write(iun) bno%wb(i)%ROFO(shd%NAA)
+            write(iun) bno%wb(i)%ROFS(shd%NAA)
+            write(iun) bno%wb(i)%ROFB(shd%NAA)
+            write(iun) bno%wb(i)%RCAN(shd%NAA)
+            write(iun) bno%wb(i)%SNCAN(shd%NAA)
+            write(iun) bno%wb(i)%SNO(shd%NAA)
+            write(iun) bno%wb(i)%WSNO(shd%NAA)
+            write(iun) bno%wb(i)%PNDW(shd%NAA)
+            write(iun) bno%wb(i)%LQWS(shd%NAA, :)
+            write(iun) bno%wb(i)%FRWS(shd%NAA, :)
+            write(iun) bno%wb(i)%STG_INI(shd%NAA)
+        end do
+
+        !> Energy balance.
+        write(iun) !bno%eb(2)%QEVP
+        write(iun) !bno%eb(2)%QH
+
+        !> Other accumulators for the water balance.
+        do i = 1, NKEY
+            write(iun) bno%wb(i)%LZS(shd%NAA)
+            write(iun) bno%wb(i)%DZS(shd%NAA)
+        end do
+
+        !> Close the file to free the unit.
+        close(iun)
+
+    end subroutine
+
     subroutine run_save_basin_output_finalize(fls, shd, cm)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
-        use FLAGS
         use climate_forcing
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
 
-        !> Local variables.
-        integer i, ierr, iun
-
-        !> Return if not the head node.
-        if (ipid /= 0) return
-
         !> Return if basin output has been disabled.
 !-        if (BASINBALANCEOUTFLAG == 0) return
 
-        !> Save the current state of the variables.
-        if (SAVERESUMEFLAG == 4) then
-
-            !> Open the resume file.
-            iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.basin_output', status = 'replace', action = 'write', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
-
-            !> Basin totals for the water balance.
-            write(iun) bno%wb(IKEY_ACC)%PRE(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%EVAP(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%ROF(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%ROFO(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%ROFS(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%ROFB(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%LQWS(shd%NAA, :)
-            write(iun) bno%wb(IKEY_ACC)%FRWS(shd%NAA, :)
-            write(iun) bno%wb(IKEY_ACC)%RCAN(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%SNCAN(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%SNO(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%WSNO(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%PNDW(shd%NAA)
-            write(iun) bno%wb(IKEY_ACC)%STG_INI(shd%NAA)
-
-            !> Other accumulators for the water balance.
-            do i = 1, NKEY
-                write(iun) bno%wb(i)%PRE(shd%NAA)
-                write(iun) bno%wb(i)%EVAP(shd%NAA)
-                write(iun) bno%wb(i)%ROF(shd%NAA)
-                write(iun) bno%wb(i)%ROFO(shd%NAA)
-                write(iun) bno%wb(i)%ROFS(shd%NAA)
-                write(iun) bno%wb(i)%ROFB(shd%NAA)
-                write(iun) bno%wb(i)%RCAN(shd%NAA)
-                write(iun) bno%wb(i)%SNCAN(shd%NAA)
-                write(iun) bno%wb(i)%SNO(shd%NAA)
-                write(iun) bno%wb(i)%WSNO(shd%NAA)
-                write(iun) bno%wb(i)%PNDW(shd%NAA)
-                write(iun) bno%wb(i)%LQWS(shd%NAA, :)
-                write(iun) bno%wb(i)%FRWS(shd%NAA, :)
-                write(iun) bno%wb(i)%STG_INI(shd%NAA)
-            end do
-
-            !> Energy balance.
-            write(iun) !bno%eb(2)%QEVP
-            write(iun) !bno%eb(2)%QH
-
-            !> Other accumulators for the water balance.
-            do i = 1, NKEY
-                write(iun) bno%wb(i)%LZS(shd%NAA)
-                write(iun) bno%wb(i)%DZS(shd%NAA)
-            end do
-
-            !> Close the file to free the unit.
-            close(iun)
-
-        end if !(SAVERESUMEFLAG == 4) then
+        !> Return if not the head node.
+        if (.not. ISHEADNODE) return
 
     end subroutine
 

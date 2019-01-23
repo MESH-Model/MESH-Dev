@@ -31,11 +31,10 @@ module climate_forcing
         !> model_files_variables: 'fls' variable.
         !> shd_variables: 'shd' variable.
         !> model_dates: 'ic' counter variable.
-        !> FLAGS: 'SAVERESUMEFLAG'.
         use model_files_variables
         use shd_variables
         use model_dates
-        use FLAGS
+!-        use FLAGS
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
@@ -224,56 +223,91 @@ module climate_forcing
             call print_message('')
         end if
 
-        !> Resume states from file.
-        if (RESUMEFLAG == 4) then
+        return
 
-            !> Open the resume file.
-            iun = fls%fl(mfk%f883)%iun
-            open( &
-                iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', action = 'read', status = 'old', &
-                form = 'unformatted', access = 'sequential', iostat = ierr)
-            if (ierr /= 0) then
-                call print_error('Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat' // ' to resume states.')
-                call program_abort()
-            end if
+999     ENDDATA = .true.
 
-            !> Stop if the state file does not contain the expected number of climate variables.
-            read(iun) ierr
-            if (ierr /= 7) then
-                call print_error('Incompatible ranking in climate state file.')
-                write(line, FMT_GEN) ierr
-                call print_message_detail('Number of clim. variables read: ' // trim(adjustl(line)))
-                write(line, FMT_GEN) 7
-                call print_message_detail('Number of clim. variables expected: ' // trim(adjustl(line)))
-                call program_abort()
-            end if
+    end function
 
-            !> Loop through variables in the climate forcing object and read the states from file.
-            do vid = 1, 7
+    !> Description:
+    !>  Resume states to the climate forcing state file.
+    !>
+    !> Input/output variables:
+    !*  fls: Contains file unit information.
+    !*  shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !*  cm: Climate forcing object. Contains the file name, format, and unit.
+    !>
+    !> Returns:
+    !*  ENDDATA: Returns .true. if there was an error occurred intializing the climate object or its variables.
+    function climate_module_resume_read(fls, shd, cm) result(ENDDATA)
 
-                !> Read the state of the climate variable (in case reading into memory).
-                read(iun) cm%dat(vid)%blocks
-                read(iun) cm%dat(vid)%iblock
+        !> model_files_variables: 'fls' variable.
+        !> shd_variables: 'shd' variable.
+        use model_files_variables
+        use shd_variables
 
-                !> Read the last time-step read from file.
-                read(iun) cm%dat(vid)%itimestep
+        !> Input variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
 
-                !> Read the interpolation state (if active).
-                read(iun) cm%dat(vid)%ipflg
-                if (cm%dat(vid)%ipflg == 1) then
-                    read(iun) cm%dat(vid)%ipdat
+        !> Input/output variables.
+        type(clim_info) cm
 
-                    !> INTERPOLATIONFLAG 1 requires an additional frame be read from the next time-step.
-                    if (cm%dat(vid)%itimestep == 0) then
-                        if (update_data(shd, cm, vid, .false.)) goto 999
-                        cm%dat(vid)%ipdat(:, 2) = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
-                    end if
-                end if
-            end do
+        !> Output variables.
+        logical ENDDATA
 
-            !> Close the file to free the unit.
-            close(iun)
+        !> Local variables.
+        integer vid, ierr, iun
+        character(len = DEFAULT_LINE_LENGTH) line
+
+        ENDDATA = .false.
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open( &
+            iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', action = 'read', status = 'old', &
+            form = 'unformatted', access = 'sequential', iostat = ierr)
+        if (ierr /= 0) then
+            call print_error('Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat' // ' to resume states.')
+            call program_abort()
         end if
+
+        !> Stop if the state file does not contain the expected number of climate variables.
+        read(iun) ierr
+        if (ierr /= 7) then
+            call print_error('Incompatible ranking in climate state file.')
+            write(line, FMT_GEN) ierr
+            call print_message_detail('Number of clim. variables read: ' // trim(adjustl(line)))
+            write(line, FMT_GEN) 7
+            call print_message_detail('Number of clim. variables expected: ' // trim(adjustl(line)))
+            call program_abort()
+        end if
+
+        !> Loop through variables in the climate forcing object and read the states from file.
+        do vid = 1, 7
+
+            !> Read the state of the climate variable (in case reading into memory).
+            read(iun) cm%dat(vid)%blocks
+            read(iun) cm%dat(vid)%iblock
+
+            !> Read the last time-step read from file.
+            read(iun) cm%dat(vid)%itimestep
+
+            !> Read the interpolation state (if active).
+            read(iun) cm%dat(vid)%ipflg
+            if (cm%dat(vid)%ipflg == 1) then
+                read(iun) cm%dat(vid)%ipdat
+
+                !> INTERPOLATIONFLAG 1 requires an additional frame be read from the next time-step.
+                if (cm%dat(vid)%itimestep == 0) then
+                    if (update_data(shd, cm, vid, .false.)) goto 999
+                    cm%dat(vid)%ipdat(:, 2) = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
+                end if
+            end if
+        end do
+
+        !> Close the file to free the unit.
+        close(iun)
 
         return
 
@@ -298,11 +332,10 @@ module climate_forcing
         !> model_files_variables: 'fls' variable.
         !> shd_variables: 'shd' variable.
         !> model_dates: 'ic' counter variable.
-        !> FLAGS: 'SAVERESUMEFLAG'.
         use model_files_variables
         use shd_variables
         use model_dates
-        use FLAGS
+!-        use FLAGS
 
         !> Required for 'value' function.
         use strings
@@ -474,26 +507,24 @@ module climate_forcing
     end function
 
     !> Description:
-    !>  Saves states to the climate forcing state file, if enabled.
+    !>  Saves states to the climate forcing state file.
     !>
     !> Input/output variables:
     !*  fls: Contains file unit information.
     !*  shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
     !*  cm: Climate forcing object. Contains the file name, format, and unit.
-    subroutine climate_module_finalize(fls, shd, cm)
+    subroutine climate_module_resume_save(fls, shd, cm)
 
         !> model_files_variables: 'fls' variable.
         !> shd_variables: 'shd' variable.
-        !> FLAGS: 'SAVERESUMEFLAG'.
         use model_files_variables
         use shd_variables
-        use FLAGS
 
         !> mpi_module: 'ipid' variable to identify node.
         use mpi_module
 
         !> Input variables.
-        type(fl_ids), intent(in) :: fls
+        type(fl_ids) fls
         type(ShedGridParams) shd
 
         !> Input/output variables.
@@ -503,44 +534,66 @@ module climate_forcing
         integer vid, ierr, iun
 
         !> Return if not the head node.
-        if (ipid /= 0) return
+        if (.not. ISHEADNODE) return
 
-        !> Save states to file.
-        if (SAVERESUMEFLAG == 4) then
-
-            !> Open the resume file.
-            iun = fls%fl(mfk%f883)%iun
-            open( &
-                iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', action = 'write', status = 'replace', &
-                form = 'unformatted', access = 'sequential', iostat = ierr)
-            if (ierr /= 0) then
-                call print_error('Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat' // ' to save states.')
-                call program_abort()
-            end if
-
-            !> Write the number of climate variables.
-            write(iun) 7
-
-            !> Loop through variables in the climate forcing object and write the states to file.
-            do vid = 1, 7
-
-                !> Save the state of the climate variable (in case reading into memory).
-                write(iun) cm%dat(vid)%blocks
-                write(iun) cm%dat(vid)%iblock
-
-                !> Save the current time-step read from file.
-                write(iun) cm%dat(vid)%itimestep
-
-                !> Save the interpolation state (if active).
-                write(iun) cm%dat(vid)%ipflg
-                if (cm%dat(vid)%ipflg == 1) then
-                    write(iun) cm%dat(vid)%ipdat
-                end if
-            end do
-
-            !> Close the file to free the unit.
-            close(iun)
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open( &
+            iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat', action = 'write', status = 'replace', &
+            form = 'unformatted', access = 'sequential', iostat = ierr)
+        if (ierr /= 0) then
+            call print_error('Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.clim_ipdat' // ' to save states.')
+            call program_abort()
         end if
+
+        !> Write the number of climate variables.
+        write(iun) 7
+
+        !> Loop through variables in the climate forcing object and write the states to file.
+        do vid = 1, 7
+
+            !> Save the state of the climate variable (in case reading into memory).
+            write(iun) cm%dat(vid)%blocks
+            write(iun) cm%dat(vid)%iblock
+
+            !> Save the current time-step read from file.
+            write(iun) cm%dat(vid)%itimestep
+
+            !> Save the interpolation state (if active).
+            write(iun) cm%dat(vid)%ipflg
+            if (cm%dat(vid)%ipflg == 1) then
+                write(iun) cm%dat(vid)%ipdat
+            end if
+        end do
+
+        !> Close the file to free the unit.
+        close(iun)
+
+    end subroutine
+
+    !> Description:
+    !>  Clean-up at the end of the run.
+    !>
+    !> Input/output variables:
+    !*  fls: Contains file unit information.
+    !*  shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !*  cm: Climate forcing object. Contains the file name, format, and unit.
+    subroutine climate_module_finalize(fls, shd, cm)
+
+        !> model_files_variables: 'fls' variable.
+        !> shd_variables: 'shd' variable.
+        use model_files_variables
+        use shd_variables
+
+        !> mpi_module: 'ipid' variable to identify node.
+        use mpi_module
+
+        !> Input variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+
+        !> Input/output variables.
+        type(clim_info) cm
 
     end subroutine
 
