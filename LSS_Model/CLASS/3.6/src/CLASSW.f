@@ -44,6 +44,10 @@
      3                  TSNOWC,TSNOWG,RHOSC,RHOSG,
      4                  XSNOWC,XSNOWG,XSNOCS,XSNOGS)
 C                                                                        
+C     * JAN 31/19 - D.PRINCZ.   SPLIT ICEBAL SO IT CAN BE USED WITH
+C     *                         OTHER OVERLAND RUNOFF ROUTINES.
+C     *                         MOVED MOVING R TO ZPOND FROM ICEBAL
+C     *                         TO FACILITATE RESTRUCTURING.
 C     * DEC 09/11 - M.MEKONNEN. FOR PDMROF.
 C     * OCT 18/11 - M.LAZARE.   PASS IN IGDR THROUGH CALLS TO
 C     *                         GRDRAN/GRINFL (ORIGINATES NOW
@@ -484,15 +488,14 @@ C
              CALL SNINFL(RPCGS,TRPCGS,ZSNOGS,TSNOGS,RHOSGS,HCPSGS,
      1                   WSNOGS,HTCS,HMFN,PCPG,ROFN,FGS,ILG,IL1,IL2,JL)
           ENDIF
-          
-          IF(NLANDI.NE.0)                                       THEN
-              CALL ICEBAL(TBARGS,TPNDGS,ZPNDGS,TSNOGS,RHOSGS,ZSNOGS,
+          IF (NLANDI.NE.0) THEN
+              CALL ICEADD(TBARGS,TPNDGS,ZPNDGS,TSNOGS,RHOSGS,ZSNOGS,
      1                    HCPSGS,ALBSGS,HMFG,HTCS,HTC,WTRS,WTRG,GFLXGS,
      2                    RUNFGS,TRNFGS,OVRFLW,TOVRFL,ZPLMGS,GGEO,
      3                    FGS,EVAPGS,RPCGS,TRPCGS,GZROGS,G12GS,G23GS,
      4                    HCPGS,QMELTG,WSNOGS,ZMAT,TMOVE,WMOVE,ZRMDR,
      5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
-     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
+     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           ENDIF
           CALL GRINFL(2,THLQGS,THICGS,TBRWGS,BASFLW,TBASFL,RUNFGS,
      1                TRNFGS,ZFAV,LZFAV,THLINV,QFG,WLSTGS,
@@ -532,6 +535,15 @@ C
      2                XSLOPE, XDRAINH, MANNING_N, DD, KSAT, TBRWGS,
      3                DELZW, THPOR, THLMIN, BI, DODRN, DOVER, DIDRN,
      4                ISAND, IWF, IG, ILG, IL1, IL2, BULK_FC)
+          IF (NLANDI.NE.0) THEN
+              CALL ICEBAL(TBARGS,TPNDGS,ZPNDGS,TSNOGS,RHOSGS,ZSNOGS,
+     1                    HCPSGS,ALBSGS,HMFG,HTCS,HTC,WTRS,WTRG,GFLXGS,
+     2                    RUNFGS,TRNFGS,OVRFLW,TOVRFL,ZPLMGS,GGEO,
+     3                    FGS,EVAPGS,RPCGS,TRPCGS,GZROGS,G12GS,G23GS,
+     4                    HCPGS,QMELTG,WSNOGS,ZMAT,TMOVE,WMOVE,ZRMDR,
+     5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
+     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+          ENDIF
           CALL TMCALC(TBARGS,THLQGS,THICGS,HCPGS,TPNDGS,ZPNDGS,
      1                TSNOGS,ZSNOGS,ALBSGS,RHOSGS,HCPSGS,TBASGS,
      2                OVRFLW,TOVRFL,RUNFGS,TRNFGS,HMFG,HTC,HTCS,
@@ -647,14 +659,14 @@ C
           CALL SNOADD(ALBSG,TSNOWG,RHOSG,ZSNOWG,
      1                HCPSG,HTCS,FG,SPCG,TSPCG,RHOSNI,ZERO,
      2                ILG,IL1,IL2,JL)
-          IF(NLANDI.NE.0)                                       THEN
-              CALL ICEBAL(TBARG,TPONDG,ZPONDG,TSNOWG,RHOSG,ZSNOWG,
+          IF (NLANDI.NE.0) THEN
+              CALL ICEADD(TBARG,TPONDG,ZPONDG,TSNOWG,RHOSG,ZSNOWG,
      1                    HCPSG,ALBSG,HMFG,HTCS,HTC,WTRS,WTRG,GFLXG,
      2                    RUNFG,TRUNFG,OVRFLW,TOVRFL,ZPLIMG,GGEO,
      3                    FG,EVAPG,RPCG,TRPCG,GZEROG,G12G,G23G,
      4                    HCPGO,QFREZG,ZERO,ZMAT,TMOVE,WMOVE,ZRMDR,
      5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
-     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
+     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
           ENDIF
           CALL GRINFL(4,THLQGO,THICGO,TBARWG,BASFLW,TBASFL,RUNFG,
      1                TRUNFG,ZFAV,LZFAV,THLINV,QFG,WLOSTG,
@@ -701,6 +713,15 @@ C
      4                G23G,GGEO,TA,ZERO,TCTOPG,TCBOTG,GFLXG,
      5                ZPLIMG,THPOR,THLMIN,HCPS,DELZW,DELZZ,DELZ,
      6                ISAND,IWF,IG,ILG,IL1,IL2,JL,N)
+          IF (NLANDI.NE.0) THEN
+              CALL ICEBAL(TBARG,TPONDG,ZPONDG,TSNOWG,RHOSG,ZSNOWG,
+     1                    HCPSG,ALBSG,HMFG,HTCS,HTC,WTRS,WTRG,GFLXG,
+     2                    RUNFG,TRUNFG,OVRFLW,TOVRFL,ZPLIMG,GGEO,
+     3                    FG,EVAPG,RPCG,TRPCG,GZEROG,G12G,G23G,
+     4                    HCPGO,QFREZG,ZERO,ZMAT,TMOVE,WMOVE,ZRMDR,
+     5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
+     6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
+          ENDIF
           CALL CHKWAT(4,PCPR,EVPIG,RUNFG,WLOSTG,RAICAN,SNOCAN,
      1                RAC,SNC,ZPONDG,ZPOND,THLQGO,THICGO,
      2                THLIQG,THICEG,ZSNOWG,RHOSG,XSNOWG,SNO,

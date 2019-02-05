@@ -5,6 +5,12 @@
      4                  ZMAT,TMOVE,WMOVE,ZRMDR,TADD,ZMOVE,TBOT,DELZ,
      5                  ISAND,ICONT,IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 C
+C     * JAN 31/19 - D.PRINCZ.   SPLIT ICEBAL SO IT CAN BE USED WITH
+C     *                         OTHER OVERLAND RUNOFF ROUTINES.
+C     *                         MOVED MOVING R TO ZPOND FROM ICEBAL
+C     *                         TO FACILITATE RESTRUCTURING.
+C     *                         UPDATED THE INLINE UPDATE OF HTC
+C     *                         ACCORDINGLY (FOR OTHER IWF).
 C     * DEC 27/07 - D.VERSEGHY. ADD GEOTHERMAL HEAT FLUX; ADD ICE MASS
 C     *                         LOSS TO RUNOFF.
 C     * NOV 01/06 - D.VERSEGHY. ALLOW PONDING OF WATER ON ICE SHEETS.
@@ -95,31 +101,24 @@ C
      2                TCGLAC,CLHMLT,CLHVAP
 C-----------------------------------------------------------------------
 C
-C     * ADD RAINFALL OR SNOWMELT TO PONDED WATER AND ASSIGN EXCESS
-C     * TO RUNOFF.  CHECK FOR POND FREEZING.
+C     * ASSIGN EXCESS PONDED WATER TO RUNOFF. CHECK FOR POND FREEZING.
 C
       DO 100 I=IL1,IL2
           IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                THEN
-              IF(R(I).GT.0.)                                THEN 
-                 RADD=R(I)*DELT                                                             
-                 TPOND(I)=((TPOND(I)+TFREZ)*ZPOND(I)+(TR(I)+TFREZ)*
-     1               RADD)/(ZPOND(I)+RADD)-TFREZ
-                 ZPOND(I)=ZPOND(I)+RADD                                                        
-                 HTC (I,1)=HTC(I,1)+FI(I)*(TR(I)+TFREZ)*HCPW*
-     1                     RADD/DELT
-              ENDIF                                                                       
-              IF(IWF(I).EQ.0 .AND. (ZPOND(I)-ZPLIM(I)).GT.1.0E-8) THEN
-                  TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TPOND(I)+TFREZ)*
-     1                   (ZPOND(I)-ZPLIM(I)))/(RUNOFF(I)+ZPOND(I)-
-     2                   ZPLIM(I))
-                  RUNOFF(I)=RUNOFF(I)+ZPOND(I)-ZPLIM(I)
-                  TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+(TPOND(I)+TFREZ)*
-     1                   FI(I)*(ZPOND(I)-ZPLIM(I)))/(OVRFLW(I)+
-     2                   FI(I)*(ZPOND(I)-ZPLIM(I)))
-                  OVRFLW(I)=OVRFLW(I)+FI(I)*(ZPOND(I)-ZPLIM(I)) 
-                  HTC(I,1)=HTC(I,1)-FI(I)*(TPOND(I)+TFREZ)*HCPW*
-     1                   (ZPOND(I)-ZPLIM(I))/DELT
-                  ZPOND(I)=MIN(ZPOND(I),ZPLIM(I))
+              IF((ZPOND(I)-ZPLIM(I)).GT.1.0E-8) THEN
+                  IF(IWF(I).EQ.0) THEN
+                      TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TPOND(I)+TFREZ)*
+     1                       (ZPOND(I)-ZPLIM(I)))/(RUNOFF(I)+ZPOND(I)-
+     2                       ZPLIM(I))
+                      RUNOFF(I)=RUNOFF(I)+ZPOND(I)-ZPLIM(I)
+                      TOVRFL(I)=(TOVRFL(I)*OVRFLW(I)+(TPOND(I)+TFREZ)*
+     1                       FI(I)*(ZPOND(I)-ZPLIM(I)))/(OVRFLW(I)+
+     2                        FI(I)*(ZPOND(I)-ZPLIM(I)))
+                      OVRFLW(I)=OVRFLW(I)+FI(I)*(ZPOND(I)-ZPLIM(I)) 
+                      ZPOND(I)=MIN(ZPOND(I),ZPLIM(I))
+                  ENDIF
+                  HTC(I,1)=HTC(I,1)-FI(I)*TOVRFL(I)*HCPW*
+     1                OVRFLW(I)/DELT
               ENDIF
               IF(TPOND(I).GT.0.001)                           THEN
                   HCOOL=TPOND(I)*HCPW*ZPOND(I)
