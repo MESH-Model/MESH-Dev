@@ -1,4 +1,4 @@
-subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
+subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 
     use mpi_module
     use strings
@@ -18,8 +18,11 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     type(CLIM_INFO) cm
     character(len = *), intent(in) :: release
 
+    !> Output variables.
+    integer, intent(out) :: ierr
+
     !> Local variables.
-    integer iun, n, m, l, x, y, k, i, j, ierr
+    integer iun, n, m, l, x, y, k, i, j, z
     real, dimension(:, :), allocatable :: grid
     character(len = DEFAULT_LINE_LENGTH) line, field
     character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
@@ -27,12 +30,19 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     !> SUBBASINFLAG.
     integer, dimension(:), allocatable :: SUBBASIN
 
+    !> Initialize the return status.
+    ierr = 0
+
+    !> Reset spacing for screen output.
+    call reset_tab()
+
     !>
     !> RUN OPTIONS.
     !>  Run options are read at the beginning of the run from
     !>  MESH_input_run_options.ini.
     !>
-    call READ_RUN_OPTIONS(fls, shd, cm)
+    call READ_RUN_OPTIONS(fls, shd, cm, ierr)
+    if (ierr /= 0) return
 
     !> Check that the output folder exists.
     write(line, FMT_GEN) ipid
@@ -40,15 +50,17 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     if (ierr /= 0) then
         ECHOTXTMODE = .false.
         call print_error('The output folder does not exist: ' // trim(adjustl(fls%GENDIR_OUT)))
-        call program_abort()
+        return
     else
         close(100, status = 'delete')
     end if
 
     !> Open the status file.
-    call open_echo_txt('./' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt')
+    call open_echo_txt('./' // trim(fls%GENDIR_OUT) // '/MESH_output_echo_print.txt', ierr)
+    if (ierr /= 0) return
 
     !> Write MESH version to file.
+    call reset_tab()
     call print_echo_txt(release)
     call print_echo_txt('')
 
@@ -56,7 +68,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     SHDFILEFMT = 1
     SHDTOMAPFLAG = .false.
 
-    !>Parse 'SHDFILEFLAG'.
+    !> Parse 'SHDFILEFLAG'.
     call parse(SHDFILEFLAG, ' ', args, n)
     if (n > 1) then
         do i = 2, n
@@ -76,10 +88,11 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
 
         !> 'r2c' format shed file.
         case (1)
-            call read_shed_r2c(shd, fls%fl(mfk%f20)%iun, fls%fl(mfk%f20)%fn)
+            call read_shed_r2c(shd, fls%fl(mfk%f20)%iun, fls%fl(mfk%f20)%fn, ierr)
+            if (ierr /= 0) return
 
         !> Map file (diagnostic).
-        if (SHDTOMAPFLAG .and. ipid == 0) then
+        if (SHDTOMAPFLAG .and. ISHEADNODE) then
             iun = 100
             open(iun, file = 'MESH_basin.map', status = 'replace', action = 'write')
             write(iun, '(a)') '#'
@@ -312,9 +325,12 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
             ro%RUNGRID = .false.
 
         case default
+
+            !> Unknown or unsupported format.
             write(line, FMT_GEN) SHDFILEFMT
             call print_error('Unrecognized drainage database format: ' // trim(adjustl(line)))
-            call program_abort()
+            ierr = 1
+            return
 
     end select
 
@@ -322,18 +338,18 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     if (ro%RUNCHNL) then
         if (shd%NA /= maxval(shd%NEXT)) then
             line = 'Total number of grids adjusted to maximum RANK. Consider adjusting the input files.'
-            call print_remark(line, PAD_3)
+            call print_remark(line)
             shd%NA = maxval(shd%NEXT)
         end if
         if (shd%NAA /= (maxval(shd%NEXT) - count(shd%NEXT == 0))) then
             line = 'The number of outlets adjusted to the number of cells where NEXT is zero. Consider adjusting the input files.'
-            call print_remark(line, PAD_3)
+            call print_remark(line)
             shd%NAA = maxval(shd%NEXT) - count(shd%NEXT == 0)
         end if
     end if
 
     !> Check for errors in the basin configuration.
-    ierr = 0
+    z = 0
 
     !> Print messages to screen (including non-critical warnings).
     do n = 1, shd%NAA
@@ -347,23 +363,23 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
         !>  Warnings: NEXT <= RANK.
         if (ro%RUNCHNL) then
             if (shd%SLOPE_CHNL(n) <= 0) then
-                ierr = 1
-                call print_message_detail('ERROR: Invalid or negative channel slope at ' // trim(adjustl(line)) // '.')
+                z = 1
+                call print_message('ERROR: Invalid or negative channel slope at ' // trim(adjustl(line)) // '.')
             end if
             if (shd%CHNL_LEN(n) <= 0.0) then
-                ierr = 1
-                call print_message_detail('ERROR: Invalid or negative channel length at ' // trim(adjustl(line)) // '.')
+                z = 1
+                call print_message('ERROR: Invalid or negative channel length at ' // trim(adjustl(line)) // '.')
             end if
             if (shd%AREA(n) <= 0.0) then
-                ierr = 1
-                call print_message_detail('ERROR: Invalid or negative grid area at ' // trim(adjustl(line)) // '.')
+                z = 1
+                call print_message('ERROR: Invalid or negative grid area at ' // trim(adjustl(line)) // '.')
             end if
             if (shd%DA(n) <= 0.0) then
-                ierr = 1
-                call print_message_detail('ERROR: Invalid or negative drainage area at ' // trim(adjustl(line)) // '.')
+                z = 1
+                call print_message('ERROR: Invalid or negative drainage area at ' // trim(adjustl(line)) // '.')
             end if
             if (shd%NEXT(n) <= n) then
-                call print_warning('NEXT might be upstream of RANK (NEXT <= RANK) at ' // trim(adjustl(line)) // '.', PAD_3)
+                call print_warning('NEXT might be upstream of RANK (NEXT <= RANK) at ' // trim(adjustl(line)) // '.')
             end if
         end if
 
@@ -373,8 +389,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
         !>  Adjustments: Sum of land covers not equal to one.
         if (ro%RUNTILE) then
             if (sum(shd%lc%ACLASS(n, :)) == 0.0) then
-                ierr = 1
-                call print_message_detail('ERROR: Total fraction of land covers (GRUs) is zero at ' // trim(adjustl(line)) // '.')
+                z = 1
+                call print_message('ERROR: Total fraction of land covers (GRUs) is zero at ' // trim(adjustl(line)) // '.')
             else if (abs(sum(shd%lc%ACLASS(n, :)) - 1.0) > 0.0) then
 
                 !> Print a warning if the missing fraction is significant (> 1%).
@@ -383,7 +399,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
                     line = &
                         'Total fraction of land covers (GRUs) at ' // trim(adjustl(line)) // ' adjusted from ' // &
                         trim(adjustl(field)) // ' to 1.0.'
-                    call print_warning(line, PAD_3)
+                    call print_warning(line)
                 end if
                 shd%lc%ACLASS(n, :) = shd%lc%ACLASS(n, :)/sum(shd%lc%ACLASS(n, :))
             end if
@@ -392,32 +408,32 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
         !> General.
         !>  Errors: Cell has no x/y coordinate value (e.g., outside basin).
         if (shd%xxx(n) == 0 .or. shd%yyy(n) == 0) then
-            ierr = 1
-            call print_message_detail(trim(line) // ' is assigned but outside the basin.')
+            z = 1
+            call print_message(trim(line) // ' is assigned but outside the basin.')
         end if
     end do
     if (ro%RUNCHNL) then
         if (maxval(shd%IAK) == 0) then
-            ierr = 1
+            z = 1
             line = 'The number of river classes (IAK) is zero. At least one river class must exist when channel routing is enabled.'
             call print_error(line)
         end if
     end if
 
-    !> Stop if errors exist.
-    if (ierr /= 0) then
+    !> Return if errors exist.
+    if (z /= 0) then
+        ierr = z
         call print_error('Errors exist in the drainage database.')
-        call program_abort()
+        return
     end if
 
     !> Check the number of river classes.
     if (ro%RUNCHNL) then
         if (shd%NRVR /= maxval(shd%IAK)) then
-            call print_remark('The number of river classes is adjusted to match IAK. Consider adjusting the input files.', PAD_3)
+            call print_remark('The number of river classes is adjusted to match IAK. Consider adjusting the input files.')
             shd%NRVR = maxval(shd%IAK)
         end if
     end if
-    if (DIAGNOSEMODE) call print_message('')
 
     !> Determine coordinates for intermediate grid locations.
     !> NOTE FROM FRANK
@@ -448,8 +464,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
         shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
     end do
 
-    !> If no land surface scheme active.
-    if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE .and. .not. RUNSVS113_flgs%PROCESS_ACTIVE) then
+    !> If no sub-grid variability is active.
+    if (.not. ro%RUNTILE) then
         shd%lc%NTYPE = 1
         if (allocated(shd%lc%ACLASS)) deallocate(shd%lc%ACLASS)
         allocate(shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1))
@@ -498,26 +514,24 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
         call print_echo_txt('Number of land tiles (NML): ' // trim(adjustl(line)))
         if (shd%lc%NML > 0) then
             write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU'
-            call print_echo_txt(line, PAD_3)
+            call print_echo_txt(line)
             do k = 1, shd%lc%NML
                 write(line, FMT_GEN) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
-                call print_echo_txt(line, PAD_3)
+                call print_echo_txt(line)
             end do
         end if
-        call print_echo_txt('')
 
         !> Water tiles.
         write(line, FMT_GEN) shd%wc%NML
         call print_echo_txt('Number of water tiles (NMW): ' // trim(adjustl(line)))
         if (shd%wc%NML > 0) then
             write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU'
-            call print_echo_txt(line, PAD_3)
+            call print_echo_txt(line)
             do k = 1, shd%wc%NML
                 write(line, FMT_GEN) k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
-                call print_echo_txt(line, PAD_3)
+                call print_echo_txt(line)
             end do
         end if
-        call print_echo_txt('')
     end if
 
     !> Calculate active tiles in the current node.
@@ -526,65 +540,69 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     i1 = shd%lc%ILMOS(il1)
     i2 = shd%lc%ILMOS(il2)
 
-    if (DIAGNOSEMODE) then
-        write(line, FMT_GEN) ipid
-        call print_screen('Node ' // trim(adjustl(line)))
-        write(line, FMT_GEN) il1
-        call print_screen('First tile: ' // trim(adjustl(line)), PAD_3)
-        write(line, FMT_GEN) il2
-        call print_screen('Last tile: ' // trim(adjustl(line)), PAD_3)
-        write(line, FMT_GEN) iln
-        call print_screen('Stride: ' // trim(adjustl(line)), PAD_3)
-        call print_screen('')
-    end if
+!todo: Update for head node to print all.
+!?    if (DIAGNOSEMODE) then
+!?        write(line, FMT_GEN) ipid
+!?        call print_screen('Node ' // trim(adjustl(line)))
+!?        write(line, FMT_GEN) il1
+!?        call print_screen('First tile: ' // trim(adjustl(line)))
+!?        write(line, FMT_GEN) il2
+!?        call print_screen('Last tile: ' // trim(adjustl(line)))
+!?        write(line, FMT_GEN) iln
+!?        call print_screen('Stride: ' // trim(adjustl(line)))
+!?    end if
 
     !> Print summary.
     write(line, FMT_GEN) shd%NA
-    call print_message_detail('Total number of grids: ' // trim(adjustl(line)))
+    call print_message('Total number of grids: ' // trim(adjustl(line)))
     write(line, FMT_GEN) shd%NAA
-    call print_message_detail('Total number of grids inside the basin: ' // trim(adjustl(line)))
+    call print_message('Total number of grids inside the basin: ' // trim(adjustl(line)))
     write(line, FMT_GEN) shd%AL
-    call print_message_detail('Side length of grid: ' // trim(adjustl(line)) // ' m')
+    call print_message('Side length of grid: ' // trim(adjustl(line)) // ' m')
     write(line, FMT_GEN) shd%lc%NTYPE
-    call print_message_detail('Number of GRUs: ' // trim(adjustl(line)))
+    call print_message('Number of GRUs: ' // trim(adjustl(line)))
     write(line, FMT_GEN) shd%lc%NML
-    call print_message_detail('Number of land-based tiles: ' // trim(adjustl(line)))
+    call print_message('Number of land-based tiles: ' // trim(adjustl(line)))
     write(line, FMT_GEN) shd%NRVR
-    call print_message_detail('Number of river classes: ' // trim(adjustl(line)))
+    call print_message('Number of river classes: ' // trim(adjustl(line)))
 
     !> Open and read in soil depths from file.
-    call READ_SOIL_LEVELS(fls, shd)
+    call READ_SOIL_LEVELS(fls, shd, ierr)
+    if (ierr /= 0) return
 
     !> Print a summary of levels to file.
     write(line, FMT_GEN) shd%lc%IGND
-    call print_message_detail('Number of soil layers: ' // trim(adjustl(line)))
+    call print_message('Number of soil layers: ' // trim(adjustl(line)))
     if (DIAGNOSEMODE) then
         write(line, FMT_GEN) 'Level', 'Thickness (m)', 'Bottom (m)'
-        call print_message_detail(line)
+        call print_message(line)
         do i = 1, shd%lc%IGND
             write(line, FMT_GEN) i, shd%lc%sl%DELZ(i), shd%lc%sl%ZBOT(i)
-            call print_message_detail(line)
+            call print_message(line)
         end do
-        call print_message('')
     end if
 
     !> Allocate and initialize SA_MESH states.
-    call stas_tile_init(stas, shd%lc%NML, shd%lc%IGND, ierr)
-    call stas_tile_init(stas_gru, shd%lc%NTYPE, shd%lc%IGND, ierr)
-    call stas_grid_init(stas_grid, shd%NA, shd%lc%IGND, ierr)
+    z = 0
+    call stas_tile_init(stas, shd%lc%NML, shd%lc%IGND, z); if (z /= 0) ierr = z
+    call stas_tile_init(stas_gru, shd%lc%NTYPE, shd%lc%IGND, z); if (z /= 0) ierr = z
+    call stas_grid_init(stas_grid, shd%NA, shd%lc%IGND, z); if (z /= 0) ierr = z
+    if (ierr /= 0) then
+        call print_error('Unable to allocate variables.')
+        return
+    end if
 
     !> Read resume configuration.
     call resumerun_config(fls, shd, cm, ierr)
-    if (ierr /= 0) then
-        call program_abort()
-    end if
+    if (ierr /= 0) return
 
     !> Call 'CLASSD' to initialize constants.
 !todo: replace this with a non-CLASS/generic version.
     call CLASSD
 
     !> Read parameters from file.
-    call read_parameters(fls, shd, cm)
+    call read_parameters(fls, shd, cm, ierr)
+    if (ierr /= 0) return
 
     !> Distribute the starting date of the forcing files.
     do n = 1, cm%nclim
@@ -616,7 +634,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
     if (ro%RUNGRID) then
 
         !> Basin structures.
-        call read_basin_structures(shd)
+        call read_basin_structures(shd, ierr)
+        if (ierr /= 0) return
 
         !> SUBBASINFLAG.
         !>  Run only on squares that make up the watersheds listed in
@@ -624,7 +643,9 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
         if (SUBBASINFLAG > 0) then
 
             !> Print message to screen.
-            call print_message('SUBBASIN mask is ACTIVATED.')
+            call reset_tab()
+            call print_message('SUBBASIN mask is ACTIVE.')
+            call increase_tab()
 
             !> Allocate and initialize local variables.
             allocate(SUBBASIN(shd%NA))
@@ -636,7 +657,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
             end do
             if (DIAGNOSEMODE) then
                 write(line, FMT_GEN) fms%stmg%n
-                call print_message_detail('Masking domains for ' // trim(adjustl(line)) // ' subbasins.')
+                call print_message('Masking domains for ' // trim(adjustl(line)) // ' subbasins.')
             end if
 
             !> Mask grids upstream of gauge locations.
@@ -668,10 +689,10 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
             !> Print diagnostic information to screen.
             if (DIAGNOSEMODE) then
                 write(line, FMT_GEN) 'SUBBASIN', 'GRIDS'
-                call print_message_detail(line)
+                call print_message(line)
                 do l = 1, fms%stmg%n
                     write(line, FMT_GEN) l, count(SUBBASIN == l)
-                    call print_message_detail(line)
+                    call print_message(line)
                 end do
             end if
         end if
@@ -679,5 +700,6 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release)
 
     !> Allocate and initialize SA_MESH states.
     call stas_fms_init(stas_fms, fms%stmg%n, 0, fms%rsvr%n, ierr)
+    if (ierr /= 0) return
 
 end subroutine

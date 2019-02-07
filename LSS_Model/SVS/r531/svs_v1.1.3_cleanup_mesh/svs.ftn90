@@ -568,14 +568,14 @@ include "thermoconsts.inc"
       do i=1,n
 !
 !
-        ZTSURF   (I) = bus(x(tsa  ,i,1        ))
-        ZTSRAD   (I) = TRAD(i)
+        ZTSURF   (1) = bus(x(tsa  ,i,1        ))
+        ZTSRAD   (1) = TRAD(i)
 !
 !       CALCULATE LAND-ATMOSPHERE OUTCOMING WATER FLUX
         BUS(X(WFLUX,I,1)) = RHOA(I)*BUS(X(EFLUX,I,1))
 
 !
-        IF (.NOT.IMPFLX) CTU (I) = 0.
+        IF (.NOT.IMPFLX) CTU (1) = 0.
 !
       end do
 #ifndef RUNSVS

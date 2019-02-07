@@ -8,7 +8,7 @@
 !*  iun: Unit of the input file.
 !*  fname: Full path to the file.
 !>
-subroutine read_abstractionpoint_txt(shd, iun, fname)
+subroutine read_abstractionpoint_txt(shd, iun, fname, ierr)
 
     use mpi_module
     use sa_mesh_common
@@ -20,48 +20,52 @@ subroutine read_abstractionpoint_txt(shd, iun, fname)
     integer, intent(in) :: iun
     character(len = *), intent(in) :: fname
 
+    !> Output variables.
+    integer, intent(out) :: ierr
+
     !> Local variables.
-    integer i, ierr
+    integer i
     character(len = DEFAULT_LINE_LENGTH) line
 
-    !> Open the file and read the number of locations to read from file.
-    call print_screen('READING: ' // trim(adjustl(fname)))
-    call print_echo_txt(fname)
+    !> Open the file.
+    call reset_tab()
+    call print_message('READING: ' // trim(adjustl(fname)))
+    call increase_tab()
     open(iun, file = fname, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
-        call print_error('Unable to open file. Check if the file exists.')
-        call program_abort()
+        call print_error('Unable to open the file. Check if the file exists.')
+        return
     end if
 
     !> Read the number of locations.
-    read(iun, *, err = 999) fms%absp%n
+    read(iun, *, err = 98) fms%absp%n
 
-    !> Return if no locations are defined.
+    !> Return if no locations were defined.
     if (fms%absp%n == 0) return
 
-    !> Allocate attributes for the driver.
+    !> Allocate variables for the driver.
     call allocate_abstraction_point_location(fms%absp, fms%absp%n, ierr)
-    if (ierr /= 0) goto 998
+    if (ierr /= 0) then
+        call print_error('Unable to allocate variables.')
+        return
+    end if
 
     !> Read information.
     do i = 1, fms%absp%n
-        read(iun, *, err = 999) fms%absp%meta%y(i), fms%absp%meta%x(i), fms%absp%meta%name(i)
+        read(iun, *, err = 98) fms%absp%meta%y(i), fms%absp%meta%x(i), fms%absp%meta%name(i)
     end do
     fms%absp%meta%y = fms%absp%meta%y/60.0
     fms%absp%meta%x = fms%absp%meta%x/60.0
 
     return
 
-    !> Stop: Error allocating variables.
-998 call print_error('Unable to allocate variables.')
-    call program_abort()
-
     !> Stop: Premature end of file.
-999 call print_error('Unable to read from file.')
+98  ierr = 1
+    call print_error('Unable to read the file.')
     write(line, FMT_GEN) fms%absp%n
     call print_message('Number of locations expected: ' // trim(adjustl(line)))
     write(line, FMT_GEN) i
     call print_message('Number found: ' // trim(adjustl(line)))
-    call program_abort()
+    return
 
 end subroutine

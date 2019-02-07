@@ -39,6 +39,9 @@ module print_routines
     integer, parameter :: PAD_3 = 3
     integer, parameter :: PAD_NONE = 0
 
+    !> Internal pad position.
+    integer, private :: PAD_NOW = PAD_1
+
     !> Line and field length constants.
     !* DEFAULT_LINE_LENGTH: Default length of a single line.
     !* DEFAULT_FIELD_LENGTH: Default length of a field (e.g., in a line).
@@ -69,14 +72,15 @@ module print_routines
 
         !> Format statement based on 'level'.
         if (present(level)) then
-            if (level == 0) then
+            if (level == PAD_NONE) then
                 f = '((a))'
             else
                 write(f, '(i4)') level
                 f = '(' // trim(adjustl(f)) // 'x, (a))'
             end if
         else
-            f = '(1x, (a))'
+            write(f, '(i4)') PAD_NOW
+            f = '(' // trim(adjustl(f)) // 'x, (a))'
         end if
 
     end function
@@ -188,7 +192,7 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Print a leading line if the indent level is not present.
-        if (.not. present(level)) call print_message('')
+        if (.not. present(level) .and. PAD_NOW == PAD_1) call print_message('')
 
         !> Flush the message.
         call print_message('ERROR: ' // trim(adjustl(message)))
@@ -209,17 +213,38 @@ module print_routines
     end subroutine
 
     !> Description:
+    !>  Reset the starting position of message output.
+    subroutine reset_tab()
+        PAD_NOW = PAD_1
+    end subroutine
+
+    !> Description:
+    !>  Increase the starting position of message output.
+    subroutine increase_tab()
+        PAD_NOW = PAD_3
+    end subroutine
+
+    !> Description:
+    !>  Decrease the starting position of message output.
+    subroutine decrease_tab()
+        PAD_NOW = PAD_1
+    end subroutine
+
+    !> Description:
     !>  Open the summary file.
     !>
     !> Variables:
     !*  path: Full path to the file.
-    subroutine open_echo_txt(path)
+    subroutine open_echo_txt(path, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: path
 
-        !> Local variables.
-        integer ierr
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Initialize the return status.
+        ierr = 0
 
         !> Return if writing output to the file is disabled.
         !> Return if 'path' is empty.
@@ -236,7 +261,7 @@ module print_routines
             !> Print an error (to screen).
             call print_error('Unable to open file: ' // trim(adjustl(path)))
             call print_message('Check that the path exists, that the file it is not read-protected or open in another application.')
-            call program_abort()
+            return
         end if
 
     end subroutine

@@ -121,39 +121,22 @@ program RUNMESH
     !* ierr: Diagnostic error/status return from various subroutines.
     integer :: ierr = 0
 
-    integer istop, ierrcode, irecv, itag
-
     !> Local variables.
     !* NA: Temporary store for the number of grid cells.
     !* NTYPE: Temporary store for the number of GRUs.
     !* NML: Temporary store for the number of active land elements (NA, NTYPE).
     !* NSL: Temporary store for the number of soil layers.
     !* iun: Temporary store for the unit number of a file.
-    integer NA, NTYPE, NML, NSL, iun, ik, jk, ignd
-    real FRAC
+    integer NA, NTYPE, NML, NSL, iun, ignd
 
 !todo: clean up comments and arrange variables a bit better
 
 !> START ENSIM == FOR ENSIM == FOR ENSIM == FOR ENSIM ==
-    character(10) wf_landclassname(10)
-    integer(kind = 4) wfo_yy, wfo_mm, wfo_dd, wfo_hh, wfo_mi, wfo_ss, &
-        wfo_ms, nj, ensim_month, ensim_day
-    integer(kind = 4) WFO_SEQ, ENSIM_IOS
-    integer(kind = 4) CURREC
+    integer(kind = 4) ensim_month, ensim_day
+    integer(kind = 4) WFO_SEQ
 !> == ENSIM == ENSIM == ENSIM == ENSIM == ENSIM ==
 
-    !> For reading in the last information in mesh_paramters_hydrology.ini
-    character(30) NMTESTFORMAT
-
-    !> CONSTANTS (PARAMETER DEFINITIONS):
-    !* M_X: MAXIMUM ALLOWABLE NUMBER OF GRID COLUMNS IN SHD FILE
-    !* M_Y: MAXIMUM ALLOWABLE NUMBER OF GRID ROWS IN SHD FILE
-    !* M_S: MAXIMUM ALLOWABLE NUMBER OF STREAMFLOW GAUGES
-    !* M_R: MAXIMUM ALLOWABLE NUMBER OF RESERVOIRS
-    !* M_C: MAXIMUM ALLOWABLE NUMBER OF RIVER CHANNELS
-    !* M_G: MAXIMUM ALLOWABLE NUMBER OF GRID OUTPUTS
-
-    integer i, j, k, l, m, u
+    integer i, j, k, l, m, u, z
     character(len = DEFAULT_LINE_LENGTH) line
 
     integer FRAME_NO_NEW
@@ -167,7 +150,7 @@ program RUNMESH
     type(ShedGridParams) shd
     type(CLIM_INFO) cm
 
-    !> Basin totals for the run.
+    !> Basin totals for the run from RESUMEFLAG.
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
 
     !> End of run states for prognostic variables.
@@ -182,15 +165,18 @@ program RUNMESH
     integer, allocatable, dimension(:) :: GRD, GAT, GRDGAT, GRD_R, GAT_R, GRDGAT_R, GRD_S, GAT_S, GRDGAT_S
     character(50), allocatable, dimension(:, :) :: R2C_ATTRIBUTES, R2C_ATTRIBUTES_R, R2C_ATTRIBUTES_S
 
-    !> To use with variable format expressions in writing some output files
-    character(500) fl_listMesh
-
     real startprog, endprog
-    integer narg
-!+    real alpharain
-!+    character(50) alphCh
 
+    !> For reading arguments from the command line.
+    character(500) fl_listMesh
+    integer narg
+
+    !> Set program start time.
+!todo: Also set date, which can be used for EnSim outputs.
     call cpu_time(startprog)
+
+    !> Reset spacing for screen output.
+    call reset_tab()
 
     !> Initialize MPI.
     call MPI_Init(ierr)
@@ -202,8 +188,8 @@ program RUNMESH
     end if
 
     !> Grab number of total processes and current process ID.
-    call MPI_Comm_size(mpi_comm_world, inp, ierr)
-    call MPI_Comm_rank(mpi_comm_world, ipid, ierr)
+    call MPI_Comm_size(mpi_comm_world, inp, z)
+    call MPI_Comm_rank(mpi_comm_world, ipid, z)
 
     !> izero is active if the head node is used for booking and lateral flow
     !> processes.
@@ -227,15 +213,8 @@ program RUNMESH
 
         !> File handled for variable in/out names
         !> At the moment only class, hydro parameters and some outputs
-        VARIABLEFILESFLAG = 1
         if (narg >= 1) then
             call get_command_argument(1, fl_listMesh)
-!        else if (narg == 2) then
-!            call get_command_argument(1, fl_listMesh)
-!todo: re-instate alpha
-!            call get_command_argument(2, alphCh)
-!            call value(alphCh, alpharain, ierr)
-!            cm%dat(8)%alpha = alpha
         end if
         call Init_fls(fls, trim(adjustl(fl_listMesh)))
     else
@@ -243,10 +222,19 @@ program RUNMESH
         call Init_fls(fls)
     end if !(narg > 0) then
 
-!-    call counter_init()
+    !> Read inputs.
+    ierr = 0
+    call READ_INITIAL_INPUTS(fls, shd, cm, RELEASE_STRING, ierr)
 
-    call READ_INITIAL_INPUTS(fls, shd, cm, RELEASE_STRING)
-    call print_message('')
+    !> Stop if an error occured.
+    call reset_tab()
+    call MPI_Barrier(MPI_COMM_WORLD, z)
+    if (ierr /= 0) then
+        call print_error('Errors occurred during initialization.')
+        if (ISHEADNODE) call program_abort()
+    else
+        call print_message('')
+    end if
 
     !> Assign shed values to local variables.
     NA = shd%NA
@@ -257,7 +245,7 @@ program RUNMESH
     !> Initialize climate forcing module.
     if (ro%RUNCLIM) then
         ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
-        if (ENDDATA) goto 997
+        if (ENDDATA) goto 97
     end if
     call print_message('')
 
@@ -265,18 +253,15 @@ program RUNMESH
     call output_variables_init(shd, cm)
 
     !> Allocate output variables for screen output.
-    call output_variables_allocate(out%d%grid%qo, shd%NA)
-    call output_variables_allocate(out%d%grid%prec, shd%NA)
-    call output_variables_allocate(out%d%grid%evap, shd%NA)
-    call output_variables_allocate(out%d%grid%rof, shd%NA)
+    if (PRINTSIMSTATUS == OUT_JDATE_DLY .or. PRINTSIMSTATUS == OUT_DATE_DLY) then
+        call output_variables_init_fields(shd, cm, out%d)
+    end if
+    if (PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) then
+        call output_variables_init_fields(shd, cm, out%m)
+    end if
 
     !> Allocate output variables for run totals.
-    call output_variables_allocate(out%tot%grid%prec, shd%NA)
-    call output_variables_allocate(out%tot%grid%evap, shd%NA)
-    call output_variables_allocate(out%tot%grid%rof, shd%NA)
-    call output_variables_allocate(out%tot%grid%rofo, shd%NA)
-    call output_variables_allocate(out%tot%grid%rofs, shd%NA)
-    call output_variables_allocate(out%tot%grid%rofb, shd%NA)
+    call output_variables_init_fields(shd, cm, out%tot)
 
     !> Initialize process modules.
     if (ro%RUNTILE) then
@@ -287,7 +272,7 @@ program RUNMESH
     call print_message('')
 
     !> Initialize basin totals for the run.
-    if (ipid == 0) then
+    if (ISHEADNODE) then
         TOTAL_PRE = 0.0
         TOTAL_EVAP = 0.0
         TOTAL_ROF = 0.0
@@ -297,26 +282,26 @@ program RUNMESH
     end if
 
     !> Open output files.
-    if (ipid == 0) then
-        if (OUTFIELDSFLAG == 1) call output_files_init(fls, shd)
+    if (ISHEADNODE) then
+        call output_files_init(fls, shd)
         call run_save_basin_output_init(fls, shd, cm)
     end if
 
-    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls)
+    if (ISHEADNODE .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls)
 
     !> Read resume configuration.
 !?    call resumerun_config(fls, shd, cm, ierr)
 !?    if (ierr /= 0) call program_abort()
 
     !> Read resume files.
-    call resumerun_read(fls, shd, cm)
+    call resumerun_read(fls, shd, cm, ierr)
 
     !> Update output variables with initial states.
-    call output_variables_update(shd, cm)
+!-    call output_variables_update(shd, cm)
 
     FRAME_NO_NEW = 1
 
-    if (ipid == 0) then
+    if (ISHEADNODE) then
 
     !> ******************************************************
     !> echo print information to MESH_output_echo_print.txt
@@ -348,13 +333,8 @@ program RUNMESH
             write(ECHO_TXT_IUN, *) 'WINDOWSIZEFLAG       = ', WINDOWSIZEFLAG
             write(ECHO_TXT_IUN, *) 'WINDOWSPACINGFLAG    = ', WINDOWSPACINGFLAG
             write(ECHO_TXT_IUN, *) 'FROZENSOILINFILFLAG  = ', FROZENSOILINFILFLAG
-            write(ECHO_TXT_IUN, *) 'LOCATIONFLAG         = ', LOCATIONFLAG
 
 !todo: restore this.
-!+            write(ECHO_TXT_IUN, "('WF_NUM_POINTS: ', i5)") WF_NUM_POINTS
-!+            write(ECHO_TXT_IUN, "('Out directory:', 5a10)") (op%DIR_OUT(i), i = 1, WF_NUM_POINTS)
-!+            write(ECHO_TXT_IUN, "('Grid number:  ', 5i10)") (op%N_OUT(i), i = 1, WF_NUM_POINTS)
-!+            write(ECHO_TXT_IUN, "('Land class:   ', 5i10)") (op%II_OUT(i), i = 1, WF_NUM_POINTS)
 !            write(ECHO_TXT_IUN, *)
 !            write(ECHO_TXT_IUN, "('MESH_parameters_hydrology.ini')")
 !            write(ECHO_TXT_IUN, *)
@@ -417,11 +397,11 @@ program RUNMESH
 !                write(ECHO_TXT_IUN, *)
 !            end do !m = 1, NTYPE
         end if
-    end if !(ipid == 0) then
+    end if
 
     !> Open and print header information to the output files
     !> Open and read in values from r2c_output.txt file
-    if (ipid == 0) then
+    if (ISHEADNODE) then
         NR2CFILES = 0
         if (R2COUTPUTFLAG >= 1) then
             inquire(file = 'r2c_output.txt', exist = R2COUTPUT)
@@ -490,7 +470,7 @@ program RUNMESH
         !> For the ENSIM timestamp
         wfo_seq = 0
 
-    end if !(ipid == 0) then
+    end if
 
     !> RESUME/SAVERESUME 1 or 2 are not supported.
 !-    if (RESUMEFLAG == 1 .or. SAVERESUMEFLAG == 1 .or. RESUMEFLAG == 2 .or. SAVERESUMEFLAG == 2) then
@@ -801,14 +781,17 @@ program RUNMESH
 !230     continue
 !+    end if !(RESUMEFLAG == 2) then
 
+    !> Update output variables with initial states.
+    call output_variables_update(shd, cm)
+
     !> Calculate initial storage.
-    if (ro%RUNBALWB .and. ipid == 0) then
+    if (ro%RUNBALWB .and. ISHEADNODE) then
         STG_INI = sum( &
             (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
              out%ts%grid%lzs + out%ts%grid%dzs + &
              sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC)
         STG_INI = STG_INI/sum(shd%FRAC)
-    end if !(ipid == 0) then
+    end if
 
     !> Read in existing basin states for RESUMEFLAG.
     if (.not. vs%flgs%resume%state == FLAG_OFF .and. btest(vs%flgs%resume%flo%ffmt, FFMT_SEQ) .and. &
@@ -826,7 +809,7 @@ program RUNMESH
         read(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
 
         !> Read states for the driver (for the head node or in serial).
-        if (ipid == 0) then
+        if (ISHEADNODE) then
 
             !> Water balance totals.
             read(iun) TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
@@ -841,7 +824,7 @@ program RUNMESH
         !> Close the file to free the unit.
         close(iun)
     else
-        call run_save_basin_update_stg_ini(fls, shd, cm)
+!-        call run_save_basin_update_stg_ini(fls, shd, cm)
     end if
 
     !> Update 'next' counter.
@@ -899,7 +882,7 @@ program RUNMESH
         !> Start of book-keeping and grid accumulation.
         !> *********************************************************************
 
-        if (ipid == 0) then
+        if (ISHEADNODE) then
 
             !> Write ENSIM output
             if (NR2CFILES > 0 .and. mod(ic%ts_daily*30, DELTR2C) == 0) then
@@ -949,14 +932,14 @@ program RUNMESH
             end if
 
             !> Update output files.
-            if (OUTFIELDSFLAG == 1) call output_files_update(fls, shd)
+            call output_files_update(fls, shd)
             call run_save_basin_output(fls, shd, cm)
 
             !> Metrics and pre-emption.
             if (ic%now%day /= ic%next%day .and. mtsflg%AUTOCALIBRATIONFLAG > 0) then
                 call stats_update_stfl_daily(fls)
                 if (mtsflg%PREEMPTIONFLAG > 1) then
-                    if (FTEST > FBEST) goto 199
+                    if (FTEST > FBEST) goto 98
                 end if
             end if
 
@@ -1009,7 +992,7 @@ program RUNMESH
             end if
 
             !> Save resume files.
-            call resumerun_save(fls, shd, cm)
+            call resumerun_save(fls, shd, cm, ierr)
         end if
 
         !> Update the current time-step and counter.
@@ -1037,8 +1020,8 @@ program RUNMESH
 
     end do !while (.not. ENDDATE .and. .not. ENDDATA)
 
-    !> ENDDATA mark
-997     continue
+    !> End of simulation termination point.
+97  continue
 
     !> End program if not the head node.
     if (ipid /= 0) then
@@ -1046,7 +1029,7 @@ program RUNMESH
             write(line, FMT_GEN) ipid
             call print_screen('Node ' // trim(adjustl(line)) // ' is existing.')
         end if
-        goto 999
+        goto 99
     end if
 
     !> *********************************************************************
@@ -1113,7 +1096,7 @@ program RUNMESH
 !+    end if !(SAVERESUMEFLAG == 2) then
 
     !> Close output files.
-    if (OUTFIELDSFLAG == 1) call output_files_finalize(fls, shd)
+    call output_files_finalize(fls, shd)
     call run_save_basin_output_finalize(fls, shd, cm)
 
     !> *********************************************************************
@@ -1123,11 +1106,10 @@ program RUNMESH
     if (ENDDATA) call print_message('Reached end of forcing data.')
     if (ENDDATE) call print_message('Reached simulation end date.')
 
-998     continue
+    !> PREEMPTIONFLAG (FTEST) termination point.
+98  continue
 
-199 continue
-
-    if (ipid == 0 .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
+    if (ISHEADNODE .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
 
     !> Call finalization routines.
     if (ro%RUNTILE) then
@@ -1137,12 +1119,12 @@ program RUNMESH
     if (ro%RUNGRID) call run_between_grid_finalize(fls, shd, cm)
     if (ro%RUNCLIM) call climate_module_finalize(fls, shd, cm)
 
-    !> Save resume files.
-    !> Force the save frequency to 'now' to force saving the files.
-    vs%flgs%save%freq = FREQ_NOW
-    call resumerun_save(fls, shd, cm)
+    if (ISHEADNODE) then
 
-    if (ipid == 0) then
+        !> Save resume files.
+        !> Force the save frequency to 'now' to force saving the files.
+        vs%flgs%save%freq = FREQ_NOW
+        call resumerun_save(fls, shd, cm, ierr)
 
         !> Basin totals for the run.
         if (ro%RUNBALWB) then
@@ -1308,7 +1290,7 @@ program RUNMESH
 
         end if
 
-    end if !(ipid == 0 ) then
+    end if
 
     !> Print end of run diagnostics and information.
 
@@ -1337,13 +1319,14 @@ program RUNMESH
     call print_message('')
     call print_message('Program has terminated normally.')
 
-    !> Run time (to file only).
+    !> Calculate and save program run time (to file only).
     call print_echo_txt('')
     call cpu_time(endprog)
     write(line, FMT_GEN) (endprog - startprog)
     call print_echo_txt('Time = ' // trim(adjustl(line)) // ' seconds.')
 
-999     continue
+    !> Absolute termination point (e.g., for worker nodes).
+99  continue
 
     call program_end()
 

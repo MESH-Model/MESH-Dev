@@ -27,9 +27,9 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     ierr = 0
 
     !> Print messages.
-!+    call reset_tab()
+    call reset_tab()
     call print_message('READING: Resume run configuration')
-!+    call increase_tab()
+    call increase_tab()
 
     !> Assign the default options for RESUMEFLAG.
     vs%flgs%resume%state = FLAG_OFF
@@ -127,9 +127,9 @@ subroutine resumerun_config(fls, shd, cm, ierr)
             line = ' on' // trim(line)
         end if
         line = 'RESUMEFLAG' // trim(line)
-        call print_message_detail('RESUMEFLAG is ACTIVE: ' // trim(line))
+        call print_message('RESUMEFLAG is ACTIVE: ' // trim(line))
     else
-        call print_message_detail('RESUMEFLAG is not active: RESUMEFLAG off')
+        call print_message('RESUMEFLAG is not active: RESUMEFLAG off')
     end if
 
     !> Assign default options for SAVERESUMEFLAG.
@@ -235,9 +235,9 @@ subroutine resumerun_config(fls, shd, cm, ierr)
             line = ' on' // trim(line)
         end if
         line = 'SAVERESUMEFLAG' // trim(line)
-        call print_message_detail('SAVERESUMEFLAG is ACTIVE: ' // trim(line))
+        call print_message('SAVERESUMEFLAG is ACTIVE: ' // trim(line))
     else
-        call print_message_detail('SAVERESUMEFLAG is not active: SAVERESUMEFLAG off')
+        call print_message('SAVERESUMEFLAG is not active: SAVERESUMEFLAG off')
     end if
 
 !temp
@@ -257,9 +257,9 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     !> Check for auto resume file.
     if (vs%flgs%resume%state == FLAG_AUTO) then
         fname = 'auto_resume.ini'
-!+        call reset_tab()
+        call reset_tab()
         call print_message('READING: ' // trim(fname))
-!+        call increase_tab()
+        call increase_tab()
         inquire(file = fname, exist = lstate)
         if (lstate) then
 
@@ -278,15 +278,15 @@ subroutine resumerun_config(fls, shd, cm, ierr)
                 call program_abort()
             end if
             write(line, "(i5, '/', i3.3, ' ', i2.2, ':', i2.2)") ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
-            call print_message_detail( &
+            call print_message( &
                 'Simulation start date revised to: ' // trim(adjustl(line)) // '. The previous run state will be resumed.')
             close(iun)
         else
 
             !> Print a warning if the resume file does not exist.
             call print_warning( &
-                'Auto-resume is active but ' // trim(fname) // ' cannot be found. A previous run state will not be resumed.', PAD_3)
-            call print_message_detail('RESUMEFLAG is revised: RESUMEFLAG off')
+                'Auto-resume is active but ' // trim(fname) // ' cannot be found. A previous run state will not be resumed.')
+            call print_message('RESUMEFLAG is revised: RESUMEFLAG off')
 
             !> Override the resume functionality.
             vs%flgs%resume%state = FLAG_OFF

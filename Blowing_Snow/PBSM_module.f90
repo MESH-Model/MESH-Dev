@@ -139,7 +139,7 @@ module PBSM_module
         end do
 
         !> Write summary to output file.
-        call print_message('PBSM (blowing snow) component ACTIVE.')
+        call print_message('PBSM (blowing snow) component is ACTIVE.')
         if (DIAGNOSEMODE) then
             call print_echo_txt('PBSMFLAG on')
             write(line, FMT_GEN) 'GRUs ->', (m, m = 1, shd%lc%NTYPE)

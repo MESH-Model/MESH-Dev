@@ -1,6 +1,6 @@
 !> Description:
 !>  Subroutine to resume the run state from file.
-subroutine resumerun_read(fls, shd, cm)
+subroutine resumerun_read(fls, shd, cm, ierr)
 
     use model_files_variables
     use sa_mesh_common
@@ -33,10 +33,19 @@ subroutine resumerun_read(fls, shd, cm)
     type(ShedGridParams) shd
     type(clim_info) cm
 
+    !> Output variables.
+    integer, intent(out) :: ierr
+
     !> Local variables.
     integer iun, ignd, k, j, i, m, z
     character(len = DEFAULT_LINE_LENGTH) args(100), line, fname
     logical lstate
+
+    !> Initialize the return status.
+    ierr = 0
+
+    !> Reset spacing for screen output.
+    call reset_tab()
 
     !> Distribute GRU-based values.
     do k = 1, shd%lc%NML
@@ -99,9 +108,9 @@ subroutine resumerun_read(fls, shd, cm)
 !?    !> Check for auto resume file.
 !?    if (vs%flgs%resume%state == FLAG_AUTO) then
 !?        fname = 'auto_resume.ini'
-!?!+        call reset_tab()
+!?        call reset_tab()
 !?        call print_message('READING: ' // trim(fname))
-!?!+        call increase_tab()
+!?        call increase_tab()
 !?        inquire(file = fname, exist = lstate)
 !?        if (lstate) then
 !?

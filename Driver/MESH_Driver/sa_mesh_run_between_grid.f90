@@ -665,8 +665,8 @@ module sa_mesh_run_between_grid
         !> Process modules.
         use WF_ROUTE_config
         use rte_module
-        use reservoir
-        use FLAGS
+!-        use reservoir
+!-        use FLAGS
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -674,7 +674,7 @@ module sa_mesh_run_between_grid
         type(clim_info) cm
 
         !> Local variables.
-        integer iun, i
+!-        integer iun, i
 
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return

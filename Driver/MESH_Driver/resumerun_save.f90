@@ -1,6 +1,6 @@
 !> Description:
 !>  Subroutine to save the run state to file.
-subroutine resumerun_save(fls, shd, cm)
+subroutine resumerun_save(fls, shd, cm, ierr)
 
     use mpi_module
     use model_files_variables
@@ -31,6 +31,9 @@ subroutine resumerun_save(fls, shd, cm)
     type(ShedGridParams) shd
     type(clim_info) cm
 
+    !> Output variables.
+    integer, intent(out) :: ierr
+
     !> Local variables.
     integer iun, j, z
 !>>>>>zone-based storage
@@ -39,8 +42,14 @@ subroutine resumerun_save(fls, shd, cm)
     character(len = DEFAULT_LINE_LENGTH) args(100), line, fname
     logical now
 
+    !> Initialize the return status.
+    ierr = 0
+
     !> Return if not the head node.
     if (.not. ISHEADNODE .or. vs%flgs%save%state == FLAG_OFF) return
+
+    !> Reset spacing for screen output.
+    call reset_tab()
 
     !> Check if now is the time for the I/O operation.
     now = .false.
@@ -65,9 +74,9 @@ subroutine resumerun_save(fls, shd, cm)
     !> txt: In text format.
     if (btest(vs%flgs%save%flo%ffmt, FFMT_TXT)) then
         fname = 'MESH_variables.txt'
-!+        call reset_tab()
+        call reset_tab()
         call print_message('SAVING: ' // trim(fname))
-!+        call increase_tab()
+        call increase_tab()
         iun = 100
         open(iun, file = fname, action = 'write', iostat = z)
         if (z /= 0) then
@@ -274,9 +283,7 @@ subroutine resumerun_save(fls, shd, cm)
     !> Save the resume date ('next') to the auto resume file.
     if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
         fname = 'auto_resume.ini'
-!+        call reset_tab()
         call print_message('SAVING: ' // trim(fname))
-!+        call increase_tab()
         iun = 100
         open(iun, file = fname, action = 'write', iostat = z)
         if (z /= 0) then
