@@ -766,6 +766,9 @@ module rte_module
         !> times route is called. Route will determine a new dtmin
         !> for the next time step.
 
+        !> 'mo1' variable for hard-coded routing in rerout.f.
+        mo1 = ic%now%month
+
         !> Prepare arrays for storing output (averaged over the routing time-step).
         if (.not. allocated(avr_qo)) allocate(avr_qo(na))
         avr_qo = 0.0
