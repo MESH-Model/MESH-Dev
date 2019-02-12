@@ -70,7 +70,7 @@ subroutine read_initial_states(fls, shd, ierr)
         !> RUNCLASS36.
         if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
             vs%tile%tac(k) = vs%gru%tcan(m) + TFREZ
-            vs%tile%qac = 0.5e-2
+            vs%tile%qac(k) = 0.5e-2
             vs%tile%tpnd(k) = vs%gru%tpnd(m) + TFREZ
             vs%tile%zpnd(k) = vs%gru%zpnd(m)
             vs%tile%rcan(k) = vs%gru%rcan(m)

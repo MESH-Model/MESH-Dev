@@ -5,7 +5,7 @@ module ensim_io
 
     implicit none
 
-    integer, parameter :: MAX_WORDS = 500, MAX_WORD_LENGTH = 50, MAX_LINE_LENGTH = 5000
+    integer, parameter :: MAX_WORDS = 500, MAX_WORD_LENGTH = 200, MAX_LINE_LENGTH = 5000
 
     interface get_keyword_value
         module procedure get_keyword_value_cfield
@@ -135,8 +135,8 @@ module ensim_io
 
         !> Local variables.
         character(len = MAX_LINE_LENGTH) line
-        character(len = MAX_WORD_LENGTH), dimension(MAX_WORDS) :: args
-        integer n, nargs
+        character(len = MAX_WORD_LENGTH), dimension(MAX_WORDS) :: args, temp
+        integer n, j, i, nargs
 
         !> Initialize keyword count and return status.
         nkeyword = 0
@@ -177,9 +177,28 @@ module ensim_io
                 call parse(line, ' ', args, nargs)
                 vkeyword(n)%keyword = args(1)
                 if (nargs > 1) then
-                    allocate(vkeyword(n)%words(nargs - 1), stat = ierr)
+                    temp(:) = ''
+                    i = 1
+                    j = 1
+                    do while (j < nargs)
+                        if (index(args(j + 1), '"') == 1) then
+                            temp(i) = trim(args(j + 1)(2:))
+                            j = j + 1
+                            do while (j < nargs .and. index(args(j + 1), '"') == 0)
+                                temp(i) = trim(temp(i)) // ' ' // trim(args(j + 1))
+                                j = j + 1
+                            end do
+                            temp(i) = trim(temp(i)) // ' ' // trim(args(j + 1)(:index(args(j + 1), '"') - 1))
+                        else
+                            temp(i) = trim(args(j + 1))
+                        end if
+                        j = j + 1
+                        i = i + 1
+                    end do
+                    i = i - 1
+                    allocate(vkeyword(n)%words(i), stat = ierr)
                     if (ierr /= 0) exit
-                    vkeyword(n)%words = args(2:nargs)
+                    vkeyword(n)%words = temp(1:i)
                 end if
             end if
         end do

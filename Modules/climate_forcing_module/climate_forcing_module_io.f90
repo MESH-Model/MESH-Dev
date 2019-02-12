@@ -27,6 +27,9 @@ module climate_forcing_io
         !> 'shd_variables': For 'shd' variable.
         use shd_variables
 
+        !> 'strings': For 'lowercase' function.
+        use strings, only: lowercase
+
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
         integer, intent(in) :: vid
@@ -59,7 +62,7 @@ module climate_forcing_io
 
                 !> Skip the header of the 'r2c' format file.
                 line = ''
-                do while (line /= ':endHeader')
+                do while (lowercase(line) /= ':endheader')
                     read(cm%dat(vid)%fiun, '(a10)', end = 998) line
                 end do
 

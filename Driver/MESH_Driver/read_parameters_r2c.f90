@@ -36,7 +36,7 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
     !> Local variables.
     type(ensim_keyword), dimension(:), allocatable :: vkeyword
     type(ensim_attr), dimension(:), allocatable :: vattr
-    integer nkeyword, nattr, ilvl, n, l, i, z
+    integer nkeyword, nattr, ilvl, n, l, j, i, z
     character(len = MAX_WORD_LENGTH) tfield, tlvl
     real, dimension(:), allocatable :: ffield
     character(len = DEFAULT_LINE_LENGTH) line
@@ -126,7 +126,9 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                         case ('ur')
                             pm_grid%cp%fcan(:, 5) = ffield
                         case default
-                            z = 1
+                            do j = 1, size(pm_grid%cp%fcan, 1)
+                                pm_grid%cp%fcan(:, j) = ffield
+                            end do
                     end select
                 end if
             case ('lnz0')
@@ -143,7 +145,9 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                         case ('ur')
                             pm_grid%cp%lnz0(:, 5) = ffield
                         case default
-                            z = 1
+                            do j = 1, size(pm_grid%cp%lnz0, 2)
+                                pm_grid%cp%lnz0(:, j) = ffield
+                            end do
                     end select
                 end if
             case ('sdep')
