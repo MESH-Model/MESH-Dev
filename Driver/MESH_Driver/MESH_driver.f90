@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1549'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1550'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -170,6 +170,7 @@ program RUNMESH
     !> For reading arguments from the command line.
     character(500) fl_listMesh
     integer narg
+    logical ltest
 
     !> Set program start time.
 !todo: Also set date, which can be used for EnSim outputs.
@@ -768,6 +769,20 @@ program RUNMESH
 !220     continue
 !230     continue
 !+    end if !(RESUMEFLAG == 2) then
+
+    !> Update initial values.
+    ltest = .false.
+    inquire(file = 'MESH_initial_values.r2c', exist = ltest)
+    if (ltest) then
+        ierr = 0
+        call read_initial_values_r2c(shd, 100, 'MESH_initial_values.r2c', ierr)
+        call reset_tab()
+        call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (ierr /= 0) then
+            call print_error('Errors occurred during reading values from file.')
+            if (ISHEADNODE) call program_abort()
+        end if
+    end if
 
     !> Update output variables with initial states.
     call output_variables_update(shd, cm)

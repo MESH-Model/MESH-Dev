@@ -156,6 +156,7 @@ OBJECTS+=	read_initial_inputs.o \
 			read_basin_structures.o \
 			read_streamflow_txt.o read_streamflow_tb0.o read_reservoir_txt.o read_reservoir_tb0.o \
 			read_soil_ini.o \
+			read_initial_values_r2c.o \
 			read_initial_states.o \
 			module_files.o
 # Output routines.
