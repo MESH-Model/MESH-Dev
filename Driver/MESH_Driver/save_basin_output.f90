@@ -394,10 +394,10 @@ module save_basin_output
 !-        call update_water_balance(shd, cm)
 
         !> For PEVP-EVAP and EVPB output
-        bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%ts%grid%evap*ic%dts*shd%FRAC)/sum(shd%FRAC)
-        bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%ts%grid%pevp*ic%dts*shd%FRAC)/sum(shd%FRAC)
-        bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(out%ts%grid%evpb*shd%FRAC)/sum(shd%FRAC)
-        bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(out%ts%grid%arrd*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%ts%grid%evap(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%ts%grid%pevp(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(out%ts%grid%evpb(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
+        bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(out%ts%grid%arrd(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
 
         !> Update the energy balance.
         call update_energy_balance(shd, cm)

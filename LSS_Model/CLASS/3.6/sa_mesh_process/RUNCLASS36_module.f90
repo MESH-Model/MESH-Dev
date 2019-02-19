@@ -63,7 +63,7 @@ module RUNCLASS36_module
             cfi%PRES(il1:il2) = vs%tile%pres(il1:il2)
             cfi%QA(il1:il2) = vs%tile%qa(il1:il2)
 
-            cfi%VMOD = max(VMIN, cfi%UL)
+            cfi%VMOD(il1:il2) = max(VMIN, cfi%UL(il1:il2))
 
             !> This estimates the fractional cloud cover (FCLOGRD) by the basis
             !> of the solar zenith angle and the occurrence of precipitation.

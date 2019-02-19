@@ -66,6 +66,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
         write(line, FMT_GEN) m
         call print_message(trim(adjustl(fls%fl(mfk%f50)%fn)) // ': ' // trim(adjustl(line)))
         ierr = 1
+        close(iun)
     end if
 
     !> Check that the number of grid cells matches the drainage database value.
@@ -76,6 +77,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
         write(line, FMT_GEN) i
         call print_message(trim(adjustl(fls%fl(mfk%f50)%fn)) // ': ' // trim(adjustl(line)))
         ierr = 1
+        close(iun)
     end if
 
     !> Return if an error has occurred.
@@ -134,6 +136,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
 
 98  ierr = 1
     call print_error('Unable to read the file.')
+    close(iun)
     return
 
 end subroutine

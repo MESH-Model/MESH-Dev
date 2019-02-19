@@ -116,18 +116,18 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
                     select case (adjustl(tlvl))
                         case ('nl')
-                            pm_grid%cp%fcan(:, 1) = ffield
+                            pm_grid%cp%fcan(1:shd%NA, 1) = ffield
                         case ('bl')
-                            pm_grid%cp%fcan(:, 2) = ffield
+                            pm_grid%cp%fcan(1:shd%NA, 2) = ffield
                         case ('cr')
-                            pm_grid%cp%fcan(:, 3) = ffield
+                            pm_grid%cp%fcan(1:shd%NA, 3) = ffield
                         case ('gr')
-                            pm_grid%cp%fcan(:, 4) = ffield
+                            pm_grid%cp%fcan(1:shd%NA, 4) = ffield
                         case ('ur')
-                            pm_grid%cp%fcan(:, 5) = ffield
+                            pm_grid%cp%fcan(1:shd%NA, 5) = ffield
                         case default
                             do j = 1, size(pm_grid%cp%fcan, 1)
-                                pm_grid%cp%fcan(:, j) = ffield
+                                pm_grid%cp%fcan(1:shd%NA, j) = ffield
                             end do
                     end select
                 end if
@@ -135,32 +135,32 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
                     select case (adjustl(tlvl))
                         case ('nl')
-                            pm_grid%cp%lnz0(:, 1) = ffield
+                            pm_grid%cp%lnz0(1:shd%NA, 1) = ffield
                         case ('bl')
-                            pm_grid%cp%lnz0(:, 2) = ffield
+                            pm_grid%cp%lnz0(1:shd%NA, 2) = ffield
                         case ('cr')
-                            pm_grid%cp%lnz0(:, 3) = ffield
+                            pm_grid%cp%lnz0(1:shd%NA, 3) = ffield
                         case ('gr')
-                            pm_grid%cp%lnz0(:, 4) = ffield
+                            pm_grid%cp%lnz0(1:shd%NA, 4) = ffield
                         case ('ur')
-                            pm_grid%cp%lnz0(:, 5) = ffield
+                            pm_grid%cp%lnz0(1:shd%NA, 5) = ffield
                         case default
                             do j = 1, size(pm_grid%cp%lnz0, 2)
-                                pm_grid%cp%lnz0(:, j) = ffield
+                                pm_grid%cp%lnz0(1:shd%NA, j) = ffield
                             end do
                     end select
                 end if
             case ('sdep')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
-                    pm_grid%slp%sdep = ffield
+                    pm_grid%slp%sdep(1:shd%NA) = ffield
                 end if
             case ('xslp')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
-                    pm_grid%tp%xslp = ffield
+                    pm_grid%tp%xslp(1:shd%NA) = ffield
                 end if
             case ('dd', 'dden')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
-                    pm_grid%hp%dd = ffield
+                    pm_grid%hp%dd(1:shd%NA) = ffield
 
                     !> Unit conversion if units are km km-2.
                     if (index(lowercase(vattr(l)%units), 'km') > 0) then
@@ -172,10 +172,10 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
                     if (ilvl == 0) then
                         do ilvl = 1, shd%lc%IGND
-                            pm_grid%slp%sand(:, ilvl) = ffield
+                            pm_grid%slp%sand(1:shd%NA, ilvl) = ffield
                         end do
                     else if (ilvl <= shd%lc%IGND) then
-                        pm_grid%slp%sand(:, ilvl) = ffield
+                        pm_grid%slp%sand(1:shd%NA, ilvl) = ffield
                     else
                         z = 1
                     end if
@@ -184,10 +184,10 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
                     if (ilvl == 0) then
                         do ilvl = 1, shd%lc%IGND
-                            pm_grid%slp%clay(:, ilvl) = ffield
+                            pm_grid%slp%clay(1:shd%NA, ilvl) = ffield
                         end do
                     else if (ilvl <= shd%lc%IGND) then
-                        pm_grid%slp%clay(:, ilvl) = ffield
+                        pm_grid%slp%clay(1:shd%NA, ilvl) = ffield
                     else
                         z = 1
                     end if
@@ -196,10 +196,10 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
                     if (ilvl == 0) then
                         do ilvl = 1, shd%lc%IGND
-                            pm_grid%slp%orgm(:, ilvl) = ffield
+                            pm_grid%slp%orgm(1:shd%NA, ilvl) = ffield
                         end do
                     else if (ilvl <= shd%lc%IGND) then
-                        pm_grid%slp%orgm(:, ilvl) = ffield
+                        pm_grid%slp%orgm(1:shd%NA, ilvl) = ffield
                     else
                         z = 1
                     end if
@@ -208,44 +208,44 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
             !> RUNCLASS36.
             case ('iwf')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-                    pm_grid%tp%iwf = int(ffield)
+                    pm_grid%tp%iwf(1:shd%NA) = int(ffield)
                 end if
 
             !> BASEFLOWFLAG == 2 (lower zone storage).
             case ('pwr')
-                if (bflm%BASEFLOWFLAG == 2) bflm%pm_grid%pwr = ffield
+                if (bflm%BASEFLOWFLAG == 2) bflm%pm_grid%pwr(1:shd%NA) = ffield
             case ('flz')
-                if (bflm%BASEFLOWFLAG == 2) bflm%pm_grid%flz = ffield
+                if (bflm%BASEFLOWFLAG == 2) bflm%pm_grid%flz(1:shd%NA) = ffield
 
             !> RPN RTE (Watflood, 2007).
             case ('r1n')
-                if (rteflg%PROCESS_ACTIVE) rtepm%r1n = ffield
+                if (rteflg%PROCESS_ACTIVE) rtepm%r1n(1:shd%NA) = ffield
             case ('r2n')
-                if (rteflg%PROCESS_ACTIVE) rtepm%r2n = ffield
+                if (rteflg%PROCESS_ACTIVE) rtepm%r2n(1:shd%NA) = ffield
             case ('mndr')
-                if (rteflg%PROCESS_ACTIVE) rtepm%mndr = ffield
+                if (rteflg%PROCESS_ACTIVE) rtepm%mndr(1:shd%NA) = ffield
             case ('widep')
-                if (rteflg%PROCESS_ACTIVE) rtepm%widep = ffield
+                if (rteflg%PROCESS_ACTIVE) rtepm%widep(1:shd%NA) = ffield
             case ('aa2')
-                if (rteflg%PROCESS_ACTIVE) rtepm%aa2 = ffield
+                if (rteflg%PROCESS_ACTIVE) rtepm%aa2(1:shd%NA) = ffield
             case ('aa3')
-                if (rteflg%PROCESS_ACTIVE) rtepm%aa3 = ffield
+                if (rteflg%PROCESS_ACTIVE) rtepm%aa3(1:shd%NA) = ffield
             case ('aa4')
-                if (rteflg%PROCESS_ACTIVE) rtepm%aa4 = ffield
+                if (rteflg%PROCESS_ACTIVE) rtepm%aa4(1:shd%NA) = ffield
 !                case ('theta')
 !                case ('kcond')
 
             !> PBSM (blowing snow).
             case ('fetch')
-                if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%fetch = ffield
+                if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%fetch(1:shd%NA) = ffield
             case ('ht')
-                if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Ht = ffield
+                if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Ht(1:shd%NA) = ffield
             case ('n_s')
-                if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%N_S = ffield
+                if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%N_S(1:shd%NA) = ffield
             case ('a_s')
-                if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%A_S = ffield
+                if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%A_S(1:shd%NA) = ffield
             case ('distrib')
-                if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Distrib = ffield
+                if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Distrib(1:shd%NA) = ffield
 
             !> Unrecognized.
             case default

@@ -51,7 +51,7 @@ subroutine read_initial_states(fls, shd, ierr)
     !>
 
     !> Distribute the values.
-    do k = il1, il2
+    do k = 1, shd%lc%NML
 
         !> Grab the indices of the grid cell and GRU.
         i = shd%lc%ILMOS(k)
@@ -85,7 +85,7 @@ subroutine read_initial_states(fls, shd, ierr)
             vs%tile%thic(k, :) = vs%gru%thic(m, :)
         end if
 
-    end do !k = il1, il2
+    end do !k = 1, shd%lc%NML
 
     !>
     !> RESUME FROM FILE.

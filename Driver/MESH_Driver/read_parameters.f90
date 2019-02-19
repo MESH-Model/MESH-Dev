@@ -67,27 +67,34 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> RUNCLASS36 (interflow flag).
     if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
         pm_gru%tp%iwf = RUNCLASS36_flgs%INTERFLOWFLAG
-        allocate( &
-            hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), stat = ierr)
-        if (ierr /= 0) goto 97
+        if (.not. allocated(hp%CMAXROW)) then
+            allocate( &
+                hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), &
+                stat = ierr)
+            if (ierr /= 0) goto 97
+        end if
         hp%CMAXROW = 0.0; hp%CMINROW = 0.0; hp%BROW = 0.0; hp%K1ROW = 0.0; hp%K2ROW = 0.0
     end if
 
     !> WF_ROUTE (Watflood, 1988).
     if (WF_RTE_flgs%PROCESS_ACTIVE) then
-        allocate(wfp%r1(NRVR), wfp%r2(NRVR), wfp%aa1(NRVR), wfp%aa2(NRVR), wfp%aa3(NRVR), wfp%aa4(NRVR), stat = ierr)
-        if (ierr /= 0) goto 97
+        if (.not. allocated(wfp%r1)) then
+            allocate(wfp%r1(NRVR), wfp%r2(NRVR), wfp%aa1(NRVR), wfp%aa2(NRVR), wfp%aa3(NRVR), wfp%aa4(NRVR), stat = ierr)
+            if (ierr /= 0) goto 97
+        end if
         wfp%r1 = 2.0; wfp%r2 = 0.0; wfp%aa1 = 1.0; wfp%aa2 = 11.0; wfp%aa3 = 0.43; wfp%aa4 = 1.0
     end if
 
     !> RPN RTE (Watflood, 2007).
     if (rteflg%PROCESS_ACTIVE) then
-        allocate(rtepm%r1n(NA), rtepm%r2n(NA), rtepm%mndr(NA), rtepm%widep(NA), &
-                 rtepm%aa2(NA), rtepm%aa3(NA), rtepm%aa4(NA), &
-                 rtepm_iak%r1n(NRVR), rtepm_iak%r2n(NRVR), rtepm_iak%mndr(NRVR), rtepm_iak%widep(NRVR), &
-                 rtepm_iak%aa2(NRVR), rtepm_iak%aa3(NRVR), rtepm_iak%aa4(NRVR), &
-                 stat = ierr)
-        if (ierr /= 0) goto 97
+        if (.not. allocated(rtepm%r1n)) then
+            allocate(rtepm%r1n(NA), rtepm%r2n(NA), rtepm%mndr(NA), rtepm%widep(NA), &
+                     rtepm%aa2(NA), rtepm%aa3(NA), rtepm%aa4(NA), &
+                     rtepm_iak%r1n(NRVR), rtepm_iak%r2n(NRVR), rtepm_iak%mndr(NRVR), rtepm_iak%widep(NRVR), &
+                     rtepm_iak%aa2(NRVR), rtepm_iak%aa3(NRVR), rtepm_iak%aa4(NRVR), &
+                     stat = ierr)
+            if (ierr /= 0) goto 97
+        end if
         rtepm%r1n = 0.0; rtepm%r2n = 0.0; rtepm%mndr = 1.0; rtepm%widep = 10.0
         rtepm%aa2 = 1.1; rtepm%aa3 = 0.043; rtepm%aa4 = 1.0
         rtepm_iak%r1n = 0.0; rtepm_iak%r2n = 0.0; rtepm_iak%mndr = 0.0; rtepm_iak%widep = 0.0
@@ -96,12 +103,14 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     !> PBSM (blowing snow).
     if (pbsm%PROCESS_ACTIVE) then
-        allocate( &
-            pbsm%pm_gru%fetch(NTYPE), pbsm%pm_gru%Ht(NTYPE), pbsm%pm_gru%N_S(NTYPE), pbsm%pm_gru%A_S(NTYPE), &
-            pbsm%pm_gru%Distrib(NTYPE), &
-            pbsm%pm_grid%fetch(NA), pbsm%pm_grid%Ht(NA), pbsm%pm_grid%N_S(NA), pbsm%pm_grid%A_S(NA), pbsm%pm_grid%Distrib(NA), &
-            pbsm%pm%fetch(NML), pbsm%pm%Ht(NML), pbsm%pm%N_S(NML), pbsm%pm%A_S(NML), pbsm%pm%Distrib(NML), stat = ierr)
-        if (ierr /= 0) goto 97
+        if (.not. allocated(pbsm%pm_gru%fetch)) then
+            allocate( &
+                pbsm%pm_gru%fetch(NTYPE), pbsm%pm_gru%Ht(NTYPE), pbsm%pm_gru%N_S(NTYPE), pbsm%pm_gru%A_S(NTYPE), &
+                pbsm%pm_gru%Distrib(NTYPE), &
+                pbsm%pm_grid%fetch(NA), pbsm%pm_grid%Ht(NA), pbsm%pm_grid%N_S(NA), pbsm%pm_grid%A_S(NA), pbsm%pm_grid%Distrib(NA), &
+                pbsm%pm%fetch(NML), pbsm%pm%Ht(NML), pbsm%pm%N_S(NML), pbsm%pm%A_S(NML), pbsm%pm%Distrib(NML), stat = ierr)
+            if (ierr /= 0) goto 97
+        end if
         pbsm%pm_gru%fetch = 0.0; pbsm%pm_gru%Ht = 0.0; pbsm%pm_gru%N_S = 0.0; pbsm%pm_gru%A_S = 0.0
         pbsm%pm_gru%Distrib = 0.0
         pbsm%pm_grid%fetch = 0.0; pbsm%pm_grid%Ht = 0.0; pbsm%pm_grid%N_S = 0.0; pbsm%pm_grid%A_S = 0.0; pbsm%pm_grid%Distrib = 0.0
@@ -110,27 +119,33 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     !> FROZENSOILINFILFLAG 1.
     if (FROZENSOILINFILFLAG == 1) then
-        allocate(hp%FRZCROW(NA, NTYPE), stat = ierr)
-        if (ierr /= 0) goto 97
+        if (.not. allocated(hp%FRZCROW)) then
+            allocate(hp%FRZCROW(NA, NTYPE), stat = ierr)
+            if (ierr /= 0) goto 97
+        end if
         hp%FRZCROW = 0.0
         NYEARS = max(ic%stop%year - ic%start%year + 1, 1)
-        allocate(t0_ACC(NYEARS))
+        if (.not. allocated(t0_ACC)) allocate(t0_ACC(NYEARS))
         t0_ACC = 0.0
     end if
 
     !> BASEFLOWFLAG 1 (Luo, 2012).
     if (bflm%BASEFLOWFLAG == 1) then
-        allocate(bflm%pm%dgw(NML), bflm%pm%agw(NML), bflm%pm_gru%dgw(NTYPE), bflm%pm_gru%agw(NTYPE), stat = ierr)
-        if (ierr /= 0) goto 97
+        if (.not. allocated(bflm%pm%dgw)) then
+            allocate(bflm%pm%dgw(NML), bflm%pm%agw(NML), bflm%pm_gru%dgw(NTYPE), bflm%pm_gru%agw(NTYPE), stat = ierr)
+            if (ierr /= 0) goto 97
+        end if
         bflm%pm%dgw = 0.0; bflm%pm%agw = 0.0; bflm%pm_gru%dgw = 0.0; bflm%pm_gru%agw = 0.0
     end if
 
     !> BASEFLOWFLAG == 2 (lower zone storage).
     if (bflm%BASEFLOWFLAG == 2) then
-        allocate(bflm%pm%pwr(NML), bflm%pm%flz(NML), &
-                 bflm%pm_iak%pwr(NRVR), bflm%pm_iak%flz(NRVR), bflm%pm_gru%pwr(NTYPE), bflm%pm_gru%flz(NTYPE), &
-                 bflm%pm_grid%pwr(NA), bflm%pm_grid%flz(NA), stat = ierr)
-        if (ierr /= 0) goto 97
+        if (.not. allocated(bflm%pm%pwr)) then
+            allocate(bflm%pm%pwr(NML), bflm%pm%flz(NML), &
+                     bflm%pm_iak%pwr(NRVR), bflm%pm_iak%flz(NRVR), bflm%pm_gru%pwr(NTYPE), bflm%pm_gru%flz(NTYPE), &
+                     bflm%pm_grid%pwr(NA), bflm%pm_grid%flz(NA), stat = ierr)
+            if (ierr /= 0) goto 97
+        end if
         bflm%pm%pwr = 0.0; bflm%pm%flz = 0.0
         bflm%pm_iak%pwr = 0.0; bflm%pm_iak%flz = 0.0; bflm%pm_gru%pwr = 0.0; bflm%pm_gru%flz = 0.0
         bflm%pm_grid%pwr = 0.0; bflm%pm_grid%flz = 0.0
@@ -138,16 +153,20 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     !> Cropland irrigation module (CROPLANDIRRIGATION > 0).
     if (cifg%PROCESS_ACTIVE) then
-        allocate( &
-            ciprot%jdsow(NTYPE), ciprot%ldini(NTYPE), ciprot%lddev(NTYPE), ciprot%ldmid(NTYPE), ciprot%ldlate(NTYPE), &
-            ciprot%Kcini(NTYPE), ciprot%Kcdev(NTYPE), ciprot%Kcmid(NTYPE), ciprot%Kclate(NTYPE), stat = ierr)
-        if (ierr /= 0) goto 97
+        if (.not. allocated(ciprot%jdsow)) then
+            allocate( &
+                ciprot%jdsow(NTYPE), ciprot%ldini(NTYPE), ciprot%lddev(NTYPE), ciprot%ldmid(NTYPE), ciprot%ldlate(NTYPE), &
+                ciprot%Kcini(NTYPE), ciprot%Kcdev(NTYPE), ciprot%Kcmid(NTYPE), ciprot%Kclate(NTYPE), stat = ierr)
+            if (ierr /= 0) goto 97
+        end if
         ciprot%jdsow = 0; ciprot%ldini = 0; ciprot%lddev = 0; ciprot%ldmid = 0; ciprot%ldlate = 0
         ciprot%Kcini = 0.0; ciprot%Kcdev = 0.0; ciprot%Kcmid = 0.0; ciprot%Kclate = 0.0
-        allocate( &
-            cip%jdsow(NML), cip%ldini(NML), cip%lddev(NML), cip%ldmid(NML), cip%ldlate(NML), &
-            cip%Kcini(NML), cip%Kcdev(NML), cip%Kcmid(NML), cip%Kclate(NML), stat = ierr)
-        if (ierr /= 0) goto 97
+        if (.not. allocated(cip%jdsow)) then
+            allocate( &
+                cip%jdsow(NML), cip%ldini(NML), cip%lddev(NML), cip%ldmid(NML), cip%ldlate(NML), &
+                cip%Kcini(NML), cip%Kcdev(NML), cip%Kcmid(NML), cip%Kclate(NML), stat = ierr)
+            if (ierr /= 0) goto 97
+        end if
         cip%jdsow = 0; cip%ldini = 0; cip%lddev = 0; cip%ldmid = 0; cip%ldlate = 0
         cip%Kcini = 0.0; cip%Kcdev = 0.0; cip%Kcmid = 0.0; cip%Kclate = 0.0
     end if
@@ -207,21 +226,21 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     !> RUNCLASS36 and RUNSVS113.
     if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
-        pm%sfp%zrfm(il1:il2) = pm_gru%sfp%zrfm(1)
-        pm%sfp%zrfh(il1:il2) = pm_gru%sfp%zrfh(1)
+        pm%sfp%zrfm(:) = pm_gru%sfp%zrfm(1)
+        pm%sfp%zrfh(:) = pm_gru%sfp%zrfh(1)
     end if
 
     !> RUNCLASS36.
     if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-        pm%sfp%zbld(il1:il2) = pm_gru%sfp%zbld(1)
-        pm%tp%gc(il1:il2) = pm_gru%tp%gc(1)
+        pm%sfp%zbld(:) = pm_gru%sfp%zbld(1)
+        pm%tp%gc(:) = pm_gru%tp%gc(1)
     end if
 
     !> Parameters.
 
     !> From GRU.
     if (btest(INPUTPARAMSFORMFLAG, 0) .or. btest(INPUTPARAMSFORMFLAG, 2)) then
-        do k = il1, il2
+        do k = 1, shd%lc%NML
 
             !> GRU index.
             i = shd%lc%JLMOS(k)
@@ -298,7 +317,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 pbsm%pm%Distrib(k) = pbsm%pm_gru%Distrib(i)
             end if
 
-        end do !k = il1, il2
+        end do !k = 1, shd%lc%NML
     end if
 
     !> From river class (IAK) if not read by grid.
@@ -326,7 +345,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
             end if
 
         end do !k = 1, NAA
-        do k = il1, il2
+        do k = 1, shd%lc%NML
 
             !> Grid index.
             i = shd%lc%ILMOS(k)
@@ -337,12 +356,12 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 if (bflm%pm_iak%flz(shd%IAK(i)) /= 0.0) bflm%pm%flz(k) = bflm%pm_iak%flz(shd%IAK(i))
             end if
 
-        end do !k = il1, il2
+        end do !k = 1, shd%lc%NML
     end if
 
     !> From grid.
     if (btest(INPUTPARAMSFORMFLAG, 1)) then
-        do k = il1, il2
+        do k = 1, shd%lc%NML
 
             !> Omit GRU's with mosaic ID >= 100 from being assigned grid-based values (special condition).
             if (pm%tp%mid(k) >= 100) cycle
@@ -384,7 +403,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 if (pbsm%pm_grid%Distrib(i) /= 0.0) pbsm%pm%Distrib(k) = pbsm%pm_grid%Distrib(i)
             end if
 
-        end do !k = il1, il2
+        end do !k = 1, shd%lc%NML
     end if
 
     !> Distribute soil variables to layers lower than the "last configured layer" and check for impermeable soils.
