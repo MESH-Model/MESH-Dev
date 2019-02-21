@@ -17,7 +17,7 @@ module sa_mesh_run_within_tile
 
         !> Process modules.
         use RUNCLASS36_config
-        use RUNSVS113_config
+        use runsvs_mesh
         use baseflow_module
         use cropland_irrigation_init
 
@@ -31,7 +31,7 @@ module sa_mesh_run_within_tile
 
         !> Call processes.
         call RUNCLASS36_init(shd, fls, cm)
-        call RUNSVS113_init(shd, fls, cm)
+        call runsvs_mesh_init(shd, fls, cm)
         call bflm_init(fls, shd, cm)
         call runci_init(shd, fls)
 
@@ -44,7 +44,7 @@ module sa_mesh_run_within_tile
 
         !> Process modules.
         use RUNCLASS36_module
-        use RUNSVS113_module
+        use runsvs_mesh
         use baseflow_module
         use cropland_irrigation_within_tile
 
@@ -64,7 +64,7 @@ module sa_mesh_run_within_tile
 
         !> Call processes.
         call RUNCLASS36_within_tile(shd, fls, cm)
-        call RUNSVS113(shd, fls, cm)
+        call runsvs_mesh_within_tile(shd, fls, cm)
         call bflm_within_tile(fls, shd, cm)
         call runci_within_tile(shd, fls, cm)
 
@@ -457,7 +457,6 @@ module sa_mesh_run_within_tile
 
         !> Process modules.
         use RUNCLASS36_config
-        use RUNSVS113_config
         use baseflow_module
 
         !> Input/output variables.
@@ -470,7 +469,6 @@ module sa_mesh_run_within_tile
 
         !> Call processes.
         call RUNCLASS36_finalize(fls, shd, cm)
-        call RUNSVS113_finalize(shd, fls, cm)
         call bflm_finalize(fls, shd, cm)
 
     end subroutine

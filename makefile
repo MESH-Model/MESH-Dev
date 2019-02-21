@@ -111,7 +111,7 @@ endif
 %.o: %.f
 	$(FC) $(LFLAG) $<
 %.o: %.F90
-	$(FC) $(LFLAG) $<
+	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $(DFLAG) $(FTN90PPOPT) $<
 %.o: %.f90
 	$(FC) $(LFLAG) $<
 %.o: %.for
@@ -127,12 +127,6 @@ EF_Module.o: EF_ParseUtilities.o
 # Files renamed for SVS.
 runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
 	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $(DFLAG) -o runsvs_mod.o $(FTN90PPOPT)$<
-RUNSVS113_variables.o: RUNSVS113_variables.f90
-	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $<
-RUNSVS113_config.o: RUNSVS113_config.f90
-	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $<
-RUNSVS113_module.o: RUNSVS113_module.f90
-	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $<
 
 # ======================================================================
 # Make target: all

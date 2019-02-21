@@ -14,7 +14,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     use climate_forcing_variabletypes
 
     use RUNCLASS36_variables
-    use RUNSVS113_variables
+    use runsvs_mesh
     use WF_ROUTE_config
     use rte_module
     use baseflow_module
@@ -225,7 +225,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> Constants.
 
     !> RUNCLASS36 and RUNSVS113.
-    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
         pm%sfp%zrfm(:) = pm_gru%sfp%zrfm(1)
         pm%sfp%zrfh(:) = pm_gru%sfp%zrfh(1)
     end if
@@ -246,7 +246,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
             i = shd%lc%JLMOS(k)
 
             !> RUNCLASS36 and RUNSVS113.
-            if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+            if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
                 pm%cp%fcan(k, :) = pm_gru%cp%fcan(i, :)
                 pm%cp%lnz0(k, :) = pm_gru%cp%lnz0(i, :)
                 pm%slp%sdep(k) = pm_gru%slp%sdep(i)
@@ -370,7 +370,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
             i = shd%lc%ILMOS(k)
 
             !> RUNCLASS36 and RUNSVS113.
-            if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+            if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
                 if (shd%SLOPE_INT(i) /= 0.0) pm%tp%xslp(k) = shd%SLOPE_INT(i)
                 if (shd%DRDN(i) /= 0.0) pm%hp%dd(k) = shd%DRDN(i)
                 if (any(pm_grid%cp%fcan(i, :) /= 0.0)) pm%cp%fcan(k, :) = pm_grid%cp%fcan(i, :)

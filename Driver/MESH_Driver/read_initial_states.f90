@@ -15,7 +15,7 @@ subroutine read_initial_states(fls, shd, ierr)
 
     use RUNCLASS36_constants
     use RUNCLASS36_variables
-    use RUNSVS113_variables
+    use runsvs_mesh
 
     implicit none
 
@@ -58,13 +58,14 @@ subroutine read_initial_states(fls, shd, ierr)
         m = shd%lc%JLMOS(k)
 
         !> RUNCLASS36 and RUNSVS113.
-        if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+        if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
             vs%tile%tcan(k) = vs%gru%tcan(m) + TFREZ
             vs%tile%tsno(k) = vs%gru%tsno(m) + TFREZ
             vs%tile%rhos(k) = vs%gru%rhos(m)
             vs%tile%albs(k) = vs%gru%albs(m)
             vs%tile%tbar(k, :) = vs%gru%tbar(m, :) + TFREZ
             vs%tile%thlq(k, :) = vs%gru%thlq(m, :)
+            vs%tile%thic(k, :) = vs%gru%thic(m, :)
         end if
 
         !> RUNCLASS36.
@@ -82,7 +83,6 @@ subroutine read_initial_states(fls, shd, ierr)
             vs%tile%tsfs(k, 3) = vs%gru%tbar(m, 1) + TFREZ
             vs%tile%tsfs(k, 4) = vs%gru%tbar(m, 1) + TFREZ
             vs%tile%tbas(k) = vs%gru%tbar(m, NSL) + TFREZ
-            vs%tile%thic(k, :) = vs%gru%thic(m, :)
         end if
 
     end do !k = 1, shd%lc%NML
@@ -107,7 +107,7 @@ subroutine read_initial_states(fls, shd, ierr)
     end select
 
     !> Distribute soil states to layers lower than the "last configured layer".
-    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
 
         !> Determine the "last configured layer" read from file (CLASS default: 3).
         if (NRSOILAYEREADFLAG > 3) then

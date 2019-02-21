@@ -12,7 +12,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use save_basin_output, only: BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
     use RUNCLASS36_variables
     use RUNCLASS36_save_output
-    use RUNSVS113_variables
+    use runsvs_mesh
     use baseflow_module
     use cropland_irrigation_variables
     use WF_ROUTE_config
@@ -633,14 +633,14 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     do j = 2, nargs
                         select case (lowercase(args(j)))
                             case ('runsvs')
-                                RUNSVS113_flgs%PROCESS_ACTIVE = .true.
+                                svs_mesh%PROCESS_ACTIVE = .true.
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
                             case ('runclass')
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
-                                RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                svs_mesh%PROCESS_ACTIVE = .false.
                             case ('nolss')
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
-                                RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                svs_mesh%PROCESS_ACTIVE = .false.
                             case ('runrte')
                                 WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                 rteflg%PROCESS_ACTIVE = .true.
@@ -650,13 +650,13 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 ro%RUNCHNL = .false.
                             case ('default')
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
-                                RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                svs_mesh%PROCESS_ACTIVE = .false.
                                 WF_RTE_flgs%PROCESS_ACTIVE = .true.
                                 rteflg%PROCESS_ACTIVE = .false.
                                 exit
                             case ('diagnostic')
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
-                                RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                svs_mesh%PROCESS_ACTIVE = .false.
                                 WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                 rteflg%PROCESS_ACTIVE = .false.
                                 exit

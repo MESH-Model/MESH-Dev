@@ -7,9 +7,6 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     use FLAGS
     use climate_forcing
 
-    use RUNCLASS36_save_output
-    use RUNSVS113_variables
-
     implicit none
 
     !> Input variables.

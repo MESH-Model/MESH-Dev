@@ -18,7 +18,7 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
 
     !> Process modules: Required for process variables, parameters.
     use RUNCLASS36_variables
-    use RUNSVS113_variables
+    use runsvs_mesh
     use baseflow_module
     use rte_module
     use PBSM_module
@@ -36,7 +36,7 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
     !> Local variables.
     type(ensim_keyword), dimension(:), allocatable :: vkeyword
     type(ensim_attr), dimension(:), allocatable :: vattr
-    integer nkeyword, nattr, ilvl, n, l, j, i, z
+    integer nkeyword, nattr, ilvl, n, l, k, j, i, ii, z
     character(len = MAX_WORD_LENGTH) tfield, tlvl
     real, dimension(:), allocatable :: ffield
     character(len = DEFAULT_LINE_LENGTH) line
@@ -88,17 +88,23 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
     do l = 1, nattr
 
         !> Extract variable name and level.
+        if (DIAGNOSEMODE) call print_message("Reading '" // trim(vattr(l)%attr) // "'.")
         z = 0
         tfield = lowercase(vattr(l)%attr)
-        i = index(trim(adjustl(tfield)), ' ')
+        i = index(trim(tfield), ' ')
+        ii = index(trim(tfield), ' ', back = .true.)
         ilvl = 0
         if (i > 0) then
-            tlvl = tfield((i + 1):)
+            if (ii /= i) then
+                ii = index(tfield((i + 1):), ' ')
+                tlvl = tfield((i + 1):(ii + i))
+            else
+                tlvl = tfield((i + 1):)
+            end if
             tfield = tfield(1:i)
             call value(tlvl, ilvl, z)
             if (z /= 0) ilvl = 0
         end if
-        if (DIAGNOSEMODE) call print_message("Reading '" // trim(tfield) // "'.")
 
         !> Assign the data to a vector.
         call r2c_to_rank(iun, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, ierr)
@@ -113,7 +119,7 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
 
             !> RUNCLASS36 and RUNSVS113.
             case ('fcan')
-                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
                     select case (adjustl(tlvl))
                         case ('nl')
                             pm_grid%cp%fcan(1:shd%NA, 1) = ffield
@@ -126,13 +132,11 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                         case ('ur')
                             pm_grid%cp%fcan(1:shd%NA, 5) = ffield
                         case default
-                            do j = 1, size(pm_grid%cp%fcan, 1)
-                                pm_grid%cp%fcan(1:shd%NA, j) = ffield
-                            end do
+                            z = 1
                     end select
                 end if
             case ('lnz0')
-                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
                     select case (adjustl(tlvl))
                         case ('nl')
                             pm_grid%cp%lnz0(1:shd%NA, 1) = ffield
@@ -145,21 +149,40 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                         case ('ur')
                             pm_grid%cp%lnz0(1:shd%NA, 5) = ffield
                         case default
-                            do j = 1, size(pm_grid%cp%lnz0, 2)
-                                pm_grid%cp%lnz0(1:shd%NA, j) = ffield
-                            end do
+                            if (svs_mesh%PROCESS_ACTIVE) then
+                                if (.not. allocated(svs_mesh%vs%lnz0)) allocate(svs_mesh%vs%lnz0(shd%lc%NML))
+                                do k = 1, shd%lc%NML
+                                    svs_mesh%vs%lnz0(k) = ffield(shd%lc%ILMOS(k))
+                                end do
+                            else
+                                call print_remark("'LNZ0' with no canopy identifier is being applied to all canopies.")
+                                do j = 1, size(pm_grid%cp%lnz0, 2)
+                                    pm_grid%cp%lnz0(1:shd%NA, j) = ffield
+                                end do
+                            end if
                     end select
                 end if
+            case ('vf')
+                if (svs_mesh%PROCESS_ACTIVE) then
+                    if (.not. allocated(svs_mesh%vs%vf)) allocate(svs_mesh%vs%vf(shd%lc%NML, 26))
+                    if (ilvl > 1199 .or. ilvl < 1174) then
+                        z = 1
+                    else
+                        do k = 1, shd%lc%NML
+                            svs_mesh%vs%vf(k, 1200 - ilvl) = ffield(shd%lc%ILMOS(k))
+                        end do
+                    end if
+                end if
             case ('sdep')
-                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
                     pm_grid%slp%sdep(1:shd%NA) = ffield
                 end if
             case ('xslp')
-                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
                     pm_grid%tp%xslp(1:shd%NA) = ffield
                 end if
             case ('dd', 'dden')
-                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
                     pm_grid%hp%dd(1:shd%NA) = ffield
 
                     !> Unit conversion if units are km km-2.
@@ -169,7 +192,7 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                     end if
                 end if
             case ('sand')
-                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
                     if (ilvl == 0) then
                         do ilvl = 1, shd%lc%IGND
                             pm_grid%slp%sand(1:shd%NA, ilvl) = ffield
@@ -181,7 +204,7 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                     end if
                 end if
             case ('clay')
-                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
                     if (ilvl == 0) then
                         do ilvl = 1, shd%lc%IGND
                             pm_grid%slp%clay(1:shd%NA, ilvl) = ffield
@@ -193,7 +216,7 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                     end if
                 end if
             case ('orgm')
-                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
                     if (ilvl == 0) then
                         do ilvl = 1, shd%lc%IGND
                             pm_grid%slp%orgm(1:shd%NA, ilvl) = ffield
