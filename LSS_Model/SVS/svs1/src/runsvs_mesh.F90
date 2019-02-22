@@ -100,7 +100,7 @@ module runsvs_mesh
 
         nl_svs = shd%lc%IGND
         allocate(dl_svs(nl_svs))
-        dl_svs = shd%lc%sl%delz
+        dl_svs = shd%lc%sl%zbot
         call svs_bus_init(il2 - il1 + 1)
         bussiz = runsvs_busdim
         allocate(bus(bussiz))
