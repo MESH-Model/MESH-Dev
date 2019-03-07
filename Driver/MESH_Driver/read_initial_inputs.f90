@@ -409,6 +409,20 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
             call print_message(trim(line) // ' is assigned but outside the basin.')
         end if
     end do
+
+    !> If tile processes (i.e., LSS) is enabled.
+    !>  Remark: Land cover has no active coverage in any cells.
+    if (ro%RUNTILE) then
+        do m = 1, shd%lc%NTYPE
+            if (sum(shd%lc%ACLASS(:, m)) == 0.0) then
+                write(line, FMT_GEN) m
+                call print_remark('GRU ' // trim(adjustl(line)) // ' has no coverage and is zero across the domain.')
+            end if
+        end do
+    end if
+
+    !> If routing is enabled.
+    !>  Error: The number of river classes is zero.
     if (ro%RUNCHNL) then
         if (maxval(shd%IAK) == 0) then
             z = 1
