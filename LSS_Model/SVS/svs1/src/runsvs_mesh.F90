@@ -147,9 +147,9 @@ module runsvs_mesh
                 bus(vegf + 13*NG + k) = pm%cp%fcan(il1 + k, 4)
                 bus(vegf + 20*NG + k) = pm%cp%fcan(il1 + k, 5)
             end if
-            bus(slop + k) = pm%tp%xslp(il1 + k)
+            bus(slop + k) = max(pm%tp%xslp(il1 + k), 0.005)
             bus(draindens + k) = pm%hp%dd(il1 + k)!*0.001
-            bus(rootdp + k) = pm%slp%sdep(il1 + k)
+            bus(rootdp + k) = max(pm%slp%sdep(il1 + k), 0.5)
 
             !> Compute weighted average of log z0 wrt vegetation
             !> (used for momentum only - local z0 used for temperature/humidity).
