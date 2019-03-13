@@ -659,10 +659,9 @@ module output_files
             allocate(group%grid%dat(shd%NA, t))
             group%grid%dat = 0.0
             if (field%ilvl > 0) then
-                call output_variables_allocate_pntr( &
-                    group%grid%src, out_group%grid, field%vname, shd%NA, shd%lc%IGND, field%ilvl)
+                call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src, field%ilvl)
             else
-                call output_variables_allocate_pntr(group%grid%src, out_group%grid, field%vname, shd%NA)
+                call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src)
             end if
 
             !> File name.
@@ -790,10 +789,9 @@ module output_files
             allocate(group%tile%dat(shd%lc%NML, t))
             group%tile%dat = 0.0
             if (field%ilvl > 0) then
-                call output_variables_allocate_pntr( &
-                    group%tile%src, out_group%tile, field%vname, shd%lc%NML, shd%lc%IGND, field%ilvl)
+                call output_variables_activate_pntr(out_group%tile, field%vname, group%tile%src, field%ilvl)
             else
-                call output_variables_allocate_pntr(group%tile%src, out_group%tile, field%vname, shd%lc%NML)
+                call output_variables_activate_pntr(out_group%tile, field%vname, group%tile%src)
             end if
 
             !> File name.

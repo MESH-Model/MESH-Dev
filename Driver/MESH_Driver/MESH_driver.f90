@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1552'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1555'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -251,18 +251,22 @@ program RUNMESH
     call print_message('')
 
     !> Initialize output variables.
-    call output_variables_init(shd, cm)
+    call output_variables_init(shd)
 
     !> Allocate output variables for screen output.
     if (PRINTSIMSTATUS == OUT_JDATE_DLY .or. PRINTSIMSTATUS == OUT_DATE_DLY) then
-        call output_variables_series_init(shd, cm, out%d)
+        call output_variables_activate(out%d%grid, (/ VN_PREC, VN_EVAP, VN_ROF /))
     end if
+    call output_variables_activate(out%d%grid, VN_QO)
     if (PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) then
-        call output_variables_series_init(shd, cm, out%m)
+        call output_variables_activate(out%m%grid, (/ VN_PREC, VN_EVAP, VN_ROF, VN_QO /))
     end if
 
     !> Allocate output variables for run totals.
-    call output_variables_series_init(shd, cm, out%tot)
+    call output_variables_activate( &
+        out%tot%grid, (/ &
+            VN_PREC, VN_EVAP, VN_ROF, VN_ROFO, VN_ROFS, VN_ROFB, &
+            VN_RCAN, VN_SNCAN, VN_SNO, VN_WSNO, VN_PNDW, VN_LZS, VN_DZS, VN_LQWS, VN_FZWS /))
 
     !> Initialize process modules.
     if (ro%RUNTILE) then
@@ -785,7 +789,8 @@ program RUNMESH
     end if
 
     !> Update output variables with initial states.
-    call output_variables_update(shd, cm)
+    call output_variables_reset(shd)
+    call output_variables_update(shd)
 
     !> Calculate initial storage.
     if (ro%RUNBALWB .and. ISHEADNODE) then
@@ -855,7 +860,7 @@ program RUNMESH
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
         !> Reset output variables.
-        call output_variables_reset(shd, cm)
+        call output_variables_reset(shd)
 
         !> Load or update climate forcing input.
         if (ro%RUNCLIM) then
@@ -880,7 +885,7 @@ program RUNMESH
 
         !> Update output variables.
 !todo: Enable this when the one in 'run_between_grid' is removed.
-!+        call output_variables_update(shd, cm)
+!+        call output_variables_update(shd)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.

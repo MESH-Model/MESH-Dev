@@ -264,16 +264,16 @@ module sa_mesh_run_between_grid
         end if
 
         !> Allocate output variables.
-        call output_variables_allocate(out%d%grid%qi, shd%NA)
-        call output_variables_allocate(out%d%grid%stgch, shd%NA)
-        call output_variables_allocate(out%d%grid%qo, shd%NA)
-        call output_variables_allocate(out%d%grid%zlvl, shd%NA)
+        call output_variables_activate(out%d%grid, (/ VN_QI, VN_STGCH, VN_QO, VN_ZLVL /))
 
         !> Call processes.
         call SA_RTE_init(shd)
         call WF_ROUTE_init(fls, shd)
         call run_rte_init(fls, shd)
         call runci_between_grid_init(shd, fls)
+
+        !> Update basin variables.
+        call run_within_grid_stas_basin_update(fls, shd, cm)
 
 1010    format(9999(g15.7e2, ','))
 
@@ -381,7 +381,7 @@ module sa_mesh_run_between_grid
 
         !> Update output variables.
 !todo: remove this when code for output files has moved.
-        call output_variables_update(shd, cm)
+        call output_variables_update(shd)
 
         if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0) then
 

@@ -34,20 +34,20 @@ module model_variables
         !* pre: Total incoming precipitation rate. [kg m-2 s-1].
         !* prern: Total incoming liquid precipitation rate. [kg m-2 s-1].
         !* presn: Total incoming solid precipitation rate. [kg m-2 s-1].
-        real, dimension(:), pointer :: fsin
-        real, dimension(:), pointer :: fsdr
-        real, dimension(:), pointer :: fsdff
-        real, dimension(:), pointer :: flin
-        real, dimension(:), pointer :: ta
-        real, dimension(:), pointer :: qa
-        real, dimension(:), pointer :: pres
-        real, dimension(:), pointer :: uv
-        real, dimension(:), pointer :: wdir
-        real, dimension(:), pointer :: uu
-        real, dimension(:), pointer :: vv
-        real, dimension(:), pointer :: pre
-        real, dimension(:), pointer :: prern
-        real, dimension(:), pointer :: presn
+        real, dimension(:), pointer :: fsin => null()
+        real, dimension(:), pointer :: fsdr => null()
+        real, dimension(:), pointer :: fsdff => null()
+        real, dimension(:), pointer :: flin => null()
+        real, dimension(:), pointer :: ta => null()
+        real, dimension(:), pointer :: qa => null()
+        real, dimension(:), pointer :: pres => null()
+        real, dimension(:), pointer :: uv => null()
+        real, dimension(:), pointer :: wdir => null()
+        real, dimension(:), pointer :: uu => null()
+        real, dimension(:), pointer :: vv => null()
+        real, dimension(:), pointer :: pre => null()
+        real, dimension(:), pointer :: prern => null()
+        real, dimension(:), pointer :: presn => null()
 
         !* rff: Contributing runoff. [kg m-2].
         !* rchg: Contributing recharge. [kg m-2].
@@ -57,14 +57,14 @@ module model_variables
         !* zlvl: Stage level from the element. [m].
         !* div: Volume diverted to the channel. [m3].
         !* ab: Volume abstracted from the channel. [m3].
-        real, dimension(:), pointer :: rff
-        real, dimension(:), pointer :: rchg
-        real, dimension(:), pointer :: qi
-        real, dimension(:), pointer :: qo
-        real, dimension(:), pointer :: stgch
-        real, dimension(:), pointer :: zlvl
-        real, dimension(:), pointer :: div
-        real, dimension(:), pointer :: ab
+        real, dimension(:), pointer :: rff => null()
+        real, dimension(:), pointer :: rchg => null()
+        real, dimension(:), pointer :: qi => null()
+        real, dimension(:), pointer :: qo => null()
+        real, dimension(:), pointer :: stgch => null()
+        real, dimension(:), pointer :: zlvl => null()
+        real, dimension(:), pointer :: div => null()
+        real, dimension(:), pointer :: ab => null()
 
         !* rcan: Intercepted liquid water stored on canopy. [kg m-2].
         !* sncan: Intercepted frozen water stored on canopy. [kg m-2].
@@ -73,13 +73,13 @@ module model_variables
         !* tcan: Vegetation canopy temperature. [K].
         !* qac: Specific humidity of air within vegetation canopy space. [kg kg-1].
         !* gro: Vegetation growth index.
-        real, dimension(:), pointer :: rcan
-        real, dimension(:), pointer :: sncan
-        real, dimension(:), pointer :: cmas
-        real, dimension(:), pointer :: tac
-        real, dimension(:), pointer :: tcan
-        real, dimension(:), pointer :: qac
-        real, dimension(:), pointer :: gro
+        real, dimension(:), pointer :: rcan => null()
+        real, dimension(:), pointer :: sncan => null()
+        real, dimension(:), pointer :: cmas => null()
+        real, dimension(:), pointer :: tac => null()
+        real, dimension(:), pointer :: tcan => null()
+        real, dimension(:), pointer :: qac => null()
+        real, dimension(:), pointer :: gro => null()
 
         !* zsno: Snow depth. [m].
         !* sno: Mass of snow pack. [kg m-2].
@@ -88,13 +88,13 @@ module model_variables
         !* rhos: Density of snow. [kg m-3].
         !* wsno: Liquid water content of snow pack. [kg m-2].
         !* tsno: Snowpack temperature. [K].
-        real, dimension(:), pointer :: zsno
-        real, dimension(:), pointer :: sno
-        real, dimension(:), pointer :: fsno
-        real, dimension(:), pointer :: albs
-        real, dimension(:), pointer :: rhos
-        real, dimension(:), pointer :: wsno
-        real, dimension(:), pointer :: tsno
+        real, dimension(:), pointer :: zsno => null()
+        real, dimension(:), pointer :: sno => null()
+        real, dimension(:), pointer :: fsno => null()
+        real, dimension(:), pointer :: albs => null()
+        real, dimension(:), pointer :: rhos => null()
+        real, dimension(:), pointer :: wsno => null()
+        real, dimension(:), pointer :: tsno => null()
 
         !* albt: Total albedo of the surface (visible and near-infrared). [--].
         !* alvs: Visible albedo of the surface. [--].
@@ -113,23 +113,23 @@ module model_variables
         !* hfs: Sensible heat flux at the surface. [W m-2].
         !* gzero: Heat flux into the soil at the surface. [W m-2].
         !* tsfs: Ground surface temperature over subarea. [K].
-        real, dimension(:), pointer :: albt
-        real, dimension(:), pointer :: alvs
-        real, dimension(:), pointer :: alir
-        real, dimension(:), pointer :: gte
-        real, dimension(:), pointer :: zpnd
-        real, dimension(:), pointer :: pndw
-        real, dimension(:), pointer :: tpnd
-        real, dimension(:), pointer :: fstr
-        real, dimension(:), pointer :: pevp
-        real, dimension(:), pointer :: evap
-        real, dimension(:), pointer :: evpb
-        real, dimension(:), pointer :: arrd
-        real, dimension(:), pointer :: rofo
-        real, dimension(:), pointer :: qevp
-        real, dimension(:), pointer :: hfs
-        real, dimension(:), pointer :: gzero
-        real, dimension(:, :), pointer :: tsfs
+        real, dimension(:), pointer :: albt => null()
+        real, dimension(:), pointer :: alvs => null()
+        real, dimension(:), pointer :: alir => null()
+        real, dimension(:), pointer :: gte => null()
+        real, dimension(:), pointer :: zpnd => null()
+        real, dimension(:), pointer :: pndw => null()
+        real, dimension(:), pointer :: tpnd => null()
+        real, dimension(:), pointer :: fstr => null()
+        real, dimension(:), pointer :: pevp => null()
+        real, dimension(:), pointer :: evap => null()
+        real, dimension(:), pointer :: evpb => null()
+        real, dimension(:), pointer :: arrd => null()
+        real, dimension(:), pointer :: rofo => null()
+        real, dimension(:), pointer :: qevp => null()
+        real, dimension(:), pointer :: hfs => null()
+        real, dimension(:), pointer :: gzero => null()
+        real, dimension(:, :), pointer :: tsfs => null()
 
         !* ggeo: Geothermal heat flux. [W m-2].
         !* rofs: Interflow component of total runoff. [kg m-2 s-1].
@@ -142,29 +142,29 @@ module model_variables
         !* lqws: Liquid water storage. [kg m-2].
         !* tbar: Temperature of soil layers. [K].
         !* gflx: Heat conduction between soil layers. [W m-2].
-        real, dimension(:), pointer :: ggeo
-        real, dimension(:), pointer :: rofs
-        real, dimension(:), pointer :: tbas
-        real, dimension(:, :), pointer :: delzw
-        real, dimension(:, :), pointer :: zbotw
-        real, dimension(:, :), pointer :: thic
-        real, dimension(:, :), pointer :: fzws
-        real, dimension(:, :), pointer :: thlq
-        real, dimension(:, :), pointer :: lqws
-        real, dimension(:, :), pointer :: tbar
-        real, dimension(:, :), pointer :: gflx
+        real, dimension(:), pointer :: ggeo => null()
+        real, dimension(:), pointer :: rofs => null()
+        real, dimension(:), pointer :: tbas => null()
+        real, dimension(:, :), pointer :: delzw => null()
+        real, dimension(:, :), pointer :: zbotw => null()
+        real, dimension(:, :), pointer :: thic => null()
+        real, dimension(:, :), pointer :: fzws => null()
+        real, dimension(:, :), pointer :: thlq => null()
+        real, dimension(:, :), pointer :: lqws => null()
+        real, dimension(:, :), pointer :: tbar => null()
+        real, dimension(:, :), pointer :: gflx => null()
 
         !* lzs: Liquid water storage in the lower zone. [kg m-2].
         !* dzs: Liquid water storage in the deep zone. [kg m-2].
         !* rofb: Baseflow component of total runoff. [kg m-2 s-1].
-        real, dimension(:), pointer :: lzs
-        real, dimension(:), pointer :: dzs
-        real, dimension(:), pointer :: rofb
+        real, dimension(:), pointer :: lzs => null()
+        real, dimension(:), pointer :: dzs => null()
+        real, dimension(:), pointer :: rofb => null()
 
         !* stgw: Total liquid water storage in the land surface. [kg m-2].
         !* stge: Total energy stored in the system. [W m-2].
-        real, dimension(:), pointer :: stgw
-        real, dimension(:), pointer :: stge
+        real, dimension(:), pointer :: stgw => null()
+        real, dimension(:), pointer :: stge => null()
     end type
 
     !> Description:
@@ -175,7 +175,7 @@ module model_variables
     !*  gru: By GRU 1:NTYPE.
     !*  grid: Grid combined from contributing GRUs (by ACLASS) 1:NA.
     type model_variables_groups
-        type(model_variables_fields) tile, gru, grid, basin
+        type(model_variables_fields), pointer :: tile, gru, grid, basin
     end type
 
     !> State of SA_MESH variables in the current time-step.
@@ -202,75 +202,75 @@ module model_variables
         ierr = 0
 
         !> Initialize variables.
-        group%fsin = 0.0
-        group%fsdr = 0.0
-        group%fsdff = 0.0
-        group%flin = 0.0
-        group%ta = 0.0
-        group%qa = 0.0
-        group%pres = 0.0
-        group%uv = 0.0
-        group%wdir = 0.0
-        group%uu = 0.0
-        group%vv = 0.0
-        group%pre = 0.0
-        group%prern = 0.0
-        group%presn = 0.0
-        group%rff = 0.0
-        group%rchg = 0.0
-        group%qi = 0.0
-        group%qo = 0.0
-        group%stgch = 0.0
-        group%zlvl = 0.0
-        group%div = 0.0
-        group%ab = 0.0
-        group%rcan = 0.0
-        group%sncan = 0.0
-        group%cmas = 0.0
-        group%tac = 0.0
-        group%tcan = 0.0
-        group%qac = 0.0
-        group%gro = 0.0
-        group%zsno = 0.0
-        group%sno = 0.0
-        group%fsno = 0.0
-        group%albs = 0.0
-        group%rhos = 0.0
-        group%wsno = 0.0
-        group%tsno = 0.0
-        group%albt = 0.0
-        group%alvs = 0.0
-        group%alir = 0.0
-        group%gte = 0.0
-        group%zpnd = 0.0
-        group%pndw = 0.0
-        group%tpnd = 0.0
-        group%fstr = 0.0
-        group%pevp = 0.0
-        group%evap = 0.0
-        group%evpb = 0.0
-        group%arrd = 0.0
-        group%rofo = 0.0
-        group%qevp = 0.0
-        group%hfs = 0.0
-        group%gzero = 0.0
-        group%tsfs = 0.0
-        group%ggeo = 0.0
-        group%rofs = 0.0
-        group%tbas = 0.0
-        group%delzw = 0.0
-        group%zbotw = 0.0
-        group%thic = 0.0
-        group%fzws = 0.0
-        group%thlq = 0.0
-        group%lqws = 0.0
-        group%tbar = 0.0
-        group%gflx = 0.0
-        group%lzs = 0.0
-        group%dzs = 0.0
-        group%rofb = 0.0
-        group%stgw = 0.0
-        group%stge = 0.0
+        if (associated(group%fsin)) group%fsin = 0.0
+        if (associated(group%fsdr)) group%fsdr = 0.0
+        if (associated(group%fsdff)) group%fsdff = 0.0
+        if (associated(group%flin)) group%flin = 0.0
+        if (associated(group%ta)) group%ta = 0.0
+        if (associated(group%qa)) group%qa = 0.0
+        if (associated(group%pres)) group%pres = 0.0
+        if (associated(group%uv)) group%uv = 0.0
+        if (associated(group%wdir)) group%wdir = 0.0
+        if (associated(group%uu)) group%uu = 0.0
+        if (associated(group%vv)) group%vv = 0.0
+        if (associated(group%pre)) group%pre = 0.0
+        if (associated(group%prern)) group%prern = 0.0
+        if (associated(group%presn)) group%presn = 0.0
+        if (associated(group%rff)) group%rff = 0.0
+        if (associated(group%rchg)) group%rchg = 0.0
+        if (associated(group%qi)) group%qi = 0.0
+        if (associated(group%qo)) group%qo = 0.0
+        if (associated(group%stgch)) group%stgch = 0.0
+        if (associated(group%zlvl)) group%zlvl = 0.0
+        if (associated(group%div)) group%div = 0.0
+        if (associated(group%ab)) group%ab = 0.0
+        if (associated(group%rcan)) group%rcan = 0.0
+        if (associated(group%sncan)) group%sncan = 0.0
+        if (associated(group%cmas)) group%cmas = 0.0
+        if (associated(group%tac)) group%tac = 0.0
+        if (associated(group%tcan)) group%tcan = 0.0
+        if (associated(group%qac)) group%qac = 0.0
+        if (associated(group%gro)) group%gro = 0.0
+        if (associated(group%zsno)) group%zsno = 0.0
+        if (associated(group%sno)) group%sno = 0.0
+        if (associated(group%fsno)) group%fsno = 0.0
+        if (associated(group%albs)) group%albs = 0.0
+        if (associated(group%rhos)) group%rhos = 0.0
+        if (associated(group%wsno)) group%wsno = 0.0
+        if (associated(group%tsno)) group%tsno = 0.0
+        if (associated(group%albt)) group%albt = 0.0
+        if (associated(group%alvs)) group%alvs = 0.0
+        if (associated(group%alir)) group%alir = 0.0
+        if (associated(group%gte)) group%gte = 0.0
+        if (associated(group%zpnd)) group%zpnd = 0.0
+        if (associated(group%pndw)) group%pndw = 0.0
+        if (associated(group%tpnd)) group%tpnd = 0.0
+        if (associated(group%fstr)) group%fstr = 0.0
+        if (associated(group%pevp)) group%pevp = 0.0
+        if (associated(group%evap)) group%evap = 0.0
+        if (associated(group%evpb)) group%evpb = 0.0
+        if (associated(group%arrd)) group%arrd = 0.0
+        if (associated(group%rofo)) group%rofo = 0.0
+        if (associated(group%qevp)) group%qevp = 0.0
+        if (associated(group%hfs)) group%hfs = 0.0
+        if (associated(group%gzero)) group%gzero = 0.0
+        if (associated(group%tsfs)) group%tsfs = 0.0
+        if (associated(group%ggeo)) group%ggeo = 0.0
+        if (associated(group%rofs)) group%rofs = 0.0
+        if (associated(group%tbas)) group%tbas = 0.0
+        if (associated(group%delzw)) group%delzw = 0.0
+        if (associated(group%zbotw)) group%zbotw = 0.0
+        if (associated(group%thic)) group%thic = 0.0
+        if (associated(group%fzws)) group%fzws = 0.0
+        if (associated(group%thlq)) group%thlq = 0.0
+        if (associated(group%lqws)) group%lqws = 0.0
+        if (associated(group%tbar)) group%tbar = 0.0
+        if (associated(group%gflx)) group%gflx = 0.0
+        if (associated(group%lzs)) group%lzs = 0.0
+        if (associated(group%dzs)) group%dzs = 0.0
+        if (associated(group%rofb)) group%rofb = 0.0
+        if (associated(group%stgw)) group%stgw = 0.0
+        if (associated(group%stge)) group%stge = 0.0
 
     end subroutine
 
@@ -326,7 +326,7 @@ module model_variables
         integer, intent(in) :: n, nsl
 
         !> Input/output variables.
-        type(model_variables_fields) group
+        type(model_variables_fields), pointer :: group
 
         !> Output variables.
         integer, intent(out) :: ierr
@@ -337,6 +337,9 @@ module model_variables
         !> Initialize the return status.
         ierr = 0
         z = 0
+
+        !> Allocate group.
+        allocate(group)
 
         !> Allocate variables.
         allocate(group%fsin(n), stat = z); if (z /= 0) ierr = z

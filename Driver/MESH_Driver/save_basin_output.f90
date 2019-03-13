@@ -176,7 +176,7 @@ module save_basin_output
             open(fls%fl(mfk%f900)%iun, &
                  file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
                  iostat = ierr)
-            call output_variables_series_init(shd, cm, out%d)
+            call allocate_water_balance_out(shd, out%d)
             call write_water_balance_header(fls, shd, fls%fl(mfk%f900)%iun, 86400)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
@@ -193,14 +193,14 @@ module save_basin_output
         end if
         if (btest(bnoflg%eb%t, 0)) then
             open(901, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance.csv')
-            call output_variables_series_init(shd, cm, out%d)
+            call allocate_energy_balance_out(shd, out%d)
             call write_energy_balance_header(fls, shd, 901, 86400)
         end if
 
         !> Monthly.
         if (btest(bnoflg%wb%t, 1)) then
             open(902, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly.csv')
-            call output_variables_series_init(shd, cm, out%m)
+            call allocate_water_balance_out(shd, out%m)
             call write_water_balance_header(fls, shd, 902, 86400)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
@@ -217,14 +217,14 @@ module save_basin_output
         end if
         if (btest(bnoflg%eb%t, 1)) then
             open(905, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance_Monthly.csv')
-            call output_variables_series_init(shd, cm, out%m)
+            call allocate_energy_balance_out(shd, out%m)
             call write_energy_balance_header(fls, shd, 905, 86400)
         end if
 
         !> Hourly.
         if (btest(bnoflg%wb%t, 2)) then
             open(903, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Hourly.csv')
-            call output_variables_series_init(shd, cm, out%h)
+            call allocate_water_balance_out(shd, out%h)
             call write_water_balance_header(fls, shd, 903, 3600)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
@@ -241,13 +241,14 @@ module save_basin_output
         end if
         if (btest(bnoflg%eb%t, 2)) then
             open(906, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance_Hourly.csv')
-            call output_variables_series_init(shd, cm, out%h)
+            call allocate_energy_balance_out(shd, out%h)
             call write_energy_balance_header(fls, shd, 906, 3600)
         end if
 
         !> Per time-step.
         if (btest(bnoflg%wb%t, 3)) then
             open(904, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_ts.csv')
+            call allocate_water_balance_out(shd, out%ts)
             call write_water_balance_header(fls, shd, 904, ic%dts)
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
@@ -264,6 +265,7 @@ module save_basin_output
         end if
         if (btest(bnoflg%eb%t, 3)) then
             open(907, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance_ts.csv')
+            call allocate_energy_balance_out(shd, out%ts)
             call write_energy_balance_header(fls, shd, 907, ic%dts)
         end if
 
@@ -284,33 +286,39 @@ module save_basin_output
 !-        end do
 
         !> Allocate and zero variables for accumulations.
-        allocate(bno%evpdts(NKEY))
-        bno%evpdts(:)%EVAP = 0.0
-        bno%evpdts(:)%PEVP = 0.0
-        bno%evpdts(:)%EVPB = 0.0
-        bno%evpdts(:)%ARRD = 0.0
+        if (BASINAVGEVPFILEFLAG > 0) then
+            allocate(bno%evpdts(NKEY))
+            bno%evpdts(:)%EVAP = 0.0
+            bno%evpdts(:)%PEVP = 0.0
+            bno%evpdts(:)%EVPB = 0.0
+            bno%evpdts(:)%ARRD = 0.0
+        end if
 
         !> Daily.
         if (btest(BASINAVGEVPFILEFLAG, 0)) then
             open(910, file = './' // trim(fls%GENDIR_OUT) // '/' // '/Basin_average_evap.csv')
+            call allocate_evp_out(shd, out%d)
             call update_evp_header(fls, shd, 910, 86400)
         end if
 
         !> Monthly.
         if (btest(BASINAVGEVPFILEFLAG, 1)) then
             open(911, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_Monthly.csv')
+            call allocate_evp_out(shd, out%m)
             call update_evp_header(fls, shd, 911, 86400)
         end if
 
         !> Hourly.
         if (btest(BASINAVGEVPFILEFLAG, 2)) then
             open(912, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_Hourly.csv')
+            call allocate_evp_out(shd, out%h)
             call update_evp_header(fls, shd, 912, 3600)
         end if
 
         !> Per time-step.
         if (btest(BASINAVGEVPFILEFLAG, 3)) then
             open(913, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_ts.csv')
+            call allocate_evp_out(shd, out%ts)
             call update_evp_header(fls, shd, 913, ic%dts)
         end if
 
@@ -394,10 +402,12 @@ module save_basin_output
 !-        call update_water_balance(shd, cm)
 
         !> For PEVP-EVAP and EVPB output
-        bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%ts%grid%evap(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
-        bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%ts%grid%pevp(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
-        bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(out%ts%grid%evpb(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
-        bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(out%ts%grid%arrd(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
+        if (BASINAVGEVPFILEFLAG > 0) then
+            bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%ts%grid%evap(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
+            bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%ts%grid%pevp(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
+            bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(out%ts%grid%evpb(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
+            bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(out%ts%grid%arrd(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
+        end if
 
         !> Update the energy balance.
         call update_energy_balance(shd, cm)
@@ -704,6 +714,28 @@ module save_basin_output
 
     end subroutine
 
+    subroutine allocate_water_balance_out(shd, series)
+
+        !> 'shd_variables' required for 'shd'.
+        !> 'control_variables' required to check for active modelling components.
+        use shd_variables
+        use control_variables
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Input/output variables.
+        type(output_series) series
+
+        !> Allocate output variables.
+        call output_variables_activate(out%tot%basin, (/ VN_PREC, VN_EVAP, VN_ROF, VN_ROFO, VN_ROFS, VN_ROFB, VN_STGW /))
+        call output_variables_activate( &
+            series%basin, (/ &
+                VN_PREC, VN_EVAP, VN_ROF, VN_ROFO, VN_ROFS, VN_ROFB, &
+                VN_SNCAN, VN_RCAN, VN_SNO, VN_WSNO, VN_PNDW, VN_LZS, VN_DZS, VN_LQWS, VN_FZWS, VN_ALWS, VN_STGW /))
+
+    end subroutine
+
     subroutine update_water_balance(shd, cm)
 
         !> For 'shd' variable type and output variables.
@@ -950,6 +982,24 @@ module save_basin_output
 
     end subroutine
 
+    subroutine allocate_evp_out(shd, series)
+
+        !> 'shd_variables' required for 'shd'.
+        !> 'control_variables' required to check for active modelling components.
+        use shd_variables
+        use control_variables
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Input/output variables.
+        type(output_series) series
+
+        !> Allocate output variables.
+        call output_variables_activate(series%grid, (/ VN_EVAP, VN_PEVP, VN_EVPB, VN_ARRD /))
+
+    end subroutine
+
     subroutine update_evp(fls, shd, fik, dts, ikdts)
 
         use model_files_variables
@@ -1012,6 +1062,27 @@ module save_basin_output
         write(fik, 1010) 'EVAP', 'PEVP', 'EVPB', 'ARRD'
 
 1010    format(9999(g15.7e2, ','))
+
+    end subroutine
+
+    subroutine allocate_energy_balance_out(shd, series)
+
+        !> 'shd_variables' required for 'shd'.
+        !> 'control_variables' required to check for active modelling components.
+        use shd_variables
+        use control_variables
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Input/output variables.
+        type(output_series) series
+
+        !> Allocate output variables.
+        call output_variables_activate( &
+            series%basin, (/ &
+                VN_FSIN, VN_FSOUT, VN_ALBT, VN_FLIN, VN_FLOUT, VN_GTE, VN_QH, VN_QE, VN_GZERO, &
+                VN_TA, VN_TCAN, VN_CMAS, VN_TSNO, VN_TPND, VN_TBAR /))
 
     end subroutine
 

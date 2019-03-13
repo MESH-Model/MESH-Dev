@@ -540,9 +540,9 @@ module rte_module
         end if
 
         !> Update SA_MESH output variables.
-        out%ts%grid%qi = qi2
-        out%ts%grid%stgch = store2
-        out%ts%grid%qo = qo2
+        if (associated(out%ts%grid%qi)) out%ts%grid%qi = qi2
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = store2
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = qo2
         if (fms%rsvr%n > 0) then
             reach_last = lake_elv(:, 1)
         end if
@@ -607,9 +607,9 @@ module rte_module
 
         !> Reset SA_MESH output variables (for averaging).
         !> Setting these to zero also prevents updating from the state variables upon return.
-        out%ts%grid%qi = 0.0
-        out%ts%grid%stgch = 0.0
-        out%ts%grid%qo = 0.0
+        if (associated(out%ts%grid%qi)) out%ts%grid%qi = 0.0
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = 0.0
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = 0.0
 
         !> Return if not the last time-step of the hour.
         if (ic%now%hour == ic%next%hour) return
@@ -815,9 +815,9 @@ module rte_module
             end if
 
             !> Update MESH output variables (for averaging).
-            out%ts%grid%qi = out%ts%grid%qi + qi2
-            out%ts%grid%stgch = out%ts%grid%stgch + store2
-            out%ts%grid%qo = out%ts%grid%qo + qo2
+            if (associated(out%ts%grid%qi)) out%ts%grid%qi = out%ts%grid%qi + qi2
+            if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = out%ts%grid%stgch + store2
+            if (associated(out%ts%grid%qo)) out%ts%grid%qo = out%ts%grid%qo + qo2
 
         end do !n = 1, no_dt
 
@@ -830,9 +830,9 @@ module rte_module
         !> Update SA_MESH output variables.
         !> Output variables are updated at every model time-step; multiply averages
         !> by the number of model time-steps in the routing time-step
-        out%ts%grid%qi = out%ts%grid%qi/no_dt*(3600/ic%dts)
-        out%ts%grid%stgch = out%ts%grid%stgch/no_dt*(3600/ic%dts)
-        out%ts%grid%qo = out%ts%grid%qo/no_dt*(3600/ic%dts) !same as avr_qo
+        if (associated(out%ts%grid%qi)) out%ts%grid%qi = out%ts%grid%qi/no_dt*(3600/ic%dts)
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = out%ts%grid%stgch/no_dt*(3600/ic%dts)
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = out%ts%grid%qo/no_dt*(3600/ic%dts) !same as avr_qo
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.
