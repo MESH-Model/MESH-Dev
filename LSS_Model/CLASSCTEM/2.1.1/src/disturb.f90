@@ -556,8 +556,9 @@ real :: soilterm_veg, duffterm_veg, betmsprd_veg, betmsprd_duff      ! temporary
 !     -----------------------------------------------------------------
 
 !     * if icc /= 9 or ignd /= 3 this subroutine will need changes.
-      IF(ICC.NE.9)      CALL XIT('DISTURB',-1)
-      IF(IGND.NE.3)     CALL XIT('DISTURB',-2)
+!     Commented out because IGND and ICC is controlled by MESH
+!      IF(ICC.NE.9)      CALL XIT('DISTURB',-1)
+!      IF(IGND.NE.3)     CALL XIT('DISTURB',-2)
 
 !>initialize required arrays to zero, or assign value
 
