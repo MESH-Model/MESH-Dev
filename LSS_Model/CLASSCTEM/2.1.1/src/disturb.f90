@@ -498,6 +498,7 @@ real :: emit_bc(ilg,icc)  !<black carbon
 
 real :: biomass(ilg,icc)  !<total biomass for fire purposes
 real :: drgtstrs(ilg,icc) !<soil dryness factor for pfts
+real :: TempDryness(ilg,icc) !Temporary variable for soil dryness calculation
 real :: betadrgt(ilg,ignd)!<dryness term for soil layers
 real :: avgdryns(ilg)     !<avg. dryness over the vegetated fraction
 real :: fcsum(ilg)        !<total vegetated fraction
@@ -722,11 +723,17 @@ real :: soilterm_veg, duffterm_veg, betmsprd_veg, betmsprd_duff      ! temporary
       do 320 j = 1, icc
         do 330 i = il1, il2
          if (.not. crop(j)) then
-     
-          drgtstrs(i,j) =  (betadrgt(i,1))*rmatctem(i,j,1) + (betadrgt(i,2))*rmatctem(i,j,2) + &
-                         (betadrgt(i,3))*rmatctem(i,j,3)
 
-          drgtstrs(i,j) = min(1.0,max(0.0,drgtstrs(i,j)/(rmatctem(i,j,1)+rmatctem(i,j,2)+rmatctem(i,j,3))))
+          !Calculate the soil dryness factor, whic will be calculated over all layers
+
+          TempDryness(i,j) = 0.0 !Initialize the temporary variable every i loop
+          DO K = 1,IGND     
+          drgtstrs(i,j) =  drgtstrs(i,j) + (betadrgt(i,k))*rmatctem(i,j,k) 
+          TempDryness(i,j) = TempDryness(i,j) + rmatctem(i,j,k) !Summing rmatctem for each layer     
+          ENDDO
+ 
+          TempDryness(i,j) = drgtstrs(i,j)/TempDryness(i,j) !Equivlenet to drgtstrs/(sum(rmatctem))
+          drgtstrs(i,j) = min(1.0,max(0.0,TempDryness(i,j)))
 
 !>Next find this dryness factor averaged over the vegetated fraction
 !!\f$avgdryns(i) = avgdryns(i) + drgtstrs(i,j)*fcancmx(i,j)\f$

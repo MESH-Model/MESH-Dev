@@ -29,6 +29,8 @@
      H            AILC,PAIC,AILCG,L2MAX,NOL2PFTS,
      I            AILCGS,FCANCS,FCANC,ZOLNC,CMASVEGC,SLAIC )
 C
+C     * MAY 28/19 - S.Sauer     Changed the calculation of RMAT such that it is dependent on IG
+C     *                         rather than on 3 layers                      
 C     * AUG 30/16 - J.Melton    Replace ICTEMMOD with ctem_on (logical switch).
 C     * JAN 05/15 - J.MELTON.   TREE PFTS NOW HAVE A MINIMUM PAI OF 1 (LIKE
 C     *                         CROPS AND GRASSES) TO PREVENT WILD CANOPY TEMPERATURE
@@ -1246,9 +1248,11 @@ C
       DO 450 J=1,IC                                                               
       DO 450 I=IL1,IL2                                                            
         IF (ctem_on) THEN
-          RMAT(I,J,1)=RMATC(I,J,1)
-          RMAT(I,J,2)=RMATC(I,J,2)
-          RMAT(I,J,3)=RMATC(I,J,3)
+        DO K=1,IG !Number or layers are now flexible  
+          RMAT(I,J,K)=RMATC(I,J,K)
+          RMAT(I,J,K)=RMATC(I,J,K)
+          RMAT(I,J,K)=RMATC(I,J,K)
+        ENDDO
         ELSE
           ZROOT=ZRTMAX(I,J)
           IF(J.EQ.3) ZROOT=ZRTMAX(I,J)*GROWA(I)                                   
