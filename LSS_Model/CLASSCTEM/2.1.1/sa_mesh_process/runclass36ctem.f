@@ -923,9 +923,7 @@ C     * BALANCES.
 C
       real, dimension(:), allocatable :: CTVSTP !<
       real, dimension(:), allocatable :: CTSSTP !<
-      real, dimension(:), allocatable :: CT1STP !<
-      real, dimension(:), allocatable :: CT2STP !<
-      real, dimension(:), allocatable :: CT3STP !<
+      real, dimension(:,:), allocatable :: CTNSTP !<
       real, dimension(:), allocatable :: WTVSTP !<
       real, dimension(:), allocatable :: WTSSTP !<
       real, dimension(:), allocatable :: WTGSTP !<
@@ -2270,9 +2268,7 @@ C
 C
         allocate(CTVSTP(ILG))
         allocate(CTSSTP(ILG))
-        allocate(CT1STP(ILG))
-        allocate(CT2STP(ILG))
-        allocate(CT3STP(ILG))
+        allocate(CTNSTP(ILG,IGND))
         allocate(WTVSTP(ILG))
         allocate(WTSSTP(ILG))
         allocate(WTGSTP(ILG))
@@ -4985,8 +4981,9 @@ C
 340   CONTINUE
 
 C
-      CALL CLASSZ (0,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP,
-     1             WTVSTP, WTSSTP, WTGSTP,
+
+      CALL CLASSZ (0,      CTVSTP, CTSSTP,
+     1             CTNSTP, WTVSTP, WTSSTP, WTGSTP,
      2             FSGVGAT,FLGVGAT,HFSCGAT,HEVCGAT,HMFCGAT,HTCCGAT,
      3             FSGSGAT,FLGSGAT,HFSSGAT,HEVSGAT,HMFNGAT,HTCSGAT,
      4             FSGGGAT,FLGGGAT,HFSGGAT,HEVGGAT,HMFGGAT,HTCGAT,
@@ -5215,8 +5212,8 @@ C          * ADAPTED TO COUPLING OF CLASS3.6 AND CTEM
 	                          
 C=======================================================================
 
-      CALL CLASSZ (1,      CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP,
-     1             WTVSTP, WTSSTP, WTGSTP,
+      CALL CLASSZ (1,      CTVSTP, CTSSTP,
+     1             CTNSTP, WTVSTP, WTSSTP, WTGSTP,
      2             FSGVGAT,FLGVGAT,HFSCGAT,HEVCGAT,HMFCGAT,HTCCGAT,
      3             FSGSGAT,FLGSGAT,HFSSGAT,HEVSGAT,HMFNGAT,HTCSGAT,
      4             FSGGGAT,FLGGGAT,HFSGGAT,HEVGGAT,HMFGGAT,HTCGAT,

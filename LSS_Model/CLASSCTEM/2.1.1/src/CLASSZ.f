@@ -1,9 +1,9 @@
 !>\file
 C!Purpose: Check for energy and water balance closure over modelled 
-C!area.
+C!area. 
 !!
-      SUBROUTINE CLASSZ(ISTEP,  CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, 
-     1                  WTVSTP, WTSSTP, WTGSTP,
+      SUBROUTINE CLASSZ(ISTEP,  CTVSTP, CTSSTP,
+     1                  CTNSTP, WTVSTP, WTSSTP, WTGSTP,
      2                  FSGV,   FLGV,   HFSC,   HEVC,   HMFC,   HTCC,
      3                  FSGS,   FLGS,   HFSS,   HEVS,   HMFN,   HTCS,
      4                  FSGG,   FLGG,   HFSG,   HEVG,   HMFG,   HTC,
@@ -14,7 +14,11 @@ C!area.
      9                  HCPS,   THPOR,  DELZW,  TBAR,   ZPOND,  TPOND,  
      A                  DELZ,   FCS,    FGS,    FC,     FG,
      B                  IL1,    IL2,    ILG,    IG,     N    )
-C
+
+C     * May 29/19 - S.Sauer     Changed the calculation of internal energy variables
+C                               Instead of 3 variables for each soil layer, there
+C                               is now a 2D variable using the variable IG (# of layers)
+C                               CLASSZ calls are much simpler now, should fix later
 C     * SEP 04/12 - J.MELTON    REMOVED 'STOP', THEY ARE DEPRECATED, 
 C                               REPLACE WITH CALL EXIT
 C     * JAN 06/09 - D.VERSEGHY. MORE VARIABLES IN PRINT STATEMENTS;
@@ -38,12 +42,8 @@ C
       REAL CTVSTP(ILG)  !<Change in internal energy of vegetation over 
                         !<current time step \f$[W m^{-2}] \f$
       REAL CTSSTP(ILG)  !<Change in internal energy of snow pack over 
-                        !<current time step \f$[W m^{-2}] \f$
-      REAL CT1STP(ILG)  !<Change in internal energy of first soil layer 
-                        !<over current time step \f$[W m^{-2}] \f$
-      REAL CT2STP(ILG)  !<Change in internal energy of second soil layer 
-                        !<over current time step \f$[W m^{-2}] \f$
-      REAL CT3STP(ILG)  !<Change in internal energy of third soil layer 
+                        !<current time step \f$[W m^{-2}] \f$                    
+      REAL CTNSTP(ILG,IG)! Change in internal energy of layer n
                         !<over current time step \f$[W m^{-2}] \f$
       REAL WTVSTP(ILG)  !<Change in vegetation mass over current time step \f$[kg m^{-2}]\f$
       REAL WTSSTP(ILG)  !<Change in snow mass over current time step \f$[kg m^{-2}]\f$
@@ -53,6 +53,8 @@ C
 C
 C     * INPUT ARRAYS.
 C
+      REAL QSUMN (IG)       !Sum of, one entry for every soil layer
+
       REAL FSGV  (ILG)      !<Diagnosed net shortwave radiation on 
                             !<vegetation canopy \f$[W m^{-2}] (K_{*,c})\f$
       REAL FLGV  (ILG)      !<Diagnosed net longwave radiation on 
@@ -247,8 +249,6 @@ C
       !!
 
 
-
-
       IF(ISTEP.EQ.0) THEN
 C
 C     * SET BALANCE CHECK VARIABLES FOR START OF CURRENT TIME STEP.
@@ -260,19 +260,27 @@ C     * SET BALANCE CHECK VARIABLES FOR START OF CURRENT TIME STEP.
      1             SCAN(I)*SPHICE)*TCAN(I)
           CTSSTP(I)=-TSNOW(I)*(HCPICE*SNO(I)/RHOICE+
      1             HCPW*WSNOW(I)/RHOW)
-          CT1STP(I)=-((HCPW*THLIQ(I,1)+HCPICE*THICE(I,1)
-     1             +HCPS(I,1)*(1.0-THPOR(I,1)))*DELZW(I,1)+
-     2             HCPSND*(DELZ(1)-DELZW(I,1)))*TBAR(I,1)-
+
+        DO J=1,IG
+           IF (J.eq.1) THEN !Include ZPOND and TPOND for the first layer
+                CTNSTP(I,J) = -((HCPW*THLIQ(I,J)+HCPICE*THICE(I,J)
+     1             +HCPS(I,J)*(1.0-THPOR(I,J)))*DELZW(I,J)+
+     2             HCPSND*(DELZ(J)-DELZW(I,J)))*TBAR(I,J)-
      3             HCPW*ZPOND(I)*TPOND(I)
-          CT2STP(I)=-((HCPW*THLIQ(I,2)+HCPICE*THICE(I,2)
-     1             +HCPS(I,2)*(1.0-THPOR(I,2)))*DELZW(I,2)+
-     2             HCPSND*(DELZ(2)-DELZW(I,2)))*TBAR(I,2)
-          CT3STP(I)=-((HCPW*THLIQ(I,3)+HCPICE*THICE(I,3)
-     1             +HCPS(I,3)*(1.0-THPOR(I,3)))*DELZW(I,3)+
-     2             HCPSND*(DELZ(3)-DELZW(I,3)))*TBAR(I,3)
-          WTVSTP(I)=-(RCAN(I)+SCAN(I))
-          WTSSTP(I)=-SNO(I)-WSNOW(I)
-          DO 50 J=1,IG
+
+
+ 
+           ELSE !All other layers
+
+               CTNSTP(I,J)=-((HCPW*THLIQ(I,J)+HCPICE*THICE(I,J)
+     1             +HCPS(I,J)*(1.0-THPOR(I,J)))*DELZW(I,J)+
+     2             HCPSND*(DELZ(J)-DELZW(I,J)))*TBAR(I,J)
+           ENDIF
+       ENDDO
+
+            WTVSTP(I)=-(RCAN(I)+SCAN(I))
+            WTSSTP(I)=-SNO(I)-WSNOW(I)
+            DO 50 J=1,IG
               WTGSTP(I)=WTGSTP(I)-
      1             (THLIQ(I,J)*RHOW+THICE(I,J)*RHOICE)*
      2             DELZW(I,J)
@@ -285,51 +293,59 @@ C
       IF(ISTEP.EQ.1) THEN
 C
 C     * CHECK ENERGY AND WATER BALANCES OVER THE CURRENT TIME STEP.
-
-                  
+                 
 C
       DO 200 I=IL1,IL2
-
-
 
           CTVSTP(I)=CTVSTP(I)+(CMAI(I)*SPHVEG+RCAN(I)*SPHW+
      1             SCAN(I)*SPHICE)*TCAN(I)
           CTSSTP(I)=CTSSTP(I)+TSNOW(I)*(HCPICE*SNO(I)/RHOICE+
      1             HCPW*WSNOW(I)/RHOW)
-          CT1STP(I)=CT1STP(I)+((HCPW*THLIQ(I,1)+HCPICE*THICE(I,1)
-     1             +HCPS(I,1)*(1.0-THPOR(I,1)))*DELZW(I,1)+
-     2             HCPSND*(DELZ(1)-DELZW(I,1)))*TBAR(I,1)+
+
+         DO J=1,IG
+           IF (J.eq.1) THEN !Include ZPOND and TPOND for the first layer
+            CTNSTP(I,J)=CTNSTP(I,J)+((HCPW*THLIQ(I,J)+HCPICE*THICE(I,J)
+     1             +HCPS(I,J)*(1.0-THPOR(I,J)))*DELZW(I,J)+
+     2             HCPSND*(DELZ(J)-DELZW(I,J)))*TBAR(I,J)+
      3             HCPW*ZPOND(I)*TPOND(I)
-          CT2STP(I)=CT2STP(I)+((HCPW*THLIQ(I,2)+HCPICE*THICE(I,2)
-     1             +HCPS(I,2)*(1.0-THPOR(I,2)))*DELZW(I,2)+
-     2             HCPSND*(DELZ(2)-DELZW(I,2)))*TBAR(I,2)
-          CT3STP(I)=CT3STP(I)+((HCPW*THLIQ(I,3)+HCPICE*THICE(I,3)
-     1             +HCPS(I,3)*(1.0-THPOR(I,3)))*DELZW(I,3)+
-     2             HCPSND*(DELZ(3)-DELZW(I,3)))*TBAR(I,3)
+           ELSE !All other layers
+            CTNSTP(I,J)=CTNSTP(I,J)+((HCPW*THLIQ(I,J)+HCPICE*THICE(I,J)
+     1             +HCPS(I,J)*(1.0-THPOR(I,J)))*DELZW(I,J)+
+     2             HCPSND*(DELZ(J)-DELZW(I,J)))*TBAR(I,J)
+           ENDIF
+         ENDDO
+
+        DO J=1,IG !For every soil layer
+            CTNSTP(I,J)=CTNSTP(I,J)/DELT
+        ENDDO
           CTVSTP(I)=CTVSTP(I)/DELT
           CTSSTP(I)=CTSSTP(I)/DELT
-          CT1STP(I)=CT1STP(I)/DELT
-          CT2STP(I)=CT2STP(I)/DELT
-          CT3STP(I)=CT3STP(I)/DELT
           WTVSTP(I)=WTVSTP(I)+RCAN(I)+SCAN(I)
           WTSSTP(I)=WTSSTP(I)+SNO(I)+WSNOW(I)
           DO 150 J=1,IG
               WTGSTP(I)=WTGSTP(I)+
      1             (THLIQ(I,J)*RHOW+THICE(I,J)*RHOICE)*
-     1             DELZW(I,J)
+     2             DELZW(I,J)
 150       CONTINUE
           WTGSTP(I)=WTGSTP(I)+ZPOND(I)*RHOW
 200   CONTINUE
+
+
 C
       DO 400 I=IL1,IL2
-          QSUMV=FSGV(I)+FLGV(I)-HFSC(I)-HEVC(I)-
-     1          HMFC(I)+HTCC(I)
-          QSUMS=FSGS(I)+FLGS(I)-HFSS(I)-HEVS(I)-
-     1          HMFN(I)+HTCS(I)
-          QSUM1=FSGG(I)+FLGG(I)-HFSG(I)-HEVG(I)-
-     1          HMFG(I,1)+HTC(I,1)
-          QSUM2=-HMFG(I,2)+HTC(I,2)
-          QSUM3=-HMFG(I,3)+HTC(I,3)
+          QSUMV=FSGV(I)+FLGV(I)-HFSC(I)-HEVC(I)-HMFC(I)+HTCC(I)      
+          QSUMS=FSGS(I)+FLGS(I)-HFSS(I)-HEVS(I)-HMFN(I)+HTCS(I)   
+
+          DO J=1,IG !For every soil layer
+             IF (J.eq.1) THEN !Include every surface variables for first layer
+           QSUMN(J)=FSGG(I)+FLGG(I)-HFSG(I)-
+     1             HEVG(I)-HMFG(I,J)+HTC(I,J)
+ 
+           ELSE !All other layers
+           QSUMN(J)= -HMFG(I,J)+HTC(I,J)             
+             ENDIF
+          ENDDO
+
           WSUMV=(PCFC(I)+PCLC(I)-
      1          QFCF(I)-QFCL(I)-ROFC(I)+
      2              WTRC(I))*DELT
@@ -358,105 +374,20 @@ C
               WRITE(6,6451) FCS(I),FGS(I),FC(I),FG(I)
               CALL EXIT
           ENDIF
-C ========================NOTE THAT I CHANGE THE FOLLOWING HERE================
-C ========================The numbers were changed > 5.0 to > 8.0=============
-C  ========================The 5.0 was causing some errors for our run======
-
-C ===============Verification of Interflow components===================
-
-                 IF (N==1449) THEN
-!
-!                 WRITE (*,*) 'QSUM1:'
-!                 WRITE (*,*) QSUM1
-!                 WRITE (*,*) 'CT1STP(I)'
-!                 WRITE (*,*) CT1STP(I)
-!                 WRITE (*,*) 'FSGG:'
-!                 WRITE (*,*) FSGG(I)
-!                 WRITE (*,*) 'FLGG:'
-!                 WRITE (*,*) FLGG(I)
-!                 WRITE (*,*) 'HFSS:'
-!                 write (*,*) HFSS(I)
-!                 write (*,*) 'HFSG(I):'
-!                 WRITE (*,*) HFSG(I)
-!                 WRITE (*,*) 'HEVG:'
-!                 WRITE (*,*) HEVG(I)
-!                 WRITE (*,*) 'HEVS:'
-!                 WRITE (*,*) HEVS(I)
-!                 WRITE (*,*) 'HMFG:'
-!                 WRITE (*,*) HMFG(I,1)
-!                 WRITE (*,*) 'HTC in CLASSZ:'
-!                 WRITE (*,*) HTC(I,1)
-!                 WRITE (*,*) 'TBAR:'
-!                 WRITE (*,*) TBAR(I,1)
-!                 WRITE (*,*) 'TPOND:'
-!                 WRITE (*,*) TPOND(I)
-!                 WRITE (*,*) 'ZPOND'
-!                 WRITE (*,*) ZPOND(I)
-!                 WRITE (*,*) 'HCPW in CLASSZ:'
-!                 WRITE (*,*) HCPW
-!                 WRITE (*,*) 'THLIQ in CLASSZ:'
-!                 WRITE (*,*) THLIQ(I,1)
-!                 WRITE (*,*) 'HCPICE in CLASSZ:'
-!                 WRITE (*,*) HCPICE
-!                 WRITE (*,*) 'THICE in CLASSZ:'
-!                 WRITE (*,*) THICE(I,1)
-!                 WRITE (*,*) 'DELZ:'
-!                 write (*,*) DELZ(1)
-!                 WRITE (*,*) 'DELZW:'
-!                 write (*,*) DELZW(I,1)
-!                 WRITE (*,*) 'THLIQ in CLASSZ:'
-!                 WRITE (*,*) THLIQ(I,1)
-         
-
-                 ENDIF
-
-C==================================================================== 
-          
-
-          IF(ABS(CT1STP(I)-QSUM1).GT.8.0) THEN
-
-              WRITE(6,6443) N,I,CT1STP(I),QSUM1
-              WRITE(6,6450) FSGG(I),FLGG(I),HFSG(I),
-     1            HEVG(I),HMFG(I,1),HTC(I,1)
-              WRITE(6,6450) FSGS(I),FLGS(I),HFSS(I),
-     1            HEVS(I),HMFN(I),HTCS(I)
-              WRITE(6,6450) THLIQ(I,1)*RHOW*DELZW(I,1),
-     *            THLIQ(I,2)*RHOW*DELZW(I,2),
-     *            THLIQ(I,3)*RHOW*DELZW(I,3),
-     *            THICE(I,1)*RHOICE*DELZW(I,1),
-     *            THICE(I,2)*RHOICE*DELZW(I,2),
-     *            THICE(I,3)*RHOICE*DELZW(I,3),
-     *            ZPOND(I)*RHOW
-              WRITE(6,6451) FCS(I),FGS(I),FC(I),FG(I),
-     1            DELZW(I,1),DELZW(I,2),DELZW(I,3)
-6443         FORMAT(2X,'LAYER 1 ENERGY BALANCE  ',2I8,2F20.8)
-              CALL EXIT
 
 
-          ENDIF
-          IF(ABS(CT2STP(I)-QSUM2).GT.8.0) THEN
-              WRITE(6,6444) N,I,CT2STP(I),QSUM2
-6444          FORMAT(2X,'LAYER 2 ENERGY BALANCE  ',2I8,2F20.8)
-              WRITE(6,6450) HMFG(I,2),HTC(I,2),
-     1            THLIQ(I,2),THICE(I,2),THPOR(I,2),TBAR(I,2)-TFREZ
-              WRITE(6,6450) HMFG(I,3),HTC(I,3),
-     1            THLIQ(I,3),THICE(I,3),THPOR(I,3),TBAR(I,3)-TFREZ
-              WRITE(6,6450) HMFG(I,1),HTC(I,1),
-     1            THLIQ(I,1),THICE(I,1),THPOR(I,1),TBAR(I,1)-TFREZ
-              WRITE(6,6451) FCS(I),FGS(I),FC(I),FG(I),
-     1            DELZW(I,2),HCPS(I,2),DELZW(I,3)
-6451          FORMAT(2X,7E20.6)
-              CALL EXIT
-          ENDIF
-          IF(ABS(CT3STP(I)-QSUM3).GT.8.0) THEN
-              WRITE(6,6445) N,I,CT3STP(I),QSUM3
-6445          FORMAT(2X,'LAYER 3 ENERGY BALANCE  ',2I8,2F20.8)
-              WRITE(6,6450) HMFG(I,3),HTC(I,3),
-     1            TBAR(I,3)
-              WRITE(6,6450) THLIQ(I,3),THICE(I,3),HCPS(I,3),
-     1                      THPOR(I,3),DELZW(I,3)
-              CALL EXIT
-          ENDIF
+!The below check was simplied and no longer gives numbers or messages
+!The previous version was unique for each layer so this should be included at some point
+! S.Sauer May/2019
+          DO J =1,IG !Go over every soil layer
+              IF(ABS(CTNSTP(I,J)-QSUMN(J)).GT.5.0) THEN
+                  WRITE(6,6443) I,J,CTNSTP(I,J),QSUMN(J)
+6451              FORMAT(2X,7E20.6)
+6443              FORMAT(2X,'Soil Layer ENERGY BALANCE  ',2I8,2F20.8)
+                  CALL EXIT !Exit
+              ENDIF
+          ENDDO
+            
           IF(ABS(WTVSTP(I)-WSUMV).GT.1.0E-3) THEN
               WRITE(6,6446) N,WTVSTP(I),WSUMV
 6446          FORMAT(2X,'CANOPY WATER BALANCE  ',I8,2F20.8)
@@ -471,6 +402,9 @@ C====================================================================
               WRITE(6,6451) FCS(I),FGS(I),FC(I),FG(I)
               CALL EXIT
           ENDIF
+
+!Message below should be updated for better representation of more layers
+
           IF(ABS(WTGSTP(I)-WSUMG).GT.1.0E-1) THEN
               WRITE(6,6448) N,I,WTGSTP(I),WSUMG
 6448          FORMAT(2X,'GROUND WATER BALANCE  ',2I8,2F20.8)
