@@ -103,6 +103,7 @@ c
                                   !<and leaf fall/harvest, \f$kg c/m^2\f$
       real roottemp(ilg,icc)      !<root temperature, which is a function of soil temperature of course, k.
       real rmatctem(ilg,icc,ignd) !<fraction of roots in each soil layer for each pft
+      real sum_rmat               !Temporary variable to calculate the sum of rmatctem
       real stemmass(ilg,icc)      !<stem mass for each of the 9 ctem pfts, \f$kg c/m^2\f$
       real rootmass(ilg,icc)      !<root mass for each of the 9 ctem pfts, \f$kg c/m^2\f$
       real fcancmx(ilg,icc)       !<max. fractional coverage of ctem's 9 pfts, but this can be modified 
@@ -756,15 +757,19 @@ c
 !>
 !!estimate drought stress term averaged over the rooting depth for each pft
 !!
+
       do 480 j = 1, icc
         n = sort(j)
         do 490 i = il1, il2
          if (fcancmx(i,j).gt.0.0) then 
-          drgtstrs(i,j) =  (1.0-betadrgt(i,1))*rmatctem(i,j,1) +  
-     &                     (1.0-betadrgt(i,2))*rmatctem(i,j,2) +  
-     &                     (1.0-betadrgt(i,3))*rmatctem(i,j,3)   
-          drgtstrs(i,j) = drgtstrs(i,j) /
-     &     (rmatctem(i,j,1)+rmatctem(i,j,2)+rmatctem(i,j,3))  
+             drgtstrs(i,j) = 0.0  !Initialize
+             sum_rmat = 0.0 !Initialize
+             DO K=1,IGND !Loop through all layers
+                drgtstrs(i,j) = drgtstrs(i,j) + 
+     &           (1.0-betadrgt(i,k))*rmatctem(i,j,k)
+                sum_rmat = sum_rmat + rmatctem(i,j,k) 
+             ENDDO  
+          drgtstrs(i,j) = drgtstrs(i,j)/(sum_rmat)  
           drgtstrs(i,j)=max(0.0, min(1.0,drgtstrs(i,j)))
 !>
 !!using this drought stress term and our two vegetation-dependent
