@@ -16,6 +16,8 @@ c                     pools.
 c
 c     change history:
 c
+c     June 7, 2019 - Made some changes for cases IGND > 3, except for when ISAND==-3 
+c
 C     1 Dec 2016 -    Make it so it works with the organic soils parameterization
 C     J. Melton
 C
@@ -70,6 +72,7 @@ c
       real soilcq10           !<
       real litrtemp(ilg,icc)  !<litter temperature
       real solctemp(ilg,icc)  !<soil carbon pool temperature
+      real sum_fracarb        !<Sum variable used in a function
       real q10func            !<
       real psisat(ilg,ignd)   !<saturation matric potential
       real grksat(ilg,ignd)   !<saturation hyd. conductivity
@@ -165,28 +168,38 @@ c
 c
           zcarbon=3.0/abar(sort(j))                ! 95% depth
           if(zcarbon.le.zbotw(i,1)) then
-              fracarb(i,j,1)=1.0             !> fraction of carbon in
-              fracarb(i,j,2)=0.0             !> soil layers
-              fracarb(i,j,3)=0.0
+              fracarb(i,j,1)=1.0  !> First layer only
+              DO K=2,IGND
+                 fracarb(i,j,k)=0.0      
+              ENDDO
           else
               fcoeff=exp(-abar(sort(j))*zcarbon)
-              fracarb(i,j,1)=
+              fracarb(i,j,1)=                             !Top Layer
      &          1.0-(exp(-abar(sort(j))*zbotw(i,1))-fcoeff)/(1.0-fcoeff) 
-              if(zcarbon.le.zbotw(i,2)) then
-                  fracarb(i,j,2)=1.0-fracarb(i,j,1)
-                  fracarb(i,j,3)=0.0
+
+              if(zcarbon.le.zbotw(i,2)) then               !> Everything in between, keep as IF for soil layer 2 for now
+              DO K=2,IGND-1    
+                  fracarb(i,j,K)=1.0-fracarb(i,j,K-1)
+              ENDDO
+                  fracarb(i,j,IGND)=0.0 !Bottom layer
               else
-                  fracarb(i,j,3)=
-     &             (exp(-abar(sort(j))*zbotw(i,2))-fcoeff)/(1.0-fcoeff)    
-                  fracarb(i,j,2)=1.0-fracarb(i,j,1)-fracarb(i,j,3)
+                  fracarb(i,j,IGND)=                      
+     &             (exp(-abar(sort(j))*zbotw(i,IGND-1))
+     &             -fcoeff)/(1.0-fcoeff)                      !> Bottom Layer
+                  DO K=2,IGND-1 
+                  fracarb(i,j,K)=1.0-fracarb(i,j,K-1)-fracarb(i,j,K+1)  !> All layers in between
+                  ENDDO
               endif
           endif
 c
-          solctemp(i,j)=tbar(i,1)*fracarb(i,j,1) +
-     &                  tbar(i,2)*fracarb(i,j,2) +
-     &                  tbar(i,3)*fracarb(i,j,3)
-          solctemp(i,j)=solctemp(i,j) /
-     &       (fracarb(i,j,1)+fracarb(i,j,2)+fracarb(i,j,3))
+          solctemp(i,j) = 0.0 !Initialize
+          sum_fracarb = 0.0 !Initialize  
+           DO K = 1,IGND!Over all soil layers
+              solctemp(i,j)= solctemp(i,j)+tbar(i,k)*fracarb(i,j,k)
+              sum_fracarb = sum_fracarb + fracarb(i,j,k)
+           ENDDO
+
+          solctemp(i,j)=solctemp(i,j)/(sum_fracarb)
 !>
 !>make sure we don't use temperatures of 2nd and 3rd soil layers if they are specified bedrock via sand -3 flag
 !>
@@ -248,14 +261,17 @@ c
 270     continue     
 260   continue     
 c
+
+
+
       do 280 j = 1, icc
         do 290 i = il1, il2
          if (fcan(i,j) .gt. 0.) then
-          socmoscl(i,j) = scmotrm(i,1)*fracarb(i,j,1) + 
-     &                    scmotrm(i,2)*fracarb(i,j,2) +
-     &                    scmotrm(i,3)*fracarb(i,j,3)
-          socmoscl(i,j) = socmoscl(i,j) /
-     &       (fracarb(i,j,1)+fracarb(i,j,2)+fracarb(i,j,3))    
+           socmoscl(i,j) = 0.0 !Initialize
+           DO K=1,IGND
+             socmoscl(i,j)=socmoscl(i,j)+scmotrm(i,1)*fracarb(i,j,k) 
+            ENDDO
+          socmoscl(i,j) = socmoscl(i,j) /sum_fracarb  
 !>
 !>make sure we don't use scmotrm of 2nd and 3rd soil layers if they are specified bedrock via sand -3 flag
 !>
