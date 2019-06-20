@@ -116,7 +116,7 @@ module WF_ROUTE_config
     subroutine WF_ROUTE_init(fls, shd)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
         use FLAGS
 
@@ -219,9 +219,9 @@ module WF_ROUTE_config
                 read(iun)
                 read(iun)
                 read(iun)
-                read(iun) stas_grid%chnl%qo
-                read(iun) stas_grid%chnl%stg
-                read(iun) stas_grid%chnl%qi
+                read(iun) vs%grid%qo
+                read(iun) vs%grid%stgch
+                read(iun) vs%grid%qi
                 read(iun)
                 read(iun)
             else
@@ -233,9 +233,9 @@ module WF_ROUTE_config
                 read(iun)
                 read(iun)
                 read(iun)
-                read(iun) stas_grid%chnl%qo
-                read(iun) stas_grid%chnl%stg
-                read(iun) stas_grid%chnl%qi
+                read(iun) vs%grid%qo
+                read(iun) vs%grid%stgch
+                read(iun) vs%grid%qi
                 read(iun)
                 read(iun)
             end if
@@ -251,7 +251,7 @@ module WF_ROUTE_config
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use FLAGS
 
         type(fl_ids) :: fls
@@ -284,9 +284,9 @@ module WF_ROUTE_config
             write(iun)
             write(iun)
             write(iun)
-            write(iun) stas_grid%chnl%qo
-            write(iun) stas_grid%chnl%stg
-            write(iun) stas_grid%chnl%qi
+            write(iun) vs%grid%qo
+            write(iun) vs%grid%stgch
+            write(iun) vs%grid%qi
             write(iun)
             write(iun)
 

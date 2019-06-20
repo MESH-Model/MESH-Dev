@@ -6,18 +6,19 @@
 !> Input variables:
 !*  iun: Unit of the input file.
 !*  fname: Full path to the file (default: './MESH_drainage_database.r2c').
+!*
+!> Output variables:
+!*  ierr: Return status.
 !>
 !> Input/output variables:
 !*  shd: Basin 'shed' object (properties).
-subroutine read_shed_r2c(shd, iun, fname)
+subroutine read_shed_r2c(shd, iun, fname, ierr)
 
     !> strings: For 'lowercase' function.
-    !> sa_mesh_variables: Required for MESH variables, parameters.
-    !> sa_mesh_utilities: Required for printing/writing messages, VERBOSEMODE, DIAGNOSEMODE.
-    !> ensim_io: Required for read 'r2c' format file.
+    !> sa_mesh_common: For common MESH variables and routines.
+    !> ensim_io: For routines to read 'r2c' format file.
     use strings
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use ensim_io
 
     implicit none
@@ -26,48 +27,59 @@ subroutine read_shed_r2c(shd, iun, fname)
     integer, intent(in) :: iun
     character(len = *), intent(in) :: fname
 
+    !> Output variables.
+    integer, intent(out) :: ierr
+
     !> Input/output variables.
     type(ShedGridParams) shd
 
     !> Local variables.
     type(ensim_keyword), dimension(:), allocatable :: vkeyword
     type(ensim_attr), dimension(:), allocatable :: vattr
-    integer nkeyword, nattr, l, x, y, ierr
+    integer nkeyword, nattr, l, x, y, z
     real, dimension(:, :), allocatable :: dat
     real, dimension(:), allocatable :: ffield
     character(len = DEFAULT_LINE_LENGTH) line
 
+    !> Initialize the return status.
+    ierr = 0
+
     !> Open the file and read the header.
-    call print_screen('READING: ' // trim(adjustl(fname)))
-    call print_echo_txt(fname)
-    call open_ensim_file(iun, fname, ierr)
-    if (ierr /= 0) then
-        call print_error('Unable to open file. Check if the file exists.')
-        call stop_program()
-    end if
-    call parse_header_ensim(iun, fname, vkeyword, nkeyword, ierr)
+    call reset_tab()
+    call print_message('READING: ' // trim(fname))
+    call increase_tab()
+    call open_ensim_input(iun, fname, ierr)
+    if (ierr /= 0) return
+    call parse_header_ensim(iun, vkeyword, nkeyword, ierr)
+    if (ierr /= 0) return
 
     !> Get keywords.
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':projection', shd%CoordSys%Proj, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ellipsoid', shd%CoordSys%Ellips, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':zone', shd%CoordSys%Zone, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':xcount', shd%xCount, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':xorigin', shd%xOrigin, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':xdelta', shd%xDelta, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ycount', shd%yCount, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':yorigin', shd%yOrigin, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':ydelta', shd%yDelta, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':nominalgridsize_AL', shd%AL, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':totalnumofgrids', shd%NA, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':numgridsinbasin', shd%NAA, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':numriverclasses', shd%NRVR, ierr, VERBOSEMODE)
-    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':classcount', shd%lc%NTYPE, ierr, VERBOSEMODE)
-!+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':debuggridno', l, ierr, VERBOSEMODE)
+    ierr = 0
+    z = 0
+    call get_keyword_value(iun, vkeyword, nkeyword, ':Projection', shd%CoordSys%Proj, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':Ellipsoid', shd%CoordSys%Ellips, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':Zone', shd%CoordSys%Zone, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':xCount', shd%xCount, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':xOrigin', shd%xOrigin, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':xDelta', shd%xDelta, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':yCount', shd%yCount, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':yOrigin', shd%yOrigin, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':yDelta', shd%yDelta, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':NominalGridSize_AL', shd%AL, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':TotalNumOfGrids', shd%NA, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':NumGridsInBasin', shd%NAA, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':NumRiverClasses', shd%NRVR, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':ClassCount', shd%lc%NTYPE, z); if (z /= 0) ierr = z
+!+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':DebugGridNo', l, z); if (z /= 0) ierr = z
+    if (ierr /= 0) then
+        call print_error('Errors occurred reading attributes from: ' // trim(fname))
+        return
+    end if
 
     !> Adjust GRU count (exclude impervious).
     shd%lc%NTYPE = shd%lc%NTYPE - 1
 
-    !> Calculate grid statistics.
+    !> Calculate additional grid attributes.
     select case (lowercase(shd%CoordSys%Proj))
         case ('latlong')
             shd%iyMin = int(shd%yOrigin*60.0)
@@ -76,27 +88,31 @@ subroutine read_shed_r2c(shd, iun, fname)
             shd%jxMax = int((shd%xOrigin + shd%xCount*shd%xDelta)*60.0)
             shd%GRDE = shd%xDelta*60.0
             shd%GRDN = shd%yDelta*60.0
-        case ('utm')
-            shd%GRDE = shd%xDelta/1000.0
-            shd%GRDN = shd%yDelta/1000.0
-            shd%jxMin = int(shd%xOrigin/1000.0)
-            shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
-            shd%iyMin = int(shd%yOrigin/1000.0)
-            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
+!+        case ('utm')
+!+            shd%GRDE = shd%xDelta/1000.0
+!+            shd%GRDN = shd%yDelta/1000.0
+!+            shd%jxMin = int(shd%xOrigin/1000.0)
+!+            shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
+!+            shd%iyMin = int(shd%yOrigin/1000.0)
+!+            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
         case default
             call print_error('Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
-            call stop_program()
+            return
     end select
 
     !> Check grid dimension.
     if (shd%NA < 1 .or. shd%NAA < 1) then
-        call print_error('Bad grid configuration. At least one grid must exist inside the basin.')
-        call print_message('The number of outlets should be at least 1 greater than the number of grids inside the basin.')
+        call print_error('No grids are defined inside the basin.')
         write(line, FMT_GEN) shd%NA
-        call print_message_detail('Number of grids (from file): ' // trim(adjustl(line)))
-        write(line, FMT_GEN) (shd%NAA - shd%NA)
-        call print_message_detail('Number of outlets (from file): ' // trim(adjustl(line)))
-        call stop_program()
+        call print_message('Number of grids read from file: ' // trim(adjustl(line)))
+        return
+    end if
+    if (shd%NAA >= shd%NA) then
+        call print_warning('No outlets exist in the basin.')
+        write(line, FMT_GEN) shd%NA
+        call print_message('Total number of grids: ' // trim(adjustl(line)))
+        write(line, FMT_GEN) shd%NAA
+        call print_message('Total number of grids inside the basin: ' // trim(adjustl(line)))
     end if
 
     !> Allocate and initialize variables.
@@ -107,25 +123,49 @@ subroutine read_shed_r2c(shd, iun, fname)
     if (ierr /= 0) then
         write(line, FMT_GEN) ierr
         call print_error("Unable to allocate 'shd' variables (error code: " // trim(adjustl(line)) // ").")
-        call stop_program()
+        return
     end if
     shd%RNKGRD = 0; shd%xxx = 0; shd%yyy = 0
     shd%IROUGH = 0
     shd%lc%ACLASS = 0.0
 
     !> Get the list of attributes.
-    call parse_header_attribute_ensim(iun, fname, vkeyword, nkeyword, vattr, nattr, ierr)
+    call parse_header_attribute_ensim(iun, vkeyword, nkeyword, vattr, nattr, ierr)
+    if (ierr /= 0) then
+        call print_error('Error reading attributes from the header in the file.')
+        return
+    end if
+    if (nattr == 0) then
+        ierr = 1
+        call print_error('No attributes were found in the file.')
+        return
+    end if
+
+    !> Advance past the end of the header.
+    call advance_past_header(iun, fname, ierr)
+    if (ierr /= 0) then
+        call print_error('Encountered premature end of file.')
+        return
+    end if
 
     !> Read and parse the attribute data.
     call load_data_r2c(iun, fname, vattr, nattr, shd%xCount, shd%yCount, .false., ierr)
+    if (ierr /= 0) then
+        call print_error('Error reading attribute values in the file.')
+        return
+    end if
 
     !> Find and assign 'RANK'.
     do l = 1, nattr
         if (lowercase(vattr(l)%attr) == 'rank') then
-            shd%RNKGRD = transpose(vattr(l)%val)
+            shd%RNKGRD = transpose(int(vattr(l)%val))
             exit
         end if
     end do
+    if (all(shd%RNKGRD == 0)) then
+        call print_error("Unable to read the 'RANK' attribute.")
+        return
+    end if
 
     !> Create the 'xxx' and 'yyy' reference tables.
     do x = 1, shd%xCount
@@ -149,7 +189,7 @@ subroutine read_shed_r2c(shd, iun, fname)
     if (ierr /= 0) then
         write(line, FMT_GEN) ierr
         call print_error("Unable to allocate 'shd' variables (error code: " // trim(adjustl(line)) // ").")
-        call stop_program()
+        return
     end if
     shd%NEXT = 0
     shd%IAK = 0; shd%SLOPE_CHNL = 0.0; shd%CHNL_LEN = 0.0; shd%ICHNL = 0; shd%IREACH = 0
@@ -163,10 +203,11 @@ subroutine read_shed_r2c(shd, iun, fname)
     do l = 1, (nattr - (shd%lc%NTYPE + 1))
 
         !> Assign the data to a vector.
-        call r2c_to_rank(iun, fname, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, VERBOSEMODE)
-        if (.not. allocated(ffield)) then
-            call print_error("Could not find attribute 'RANK' in the file.")
-            call stop_program()
+        if (DIAGNOSEMODE) call print_message("Reading '" // trim(vattr(l)%attr) // "'.")
+        call r2c_to_rank(iun, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, ierr)
+        if (ierr /= 0) then
+            call print_error("Unable to read the '" // trim(vattr(l)%attr) // "' attribute.")
+            return
         end if
 
         !> Determine and assign to the variable.
@@ -199,7 +240,6 @@ subroutine read_shed_r2c(shd, iun, fname)
                 shd%DRDN = ffield
 
                 !> Convert DD from km/km^2 to m/m^2; WATROF expects m/m^2.
-!todo: At some point these units were keyed to the first grid square; whether or not it's -1.0 (or maybe 1.0)
                 shd%DRDN = ffield/1000.0
         end select
     end do
@@ -208,10 +248,11 @@ subroutine read_shed_r2c(shd, iun, fname)
     do l = (nattr - shd%lc%NTYPE), nattr
 
         !> Assign the data to a vector.
-        call r2c_to_rank(iun, fname, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, VERBOSEMODE)
-        if (.not. allocated(ffield)) then
+        z = 0
+        call r2c_to_rank(iun, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, z)
+        if (z /= 0) then
             write(line, FMT_GEN) l
-            call print_warning('Unable to read Attribute ' // trim(adjustl(line)) // '.', PAD_3)
+            call print_warning('Unable to read Attribute ' // trim(adjustl(line)) // '.')
             cycle
         end if
 

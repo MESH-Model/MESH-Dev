@@ -29,7 +29,7 @@
     subroutine read_init_prog_variables_class(fls)
 
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
 
         implicit none
 
@@ -54,25 +54,25 @@
 !>    end type
 
         !> Read inital values from the file.
-        read(iun) stas%sno%albs     !1 (NML)
-        read(iun) stas%cnpy%cmas    !2 (NML)
-        read(iun) stas%cnpy%gro     !3 (NML)
-        read(iun) stas%cnpy%qac     !4 (NML)
-        read(iun) stas%cnpy%rcan    !5 (NML)
-        read(iun) stas%sno%rhos     !6 (NML)
-        read(iun) stas%cnpy%sncan   !7 (NML)
-        read(iun) stas%sno%sno      !8 (NML)
-        read(iun) stas%cnpy%tac     !9 (NML)
-        read(iun) stas%sl%tbar      !10 (NML, NSL)
-        read(iun) stas%sl%tbas      !11 (NML)
-        read(iun) stas%cnpy%tcan    !12 (NML)
-        read(iun) stas%sl%thic      !13 (NML, NSL)
-        read(iun) stas%sl%thlq      !14 (NML, NSL)
-        read(iun) stas%sfc%tpnd     !15 (NML)
-        read(iun) stas%sfc%tsfs     !16 (NML, 4)
-        read(iun) stas%sno%tsno     !17 (NML)
-        read(iun) stas%sno%wsno     !18 (NML)
-        read(iun) stas%sfc%zpnd     !19 (NML)
+        read(iun) vs%tile%albs      !1 (NML)
+        read(iun) vs%tile%cmas      !2 (NML)
+        read(iun) vs%tile%gro       !3 (NML)
+        read(iun) vs%tile%qac       !4 (NML)
+        read(iun) vs%tile%rcan      !5 (NML)
+        read(iun) vs%tile%rhos      !6 (NML)
+        read(iun) vs%tile%sncan     !7 (NML)
+        read(iun) vs%tile%sno       !8 (NML)
+        read(iun) vs%tile%tac       !9 (NML)
+        read(iun) vs%tile%tbar      !10 (NML, NSL)
+        read(iun) vs%tile%tbas      !11 (NML)
+        read(iun) vs%tile%tcan      !12 (NML)
+        read(iun) vs%tile%thic      !13 (NML, NSL)
+        read(iun) vs%tile%thlq      !14 (NML, NSL)
+        read(iun) vs%tile%tpnd      !15 (NML)
+        read(iun) vs%tile%tsfs      !16 (NML, 4)
+        read(iun) vs%tile%tsno      !17 (NML)
+        read(iun) vs%tile%wsno      !18 (NML)
+        read(iun) vs%tile%zpnd      !19 (NML)
 
         !> Close the file to free the unit.
         close(iun)

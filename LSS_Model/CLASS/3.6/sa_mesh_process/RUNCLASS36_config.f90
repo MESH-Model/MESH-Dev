@@ -78,7 +78,7 @@ module RUNCLASS36_config
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
         use FLAGS
@@ -398,25 +398,25 @@ module RUNCLASS36_config
                     jk = shd%lc%JLMOS(k)
 
                     !> Assign values.
-                    stas%sno%albs(k) = ALBSROW(ik, jk)
-                    stas%cnpy%cmas(k) = CMAIROW(ik, jk)
-                    stas%cnpy%gro(k) = GROROW(ik, jk)
-                    stas%cnpy%qac(k) = QACROW(ik, jk)
-                    stas%cnpy%rcan(k) = RCANROW(ik, jk)
-                    stas%sno%rhos(k) = RHOSROW(ik, jk)
-                    stas%cnpy%sncan(k) = SCANROW(ik, jk)
-                    stas%sno%sno(k) = SNOROW(ik, jk)
-                    stas%cnpy%tac(k) = TACROW(ik, jk)
-                    stas%sl%tbar(k, :) = TBARROW(ik, jk, :)
-                    stas%sl%tbas(k) = TBASROW(ik, jk)
-                    stas%cnpy%tcan(k) = TCANROW(ik, jk)
-                    stas%sl%thic(k, :) = THICROW(ik, jk, :)
-                    stas%sl%thlq(k, :) = THLQROW(ik, jk, :)
-                    stas%sfc%tpnd(k) = TPNDROW(ik, jk)
-                    stas%sfc%tsfs(k, :) = TSFSROW(ik, jk, :)
-                    stas%sno%tsno(k) = TSNOROW(ik, jk)
-                    stas%sno%wsno(k) = WSNOROW(ik, jk)
-                    stas%sfc%zpnd(k) = ZPNDROW(ik, jk)
+                    vs%tile%albs(k) = ALBSROW(ik, jk)
+                    vs%tile%cmas(k) = CMAIROW(ik, jk)
+                    vs%tile%gro(k) = GROROW(ik, jk)
+                    vs%tile%qac(k) = QACROW(ik, jk)
+                    vs%tile%rcan(k) = RCANROW(ik, jk)
+                    vs%tile%rhos(k) = RHOSROW(ik, jk)
+                    vs%tile%sncan(k) = SCANROW(ik, jk)
+                    vs%tile%sno(k) = SNOROW(ik, jk)
+                    vs%tile%tac(k) = TACROW(ik, jk)
+                    vs%tile%tbar(k, :) = TBARROW(ik, jk, :)
+                    vs%tile%tbas(k) = TBASROW(ik, jk)
+                    vs%tile%tcan(k) = TCANROW(ik, jk)
+                    vs%tile%thic(k, :) = THICROW(ik, jk, :)
+                    vs%tile%thlq(k, :) = THLQROW(ik, jk, :)
+                    vs%tile%tpnd(k) = TPNDROW(ik, jk)
+                    vs%tile%tsfs(k, :) = TSFSROW(ik, jk, :)
+                    vs%tile%tsno(k) = TSNOROW(ik, jk)
+                    vs%tile%wsno(k) = WSNOROW(ik, jk)
+                    vs%tile%zpnd(k) = ZPNDROW(ik, jk)
 
                 end do
 
@@ -437,59 +437,59 @@ module RUNCLASS36_config
         end select !case (RESUMEFLAG)
 
         !> Distribute variables.
-        catv%ZRFM = pm%sfp%zrfm
-        catv%ZRFH = pm%sfp%zrfh
-        catv%ZBLD = pm%sfp%zbld
-        catv%GC = pm%tp%gc
-        csfv%FARE = pm%tp%fare
-        csfv%MID = pm%tp%mid
-        csfv%IWF = pm%tp%iwf
-        csfv%FCAN = pm%cp%fcan
-        csfv%LNZ0 = pm%cp%lnz0
-        csfv%ALVC = pm%cp%alvc
-        csfv%ALIC = pm%cp%alic
-        csfv%PAMX = pm%cp%lamx
-        csfv%PAMN = pm%cp%lamn
-        csfv%CMAS = pm%cp%cmas
-        csfv%ROOT = pm%cp%root
-        csfv%RSMN = pm%cp%rsmn
-        csfv%QA50 = pm%cp%qa50
-        csfv%VPDA = pm%cp%vpda
-        csfv%VPDB = pm%cp%vpdb
-        csfv%PSGA = pm%cp%psga
-        csfv%PSGB = pm%cp%psgb
-        csfv%DRN = pm%hp%drn
-        csfv%SDEP = pm%slp%sdep
-        csfv%XSLP = pm%tp%xslp
-        DDGAT = pm%hp%dd
-        MANNGAT = pm%hp%mann
-        XDGAT = pm%hp%grkf
-        KSGAT = pm%hp%ks
-        csfv%SAND = pm%slp%sand
-        csfv%CLAY = pm%slp%clay
-        csfv%ORGM = pm%slp%orgm
-        cpv%CMAI = stas%cnpy%cmas
-        cpv%WSNO = stas%sno%wsno
-        cpv%QAC = stas%cnpy%qac
-        cpv%TCAN = stas%cnpy%tcan
-        cpv%TAC = stas%cnpy%tac
-        cpv%TSNO = stas%sno%tsno
-        cpv%TPND = stas%sfc%tpnd
-        cpv%ZPND = stas%sfc%zpnd
-        cpv%RCAN = stas%cnpy%rcan
-        cpv%SNCAN = stas%cnpy%sncan
-        cpv%SNO = stas%sno%sno
-        cpv%ALBS = stas%sno%albs
-        cpv%RHOS = stas%sno%rhos
-        cpv%GRO = stas%cnpy%gro
-        cpv%TSFS = stas%sfc%tsfs
-        cpv%TBAR = stas%sl%tbar
-        cpv%THLQ = stas%sl%thlq
-        cpv%THIC = stas%sl%thic
-        cpv%TBAS = stas%sl%tbas
-        csfv%ZSNL = pm%snp%zsnl
-        csfv%ZPLG = pm%sfp%zplg
-        csfv%ZPLS = pm%snp%zpls
+        catv%ZRFM(il1:il2) = pm%sfp%zrfm(il1:il2)
+        catv%ZRFH(il1:il2) = pm%sfp%zrfh(il1:il2)
+        catv%ZBLD(il1:il2) = pm%sfp%zbld(il1:il2)
+        catv%GC(il1:il2) = pm%tp%gc(il1:il2)
+        csfv%FARE(il1:il2) = pm%tp%fare(il1:il2)
+        csfv%MID(il1:il2) = pm%tp%mid(il1:il2)
+        csfv%IWF(il1:il2) = pm%tp%iwf(il1:il2)
+        csfv%FCAN(il1:il2, :) = pm%cp%fcan(il1:il2, :)
+        csfv%LNZ0(il1:il2, :) = pm%cp%lnz0(il1:il2, :)
+        csfv%ALVC(il1:il2, :) = pm%cp%alvc(il1:il2, :)
+        csfv%ALIC(il1:il2, :) = pm%cp%alic(il1:il2, :)
+        csfv%PAMX(il1:il2, :) = pm%cp%lamx(il1:il2, :)
+        csfv%PAMN(il1:il2, :) = pm%cp%lamn(il1:il2, :)
+        csfv%CMAS(il1:il2, :) = pm%cp%cmas(il1:il2, :)
+        csfv%ROOT(il1:il2, :) = pm%cp%root(il1:il2, :)
+        csfv%RSMN(il1:il2, :) = pm%cp%rsmn(il1:il2, :)
+        csfv%QA50(il1:il2, :) = pm%cp%qa50(il1:il2, :)
+        csfv%VPDA(il1:il2, :) = pm%cp%vpda(il1:il2, :)
+        csfv%VPDB(il1:il2, :) = pm%cp%vpdb(il1:il2, :)
+        csfv%PSGA(il1:il2, :) = pm%cp%psga(il1:il2, :)
+        csfv%PSGB(il1:il2, :) = pm%cp%psgb(il1:il2, :)
+        csfv%DRN(il1:il2) = pm%hp%drn(il1:il2)
+        csfv%SDEP(il1:il2) = pm%slp%sdep(il1:il2)
+        csfv%XSLP(il1:il2) = pm%tp%xslp(il1:il2)
+        DDGAT(il1:il2) = pm%hp%dd(il1:il2)
+        MANNGAT(il1:il2) = pm%hp%mann(il1:il2)
+        XDGAT(il1:il2) = pm%hp%grkf(il1:il2)
+        KSGAT(il1:il2) = pm%hp%ks(il1:il2)
+        csfv%SAND(il1:il2, :) = pm%slp%sand(il1:il2, :)
+        csfv%CLAY(il1:il2, :) = pm%slp%clay(il1:il2, :)
+        csfv%ORGM(il1:il2, :) = pm%slp%orgm(il1:il2, :)
+        cpv%CMAI(il1:il2) = vs%tile%cmas(il1:il2)
+        cpv%WSNO(il1:il2) = vs%tile%wsno(il1:il2)
+        cpv%QAC(il1:il2) = vs%tile%qac(il1:il2)
+        cpv%TCAN(il1:il2) = vs%tile%tcan(il1:il2)
+        cpv%TAC(il1:il2) = vs%tile%tac(il1:il2)
+        cpv%TSNO(il1:il2) = vs%tile%tsno(il1:il2)
+        cpv%TPND(il1:il2) = vs%tile%tpnd(il1:il2)
+        cpv%ZPND(il1:il2) = vs%tile%zpnd(il1:il2)
+        cpv%RCAN(il1:il2) = vs%tile%rcan(il1:il2)
+        cpv%SNCAN(il1:il2) = vs%tile%sncan(il1:il2)
+        cpv%SNO(il1:il2) = vs%tile%sno(il1:il2)
+        cpv%ALBS(il1:il2) = vs%tile%albs(il1:il2)
+        cpv%RHOS(il1:il2) = vs%tile%rhos(il1:il2)
+        cpv%GRO(il1:il2) = vs%tile%gro(il1:il2)
+        cpv%TSFS(il1:il2, :) = vs%tile%tsfs(il1:il2, :)
+        cpv%TBAR(il1:il2, :) = vs%tile%tbar(il1:il2, :)
+        cpv%THLQ(il1:il2, :) = vs%tile%thlq(il1:il2, :)
+        cpv%THIC(il1:il2, :) = vs%tile%thic(il1:il2, :)
+        cpv%TBAS(il1:il2) = vs%tile%tbas(il1:il2)
+        csfv%ZSNL(il1:il2) = pm%snp%zsnl(il1:il2)
+        csfv%ZPLG(il1:il2) = pm%sfp%zplg(il1:il2)
+        csfv%ZPLS(il1:il2) = pm%snp%zpls(il1:il2)
 
         cdv%ITCT = 0
 
@@ -554,33 +554,24 @@ module RUNCLASS36_config
                      pm_gru%slp%psisat, pm_gru%slp%grksat, pm_gru%slp%hcps, pm_gru%slp%tcs, &
                      NA, NTYPE, shd%lc%ILG, shd%lc%ILMOS, shd%lc%JLMOS)
 
-        pm%slp%alwet = csfv%ALGW
-        pm%slp%aldry = csfv%ALGD
-        pm%slp%thpor = csfv%THP
-        pm%slp%thlret = csfv%THR
-        pm%slp%thlmin = csfv%THM
-        pm%slp%bi = csfv%BI
-        pm%slp%psisat = csfv%PSIS
-        pm%slp%grksat = csfv%GRKS
-        pm%slp%thlrat = csfv%THRA
-        pm%slp%hcps = csfv%HCPS
-        pm%slp%tcs = csfv%TCS
-        pm%slp%thfc = csfv%THFC
-        pm%slp%psiwlt = csfv%PSIW
-        stas%sl%delzw = csfv%DELZW
-        stas%sl%zbotw = csfv%ZBTW
+        pm%slp%alwet(il1:il2) = csfv%ALGW(il1:il2)
+        pm%slp%aldry(il1:il2) = csfv%ALGD(il1:il2)
+        pm%slp%thpor(il1:il2, :) = csfv%THP(il1:il2, :)
+        pm%slp%thlret(il1:il2, :) = csfv%THR(il1:il2, :)
+        pm%slp%thlmin(il1:il2, :) = csfv%THM(il1:il2, :)
+        pm%slp%bi(il1:il2, :) = csfv%BI(il1:il2, :)
+        pm%slp%psisat(il1:il2, :) = csfv%PSIS(il1:il2, :)
+        pm%slp%grksat(il1:il2, :) = csfv%GRKS(il1:il2, :)
+        pm%slp%thlrat(il1:il2, :) = csfv%THRA(il1:il2, :)
+        pm%slp%hcps(il1:il2, :) = csfv%HCPS(il1:il2, :)
+        pm%slp%tcs(il1:il2, :) = csfv%TCS(il1:il2, :)
+        pm%slp%thfc(il1:il2, :) = csfv%THFC(il1:il2, :)
+        pm%slp%psiwlt(il1:il2, :) = csfv%PSIW(il1:il2, :)
+        vs%tile%delzw(il1:il2, :) = csfv%DELZW(il1:il2, :)
+        vs%tile%zbotw(il1:il2, :) = csfv%ZBTW(il1:il2, :)
 
-        if (WF_NUM_POINTS > 0) then
-
-            print *, 'Found these output locations:'
-            print *, 'Output Directory, grid number, land class number'
-            do i = 1, WF_NUM_POINTS
-                print *, op%DIR_OUT(i), op%N_OUT(i), op%II_OUT(i)
-            end do
-            print *
-
-            call CLASSOUT_open_files(shd)
-        end if
+        !> CLASS output files.
+        if (WF_NUM_POINTS > 0) call CLASSOUT_open_files(shd)
 
         do k = il1, il2
             ik = shd%lc%ILMOS(k)
@@ -598,7 +589,7 @@ module RUNCLASS36_config
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
         use FLAGS
@@ -656,25 +647,25 @@ module RUNCLASS36_config
                     jk = shd%lc%JLMOS(k)
 
                     !> Assign values.
-                    ALBSROW(ik, jk) = stas%sno%albs(k)
-                    CMAIROW(ik, jk) = stas%cnpy%cmas(k)
-                    GROROW(ik, jk) = stas%cnpy%gro(k)
-                    QACROW(ik, jk) = stas%cnpy%qac(k)
-                    RCANROW(ik, jk) = stas%cnpy%rcan(k)
-                    RHOSROW(ik, jk) = stas%sno%rhos(k)
-                    SCANROW(ik, jk) = stas%cnpy%sncan(k)
-                    SNOROW(ik, jk) = stas%sno%sno(k)
-                    TACROW(ik, jk) = stas%cnpy%tac(k)
-                    TBARROW(ik, jk, :) = stas%sl%tbar(k, :)
-                    TBASROW(ik, jk) = stas%sl%tbas(k)
-                    TCANROW(ik, jk) = stas%cnpy%tcan(k)
-                    THICROW(ik, jk, :) = stas%sl%thic(k, :)
-                    THLQROW(ik, jk, :) = stas%sl%thlq(k, :)
-                    TPNDROW(ik, jk) = stas%sfc%tpnd(k)
-                    TSFSROW(ik, jk, :) = stas%sfc%tsfs(k, :)
-                    TSNOROW(ik, jk) = stas%sno%tsno(k)
-                    WSNOROW(ik, jk) = stas%sno%wsno(k)
-                    ZPNDROW(ik, jk) = stas%sfc%zpnd(k)
+                    ALBSROW(ik, jk) = vs%tile%albs(k)
+                    CMAIROW(ik, jk) = vs%tile%cmas(k)
+                    GROROW(ik, jk) = vs%tile%gro(k)
+                    QACROW(ik, jk) = vs%tile%qac(k)
+                    RCANROW(ik, jk) = vs%tile%rcan(k)
+                    RHOSROW(ik, jk) = vs%tile%rhos(k)
+                    SCANROW(ik, jk) = vs%tile%sncan(k)
+                    SNOROW(ik, jk) = vs%tile%sno(k)
+                    TACROW(ik, jk) = vs%tile%tac(k)
+                    TBARROW(ik, jk, :) = vs%tile%tbar(k, :)
+                    TBASROW(ik, jk) = vs%tile%tbas(k)
+                    TCANROW(ik, jk) = vs%tile%tcan(k)
+                    THICROW(ik, jk, :) = vs%tile%thic(k, :)
+                    THLQROW(ik, jk, :) = vs%tile%thlq(k, :)
+                    TPNDROW(ik, jk) = vs%tile%tpnd(k)
+                    TSFSROW(ik, jk, :) = vs%tile%tsfs(k, :)
+                    TSNOROW(ik, jk) = vs%tile%tsno(k)
+                    WSNOROW(ik, jk) = vs%tile%wsno(k)
+                    ZPNDROW(ik, jk) = vs%tile%zpnd(k)
 
                 end do
 

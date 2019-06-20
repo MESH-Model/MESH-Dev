@@ -1,11 +1,11 @@
 module sa_mesh_run_within_grid
 
     !> 'model_files_variables' required for 'fls' object and file keys.
-    !> 'sa_mesh_variables' required for SA_MESH variables, parameters, and counter.
+    !> 'sa_mesh_common' required for common SA_MESH variables and routines.
     !> 'climate_forcing' required for 'cm' variable.
     !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
     use model_files_variables
-    use sa_mesh_variables
+    use sa_mesh_common
     use climate_forcing
     use mpi_module
 
@@ -167,9 +167,9 @@ module sa_mesh_run_within_grid
                 imstat = 0
 
                 !> Channel routing.
-!                chnl((1 + iin*0):(iin*1)) = stas_grid%chnl%s(ii1:ii2)
-!                chnl((1 + iin*1):(iin*2)) = stas_grid%chnl%div(ii1:ii2)
-!                chnl((1 + iin*2):(iin*3)) = stas_grid%chnl%ab(ii1:ii2)
+!                chnl((1 + iin*0):(iin*1)) = vs%grid%stg(ii1:ii2)
+!                chnl((1 + iin*1):(iin*2)) = vs%grid%div(ii1:ii2)
+!                chnl((1 + iin*2):(iin*3)) = vs%grid%ab(ii1:ii2)
 !                call MPI_Isend(chnl, size(chnl), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z)
 !                i = i + 1
 
@@ -200,9 +200,9 @@ module sa_mesh_run_within_grid
             !> Assign variables.
 
             !> Channel routing.
-!            stas_grid%chnl%s(ii1:ii2) = chnl((1 + iin*0):(iin*1))
-!            stas_grid%chnl%div(ii1:ii2) = chnl((1 + iin*1):(iin*2))
-!            stas_grid%chnl%ab(ii1:ii2) = chnl((1 + iin*2):(iin*3))
+!            vs%grid%stg(ii1:ii2) = chnl((1 + iin*0):(iin*1))
+!            vs%grid%div(ii1:ii2) = chnl((1 + iin*1):(iin*2))
+!            vs%grid%ab(ii1:ii2) = chnl((1 + iin*2):(iin*3))
 
         end if !(inp > 1 .and. ipid /= 0) then
 
@@ -228,40 +228,42 @@ module sa_mesh_run_within_grid
         if (.not. ro%RUNTILE) return
 
         !> Initialize variables.
-        stas_grid%cnpy%rcan(i1:i2) = 0.0
-        stas_grid%cnpy%sncan(i1:i2) = 0.0
-        stas_grid%cnpy%cmas(i1:i2) = 0.0
-        stas_grid%cnpy%tcan(i1:i2) = 0.0
-        stas_grid%cnpy%gro(i1:i2) = 0.0
-        stas_grid%sno%sno(i1:i2) = 0.0
-        stas_grid%sno%wsno(i1:i2) = 0.0
-        stas_grid%sno%tsno(i1:i2)  = 0.0
-        stas_grid%sfc%albt(i1:i2) = 0.0
-        stas_grid%sfc%alvs(i1:i2) = 0.0
-        stas_grid%sfc%alir(i1:i2) = 0.0
-        stas_grid%sfc%gte(i1:i2) = 0.0
-        stas_grid%sfc%zpnd(i1:i2) = 0.0
-        stas_grid%sfc%pndw(i1:i2) = 0.0
-        stas_grid%sfc%tpnd(i1:i2) = 0.0
-        stas_grid%sfc%pevp(i1:i2) = 0.0
-        stas_grid%sfc%evap(i1:i2) = 0.0
-        stas_grid%sfc%evpb(i1:i2) = 0.0
-        stas_grid%sfc%arrd(i1:i2) = 0.0
-        stas_grid%sfc%rofo(i1:i2) = 0.0
-        stas_grid%sfc%qevp(i1:i2) = 0.0
-        stas_grid%sfc%hfs(i1:i2) = 0.0
-        stas_grid%sfc%gzero(i1:i2) = 0.0
-        stas_grid%sl%rofs(i1:i2) = 0.0
-        stas_grid%sl%thic(i1:i2, :) = 0.0
-        stas_grid%sl%fzws(i1:i2, :) = 0.0
-        stas_grid%sl%thlq(i1:i2, :) = 0.0
-        stas_grid%sl%lqws(i1:i2, :) = 0.0
-        stas_grid%sl%tbar(i1:i2, :) = 0.0
-        stas_grid%sl%gflx(i1:i2, :) = 0.0
-        stas_grid%lzs%ws(i1:i2) = 0.0
-        stas_grid%lzs%rofb(i1:i2) = 0.0
-        stas_grid%dzs%ws(i1:i2) = 0.0
-        stas_grid%dzs%rofb(i1:i2) = 0.0
+        vs%grid%rcan(i1:i2) = 0.0
+        vs%grid%sncan(i1:i2) = 0.0
+        vs%grid%cmas(i1:i2) = 0.0
+        vs%grid%tcan(i1:i2) = 0.0
+        vs%grid%gro(i1:i2) = 0.0
+        vs%grid%zsno(i1:i2) = 0.0
+        vs%grid%rhos(i1:i2) = 0.0
+        vs%grid%sno(i1:i2) = 0.0
+        vs%grid%wsno(i1:i2) = 0.0
+        vs%grid%tsno(i1:i2) = 0.0
+        vs%grid%albt(i1:i2) = 0.0
+        vs%grid%alvs(i1:i2) = 0.0
+        vs%grid%alir(i1:i2) = 0.0
+        vs%grid%gte(i1:i2) = 0.0
+        vs%grid%zpnd(i1:i2) = 0.0
+        vs%grid%pndw(i1:i2) = 0.0
+        vs%grid%tpnd(i1:i2) = 0.0
+        vs%grid%fstr(i1:i2) = 0.0
+        vs%grid%pevp(i1:i2) = 0.0
+        vs%grid%evap(i1:i2) = 0.0
+        vs%grid%evpb(i1:i2) = 0.0
+        vs%grid%arrd(i1:i2) = 0.0
+        vs%grid%rofo(i1:i2) = 0.0
+        vs%grid%qevp(i1:i2) = 0.0
+        vs%grid%hfs(i1:i2) = 0.0
+        vs%grid%gzero(i1:i2) = 0.0
+        vs%grid%rofs(i1:i2) = 0.0
+        vs%grid%thic(i1:i2, :) = 0.0
+        vs%grid%fzws(i1:i2, :) = 0.0
+        vs%grid%thlq(i1:i2, :) = 0.0
+        vs%grid%lqws(i1:i2, :) = 0.0
+        vs%grid%tbar(i1:i2, :) = 0.0
+        vs%grid%gflx(i1:i2, :) = 0.0
+        vs%grid%lzs(i1:i2) = 0.0
+        vs%grid%dzs(i1:i2) = 0.0
+        vs%grid%rofb(i1:i2) = 0.0
 
         !> Update variables.
         fcan(i1:i2) = 0.0
@@ -271,59 +273,64 @@ module sa_mesh_run_within_grid
             ki = shd%lc%ILMOS(k)
             kj = shd%lc%JLMOS(k)
             frac = shd%lc%ACLASS(ki, kj)
-            stas_grid%cnpy%rcan(ki) = stas_grid%cnpy%rcan(ki) + stas%cnpy%rcan(k)*frac
-            stas_grid%cnpy%sncan(ki) = stas_grid%cnpy%sncan(ki) + stas%cnpy%sncan(k)*frac
-            if (stas%cnpy%tcan(k) > 0.0) then
-                stas_grid%cnpy%cmas(ki) = stas_grid%cnpy%cmas(ki) + stas%cnpy%cmas(k)*frac
-                stas_grid%cnpy%tcan(ki) = stas_grid%cnpy%tcan(ki) + stas%cnpy%tcan(k)*frac
-                stas_grid%cnpy%gro(ki) = stas_grid%cnpy%gro(ki) + stas%cnpy%gro(k)*frac
+            vs%grid%rcan(ki) = vs%grid%rcan(ki) + vs%tile%rcan(k)*frac
+            vs%grid%sncan(ki) = vs%grid%sncan(ki) + vs%tile%sncan(k)*frac
+            if (vs%tile%tcan(k) > 0.0) then
+                vs%grid%cmas(ki) = vs%grid%cmas(ki) + vs%tile%cmas(k)*frac
+                vs%grid%tcan(ki) = vs%grid%tcan(ki) + vs%tile%tcan(k)*frac
+                vs%grid%gro(ki) = vs%grid%gro(ki) + vs%tile%gro(k)*frac
                 fcan(ki) = fcan(ki) + frac
             end if
-            stas_grid%sno%sno(ki) = stas_grid%sno%sno(ki) + stas%sno%sno(k)*frac
-            if (stas%sno%sno(k) > 0.0) then
-                stas_grid%sno%wsno(ki) = stas_grid%sno%wsno(ki) + stas%sno%wsno(k)*frac
-                stas_grid%sno%tsno(ki) = stas_grid%sno%tsno(ki) + stas%sno%tsno(k)*frac
+            vs%grid%sno(ki) = vs%grid%sno(ki) + vs%tile%sno(k)*frac
+            if (vs%tile%sno(k) > 0.0) then
+                vs%grid%wsno(ki) = vs%grid%wsno(ki) + vs%tile%wsno(k)*frac
+                vs%grid%tsno(ki) = vs%grid%tsno(ki) + vs%tile%tsno(k)*frac
+                vs%grid%rhos(ki) = vs%grid%rhos(ki) + vs%tile%rhos(k)*frac
                 fsno(ki) = fsno(ki) + frac
             end if
-            stas_grid%sfc%albt(ki) = stas_grid%sfc%albt(ki) + stas%sfc%albt(k)*frac
-            stas_grid%sfc%alvs(ki) = stas_grid%sfc%alvs(ki) + stas%sfc%alvs(k)*frac
-            stas_grid%sfc%alir(ki) = stas_grid%sfc%alir(ki) + stas%sfc%alir(k)*frac
-            stas_grid%sfc%gte(ki) = stas_grid%sfc%gte(ki) + stas%sfc%gte(k)*frac
-            stas_grid%sfc%zpnd(ki) = stas_grid%sfc%zpnd(ki) + stas%sfc%zpnd(k)*frac
-            if (stas%sfc%zpnd(k) > 0.0) then
-                stas_grid%sfc%pndw(ki) = stas_grid%sfc%pndw(ki) + stas%sfc%pndw(k)*frac
-                stas_grid%sfc%tpnd(ki) = stas_grid%sfc%tpnd(ki) + stas%sfc%tpnd(k)*frac
+            vs%grid%albt(ki) = vs%grid%albt(ki) + vs%tile%albt(k)*frac
+            vs%grid%alvs(ki) = vs%grid%alvs(ki) + vs%tile%alvs(k)*frac
+            vs%grid%alir(ki) = vs%grid%alir(ki) + vs%tile%alir(k)*frac
+            vs%grid%gte(ki) = vs%grid%gte(ki) + vs%tile%gte(k)*frac
+            vs%grid%zpnd(ki) = vs%grid%zpnd(ki) + vs%tile%zpnd(k)*frac
+            if (vs%tile%zpnd(k) > 0.0) then
+                vs%grid%pndw(ki) = vs%grid%pndw(ki) + vs%tile%pndw(k)*frac
+                vs%grid%tpnd(ki) = vs%grid%tpnd(ki) + vs%tile%tpnd(k)*frac
+                vs%grid%fstr(ki) = vs%grid%fstr(ki) + vs%tile%fstr(k)*frac
                 fpnd(ki) = fpnd(ki) + frac
             end if
-            stas_grid%sfc%pevp(ki) = stas_grid%sfc%pevp(ki) + stas%sfc%pevp(k)*frac
-            stas_grid%sfc%evap(ki) = stas_grid%sfc%evap(ki) + stas%sfc%evap(k)*frac
-            stas_grid%sfc%evpb(ki) = stas_grid%sfc%evpb(ki) + stas%sfc%evpb(k)*frac
-            stas_grid%sfc%arrd(ki) = stas_grid%sfc%arrd(ki) + stas%sfc%arrd(k)*frac
-            stas_grid%sfc%rofo(ki) = stas_grid%sfc%rofo(ki) + stas%sfc%rofo(k)*frac
-            stas_grid%sfc%qevp(ki) = stas_grid%sfc%qevp(ki) + stas%sfc%qevp(k)*frac
-            stas_grid%sfc%hfs(ki) = stas_grid%sfc%hfs(ki) + stas%sfc%hfs(k)*frac
-            stas_grid%sfc%gzero(ki) = stas_grid%sfc%gzero(ki) + stas%sfc%gzero(k)*frac
-            stas_grid%sl%rofs(ki) = stas_grid%sl%rofs(ki) + stas%sl%rofs(k)*frac
-            stas_grid%sl%thic(ki, :) = stas_grid%sl%thic(ki, :) + stas%sl%thic(k, :)*frac
-            stas_grid%sl%fzws(ki, :) = stas_grid%sl%fzws(ki, :) + stas%sl%fzws(k, :)*frac
-            stas_grid%sl%thlq(ki, :) = stas_grid%sl%thlq(ki, :) + stas%sl%thlq(k, :)*frac
-            stas_grid%sl%lqws(ki, :) = stas_grid%sl%lqws(ki, :) + stas%sl%lqws(k, :)*frac
-            stas_grid%sl%tbar(ki, :) = stas_grid%sl%tbar(ki, :) + stas%sl%tbar(k, :)*frac
-            stas_grid%sl%gflx(ki, :) = stas_grid%sl%gflx(ki, :) + stas%sl%gflx(k, :)*frac
-            stas_grid%lzs%ws(ki) = stas_grid%lzs%ws(ki) + stas%lzs%ws(k)*frac
-            stas_grid%lzs%rofb(ki) = stas_grid%lzs%rofb(ki) + stas%lzs%rofb(k)*frac
-            stas_grid%dzs%ws(ki) = stas_grid%dzs%ws(ki) + stas%dzs%ws(k)*frac
-            stas_grid%dzs%rofb(ki) = stas_grid%dzs%rofb(ki) + stas%dzs%rofb(k)*frac
+            vs%grid%pevp(ki) = vs%grid%pevp(ki) + vs%tile%pevp(k)*frac
+            vs%grid%evap(ki) = vs%grid%evap(ki) + vs%tile%evap(k)*frac
+            vs%grid%evpb(ki) = vs%grid%evpb(ki) + vs%tile%evpb(k)*frac
+            vs%grid%arrd(ki) = vs%grid%arrd(ki) + vs%tile%arrd(k)*frac
+            vs%grid%rofo(ki) = vs%grid%rofo(ki) + vs%tile%rofo(k)*frac
+            vs%grid%qevp(ki) = vs%grid%qevp(ki) + vs%tile%qevp(k)*frac
+            vs%grid%hfs(ki) = vs%grid%hfs(ki) + vs%tile%hfs(k)*frac
+            vs%grid%gzero(ki) = vs%grid%gzero(ki) + vs%tile%gzero(k)*frac
+            vs%grid%rofs(ki) = vs%grid%rofs(ki) + vs%tile%rofs(k)*frac
+            vs%grid%thic(ki, :) = vs%grid%thic(ki, :) + vs%tile%thic(k, :)*frac
+            vs%grid%fzws(ki, :) = vs%grid%fzws(ki, :) + vs%tile%fzws(k, :)*frac
+            vs%grid%thlq(ki, :) = vs%grid%thlq(ki, :) + vs%tile%thlq(k, :)*frac
+            vs%grid%lqws(ki, :) = vs%grid%lqws(ki, :) + vs%tile%lqws(k, :)*frac
+            vs%grid%tbar(ki, :) = vs%grid%tbar(ki, :) + vs%tile%tbar(k, :)*frac
+            vs%grid%gflx(ki, :) = vs%grid%gflx(ki, :) + vs%tile%gflx(k, :)*frac
+            vs%grid%lzs(ki) = vs%grid%lzs(ki) + vs%tile%lzs(k)*frac
+            vs%grid%dzs(ki) = vs%grid%dzs(ki) + vs%tile%dzs(k)*frac
+            vs%grid%rofb(ki) = vs%grid%rofb(ki) + vs%tile%rofb(k)*frac
         end do
         where (fcan(i1:i2) > 0.0)
-            stas_grid%cnpy%cmas(i1:i2) = stas_grid%cnpy%cmas(i1:i2)/fcan(i1:i2)
-            stas_grid%cnpy%tcan(i1:i2) = stas_grid%cnpy%tcan(i1:i2)/fcan(i1:i2)
-            stas_grid%cnpy%gro(i1:i2) = stas_grid%cnpy%gro(i1:i2)/fcan(i1:i2)
+            vs%grid%cmas(i1:i2) = vs%grid%cmas(i1:i2)/fcan(i1:i2)
+            vs%grid%tcan(i1:i2) = vs%grid%tcan(i1:i2)/fcan(i1:i2)
+            vs%grid%gro(i1:i2) = vs%grid%gro(i1:i2)/fcan(i1:i2)
         end where
         where (fsno(i1:i2) > 0.0)
-            stas_grid%sno%tsno(i1:i2) = stas_grid%sno%tsno(i1:i2)/fsno(i1:i2)
+            vs%grid%tsno(i1:i2) = vs%grid%tsno(i1:i2)/fsno(i1:i2)
+            vs%grid%rhos(i1:i2) = vs%grid%rhos(i1:i2)/fsno(i1:i2)
         end where
-        where (fpnd(i1:i2) > 0.0) stas_grid%sfc%tpnd(i1:i2) = stas_grid%sfc%tpnd(i1:i2)/fpnd(i1:i2)
+        where (vs%grid%rhos(i1:i2) > 0.0)
+            vs%grid%zsno(i1:i2) = vs%grid%sno(i1:i2)/vs%grid%rhos(i1:i2)
+        end where
+        where (fpnd(i1:i2) > 0.0) vs%grid%tpnd(i1:i2) = vs%grid%tpnd(i1:i2)/fpnd(i1:i2)
 
     end subroutine
 

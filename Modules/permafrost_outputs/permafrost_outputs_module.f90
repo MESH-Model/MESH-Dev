@@ -1,12 +1,10 @@
 module permafrost_outputs_module
 
-    !> 'sa_mesh_variables' required for SA_MESH variables, parameters, and counter.
-    !> 'sa_mesh_utilities' required for I/O to screen and 'echo_print.txt', and for character defaults.
+    !> 'sa_mesh_common' required for common SA_MESH variables and routines.
     !> 'model_dates' required for 'ic' counter.
     !> 'model_files_variables' required for 'fls' object and file keys.
     !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
-    use sa_mesh_variables
-    use sa_mesh_utilities
+    use sa_mesh_common
     use model_dates
     use model_files_variables
     use mpi_module
@@ -190,15 +188,15 @@ module permafrost_outputs_module
             end if
 
             !> Tile-based.
-            where (stas%sl%tbar(:, j) > 173.16 .and. stas%sl%tbar(:, j) < 373.16)
-                prmfst%out%tavg(j)%d_tile = prmfst%out%tavg(j)%d_tile + stas%sl%tbar(:, j)
+            where (vs%tile%tbar(:, j) > 173.16 .and. vs%tile%tbar(:, j) < 373.16)
+                prmfst%out%tavg(j)%d_tile = prmfst%out%tavg(j)%d_tile + vs%tile%tbar(:, j)
             elsewhere
                 prmfst%out%tavg(j)%d_tile = out%NO_DATA
             end where
 
             !> Grid-based.
-            where (stas_grid%sl%tbar(:, j) > 173.16 .and. stas_grid%sl%tbar(:, j) < 373.16)
-                prmfst%out%tavg(j)%d_grid = prmfst%out%tavg(j)%d_grid + stas_grid%sl%tbar(:, j)
+            where (vs%grid%tbar(:, j) > 173.16 .and. vs%grid%tbar(:, j) < 373.16)
+                prmfst%out%tavg(j)%d_grid = prmfst%out%tavg(j)%d_grid + vs%grid%tbar(:, j)
             elsewhere
                 prmfst%out%tavg(j)%d_grid = out%NO_DATA
             end where
@@ -252,7 +250,7 @@ module permafrost_outputs_module
 
                 !> Tile-based.
                 where (prmfst%out%tavg(j)%d_tile /= out%NO_DATA)
-                    prmfst%out%tavg(j)%y_tile = prmfst%out%tavg(j)%y_tile + prmfst%out%tavg(j)%d_tile
+                    prmfst%out%tavg(j)%y_tile = prmfst%out%tavg(j)%y_tile + prmfst%out%tavg(j)%d_tile*ic%ts_daily
                     prmfst%out%tmax(j)%y_tile = max(prmfst%out%tmax(j)%y_tile, prmfst%out%tavg(j)%d_tile)
                     prmfst%out%tmin(j)%y_tile = min(prmfst%out%tmin(j)%y_tile, prmfst%out%tavg(j)%d_tile)
                 elsewhere
@@ -261,7 +259,7 @@ module permafrost_outputs_module
 
                 !> Grid-based.
                 where (prmfst%out%tavg(j)%d_grid /= out%NO_DATA)
-                    prmfst%out%tavg(j)%y_grid = prmfst%out%tavg(j)%y_grid + prmfst%out%tavg(j)%d_grid
+                    prmfst%out%tavg(j)%y_grid = prmfst%out%tavg(j)%y_grid + prmfst%out%tavg(j)%d_grid*ic%ts_daily
                     prmfst%out%tmax(j)%y_grid = max(prmfst%out%tmax(j)%y_grid, prmfst%out%tavg(j)%d_grid)
                     prmfst%out%tmin(j)%y_grid = min(prmfst%out%tmin(j)%y_grid, prmfst%out%tavg(j)%d_grid)
                 elsewhere

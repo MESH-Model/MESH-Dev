@@ -155,6 +155,9 @@ module input_parameters
         !> Output variables.
         integer, intent(out), optional :: ierr
 
+        !> Initialize the return status.
+        ierr = 0
+
         !> Return if the instance is already initialized.
         if (pm%inid) return
 
