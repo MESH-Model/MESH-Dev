@@ -25,7 +25,11 @@ module output_variables
         real, dimension(:), pointer :: uu => null()
         real, dimension(:), pointer :: vv => null()
         real, dimension(:), pointer :: pre => null()
+        real, dimension(:), pointer :: prern => null()
+        real, dimension(:), pointer :: presno => null()
         real, dimension(:), pointer :: prec => null()
+        real, dimension(:), pointer :: precrn => null()
+        real, dimension(:), pointer :: precsno => null()
         real, dimension(:), pointer :: evap => null()
         real, dimension(:), pointer :: pevp => null()
         real, dimension(:), pointer :: evpb => null()
@@ -41,6 +45,7 @@ module output_variables
         real, dimension(:), pointer :: rhosno => null()
         real, dimension(:), pointer :: sno => null()
         real, dimension(:), pointer :: fsno => null()
+        real, dimension(:), pointer :: rofsno => null()
         real, dimension(:), pointer :: isno => null()
         real, dimension(:), pointer :: wsno => null()
         real, dimension(:), pointer :: zpnd => null()
@@ -242,12 +247,32 @@ module output_variables
                     call output_variables_allocate(fields%pre, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%pre, n1)
                 end if
+            case (VN_PRERN)
+                if (associated(fields%vs%prern)) then
+                    call output_variables_allocate(fields%prern, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%prern, n1)
+                end if
+            case (VN_PRESNO)
+                if (associated(fields%vs%presno)) then
+                    call output_variables_allocate(fields%presno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%presno, n1)
+                end if
 
             !> Water balance.
             case (VN_PREC)
                 if (associated(fields%vs%pre)) then
                     call output_variables_allocate(fields%prec, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%prec, n1)
+                end if
+            case (VN_PRECRN)
+                if (associated(fields%vs%prern)) then
+                    call output_variables_allocate(fields%precrn, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%precrn, n1)
+                end if
+            case (VN_PRECSNO)
+                if (associated(fields%vs%presno)) then
+                    call output_variables_allocate(fields%precsno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%precsno, n1)
                 end if
             case (VN_EVAP)
                 if (associated(fields%vs%evap)) then
@@ -328,6 +353,11 @@ module output_variables
                 if (associated(fields%vs%fsno)) then
                     call output_variables_allocate(fields%fsno, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsno, n1)
+                end if
+            case (VN_ROFSNO)
+                if (associated(fields%vs%rofsno)) then
+                    call output_variables_allocate(fields%rofsno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%rofsno, n1)
                 end if
             case (VN_WSNO)
                 if (associated(fields%vs%wsno)) then
@@ -635,6 +665,8 @@ module output_variables
         !> Meteorological forcing.
         if (ro%RUNCLIM) then
             if (associated(group%pre)) group%pre = out%NO_DATA
+            if (associated(group%prern)) group%prern = out%NO_DATA
+            if (associated(group%presno)) group%presno = out%NO_DATA
             if (associated(group%fsin)) group%fsin = out%NO_DATA
             if (associated(group%flin)) group%flin = out%NO_DATA
             if (associated(group%ta)) group%ta = out%NO_DATA
@@ -646,6 +678,8 @@ module output_variables
         !> Water balance.
         if (ro%RUNBALWB) then
             if (associated(group%prec)) group%prec = out%NO_DATA
+            if (associated(group%precrn)) group%precrn = out%NO_DATA
+            if (associated(group%precsno)) group%precsno = out%NO_DATA
             if (associated(group%evap)) group%evap = out%NO_DATA
             if (associated(group%pevp)) group%pevp = out%NO_DATA
             if (associated(group%evpb)) group%evpb = out%NO_DATA
@@ -661,6 +695,7 @@ module output_variables
             if (associated(group%rhosno)) group%rhosno = out%NO_DATA
             if (associated(group%sno)) group%sno = out%NO_DATA
             if (associated(group%fsno)) group%fsno = out%NO_DATA
+            if (associated(group%rofsno)) group%rofsno = out%NO_DATA
             if (associated(group%wsno)) group%wsno = out%NO_DATA
             if (associated(group%zpnd)) group%zpnd = out%NO_DATA
             if (associated(group%pndw)) group%pndw = out%NO_DATA
@@ -850,12 +885,24 @@ module output_variables
             if (associated(group%pre)) then
                 if (all(group%pre == out%NO_DATA)) group%pre = group_vs%pre
             end if
+            if (associated(group%prern)) then
+                if (all(group%prern == out%NO_DATA)) group%prern = group_vs%prern
+            end if
+            if (associated(group%presno)) then
+                if (all(group%presno == out%NO_DATA)) group%presno = group_vs%presno
+            end if
         end if
 
         !> Water balance.
         if (ro%RUNBALWB) then
             if (associated(group%prec)) then
                 if (all(group%prec == out%NO_DATA)) group%prec = group_vs%pre*ic%dts
+            end if
+            if (associated(group%precrn)) then
+                if (all(group%precrn == out%NO_DATA)) group%precrn = group_vs%prern*ic%dts
+            end if
+            if (associated(group%precsno)) then
+                if (all(group%precsno == out%NO_DATA)) group%precsno = group_vs%presno*ic%dts
             end if
             if (associated(group%evap)) then
                 if (all(group%evap == out%NO_DATA)) group%evap = group_vs%evap
@@ -923,6 +970,9 @@ module output_variables
             end if
             if (associated(group%fsno)) then
                 if (all(group%fsno == out%NO_DATA)) group%fsno = group_vs%fsno
+            end if
+            if (associated(group%rofsno)) then
+                if (all(group%rofsno == out%NO_DATA)) group%rofsno = group_vs%rofsno
             end if
             if (associated(group%zpnd)) then
                 if (all(group%zpnd == out%NO_DATA)) group%zpnd = group_vs%zpnd
@@ -1249,12 +1299,24 @@ module output_variables
             if (associated(group%pre)) then
                 call output_variables_field_update(group%pre, group_ts%pre, its, 'avg')
             end if
+            if (associated(group%prern)) then
+                call output_variables_field_update(group%prern, group_ts%prern, its, 'avg')
+            end if
+            if (associated(group%presno)) then
+                call output_variables_field_update(group%presno, group_ts%presno, its, 'avg')
+            end if
         end if
 
         !> Water balance.
         if (ro%RUNBALWB) then
             if (associated(group%prec)) then
                 call output_variables_field_update(group%prec, group_ts%prec, its, 'sum')
+            end if
+            if (associated(group%precrn)) then
+                call output_variables_field_update(group%precrn, group_ts%precrn, its, 'sum')
+            end if
+            if (associated(group%precsno)) then
+                call output_variables_field_update(group%precsno, group_ts%precsno, its, 'sum')
             end if
             if (associated(group%evap)) then
                 call output_variables_field_update(group%evap, group_ts%evap, its, 'sum')
@@ -1303,6 +1365,9 @@ module output_variables
             end if
             if (associated(group%wsno)) then
                 call output_variables_field_update(group%wsno, group_ts%wsno, its, 'avg')
+            end if
+            if (associated(group%rofsno)) then
+                call output_variables_field_update(group%rofsno, group_ts%rofsno, its, 'sum')
             end if
             if (associated(group%zpnd)) then
                 call output_variables_field_update(group%zpnd, group_ts%zpnd, its, 'avg')

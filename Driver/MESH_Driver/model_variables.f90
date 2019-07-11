@@ -33,7 +33,7 @@ module model_variables
         !* vv: V-component of wind speed (at user-specified reference height). [m s-1].
         !* pre: Total incoming precipitation rate. [kg m-2 s-1].
         !* prern: Total incoming liquid precipitation rate. [kg m-2 s-1].
-        !* presn: Total incoming solid precipitation rate. [kg m-2 s-1].
+        !* presno: Total incoming solid precipitation rate. [kg m-2 s-1].
         real, dimension(:), pointer :: fsin => null()
         real, dimension(:), pointer :: fsdr => null()
         real, dimension(:), pointer :: fsdff => null()
@@ -47,7 +47,7 @@ module model_variables
         real, dimension(:), pointer :: vv => null()
         real, dimension(:), pointer :: pre => null()
         real, dimension(:), pointer :: prern => null()
-        real, dimension(:), pointer :: presn => null()
+        real, dimension(:), pointer :: presno => null()
 
         !* rff: Contributing runoff. [kg m-2].
         !* rchg: Contributing recharge. [kg m-2].
@@ -84,6 +84,7 @@ module model_variables
         !* zsno: Snow depth. [m].
         !* sno: Mass of snow pack. [kg m-2].
         !* fsno: Diagnosed fractional snow coverage. [ ].
+        !* rofsno: Component of runoff attributed to melting of the snowpack. [kg m-2 s-1].
         !* albs: Snow albedo.
         !* rhos: Density of snow. [kg m-3].
         !* wsno: Liquid water content of snow pack. [kg m-2].
@@ -91,6 +92,7 @@ module model_variables
         real, dimension(:), pointer :: zsno => null()
         real, dimension(:), pointer :: sno => null()
         real, dimension(:), pointer :: fsno => null()
+        real, dimension(:), pointer :: rofsno => null()
         real, dimension(:), pointer :: albs => null()
         real, dimension(:), pointer :: rhos => null()
         real, dimension(:), pointer :: wsno => null()
@@ -215,7 +217,7 @@ module model_variables
         if (associated(group%vv)) group%vv = 0.0
         if (associated(group%pre)) group%pre = 0.0
         if (associated(group%prern)) group%prern = 0.0
-        if (associated(group%presn)) group%presn = 0.0
+        if (associated(group%presno)) group%presno = 0.0
         if (associated(group%rff)) group%rff = 0.0
         if (associated(group%rchg)) group%rchg = 0.0
         if (associated(group%qi)) group%qi = 0.0
@@ -234,6 +236,7 @@ module model_variables
         if (associated(group%zsno)) group%zsno = 0.0
         if (associated(group%sno)) group%sno = 0.0
         if (associated(group%fsno)) group%fsno = 0.0
+        if (associated(group%rofsno)) group%rofsno = 0.0
         if (associated(group%albs)) group%albs = 0.0
         if (associated(group%rhos)) group%rhos = 0.0
         if (associated(group%wsno)) group%wsno = 0.0
@@ -355,7 +358,7 @@ module model_variables
         allocate(group%vv(n), stat = z); if (z /= 0) ierr = z
         allocate(group%pre(n), stat = z); if (z /= 0) ierr = z
         allocate(group%prern(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%presn(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%presno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%rff(n), stat = z); if (z /= 0) ierr = z
         allocate(group%rchg(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qi(n), stat = z); if (z /= 0) ierr = z
@@ -374,6 +377,7 @@ module model_variables
         allocate(group%zsno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%sno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%fsno(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%rofsno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%albs(n), stat = z); if (z /= 0) ierr = z
         allocate(group%rhos(n), stat = z); if (z /= 0) ierr = z
         allocate(group%wsno(n), stat = z); if (z /= 0) ierr = z
