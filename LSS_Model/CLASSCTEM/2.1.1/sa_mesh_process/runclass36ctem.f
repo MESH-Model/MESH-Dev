@@ -12,6 +12,9 @@
 C
 C     REVISION HISTORY:
 
+C     * JUL 2019 : Code added Nitrogen components from Huang et al.(2011) and Ben Windeler
+C       Stefan Sauer
+C
 C     * JUL 2018 : Code here editied heavily by Daniel Princz and Stefan Sauer for Module use in MESH
 C
 C
@@ -202,6 +205,8 @@ C
       INTEGER NLANDI  !<Number of modelled areas that are ice sheets
       INTEGER I,J,K,L,M
       INTEGER NTLD    !<
+
+      INTEGER JK      !<Nitrogen ctem PFT select
 C
       INTEGER K1,K2,K3,K4,K5,K6,K7,K8,K9,K10,K11
       INTEGER ITA        !<
@@ -999,6 +1004,26 @@ c
      1      orgmgat,
      2      sandgat, claygat
 
+
+!     Nitrogen Process Parameters
+
+       real et0, jmax, kl, km, kmin0,
+     1      rtmass0, r, solnh4,
+     2      rnlf0, rnsm0, rnrt0,
+     3      conreal,
+     4      lai0, krubn, kn,
+     5      kni0, kdn0, kv0,
+     6      nbfix0, ndep0, nfer0, nfero0
+
+      COMMON /NITROGEN/ et0, jmax, kl,
+     1      km, kmin0, rtmass0,
+     2      r, solnh4,
+     3      rnlf0, rnsm0, rnrt0,
+     4      conreal,
+     5      lai0, krubn, kn,
+     6      kni0, kdn0, kv0
+
+
       ! Model switches:
       logical, pointer :: ctem_on
       logical, pointer :: parallelrun
@@ -1020,6 +1045,7 @@ c
       logical, pointer :: dowetlands
       logical, pointer :: obswetf
       logical, pointer :: transient_run
+      logical, pointer :: ctemn
 
       ! ROW vars:
       logical, pointer, dimension(:,:,:) :: pftexistrow
@@ -1037,15 +1063,15 @@ c
       real, pointer, dimension(:,:) :: uvaccrow_m
       real, pointer, dimension(:,:) :: vvaccrow_m
 
-      real, pointer, dimension(:,:,:) :: ailcminrow         !
-      real, pointer, dimension(:,:,:) :: ailcmaxrow         !
-      real, pointer, dimension(:,:,:) :: dvdfcanrow         !
-      real, pointer, dimension(:,:,:) :: gleafmasrow        !
-      real, pointer, dimension(:,:,:) :: bleafmasrow        !
-      real, pointer, dimension(:,:,:) :: stemmassrow        !
-      real, pointer, dimension(:,:,:) :: rootmassrow        !
-      real, pointer, dimension(:,:,:) :: pstemmassrow       !
-      real, pointer, dimension(:,:,:) :: pgleafmassrow      !
+      real, pointer, dimension(:,:,:) :: ailcminrow         
+      real, pointer, dimension(:,:,:) :: ailcmaxrow         
+      real, pointer, dimension(:,:,:) :: dvdfcanrow         
+      real, pointer, dimension(:,:,:) :: gleafmasrow        
+      real, pointer, dimension(:,:,:) :: bleafmasrow        
+      real, pointer, dimension(:,:,:) :: stemmassrow        
+      real, pointer, dimension(:,:,:) :: rootmassrow        
+      real, pointer, dimension(:,:,:) :: pstemmassrow       
+      real, pointer, dimension(:,:,:) :: pgleafmassrow      
       real, pointer, dimension(:,:,:) :: fcancmxrow
       real, pointer, dimension(:,:) :: gavglairow
       real, pointer, dimension(:,:,:) :: zolncrow
@@ -1194,6 +1220,42 @@ c
       real, pointer, dimension(:,:) :: annsrplsrow
       real, pointer, dimension(:,:) :: annpcprow
       real, pointer, dimension(:,:) :: dry_season_lengthrow
+
+      logical, pointer, dimension(:) :: calsoil
+      integer, pointer, dimension(:) :: ndaytime
+
+      real, pointer, dimension(:,:,:) :: rnleafrow
+      real, pointer, dimension(:,:,:) :: rnstemrow
+      real, pointer, dimension(:,:,:) :: rnrootrow
+      real, pointer, dimension(:,:,:) :: rnlitrrow
+      real, pointer, dimension(:,:,:) :: rnsomrow
+      real, pointer, dimension(:,:,:) :: snh4row
+      real, pointer, dimension(:,:,:) :: sno3row
+      real, pointer, dimension(:,:,:) :: nrubrow
+      real, pointer, dimension(:,:,:) :: nrub0row
+
+      real, pointer, dimension(:,:) :: dndeprow
+      real, pointer, dimension(:,:) :: dnferrow
+      real, pointer, dimension(:,:) :: dnpltrrow
+      real, pointer, dimension(:,:) :: dndisrow 
+      real, pointer, dimension(:,:) :: dnlsomrow  
+      real, pointer, dimension(:,:) :: dnminrow  
+      real, pointer, dimension(:,:) :: dnnitrow
+      real, pointer, dimension(:,:) :: dnpuprow 
+      real, pointer, dimension(:,:) :: dndnitrow
+      real, pointer, dimension(:,:) :: dnlearow 
+      real, pointer, dimension(:,:) :: dnvolrow   
+      real, pointer, dimension(:,:) :: dnsorrow     
+      real, pointer, dimension(:,:) :: dnlosrow   
+      real, pointer, dimension(:,:) :: n2ototrow  
+      real, pointer, dimension(:,:) :: n2totrow  
+      real, pointer, dimension(:,:) :: dnbfixrow  
+      real, pointer, dimension(:,:) :: dnplossrow  
+      real, pointer, dimension(:,:) :: dnslossrow 
+
+      real, pointer, dimension(:,:) :: etprow  
+      real, pointer, dimension(:,:) :: xminf  
+      real, pointer, dimension(:,:) :: xminfbar
 
 
       ! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
@@ -1384,6 +1446,42 @@ c
       real, pointer, dimension(:,:) :: mmgat
       integer, pointer, dimension(:) :: altotcntr_d
 
+      real, pointer, dimension(:,:) :: rnleafgat
+      real, pointer, dimension(:,:) :: rnstemgat
+      real, pointer, dimension(:,:) :: rnrootgat
+      real, pointer, dimension(:,:) :: rnlitrgat
+      real, pointer, dimension(:,:) :: rnsomgat
+      real, pointer, dimension(:,:) :: snh4gat
+      real, pointer, dimension(:,:) :: sno3gat
+      real, pointer, dimension(:,:) :: nrubgat
+      real, pointer, dimension(:,:) :: nrub0gat
+
+      real, pointer, dimension(:) :: dndepgat
+      real, pointer, dimension(:) :: dnfergat
+      real, pointer, dimension(:) :: dnpltrgat
+      real, pointer, dimension(:) :: dndisgat 
+      real, pointer, dimension(:) :: dnlsomgat  
+      real, pointer, dimension(:) :: dnmingat  
+      real, pointer, dimension(:) :: dnnitgat
+      real, pointer, dimension(:) :: dnpupgat 
+      real, pointer, dimension(:) :: dndnitgat
+      real, pointer, dimension(:) :: dnleagat 
+      real, pointer, dimension(:) :: dnvolgat   
+      real, pointer, dimension(:) :: dnsorgat     
+      real, pointer, dimension(:) :: dnlosgat   
+      real, pointer, dimension(:) :: n2ototgat  
+      real, pointer, dimension(:) :: n2totgat  
+      real, pointer, dimension(:) :: dnbfixgat  
+      real, pointer, dimension(:) :: dnplossgat  
+      real, pointer, dimension(:) :: dnslossgat 
+
+      real, pointer, dimension(:) :: etpgat
+      real, pointer, dimension(:) :: etpacc
+
+      real, pointer, dimension(:) :: ovraccgat_m
+      real, pointer, dimension(:) :: rofaccgat_m 
+
+
       ! Mosaic level:
 
       real, pointer, dimension(:,:) :: PREACC_M
@@ -1418,6 +1516,7 @@ c
       real, pointer, dimension(:,:) :: ALTOTACC_M
       real, pointer, dimension(:,:) :: EVAPACC_M
       real, pointer, dimension(:,:) :: FLUTACC_M
+
 
 !      Outputs
 
@@ -2329,6 +2428,7 @@ C===================== CTEM ==============================================\
       dowetlands        => c_switch%dowetlands
       obswetf           => c_switch%obswetf
       transient_run     => c_switch%transient_run
+      ctemn             => c_switch%ctemn
 
       tcanrs            => vrot%tcanrs
       tsnors            => vrot%tsnors
@@ -2508,6 +2608,43 @@ C===================== CTEM ==============================================\
       dry_season_lengthrow => vrot%dry_season_length
 
       altotcntr_d       => vrot%altotcntr_d
+
+      calsoil           => vrot%calsoil
+      ndaytime          => vrot%ndaytime
+    
+      rnleafrow         => vrot%rnleaf
+      rnstemrow         => vrot%rnstem
+      rnrootrow         => vrot%rnroot
+      rnlitrrow         => vrot%rnlitr
+      rnsomrow          => vrot%rnsom
+      snh4row           => vrot%snh4
+      sno3row           => vrot%sno3
+      nrubrow           => vrot%nrub
+      nrub0row          => vrot%nrub0
+
+      dndeprow          => vrot%dndep
+      dnferrow          => vrot%dnfer
+      dnpltrrow         => vrot%dnpltr
+      dndisrow          => vrot%dndis
+      dnlsomrow         => vrot%dnlsom
+      dnminrow          => vrot%dnmin
+      dnnitrow          => vrot%dnnit
+      dnpuprow          => vrot%dnpup
+      dndnitrow         => vrot%dndnit
+      dnlearow          => vrot%dnlea
+      dnvolrow          => vrot%dnvol
+      dnsorrow          => vrot%dnsor
+      dnlosrow          => vrot%dnlos
+      n2ototrow         => vrot%n2otot
+      n2totrow          => vrot%n2tot
+      dnbfixrow         => vrot%dnbfix
+      dnplossrow        => vrot%dnploss
+      dnslossrow        => vrot%dnsloss
+
+      etprow            => vrot%etp
+      xminf             => vrot%xminf
+      xminfbar          => vrot%xminfbar
+
 
       ! >>>>>>>>>>>>>>>>>>>>>>>>>>
       ! GAT:
@@ -2698,6 +2835,43 @@ C===================== CTEM ==============================================\
       pandaysgat        => vgat%pandays
       stdalngat         => vgat%stdaln
 
+      rnleafgat         => vgat%rnleaf
+      rnstemgat         => vgat%rnstem
+      rnrootgat         => vgat%rnroot
+      rnlitrgat         => vgat%rnlitr
+      rnsomgat          => vgat%rnsom
+      snh4gat           => vgat%snh4
+      sno3gat           => vgat%sno3
+      nrubgat           => vgat%nrub
+      nrub0gat          => vgat%nrub0
+
+      dndepgat          => vgat%dndep
+      dnfergat          => vgat%dnfer
+      dnpltrgat         => vgat%dnpltr
+      dndisgat          => vgat%dndis
+      dnlsomgat         => vgat%dnlsom
+      dnmingat          => vgat%dnmin
+      dnnitgat          => vgat%dnnit
+      dnpupgat          => vgat%dnpup
+      dndnitgat         => vgat%dndnit
+      dnleagat          => vgat%dnlea
+      dnvolgat          => vgat%dnvol
+      dnsorgat          => vgat%dnsor
+      dnlosgat          => vgat%dnlos
+      n2ototgat         => vgat%n2otot
+      n2totgat          => vgat%n2tot
+      dnbfixgat         => vgat%dnbfix
+      dnplossgat        => vgat%dnploss
+      dnslossgat        => vgat%dnsloss
+
+      etpgat            => vgat%etp
+      etpacc            => vgat%etpacc
+
+      rofaccgat_m       => vgat%rofacc_m
+      ovraccgat_m       => vgat%ovracc_m
+
+
+  
       ! Mosaic-level (CLASS vars):
 
       PREACC_M          => vrot%PREACC_M
@@ -2831,6 +3005,8 @@ C===================== CTEM ==============================================\
       ancgvgac_t        => ctem_tile%ancgvgac_t
       rmlcsvga_t        => ctem_tile%rmlcsvga_t
       rmlcgvga_t        => ctem_tile%rmlcgvga_t
+ 
+
 
 C===================== CTEM ==============================================/
 
@@ -2854,10 +3030,10 @@ c     all model switches are read in from a namelist file
      2             spinfast,cyclemet,nummetcylyrs,metcylyrst,co2on,
      3             setco2conc,ch4on,setch4conc,popdon,popcycleyr,
      4             parallelrun,dofire,dowetlands,obswetf,compete,
-     5             inibioclim,start_bare,rsfile,start_from_rs,leap,
-     6             jmosty,idisp,izref,islfd,ipcp,itc,itcg,itg,i,ipai,
-     7             ihgt,ialc,ials,ialg,isnoalb,igralb,jhhstd,jhhendd,
-     8             jdstd,jdendd,jhhsty,jhhendy,jdsty,jdendy)
+     5             inibioclim,start_bare,rsfile,start_from_rs,ctemn,
+     6             leap,jmosty,idisp,izref,islfd,ipcp,itc,itcg,itg,
+     7             ipai,ihgt,ialc,ials,ialg,isnoalb,igralb,jhhstd,
+     8             jhhendd,jdstd,jdendd,jhhsty,jhhendy,jdsty,jdendy)
 
 	!Here we will be reading the CLASS Logical parameters from MESH
 	!Note that read_from_job_options still has these as arguments but the read in the subroutine above is commented out
@@ -3787,6 +3963,44 @@ C    CTEM pointer delcarations
 
       altotcntr_d       => vrot%altotcntr_d
 
+      calsoil           => vrot%calsoil
+      ndaytime          => vrot%ndaytime
+    
+      rnleafrow         => vrot%rnleaf
+      rnstemrow         => vrot%rnstem
+      rnrootrow         => vrot%rnroot
+      rnlitrrow         => vrot%rnlitr
+      rnsomrow          => vrot%rnsom
+      snh4row           => vrot%snh4
+      sno3row           => vrot%sno3
+      nrubrow           => vrot%nrub
+      nrub0row          => vrot%nrub0
+
+      dndeprow          => vrot%dndep
+      dnferrow          => vrot%dnfer
+      dnpltrrow         => vrot%dnpltr
+      dndisrow          => vrot%dndis
+      dnlsomrow         => vrot%dnlsom
+      dnminrow          => vrot%dnmin
+      dnnitrow          => vrot%dnnit
+      dnpuprow          => vrot%dnpup
+      dndnitrow         => vrot%dndnit
+      dnlearow          => vrot%dnlea
+      dnvolrow          => vrot%dnvol
+      dnsorrow          => vrot%dnsor
+      dnlosrow          => vrot%dnlos
+      n2ototrow         => vrot%n2otot
+      n2totrow          => vrot%n2tot
+      dnbfixrow         => vrot%dnbfix
+      dnplossrow        => vrot%dnploss
+      dnslossrow        => vrot%dnsloss
+
+      etprow            => vrot%etp
+      xminf             => vrot%xminf
+      xminfbar          => vrot%xminfbar
+
+
+
       ! >>>>>>>>>>>>>>>>>>>>>>>>>>
       ! GAT:
 
@@ -3975,6 +4189,41 @@ C    CTEM pointer delcarations
       lfstatusgat       => vgat%lfstatus
       pandaysgat        => vgat%pandays
       stdalngat         => vgat%stdaln
+
+      rnleafgat         => vgat%rnleaf
+      rnstemgat         => vgat%rnstem
+      rnrootgat         => vgat%rnroot
+      rnlitrgat         => vgat%rnlitr
+      rnsomgat          => vgat%rnsom
+      snh4gat           => vgat%snh4
+      sno3gat           => vgat%sno3
+      nrubgat           => vgat%nrub
+      nrub0gat          => vgat%nrub0
+
+      dndepgat          => vgat%dndep
+      dnfergat          => vgat%dnfer
+      dnpltrgat         => vgat%dnpltr
+      dndisgat          => vgat%dndis
+      dnlsomgat         => vgat%dnlsom
+      dnmingat          => vgat%dnmin
+      dnnitgat          => vgat%dnnit
+      dnpupgat          => vgat%dnpup
+      dndnitgat         => vgat%dndnit
+      dnleagat          => vgat%dnlea
+      dnvolgat          => vgat%dnvol
+      dnsorgat          => vgat%dnsor
+      dnlosgat          => vgat%dnlos
+      n2ototgat         => vgat%n2otot
+      n2totgat          => vgat%n2tot
+      dnbfixgat         => vgat%dnbfix
+      dnplossgat        => vgat%dnploss
+      dnslossgat        => vgat%dnsloss
+
+      etpgat            => vgat%etp
+      etpacc            => vgat%etpacc
+
+      rofaccgat_m       => vgat%rofacc_m
+      ovraccgat_m       => vgat%ovracc_m
 
       ! Mosaic-level (CLASS vars):
 

@@ -72,8 +72,8 @@
 subroutine read_from_job_options(argbuff,transient_run,trans_startyr,ctemloop,ctem_on, &
                   ncyear,lnduseon,spinfast,cyclemet,nummetcylyrs,metcylyrst,co2on, &
                   setco2conc,ch4on,setch4conc,popdon,popcycleyr,parallelrun,dofire,dowetlands,obswetf,&
-                  compete,inibioclim,start_bare,rsfile,start_from_rs,leap,jmosty,idisp,izref, &
-                  islfd,ipcp,itc,itcg,itg,iwf,ipai,ihgt,ialc,ials,ialg,isnoalb,igralb,jhhstd,& 
+                  compete,inibioclim,start_bare,rsfile,start_from_rs,ctemn,leap,jmosty,idisp,izref, &
+                  islfd,ipcp,itc,itcg,itg,ipai,ihgt,ialc,ials,ialg,isnoalb,igralb,jhhstd,& 
                   jhhendd,jdstd,jdendd,jhhsty,jhhendy,jdsty,jdendy)
 
 !#ifdef nagf95
@@ -216,6 +216,9 @@ logical, intent(out) :: start_from_rs !< if true, this option copies the _RS INI
 logical, intent(out) :: leap     !< set to true if all/some leap years in the .MET file have data for 366 days 
                                  !< also accounts for leap years in .MET when cycling over meteorology (cyclemet) 
 
+logical, intent(out) :: ctemn     !< logical parameter to set Nitrogen coupling in CTEM algorithms
+                                  !< Must have a .CTN file if this is set TRUE
+
 integer, intent(out) :: jmosty    !< Year to start writing out the monthly output files. If you want to write monthly outputs right 
                                   !< from the start then put in a negative number (like -9999), if you never want to have monthly
                                   !< outputs put a large positive number (like 9999). This is given in the same timescale as IYEAR                                 
@@ -247,11 +250,6 @@ integer, intent(out) :: ipcp     !< if ipcp=1, the rainfall-snowfall cutoff is t
 				 !< if ipcp=3, rainfall and snowfall are partitioned according to
 				 !< a polynomial curve between 0 c and 6 c.
 
-integer, intent(out) :: iwf     !< if iwf=0, only overland flow and baseflow are modelled, and
-				!< the ground surface slope is not modelled.
-				!< if iwf=n (0<n<4), the watflood calculations of overland flow 
-				!< and interflow are performed; interflow is drawn from the top 
-				!< n soil layers.
 
 INTEGER, INTENT(OUT) :: ITC!< itc, itcg and itg are switches to choose the iteration scheme to
                            !< be used in calculating the canopy or ground surface temperature
@@ -349,6 +347,7 @@ namelist /joboptions/ &
   rsfile,             &
   start_from_rs,      &
   leap,               &
+  CTEMN,              &
   IDISP,              &
   IZREF,              &
   ISLFD,              &
@@ -356,7 +355,6 @@ namelist /joboptions/ &
   ITC,                &
   ITCG,               &
   ITG,                &
-  IWF,                &
   IPAI,               &
   IHGT,               &
   IALC,               &

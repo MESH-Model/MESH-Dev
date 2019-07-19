@@ -76,6 +76,7 @@ type ctem_switches
                            !<hadar or spica, instead you have to manually move the files and set this to .false.    
     logical :: leap        !< set to true if all/some leap years in the .MET file have data for 366 days
                            !< also accounts for leap years in .MET when cycling over meteorology (cyclemet)
+    logical :: ctemn       !<logical switch for Nitrogen components
     logical :: dowetlands   !<if true allow wetland methane emission
     logical :: obswetf      !<observed wetland fraction
     logical :: transient_run!<
@@ -329,6 +330,49 @@ type veg_rot
     real, dimension(:,:), allocatable :: annpcp             !< annual precipitation (mm)
     real, dimension(:,:), allocatable :: dry_season_length  !< length of dry season (months)
 
+
+    !Nitrogen Related Variables
+
+    logical, dimension(:), allocatable :: CALSOIL       !< Logical parameter if the soil is Calcious
+    integer, dimension(:), allocatable :: NDAYTIME      !<Nitrogen time
+    
+    real, dimension(:,:,:), allocatable :: RNLEAF       !< Nitrogen Ratios and contents
+    real, dimension(:,:,:), allocatable :: RNSTEM       !<
+    real, dimension(:,:,:), allocatable :: RNROOT       !< 
+    real, dimension(:,:,:), allocatable :: RNLITR       !< 
+    real, dimension(:,:,:), allocatable :: RNSOM        !< 
+    real, dimension(:,:,:), allocatable :: SNH4         !< 
+    real, dimension(:,:,:), allocatable :: SNO3         !< 
+    real, dimension(:,:,:), allocatable :: NRUB         !< 
+    real, dimension(:,:,:), allocatable :: NRUB0        !< 
+
+    real, dimension(:,:,:), allocatable :: vcmx0        !< Initial Max photosynthesis
+    real, dimension(:,:), allocatable :: btdpth         !< Bottom Drainage Depth
+
+    real, dimension(:,:), allocatable :: dndep          !< Nitrogen Budget Outputs
+    real, dimension(:,:), allocatable :: dnfer          !<
+    real, dimension(:,:), allocatable :: dnpltr         !< 
+    real, dimension(:,:), allocatable :: dndis          !< 
+    real, dimension(:,:), allocatable :: dnlsom         !< 
+    real, dimension(:,:), allocatable :: dnmin          !< 
+    real, dimension(:,:), allocatable :: dnnit          !< 
+    real, dimension(:,:), allocatable :: dnpup          !< 
+    real, dimension(:,:), allocatable :: dndnit         !< 
+    real, dimension(:,:), allocatable :: dnlea          !< 
+    real, dimension(:,:), allocatable :: dnvol          !<
+    real, dimension(:,:), allocatable :: dnsor          !< 
+    real, dimension(:,:), allocatable :: dnlos          !< 
+    real, dimension(:,:), allocatable :: n2otot         !< 
+    real, dimension(:,:), allocatable :: n2tot          !< 
+    real, dimension(:,:), allocatable :: dnbfix         !< 
+    real, dimension(:,:), allocatable :: dnploss        !< 
+    real, dimension(:,:), allocatable :: dnsloss        !<
+
+    real, dimension(:,:), allocatable :: etp            !< Water Balance and nitrogen Ion uptake rates
+    real, dimension(:,:), allocatable :: xminf
+    real, dimension(:,:), allocatable :: xminfbar
+
+
 end type veg_rot
 
 type (veg_rot), save, target :: vrot
@@ -548,6 +592,47 @@ type veg_gat
     integer, dimension(:), allocatable :: stdaln        !<an integer telling if ctem is operated within gcm (=0) or in stand
                                                         !<alone mode (=1). this is used for fire purposes. see comments just
                                                         !<above where disturb subroutine is called.
+
+    !Nitrogen Related Variables
+    
+    real, dimension(:,:), allocatable :: RNLEAF       !< Nitrogen Ratios and contents
+    real, dimension(:,:), allocatable :: RNSTEM       !<
+    real, dimension(:,:), allocatable :: RNROOT       !< 
+    real, dimension(:,:), allocatable :: RNLITR       !< 
+    real, dimension(:,:), allocatable :: RNSOM        !< 
+    real, dimension(:,:), allocatable :: SNH4         !< 
+    real, dimension(:,:), allocatable :: SNO3         !< 
+    real, dimension(:,:), allocatable :: NRUB         !< 
+    real, dimension(:,:), allocatable :: NRUB0        !< 
+
+    real, dimension(:,:), allocatable :: vcmx0        !< Initial Max photosynthesis
+    real, dimension(:), allocatable :: btdpth         !< Bottom Drainage Depth
+
+    real, dimension(:), allocatable :: dndep          !< Nitrogen Budget Outputs
+    real, dimension(:), allocatable :: dnfer          !<
+    real, dimension(:), allocatable :: dnpltr         !< 
+    real, dimension(:), allocatable :: dndis          !< 
+    real, dimension(:), allocatable :: dnlsom         !< 
+    real, dimension(:), allocatable :: dnmin          !< 
+    real, dimension(:), allocatable :: dnnit          !< 
+    real, dimension(:), allocatable :: dnpup          !< 
+    real, dimension(:), allocatable :: dndnit         !< 
+    real, dimension(:), allocatable :: dnlea          !< 
+    real, dimension(:), allocatable :: dnvol          !<
+    real, dimension(:), allocatable :: dnsor          !< 
+    real, dimension(:), allocatable :: dnlos          !< 
+    real, dimension(:), allocatable :: n2otot         !< 
+    real, dimension(:), allocatable :: n2tot          !< 
+    real, dimension(:), allocatable :: dnbfix         !< 
+    real, dimension(:), allocatable :: dnploss        !< 
+    real, dimension(:), allocatable :: dnsloss        !< 
+
+    real, dimension(:), allocatable :: etp            !< Water Balance and nitrogen Ion uptake rates
+    real, dimension(:), allocatable :: etpacc         !<
+
+    real, dimension(:), allocatable :: rofacc_m       !< For CTEM drainage Nitrogen calculation
+    real, dimension(:), allocatable :: ovracc_m       !< 
+
 
 end type veg_gat
 
@@ -1365,6 +1450,46 @@ subroutine veg_rot_allocate()
     allocate(vrot%annpcp(nlat,nmos))
     allocate(vrot%dry_season_length(nlat,nmos))
 
+    !Nitrogen Related variables
+ 
+      allocate(vrot%calsoil(ilg))
+      allocate(vrot%ndaytime(ilg))
+    
+      allocate(vrot%rnleaf(nlat,nmos,icc))
+      allocate(vrot%rnstem(nlat,nmos,icc))
+      allocate(vrot%rnroot(nlat,nmos,icc))
+      allocate(vrot%rnlitr(nlat,nmos,iccp1))
+      allocate(vrot%rnsom(nlat,nmos,iccp1))
+      allocate(vrot%snh4(nlat,nmos,iccp1))
+      allocate(vrot%sno3(nlat,nmos,iccp1))
+      allocate(vrot%nrub(nlat,nmos,icc))
+      allocate(vrot%nrub0(nlat,nmos,icc))
+
+      allocate(vrot%dndep(nlat,nmos))
+      allocate(vrot%dnfer(nlat,nmos))
+      allocate(vrot%dnpltr(nlat,nmos))
+      allocate(vrot%dndis(nlat,nmos))
+      allocate(vrot%dnlsom(nlat,nmos))
+      allocate(vrot%dnmin(nlat,nmos))
+      allocate(vrot%dnnit(nlat,nmos))
+      allocate(vrot%dnpup(nlat,nmos))
+      allocate(vrot%dndnit(nlat,nmos))
+      allocate(vrot%dnlea(nlat,nmos))
+      allocate(vrot%dnvol(nlat,nmos))
+      allocate(vrot%dnsor(nlat,nmos))
+      allocate(vrot%dnlos(nlat,nmos))
+      allocate(vrot%n2otot(nlat,nmos))
+      allocate(vrot%n2tot(nlat,nmos))
+      allocate(vrot%dnbfix(nlat,nmos))
+      allocate(vrot%dnploss(nlat,nmos))
+      allocate(vrot%dnsloss(nlat,nmos))
+
+      allocate(vrot%etp(nlat,nmos))
+      allocate(vrot%xminf(ilg,icc))
+      allocate(vrot%xminfbar(ilg,icc))
+
+
+
 end subroutine
 
 !=================================================================================
@@ -1741,6 +1866,42 @@ subroutine veg_gat_allocate()
     allocate(vgat%annsrpls(ilg))
     allocate(vgat%annpcp(ilg))
     allocate(vgat%dry_season_length(ilg))
+
+   !Nitrogen Related variables
+ 
+    
+      allocate(vgat%rnleaf(ilg,icc))
+      allocate(vgat%rnstem(ilg,icc))
+      allocate(vgat%rnroot(ilg,icc))
+      allocate(vgat%rnlitr(ilg,iccp1))
+      allocate(vgat%rnsom(ilg,iccp1))
+      allocate(vgat%snh4(ilg,iccp1))
+      allocate(vgat%sno3(ilg,iccp1))
+      allocate(vgat%nrub(ilg,icc))
+      allocate(vgat%nrub0(ilg,icc))
+
+      allocate(vgat%dndep(ilg))
+      allocate(vgat%dnfer(ilg))
+      allocate(vgat%dnpltr(ilg))
+      allocate(vgat%dndis(ilg))
+      allocate(vgat%dnlsom(ilg))
+      allocate(vgat%dnmin(ilg))
+      allocate(vgat%dnnit(ilg))
+      allocate(vgat%dnpup(ilg))
+      allocate(vgat%dndnit(ilg))
+      allocate(vgat%dnlea(ilg))
+      allocate(vgat%dnvol(ilg))
+      allocate(vgat%dnsor(ilg))
+      allocate(vgat%dnlos(ilg))
+      allocate(vgat%n2otot(ilg))
+      allocate(vgat%n2tot(ilg))
+      allocate(vgat%dnbfix(ilg))
+      allocate(vgat%dnploss(ilg))
+      allocate(vgat%dnsloss(ilg))
+
+      allocate(vgat%etp(ilg))
+      allocate(vgat%etpacc(ilg))
+
 
     ! These go into CTEM and are used to keep track of the bioclim limits.
     allocate(vgat%tcurm(ilg))
