@@ -1007,8 +1007,8 @@ c
 
 !     Nitrogen Process Parameters
 
-       real et0, jmax, kl, km, kmin0,
-     1      rtmass0, r, solnh4,
+       real et0, jmax, kl, km,
+     1      kmin0, rtmass0, r, solnh4,
      2      rnlf0, rnsm0, rnrt0,
      3      conreal,
      4      lai0, krubn, kn,
@@ -3514,31 +3514,6 @@ C======================= CTEM ========================================== /
         ENDDO
 
 
-!DAN    These are calculated by the call to 'CLASSB'.
-!DAN    Should double-check if the 'pm' values have already been populated by MESH, in which
-!DAN    case those values should be transferred from MESH (and the call to 'CLASSB' here in CTEM, commented).
-        DO J=1,IGND
-!?          THPROT(I,M,J) = pm%slp%thpor(K,J)
-!?          THRROT(I,M,J) = pm%slp%thlret(K,J)
-!?          THMROT(I,M,J) = pm%slp%thlmin(K,J)
-!?          BIROT(I,M,J) = pm%slp%bi(K,J)
-!?          PSISROT(I,M,J) = pm%slp%psisat(K,J)
-!?          GRKSROT(I,M,J) = pm%slp%grksat(K,J)
-!?          THRAROT(I,M,J) = pm%slp%thlrat(K,J)
-!?          HCPSROT(I,M,J) = pm%slp%hcps(K,J)
-!?          TCSROT(I,M,J) = pm%slp%tcs(K,J)
-!?          THFCROT(I,M,J) = pm%slp%thfc(K,J)
-!?          THLWROT(I,M,J)
-!?          PSIWROT(I,M,J) = pm%slp%psiwlt(K,J)
-        ENDDO
-
-!?        ALGWROT(I,M) = pm%slp%alwet(K)
-!?        ALGDROT(I,M) = pm%slp%aldry(K)
-!?        ALGWVROT(I,M)
-!?        ALGWNROT(I,M)
-!?        ALGDVROT(I,M)
-!?        ALGDNROT(I,M)
-
         ZPNDROT(I,M) = stas%sfc%zpnd(K)
         RCANROT(I,M) = stas%cnpy%rcan(K)
         SCANROT(I,M) = stas%cnpy%sncan(K) !Note that MESH uses SNCAN and not CLASS-CTEM's SCAN
@@ -3584,6 +3559,20 @@ c     read from ctem initialization file (.CTM)
      5                   TSNOROT,TPNDROT,ZPNDROT,RCANROT,SCANROT,
      6                   SNOROT,ALBSROT,RHOSROT,GROROT,argbuff,
      7                   onetile_perPFT)
+      end if
+
+
+!Read in the Nitrogen parameters
+! Similar format to the .CTM file and will read in several GRUs of Nitrogen parameters
+
+
+      if (ctemn) then
+        call nitrogen_read(nltest,nmtest,icc,iccp1, rnleafrow, 
+     1               rnstemrow, rnrootrow, rnlitrrow,rnsomrow,   
+     2               snh4row, sno3row, et0, jmax, kl, km, kmin0,  
+     3               rtmass0, solnh4, rnlf0, rnsm0, rnrt0, conreal,  
+     4               LAI0, krubn, kn, kni0, kdn0, kv0, nbfix0,  
+     5               ndep0, nfer0, nfero0)
       end if
 
 c
