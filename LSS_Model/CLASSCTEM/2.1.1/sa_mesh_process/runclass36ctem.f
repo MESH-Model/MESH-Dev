@@ -1234,6 +1234,9 @@ c
       real, pointer, dimension(:,:,:) :: nrubrow
       real, pointer, dimension(:,:,:) :: nrub0row
 
+      real, pointer, dimension(:,:,:) :: vcmx0row
+      real, pointer, dimension(:,:) :: btdpthrow
+
       real, pointer, dimension(:,:) :: dndeprow
       real, pointer, dimension(:,:) :: dnferrow
       real, pointer, dimension(:,:) :: dnpltrrow
@@ -1455,6 +1458,9 @@ c
       real, pointer, dimension(:,:) :: sno3gat
       real, pointer, dimension(:,:) :: nrubgat
       real, pointer, dimension(:,:) :: nrub0gat
+
+      real, pointer, dimension(:,:) :: vcmx0gat
+      real, pointer, dimension(:) :: btdpthgat
 
       real, pointer, dimension(:) :: dndepgat
       real, pointer, dimension(:) :: dnfergat
@@ -2622,6 +2628,9 @@ C===================== CTEM ==============================================\
       nrubrow           => vrot%nrub
       nrub0row          => vrot%nrub0
 
+      vcmx0row          => vrot%vcmx0
+      btdpthrow         => vrot%btdpth
+
       dndeprow          => vrot%dndep
       dnferrow          => vrot%dnfer
       dnpltrrow         => vrot%dnpltr
@@ -2844,6 +2853,9 @@ C===================== CTEM ==============================================\
       sno3gat           => vgat%sno3
       nrubgat           => vgat%nrub
       nrub0gat          => vgat%nrub0
+
+      vcmx0gat          => vgat%vcmx0
+      btdpthgat         => vgat%btdpth
 
       dndepgat          => vgat%dndep
       dnfergat          => vgat%dnfer
@@ -3968,6 +3980,9 @@ C    CTEM pointer delcarations
       nrubrow           => vrot%nrub
       nrub0row          => vrot%nrub0
 
+      vcmx0row          => vrot%vcmx0
+      btdpthrow         => vrot%btdpth
+
       dndeprow          => vrot%dndep
       dnferrow          => vrot%dnfer
       dnpltrrow         => vrot%dnpltr
@@ -4191,6 +4206,9 @@ C    CTEM pointer delcarations
       sno3gat           => vgat%sno3
       nrubgat           => vgat%nrub
       nrub0gat          => vgat%nrub0
+
+      vcmx0gat          => vgat%vcmx0
+      btdpthgat         => vgat%btdpth
 
       dndepgat          => vgat%dndep
       dnfergat          => vgat%dnfer
@@ -4644,6 +4662,44 @@ c
      7                     alirctmgat, paicgat,  slaicgat )
 
 
+!     Nitrogen initialization
+      IF (CTEMN) THEN
+          DO I=1,NLTEST
+              DO  M =1,NMTEST
+              BTDPTHROW(I,M)= MAX(ROOTROT(I,M,1),ROOTROT(I,M,2),
+     &                         ROOTROT(I,M,3))  !BOTTOM DRAINAGE DEPTH
+
+!      INITIAL VCMAX0 (umol/m2/s)
+                DO J=1,ICC
+                  VCMX0ROW(I,M,J) = 60.0E-6          !DEFAULT VALUE
+                ENDDO !J
+              ENDDO !M
+!Comment out these yearly values for now
+              !YRNDEP(I)  = 0.0     ! YEARLY N DEPOSITION (gN/m2)
+              !YRNFER(I)  = 0.0     ! YEARLY N FERTILIZATION (gN/m2)
+              !YRNPLTR(I) = 0.0     ! YEARLY N LITTER-FALLING (gN/m2)
+              !YRNDIS(I)  = 0.0     ! YEARLY N DISTURBANCE LOSS (gN/m2)
+              !YRNLSOM(I) = 0.0     ! YEARLY N HUMIFICATION (gN/m2)
+              !YRNMIN(I)  = 0.0     ! YEARLY N MINERALIZATION (gN/m2)
+              !YRNNIT(I)  = 0.0     ! YEARLY N NITRIFICATION (gN/m2)
+              !YRNPUP(I)  = 0.0     ! YEARLY N PLANT UPTAKE (gN/m2)
+              !YRNDNIT(I) = 0.0     ! YEARLY N DENITRIFICATION (gN/m2)
+              !YRNLEA(I)  = 0.0     ! YEARLY NO3 LEACHING (gN/m2)
+              !YRNVOL(I)  = 0.0     ! YEARLY NH4 VOLATILIZATION(gN/m2)
+              !YRNSRCE(I) = 0.0     ! YEARLY N SOURCES (gN/m2)
+              !YRNLOSS(I) = 0.0     ! YEARLY N LOSSES (gN/m2)
+              !YRNN2O(I)  = 0.0   ! YEARLY N2O LOSSES (gN/m2) HSuo
+              !YRNN2(I)   = 0.0   ! YEARLY N2 LOSSES (gN/m2) HSuo
+         ENDDO !I
+
+         DO I=1,ILG
+              CALSOIL(I)  = .TRUE.                   ! DEFINE SOIL TYPE AS CALCIOUS
+            ! Currently constant, if changed should go through gather/scatter
+         ENDDO
+
+      ENDIF !CTEMN
+
+
       call ctems1(gleafmasrow,bleafmasrow,stemmassrow,rootmassrow,
      1      fcancmxrow,ZBTWROT,DLZWROT,SDEPROT,ailcgrow,ailcbrow,
      2      ailcrow,zolncrow,rmatcrow,rmatctemrow,slairow,
@@ -4723,6 +4779,11 @@ C     **** LAUNCH RUN. ****
       NCOUNT=1
       NDAY=86400/NINT(DELT) !Based on number of simulations in a single year
 
+     !Nitrogen time initialization
+      do I=1,NLTEST
+          NDAYTIME(I) = 0
+      enddo
+
 	WRITE(*,*) ' '
 	WRITE(*,*) 'Successful: RUNCLASS36CTEM_init() is done'
 	WRITE(*,*) ' '  
@@ -4771,6 +4832,8 @@ C     **** LAUNCH RUN. ****
        !Note that these variables have dimension ILG, which in our case is the same as NMOS/NMTEST
 !DAN    ILG is the total number of active tiles (which increment by the number of active NMOS inside each grid NLAT).
 !DAN    Must convert from tile indexing using ILMOS=NLAT and JLMOS=NMOS.
+
+
 
       DO k = 1, NML
 
@@ -5284,7 +5347,6 @@ C
      &      twarmmgat,    tcoldmgat,     gdd5gat,
      1      ariditygat, srplsmongat,  defctmongat, anndefctgat,
      2      annsrplsgat,   annpcpgat,  dry_season_lengthgat,
-c
      r      ilmos,       jlmos,       iwmos,        jwmos,
      s      nml,      fcancmxrow,  rmatcrow,    zolncrow,  paicrow,
      v      ailcrow,     ailcgrow,    cmasvegcrow,  slaicrow,
