@@ -839,6 +839,7 @@ logical, pointer :: dowetlands
 logical, pointer :: lnduseon
 logical, pointer :: obswetf
 logical, pointer :: parallelrun
+logical, pointer :: ctemn
 
 ! local variables:
 integer :: strlen
@@ -852,6 +853,7 @@ dowetlands        => c_switch%dowetlands
 lnduseon          => c_switch%lnduseon
 obswetf           => c_switch%obswetf
 parallelrun       => c_switch%parallelrun
+ctemn             => c_switch%ctemn
 
 !-----     
 !>begin:
@@ -965,12 +967,12 @@ if (ctem_on .and. .not. parallelrun) then
     !write(76*k,7080)
 
     if (dofire .or. lnduseon) then
-        write(77,6001) title1,title2,title3,title4,title5,title6
-        write(77,6002) name1,name2,name3,name4,name5,name6
-        write(77,6003) place1,place2,place3,place4,place5,place6
-        write(77,7021)
-        write(77,7110)
-        write(77,7111)
+        write(77*k,6001) title1,title2,title3,title4,title5,title6
+        write(77*k,6002) name1,name2,name3,name4,name5,name6
+        write(77*k,6003) place1,place2,place3,place4,place5,place6
+        write(77*k,7021)
+        write(77*k,7110)
+        write(77*k,7111)
     end if
 
     write(711*k,6001) title1,title2,title3,title4,title5,title6
@@ -1153,6 +1155,35 @@ if (ctem_on) then
         write(92*k,6232)'#','gCH4/M2.YR','gCH4/M2.YR','fraction','gCH4/M2.YR','gCH4/M2.YR','gCH4/M2.YR'
 
     end if 
+
+
+
+    if(CTEMN) then
+         open(unit=93*k,file=argbuff(1:strlen(argbuff))//'.CN1') !daily N output
+         open(unit=94*k,file=argbuff(1:strlen(argbuff))//'.CN2') !daily
+         open(unit=95*k,file=argbuff(1:strlen(argbuff))//'.CN3') !yearly
+
+         WRITE(93*k,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+         WRITE(93*k,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+         WRITE(93*k,6003) PLACE1,PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
+         WRITE(93*k,8010) 
+         WRITE(93*k,8020) 
+
+         WRITE(94*k,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+         WRITE(94*k,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+         WRITE(94*k,6003) PLACE1,PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
+         WRITE(94*k,8010) 
+         WRITE(94*k,8030) 
+
+         WRITE(95*k,6001) TITLE1,TITLE2,TITLE3,TITLE4,TITLE5,TITLE6
+         WRITE(95*k,6002) NAME1,NAME2,NAME3,NAME4,NAME5,NAME6
+         WRITE(95*k,6003) PLACE1,PLACE2,PLACE3,PLACE4,PLACE5,PLACE6
+         WRITE(95*k,8050) 
+         WRITE(95*k,8030) 
+
+
+    end if !Nitrogen Output files
+
     
 end if !>ctem_on & parallelrun
 
@@ -1169,6 +1200,15 @@ ENDDO !End the DO K loop
 6129  FORMAT(A5,11(A12,1X),45A)
 6230  FORMAT(A5,A5,8(A12,1X))
 6232  FORMAT(1X,A5,7(A12,1X))
+!Nitrogen Formats
+8010  FORMAT('N COMPONENT FOR CTEM 2/CLASS3.6 DAILY RESULTS')
+8050  FORMAT('N COMPONENT FOR CTEM 2/CLASS3.6 YEARLY RESULTS')
+8020  FORMAT('  DAY YEAR N/C(leaf)   N/C(stem)   N/C(root)   N/C(litr)& 
+       N/C(som)    Vcmax(top)')
+8030  FORMAT('  YEAR     DEPOS    FERTIL      LITR    DISTUR  &
+          SOM   MINERAL    NITRIF    UPTAKE    DENITR     LEACH &
+          VOLAT    SOURCE      LOSS       N2O        N2      BFIX &
+          PLOSS     SLOSS')
  
 end subroutine create_outfiles
 !>@}

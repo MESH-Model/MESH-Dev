@@ -1058,10 +1058,10 @@ c
       real, pointer, dimension(:,:) :: tsnors
       real, pointer, dimension(:,:) :: tpndrs
       real, pointer, dimension(:,:,:) :: csum
-      real, pointer, dimension(:,:,:) :: tbaraccrow_m
-      real, pointer, dimension(:,:) :: tcanoaccrow_m
-      real, pointer, dimension(:,:) :: uvaccrow_m
-      real, pointer, dimension(:,:) :: vvaccrow_m
+      real, pointer, dimension(:,:,:) :: tbaraccrow_t
+      real, pointer, dimension(:,:) :: tcanoaccrow_t
+      real, pointer, dimension(:,:) :: uvaccrow_t
+      real, pointer, dimension(:,:) :: vvaccrow_t
 
       real, pointer, dimension(:,:,:) :: ailcminrow         
       real, pointer, dimension(:,:,:) :: ailcmaxrow         
@@ -1478,44 +1478,44 @@ c
       real, pointer, dimension(:) :: etpgat
       real, pointer, dimension(:) :: etpacc
 
-      real, pointer, dimension(:) :: ovraccgat_m
-      real, pointer, dimension(:) :: rofaccgat_m 
+      real, pointer, dimension(:) :: ovraccgat_t
+      real, pointer, dimension(:) :: rofaccgat_t 
 
 
       ! Mosaic level:
 
-      real, pointer, dimension(:,:) :: PREACC_M
-      real, pointer, dimension(:,:) :: GTACC_M
-      real, pointer, dimension(:,:) :: QEVPACC_M
-      real, pointer, dimension(:,:) :: HFSACC_M
-      real, pointer, dimension(:,:) :: HMFNACC_M
-      real, pointer, dimension(:,:) :: ROFACC_M
-      real, pointer, dimension(:,:) :: SNOACC_M
-      real, pointer, dimension(:,:) :: OVRACC_M
-      real, pointer, dimension(:,:) :: WTBLACC_M
-      real, pointer, dimension(:,:,:) :: TBARACC_M
-      real, pointer, dimension(:,:,:) :: THLQACC_M
-      real, pointer, dimension(:,:,:) :: THICACC_M
-      real, pointer, dimension(:,:,:) :: THALACC_M
-      real, pointer, dimension(:,:) :: ALVSACC_M
-      real, pointer, dimension(:,:) :: ALIRACC_M
-      real, pointer, dimension(:,:) :: RHOSACC_M
-      real, pointer, dimension(:,:) :: TSNOACC_M
-      real, pointer, dimension(:,:) :: WSNOACC_M
-      real, pointer, dimension(:,:) :: SNOARE_M
-      real, pointer, dimension(:,:) :: TCANACC_M
-      real, pointer, dimension(:,:) :: RCANACC_M
-      real, pointer, dimension(:,:) :: SCANACC_M
-      real, pointer, dimension(:,:) :: GROACC_M
-      real, pointer, dimension(:,:) :: FSINACC_M
-      real, pointer, dimension(:,:) :: FLINACC_M
-      real, pointer, dimension(:,:) :: TAACC_M
-      real, pointer, dimension(:,:) :: UVACC_M
-      real, pointer, dimension(:,:) :: PRESACC_M
-      real, pointer, dimension(:,:) :: QAACC_M
-      real, pointer, dimension(:,:) :: ALTOTACC_M
-      real, pointer, dimension(:,:) :: EVAPACC_M
-      real, pointer, dimension(:,:) :: FLUTACC_M
+      real, pointer, dimension(:,:) :: PREACC_t
+      real, pointer, dimension(:,:) :: GTACC_t
+      real, pointer, dimension(:,:) :: QEVPACC_t
+      real, pointer, dimension(:,:) :: HFSACC_t
+      real, pointer, dimension(:,:) :: HMFNACC_t
+      real, pointer, dimension(:,:) :: ROFACC_t
+      real, pointer, dimension(:,:) :: SNOACC_t
+      real, pointer, dimension(:,:) :: OVRACC_t
+      real, pointer, dimension(:,:) :: WTBLACC_t
+      real, pointer, dimension(:,:,:) :: TBARACC_t
+      real, pointer, dimension(:,:,:) :: THLQACC_t
+      real, pointer, dimension(:,:,:) :: THICACC_t
+      real, pointer, dimension(:,:,:) :: THALACC_t
+      real, pointer, dimension(:,:) :: ALVSACC_t
+      real, pointer, dimension(:,:) :: ALIRACC_t
+      real, pointer, dimension(:,:) :: RHOSACC_t
+      real, pointer, dimension(:,:) :: TSNOACC_t
+      real, pointer, dimension(:,:) :: WSNOACC_t
+      real, pointer, dimension(:,:) :: SNOARE_t
+      real, pointer, dimension(:,:) :: TCANACC_t
+      real, pointer, dimension(:,:) :: RCANACC_t
+      real, pointer, dimension(:,:) :: SCANACC_t
+      real, pointer, dimension(:,:) :: GROACC_t
+      real, pointer, dimension(:,:) :: FSINACC_t
+      real, pointer, dimension(:,:) :: FLINACC_t
+      real, pointer, dimension(:,:) :: TAACC_t
+      real, pointer, dimension(:,:) :: UVACC_t
+      real, pointer, dimension(:,:) :: PRESACC_t
+      real, pointer, dimension(:,:) :: QAACC_t
+      real, pointer, dimension(:,:) :: ALTOTACC_t
+      real, pointer, dimension(:,:) :: EVAPACC_t
+      real, pointer, dimension(:,:) :: FLUTACC_t
 
 
 !      Outputs
@@ -2434,10 +2434,10 @@ C===================== CTEM ==============================================\
       tsnors            => vrot%tsnors
       tpndrs            => vrot%tpndrs
       csum              => vrot%csum
-      tbaraccrow_m      => vrot%tbaraccrow_m
-      tcanoaccrow_m     => vrot%tcanoaccrow_m
-      uvaccrow_m        => vrot%uvaccrow_m
-      vvaccrow_m        => vrot%vvaccrow_m
+      tbaraccrow_t      => vrot%tbaraccrow_m
+      tcanoaccrow_t     => vrot%tcanoaccrow_m
+      uvaccrow_t        => vrot%uvaccrow_m
+      vvaccrow_t        => vrot%vvaccrow_m
 
       ! ROW:
       ailcminrow        => vrot%ailcmin
@@ -2867,45 +2867,45 @@ C===================== CTEM ==============================================\
       etpgat            => vgat%etp
       etpacc            => vgat%etpacc
 
-      rofaccgat_m       => vgat%rofacc_m
-      ovraccgat_m       => vgat%ovracc_m
+      rofaccgat_t       => vgat%rofacc_m
+      ovraccgat_t       => vgat%ovracc_m
 
 
   
       ! Mosaic-level (CLASS vars):
 
-      PREACC_M          => vrot%PREACC_M
-      GTACC_M           => vrot%GTACC_M
-      QEVPACC_M         => vrot%QEVPACC_M
-      HFSACC_M          => vrot%HFSACC_M
-      HMFNACC_M         => vrot%HMFNACC_M
-      ROFACC_M          => vrot%ROFACC_M
-      SNOACC_M          => vrot%SNOACC_M
-      OVRACC_M          => vrot%OVRACC_M
-      WTBLACC_M         => vrot%WTBLACC_M
-      TBARACC_M         => vrot%TBARACC_M
-      THLQACC_M         => vrot%THLQACC_M
-      THICACC_M         => vrot%THICACC_M
-      THALACC_M         => vrot%THALACC_M
-      ALVSACC_M         => vrot%ALVSACC_M
-      ALIRACC_M         => vrot%ALIRACC_M
-      RHOSACC_M         => vrot%RHOSACC_M
-      TSNOACC_M         => vrot%TSNOACC_M
-      WSNOACC_M         => vrot%WSNOACC_M
-      SNOARE_M          => vrot%SNOARE_M
-      TCANACC_M         => vrot%TCANACC_M
-      RCANACC_M         => vrot%RCANACC_M
-      SCANACC_M         => vrot%SCANACC_M
-      GROACC_M          => vrot%GROACC_M
-      FSINACC_M         => vrot%FSINACC_M
-      FLINACC_M         => vrot%FLINACC_M
-      TAACC_M           => vrot%TAACC_M
-      UVACC_M           => vrot%UVACC_M
-      PRESACC_M         => vrot%PRESACC_M
-      QAACC_M           => vrot%QAACC_M
-      ALTOTACC_M        => vrot%ALTOTACC_M
-      EVAPACC_M         => vrot%EVAPACC_M
-      FLUTACC_M         => vrot%FLUTACC_M
+      PREACC_t          => vrot%PREACC_M
+      GTACC_t           => vrot%GTACC_M
+      QEVPACC_t         => vrot%QEVPACC_M
+      HFSACC_t          => vrot%HFSACC_M
+      HMFNACC_t         => vrot%HMFNACC_M
+      ROFACC_t          => vrot%ROFACC_M
+      SNOACC_t          => vrot%SNOACC_M
+      OVRACC_t          => vrot%OVRACC_M
+      WTBLACC_t         => vrot%WTBLACC_M
+      TBARACC_t         => vrot%TBARACC_M
+      THLQACC_t         => vrot%THLQACC_M
+      THICACC_t         => vrot%THICACC_M
+      THALACC_t         => vrot%THALACC_M
+      ALVSACC_t         => vrot%ALVSACC_M
+      ALIRACC_t         => vrot%ALIRACC_M
+      RHOSACC_t         => vrot%RHOSACC_M
+      TSNOACC_t         => vrot%TSNOACC_M
+      WSNOACC_t         => vrot%WSNOACC_M
+      SNOARE_t          => vrot%SNOARE_M
+      TCANACC_t         => vrot%TCANACC_M
+      RCANACC_t         => vrot%RCANACC_M
+      SCANACC_t         => vrot%SCANACC_M
+      GROACC_t          => vrot%GROACC_M
+      FSINACC_t         => vrot%FSINACC_M
+      FLINACC_t         => vrot%FLINACC_M
+      TAACC_t           => vrot%TAACC_M
+      UVACC_t           => vrot%UVACC_M
+      PRESACC_t         => vrot%PRESACC_M
+      QAACC_t           => vrot%QAACC_M
+      ALTOTACC_t        => vrot%ALTOTACC_M
+      EVAPACC_t         => vrot%EVAPACC_M
+      FLUTACC_t         => vrot%FLUTACC_M
 
       ! grid-averaged (CLASS vars)
 
@@ -3091,9 +3091,9 @@ C
        do 11 i=1,nlat
         do 11 m=1,nmos
          barf(i,m)                = 1.0
-         TCANOACCROW_M(I,M)       = 0.0
-         UVACCROW_M(I,M)          = 0.0
-         VVACCROW_M(I,M)          = 0.0
+         TCANOACCROW_t(I,M)       = 0.0
+         UVACCROW_t(I,M)          = 0.0
+         VVACCROW_t(I,M)          = 0.0
          TCANOACCROW_OUT(I,M)     = 0.0
 11     continue
 
@@ -3564,6 +3564,7 @@ c     read from ctem initialization file (.CTM)
 
 !Read in the Nitrogen parameters
 ! Similar format to the .CTM file and will read in several GRUs of Nitrogen parameters
+!This subroutine also initializes the JK integer
 
 
       if (ctemn) then
@@ -3571,9 +3572,10 @@ c     read from ctem initialization file (.CTM)
      1               rnstemrow, rnrootrow, rnlitrrow,rnsomrow,   
      2               snh4row, sno3row, et0, jmax, kl, km, kmin0,  
      3               rtmass0, solnh4, rnlf0, rnsm0, rnrt0, conreal,  
-     4               LAI0, krubn, kn, kni0, kdn0, kv0, nbfix0,  
-     5               ndep0, nfer0, nfero0)
+     4               LAI0, krubn, kn, kni0, kdn0, kv0, nbfix0,ndep0,  
+     5               nfer0,nfero0,JK,fcancmxrow,etpacc,xminfbar)
       end if
+
 
 c
 C===================== CTEM =============================================== /
@@ -3769,6 +3771,7 @@ C    CTEM pointer delcarations
       popdon            => c_switch%popdon
       inibioclim        => c_switch%inibioclim
       start_from_rs     => c_switch%start_from_rs
+      ctemn             => c_switch%ctemn
       leap              => c_switch%leap         
       dowetlands        => c_switch%dowetlands
       obswetf           => c_switch%obswetf
@@ -3778,10 +3781,10 @@ C    CTEM pointer delcarations
       tsnors            => vrot%tsnors
       tpndrs            => vrot%tpndrs
       csum              => vrot%csum
-      tbaraccrow_m      => vrot%tbaraccrow_m
-      tcanoaccrow_m     => vrot%tcanoaccrow_m
-      uvaccrow_m        => vrot%uvaccrow_m
-      vvaccrow_m        => vrot%vvaccrow_m
+      tbaraccrow_t      => vrot%tbaraccrow_m
+      tcanoaccrow_t     => vrot%tcanoaccrow_m
+      uvaccrow_t        => vrot%uvaccrow_m
+      vvaccrow_t        => vrot%vvaccrow_m
 
       ailcminrow        => vrot%ailcmin
       ailcmaxrow        => vrot%ailcmax
@@ -4211,43 +4214,43 @@ C    CTEM pointer delcarations
       etpgat            => vgat%etp
       etpacc            => vgat%etpacc
 
-      rofaccgat_m       => vgat%rofacc_m
-      ovraccgat_m       => vgat%ovracc_m
+      rofaccgat_t       => vgat%rofacc_m
+      ovraccgat_t       => vgat%ovracc_m
 
       ! Mosaic-level (CLASS vars):
 
-      PREACC_M          => vrot%PREACC_M
-      GTACC_M           => vrot%GTACC_M
-      QEVPACC_M         => vrot%QEVPACC_M
-      HFSACC_M          => vrot%HFSACC_M
-      HMFNACC_M         => vrot%HMFNACC_M
-      ROFACC_M          => vrot%ROFACC_M
-      SNOACC_M          => vrot%SNOACC_M
-      OVRACC_M          => vrot%OVRACC_M
-      WTBLACC_M         => vrot%WTBLACC_M
-      TBARACC_M         => vrot%TBARACC_M
-      THLQACC_M         => vrot%THLQACC_M
-      THICACC_M         => vrot%THICACC_M
-      THALACC_M         => vrot%THALACC_M
-      ALVSACC_M         => vrot%ALVSACC_M
-      ALIRACC_M         => vrot%ALIRACC_M
-      RHOSACC_M         => vrot%RHOSACC_M
-      TSNOACC_M         => vrot%TSNOACC_M
-      WSNOACC_M         => vrot%WSNOACC_M
-      SNOARE_M          => vrot%SNOARE_M
-      TCANACC_M         => vrot%TCANACC_M
-      RCANACC_M         => vrot%RCANACC_M
-      SCANACC_M         => vrot%SCANACC_M
-      GROACC_M          => vrot%GROACC_M
-      FSINACC_M         => vrot%FSINACC_M
-      FLINACC_M         => vrot%FLINACC_M
-      TAACC_M           => vrot%TAACC_M
-      UVACC_M           => vrot%UVACC_M
-      PRESACC_M         => vrot%PRESACC_M
-      QAACC_M           => vrot%QAACC_M
-      ALTOTACC_M        => vrot%ALTOTACC_M
-      EVAPACC_M         => vrot%EVAPACC_M
-      FLUTACC_M         => vrot%FLUTACC_M
+      PREACC_t          => vrot%PREACC_M
+      GTACC_t           => vrot%GTACC_M
+      QEVPACC_t         => vrot%QEVPACC_M
+      HFSACC_t          => vrot%HFSACC_M
+      HMFNACC_t         => vrot%HMFNACC_M
+      ROFACC_t          => vrot%ROFACC_M
+      SNOACC_t          => vrot%SNOACC_M
+      OVRACC_t          => vrot%OVRACC_M
+      WTBLACC_t         => vrot%WTBLACC_M
+      TBARACC_t         => vrot%TBARACC_M
+      THLQACC_t         => vrot%THLQACC_M
+      THICACC_t         => vrot%THICACC_M
+      THALACC_t         => vrot%THALACC_M
+      ALVSACC_t         => vrot%ALVSACC_M
+      ALIRACC_t         => vrot%ALIRACC_M
+      RHOSACC_t         => vrot%RHOSACC_M
+      TSNOACC_t         => vrot%TSNOACC_M
+      WSNOACC_t         => vrot%WSNOACC_M
+      SNOARE_t          => vrot%SNOARE_M
+      TCANACC_t         => vrot%TCANACC_M
+      RCANACC_t         => vrot%RCANACC_M
+      SCANACC_t         => vrot%SCANACC_M
+      GROACC_t          => vrot%GROACC_M
+      FSINACC_t         => vrot%FSINACC_M
+      FLINACC_t         => vrot%FLINACC_M
+      TAACC_t           => vrot%TAACC_M
+      UVACC_t           => vrot%UVACC_M
+      PRESACC_t         => vrot%PRESACC_M
+      QAACC_t           => vrot%QAACC_M
+      ALTOTACC_t        => vrot%ALTOTACC_M
+      EVAPACC_t         => vrot%EVAPACC_M
+      FLUTACC_t         => vrot%FLUTACC_M
 
       ! grid-averaged (CLASS vars)
 
@@ -4383,6 +4386,10 @@ c
          fsnowacc_t(i)=0.0         !daily accu. fraction of snow
          tcansacc_t(i)=0.0         !daily accu. canopy temp. over snow
          taaccgat_t(i)=0.0
+c       Nitrogen ROF and OVR for ctem and CLASSN
+         ovraccgat_t(i)=0.0
+         rofaccgat_t(i)=0.0 
+
 c
          do 128 j = 1, icc
            ancsvgac_t(i,j)=0.0    !daily accu. net photosyn. for canopy over snow subarea
@@ -5287,8 +5294,8 @@ c
      z      cfluxcsrow,  ancsvegrow,  ancgvegrow,   rmlcsvegrow,
      1      rmlcgvegrow, canresrow,   SDEPROT,      ch4concrow,
      2      SANDROT,     CLAYROT,     ORGMROT,
-     3      anvegrow,    rmlvegrow,   tcanoaccrow_m,tbaraccrow_m,
-     4      uvaccrow_m,  vvaccrow_m,  mlightngrow,  prbfrhucrow,
+     3      anvegrow,    rmlvegrow,   tcanoaccrow_t,tbaraccrow_t,
+     4      uvaccrow_t,  vvaccrow_t,  mlightngrow,  prbfrhucrow,
      5      extnprobrow, stdalnrow,   pfcancmxrow,  nfcancmxrow,
      6      stemmassrow, rootmassrow, litrmassrow,  gleafmasrow,
      7      bleafmasrow, soilcmasrow, ailcbrow,     flhrlossrow,
@@ -5849,8 +5856,8 @@ C
      5      cfluxcsrow,  ancsvegrow,  ancgvegrow,   rmlcsvegrow,
      6      rmlcgvegrow, canresrow,   SDEPROT,      ch4concrow,
      7      SANDROT,     CLAYROT,     ORGMROT,
-     8      anvegrow,    rmlvegrow,   tcanoaccrow_m,tbaraccrow_m,
-     9      uvaccrow_m,  vvaccrow_m,  prbfrhucrow,
+     8      anvegrow,    rmlvegrow,   tcanoaccrow_t,tbaraccrow_t,
+     9      uvaccrow_t,  vvaccrow_t,  prbfrhucrow,
      a      extnprobrow, pfcancmxrow,  nfcancmxrow,
      b      stemmassrow, rootmassrow, litrmassrow,  gleafmasrow,
      c      bleafmasrow, soilcmasrow, ailcbrow,     flhrlossrow,
@@ -6777,52 +6784,52 @@ C
 !       start -> FLAG JM
       DO 676 I=1,NLTEST
       DO 658 M=1,NMTEST
-          PREACC_M(I,M)=PREACC_M(I,M)+PREROW(I)*DELT
-          GTACC_M(I,M)=GTACC_M(I,M)+GTROT(I,M)
-          QEVPACC_M(I,M)=QEVPACC_M(I,M)+QEVPROT(I,M)
-          EVAPACC_M(I,M)=EVAPACC_M(I,M)+QFSROT(I,M)*DELT
-          HFSACC_M(I,M)=HFSACC_M(I,M)+HFSROT(I,M)
-          HMFNACC_M(I,M)=HMFNACC_M(I,M)+HMFNROT(I,M)
-          ROFACC_M(I,M)=ROFACC_M(I,M)+ROFROT(I,M)*DELT
-          OVRACC_M(I,M)=OVRACC_M(I,M)+ROFOROT(I,M)*DELT
-          WTBLACC_M(I,M)=WTBLACC_M(I,M)+WTABROT(I,M)
+          PREACC_t(I,M)=PREACC_t(I,M)+PREROW(I)*DELT
+          GTACC_t(I,M)=GTACC_t(I,M)+GTROT(I,M)
+          QEVPACC_t(I,M)=QEVPACC_t(I,M)+QEVPROT(I,M)
+          EVAPACC_t(I,M)=EVAPACC_t(I,M)+QFSROT(I,M)*DELT
+          HFSACC_t(I,M)=HFSACC_t(I,M)+HFSROT(I,M)
+          HMFNACC_t(I,M)=HMFNACC_t(I,M)+HMFNROT(I,M)
+          ROFACC_t(I,M)=ROFACC_t(I,M)+ROFROT(I,M)*DELT
+          OVRACC_t(I,M)=OVRACC_t(I,M)+ROFOROT(I,M)*DELT
+          WTBLACC_t(I,M)=WTBLACC_t(I,M)+WTABROT(I,M)
 
           DO 626 J=1,IGND
-              TBARACC_M(I,M,J)=TBARACC_M(I,M,J)+TBARROT(I,M,J)
-              THLQACC_M(I,M,J)=THLQACC_M(I,M,J)+THLQROT(I,M,J)
-              THICACC_M(I,M,J)=THICACC_M(I,M,J)+THICROT(I,M,J)
-              THALACC_M(I,M,J)=THALACC_M(I,M,J)+(THLQROT(I,M,J)+
+              TBARACC_t(I,M,J)=TBARACC_t(I,M,J)+TBARROT(I,M,J)
+              THLQACC_t(I,M,J)=THLQACC_t(I,M,J)+THLQROT(I,M,J)
+              THICACC_t(I,M,J)=THICACC_t(I,M,J)+THICROT(I,M,J)
+              THALACC_t(I,M,J)=THALACC_t(I,M,J)+(THLQROT(I,M,J)+
      1           THICROT(I,M,J))
 626       CONTINUE
 
-          ALVSACC_M(I,M)=ALVSACC_M(I,M)+ALVSROT(I,M)*FSVHROW(I)
-          ALIRACC_M(I,M)=ALIRACC_M(I,M)+ALIRROT(I,M)*FSIHROW(I)
+          ALVSACC_t(I,M)=ALVSACC_t(I,M)+ALVSROT(I,M)*FSVHROW(I)
+          ALIRACC_t(I,M)=ALIRACC_t(I,M)+ALIRROT(I,M)*FSIHROW(I)
           IF(SNOROT(I,M).GT.0.0) THEN
-              RHOSACC_M(I,M)=RHOSACC_M(I,M)+RHOSROT(I,M)
-              TSNOACC_M(I,M)=TSNOACC_M(I,M)+TSNOROT(I,M)
-              WSNOACC_M(I,M)=WSNOACC_M(I,M)+WSNOROT(I,M)
-              SNOARE_M(I,M) = SNOARE_M(I,M) + 1.0 !FLAG test.
+              RHOSACC_t(I,M)=RHOSACC_t(I,M)+RHOSROT(I,M)
+              TSNOACC_t(I,M)=TSNOACC_t(I,M)+TSNOROT(I,M)
+              WSNOACC_t(I,M)=WSNOACC_t(I,M)+WSNOROT(I,M)
+              SNOARE_t(I,M) = SNOARE_t(I,M) + 1.0 !FLAG test.
           ENDIF
           IF(TCANROT(I,M).GT.0.5) THEN
-              TCANACC_M(I,M)=TCANACC_M(I,M)+TCANROT(I,M)
+              TCANACC_t(I,M)=TCANACC_t(I,M)+TCANROT(I,M)
 C              CANARE(I)=CANARE(I)+FAREROT(I,M)
           ENDIF
-          SNOACC_M(I,M)=SNOACC_M(I,M)+SNOROT(I,M)
-          RCANACC_M(I,M)=RCANACC_M(I,M)+RCANROT(I,M)
-          SCANACC_M(I,M)=SCANACC_M(I,M)+SCANROT(I,M)
-          GROACC_M(I,M)=GROACC_M(I,M)+GROROT(I,M)
+          SNOACC_t(I,M)=SNOACC_t(I,M)+SNOROT(I,M)
+          RCANACC_t(I,M)=RCANACC_t(I,M)+RCANROT(I,M)
+          SCANACC_t(I,M)=SCANACC_t(I,M)+SCANROT(I,M)
+          GROACC_t(I,M)=GROACC_t(I,M)+GROROT(I,M)
           IF (FSSROW(I) .gt. 0.) THEN ! we will reuse the altotcntr_d counter values so don't need to do again.
-            ALTOTACC_M(I,M)=ALTOTACC_M(I,M) + (FSSROW(I)-
+            ALTOTACC_t(I,M)=ALTOTACC_t(I,M) + (FSSROW(I)-
      1                    (FSGVROT(I,M)+FSGSROT(I,M)+
      2                     FSGGROT(I,M)))/FSSROW(I)
           END IF
-          FSINACC_M(I,M)=FSINACC_M(I,M)+FSSROW(I)
-          FLINACC_M(I,M)=FLINACC_M(I,M)+FDLROW(I)
-          FLUTACC_M(I,M)=FLUTACC_M(I,M)+SBC*GTROT(I,M)**4
-          TAACC_M(I,M)=TAACC_M(I,M)+TAROW(I)
-          UVACC_M(I,M)=UVACC_M(I,M)+UVROW(I)
-          PRESACC_M(I,M)=PRESACC_M(I,M)+PRESROW(I)
-          QAACC_M(I,M)=QAACC_M(I,M)+QAROW(I)
+          FSINACC_t(I,M)=FSINACC_t(I,M)+FSSROW(I)
+          FLINACC_t(I,M)=FLINACC_t(I,M)+FDLROW(I)
+          FLUTACC_t(I,M)=FLUTACC_t(I,M)+SBC*GTROT(I,M)**4
+          TAACC_t(I,M)=TAACC_t(I,M)+TAROW(I)
+          UVACC_t(I,M)=UVACC_t(I,M)+UVROW(I)
+          PRESACC_t(I,M)=PRESACC_t(I,M)+PRESROW(I)
+          QAACC_t(I,M)=QAACC_t(I,M)+QAROW(I)
 658   CONTINUE
 676   CONTINUE
 C
@@ -6834,79 +6841,79 @@ C
 
       DO 808 I=1,NLTEST
         DO 809 M=1,NMTEST
-          PREACC_M(I,M)=PREACC_M(I,M)     !became [kg m-2 day-1] instead of [kg m-2 s-1]
-          GTACC_M(I,M)=GTACC_M(I,M)/REAL(NDAY)
-          QEVPACC_M(I,M)=QEVPACC_M(I,M)/REAL(NDAY)
-          EVAPACC_M(I,M)=EVAPACC_M(I,M)   !became [kg m-2 day-1] instead of [kg m-2 s-1]
-          HFSACC_M(I,M)=HFSACC_M(I,M)/REAL(NDAY)
-          HMFNACC_M(I,M)=HMFNACC_M(I,M)/REAL(NDAY)
-          ROFACC_M(I,M)=ROFACC_M(I,M)   !became [kg m-2 day-1] instead of [kg m-2 s-1
-          OVRACC_M(I,M)=OVRACC_M(I,M)   !became [kg m-2 day-1] instead of [kg m-2 s-1]
-          WTBLACC_M(I,M)=WTBLACC_M(I,M)/REAL(NDAY)
+          PREACC_t(I,M)=PREACC_t(I,M)     !became [kg m-2 day-1] instead of [kg m-2 s-1]
+          GTACC_t(I,M)=GTACC_t(I,M)/REAL(NDAY)
+          QEVPACC_t(I,M)=QEVPACC_t(I,M)/REAL(NDAY)
+          EVAPACC_t(I,M)=EVAPACC_t(I,M)   !became [kg m-2 day-1] instead of [kg m-2 s-1]
+          HFSACC_t(I,M)=HFSACC_t(I,M)/REAL(NDAY)
+          HMFNACC_t(I,M)=HMFNACC_t(I,M)/REAL(NDAY)
+          ROFACC_t(I,M)=ROFACC_t(I,M)   !became [kg m-2 day-1] instead of [kg m-2 s-1
+          OVRACC_t(I,M)=OVRACC_t(I,M)   !became [kg m-2 day-1] instead of [kg m-2 s-1]
+          WTBLACC_t(I,M)=WTBLACC_t(I,M)/REAL(NDAY)
           DO 726 J=1,IGND
-            TBARACC_M(I,M,J)=TBARACC_M(I,M,J)/REAL(NDAY)
-            THLQACC_M(I,M,J)=THLQACC_M(I,M,J)/REAL(NDAY)
-            THICACC_M(I,M,J)=THICACC_M(I,M,J)/REAL(NDAY)
-            THALACC_M(I,M,J)=THALACC_M(I,M,J)/REAL(NDAY)
+            TBARACC_t(I,M,J)=TBARACC_t(I,M,J)/REAL(NDAY)
+            THLQACC_t(I,M,J)=THLQACC_t(I,M,J)/REAL(NDAY)
+            THICACC_t(I,M,J)=THICACC_t(I,M,J)/REAL(NDAY)
+            THALACC_t(I,M,J)=THALACC_t(I,M,J)/REAL(NDAY)
 726       CONTINUE
 C
-          IF(FSINACC_M(I,M).GT.0.0) THEN
-            ALVSACC_M(I,M)=ALVSACC_M(I,M)/(FSINACC_M(I,M)*0.5)
-            ALIRACC_M(I,M)=ALIRACC_M(I,M)/(FSINACC_M(I,M)*0.5)
+          IF(FSINACC_t(I,M).GT.0.0) THEN
+            ALVSACC_t(I,M)=ALVSACC_t(I,M)/(FSINACC_t(I,M)*0.5)
+            ALIRACC_t(I,M)=ALIRACC_t(I,M)/(FSINACC_t(I,M)*0.5)
           ELSE
-            ALVSACC_M(I,M)=0.0
-            ALIRACC_M(I,M)=0.0
+            ALVSACC_t(I,M)=0.0
+            ALIRACC_t(I,M)=0.0
           ENDIF
 C
-          SNOACC_M(I,M)=SNOACC_M(I,M)/REAL(NDAY)
-          if (SNOARE_M(I,M) .GT. 0.) THEN
-             RHOSACC_M(I,M)=RHOSACC_M(I,M)/SNOARE_M(I,M)
-             TSNOACC_M(I,M)=TSNOACC_M(I,M)/SNOARE_M(I,M)
-             WSNOACC_M(I,M)=WSNOACC_M(I,M)/SNOARE_M(I,M)
+          SNOACC_t(I,M)=SNOACC_t(I,M)/REAL(NDAY)
+          if (SNOARE_t(I,M) .GT. 0.) THEN
+             RHOSACC_t(I,M)=RHOSACC_t(I,M)/SNOARE_t(I,M)
+             TSNOACC_t(I,M)=TSNOACC_t(I,M)/SNOARE_t(I,M)
+             WSNOACC_t(I,M)=WSNOACC_t(I,M)/SNOARE_t(I,M)
           END IF
-          TCANACC_M(I,M)=TCANACC_M(I,M)/REAL(NDAY)
-          RCANACC_M(I,M)=RCANACC_M(I,M)/REAL(NDAY)
-          SCANACC_M(I,M)=SCANACC_M(I,M)/REAL(NDAY)
-          GROACC_M(I,M)=GROACC_M(I,M)/REAL(NDAY)
-          FSINACC_M(I,M)=FSINACC_M(I,M)/REAL(NDAY)
-          FLINACC_M(I,M)=FLINACC_M(I,M)/REAL(NDAY)
-          FLUTACC_M(I,M)=FLUTACC_M(I,M)/REAL(NDAY)
-          TAACC_M(I,M)=TAACC_M(I,M)/REAL(NDAY)
-          UVACC_M(I,M)=UVACC_M(I,M)/REAL(NDAY)
-          PRESACC_M(I,M)=PRESACC_M(I,M)/REAL(NDAY)
-          QAACC_M(I,M)=QAACC_M(I,M)/REAL(NDAY)
+          TCANACC_t(I,M)=TCANACC_t(I,M)/REAL(NDAY)
+          RCANACC_t(I,M)=RCANACC_t(I,M)/REAL(NDAY)
+          SCANACC_t(I,M)=SCANACC_t(I,M)/REAL(NDAY)
+          GROACC_t(I,M)=GROACC_t(I,M)/REAL(NDAY)
+          FSINACC_t(I,M)=FSINACC_t(I,M)/REAL(NDAY)
+          FLINACC_t(I,M)=FLINACC_t(I,M)/REAL(NDAY)
+          FLUTACC_t(I,M)=FLUTACC_t(I,M)/REAL(NDAY)
+          TAACC_t(I,M)=TAACC_t(I,M)/REAL(NDAY)
+          UVACC_t(I,M)=UVACC_t(I,M)/REAL(NDAY)
+          PRESACC_t(I,M)=PRESACC_t(I,M)/REAL(NDAY)
+          QAACC_t(I,M)=QAACC_t(I,M)/REAL(NDAY)
           if (altotcntr_d(i) > 0) then
-            ALTOTACC_M(I,M)=ALTOTACC_M(I,M)/REAL(altotcntr_d(i))
+            ALTOTACC_t(I,M)=ALTOTACC_t(I,M)/REAL(altotcntr_d(i))
           else
-            ALTOTACC_M(I,M)=0.
+            ALTOTACC_t(I,M)=0.
           end if
-          FSSTAR=FSINACC_M(I,M)*(1.-ALTOTACC_M(I,M))
-          FLSTAR=FLINACC_M(I,M)-FLUTACC_M(I,M)
-          QH=HFSACC_M(I,M)
-          QE=QEVPACC_M(I,M)
-          QEVPACC_M_SAVE(I,M)=QEVPACC_M(I,M)   !FLAG! What is the point of this? JM Apr 1 2015
+          FSSTAR=FSINACC_t(I,M)*(1.-ALTOTACC_t(I,M))
+          FLSTAR=FLINACC_t(I,M)-FLUTACC_t(I,M)
+          QH=HFSACC_t(I,M)
+          QE=QEVPACC_t(I,M)
+          QEVPACC_M_SAVE(I,M)=QEVPACC_t(I,M)   !FLAG! What is the point of this? JM Apr 1 2015
           BEG=FSSTAR+FLSTAR-QH-QE
-          SNOMLT=HMFNACC_M(I,M)
+          SNOMLT=HMFNACC_t(I,M)
 C
-          IF(RHOSACC_M(I,M).GT.0.0) THEN
-              ZSN=SNOACC_M(I,M)/RHOSACC_M(I,M)
+          IF(RHOSACC_t(I,M).GT.0.0) THEN
+              ZSN=SNOACC_t(I,M)/RHOSACC_t(I,M)
           ELSE
               ZSN=0.0
           ENDIF
 C
-          IF(TCANACC_M(I,M).GT.0.01) THEN
-              TCN=TCANACC_M(I,M)-TFREZ
+          IF(TCANACC_t(I,M).GT.0.01) THEN
+              TCN=TCANACC_t(I,M)-TFREZ
           ELSE
               TCN=0.0
           ENDIF
 C
-          IF(TSNOACC_M(I,M).GT.0.01) THEN
-              TSN=TSNOACC_M(I,M)-TFREZ
+          IF(TSNOACC_t(I,M).GT.0.01) THEN
+              TSN=TSNOACC_t(I,M)-TFREZ
           ELSE
               TSN=0.0
           ENDIF
 C
-          GTOUT=GTACC_M(I,M)-TFREZ
+          GTOUT=GTACC_t(I,M)-TFREZ
 C
 
 
@@ -6920,28 +6927,28 @@ C
 C         WRITE TO OUTPUT FILES
 
           WRITE(611*k,6100) IDAY,IYEAR,FSSTAR,FLSTAR,QH,QE,SNOMLT,
-     1                    BEG,GTOUT,SNOACC_M(I,M),RHOSACC_M(I,M),
-     2                    WSNOACC_M(I,M),ALTOTACC_M(I,M),ROFACC_M(I,M),
+     1                    BEG,GTOUT,SNOACC_t(I,M),RHOSACC_t(I,M),
+     2                    WSNOACC_t(I,M),ALTOTACC_t(I,M),ROFACC_t(I,M),
      3                    CUMSNO,' TILE ',M
             IF(IGND.GT.3) THEN
-               WRITE(621*k,6201) IDAY,IYEAR,(TBARACC_M(I,M,J)-TFREZ,
-     1                  THLQACC_M(I,M,J),THICACC_M(I,M,J),J=1,5),
+               WRITE(621*k,6201) IDAY,IYEAR,(TBARACC_t(I,M,J)-TFREZ,
+     1                  THLQACC_t(I,M,J),THICACC_t(I,M,J),J=1,5),
      2                  ' TILE ',M
-               WRITE(631*k,6201) IDAY,IYEAR,(TBARACC_M(I,M,J)-TFREZ,
-     1                  THLQACC_M(I,M,J),THICACC_M(I,M,J),J=6,10),
+               WRITE(631*k,6201) IDAY,IYEAR,(TBARACC_t(I,M,J)-TFREZ,
+     1                  THLQACC_t(I,M,J),THICACC_t(I,M,J),J=6,10),
      2                  ' TILE ',M
             ELSE
-               WRITE(621*k,6200) IDAY,IYEAR,(TBARACC_M(I,M,J)-TFREZ,
-     1                  THLQACC_M(I,M,J),THICACC_M(I,M,J),J=1,3),
-     2                  TCN,RCANACC_M(I,M),SCANACC_M(I,M),TSN,ZSN,
+               WRITE(621*k,6200) IDAY,IYEAR,(TBARACC_t(I,M,J)-TFREZ,
+     1                  THLQACC_t(I,M,J),THICACC_t(I,M,J),J=1,3),
+     2                  TCN,RCANACC_t(I,M),SCANACC_t(I,M),TSN,ZSN,
      3                  ' TILE ',M
 
 
-               WRITE(631*k,6300) IDAY,IYEAR,FSINACC_M(I,M),
-     1                    FLINACC_M(I,M), TAACC_M(I,M)-TFREZ,
-     2                    UVACC_M(I,M),PRESACC_M(I,M),
-     3                    QAACC_M(I,M), PREACC_M(I,M),
-     4                    EVAPACC_M(I,M),
+               WRITE(631*k,6300) IDAY,IYEAR,FSINACC_t(I,M),
+     1                    FLINACC_t(I,M), TAACC_t(I,M)-TFREZ,
+     2                    UVACC_t(I,M),PRESACC_t(I,M),
+     3                    QAACC_t(I,M), PREACC_t(I,M),
+     4                    EVAPACC_t(I,M),
      5                   ' TILE ',M
             ENDIF
 

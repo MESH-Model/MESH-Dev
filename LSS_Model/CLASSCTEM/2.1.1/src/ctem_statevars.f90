@@ -1902,6 +1902,9 @@ subroutine veg_gat_allocate()
       allocate(vgat%etp(ilg))
       allocate(vgat%etpacc(ilg))
 
+      allocate(vgat%rofacc_m(ilg))
+      allocate(vgat%ovracc_m(ilg))
+
 
     ! These go into CTEM and are used to keep track of the bioclim limits.
     allocate(vgat%tcurm(ilg))

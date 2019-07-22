@@ -9,6 +9,7 @@
 
 !This current version will accept the same way for .CTM
 !The reading will go over and repeat for each GRU
+!This also helps to initialze the JK integer
 
 
 
@@ -19,19 +20,24 @@
      4              et0, jmax, kl, km, kmin0, rtmass0, solnh4, 
      5              rnlf0, rnsm0, rnrt0, conreal, LAI0, krubn, 
      6              kn, kni0, kdn0, kv0, nbfix0, ndep0, nfer0, 
-     7              nfero0)
+     7              nfero0,JK,fcancmxrow,etpacc,xminfbar)
 
 
 
       IMPLICIT NONE
 
+              INTEGER JK      !<PFT Nitrogen Select
               INTEGER nltest  !< Number of grids (formerly MOSAIC grids)
               INTEGER nmtest  !< Number of GRUs 
               INTEGER icc     !< Number of CTEM PFTs
               INTEGER iccp1   !< Number of CTEM PFTs plus Urban landuse
-              INTEGER J, M
+              INTEGER J, M, I
               character*80    TITLEC1
 
+              real, dimension(nltest)     :: etpacc
+              real, dimension(nltest,icc) :: XMINFBAR
+              
+              real, dimension(nltest,nmtest,icc) :: fcancmxrow
               real, dimension(nltest,nmtest,icc) :: rnleafrow
               real, dimension(nltest,nmtest,icc) :: rnstemrow
               real, dimension(nltest,nmtest,icc) :: rnrootrow
@@ -67,6 +73,20 @@
 
               !Open Nitrogen input file
          open(unit=15,file='MESH_input_nitrogen.CTN',status='old')
+
+
+!     Nitrogen PFT Select
+        JK = 1
+          DO  I=1,NLTEST
+          DO  M=1,NMTEST
+          DO  J=2,ICC
+             IF (fcancmxrow(I,M,J).GT.fcancmxrow(I,M,J-1)) THEN
+               JK=J
+             ENDIF
+          ENDDO
+          ENDDO
+          ENDDO
+
 
 
 
