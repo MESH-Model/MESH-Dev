@@ -159,9 +159,12 @@ C!
      4                       THFC, THLW, FCANCMX,  L2MAX, NOL2PFTS,
 C    ---------------------- INPUTS ABOVE, OUTPUTS BELOW ---------------
      5                        RC,  CO2I1, CO2I2, AN_VEG, RML_VEG,
-     6                        LFSTATUS,DAYL,DAYL_MAX)
+     6                        LFSTATUS,DAYL,DAYL_MAX,
+     7                        CTEMN,  NRUB0, XNUP_VEG, VCMAX0)
 
 C     HISTORY:
+C
+C     * JUL 23/19 - S.Sauer        Added Nitrogen Components for Photosynthesis originally written by B.Windeler and S.Huang
 C
 C     * JAN 5/15  - J. Melton      Use TCAN again. We instituted a PAI minimum for trees (grass and crops already had it) of
 C                                  of 1. This removed the wild TCAN values that could occur.
@@ -349,6 +352,14 @@ C
 C
 C
       REAL TEMP_PHI1, TEMP_PHI2, EA, EASAT, T_TEMP(ILG)
+
+C     Nitrogen variables  BW 7/2015
+      LOGICAL CTEMN, VCNONOFF
+      REAL XNUP_VEG(ILG,ICC),     NRUB0(ILG,ICC),    VCMAX0(ILG,ICC)
+      REAL TRUBX(KK),    TRUBN(KK),    TRUBO(KK),    VCMAXN0(KK)
+      REAL TX,           TN,           TOPT,         FSEAS
+      REAL VMXR
+
 C     -----------------------------------------------------------------
 C
 C     CONSTANTS AND PARAMETERS USED IN THE PHOTOSYNTHESIS MODEL. ALSO
@@ -512,6 +523,33 @@ C     EQUIVALENT CO2 FERTILIZATION EFFECT THAT MODEL ACTUALLY GIVES
 C     WITHOUT ANY PHOTOSYNTHESIS DOWN-REGULATION
       DATA GAMMA_M/0.95/
 
+C     Nitrogen parameters  BW 7/2015
+C     MAX. RUBISCO-N ACTIVITY, MOL CO2 M^-2 S^-1
+      DATA VCMAXN0/150.0E-06, 150.0E-06,  0.00E-06,
+     &             280.0E-06, 5000.0E-06, 600.0E-06,  
+     &             500.0E-06, 3000.0E-06, 0.00E-06,  
+     &             600.0E-06, 2500.0E-06, 0.00E-06/ 
+C       TEMPERATURE CRITERA FOR RUBISCO ACTIVITY
+C       MAX TEMP 50°C; NEEDS VERIFICATION !Nitrogen
+c      DATA TRUBX/ 323.1, 323.1, 0.000, !BW flag (original)
+      DATA TRUBX/ 323.1, 323.1, 0.000,
+     &            323.1, 323.1, 323.1,
+     &            323.1, 323.1, 0.000,
+     &            323.1, 323.1, 0.000/
+C       
+C       MIN TEMP  0°C; NEEDS VERIFICATION !Nitrogen
+c      DATA TRUBN/ 273.1, 273.1, 0.000,               
+      DATA TRUBN/ 273.1, 273.1, 0.000,
+     &            273.1, 273.1, 273.1,
+     &            273.1, 273.1, 0.000,
+     &            273.1, 273.1, 0.000/
+C       OPTIMUM TEMP 37°C; NEEDS VERIFICATION !Nitrogen
+c      DATA TRUBO/310.1, 310.1, 0.000,    
+      DATA TRUBO/310.1, 310.1, 0.000,
+     &           315.1, 315.1, 315.1,
+     &           310.1, 310.1, 0.000,
+     &           310.1, 310.1, 0.000/
+
 C     --------------------------------------------------------------
 C     DECIDE HERE IF WE WANT TO USE SINGLE LEAF OR TWO-LEAF MODEL
 C     CHOOSE 1 FOR SINGLE-LEAF MODEL, AND 2 FOR TWO-LEAF MODEL
@@ -530,6 +568,13 @@ C
       SMOOTH=.TRUE.
       MIN2=.FALSE.
       MIN3=.FALSE.
+
+C     Nitrogen switch  BW 7/2015
+C     SWITCH FOR VCMAX MODULATED BY SOIL-PLANT N CYCLING
+C
+      VCNONOFF=.TRUE.
+      IF (.NOT. CTEMN) VCNONOFF = .FALSE.
+C
 C
 C     --------------------------------------------------------------
 C
@@ -941,6 +986,34 @@ C>
              VMAXC_SUN(I,M) = use_vmax * FPAR_SUN(I,M)
              VMAXC_SHA(I,M) = use_vmax * FPAR_SHA(I,M)
           ENDIF
+
+
+!!     Nitrogen modulation of VCMAX  BW 7/2015
+
+        IF(VCNONOFF)THEN
+
+!!        TEMPERATURE RESPONSE FUNCTION OF RUBISCO ACTIVITY
+              TN        = TRUBN(SORT(M))
+              TX        = TRUBX(SORT(M))
+              TOPT      = TRUBO(SORT(M))
+              IF (TCAN(I).LE.TN .OR. TCAN(I).GE.TX) THEN
+                  FSEAS = 0.0
+              ELSE
+                  FSEAS = (TX-TCAN(I))/(TX-TOPT)
+     1               *(((TCAN(I)-TN)/(TOPT-TN))**((TOPT-TN)/(TX-TOPT)))
+              ENDIF
+
+!!        VCMAX0 DETERMINED BY BOTH NRUB0 AND CANOPY TEMPERATURE
+              VMXR       = VCMAXN0(SORT(M))*(1.0- EXP(-1.80*NRUB0(I,M))) !mol CO2/m2/s
+              VCMAX0(I,M)= VMXR *(MAX(FSEAS,0.0)*0.90+0.10)
+!!             Write FSEAS, write vmaxc
+              VMAXC(I,M)=VCMAX0(I,M)
+              IF(LEAFOPT.EQ.2)THEN
+                  VMAXC_SUN(I,M)=VCMAX0(I,M)*FPAR_SUN(I,M)
+                  VMAXC_SHA(I,M)=VCMAX0(I,M)*FPAR_SHA(I,M)
+              ENDIF
+        ENDIF
+
 C>
 !>------------- Changing Vcmax seasonally -----------------------///
 
@@ -1353,6 +1426,34 @@ C
         ENDIF
 670     CONTINUE
 660   CONTINUE
+
+
+!!     Nitrogen coupling  BW 7/2015
+!!     * CALCULATE ION ROOT UPTAKE REDUCTION FACTOR BY LIGHT-LIMITED CANOPY
+      IF(CTEMN) THEN
+      DO 665 J = 1,ICC
+        DO 675 I = IL1, IL2
+        IF(FCANC(I,J).GT.ZERO)THEN
+
+          IF(COSZS(I).GT.0.0)THEN
+           IF(LEAFOPT.EQ.1)THEN
+             XNUP_VEG(I,J)=1.0-EXP(-MAX(1.0E-9,JE(I,J))
+     1                             /MAX(1.0E-8,JC(I,J)))
+           ELSE IF(LEAFOPT.EQ.2)THEN
+             XNUP_VEG(I,J)=1.0
+     1             -EXP(-MAX(1.0E-9,(JE_SUN(I,J)+JE_SHA(I,J)))
+     2                  /MAX(1.0E-8,(JC_SUN(I,J)+JC_SHA(I,J))))
+           ENDIF
+          ELSE
+!!       BW find what XNUP should be at night 8/2015
+          ENDIF
+
+        ENDIF
+675     CONTINUE 
+665   CONTINUE 
+        ENDIF
+
+
 C>
 C>ESTIMATE LEAF MAINTENANCE RESPIRATION RATES AND NET PHOTOSYNTHETIC
 C>RATE. THIS NET PHOSYNTHETIC RATE IS /M^2 OF VEGETATED LAND.

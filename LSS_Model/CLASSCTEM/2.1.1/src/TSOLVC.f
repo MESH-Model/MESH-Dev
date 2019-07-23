@@ -26,7 +26,8 @@
      L                 XDIFFUS,ICTEM,IC,CO2I1,CO2I2,
      M                 ctem_on,SLAI,FCANCMX,L2MAX,
      N                 NOL2PFTS,CFLUXV,ANVEG,RMLVEG, LFSTATUS,
-     O                 DAYL,DAYL_MAX)
+     O                 DAYL,DAYL_MAX,
+     P                 CTEMN, XNUP_VEG, NRUB0, VCMAX0)
 C
 C     * AUG 30/16 - J.Melton    Replace ICTEMMOD with ctem_on (logical switch).
 C     * JUL 22/15 - D.VERSEGHY. LIMIT CALCULATED EVAPORATION RATES
@@ -324,6 +325,11 @@ C
 C
       INTEGER              ITER  (ILG),    NITER (ILG),    IEVAPC(ILG),
      1                     KF1   (ILG),    KF2   (ILG)
+
+
+C     Nitrogen variables  BW 7/2015
+      LOGICAL CTEMN  
+      REAL XNUP_VEG(ILG,ICTEM), NRUB0(ILG,ICTEM), VCMAX0(ILG,ICTEM)
 C
 C     * TEMPORARY VARIABLES.
 C
@@ -537,7 +543,8 @@ C
      3                   IL1,   IL2,       IG,   ICTEM,   ISNOW,  SLAI,
      4               THFC,  THLW,  FCANCMX,   L2MAX,NOL2PFTS,
      5              RCPHTSYN, CO2I1,    CO2I2,   ANVEG,  RMLVEG,
-     6              LFSTATUS,DAYL, DAYL_MAX)  !FLAG TEST LFSTATUS is new and brought in to test. JM Dec 4.
+     6              LFSTATUS,DAYL, DAYL_MAX,  !FLAG TEST LFSTATUS is new and brought in to test. JM Dec 4.
+     7              CTEMN, NRUB0, XNUP_VEG,  VCMAX0)  !Nitrogen Components
 C
 C       * KEEP CLASS RC FOR BONEDRY POINTS (DIANA'S FLAG OF 1.E20) SUCH
 C       * THAT WE GET (BALT-BEG) CONSERVATION.

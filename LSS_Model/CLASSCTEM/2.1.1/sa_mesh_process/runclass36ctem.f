@@ -10,7 +10,7 @@
 
       MODULE RUNCLASS36CTEM
 C
-C     REVISION HISTORY:
+C     REVISION HISTORY:  
 
 C     * JUL 2019 : Code added Nitrogen components from Huang et al.(2011) and Ben Windeler
 C       Stefan Sauer
@@ -2628,8 +2628,8 @@ C===================== CTEM ==============================================\
       nrubrow           => vrot%nrub
       nrub0row          => vrot%nrub0
 
-      vcmx0row          => vrot%vcmx0
-      btdpthrow         => vrot%btdpth
+      vcmx0row           => vrot%vcmx0
+      btdpthrow          => vrot%btdpth
 
       dndeprow          => vrot%dndep
       dnferrow          => vrot%dnfer
@@ -2854,8 +2854,8 @@ C===================== CTEM ==============================================\
       nrubgat           => vgat%nrub
       nrub0gat          => vgat%nrub0
 
-      vcmx0gat          => vgat%vcmx0
-      btdpthgat         => vgat%btdpth
+      vcmx0gat           => vgat%vcmx0
+      btdpthgat          => vgat%btdpth
 
       dndepgat          => vgat%dndep
       dnfergat          => vgat%dnfer
@@ -3980,8 +3980,8 @@ C    CTEM pointer delcarations
       nrubrow           => vrot%nrub
       nrub0row          => vrot%nrub0
 
-      vcmx0row          => vrot%vcmx0
-      btdpthrow         => vrot%btdpth
+      vcmx0row           => vrot%vcmx0
+      btdpthrow          => vrot%btdpth
 
       dndeprow          => vrot%dndep
       dnferrow          => vrot%dnfer
@@ -4207,8 +4207,8 @@ C    CTEM pointer delcarations
       nrubgat           => vgat%nrub
       nrub0gat          => vgat%nrub0
 
-      vcmx0gat          => vgat%vcmx0
-      btdpthgat         => vgat%btdpth
+      vcmx0gat           => vgat%vcmx0
+      btdpthgat          => vgat%btdpth
 
       dndepgat          => vgat%dndep
       dnfergat          => vgat%dnfer
@@ -4661,43 +4661,38 @@ c
      6                 cmasvegcgat,veghghtgat, rootdpthgat,alvsctmgat,
      7                     alirctmgat, paicgat,  slaicgat )
 
-
-!     Nitrogen initialization
+      !Nitrogen initialization BW 8/2015
       IF (CTEMN) THEN
-          DO I=1,NLTEST
+          DO 95 I=1,NLTEST
               DO  M =1,NMTEST
-              BTDPTHROW(I,M)= MAX(ROOTROT(I,M,1),ROOTROT(I,M,2),
-     &                         ROOTROT(I,M,3))  !BOTTOM DRAINAGE DEPTH
 
-!      INITIAL VCMAX0 (umol/m2/s)
+      BTDPTHROW(I,M)=MAX(ROOTROT(I,M,1),ROOTROT(I,M,2),ROOTROT(I,M,3)) !BOTTOM DRAINAGE DEPTH
+      ! INITIAL VCMAX0 (umol/m2/s)
                 DO J=1,ICC
-                  VCMX0ROW(I,M,J) = 60.0E-6          !DEFAULT VALUE
-                ENDDO !J
-              ENDDO !M
-!Comment out these yearly values for now
-              !YRNDEP(I)  = 0.0     ! YEARLY N DEPOSITION (gN/m2)
-              !YRNFER(I)  = 0.0     ! YEARLY N FERTILIZATION (gN/m2)
-              !YRNPLTR(I) = 0.0     ! YEARLY N LITTER-FALLING (gN/m2)
-              !YRNDIS(I)  = 0.0     ! YEARLY N DISTURBANCE LOSS (gN/m2)
-              !YRNLSOM(I) = 0.0     ! YEARLY N HUMIFICATION (gN/m2)
-              !YRNMIN(I)  = 0.0     ! YEARLY N MINERALIZATION (gN/m2)
-              !YRNNIT(I)  = 0.0     ! YEARLY N NITRIFICATION (gN/m2)
-              !YRNPUP(I)  = 0.0     ! YEARLY N PLANT UPTAKE (gN/m2)
-              !YRNDNIT(I) = 0.0     ! YEARLY N DENITRIFICATION (gN/m2)
-              !YRNLEA(I)  = 0.0     ! YEARLY NO3 LEACHING (gN/m2)
-              !YRNVOL(I)  = 0.0     ! YEARLY NH4 VOLATILIZATION(gN/m2)
-              !YRNSRCE(I) = 0.0     ! YEARLY N SOURCES (gN/m2)
-              !YRNLOSS(I) = 0.0     ! YEARLY N LOSSES (gN/m2)
-              !YRNN2O(I)  = 0.0   ! YEARLY N2O LOSSES (gN/m2) HSuo
-              !YRNN2(I)   = 0.0   ! YEARLY N2 LOSSES (gN/m2) HSuo
-         ENDDO !I
-
+                  VCMX0ROW(I,M,J) = 60.0E-6                     !DEFAULT VALUE
+                ENDDO
+              ENDDO
+              !YRNDEP(I)  = 0.0                       ! YEARLY N DEPOSITION (gN/m2)
+              !YRNFER(I)  = 0.0                       ! YEARLY N FERTILIZATION (gN/m2)
+              !YRNPLTR(I) = 0.0                       ! YEARLY N LITTER-FALLING (gN/m2)
+              !YRNDIS(I)  = 0.0                       ! YEARLY N DISTURBANCE LOSS (gN/m2)
+              !YRNLSOM(I) = 0.0                       ! YEARLY N HUMIFICATION (gN/m2)
+              !YRNMIN(I)  = 0.0                       ! YEARLY N MINERALIZATION (gN/m2)
+              !YRNNIT(I)  = 0.0                       ! YEARLY N NITRIFICATION (gN/m2)
+              !YRNPUP(I)  = 0.0                       ! YEARLY N PLANT UPTAKE (gN/m2)
+              !YRNDNIT(I) = 0.0                       ! YEARLY N DENITRIFICATION (gN/m2)
+              !YRNLEA(I)  = 0.0                       ! YEARLY NO3 LEACHING (gN/m2)
+              !YRNVOL(I)  = 0.0                       ! YEARLY NH4 VOLATILIZATION (gN/m2)
+              !YRNSRCE(I) = 0.0                       ! YEARLY N SOURCES (gN/m2)
+              !YRNLOSS(I) = 0.0                       ! YEARLY N LOSSES (gN/m2)
+                !YRNN2O(I)  = 0.0                       ! YEARLY N2O LOSSES (gN/m2) HSuo
+                !YRNN2(I)   = 0.0                       ! YEARLY N2 LOSSES (gN/m2) HSuo
+95        CONTINUE
          DO I=1,ILG
               CALSOIL(I)  = .TRUE.                   ! DEFINE SOIL TYPE AS CALCIOUS
             ! Currently constant, if changed should go through gather/scatter
          ENDDO
-
-      ENDIF !CTEMN
+      ENDIF
 
 
       call ctems1(gleafmasrow,bleafmasrow,stemmassrow,rootmassrow,
@@ -4754,7 +4749,7 @@ c
         end do
 190    continue
 
-c
+
 !       ! FLAG test JM Dec 18 2015
 !     Find the maximum daylength at this location for day 172 = June 21st - summer solstice.
       do i = 1, nltest
@@ -4765,6 +4760,12 @@ c
        end if
       end do
       ! end FLAG test JM Dec 18 2015
+
+!     Nitrogen time initialization BW 7/2015
+      do I=1,NLTEST
+          NDAYTIME(I) = 0
+      enddo
+
 
       endif   ! if (ctem_on)
 
@@ -4779,10 +4780,7 @@ C     **** LAUNCH RUN. ****
       NCOUNT=1
       NDAY=86400/NINT(DELT) !Based on number of simulations in a single year
 
-     !Nitrogen time initialization
-      do I=1,NLTEST
-          NDAYTIME(I) = 0
-      enddo
+
 
 	WRITE(*,*) ' '
 	WRITE(*,*) 'Successful: RUNCLASS36CTEM_init() is done'
@@ -4832,8 +4830,6 @@ C     **** LAUNCH RUN. ****
        !Note that these variables have dimension ILG, which in our case is the same as NMOS/NMTEST
 !DAN    ILG is the total number of active tiles (which increment by the number of active NMOS inside each grid NLAT).
 !DAN    Must convert from tile indexing using ILMOS=NLAT and JLMOS=NMOS.
-
-
 
       DO k = 1, NML
 
@@ -5347,6 +5343,16 @@ C
      &      twarmmgat,    tcoldmgat,     gdd5gat,
      1      ariditygat, srplsmongat,  defctmongat, anndefctgat,
      2      annsrplsgat,   annpcpgat,  dry_season_lengthgat,
+c     Nitrogen ctem variables BW 8/2015
+     &      RNLEAFGAT, RNSTEMGAT, RNROOTGAT, RNLITRGAT, RNSOMGAT,
+     &      SNH4GAT,   SNO3GAT,   NRUBGAT,   NRUB0GAT,  VCMX0GAT,
+     &      BTDPTHGAT, ETPGAT, 
+     &      DNDEPGAT,     DNFERGAT,    DNPLTRGAT,     DNDISGAT,
+     &      DNLSOMGAT,     DNMINGAT,     DNNITGAT,     DNPUPGAT,
+     &      DNDNITGAT,     DNLEAGAT,     DNVOLGAT,
+     &      DNSORGAT,     DNLOSGAT,
+     &      N2OTOTGAT,     N2TOTGAT,    DNBFIXGAT,   DNPLOSSGAT,
+     &      DNSLOSSGAT,
      r      ilmos,       jlmos,       iwmos,        jwmos,
      s      nml,      fcancmxrow,  rmatcrow,    zolncrow,  paicrow,
      v      ailcrow,     ailcgrow,    cmasvegcrow,  slaicrow,
@@ -5387,7 +5393,17 @@ C
      &      wetfdynrow, ch4dyn1row, ch4dyn2row, ch4soillsrow,
      &      twarmmrow,    tcoldmrow,     gdd5row,
      1      aridityrow, srplsmonrow,  defctmonrow, anndefctrow,
-     2      annsrplsrow,   annpcprow,  dry_season_lengthrow)
+     2      annsrplsrow,   annpcprow,  dry_season_lengthrow,
+c     Nitrogen ctem variables BW 8/2015
+     &      RNLEAFROW, RNSTEMROW, RNROOTROW, RNLITRROW, RNSOMROW,
+     &      SNH4ROW,   SNO3ROW,   NRUBROW,   NRUB0ROW,  VCMX0ROW,
+     &      BTDPTHROW, ETPROW,
+     &      DNDEPROW,     DNFERROW,    DNPLTRROW,     DNDISROW,
+     &      DNLSOMROW,     DNMINROW,     DNNITROW,     DNPUPROW,
+     &      DNDNITROW,     DNLEAROW,     DNVOLROW,
+     &      DNSORROW,     DNLOSROW,
+     &      N2OTOTROW,     N2TOTROW,    DNBFIXROW,   DNPLOSSROW,
+     &      DNSLOSSROW )
 c
 C===================== CTEM ============================================ /
 C
@@ -5480,7 +5496,8 @@ C          * ADAPTED TO COUPLING OF CLASS3.6 AND CTEM
      R  CFLUXCSGAT,ANCSVEGGAT,ANCGVEGGAT,RMLCSVEGGAT,RMLCGVEGGAT,
      S  TCSNOW,GSNOW,ITC,ITCG,ITG,    ILG,    1,NML,  JLAT,N, ICAN,
      T  IGND,   IZREF,  ISLFD,  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI,
-     U  NBS,    ISNOALB,lfstatusgat,daylgat, dayl_maxgat)
+     U  NBS,    ISNOALB,lfstatusgat,daylgat, dayl_maxgat,
+     V  CTEMN,  ETPGAT,    XMINF,  BIGAT,     NRUB0GAT,  VCMX0GAT)                                                                       )
 
 
 

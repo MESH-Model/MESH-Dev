@@ -42,8 +42,16 @@
      &      twarmmgat,    tcoldmgat,     gdd5gat,
      1      ariditygat, srplsmongat,  defctmongat, anndefctgat,
      2      annsrplsgat,   annpcpgat,  dry_season_lengthgat,
-
-c
+c     Nitrogen ctem variables BW 8/2015
+     &      RNLEAFGAT, RNSTEMGAT, RNROOTGAT, RNLITRGAT, RNSOMGAT,
+     &      SNH4GAT,   SNO3GAT,   NRUBGAT,   NRUB0GAT,  VCMX0GAT,
+     &      BTDPTHGAT, ETPGAT, 
+     &      DNDEPGAT,     DNFERGAT,    DNPLTRGAT,     DNDISGAT,
+     &      DNLSOMGAT,     DNMINGAT,     DNNITGAT,     DNPUPGAT,
+     &      DNDNITGAT,     DNLEAGAT,     DNVOLGAT,
+     &      DNSORGAT,     DNLOSGAT,
+     &      N2OTOTGAT,     N2TOTGAT,    DNBFIXGAT,   DNPLOSSGAT,
+     &      DNSLOSSGAT,
      r      ilmos,       jlmos,       iwmos,        jwmos,
      s      nml,    fcancmxrow,  rmatcrow,    zolncrow,     paicrow,
      v      ailcrow,     ailcgrow,    cmasvegcrow,  slaicrow,
@@ -84,7 +92,17 @@ c
      &      wetfdynrow, ch4dyn1row, ch4dyn2row, ch4soillsrow,
      &      twarmmrow,    tcoldmrow,     gdd5row,
      1      aridityrow, srplsmonrow,  defctmonrow, anndefctrow,
-     2      annsrplsrow,   annpcprow,  dry_season_lengthrow)
+     2      annsrplsrow,   annpcprow,  dry_season_lengthrow,
+c     Nitrogen ctem variables BW 8/2015
+     &      RNLEAFROW, RNSTEMROW, RNROOTROW, RNLITRROW, RNSOMROW,
+     &      SNH4ROW,   SNO3ROW,   NRUBROW,   NRUB0ROW,  VCMX0ROW,
+     &      BTDPTHROW, ETPROW,
+     &              DNDEPROW,     DNFERROW,    DNPLTRROW,     DNDISROW,
+     &             DNLSOMROW,     DNMINROW,     DNNITROW,     DNPUPROW,
+     &             DNDNITROW,     DNLEAROW,     DNVOLROW,
+     &              DNSORROW,     DNLOSROW,
+     &             N2OTOTROW,     N2TOTROW,    DNBFIXROW,   DNPLOSSROW,
+     &            DNSLOSSROW)
 
 c
 C     July 12 2013    Bring in the ctem params use statement
@@ -315,6 +333,37 @@ c   Methane related variables
      9       dry_season_lengthrow(nlat,nmos),
      +       dry_season_lengthgat(ilg)
 
+
+C     Nitrogen ratios and contents (ROW) BW 8/2015
+      REAL RNLEAFROW(nlat,nmos,icc),   RNSTEMROW(nlat,nmos,icc)
+      REAL RNROOTROW(nlat,nmos,icc)
+      REAL RNLITRROW(nlat,nmos,iccp1), RNSOMROW(nlat,nmos,iccp1)
+      REAL SNH4ROW(nlat,nmos,iccp1),   SNO3ROW(nlat,nmos,iccp1)
+      REAL NRUBROW(nlat,nmos,icc),     NRUB0ROW(nlat,nmos,icc)
+      REAL VCMX0ROW(nlat,nmos,icc),    BTDPTHROW(nlat,nmos)
+C     Nitrogen ratios and contents (GAT) BW 8/2015
+      REAL RNLEAFGAT(ilg, icc),   RNSTEMGAT(ilg, icc)
+      REAL RNROOTGAT(ilg, icc)
+      REAL RNLITRGAT(ilg, iccp1), RNSOMGAT(ilg, iccp1)
+      REAL SNH4GAT(ilg, iccp1),   SNO3GAT(ilg,iccp1)
+      REAL NRUBGAT(ilg, icc),     NRUB0GAT(ilg, icc)
+      REAL VCMX0GAT(ilg,icc),     BTDPTHGAT(ilg)
+C     Nitrogen budget outputs
+      REAL DNDEPGAT( ilg),       DNFERGAT( ilg),        DNPLTRGAT( ilg),
+     1     DNDISGAT( ilg),      DNLSOMGAT( ilg),         DNMINGAT( ilg),
+     2     DNNITGAT( ilg),       DNPUPGAT( ilg),        DNDNITGAT( ilg),
+     3     DNLEAGAT( ilg),       DNVOLGAT( ilg),         DNSORGAT( ilg),
+     4     DNLOSGAT( ilg),      N2OTOTGAT( ilg),         N2TOTGAT( ilg),
+     5    DNBFIXGAT( ilg),     DNPLOSSGAT( ilg),       DNSLOSSGAT( ilg)
+
+      REAL DNDEPROW(nlat,nmos),DNFERROW(nlat,nmos),DNPLTRROW(nlat,nmos),
+     1  DNDISROW(nlat,nmos), DNLSOMROW(nlat,nmos), DNMINROW(nlat,nmos),
+     2  DNNITROW(nlat,nmos), DNPUPROW(nlat,nmos), DNDNITROW(nlat,nmos),
+     3  DNLEAROW(nlat,nmos), DNVOLROW(nlat,nmos),  DNSORROW(nlat,nmos),
+     4  DNLOSROW(nlat,nmos), N2OTOTROW(nlat,nmos), N2TOTROW(nlat,nmos),
+     5  DNBFIXROW(nlat,nmos),DNPLOSSROW(nlat,nmos),DNSLOSSROW(nlat,nmos)
+      REAL ETPGAT(ilg),      ETPROW(nlat,nmos)
+
 c----------------------------------------------------------------------
       do 100 k=1,nml
           sdepgat(k)      = sdeprow(ilmos(k),jlmos(k))
@@ -387,7 +436,29 @@ c----------------------------------------------------------------------
           mlightnggat(k,j)=mlightngrow(ilmos(k),jlmos(k),j)
 90    continue
 
-c  
+          !Nitrogen variable BW 8/2015
+          BTDPTHGAT(k)    = BTDPTHROW(ilmos(k),jlmos(k))
+          DNDEPGAT(k)     = DNDEPROW(ilmos(k),jlmos(k))
+          DNFERGAT(k)     = DNFERROW(ilmos(k),jlmos(k))
+          DNPLTRGAT(k)    = DNPLTRROW(ilmos(k),jlmos(k))
+          DNDISGAT(k)     = DNDISROW(ilmos(k),jlmos(k))
+          DNLSOMGAT(k)    = DNLSOMROW(ilmos(k),jlmos(k))
+          DNMINGAT(k)     = DNMINROW(ilmos(k),jlmos(k))
+          DNNITGAT(k)     = DNNITROW(ilmos(k),jlmos(k))
+          DNPUPGAT(k)     = DNPUPROW(ilmos(k),jlmos(k))
+          DNDNITGAT(k)    = DNDNITROW(ilmos(k),jlmos(k))
+          DNLEAGAT(k)     = DNLEAROW(ilmos(k),jlmos(k))
+          DNVOLGAT(k)     = DNVOLROW(ilmos(k),jlmos(k))
+          DNSORGAT(k)     = DNSORROW(ilmos(k),jlmos(k))
+          DNLOSGAT(k)     = DNLOSROW(ilmos(k),jlmos(k))
+          N2OTOTGAT(k)    = N2OTOTROW(ilmos(k),jlmos(k))
+          N2TOTGAT(k)     = N2TOTROW(ilmos(k),jlmos(k))
+          DNBFIXGAT(k)    = DNBFIXROW(ilmos(k),jlmos(k))
+          DNPLOSSGAT(k)   = DNPLOSSROW(ilmos(k),jlmos(k))
+          DNSLOSSGAT(k)   = DNSLOSSROW(ilmos(k),jlmos(k))
+          ETPGAT(k)       = ETPROW(ilmos(k),jlmos(k))
+
+  
 100   continue
 c
       do 101 l=1,icc
@@ -469,7 +540,16 @@ c         fire emission variables
           emit_ocgat(k,l)   = emit_ocrow(ilmos(k),jlmos(k),l)   
           emit_bcgat(k,l)   = emit_bcrow(ilmos(k),jlmos(k),l) 
           burnvegfgat(k,l)  = burnvegfrow(ilmos(k),jlmos(k),l) 
-c
+
+
+c         Nitrogen variables BW 8/2015
+          rnleafgat(k,l)    = rnleafrow(ilmos(k),jlmos(k),l)
+          rnrootgat(k,l)    = rnrootrow(ilmos(k),jlmos(k),l)
+          rnstemgat(k,l)    = rnstemrow(ilmos(k),jlmos(k),l)
+          nrubgat(k,l)      = nrubrow(ilmos(k),jlmos(k),l)
+          nrub0gat(k,l)     = nrub0row(ilmos(k),jlmos(k),l)
+          vcmx0gat(k,l)     = vcmx0row(ilmos(k),jlmos(k),l)
+
 101   continue
 c
       do 102 l=1,iccp1
@@ -481,6 +561,11 @@ c
           soilcresveggat(k,l)= soilcresvegrow(ilmos(k),jlmos(k),l)
           nepveggat(k,l)   = nepvegrow(ilmos(k),jlmos(k),l)
           nbpveggat(k,l)   = nbpvegrow(ilmos(k),jlmos(k),l)
+c         Nitrogen variables BW 8/2015
+          rnlitrgat(k,l)    = rnlitrrow(ilmos(k),jlmos(k),l)
+          rnsomgat(k,l)     = rnsomrow(ilmos(k),jlmos(k),l)
+          snh4gat(k,l)      = snh4row(ilmos(k),jlmos(k),l)
+          sno3gat(k,l)      = sno3row(ilmos(k),jlmos(k),l)
 
 102   continue
 c

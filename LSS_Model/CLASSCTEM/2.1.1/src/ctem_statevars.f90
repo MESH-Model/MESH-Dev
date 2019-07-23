@@ -1465,6 +1465,9 @@ subroutine veg_rot_allocate()
       allocate(vrot%nrub(nlat,nmos,icc))
       allocate(vrot%nrub0(nlat,nmos,icc))
 
+      allocate(vrot%vcmx0(nlat,nmos,icc))
+      allocate(vrot%btdpth(nlat,nmos))
+
       allocate(vrot%dndep(nlat,nmos))
       allocate(vrot%dnfer(nlat,nmos))
       allocate(vrot%dnpltr(nlat,nmos))
@@ -1879,6 +1882,9 @@ subroutine veg_gat_allocate()
       allocate(vgat%sno3(ilg,iccp1))
       allocate(vgat%nrub(ilg,icc))
       allocate(vgat%nrub0(ilg,icc))
+
+      allocate(vgat%vcmx0(ilg,icc))
+      allocate(vgat%btdpth(ilg))
 
       allocate(vgat%dndep(ilg))
       allocate(vgat%dnfer(ilg))

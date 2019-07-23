@@ -39,7 +39,8 @@
      Y   TCSNOW, GSNOW,                                                 
      Z   ITC,    ITCG,   ITG,    ILG,    IL1,IL2,JL,N,   IC,     
      +   IG,     IZREF,  ISLFD,  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI,
-     +   NBS, ISNOALB,LFSTATUS,DAYL, DAYL_MAX)
+     +   NBS, ISNOALB,LFSTATUS,DAYL, DAYL_MAX,
+     +   CTEMN,  ETP,    XMINF,  BI,     NRUB0,  VCMAX0 )
 C
 C     * AUG 30/16 - J.Melton    Replace ICTEMMOD with ctem_on (logical switch).
 C     * AUG 04/15 - M.LAZARE.   SPLIT FROOT INTO TWO ARRAYS, FOR CANOPY
@@ -504,6 +505,12 @@ C
       INTEGER              ITER  (ILG),    NITER (ILG),    JEVAP (ILG),
      1                     KF    (ILG),    KF1   (ILG),    KF2   (ILG),
      2                     IEVAPC(ILG)
+
+C     Nitrogen variables  BW 7/2015
+      LOGICAL CTEMN
+      REAL ETP(ILG),           XMINF(ILG,ICTEM),     NRUB0(ILG,ICTEM),
+     1     VCMAX0(ILG,ICTEM),  XUPCSVEG(ILG,ICTEM),  XUPCGVEG(ILG,ICTEM)
+      REAL BI(ILG,IG)
 C
 C     * TEMPORARY VARIABLES.
 C
@@ -872,7 +879,8 @@ C
      L                XDIFFUS,ICTEM,IC,CO2I1CS,CO2I2CS,
      M                ctem_on,SLAI,FCANCMX,L2MAX,
      N                NOL2PFTS,CFLUXCS,ANCSVEG,RMLCSVEG,LFSTATUS,
-     O                DAYL, DAYL_MAX)
+     O                DAYL, DAYL_MAX,
+     P                CTEMN,  XUPCSVEG, NRUB0, VCMAX0)                                  )
 
           CALL TSPOST(GSNOWC,TSNOCS,WSNOCS,RHOSCS,QMELTC,
      1                GZROCS,TSNBOT,HTCS,HMFN,
@@ -1226,7 +1234,8 @@ C
      L                XDIFFUS,ICTEM,IC,CO2I1CG,CO2I2CG,
      M                ctem_on,SLAI,FCANCMX,L2MAX,
      N                NOL2PFTS,CFLUXCG,ANCGVEG,RMLCGVEG,LFSTATUS,
-     O                DAYL, DAYL_MAX)
+     O                DAYL, DAYL_MAX,
+     P                CTEMN,  XUPCGVEG, NRUB0, VCMAX0)
 
           CALL TNPOST(TBARC,G12C,G23C,TPONDC,GZEROC,QFREZC,GCONST,
      1                GCOEFF,TBAR,TCTOPC,TCBOTC,HCPC,ZPOND,TSURX,
@@ -1516,6 +1525,28 @@ C
          
 
   500 CONTINUE
+
+C     Nitrogen coupling  BW 7/2015
+c     Calculation of certain Nitrogen variables
+      DO 600 I = IL1, IL2
+        IF( (FC(I)+FCS(I)).GT. 1.0E-12) THEN
+          ETP(I)=FCS(I)*EVAPCS(I)+FC (I)*EVAPC (I)                      
+          ETP(I)=ETP(I)*RHOW                                            
+        ELSE
+          ETP(I)=0.0
+        ENDIF
+600   CONTINUE
+C
+      DO 610 J = 1, ICTEM
+          DO 620 I = IL1, IL2
+              IF( (FC(I)+FCS(I)).GT. 1.0E-12) THEN
+                  XMINF(I,J)=FCANCS(I,J)*XUPCSVEG(I,J)
+     1                      +FCANC(I,J)*XUPCGVEG(I,J)                   
+              ELSE
+                  XMINF(I,J)=0.0
+              ENDIF
+620       CONTINUE
+610   CONTINUE
 
                                                               
       RETURN                                                                      
