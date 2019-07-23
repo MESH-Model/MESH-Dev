@@ -25,7 +25,8 @@
      &                   currlat,       THP,       BI,    PSIS, &
      &                   ch4conc,       GRAV,    RHOW,  RHOICE,&
      &                   leapnow, &
-!
+     &                  CTEMN,     CALSOIL,       THPOR,     BTDPTH,&
+     &                 ETPACC,         OVR,         ROF,   XMINF,&
 !    -------------- inputs used by ctem are above this line ---------
 !
      &                    stemmass, rootmass, litrmass,  gleafmas,&
@@ -45,6 +46,9 @@
      &                     aridity, srplsmon, defctmon,  anndefct,&
      &                    annsrpls,  annpcp,dry_season_length,&
      &                    burnvegf, pstemmass, pgleafmass,&
+     &                 RNLEAF,      RNSTEM,       RNROOT,      RNLITR,&
+     &                  RNSOM,        SNH4,         SNO3,        NRUB,&
+     &                  NRUB0,&
 !
 !    -------------- inputs updated by ctem are above this line ------
 !
@@ -67,8 +71,14 @@
      &                      rmlveg,  rmsveg,   rmrveg,    rgveg,&
      &                vgbiomas_veg,  gppveg,   nepveg,   nbpveg,&
      &                  hetrsveg,autoresveg, ltresveg, scresveg,&
-     &                 nml,    ilmos, jlmos,  ch4wet1,  ch4wet2,  &
-     &                 wetfdyn, ch4dyn1, ch4dyn2, ch4soills)
+     &                 nml,    ilmos, jlmos,  ch4wet1,  ch4wet2, &
+     &                 wetfdyn, ch4dyn1, ch4dyn2, ch4soills,&
+     &              DNDEPGAT,   DNFERGAT,   DNPLTRGAT, DNDISGAT,&
+     &             DNLSOMGAT,   DNMINGAT,   DNNITGAT,  DNPUPGAT,&
+     &             DNDNITGAT,   DNLEAGAT,   DNVOLGAT,&
+     &              DNSORGAT,   DNLOSGAT,&
+     &             N2OTOTGAT,   N2TOTGAT,  DNBFIXGAT,DNPLOSSGAT,&
+     &            DNSLOSSGAT)                                           
 !
 !    ---------------- outputs are listed above this line ------------ 
 !
@@ -516,6 +526,53 @@ real reprocost(ilg,icc) !<
 real repro_cost_g(ilg)  !<
 real lambdaalt !<
 
+
+!!     Nitrogen components for ctem
+      LOGICAL CTEMN
+      LOGICAL CALSOIL(ILG)
+
+      INTEGER DELT
+      INTEGER KGROWS(ILG, ICC),     KGROWE(ILG,ICC), PLFSTATUS(ILG,ICC)
+
+      REAL THPOR(ILG, IGND)
+      REAL BTDPTH(ILG),       FGT(ILG)
+      REAL ETPACC(ILG),       OVR(ILG),         ROF(ILG)
+      REAL ETR(ILG, ICC),     RUNOFF(ILG, ICCP1),  DRAIN(ILG, ICCP1)
+      REAL XMINF(ILG,ICC)
+
+      REAL NPPLFG(ILG, ICC),  NPPSMG(ILG, ICC),   NPPRTG(ILG, ICC)
+
+      REAL RDCSVEG(ILG, ICC), RDCGVEG(ILG, ICC)
+
+      REAL RLTRG(ILG, ICCP1), RSOMG(ILG, ICCP1),  CLTRSOM(ILG,ICCP1)
+      REAL LTRLF(ILG, ICC),   LTRSM(ILG, ICC),    LTRRT(ILG, ICC),& 
+           CLSLF(ILG, ICC),   CLSSM(ILG, ICC),    CLSRT(ILG, ICC)
+      REAL CLSLTR(ILG,ICCP1), CLSSOM(ILG,ICCP1)
+
+      REAL RNLEAF(ILG, ICC),  RNSTEM(ILG, ICC),   RNROOT(ILG, ICC)
+      REAL RNLITR(ILG, ICCP1),RNSOM(ILG, ICCP1) 
+      REAL SNH4(ILG, ICCP1),  SNO3(ILG, ICCP1)
+      REAL NRUB(ILG, ICC),    NRUB0(ILG, ICC)
+
+      REAL DNBFIX(ILG,ICC),   DNPLTR(ILG, ICC),  DNPLOSS(ILG, ICC)
+      REAL DNSLOSS(ILG,ICCP1),DNDEP(ILG, ICCP1), DNFERI(ILG, ICCP1),& 
+          DNFERO(ILG, ICCP1),DNLTRSOM(ILG,ICCP1),DNMIN(ILG, ICCP1),&  
+          DNNIT(ILG, ICCP1), DNPUP(ILG,ICCP1),  DNDNIT(ILG, ICCP1),&  
+          DNRUNOF(ILG,ICCP1),DNDRAIN(ILG,ICCP1),DNVOL(ILG, ICCP1),&
+          DNSOURCE(ILG,ICCP1),DNLOSS(ILG, ICCP1)
+
+      REAL N2OTOT(ILG,ICCP1),N2TOT(ILG, ICCP1)
+ 
+!!      * GRID-AVERAGED N CHANGES (LOSSES) WITHIN INTERVAL
+      REAL DNDEPGAT(ILG),     DNFERGAT(ILG),     DNPLTRGAT(ILG),&
+          DNDISGAT(ILG),    DNLSOMGAT(ILG),     DNMINGAT(ILG),&
+          DNNITGAT(ILG),     DNPUPGAT(ILG),     DNDNITGAT(ILG),&
+          DNLEAGAT(ILG),     DNVOLGAT(ILG),      DNSORGAT(ILG),&
+          DNLOSGAT(ILG)
+ 
+      REAL N2OTOTGAT(ILG),N2TOTGAT(ILG),DNBFIXGAT(ILG),&
+          DNPLOSSGAT(ILG),DNSLOSSGAT(ILG)    
+
 !>
 !>     ---------------------------------------------------------------
 !>     Constants and parameters are located in ctem_params.f90
@@ -908,6 +965,74 @@ do 110 j = 1,icc
     !          expbalvg(i,j)=0.0  !amount of c related to spatial expansion !Not used JM Jun 2014
 120     continue
 110   continue
+
+
+!!     Nitrogen initialization  BW 7/2015
+      if (CTEMN) then
+      DO 105 J=1, ICC
+          DO 115 I= il1, il2
+              DNBFIX(I, J)  = 0.0
+              DNPLTR(I, J)  = 0.0
+              DNPLOSS(I, J) = 0.0
+              DNPUP(I, J)   = 0.0
+
+!!       LEAF RESP. FROM PHOTOSYNTHESIS is only portion of LEAF
+!!       MAINTENANCE RESP
+!!       SO, HERE IS RESERVED FOR FURTHER USE. 
+              RDCSVEG(I,J)  = RMLCSVEG(I,J)
+              RDCGVEG(I,J)  = RMLCGVEG(I,J)
+
+!!       FOR USE IN DETERMINING VEGETATION GROWTH PERIOD
+              PLFSTATUS(I,J) = LFSTATUS(I,J)  ! LEAF STATUS FROM LAST TIME STEP
+
+115       CONTINUE
+105   CONTINUE
+
+      DO 125 J=1, ICC+1
+          DO 135 I= il1, il2
+              DNSLOSS(I,J)   = 0.0
+              DNDEP(I, J)    = 0.0
+              DNFERI(I, J)   = 0.0
+              DNFERO(I, J)   = 0.0
+              DNLTRSOM(I, J) = 0.0
+              DNMIN(I, J)    = 0.0
+              DNNIT(I, J)    = 0.0 
+              DNRUNOF(I, J)  = 0.0 
+              DNDRAIN(I, J)  = 0.0 
+              DNDNIT(I, J)   = 0.0
+              DNVOL(I, J)    = 0.0 
+              DNSOURCE(I, J) = 0.0
+              DNLOSS(I, J)   = 0.0
+              N2OTOT(I, J)   = 0.0 
+              N2TOT(I, J)    = 0.0
+
+135       CONTINUE
+125   CONTINUE
+
+      DO 155 I=1, ILG
+              DNDEPGAT(I)  = 0.0
+              DNFERGAT(I)  = 0.0
+              DNPLTRGAT(I) = 0.0
+              DNDISGAT(I)  = 0.0
+              DNLSOMGAT(I) = 0.0
+              DNMINGAT(I)  = 0.0
+              DNPUPGAT(I)  = 0.0
+              DNNITGAT(I)  = 0.0
+              DNDNITGAT(I) = 0.0
+              DNLEAGAT(I)  = 0.0
+              DNVOLGAT(I)  = 0.0
+              DNSORGAT(I)  = 0.0
+              DNLOSGAT(I)  = 0.0 
+              N2OTOTGAT(I) = 0.0  
+              N2TOTGAT(I)  = 0.0
+              DNBFIXGAT(I) = 0.0
+              DNPLOSSGAT(I)= 0.0
+              DNSLOSSGAT(I)= 0.0
+
+155   CONTINUE
+      endif !CTEMN
+
+
 !>
 !!Store green and brown leaf, stem, and root biomass, and litter and
 !!soil c pool mass in arrays. knowing initial sizes of all pools and
@@ -977,7 +1102,8 @@ call   mainres (fcancs,      fcs,     stemmass,   rootmass,       &
      &                  il1, il2, leapnow, &
      &                    ta,       tbarcs,   rmatctem,&
      &                  sort, nol2pfts,        isand,&
-     &              rmscsveg, rmrcsveg,     rttempcs)
+     &              rmscsveg, rmrcsveg,     rttempcs,&
+     &              AILCG,     NRUB,     RMLCSVEG, CTEMN)
 
 
 
@@ -989,7 +1115,10 @@ call   mainres ( fcanc,       fc,     stemmass,   rootmass,       &
      &                   il1, il2, leapnow, &
      &                    ta,        tbarc,   rmatctem,&
      &                  sort, nol2pfts,        isand,&
-     &              rmscgveg, rmrcgveg,     rttempcg)
+     &              rmscgveg, rmrcgveg,     rttempcg,&
+     &              AILCG,     NRUB,     RMLCGVEG, CTEMN)
+
+
 
 
 
@@ -999,6 +1128,19 @@ call   mainres ( fcanc,       fc,     stemmass,   rootmass,       &
 
 do 180 j = 1, icc
   do 190 i = il1, il2
+
+!!       Nitrogen calculation of leaf respiration  BW 7/2015
+           if (ctemn) then
+             GPPCSVEG(I,J)=ANCSVEG(I,J)+RDCSVEG(I,J)  ! Photosynthesis-related 
+             GPPCGVEG(I,J)=ANCGVEG(I,J)+RDCGVEG(I,J)
+
+             RMLCSVEG(I,J)=RDCSVEG(I,J)+RMLCSVEG(I,J) ! sum of two leaf resp. rates
+             RMLCGVEG(I,J)=RDCGVEG(I,J)+RMLCGVEG(I,J)
+          else
+        
+             gppcsveg(i,j)=ancsveg(i,j)+rmlcsveg(i,j)
+             gppcgveg(i,j)=ancgveg(i,j)+rmlcgveg(i,j)
+          endif !CTEMN
 
     gppcsveg(i,j)=ancsveg(i,j)+rmlcsveg(i,j)
     gppcgveg(i,j)=ancgveg(i,j)+rmlcgveg(i,j)
@@ -1790,6 +1932,178 @@ do j = 1, icc
         gavglai (i)=gavglai (i)+fcancmx(i,j)*ailcg(i,j)
     enddo
 enddo
+
+
+!     ----------------------------Nitrogen Call and CLASSN call-------------------------------------
+
+!    Nitrogen components for ctem  BW 7/2015
+
+!    REBUILT EXACTLY FOR CANADIAN TERRESTRIAL ECOSYSTEM MODEL (CTEM)
+!    VERSION 1.0 AS A PORTION OF CGC3M PROJECT
+!    BY FENGMING YUAN, McMASTER UNIVERSITY 
+
+!    * UNITS: ALL C STOCKS - KgC/m2;
+!             ALL N CONTNET - gN/m2;
+!             ALL C CHANGES (FLUXES) - gC/m2/sec
+!             ALL N CHANGES (FLUXES) - gN/m2/sec
+
+!    * TIMESTEP IN THIS SUBROUNTINE: second ('DELT')
+
+      IF (CTEMN) THEN
+
+!     * VARIABLES CONVERSION FOR USE IN SOIL-PLANT N CYCLING SUBROUTINE
+     
+          DELT = DELTAT*86400
+
+          DO 2005 I=IL1, IL2
+              FGT(I)      = FGS(I)+FG(I)
+
+2005      CONTINUE
+
+          DO 2010 J=1, ICC
+              DO 2020 I=IL1, IL2
+
+!      * WATER BALANCE (FROM CLASS) USED FOR NITROGEN CYCLING
+                  ETR(I,J)    = ETPACC(I)/DELT
+
+!      * PLANT GROWTH STARTING AND ENDING DAY
+                  IF (PLFSTATUS(I,J).NE.1 &
+                  .AND. LFSTATUS(I,J).EQ.1) KGROWS(I,J) = IDAY
+                  IF (PLFSTATUS(I,J).NE.3 &
+                  .AND. LFSTATUS(I,J).EQ.3) KGROWE(I,J) = IDAY
+
+!      * C CHANGES IN gC/m2/sec
+                  NPPLFG(I,J) = NTCHLVEG(I,J)*12.0E-6
+                  NPPSMG(I,J) = NTCHSVEG(I,J)*12.0E-6
+                  NPPRTG(I,J) = NTCHRVEG(I,J)*12.0E-6
+                  LTRLF(I,J)  = TLTRLEAF(I,J)*12.0E-6
+                  LTRSM(I,J)  = TLTRSTEM(I,J)*12.0E-6
+                  LTRRT(I,J)  = TLTRROOT(I,J)*12.0E-6              
+                  CLSLF(I,J)  = GLCAEMLS(I,J)*1000./DELT &
+                               +BLCAEMLS(I,J)*1000./DELT                
+                  CLSSM(I,J)  = STCAEMLS(I,J)*1000./DELT                
+                  CLSRT(I,J)  = RTCAEMLS(I,J)*1000./DELT                
+                  CLSLTR(I,J) = LTRCEMLS(I,J)*1000./DELT                
+                  CLSSOM(I,J) = 0.0                
+              
+2020          CONTINUE
+2010      CONTINUE
+      
+          DO 2030 J=1, ICC+1                      ! bare soil
+              DO 2040 I=IL1, IL2
+
+!      * WATER BALANCE (FROM CLASS) USED FOR NITROGEN CYCLING
+                  RUNOFF(I,J) = OVR(I)*FAREGAT(I)
+                  DRAIN(I,J)  = ROF(I)*FAREGAT(I)
+
+!      * C CHANGES IN gC/m2/sec
+                  RLTRG(I,J)    = LTRESVEG(I,J)*12.0E-6
+                  RSOMG(I,J)    = SCRESVEG(I,J)*12.0E-6
+                  CLTRSOM(I,J)  = HUMTRSVG(I,J)*12.0E-6
+
+2040          CONTINUE
+2030      CONTINUE
+      
+         CALL CLASSN(IDAY,KGROWS, KGROWE, DELT, &
+               &   ILG, ICAN, ICC, 3,IL1, IL2, &
+               &  FCANCMX,FGT, ROOTDPTH, DELZW, &
+               &   ZBOTW, CALSOIL,              &
+               &  AILCG,TA, TCANO, TBARCCS, THLIQC, THPOR, &
+               & ETR, RUNOFF, DRAIN, BTDPTH, XMINF, BI, &
+               & GLEAFMAS, STEMMASS, ROOTMASS, LITRMASS, &
+               & SOILCMAS, NPPLFG, NPPSMG, NPPRTG, RLTRG, &
+               & RSOMG, LTRLF, LTRSM, LTRRT, CLSLF, CLSSM, &
+               & CLSRT, CLSLTR, CLSSOM, CLTRSOM, &
+               & RNLEAF, RNSTEM, RNROOT, RNLITR, RNSOM, &
+               & SNH4, SNO3, NRUB, NRUB0, &
+               & DNBFIX, DNDEP, DNFERI, DNFERO, DNPLTR, &
+               & DNPLOSS, DNSLOSS, DNLTRSOM, DNMIN, DNNIT, &
+               & DNPUP, DNDNIT, DNDRAIN, DNVOL, &
+               & DNSOURCE, DNLOSS, &
+               & N2OTOT,     N2TOT)      
+
+!! 
+!!     * GRID-AVERAGED N CHANGE (INCLUDING LOSS) WITHIN ONE TIMESTEP
+!!     [gN/m2/DELT]
+
+          DO 552 J=1, ICC
+              DO 562 I=1,ILG
+              DNDEPGAT(I)  = DNDEPGAT(I) + DNDEP(I,J)*FCANCMX(I,J)
+              DNFERGAT(I)  = DNFERGAT(I) + (DNFERI(I,J)+DNFERO(I,J)) &
+                                         *FCANCMX(I,J)
+              DNPLTRGAT(I) = DNPLTRGAT(I) + DNPLTR(I,J)*FCANCMX(I,J)
+              DNDISGAT(I)  = DNDISGAT(I) + (DNPLOSS(I,J)+DNSLOSS(I,J)) &
+                                         *FCANCMX(I,J)
+              DNLSOMGAT(I) = DNLSOMGAT(I) + DNLTRSOM(I,J)*FCANCMX(I,J)
+              DNMINGAT(I)  = DNMINGAT(I) + DNMIN(I,J)*FCANCMX(I,J)
+              DNNITGAT(I)  = DNNITGAT(I) + DNNIT(I,J)*FCANCMX(I,J)
+              DNPUPGAT(I)  = DNPUPGAT(I) + DNPUP(I,J)*FCANCMX(I,J)
+              DNDNITGAT(I) = DNDNITGAT(I) + DNDNIT(I,J)*FCANCMX(I,J)
+              DNLEAGAT(I)  = DNLEAGAT(I) + DNDRAIN(I,J)*FCANCMX(I,J)
+              DNVOLGAT(I)  = DNVOLGAT(I) + DNVOL(I,J)*FCANCMX(I,J)
+              DNSORGAT(I)  = DNSORGAT(I) + DNSOURCE(I,J)*FCANCMX(I,J)
+              DNLOSGAT(I)  = DNLOSGAT(I) + DNLOSS(I,J)*FCANCMX(I,J)
+              N2OTOTGAT(I) = N2OTOTGAT(I)+ N2OTOT(I,J)*FCANCMX(I,J)   
+              N2TOTGAT(I)  = N2TOTGAT(I) + N2TOT(I,J)*FCANCMX(I,J) 
+              DNBFIXGAT(I) = DNBFIXGAT(I)+ DNBFIX(I,J)*FCANCMX(I,J)
+              DNPLOSSGAT(I)= DNPLOSSGAT(I)+DNPLOSS(I,J)*FCANCMX(I,J)
+              DNSLOSSGAT(I)= DNSLOSSGAT(I)+DNSLOSS(I,J)*FCANCMX(I,J)
+
+562          CONTINUE
+552      CONTINUE
+
+          DO 2070 I=1,ILG  !BARE GROUND OR SNOW
+              DNDEPGAT(I)  = DNDEPGAT(I)+DNDEP(I,ICC+1)*(FG(I)+FGS(I))
+              DNFERGAT(I)  = DNFERGAT(I)+(DNFERI(I,ICC+1) &
+                            +DNFERO(I,ICC+1))*(FG(I)+FGS(I))
+              DNDISGAT(I)  = DNDISGAT(I) &
+                            +DNSLOSS(I,ICC+1)*(FG(I)+FGS(I))
+              DNLSOMGAT(I) = DNLSOMGAT(I)+DNLTRSOM(I,ICC+1) &
+                            *(FG(I)+FGS(I))
+              DNMINGAT(I)  = DNMINGAT(I) + DNMIN(I,ICC+1) &
+                            *(FG(I)+FGS(I))
+              DNNITGAT(I)  = DNNITGAT(I) + DNNIT(I,ICC+1) &
+                            *(FG(I)+FGS(I))
+              DNDNITGAT(I) = DNDNITGAT(I) + DNDNIT(I,ICC+1) &
+                            *(FG(I)+FGS(I))
+              DNVOLGAT(I)  = DNVOLGAT(I) + DNVOL(I,ICC+1) &
+                            *(FG(I)+FGS(I))
+              DNSORGAT(I)  = DNSORGAT(I)+DNSOURCE(I,ICC+1) &
+                          *(FG(I)+FGS(I))
+              DNLOSGAT(I)  = DNLOSGAT(I)+DNLOSS(I,ICC+1)*(FG(I)+FGS(I))
+
+            N2OTOTGAT(I) = N2OTOTGAT(I)+N2OTOT(I,ICC+1)*(FG(I)+FGS(I))  
+            N2TOTGAT(I)  = N2TOTGAT(I)+ N2TOT(I,ICC+1)*(FG(I)+FGS(I))
+!           DNBFIXGAT(I) = DNBFIXGAT(I)+DNBFIX(I,ICC+1)*(FG(I)+FGS(I))
+!           DNPLOSSGAT(I)= DNPLOSSGAT(I)+DNPLOSS(I,ICC+1)*(FG(I)+FGS(I))  !NO VEG
+            DNSLOSSGAT(I)= DNSLOSSGAT(I)+DNSLOSS(I,ICC+1)*(FG(I)+FGS(I))
+
+2070      CONTINUE
+
+          DO 2080 I=1,ILG
+              DNDEPGAT(I)  = DNDEPGAT(I)*DELT
+              DNFERGAT(I)  = DNFERGAT(I)*DELT 
+              DNPLTRGAT(I) = DNPLTRGAT(I)*DELT
+              DNDISGAT(I)  = DNDISGAT(I)*DELT 
+              DNLSOMGAT(I) = DNLSOMGAT(I)*DELT
+              DNMINGAT(I)  = DNMINGAT(I)*DELT
+              DNNITGAT(I)  = DNNITGAT(I)*DELT
+              DNPUPGAT(I)  = DNPUPGAT(I)*DELT
+              DNDNITGAT(I) = DNDNITGAT(I)*DELT
+              DNLEAGAT(I)  = DNLEAGAT(I)*DELT
+              DNVOLGAT(I)  = DNVOLGAT(I)*DELT
+              DNSORGAT(I)  = DNSORGAT(I)*DELT
+              DNLOSGAT(I)  = DNLOSGAT(I)*DELT
+              N2OTOTGAT(I) = N2OTOTGAT(I)*DELT  
+              N2TOTGAT(I)  = N2TOTGAT(I)*DELT  
+              DNBFIXGAT(I) = DNBFIXGAT(I)*DELT
+              DNPLOSSGAT(I)= DNPLOSSGAT(I)*DELT
+              DNSLOSSGAT(I)= DNSLOSSGAT(I)*DELT
+2080      CONTINUE
+
+      ENDIF !CTEMN
+       
+!     -----------------------------------------------------------------
 
 return
 end

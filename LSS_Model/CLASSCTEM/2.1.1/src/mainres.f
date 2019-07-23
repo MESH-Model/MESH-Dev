@@ -49,7 +49,8 @@
      2                       tcan,         tbar,   rmatctem,
      3                      sort, nol2pfts,        isand,
 c    -------------- inputs above this line, outputs below ----------
-     4                      rmsveg, rmrveg,     roottemp)
+     4                      rmsveg, rmrveg,     roottemp,
+     5                 AILCG,     NRUB,     RMLVEG, CTEMN)
 c
 c     20  sep. 2001 - this subroutine calculates maintenance respiration,
 c     V. Arora        over a given sub-area, for stem and root components.
@@ -80,7 +81,8 @@ c     ilg       - no. of grid cells in latitude circle
 c     ican      - number of class pfts, currently 4
 c
       use ctem_params,        only : icc, ilg, ignd, ican, kk, zero, 
-     1                               bsrtstem, bsrtroot, minlvfr
+     1                               bsrtstem, bsrtroot, bsrtleaf,
+     2                               minlvfr
 
       implicit none
 c
@@ -114,6 +116,11 @@ c
       real tot_rmat(ilg,icc) !<
 c
       logical consq10 !<
+
+c     Nitrogen components for mainres
+      REAL  NRUB(ILG,ICC), ailcg(ilg,icc),      
+     1      RMLVEG(ILG,ICC)
+      LOGICAL CTEMN
 !>
 !>---------------------------------------------------
 !!Constants and parameters are located in ctem_params.f90
@@ -250,6 +257,41 @@ c
          endif !fcan check.   
 210     continue 
 200   continue 
+
+
+!!     Nitrogen green leaf maintanence resp  BW 7/2015
+
+      if (CTEMN) then !turned off for mosaic (causes overheating in
+                           !some pfts)
+      DO 220 J = 1, ICC
+        DO 230 I = IL1, IL2
+
+!!         FIRST FIND THE Q10 RESPONSE FUNCTION TO SCALE BASE RESPIRATION
+!!         RATE FROM 15 C TO CURRENT TEMPERATURE, WE DO THE STEM FIRST.
+
+          IF (.NOT.CONSQ10) THEN
+!!           WHEN FINDING TEMPERATURE DEPENDENT Q10, USE TEMPERATURE WHICH
+!!           IS CLOSE TO AVERAGE OF ACTUAL TEMPERATURE AND THE TEMPERATURE
+!!           AT WHICH BASE RATE IS SPECIFIED
+            TEMPQ10S(I)=(15.0+273.16+TCAN(I))/1.9
+            Q10 = 3.22 - 0.046*(TEMPQ10S(I)-273.16)       
+            Q10 = MIN(4.0, MAX(1.5, Q10))
+          ENDIF
+
+          Q10FUNC = Q10**(0.1*(TCAN(I)-288.16))
+
+        IF (AILCG(I,J).NE.0.) THEN
+          RMLVEG(I,J) = NRUB(I,J)/AILCG(I,J)     !CONVERT NRUB from ground-based to LAI-based
+     1      *Q10FUNC*(BSRTLEAF(SORT(J))/365.0)
+     2                  * 963.62                  !CONVERT Kg/M2.DAY -> u MOL CO2/M2.SEC
+        ELSE
+          RMLVEG(I,J) = 0.
+        ENDIF
+
+230     CONTINUE 
+220   CONTINUE  
+      endif    
+
 c     
       return
       end

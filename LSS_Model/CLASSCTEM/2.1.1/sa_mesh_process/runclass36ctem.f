@@ -5584,6 +5584,9 @@ c
      2                /FSSROW(I)
              altotcount_ctm = altotcount_ctm + 1
           end if
+C       Nitrogen OVR and ACC for ctem and CLASSN BW 8/2015
+          ovraccgat_t(i)  =ovraccgat_t(i) + rofogat(i)
+          rofaccgat_t(i)  =rofaccgat_t(i) + rofgat(i)
 c
           do 710 j=1,ignd
              tbaraccgat_t(i,j)=tbaraccgat_t(i,j)+tbargat(i,j)
@@ -5605,6 +5608,17 @@ c
             rmlcgvga_t(i,j)=rmlcgvga_t(i,j)+rmlcgveggat(i,j)
 713       continue
 c
+
+C      Nitrogen coupling  BW 7/2015
+          ETPACC(I)    = ETPACC(I)+ETPGAT(I)
+          IF(CSZGAT(I).GT.0.0) NDAYTIME(I) = NDAYTIME(I) + 1
+          DO J = 1, ICC
+              IF(CSZGAT(I).GT.0.0)THEN
+                  XMINFBAR(I,J)  = XMINFBAR(I,J)+ XMINF(I,J)
+              ENDIF
+          ENDDO
+
+
 700     continue
       endif !if (ctem_on)
 
@@ -5760,6 +5774,9 @@ c
      &          faregat,onetile_perPFT,wetfrac_presgat,slopefracgat,
      &             currlat,         THPGAT,       BIGAT,    PSISGAT,
      &             ch4concgat,      GRAV, RHOW, RHOICE, leapnow,
+C                      Nitrogen inputs from CLASS  BW 7/2015
+     &                CTEMN,     CALSOIL,      THPGAT,  BTDPTHGAT,
+     &              ETPACC,    OVRACCGAT_t,  ROFACCGAT_t,   XMINFBAR,    
 c    -------------- inputs used by ctem are above this line ---------
      c            stemmassgat, rootmassgat, litrmassgat, gleafmasgat,
      d            bleafmasgat, soilcmasgat,    ailcggat,    ailcgat,
@@ -5777,6 +5794,10 @@ c    -------------- inputs used by ctem are above this line ---------
      1             ariditygat, srplsmongat,  defctmongat, anndefctgat,
      2            annsrplsgat,   annpcpgat,  dry_season_lengthgat,
      &              burnvegfgat, pstemmassgat, pgleafmassgat,
+C                Nitrogen ratios and contents (updated)  BW 7/2015
+     &                 RNLEAFGAT,  RNSTEMGAT,   RNROOTGAT,  RNLITRGAT,
+     &                  RNSOMGAT,    SNH4GAT,     SNO3GAT,    NRUBGAT,
+     &                  NRUB0GAT,     
 c    -------------- inputs updated by ctem are above this line ------
      k                 nppgat,      nepgat, hetroresgat, autoresgat,
      l            soilcrespgat,       rmgat,       rggat,      nbpgat,
@@ -5795,11 +5816,18 @@ c    -------------- inputs updated by ctem are above this line ------
      &               btermgat,    ltermgat,     mtermgat,
      &            ccgat,             mmgat,
      &          rmlvegaccgat,    rmsveggat,  rmrveggat,  rgveggat,
-     &       vgbiomas_veggat, gppveggat,  nepveggat, nbpveggat,
-     &        hetroresveggat, autoresveggat, litresveggat,
+     &         vgbiomas_veggat, gppveggat,  nepveggat, nbpveggat,
+     &         hetroresveggat, autoresveggat, litresveggat,
      &           soilcresveggat, nml, ilmos, jlmos, ch4wet1gat,
      &          ch4wet2gat, wetfdyngat, ch4dyn1gat, ch4dyn2gat,
-     &          ch4soillsgat)
+     &          ch4soillsgat,
+C                Nitrogen budget outputs  BW 7/2015
+     &              DNDEPGAT,     DNFERGAT,    DNPLTRGAT,     DNDISGAT,
+     &             DNLSOMGAT,     DNMINGAT,     DNNITGAT,     DNPUPGAT,
+     &             DNDNITGAT,     DNLEAGAT,     DNVOLGAT,
+     &              DNSORGAT,     DNLOSGAT,   
+     &             N2OTOTGAT,     N2TOTGAT,    DNBFIXGAT,    DNPLOSSGAT,
+     &            DNSLOSSGAT )                                          
 c    ---------------- outputs are listed above this line ------------
 
 c

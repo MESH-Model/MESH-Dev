@@ -569,6 +569,7 @@ real :: tolrnce1 = 0.50  !FLAG would be good to make this consistent with global
 
 real, dimension(kk) :: bsrtstem !<
 real, dimension(kk) :: bsrtroot !<
+real, dimension(kk) :: bsrtleaf !< Added for Nitrogen algorithms
 real :: minlvfr = 0.05          !< Minimum live wood fraction
 
 ! mortality.f parameters: ----------
@@ -769,6 +770,10 @@ bsrtroot = [ 0.5000, 0.2850, 0.0000, & ! IN BOTH PRESCRIBED AND COMPETE (TWO VER
              0.4000, 0.2250, 0.1500, & 
              0.1600, 0.1600, 0.0000, & 
              0.1000, 0.1000, 0.0000 ]
+bsrtleaf = [ 0.0015, 0.0017, 0.0000, & !Nitrogen base respiration rates
+             0.0020, 0.0015, 0.0015, &
+             0.0015, 0.0025, 0.0000, &
+             0.0013, 0.0025, 0.0000 ]
 
 ! mortality.f parameters: ---------
 
@@ -834,6 +839,11 @@ bsrtroot = [ 0.5000, 0.2850, 0.0000, &
              0.6500, 0.2250, 0.0550, &
              0.1600, 0.1600, 0.0000, &
              0.1000, 0.1000, 0.0000 ]
+
+bsrtleaf = [ 0.0015, 0.0017, 0.0000, & ! Nitrogen base respiration rates for green leaf
+             0.0020, 0.0015, 0.0015, &
+             0.0015, 0.0025, 0.0000, &
+             0.0013, 0.0025, 0.0000 ]
 
 
 ! mortality.f parameters: ---------
