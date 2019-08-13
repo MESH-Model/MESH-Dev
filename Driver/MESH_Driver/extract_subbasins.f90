@@ -14,10 +14,12 @@ subroutine extract_subbasins(shd, ierr)
     integer, intent(out) :: ierr
 
     !> Local variables.
-    integer n, m, k, l, i
-    integer, dimension(:), allocatable :: SUBBASIN, LOCSTART, LOCSTOP
+    integer NSUBBSN, n, m, k, l, i
+    integer, dimension(:), allocatable :: SUBBASIN, RANKFIRST, RANKLAST
     type(ShedGridParams) SUBBASIN_shd
     character(len = DEFAULT_LINE_LENGTH) line
+!temp
+!    integer grid(shd%yCount, shd%xCount), y, x
 
     !> Initialize the return status.
     ierr = 0
@@ -56,62 +58,119 @@ subroutine extract_subbasins(shd, ierr)
     SUBBASIN_shd%DRDN = 0.0
     SUBBASIN_shd%ylat = 0.0; SUBBASIN_shd%xlng = 0.0
 
-    !> Set gauge locations to 1.
-    allocate(SUBBASIN(shd%NA), LOCSTART(fms%stmg%n), LOCSTOP(fms%stmg%n))
+    !> Mask station locations (using an inverted index to allow the re-indexing that follows).
+    allocate(SUBBASIN(shd%NA))
     SUBBASIN = 0
-    LOCSTART = fms%stmg%meta%rnk
-    LOCSTOP = fms%stmg%meta%rnk
     i = 0
     do l = 1, fms%stmg%n
-        if (SUBBASIN(fms%stmg%meta%rnk(l)) > 0) then
+        if (SUBBASIN(fms%stmg%meta%rnk(l)) /= 0) then
             call print_remark('The outlet at ' // trim(fms%stmg%meta%name(l)) // ' already exists as a subbasin.')
             i = i + 1
         end if
-        SUBBASIN(fms%stmg%meta%rnk(l)) = l
+        SUBBASIN(fms%stmg%meta%rnk(l)) = (l*-1)
     end do
+    NSUBBSN = fms%stmg%n - i
     if (i > 0) then
         write(line, FMT_GEN) i
         call print_message(trim(adjustl(line)) // ' station locations share the same RANK and are repeated subbasins.')
     end if
-    write(line, FMT_GEN) (fms%stmg%n - i)
-    call print_message('Masking domains for ' // trim(adjustl(line)) // ' subbasins.')
 
-    !> Mask grids upstream of gauge locations.
+    !> Mask subbasins.
+    write(line, FMT_GEN) NSUBBSN
+    call print_message('Masking the domain for ' // trim(adjustl(line)) // ' subbasins.')
+    do n = maxval(fms%stmg%meta%rnk), 1, -1
+        if (SUBBASIN(n) /= 0) then
+            do m = 1, n
+                if (shd%NEXT(m) == n .and. SUBBASIN(m) == 0) SUBBASIN(m) = SUBBASIN(n)
+            end do
+        end if
+    end do
+    SUBBASIN_shd%NA = count(SUBBASIN /= 0)
+    SUBBASIN_shd%NAA = count(SUBBASIN /= 0)
+
+!temp
+!    grid = 0
+!    do n = 1, shd%NA
+!        grid(shd%yyy(n), shd%xxx(n)) = SUBBASIN(n)*-1
+!    end do
+!    do y = 1, shd%yCount
+!        write(10, *) (grid(y, x), x = 1, shd%xCount)
+!    end do
+
+    !> Assign subbasin ID, considering nested subbasins.
+    call print_message('Reordering and checking for nested subbasins.')
+    allocate(RANKFIRST(NSUBBSN), RANKLAST(NSUBBSN))
+    RANKFIRST = 0; RANKLAST = 0
+    l = 0
     i = 1
-    do while (i > 0)
-        i = 0
-        do n = 1, shd%NAA
-            if (SUBBASIN(shd%NEXT(n)) > 0 .and. SUBBASIN(n) == 0) then
-                SUBBASIN(n) = SUBBASIN(shd%NEXT(n))
-                i = 1
-                LOCSTART(SUBBASIN(n)) = min(n, LOCSTART(SUBBASIN(n)))
+    do while (.true.)
+
+        !> Exit if no more subbasins exists to be index.
+        if (.not. any(SUBBASIN < 0)) exit
+
+        !> Find the lowest ranking subbasin.
+        if (l == 0) then
+            do n = 1, maxval(fms%stmg%meta%rnk)
+                if (SUBBASIN(n) < 0) then
+                    l = SUBBASIN(n)*-1
+                    exit
+                end if
+            end do
+        end if
+
+        !> Update the subbasin ID.
+        RANKLAST(i) = fms%stmg%meta%rnk(l)
+        do n = 1, fms%stmg%meta%rnk(l)
+            if (SUBBASIN(n) == (l*-1)) then
+                SUBBASIN(n) = i
+                if (RANKFIRST(i) == 0) RANKFIRST(i) = n
             end if
         end do
+
+        !> Increment the subbasin ID.
+        i = i + 1
+
+        !> Check to see if the subbasin flows into another active domain or reset 'l' to find the next lowest ranking subbasin.
+        n = fms%stmg%meta%rnk(l)
+        if (SUBBASIN(shd%NEXT(n)) < 0) then
+            l = SUBBASIN(shd%NEXT(n))*-1
+        else
+            l = 0
+        end if
     end do
 
 !temp
-!    allocate(grid(shd%yCount, shd%xCount))
 !    grid = 0
 !    do n = 1, shd%NA
 !        grid(shd%yyy(n), shd%xxx(n)) = SUBBASIN(n)
 !    end do
 !    do y = 1, shd%yCount
-!        write(10, *) (grid(y, x), x = 1, shd%xCount)
+!        write(11, *) (grid(y, x), x = 1, shd%xCount)
 !    end do
-!    deallocate(grid)
 
         !> Set 'FRAC' to zero at inactive grids.
-!?    where (SUBBASIN > 0) shd%FRAC = 0.0
+!-    where (SUBBASIN > 0) shd%FRAC = 0.0
 
     !> Reorder RANK/NEXT and transfer properties.
+    call print_message('Recalculating RANK and NEXT.')
     i = 1
-    do l = 1, fms%stmg%n
-        do n = LOCSTART(l), LOCSTOP(l)
+    do l = 1, maxval(SUBBASIN)
+        do n = RANKFIRST(l), RANKLAST(l)
             if (SUBBASIN(n) == l) then
 
                 !> Update streamflow gauge location (catching other stations that share the same location).
-                if (n == LOCSTOP(l)) then
-                    where (fms%stmg%meta%rnk == LOCSTOP(l)) fms%stmg%meta%rnk = i
+                if (n == RANKLAST(l)) then
+                    where (fms%stmg%meta%rnk == RANKLAST(l)) fms%stmg%meta%rnk = i
+
+                    !> Update 'NA' and add a basin-level outlet if NEXT is outside the active domain.
+                    if (shd%NEXT(n) > 0) then
+                        if (SUBBASIN(shd%NEXT(n)) == 0) then
+                            m = SUBBASIN_shd%NA + 1
+                            SUBBASIN_shd%NA = m
+                            SUBBASIN_shd%xxx(m) = shd%xxx(shd%NEXT(n))
+                            SUBBASIN_shd%yyy(m) = shd%yyy(shd%NEXT(n))
+                        end if
+                    end if
                 end if
 
                 !> Copy cell properties.
@@ -135,21 +194,17 @@ subroutine extract_subbasins(shd, ierr)
                 SUBBASIN_shd%ylat(i) = shd%ylat(n)
                 SUBBASIN_shd%xlng(i) = shd%xlng(n)
 
-                !> Increment 'i' (the new NA).
+                !> Increment 'i' (the next new NA).
                 i = i + 1
 
                 !> Update the location of the basin outlet via this cell's 'NEXT'.
-                if (shd%NEXT(n) > 0) then
-                    SUBBASIN_shd%xxx(i) = shd%xxx(shd%NEXT(n))
-                    SUBBASIN_shd%yyy(i) = shd%yyy(shd%NEXT(n))
-                end if
+!                if (shd%NEXT(n) > 0) then
+!                    SUBBASIN_shd%xxx(i) = shd%xxx(shd%NEXT(n))
+!                    SUBBASIN_shd%yyy(i) = shd%yyy(shd%NEXT(n))
+!                end if
             end if
         end do
     end do
-
-    !> Update the new values for 'NA' and 'NAA'.
-    SUBBASIN_shd%NA = i
-    SUBBASIN_shd%NAA = i - 1
 
     !> Reallocate the actual 'shd' variable.
     deallocate( &
@@ -223,7 +278,7 @@ subroutine extract_subbasins(shd, ierr)
 
     !> Print a summary of locations to file.
     write(line, FMT_GEN) fms%stmg%n
-    call print_message('Number of streamflow gauges: ' // trim(adjustl(line)))
+    call print_echo_txt('Number of streamflow gauges: ' // trim(adjustl(line)))
     write(line, FMT_GEN) 'GAUGE', 'IY', 'JX', 'RANK', 'DA (km2)'
     call print_echo_txt(line)
     do i = 1, fms%stmg%n
