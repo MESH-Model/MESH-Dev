@@ -24,9 +24,6 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     character(len = DEFAULT_LINE_LENGTH) line, field
     character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
 
-    !> SUBBASINFLAG.
-    integer, dimension(:), allocatable :: SUBBASIN
-
     !> Initialize the return status.
     ierr = 0
 
@@ -648,61 +645,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         !> SUBBASINFLAG.
         !>  Run only on squares that make up the watersheds listed in
         !>  the streamflow file.
-        if (SUBBASINFLAG > 0) then
-
-            !> Print message to screen.
-            call reset_tab()
-            call print_message('SUBBASIN mask is ACTIVE.')
-            call increase_tab()
-
-            !> Allocate and initialize local variables.
-            allocate(SUBBASIN(shd%NA))
-            SUBBASIN = 0
-
-            !> Set gauge locations to 1.
-            do l = 1, fms%stmg%n
-                SUBBASIN(fms%stmg%meta%rnk(l)) = l
-            end do
-            if (DIAGNOSEMODE) then
-                write(line, FMT_GEN) fms%stmg%n
-                call print_message('Masking domains for ' // trim(adjustl(line)) // ' subbasins.')
-            end if
-
-            !> Mask grids upstream of gauge locations.
-            i = 1
-            do while (i > 0)
-                i = 0
-                do n = 1, shd%NAA
-                    if (SUBBASIN(shd%NEXT(n)) > 0 .and. SUBBASIN(n) == 0) then
-                        SUBBASIN(n) = SUBBASIN(shd%NEXT(n))
-                        i = 1
-                    end if
-                end do
-            end do
-
-!temp
-!            allocate(grid(shd%yCount, shd%xCount))
-!            grid = 0
-!            do n = 1, shd%NA
-!                grid(shd%yyy(n), shd%xxx(n)) = SUBBASIN(n)
-!            end do
-!            do y = 1, shd%yCount
-!                write(10, *) (grid(y, x), x = 1, shd%xCount)
-!            end do
-!            deallocate(grid)
-
-            !> Set 'FRAC' to zero at inactive grids.
-!?            where (SUBBASIN > 0) shd%FRAC = 0.0
-
-            !> Print diagnostic information to screen.
-            if (DIAGNOSEMODE) then
-                write(line, FMT_GEN) 'SUBBASIN', 'GRIDS'
-                call print_message(line)
-                do l = 1, fms%stmg%n
-                    write(line, FMT_GEN) l, count(SUBBASIN == l)
-                    call print_message(line)
-                end do
-            end if
+        if (SUBBASINFLAG > 0 .and. fms%stmg%n > 0) then
+            call extract_subbasins(shd, ierr)
         end if
     end if
 

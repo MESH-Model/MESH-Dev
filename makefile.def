@@ -64,6 +64,7 @@ OBJECTS+=	cropland_irrigation_variables.o \
 OBJECTS+=	SIMSTATS_config.o \
 			KGE.o NSE.o SAE.o SORT.o SAESRT.o calc_drms.o calc_abserr.o \
 			SIMSTATS.o
+OBJECTS+=	extract_subbasins.o
 #todo: fix dependency on RUNCLASS36_constants;
 OBJECTS+=	RUNCLASS36_constants.o
 OBJECTS+=	PBSMrates.o PBSMrun.o ProbabilityThreshold.o REDISTRIB_SNOW.o SUM.o \

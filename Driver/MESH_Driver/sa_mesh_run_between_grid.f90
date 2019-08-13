@@ -519,85 +519,85 @@ module sa_mesh_run_between_grid
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> Initialize variables.
-        vs%basin%fsin = vs%grid%fsin*shd%FRAC
-        vs%basin%fsdr = vs%grid%fsdr*shd%FRAC
-        vs%basin%fsdff = vs%grid%fsdff*shd%FRAC
-        vs%basin%flin = vs%grid%flin*shd%FRAC
-        vs%basin%ta = vs%grid%ta*shd%FRAC
-        vs%basin%qa = vs%grid%qa*shd%FRAC
-        vs%basin%pres = vs%grid%pres*shd%FRAC
-        vs%basin%uv = vs%grid%uv*shd%FRAC
-        vs%basin%wdir = vs%grid%wdir*shd%FRAC
-        vs%basin%uu = vs%grid%uu*shd%FRAC
-        vs%basin%vv = vs%grid%vv*shd%FRAC
-        vs%basin%pre = vs%grid%pre*shd%FRAC
-        vs%basin%prern = vs%grid%prern*shd%FRAC
-        vs%basin%presn = vs%grid%presn*shd%FRAC
-        vs%basin%rcan = vs%grid%rcan*shd%FRAC
-        vs%basin%sncan = vs%grid%sncan*shd%FRAC
-        vs%basin%cmas = vs%grid%cmas*shd%FRAC
-        vs%basin%tac = vs%grid%tac*shd%FRAC
-        vs%basin%tcan = vs%grid%tcan*shd%FRAC
-        vs%basin%qac = vs%grid%qac*shd%FRAC
-        vs%basin%gro = vs%grid%gro*shd%FRAC
-        vs%basin%sno = vs%grid%sno*shd%FRAC
-        vs%basin%fsno = vs%grid%fsno*shd%FRAC
-        vs%basin%albs = vs%grid%albs*shd%FRAC
-        vs%basin%rhos = vs%grid%rhos*shd%FRAC
-        vs%basin%wsno = vs%grid%wsno*shd%FRAC
-        vs%basin%tsno = vs%grid%tsno*shd%FRAC
-        vs%basin%albt = vs%grid%albt*shd%FRAC
-        vs%basin%alvs = vs%grid%alvs*shd%FRAC
-        vs%basin%alir = vs%grid%alir*shd%FRAC
-        vs%basin%gte = vs%grid%gte*shd%FRAC
-        vs%basin%zpnd = vs%grid%zpnd*shd%FRAC
-        vs%basin%pndw = vs%grid%pndw*shd%FRAC
-        vs%basin%tpnd = vs%grid%tpnd*shd%FRAC
-        vs%basin%fstr = vs%grid%fstr*shd%FRAC
-        vs%basin%pevp = vs%grid%pevp*shd%FRAC
-        vs%basin%evap = vs%grid%evap*shd%FRAC
-        vs%basin%evpb = vs%grid%evpb*shd%FRAC
-        vs%basin%arrd = vs%grid%arrd*shd%FRAC
-        vs%basin%rofo = vs%grid%rofo*shd%FRAC
-        vs%basin%qevp = vs%grid%qevp*shd%FRAC
-        vs%basin%hfs = vs%grid%hfs*shd%FRAC
-        vs%basin%gzero = vs%grid%gzero*shd%FRAC
+        vs%basin%fsin(1:shd%NA) = vs%grid%fsin(1:shd%NA)*shd%FRAC
+        vs%basin%fsdr(1:shd%NA) = vs%grid%fsdr(1:shd%NA)*shd%FRAC
+        vs%basin%fsdff(1:shd%NA) = vs%grid%fsdff(1:shd%NA)*shd%FRAC
+        vs%basin%flin(1:shd%NA) = vs%grid%flin(1:shd%NA)*shd%FRAC
+        vs%basin%ta(1:shd%NA) = vs%grid%ta(1:shd%NA)*shd%FRAC
+        vs%basin%qa(1:shd%NA) = vs%grid%qa(1:shd%NA)*shd%FRAC
+        vs%basin%pres(1:shd%NA) = vs%grid%pres(1:shd%NA)*shd%FRAC
+        vs%basin%uv(1:shd%NA) = vs%grid%uv(1:shd%NA)*shd%FRAC
+        vs%basin%wdir(1:shd%NA) = vs%grid%wdir(1:shd%NA)*shd%FRAC
+        vs%basin%uu(1:shd%NA) = vs%grid%uu(1:shd%NA)*shd%FRAC
+        vs%basin%vv(1:shd%NA) = vs%grid%vv(1:shd%NA)*shd%FRAC
+        vs%basin%pre(1:shd%NA) = vs%grid%pre(1:shd%NA)*shd%FRAC
+        vs%basin%prern(1:shd%NA) = vs%grid%prern(1:shd%NA)*shd%FRAC
+        vs%basin%presn(1:shd%NA) = vs%grid%presn(1:shd%NA)*shd%FRAC
+        vs%basin%rcan(1:shd%NA) = vs%grid%rcan(1:shd%NA)*shd%FRAC
+        vs%basin%sncan(1:shd%NA) = vs%grid%sncan(1:shd%NA)*shd%FRAC
+        vs%basin%cmas(1:shd%NA) = vs%grid%cmas(1:shd%NA)*shd%FRAC
+        vs%basin%tac(1:shd%NA) = vs%grid%tac(1:shd%NA)*shd%FRAC
+        vs%basin%tcan(1:shd%NA) = vs%grid%tcan(1:shd%NA)*shd%FRAC
+        vs%basin%qac(1:shd%NA) = vs%grid%qac(1:shd%NA)*shd%FRAC
+        vs%basin%gro(1:shd%NA) = vs%grid%gro(1:shd%NA)*shd%FRAC
+        vs%basin%sno(1:shd%NA) = vs%grid%sno(1:shd%NA)*shd%FRAC
+        vs%basin%fsno(1:shd%NA) = vs%grid%fsno(1:shd%NA)*shd%FRAC
+        vs%basin%albs(1:shd%NA) = vs%grid%albs(1:shd%NA)*shd%FRAC
+        vs%basin%rhos(1:shd%NA) = vs%grid%rhos(1:shd%NA)*shd%FRAC
+        vs%basin%wsno(1:shd%NA) = vs%grid%wsno(1:shd%NA)*shd%FRAC
+        vs%basin%tsno(1:shd%NA) = vs%grid%tsno(1:shd%NA)*shd%FRAC
+        vs%basin%albt(1:shd%NA) = vs%grid%albt(1:shd%NA)*shd%FRAC
+        vs%basin%alvs(1:shd%NA) = vs%grid%alvs(1:shd%NA)*shd%FRAC
+        vs%basin%alir(1:shd%NA) = vs%grid%alir(1:shd%NA)*shd%FRAC
+        vs%basin%gte(1:shd%NA) = vs%grid%gte(1:shd%NA)*shd%FRAC
+        vs%basin%zpnd(1:shd%NA) = vs%grid%zpnd(1:shd%NA)*shd%FRAC
+        vs%basin%pndw(1:shd%NA) = vs%grid%pndw(1:shd%NA)*shd%FRAC
+        vs%basin%tpnd(1:shd%NA) = vs%grid%tpnd(1:shd%NA)*shd%FRAC
+        vs%basin%fstr(1:shd%NA) = vs%grid%fstr(1:shd%NA)*shd%FRAC
+        vs%basin%pevp(1:shd%NA) = vs%grid%pevp(1:shd%NA)*shd%FRAC
+        vs%basin%evap(1:shd%NA) = vs%grid%evap(1:shd%NA)*shd%FRAC
+        vs%basin%evpb(1:shd%NA) = vs%grid%evpb(1:shd%NA)*shd%FRAC
+        vs%basin%arrd(1:shd%NA) = vs%grid%arrd(1:shd%NA)*shd%FRAC
+        vs%basin%rofo(1:shd%NA) = vs%grid%rofo(1:shd%NA)*shd%FRAC
+        vs%basin%qevp(1:shd%NA) = vs%grid%qevp(1:shd%NA)*shd%FRAC
+        vs%basin%hfs(1:shd%NA) = vs%grid%hfs(1:shd%NA)*shd%FRAC
+        vs%basin%gzero(1:shd%NA) = vs%grid%gzero(1:shd%NA)*shd%FRAC
         do j = 1, 4
-            vs%basin%tsfs(:, j) = vs%grid%tsfs(:, j)*shd%FRAC
+            vs%basin%tsfs(1:shd%NA, j) = vs%grid%tsfs(1:shd%NA, j)*shd%FRAC
         end do
-        vs%basin%ggeo = vs%grid%ggeo*shd%FRAC
-        vs%basin%rofs = vs%grid%rofs*shd%FRAC
-        vs%basin%tbas = vs%grid%tbas*shd%FRAC
+        vs%basin%ggeo(1:shd%NA) = vs%grid%ggeo(1:shd%NA)*shd%FRAC
+        vs%basin%rofs(1:shd%NA) = vs%grid%rofs(1:shd%NA)*shd%FRAC
+        vs%basin%tbas(1:shd%NA) = vs%grid%tbas(1:shd%NA)*shd%FRAC
         do j = 1, shd%lc%IGND
-            vs%basin%thic(:, j) = vs%grid%thic(:, j)*shd%FRAC
-            vs%basin%fzws(:, j) = vs%grid%fzws(:, j)*shd%FRAC
-            vs%basin%thlq(:, j) = vs%grid%thlq(:, j)*shd%FRAC
-            vs%basin%lqws(:, j) = vs%grid%lqws(:, j)*shd%FRAC
-            vs%basin%tbar(:, j) = vs%grid%tbar(:, j)*shd%FRAC
-            vs%basin%gflx(:, j) = vs%grid%gflx(:, j)*shd%FRAC
+            vs%basin%thic(1:shd%NA, j) = vs%grid%thic(1:shd%NA, j)*shd%FRAC
+            vs%basin%fzws(1:shd%NA, j) = vs%grid%fzws(1:shd%NA, j)*shd%FRAC
+            vs%basin%thlq(1:shd%NA, j) = vs%grid%thlq(1:shd%NA, j)*shd%FRAC
+            vs%basin%lqws(1:shd%NA, j) = vs%grid%lqws(1:shd%NA, j)*shd%FRAC
+            vs%basin%tbar(1:shd%NA, j) = vs%grid%tbar(1:shd%NA, j)*shd%FRAC
+            vs%basin%gflx(1:shd%NA, j) = vs%grid%gflx(1:shd%NA, j)*shd%FRAC
         end do
-        vs%basin%lzs = vs%grid%lzs*shd%FRAC
-        vs%basin%dzs = vs%grid%dzs*shd%FRAC
-        vs%basin%rofb = vs%grid%rofb*shd%FRAC
-        vs%basin%stgw = vs%grid%stgw*shd%FRAC
-        vs%basin%stge = vs%grid%stge*shd%FRAC
+        vs%basin%lzs(1:shd%NA) = vs%grid%lzs(1:shd%NA)*shd%FRAC
+        vs%basin%dzs(1:shd%NA) = vs%grid%dzs(1:shd%NA)*shd%FRAC
+        vs%basin%rofb(1:shd%NA) = vs%grid%rofb(1:shd%NA)*shd%FRAC
+        vs%basin%stgw(1:shd%NA) = vs%grid%stgw(1:shd%NA)*shd%FRAC
+        vs%basin%stge(1:shd%NA) = vs%grid%stge(1:shd%NA)*shd%FRAC
         frac = shd%FRAC
-        where (vs%basin%albt > 0.0)
+        where (vs%basin%albt(1:shd%NA) > 0.0)
             albtfrac = shd%FRAC
         elsewhere
             albtfrac = 0.0
         end where
-        where (vs%basin%tpnd > 0.0)
+        where (vs%basin%tpnd(1:shd%NA) > 0.0)
             tpndfrac = shd%FRAC
         elsewhere
             tpndfrac = 0.0
         end where
-        where (vs%basin%tsno > 0.0)
+        where (vs%basin%tsno(1:shd%NA) > 0.0)
             tsnofrac = shd%FRAC
         elsewhere
             tsnofrac = 0.0
         end where
-        where (vs%basin%tcan > 0.0)
+        where (vs%basin%tcan(1:shd%NA) > 0.0)
             tcanfrac = shd%FRAC
         elsewhere
             tcanfrac = 0.0

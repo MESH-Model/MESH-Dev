@@ -240,6 +240,27 @@ program RUNMESH
 
 !>>>>>>GRIP-E.
 !todo: clean; generalize.
+    do n = 1, cm%nclim
+        cm%dat(n)%start_date%year = cm%start_date%year
+        cm%dat(n)%start_date%jday = cm%start_date%jday
+        cm%dat(n)%start_date%hour = cm%start_date%hour
+        cm%dat(n)%start_date%mins = cm%start_date%mins
+    end do
+    if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%hour == 0 .and. ic%start%mins == 0) then
+        ic%start%year = cm%start_date%year
+        ic%start%jday = cm%start_date%jday
+        ic%start%hour = cm%start_date%hour
+        ic%start%mins = cm%start_date%mins
+    end if
+    ic%now%year = ic%start%year
+    ic%now%jday = ic%start%jday
+    call julian2monthday(ic%now%jday, ic%now%year, ic%now%month, ic%now%day)
+    ic%now%hour = ic%start%hour
+    ic%now%mins = ic%start%mins
+    call read_basin_structures(shd, ierr)
+    if (SUBBASINFLAG > 0 .and. fms%stmg%n > 0) then
+        call extract_subbasins(shd, ierr)
+    end if
     call read_lss_db_r2c(shd2, 100, 'MESH_lss_database.r2c', shd%ylat, shd%xlng, shd%NA, ierr)
     if (ierr /= 0) then
         call print_error('Bad read or opening MESH_lss_database.r2c.')
@@ -288,27 +309,31 @@ program RUNMESH
     call print_message('Number of GRUs: ' // trim(adjustl(line)))
     write(line, FMT_GEN) shd2%lc%NML
     call print_message('Number of land-based tiles: ' // trim(adjustl(line)))
+    if (DIAGNOSEMODE) then
+        write(line, FMT_GEN) shd2%lc%NML
+        call print_echo_txt('Number of land tiles (NML): ' // trim(adjustl(line)))
+        if (shd2%lc%NML > 0) then
+            write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU'
+            call print_echo_txt(line)
+            do k = 1, shd2%lc%NML
+                write(line, FMT_GEN) k, shd2%lc%ILMOS(k), shd2%lc%JLMOS(k)
+                call print_echo_txt(line)
+            end do
+        end if
+        write(line, FMT_GEN) shd2%wc%NML
+        call print_echo_txt('Number of water tiles (NMW): ' // trim(adjustl(line)))
+        if (shd2%wc%NML > 0) then
+            write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU'
+            call print_echo_txt(line)
+            do k = 1, shd2%wc%NML
+                write(line, FMT_GEN) k, shd2%wc%ILMOS(k), shd2%wc%JLMOS(k)
+                call print_echo_txt(line)
+            end do
+        end if
+    end if
     call READ_SOIL_LEVELS(fls, shd2, ierr)
     call read_parameters(fls, shd2, cm, ierr)
-    do n = 1, cm%nclim
-        cm%dat(n)%start_date%year = cm%start_date%year
-        cm%dat(n)%start_date%jday = cm%start_date%jday
-        cm%dat(n)%start_date%hour = cm%start_date%hour
-        cm%dat(n)%start_date%mins = cm%start_date%mins
-    end do
-    if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%hour == 0 .and. ic%start%mins == 0) then
-        ic%start%year = cm%start_date%year
-        ic%start%jday = cm%start_date%jday
-        ic%start%hour = cm%start_date%hour
-        ic%start%mins = cm%start_date%mins
-    end if
-    ic%now%year = ic%start%year
-    ic%now%jday = ic%start%jday
-    call julian2monthday(ic%now%jday, ic%now%year, ic%now%month, ic%now%day)
-    ic%now%hour = ic%start%hour
-    ic%now%mins = ic%start%mins
     call read_initial_states(fls, shd2, ierr)
-    call read_basin_structures(shd, ierr)
 !todo: BASEFLOWFLAG wf_lzs.
     call READ_PARAMETERS_HYDROLOGY(shd, fls, ierr)
     do k = 1, shd%NAA
