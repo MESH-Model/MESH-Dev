@@ -107,6 +107,9 @@ program RUNMESH
     use save_basin_output
     use SIMSTATS
 
+!>>>>>>GRIP-E.
+    use rte_module, only: rtepm, rtepm_iak, rteflg
+!<<<<<<GRIP-E.
     implicit none
 
     !> Constants.
@@ -173,8 +176,9 @@ program RUNMESH
 
 !>>>>>>GRIP-E.
     type(ShedGridParams) shd2
+    logical ltest
     integer, dimension(:), allocatable :: rankgeophytoshd
-    real, dimension(:), allocatable :: rff, rchg
+    real, dimension(:), allocatable :: pre, evap, rofo, rofs, rofb
     integer ii1, ii2, n
     real y, x
 !<<<<<<GRIP-E.
@@ -236,17 +240,16 @@ program RUNMESH
 
 !>>>>>>GRIP-E.
 !todo: clean; generalize.
-    call read_shed_r2c(shd2, 100, 'MESH_geophy.r2c', ierr)
+    call read_lss_db_r2c(shd2, 100, 'MESH_lss_database.r2c', shd%ylat, shd%xlng, shd%NA, ierr)
     if (ierr /= 0) then
-        call print_error('Bad read or opening MESH_geophy.r2c.')
+        call print_error('Bad read or opening MESH_lss_database.r2c.')
         call program_abort()
     else if (all(shd2%ylat == 0.0) .or. all(shd2%xlng == 0.0)) then
-        call print_error("Missing 'Latitude' and 'Longitude' attributes from MESH_geophy.r2c.")
+        call print_error("Missing 'Latitude' and 'Longitude' attributes from MESH_lss_database.r2c.")
         call program_abort()
     end if
     allocate(rankgeophytoshd(shd%NA))
     rankgeophytoshd = 0
-    shd2%FRAC = 1.0
     do n = 1, shd%NA
         y = shd2%ylat(minloc(abs(shd2%ylat - shd%ylat(n)), dim = 1))
         x = shd2%xlng(minloc(abs(shd2%xlng - shd%xlng(n)), dim = 1))
@@ -258,10 +261,10 @@ program RUNMESH
         end do
     end do
     if (any(rankgeophytoshd == 0)) then
-        call print_error('Bad mapping from MESH_geophy.r2c.')
+        call print_error('Bad mapping from MESH_lss_database.r2c.')
         call program_abort()
     end if
-    allocate(rff(shd%NA), rchg(shd%NA))
+    allocate(pre(shd%NA), evap(shd%NA), rofo(shd%NA), rofs(shd%NA), rofb(shd%NA))
     shd2%lc%ILG = shd2%NA*shd2%lc%NTYPE
     shd2%wc%ILG = shd2%NA*shd2%lc%NTYPE
     allocate(shd2%lc%ILMOS(shd2%lc%ILG), shd2%lc%JLMOS(shd2%lc%ILG), &
@@ -306,6 +309,18 @@ program RUNMESH
     ic%now%mins = ic%start%mins
     call read_initial_states(fls, shd2, ierr)
     call read_basin_structures(shd, ierr)
+!todo: BASEFLOWFLAG wf_lzs.
+    call READ_PARAMETERS_HYDROLOGY(shd, fls, ierr)
+    do k = 1, shd%NAA
+        i = shd%IAK(k)
+        if (rtepm_iak%r1n(i) /= 0.0) rtepm%r1n(k) = rtepm_iak%r1n(i)
+        if (rtepm_iak%r2n(i) /= 0.0) rtepm%r2n(k) = rtepm_iak%r2n(i)
+        if (rtepm_iak%mndr(i) /= 0.0) rtepm%mndr(k) = rtepm_iak%mndr(i)
+        if (rtepm_iak%widep(i) /= 0.0) rtepm%widep(k) = rtepm_iak%widep(i)
+        if (rtepm_iak%aa2(i) /= 0.0) rtepm%aa2(k) = rtepm_iak%aa2(i)
+        if (rtepm_iak%aa3(i) /= 0.0) rtepm%aa3(k) = rtepm_iak%aa3(i)
+        if (rtepm_iak%aa4(i) /= 0.0) rtepm%aa4(k) = rtepm_iak%aa4(i)
+    end do
 !<<<<<<GRIP-E.
 
     !> Stop if an error occured.
@@ -870,7 +885,10 @@ program RUNMESH
     inquire(file = 'MESH_initial_values.r2c', exist = ltest)
     if (ltest) then
         ierr = 0
+!>>>>>>GRIP-E.
+!reads MESH_initial_values.r2c to 'shd' grid -- routing.
         call read_initial_values_r2c(shd, 100, 'MESH_initial_values.r2c', ierr)
+!<<<<<<GRIP-E.
         call reset_tab()
         call MPI_Barrier(MPI_COMM_WORLD, z)
         if (ierr /= 0) then
@@ -970,14 +988,23 @@ program RUNMESH
         end if
 
 !todo: clean; generalize.
-        rff = 0.0
-        rchg = 0.0
-        do i = 1, shd%NA
-            rff(i) = vs%grid%rff(rankgeophytoshd(i))
-            rchg(i) = vs%grid%rchg(rankgeophytoshd(i))
+        pre = 0.0
+        evap = 0.0
+        rofo = 0.0
+        rofs = 0.0
+        rofb = 0.0
+        do n = 1, shd%NA
+            pre(n) = vs%grid%pre(rankgeophytoshd(n))
+            evap(n) = vs%grid%evap(rankgeophytoshd(n))
+            rofo(n) = vs%grid%rofo(rankgeophytoshd(n))
+            rofs(n) = vs%grid%rofs(rankgeophytoshd(n))
+            rofb(n) = vs%grid%rofb(rankgeophytoshd(n))
         end do
-        vs%grid%rff = rff
-        vs%grid%rchg = rchg
+        vs%grid%pre = pre
+        vs%grid%evap = evap
+        vs%grid%rofo = rofo
+        vs%grid%rofs = rofs
+        vs%grid%rofb = rofb
 
         !> Update grid states (e.g., channel storage) from worker nodes.
 !?        if (ro%RUNGRID) call run_within_grid_mpi_isend(fls, shd, cm)

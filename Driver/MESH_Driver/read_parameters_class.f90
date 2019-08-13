@@ -26,7 +26,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
     integer, intent(out) :: ierr
 
     !> Local variables.
-    integer NA, NTYPE, NSL, iun, k, ignd, i, m, j
+    integer NTYPE, NSL, iun, k, ignd, i, m, j
     character(len = DEFAULT_LINE_LENGTH) line
 
     !> Local variables (read from file).
@@ -47,7 +47,6 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
         return
     end if
 
-    NA = shd%NA
     NTYPE = shd%lc%NTYPE
     NSL = shd%lc%IGND
 
@@ -64,17 +63,6 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
         write(line, FMT_GEN) NTYPE
         call print_message('Drainage database: ' // trim(adjustl(line)))
         write(line, FMT_GEN) m
-        call print_message(trim(adjustl(fls%fl(mfk%f50)%fn)) // ': ' // trim(adjustl(line)))
-        ierr = 1
-        close(iun)
-    end if
-
-    !> Check that the number of grid cells matches the drainage database value.
-    if (i /= NA) then
-        call print_error('The number of grid cells does not match the drainage database.')
-        write(line, FMT_GEN) NA
-        call print_message('Drainage database: ' // trim(adjustl(line)))
-        write(line, FMT_GEN) i
         call print_message(trim(adjustl(fls%fl(mfk%f50)%fn)) // ': ' // trim(adjustl(line)))
         ierr = 1
         close(iun)
