@@ -120,14 +120,14 @@ subroutine read_initial_values_r2c(shd, iun, fname, ierr)
 
             case ('qi1')
                 if (associated(vs%grid%qi)) then
-                    vs%grid%qi(1:shd%NA) = ffield
+                    vs%grid%qi(1:size(ffield)) = ffield
                 else
                     z = 3
                 end if
             case ('qo1')
                 if (associated(vs%grid%qo)) then
                     if (ilvl == 0) then
-                        vs%grid%qo(1:shd%NA) = ffield
+                        vs%grid%qo(1:size(ffield)) = ffield
                     else
                         z = 3
                     end if
@@ -136,13 +136,13 @@ subroutine read_initial_values_r2c(shd, iun, fname, ierr)
                 end if
             case ('stor')
                 if (associated(vs%grid%stgch)) then
-                    vs%grid%stgch(1:shd%NA) = ffield
+                    vs%grid%stgch(1:size(ffield)) = ffield
                 else
                     z = 3
                 end if
             case ('lzs')
                 if (associated(vs%grid%lzs)) then
-                    vs%grid%lzs(1:shd%NA) = ffield
+                    vs%grid%lzs(1:size(ffield)) = ffield
                 else
                     z = 3
                 end if

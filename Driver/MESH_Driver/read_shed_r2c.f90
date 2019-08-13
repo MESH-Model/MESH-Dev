@@ -95,8 +95,10 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
 !+            shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
 !+            shd%iyMin = int(shd%yOrigin/1000.0)
 !+            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
+        case ('rotlatlong')
         case default
             call print_error('Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
+            ierr = 1
             return
     end select
 
@@ -105,6 +107,7 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
         call print_error('No grids are defined inside the basin.')
         write(line, FMT_GEN) shd%NA
         call print_message('Number of grids read from file: ' // trim(adjustl(line)))
+        ierr = 1
         return
     end if
     if (shd%NAA >= shd%NA) then
@@ -123,6 +126,7 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
     if (ierr /= 0) then
         write(line, FMT_GEN) ierr
         call print_error("Unable to allocate 'shd' variables (error code: " // trim(adjustl(line)) // ").")
+        ierr = 1
         return
     end if
     shd%RNKGRD = 0; shd%xxx = 0; shd%yyy = 0
@@ -133,11 +137,13 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
     call parse_header_attribute_ensim(iun, vkeyword, nkeyword, vattr, nattr, ierr)
     if (ierr /= 0) then
         call print_error('Error reading attributes from the header in the file.')
+        ierr = 1
         return
     end if
     if (nattr == 0) then
         ierr = 1
         call print_error('No attributes were found in the file.')
+        ierr = 1
         return
     end if
 
@@ -145,6 +151,7 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
     call advance_past_header(iun, fname, ierr)
     if (ierr /= 0) then
         call print_error('Encountered premature end of file.')
+        ierr = 1
         return
     end if
 
@@ -152,6 +159,7 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
     call load_data_r2c(iun, fname, vattr, nattr, shd%xCount, shd%yCount, .false., ierr)
     if (ierr /= 0) then
         call print_error('Error reading attribute values in the file.')
+        ierr = 1
         return
     end if
 
@@ -164,6 +172,7 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
     end do
     if (all(shd%RNKGRD == 0)) then
         call print_error("Unable to read the 'RANK' attribute.")
+        ierr = 1
         return
     end if
 
@@ -185,10 +194,12 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
         shd%BNKFLL(shd%NA), &
         shd%ELEV(shd%NA), shd%SLOPE_INT(shd%NA), &
         shd%DRDN(shd%NA), &
+        shd%ylat(shd%NA), shd%xlng(shd%NA), &
         stat = ierr)
     if (ierr /= 0) then
         write(line, FMT_GEN) ierr
         call print_error("Unable to allocate 'shd' variables (error code: " // trim(adjustl(line)) // ").")
+        ierr = 1
         return
     end if
     shd%NEXT = 0
@@ -197,6 +208,7 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
     shd%BNKFLL = 0.0
     shd%ELEV = 0.0; shd%SLOPE_INT = 0.0
     shd%DRDN = 0.0
+    shd%ylat = 0.0; shd%xlng = 0.0
 
     !> Scan and assign remaining variables.
     !> Cycle to where land cover (GRU) classes are expected.
@@ -207,6 +219,7 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
         call r2c_to_rank(iun, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, ierr)
         if (ierr /= 0) then
             call print_error("Unable to read the '" // trim(vattr(l)%attr) // "' attribute.")
+            ierr = 1
             return
         end if
 
@@ -241,6 +254,14 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
 
                 !> Convert DD from km/km^2 to m/m^2; WATROF expects m/m^2.
                 shd%DRDN = ffield/1000.0
+            case ('latitude')
+                shd%ylat = ffield
+            case ('longitude')
+                where (ffield > 180.0)
+                    shd%xlng = ffield - 360.0
+                elsewhere
+                    shd%xlng = ffield
+                end where
         end select
     end do
 
