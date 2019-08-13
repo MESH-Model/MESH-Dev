@@ -31,7 +31,9 @@ module sa_mesh_run_within_grid
     subroutine run_within_grid(fls, shd, cm)
 
         !> Process modules.
-        use baseflow_module
+!>>>>>>GRIP-E.
+!        use baseflow_module
+!<<<<<<GRIP-E.
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -45,7 +47,9 @@ module sa_mesh_run_within_grid
         call run_within_grid_stas_update(fls, shd, cm)
 
         !> Call processes.
-        call bflm_within_grid(fls, shd, cm)
+!>>>>>>GRIP-E.
+!        call bflm_within_grid(fls, shd, cm)
+!<<<<<<GRIP-E.
 
     end subroutine
 
@@ -261,7 +265,9 @@ module sa_mesh_run_within_grid
         vs%grid%lqws(i1:i2, :) = 0.0
         vs%grid%tbar(i1:i2, :) = 0.0
         vs%grid%gflx(i1:i2, :) = 0.0
-        vs%grid%lzs(i1:i2) = 0.0
+!>>>>>>GRIP-E.
+!        vs%grid%lzs(i1:i2) = 0.0
+!<<<<<<GRIP-E.
         vs%grid%dzs(i1:i2) = 0.0
         vs%grid%rofb(i1:i2) = 0.0
 
@@ -314,7 +320,9 @@ module sa_mesh_run_within_grid
             vs%grid%lqws(ki, :) = vs%grid%lqws(ki, :) + vs%tile%lqws(k, :)*frac
             vs%grid%tbar(ki, :) = vs%grid%tbar(ki, :) + vs%tile%tbar(k, :)*frac
             vs%grid%gflx(ki, :) = vs%grid%gflx(ki, :) + vs%tile%gflx(k, :)*frac
-            vs%grid%lzs(ki) = vs%grid%lzs(ki) + vs%tile%lzs(k)*frac
+!>>>>>>GRIP-E.
+!            vs%grid%lzs(ki) = vs%grid%lzs(ki) + vs%tile%lzs(k)*frac
+!<<<<<<GRIP-E.
             vs%grid%dzs(ki) = vs%grid%dzs(ki) + vs%tile%dzs(k)*frac
             vs%grid%rofb(ki) = vs%grid%rofb(ki) + vs%tile%rofb(k)*frac
         end do

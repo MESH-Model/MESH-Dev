@@ -67,6 +67,9 @@ module sa_mesh_run_between_grid
     subroutine run_between_grid_init(fls, shd, cm)
 
         !> Process modules.
+!>>>>>>GRIP-E.
+        use baseflow_module
+!<<<<<<GRIP-E.
         use SA_RTE_module
         use WF_ROUTE_config
         use rte_module
@@ -267,6 +270,9 @@ module sa_mesh_run_between_grid
         call output_variables_activate(out%d%grid, (/ VN_QI, VN_STGCH, VN_QO, VN_ZLVL /))
 
         !> Call processes.
+!>>>>>>GRIP-E.
+        call bflm_init(fls, shd, cm)
+!<<<<<<GRIP-E.
         call SA_RTE_init(shd)
         call WF_ROUTE_init(fls, shd)
         call run_rte_init(fls, shd)
@@ -282,6 +288,9 @@ module sa_mesh_run_between_grid
     subroutine run_between_grid(fls, shd, cm)
 
         !> Process modules.
+!>>>>>>GRIP-E.
+        use baseflow_module
+!<<<<<<GRIP-E.
         use SA_RTE_module
         use WF_ROUTE_module
         use rte_module
@@ -371,6 +380,9 @@ module sa_mesh_run_between_grid
         vs%grid%rchg = vs%grid%rofb*ic%dts
 
         !> Call processes.
+!>>>>>>GRIP-E.
+        call bflm_within_grid(fls, shd, cm)
+!<<<<<<GRIP-E.
         call SA_RTE(shd)
         call WF_ROUTE_between_grid(fls, shd)
         call run_rte_between_grid(fls, shd)
@@ -736,6 +748,9 @@ module sa_mesh_run_between_grid
     subroutine run_between_grid_finalize(fls, shd, cm)
 
         !> Process modules.
+!>>>>>>GRIP-E.
+        use baseflow_module
+!<<<<<<GRIP-E.
         use WF_ROUTE_config
         use rte_module
 
@@ -748,6 +763,9 @@ module sa_mesh_run_between_grid
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> Call processes.
+!>>>>>>GRIP-E.
+        call bflm_finalize(fls, shd, cm)
+!<<<<<<GRIP-E.
         call WF_ROUTE_finalize(fls, shd)
         call run_rte_finalize(fls, shd)
 

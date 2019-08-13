@@ -32,7 +32,13 @@ module sa_mesh_run_within_tile
         !> Call processes.
         call RUNCLASS36_init(shd, fls, cm)
         call runsvs_mesh_init(shd, fls, cm)
-        call bflm_init(fls, shd, cm)
+!>>>>>>GRIP-E.
+!        call bflm_init(fls, shd, cm)
+        if (bflm%BASEFLOWFLAG == 1) then
+            call print_error('BASEFLOWFLAG 1 is not supported.')
+            call program_abort()
+        end if
+!<<<<<<GRIP-E.
         call runci_init(shd, fls)
 
         !> Update variables.
@@ -45,7 +51,9 @@ module sa_mesh_run_within_tile
         !> Process modules.
         use RUNCLASS36_module
         use runsvs_mesh
-        use baseflow_module
+!>>>>>>GRIP-E.
+!        use baseflow_module
+!<<<<<<GRIP-E.
         use cropland_irrigation_within_tile
 
         !> Input/output variables.
@@ -65,7 +73,9 @@ module sa_mesh_run_within_tile
         !> Call processes.
         call RUNCLASS36_within_tile(shd, fls, cm)
         call runsvs_mesh_within_tile(shd, fls, cm)
-        call bflm_within_tile(fls, shd, cm)
+!>>>>>>GRIP-E.
+!        call bflm_within_tile(fls, shd, cm)
+!<<<<<<GRIP-E.
         call runci_within_tile(shd, fls, cm)
 
         !> MPI exchange.
@@ -79,7 +89,9 @@ module sa_mesh_run_within_tile
     subroutine run_within_tile_mpi_isend(fls, shd, cm)
 
         !> Process modules.
-        use baseflow_module
+!>>>>>>GRIP-E.
+!        use baseflow_module
+!<<<<<<GRIP-E.
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -97,7 +109,9 @@ module sa_mesh_run_within_tile
 
         !> Count the number of active variables included in the exchange.
         nvars = 6
-        if (bflm%BASEFLOWFLAG == 1) nvars = nvars + 1
+!>>>>>>GRIP-E.
+!        if (bflm%BASEFLOWFLAG == 1) nvars = nvars + 1
+!<<<<<<GRIP-E.
         if (nvars == 0) return
 
         !> Exchange variables.
@@ -190,10 +204,12 @@ module sa_mesh_run_within_tile
             i = i + 1
 
             !> BASEFLOWFLAG.
-            if (bflm%BASEFLOWFLAG == 1) then
-                call MPI_Isend(Qb(ii1:ii2), iin, MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
-                i = i + 1
-            end if
+!>>>>>>GRIP-E.
+!            if (bflm%BASEFLOWFLAG == 1) then
+!                call MPI_Isend(Qb(ii1:ii2), iin, MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+!                i = i + 1
+!            end if
+!<<<<<<GRIP-E.
 
             !> Wait until the exchange completes.
             lstat = .false.
@@ -234,9 +250,11 @@ module sa_mesh_run_within_tile
                 call MPI_Irecv(dz, size(dz), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
 
                 !> BASEFLOWFLAG.
-                if (bflm%BASEFLOWFLAG == 1) then
-                    call MPI_Irecv(Qb(ii1:ii2), iin, MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
-                end if
+!>>>>>>GRIP-E.
+!                if (bflm%BASEFLOWFLAG == 1) then
+!                    call MPI_Irecv(Qb(ii1:ii2), iin, MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+!                end if
+!<<<<<<GRIP-E.
 
                 !> Wait until the exchange completes.
                 lstat = .false.
@@ -457,7 +475,9 @@ module sa_mesh_run_within_tile
 
         !> Process modules.
         use RUNCLASS36_config
+!>>>>>>GRIP-E.
         use baseflow_module
+!<<<<<<GRIP-E.
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -469,7 +489,9 @@ module sa_mesh_run_within_tile
 
         !> Call processes.
         call RUNCLASS36_finalize(fls, shd, cm)
+!>>>>>>GRIP-E.
         call bflm_finalize(fls, shd, cm)
+!<<<<<<GRIP-E.
 
     end subroutine
 

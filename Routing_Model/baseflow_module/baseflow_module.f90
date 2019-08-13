@@ -218,7 +218,9 @@ module baseflow_module
                     vs%tile%lzs(k) = Wrchrg_new
                 end do
             case (2)
-                vs%tile%lzs(il1:il2) = vs%tile%lzs(il1:il2) + vs%tile%rofb(il1:il2)*ic%dts
+!>>>>>>GRIP-E.
+!                vs%tile%lzs(il1:il2) = vs%tile%lzs(il1:il2) + vs%tile%rofb(il1:il2)*ic%dts
+!<<<<<<GRIP-E.
         end select
 
     end subroutine
@@ -245,6 +247,9 @@ module baseflow_module
         !> Calculate contribution of baseflow to lower zone storage and redistribute runoff.
         select case (bflm%BASEFLOWFLAG)
             case (2)
+!>>>>>>GRIP-E.
+                vs%grid%lzs(il1:il2) = vs%grid%lzs(il1:il2) + vs%grid%rofb(il1:il2)*ic%dts
+!<<<<<<GRIP-E.
                 if ((bflm%dts - ic%dts*ic%ts_hourly) == 0) then
                     lzs(i1:i2) = vs%grid%lzs(i1:i2)
                     call baseflow_wfqlz(bflm%pm_grid%flz, bflm%pm_grid%pwr, lzs, dlz, shd%NA, i1, i2)
