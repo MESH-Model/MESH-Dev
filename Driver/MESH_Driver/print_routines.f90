@@ -45,8 +45,8 @@ module print_routines
     !> Line and field length constants.
     !* DEFAULT_LINE_LENGTH: Default length of a single line.
     !* DEFAULT_FIELD_LENGTH: Default length of a field (e.g., in a line).
-    integer, parameter :: DEFAULT_LINE_LENGTH = 5000
-    integer, parameter :: DEFAULT_FIELD_LENGTH = 100
+    integer, parameter :: DEFAULT_LINE_LENGTH = 10000
+    integer, parameter :: DEFAULT_FIELD_LENGTH = 50
 
     !> Format constants.
     character(len = *), parameter :: FMT_GEN = '(99999(g15.6e2, 1x))'

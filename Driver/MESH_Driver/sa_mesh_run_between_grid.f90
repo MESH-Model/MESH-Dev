@@ -322,7 +322,11 @@ module sa_mesh_run_between_grid
             if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
 
                 !> The minimum time-stepping of the reservoir file is hourly.
-                if (mod(ic%now%hour, fms%rsvr%rlsmeas%dts) == 0 .and. ic%now%mins == 0) then
+!hackfix: To deal with non-0 start hour.
+!truefix: May need to move reading this value to the end of the time-step.
+!                if (mod(ic%now%hour, fms%rsvr%rlsmeas%dts) == 0 .and. ic%now%mins == 0) then
+                if ((mod(ic%now%hour, fms%rsvr%rlsmeas%dts) == 0 .and. ic%now%mins == 0) .or. &
+                    ic%ts_count == 1) then
                     ierr = read_records_txt(fms%rsvr%rlsmeas%fls%iun, fms%rsvr%rlsmeas%val)
 
                     !> Stop if no releases exist.
@@ -339,7 +343,11 @@ module sa_mesh_run_between_grid
         if (fms%stmg%n > 0) then
 
             !> The minimum time-stepping of the streamflow file is hourly.
-            if (mod(ic%now%hour, fms%stmg%qomeas%dts) == 0 .and. ic%now%mins == 0) then
+!hackfix: To deal with non-0 start hour.
+!truefix: May need to move reading this value to the end of the time-step.
+!            if (mod(ic%now%hour, fms%stmg%qomeas%dts) == 0 .and. ic%now%mins == 0) then
+            if ((mod(ic%now%hour, fms%stmg%qomeas%dts) == 0 .and. ic%now%mins == 0) .or. &
+                ic%ts_count == 1) then
                 ierr = read_records_txt(fms%stmg%qomeas%fls%iun, fms%stmg%qomeas%val)
 
                 !> Assign a dummy value if no flow record exists.
