@@ -322,7 +322,9 @@ c          wetxa(n)=wcap(n)/rl(n)/abs(theta(ii))
          end do
       end do
 
-      do n=naa+1,naa
+!dgp    2019-08-09: Meant to initialize these variables for outlet(s)?
+!      do n=naa+1,naa
+      do n=naa+1,na
          iset(n)=0
          qda(n)=0.0
          qbase(n)=0.0
@@ -871,7 +873,7 @@ c      stop 'program aborted in flowinit @ 164'
             i=iy(l)
             j=jx(l)
             n=s(i,j)
-            datemp(n)=0.0
+            datemp(n)=max(0.0,datemp(n))
             da1=da(n)
             qda1=qda(n)
 !        START AT EACH GAUGE AND WORK DOWNSTREAM
@@ -925,7 +927,7 @@ c      stop 'program aborted in flowinit @ 164'
                endif
                n=next(n)
 !             CHECK IN CASE (NAA == NA).
-               if(n.eq.next(n)) exit
+               if(n.eq.next(n).or.n==0) exit
             end do
          endif                  ! inbsn
       end do

@@ -329,13 +329,16 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     end select
 
     !> Check maximum number of cells and outlets, and print a warning if an adjustment is made.
+!todo: Fix these for multi-outlet domains.
     if (ro%RUNCHNL) then
-        if (shd%NA /= maxval(shd%NEXT)) then
+!        if (shd%NA /= maxval(shd%NEXT)) then
+        if (shd%NA /= count(shd%RNKGRD > 0)) then
             line = 'Total number of grids adjusted to maximum RANK. Consider adjusting the input files.'
             call print_remark(line)
             shd%NA = maxval(shd%NEXT)
         end if
-        if (shd%NAA /= (maxval(shd%NEXT) - count(shd%NEXT == 0))) then
+!        if (shd%NAA /= (maxval(shd%NEXT) - count(shd%NEXT == 0))) then
+        if (shd%NAA /= (shd%NA - count(shd%NEXT == 0))) then
             line = 'The number of outlets adjusted to the number of cells where NEXT is zero. Consider adjusting the input files.'
             call print_remark(line)
             shd%NAA = maxval(shd%NEXT) - count(shd%NEXT == 0)

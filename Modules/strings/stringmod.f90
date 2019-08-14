@@ -571,6 +571,60 @@ end subroutine trimzero
 
 !**********************************************************************
 
+subroutine compactzeros(str)
+
+! Converts multiple spaces and tabs to single spaces; deletes control characters;
+! removes initial spaces.
+! Deletes nonsignificant trailing zeroes from numbers in string str.
+! If number
+! string ends in a decimal point, one trailing zero is added.
+
+character(len=*) :: str
+character :: ch
+character(len=len_trim(str)):: substr, outstr
+character(len=10) :: exp
+
+call compact(str)
+str=adjustl(str)
+lenstr=len_trim(str)
+if(scan(str,' ')==0) then
+   call trimzero(str)
+   return
+endif
+outstr=''
+k1=1
+k2=scan(str,' ')
+do while(k1<k2)
+   substr=str(k1:(k2-1))
+   ipos=scan(substr,'eE')
+   if(ipos>0) then
+      exp=substr(ipos:)
+      substr=substr(1:ipos-1)
+   endif
+   lstr=len_trim(substr)
+   do i=lstr,1,-1
+      ch=substr(i:i)
+      if(ch=='0') cycle          
+      if(ch=='.') then
+         substr=substr(1:i)//'0'
+         if(ipos>0) substr=trim(substr)//trim(exp)
+         exit
+      endif
+      substr=substr(1:i)
+      exit
+   end do
+   if(ipos>0) substr=trim(substr)//trim(exp)
+   outstr=trim(outstr)//' '//trim(substr)
+   k1=k2+1
+   k2=k2+scan(str(k1:),' ')
+end do
+
+str=adjustl(outstr)
+
+end subroutine compactzeros
+
+!**********************************************************************
+
 subroutine writeq_dr(unit,namestr,value,fmt)
 
 ! Writes a string of the form <name> = value to unit

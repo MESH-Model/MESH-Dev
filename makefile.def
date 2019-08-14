@@ -164,7 +164,7 @@ OBJECTS+=	read_initial_inputs.o \
 			module_files.o
 # Output routines.
 OBJECTS+=	WRITE_R2C_HEADER.o write_r2c.o \
-			output_files.o save_basin_output.o
+			output_files.o save_basin_output.o save_shed_r2c.o
 # MESH driver.
 OBJECTS+=	read_run_options.o \
 			sa_mesh_run_within_tile.o sa_mesh_run_within_grid.o sa_mesh_run_between_grid.o \

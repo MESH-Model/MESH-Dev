@@ -14,7 +14,7 @@ subroutine extract_subbasins(shd, ierr)
     integer, intent(out) :: ierr
 
     !> Local variables.
-    integer NSUBBSN, n, m, k, l, i
+    integer NSUBBSN, z, n, m, k, l, i
     integer, dimension(:), allocatable :: SUBBASIN, RANKFIRST, RANKLAST
     type(ShedGridParams) SUBBASIN_shd
     character(len = DEFAULT_LINE_LENGTH) line
@@ -158,21 +158,6 @@ subroutine extract_subbasins(shd, ierr)
         do n = RANKFIRST(l), RANKLAST(l)
             if (SUBBASIN(n) == l) then
 
-                !> Update streamflow gauge location (catching other stations that share the same location).
-                if (n == RANKLAST(l)) then
-                    where (fms%stmg%meta%rnk == RANKLAST(l)) fms%stmg%meta%rnk = i
-
-                    !> Update 'NA' and add a basin-level outlet if NEXT is outside the active domain.
-                    if (shd%NEXT(n) > 0) then
-                        if (SUBBASIN(shd%NEXT(n)) == 0) then
-                            m = SUBBASIN_shd%NA + 1
-                            SUBBASIN_shd%NA = m
-                            SUBBASIN_shd%xxx(m) = shd%xxx(shd%NEXT(n))
-                            SUBBASIN_shd%yyy(m) = shd%yyy(shd%NEXT(n))
-                        end if
-                    end if
-                end if
-
                 !> Copy cell properties.
                 SUBBASIN_shd%xxx(i) = shd%xxx(n)
                 SUBBASIN_shd%yyy(i) = shd%yyy(n)
@@ -193,6 +178,24 @@ subroutine extract_subbasins(shd, ierr)
                 SUBBASIN_shd%DRDN(i) = shd%DRDN(n)
                 SUBBASIN_shd%ylat(i) = shd%ylat(n)
                 SUBBASIN_shd%xlng(i) = shd%xlng(n)
+
+                !> Update streamflow gauge location (catching other stations that share the same location).
+                if (n == RANKLAST(l)) then
+                    where (fms%stmg%meta%rnk == RANKLAST(l)) fms%stmg%meta%rnk = i
+
+                    !> Update 'NA' and add a basin-level outlet if NEXT is outside the active domain.
+                    if (shd%NEXT(n) > 0) then
+                        if (SUBBASIN(shd%NEXT(n)) == 0) then
+                            m = SUBBASIN_shd%NA + 1
+                            SUBBASIN_shd%NA = m
+                            SUBBASIN_shd%xxx(m) = shd%xxx(shd%NEXT(n))
+                            SUBBASIN_shd%yyy(m) = shd%yyy(shd%NEXT(n))
+
+                            !> Update 'NEXT' of the current grid.
+                            SUBBASIN_shd%NEXT(i) = m
+                        end if
+                    end if
+                end if
 
                 !> Increment 'i' (the next new NA).
                 i = i + 1
@@ -378,5 +381,16 @@ subroutine extract_subbasins(shd, ierr)
     call print_message('Number of land-based tiles: ' // trim(adjustl(line)))
     write(line, FMT_GEN) shd%NRVR
     call print_message('Number of river classes: ' // trim(adjustl(line)))
+
+    !> Save to file.
+    z = 0
+    call save_shed_r2c(shd, 100, 'MESH_drainage_database_SUBBASINFLAG.r2c', z)
+    if (z /= 0) then
+        call print_error('The file could not be saved.')
+        call program_abort()
+    else
+        call print_message('The file has been saved.')
+        call program_end()
+    end if
 
 end subroutine
