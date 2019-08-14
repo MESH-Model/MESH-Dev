@@ -55,7 +55,7 @@ module baseflow_module
 
     subroutine bflm_init(fls, shd, cm)
 
-        use mpi_module
+!-        use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
@@ -70,8 +70,13 @@ module baseflow_module
         type(clim_info), intent(in) :: cm
 
         !> Local variables.
-        integer NA, NML, NTYPE, NRVR, iun, n, i, ierr
+        integer NA, NML, NTYPE, NRVR, iun, n, k, i, ierr
         character(len = DEFAULT_LINE_LENGTH) line
+!>>>>>>GRIP-E.
+        integer :: i1 = 1, i2, il1 = 1, il2
+        i2 = shd%NA
+        il2 = shd%lc%NML
+!<<<<<<GRIP-E.
 
         !> Return if BASEFLOWFLAG is not active.
         if (bflm%BASEFLOWFLAG == 0) return
@@ -182,6 +187,12 @@ module baseflow_module
                     end if
                     read(iun) vs%tile%lzs
                     close(iun)
+!>>>>>>GRIP-E.
+                    vs%grid%lzs(i1:i2) = 0.0
+                    do k = il1, il2
+                        vs%grid%lzs(shd%lc%ILMOS(k)) = vs%grid%lzs(shd%lc%ILMOS(k)) + vs%tile%lzs(k)*shd%lc%ILMOS(k)
+                    end do
+!<<<<<<GRIP-E.
             end select
         end if
 
@@ -189,7 +200,7 @@ module baseflow_module
 
     subroutine bflm_within_tile(fls, shd, cm)
 
-        use mpi_module
+!-        use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
@@ -202,6 +213,11 @@ module baseflow_module
 
         !> Local variables.
         integer k
+!>>>>>>GRIP-E.
+        integer :: i1 = 1, i2, il1 = 1, il2
+        i2 = shd%NA
+        il2 = shd%lc%NML
+!<<<<<<GRIP-E.
 
         !> Return if BASEFLOWFLAG is not active.
         if (bflm%BASEFLOWFLAG == 0) return
@@ -227,7 +243,7 @@ module baseflow_module
 
     subroutine bflm_within_grid(fls, shd, cm)
 
-        use mpi_module
+!-        use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
@@ -240,6 +256,11 @@ module baseflow_module
 
         !> Local variables.
         integer k
+!>>>>>>GRIP-E.
+        integer :: i1 = 1, i2, il1 = 1, il2
+        i2 = shd%NA
+        il2 = shd%lc%NML
+!<<<<<<GRIP-E.
 
         !> Return if BASEFLOWFLAG is not active.
         if (bflm%BASEFLOWFLAG == 0) return
@@ -248,7 +269,7 @@ module baseflow_module
         select case (bflm%BASEFLOWFLAG)
             case (2)
 !>>>>>>GRIP-E.
-                vs%grid%lzs(il1:il2) = vs%grid%lzs(il1:il2) + vs%grid%rofb(il1:il2)*ic%dts
+                vs%grid%lzs(i1:i2) = vs%grid%lzs(i1:i2) + vs%grid%rofb(i1:i2)*ic%dts
 !<<<<<<GRIP-E.
                 if ((bflm%dts - ic%dts*ic%ts_hourly) == 0) then
                     lzs(i1:i2) = vs%grid%lzs(i1:i2)
@@ -267,7 +288,7 @@ module baseflow_module
 
     subroutine bflm_finalize(fls, shd, cm)
 
-        use mpi_module
+!-        use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
@@ -285,7 +306,7 @@ module baseflow_module
         integer ierr, iun
 
         !> Return if not the head node or if BASEFLOWFLAG is not active.
-        if (ipid /= 0 .or. bflm%BASEFLOWFLAG == 0) return
+        if (.not. ISHEADNODE .or. bflm%BASEFLOWFLAG == 0) return
 
         !> Save states to file.
         if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then

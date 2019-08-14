@@ -109,6 +109,7 @@ program RUNMESH
 
 !>>>>>>GRIP-E.
     use rte_module, only: rtepm, rtepm_iak, rteflg
+    use baseflow_module, only: bflm
 !<<<<<<GRIP-E.
     implicit none
 
@@ -334,7 +335,6 @@ program RUNMESH
     call READ_SOIL_LEVELS(fls, shd2, ierr)
     call read_parameters(fls, shd2, cm, ierr)
     call read_initial_states(fls, shd2, ierr)
-!todo: BASEFLOWFLAG wf_lzs.
     call READ_PARAMETERS_HYDROLOGY(shd, fls, ierr)
     do k = 1, shd%NAA
         i = shd%IAK(k)
@@ -345,6 +345,8 @@ program RUNMESH
         if (rtepm_iak%aa2(i) /= 0.0) rtepm%aa2(k) = rtepm_iak%aa2(i)
         if (rtepm_iak%aa3(i) /= 0.0) rtepm%aa3(k) = rtepm_iak%aa3(i)
         if (rtepm_iak%aa4(i) /= 0.0) rtepm%aa4(k) = rtepm_iak%aa4(i)
+        if (bflm%pm_iak%pwr(i) /= 0.0) bflm%pm_grid%pwr(k) = bflm%pm_iak%pwr(i)
+        if (bflm%pm_iak%flz(i) /= 0.0) bflm%pm_grid%flz(k) = bflm%pm_iak%flz(i)
     end do
 !<<<<<<GRIP-E.
 

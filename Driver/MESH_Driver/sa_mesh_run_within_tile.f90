@@ -310,7 +310,9 @@ module sa_mesh_run_within_tile
                 end do
 
                 !> Lower zone storage.
-                vs%tile%lzs(ii1:ii2) = lz((1 + iin*0):(iin*1))
+!>>>>>>GRIP-E.
+!                vs%tile%lzs(ii1:ii2) = lz((1 + iin*0):(iin*1))
+!<<<<<<GRIP-E.
 
                 !> Deep zone storage.
                 vs%tile%dzs(ii1:ii2) = dz((1 + iin*0):(iin*1))
@@ -476,7 +478,7 @@ module sa_mesh_run_within_tile
         !> Process modules.
         use RUNCLASS36_config
 !>>>>>>GRIP-E.
-        use baseflow_module
+!        use baseflow_module
 !<<<<<<GRIP-E.
 
         !> Input/output variables.
@@ -490,7 +492,7 @@ module sa_mesh_run_within_tile
         !> Call processes.
         call RUNCLASS36_finalize(fls, shd, cm)
 !>>>>>>GRIP-E.
-        call bflm_finalize(fls, shd, cm)
+!        call bflm_finalize(fls, shd, cm)
 !<<<<<<GRIP-E.
 
     end subroutine
