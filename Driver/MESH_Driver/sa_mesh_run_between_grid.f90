@@ -385,12 +385,12 @@ module sa_mesh_run_between_grid
 
         !> Update variables.
         vs%grid%rff = (vs%grid%rofo + vs%grid%rofs)*ic%dts
-        vs%grid%rchg = vs%grid%rofb*ic%dts
-
-        !> Call processes.
 !>>>>>>GRIP-E.
         call bflm_within_grid(fls, shd, cm)
 !<<<<<<GRIP-E.
+        vs%grid%rchg = vs%grid%rofb*ic%dts
+
+        !> Call processes.
         call SA_RTE(shd)
         call WF_ROUTE_between_grid(fls, shd)
         call run_rte_between_grid(fls, shd)
