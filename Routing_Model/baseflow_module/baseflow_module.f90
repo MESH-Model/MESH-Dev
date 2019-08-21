@@ -190,7 +190,8 @@ module baseflow_module
 !>>>>>>GRIP-E.
                     vs%grid%lzs(i1:i2) = 0.0
                     do k = il1, il2
-                        vs%grid%lzs(shd%lc%ILMOS(k)) = vs%grid%lzs(shd%lc%ILMOS(k)) + vs%tile%lzs(k)*shd%lc%ILMOS(k)
+                        vs%grid%lzs(shd%lc%ILMOS(k)) = vs%grid%lzs(shd%lc%ILMOS(k)) + &
+                            vs%tile%lzs(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
                     end do
 !<<<<<<GRIP-E.
             end select
