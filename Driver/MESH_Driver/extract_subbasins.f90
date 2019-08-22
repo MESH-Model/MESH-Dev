@@ -14,12 +14,11 @@ subroutine extract_subbasins(shd, ierr)
     integer, intent(out) :: ierr
 
     !> Local variables.
-    integer NSUBBSN, z, n, m, k, l, i
-    integer, dimension(:), allocatable :: SUBBASIN, RANKFIRST, RANKLAST
+    integer NSUBBSN, z, n, m, k, l, j, i
+    integer, dimension(:), allocatable :: SUBBASIN, STMGID, RANKFIRST, RANKLAST, STGRANKNEW
     type(ShedGridParams) SUBBASIN_shd
+    real :: tol = 1.0E-6, tol_diff
     character(len = DEFAULT_LINE_LENGTH) line
-!temp
-!    integer grid(shd%yCount, shd%xCount), y, x
 
     !> Initialize the return status.
     ierr = 0
@@ -58,24 +57,58 @@ subroutine extract_subbasins(shd, ierr)
     SUBBASIN_shd%DRDN = 0.0
     SUBBASIN_shd%ylat = 0.0; SUBBASIN_shd%xlng = 0.0
 
+    !> Sanity check.
+!todo: Copy this and move commented section to 'read_initial_inputs', alongside other generic sanity checks.
+!todo    write(line, FMT_GEN) tol
+!todo    call print_message('Re-accumulating DA by NEXT to a tolerance of ' // trim(adjustl(line)) // ' km2 (sanity check).')
+    shd%AREA = shd%DA
+    do n = 1, shd%NAA
+        if (shd%NEXT(n) > 0 .and. shd%NEXT(n) /= n) then
+            shd%AREA(shd%NEXT(n)) = shd%AREA(shd%NEXT(n)) - shd%DA(n)
+        end if
+    end do
+    shd%AREA = shd%AREA*1000000.0
+    shd%FRAC = shd%AREA/(shd%AL**2)
+!todo    SUBBASIN_shd%DA = SUBBASIN_shd%AREA/1000000.0
+!todo    do n = 1, shd%NAA
+!todo        if (shd%NEXT(n) > 0 .and. shd%NEXT(n) /= n) then
+!todo            SUBBASIN_shd%DA(shd%NEXT(n)) = SUBBASIN_shd%DA(shd%NEXT(n)) + SUBBASIN_shd%DA(n)
+!todo        end if
+!todo    end do
+!todo    tol_diff = maxval(abs(shd%DA - SUBBASIN_shd%DA))/(shd%AL**2)
+!todo    write(line, FMT_GEN) tol_diff
+!todo    if (tol_diff > tol) then
+!todo        call print_warning( &
+!todo            'The comparison of re-accumulated DA to the existing DA exceeds the tolerance: ' // trim(adjustl(line)) // ' km2.')
+!todo    else
+!todo        call print_remark( &
+!todo            'The re-accumulated DA compared to the existing DA is within tolerance: ' // trim(adjustl(line)) // ' km2.')
+!todo    end if
+!todo    if (DIAGNOSEMODE) then
+!todo        write(line, FMT_GEN) 'GAUGE', 'DA (km2)', 'REACC_DA (km2)'
+!todo        call print_message(line)
+!todo        do l = 1, fms%stmg%n
+!todo            write(line, FMT_GEN) fms%stmg%meta%name(l), shd%DA(fms%stmg%meta%rnk(l)), SUBBASIN_shd%DA(fms%stmg%meta%rnk(l))
+!todo            call print_message(line)
+!todo        end do
+!todo    end if
+
     !> Mask station locations (using an inverted index to allow the re-indexing that follows).
     allocate(SUBBASIN(shd%NA))
-    SUBBASIN = 0
     i = 0
     do l = 1, fms%stmg%n
         if (SUBBASIN(fms%stmg%meta%rnk(l)) /= 0) then
             call print_remark('The outlet at ' // trim(fms%stmg%meta%name(l)) // ' already exists as a subbasin.')
             i = i + 1
+        else
+            SUBBASIN(fms%stmg%meta%rnk(l)) = (l*-1)
         end if
-        SUBBASIN(fms%stmg%meta%rnk(l)) = (l*-1)
     end do
     NSUBBSN = fms%stmg%n - i
     if (i > 0) then
         write(line, FMT_GEN) i
         call print_message(trim(adjustl(line)) // ' station locations share the same RANK and are repeated subbasins.')
     end if
-
-    !> Mask subbasins.
     write(line, FMT_GEN) NSUBBSN
     call print_message('Masking the domain for ' // trim(adjustl(line)) // ' subbasins.')
     do n = maxval(fms%stmg%meta%rnk), 1, -1
@@ -88,29 +121,20 @@ subroutine extract_subbasins(shd, ierr)
     SUBBASIN_shd%NA = count(SUBBASIN /= 0)
     SUBBASIN_shd%NAA = count(SUBBASIN /= 0)
 
-!temp
-!    grid = 0
-!    do n = 1, shd%NA
-!        grid(shd%yyy(n), shd%xxx(n)) = SUBBASIN(n)*-1
-!    end do
-!    do y = 1, shd%yCount
-!        write(10, *) (grid(y, x), x = 1, shd%xCount)
-!    end do
-
     !> Assign subbasin ID, considering nested subbasins.
     call print_message('Reordering and checking for nested subbasins.')
-    allocate(RANKFIRST(NSUBBSN), RANKLAST(NSUBBSN))
-    RANKFIRST = 0; RANKLAST = 0
+    allocate(STMGID(NSUBBSN), RANKFIRST(NSUBBSN), RANKLAST(NSUBBSN), STGRANKNEW(fms%stmg%n))
+    STMGID = 0; RANKFIRST = 0; RANKLAST = 0; STGRANKNEW = 0
+    i = NSUBBSN
     l = 0
-    i = 1
-    do while (.true.)
+    do while (i > 0)
 
         !> Exit if no more subbasins exists to be index.
         if (.not. any(SUBBASIN < 0)) exit
 
-        !> Find the lowest ranking subbasin.
+        !> Find the highest ranking subbasin.
         if (l == 0) then
-            do n = 1, maxval(fms%stmg%meta%rnk)
+            do n = maxval(fms%stmg%meta%rnk), 1, -1
                 if (SUBBASIN(n) < 0) then
                     l = SUBBASIN(n)*-1
                     exit
@@ -120,6 +144,7 @@ subroutine extract_subbasins(shd, ierr)
 
         !> Update the subbasin ID.
         RANKLAST(i) = fms%stmg%meta%rnk(l)
+        STMGID(i) = l
         do n = 1, fms%stmg%meta%rnk(l)
             if (SUBBASIN(n) == (l*-1)) then
                 SUBBASIN(n) = i
@@ -127,43 +152,87 @@ subroutine extract_subbasins(shd, ierr)
             end if
         end do
 
-        !> Increment the subbasin ID.
-        i = i + 1
+        !> Check to see if a subbasin exists directly upstream or reset 'l' to find the next highest ranking subbasin.
+        l = 0
+        do n = 1, RANKLAST(i)
+            if (SUBBASIN(n) < 0 .and. shd%NEXT(n) > 0) then
+                if (SUBBASIN(shd%NEXT(n)) == i) then
+                    l = SUBBASIN(n)*-1
+                    exit
+                end if
+            end if
+        end do
 
-        !> Check to see if the subbasin flows into another active domain or reset 'l' to find the next lowest ranking subbasin.
-        n = fms%stmg%meta%rnk(l)
-        if (SUBBASIN(shd%NEXT(n)) < 0) then
-            l = SUBBASIN(shd%NEXT(n))*-1
-        else
-            l = 0
-        end if
+        !> De-increment the subbasin ID.
+        i = i - 1
     end do
-
-!temp
-!    grid = 0
-!    do n = 1, shd%NA
-!        grid(shd%yyy(n), shd%xxx(n)) = SUBBASIN(n)
-!    end do
-!    do y = 1, shd%yCount
-!        write(11, *) (grid(y, x), x = 1, shd%xCount)
-!    end do
+    if (DIAGNOSEMODE) then
+        write(line, FMT_GEN) 'SUBBASIN', 'CELLS', 'OUTLET'
+        call print_message(line)
+        do l = 1, NSUBBSN
+            line = '(new basin)'
+            if (shd%NEXT(RANKLAST(l)) > 0) then
+                if (SUBBASIN(shd%NEXT(RANKLAST(l))) /= 0) then
+                    line = fms%stmg%meta%name(STMGID(SUBBASIN(shd%NEXT(RANKLAST(l)))))
+                end if
+            end if
+            write(line, FMT_GEN) fms%stmg%meta%name(STMGID(l)), count(SUBBASIN == l), trim(line)
+!debug            write(line, FMT_GEN) l, count(SUBBASIN == l), SUBBASIN(shd%NEXT(RANKLAST(l)))
+            call print_message(line)
+        end do
+    end if
 
         !> Set 'FRAC' to zero at inactive grids.
 !-    where (SUBBASIN > 0) shd%FRAC = 0.0
 
     !> Reorder RANK/NEXT and transfer properties.
     call print_message('Recalculating RANK and NEXT.')
-    i = 1
-    do l = 1, maxval(SUBBASIN)
-        do n = RANKFIRST(l), RANKLAST(l)
+    i = SUBBASIN_shd%NAA
+    do l = NSUBBSN, 1, -1
+
+        !> Update streamflow gauge location (catching other stations that share the same location).
+        if (count(fms%stmg%meta%rnk == RANKLAST(l)) > 0) then
+            where (fms%stmg%meta%rnk == RANKLAST(l)) STGRANKNEW = i
+        end if
+
+        !> Update 'NEXT' at the outlet.
+        n = RANKLAST(l)
+        if (shd%NEXT(n) > 0) then
+            if (SUBBASIN(shd%NEXT(n)) == 0) then
+
+                !> Add a basin-level outlet if 'NEXT' is outside the revised domain.
+                SUBBASIN_shd%NA = SUBBASIN_shd%NA + 1
+                SUBBASIN_shd%xxx(SUBBASIN_shd%NA) = shd%xxx(shd%NEXT(n))
+                SUBBASIN_shd%yyy(SUBBASIN_shd%NA) = shd%yyy(shd%NEXT(n))
+                SUBBASIN_shd%NEXT(i) = SUBBASIN_shd%NA
+            else
+
+                !> Updated 'NEXT' of the outlet if the subbasin leads to another subbasin.
+                j = SUBBASIN_shd%NAA
+                do m = NSUBBSN, l, -1
+                    do k = RANKLAST(m), RANKFIRST(m), -1
+                        if (SUBBASIN(k) == m) then
+                            j = j - 1
+                            if (SUBBASIN(k) > l .and. k == shd%NEXT(n)) then
+                                SUBBASIN_shd%NEXT(i) = j
+                                exit
+                            end if
+                        end if
+                    end do
+                    if (SUBBASIN_shd%NEXT(i) /= 0) exit
+                end do
+            end if
+        end if
+
+        !> Cascade.
+        do n = RANKLAST(l), RANKFIRST(l), -1
             if (SUBBASIN(n) == l) then
 
-                !> Copy cell properties.
+                !> Transfer properties.
                 SUBBASIN_shd%xxx(i) = shd%xxx(n)
                 SUBBASIN_shd%yyy(i) = shd%yyy(n)
                 SUBBASIN_shd%IROUGH(i) = shd%IROUGH(n)
                 SUBBASIN_shd%lc%ACLASS(i, :) = shd%lc%ACLASS(n, :)
-                SUBBASIN_shd%NEXT(i) = i + 1
                 SUBBASIN_shd%IAK(i) = shd%IAK(n)
                 SUBBASIN_shd%SLOPE_CHNL(i) = shd%SLOPE_CHNL(n)
                 SUBBASIN_shd%CHNL_LEN(i) = shd%CHNL_LEN(n)
@@ -179,35 +248,47 @@ subroutine extract_subbasins(shd, ierr)
                 SUBBASIN_shd%ylat(i) = shd%ylat(n)
                 SUBBASIN_shd%xlng(i) = shd%xlng(n)
 
-                !> Update streamflow gauge location (catching other stations that share the same location).
-                if (n == RANKLAST(l)) then
-                    where (fms%stmg%meta%rnk == RANKLAST(l)) fms%stmg%meta%rnk = i
-
-                    !> Update 'NA' and add a basin-level outlet if NEXT is outside the active domain.
-                    if (shd%NEXT(n) > 0) then
-                        if (SUBBASIN(shd%NEXT(n)) == 0) then
-                            m = SUBBASIN_shd%NA + 1
-                            SUBBASIN_shd%NA = m
-                            SUBBASIN_shd%xxx(m) = shd%xxx(shd%NEXT(n))
-                            SUBBASIN_shd%yyy(m) = shd%yyy(shd%NEXT(n))
-
-                            !> Update 'NEXT' of the current grid.
-                            SUBBASIN_shd%NEXT(i) = m
+                !> Update all 'NEXT' of cells that flow into 'n'.
+                j = i
+                do k = (n - 1), RANKFIRST(l), -1
+                    if (SUBBASIN(k) == l) then
+                        j = j - 1
+                        if (shd%NEXT(k) == n) then
+                            SUBBASIN_shd%NEXT(j) = i
                         end if
                     end if
-                end if
+                end do
 
-                !> Increment 'i' (the next new NA).
-                i = i + 1
-
-                !> Update the location of the basin outlet via this cell's 'NEXT'.
-!                if (shd%NEXT(n) > 0) then
-!                    SUBBASIN_shd%xxx(i) = shd%xxx(shd%NEXT(n))
-!                    SUBBASIN_shd%yyy(i) = shd%yyy(shd%NEXT(n))
-!                end if
+                !> De-increment 'i'.
+                i = i - 1
             end if
         end do
     end do
+
+    !> Sanity check.
+    write(line, FMT_GEN) tol
+    call print_message('Re-accumulating DA by NEXT to a tolerance of ' // trim(adjustl(line)) // ' km2 (sanity check).')
+    SUBBASIN_shd%DA = SUBBASIN_shd%AREA/1000000.0
+    do n = 1, SUBBASIN_shd%NAA
+        SUBBASIN_shd%DA(SUBBASIN_shd%NEXT(n)) = SUBBASIN_shd%DA(SUBBASIN_shd%NEXT(n)) + SUBBASIN_shd%DA(n)
+    end do
+    tol_diff = maxval(abs(shd%DA(fms%stmg%meta%rnk(:)) - SUBBASIN_shd%DA(STGRANKNEW(:))))/(shd%AL**2)
+    write(line, FMT_GEN) tol_diff
+    if (tol_diff > tol) then
+        call print_warning( &
+            'The comparison of re-accumulated DA to the existing DA exceeds the tolerance: ' // trim(adjustl(line)) // ' km2.')
+    else
+        call print_remark( &
+            'The re-accumulated DA compared to the existing DA is within tolerance: ' // trim(adjustl(line)) // ' km2.')
+    end if
+    if (DIAGNOSEMODE) then
+        write(line, FMT_GEN) 'GAUGE', 'DA (km2)', 'REACC_DA (km2)'
+        call print_message(line)
+        do l = 1, fms%stmg%n
+            write(line, FMT_GEN) fms%stmg%meta%name(l), shd%DA(fms%stmg%meta%rnk(l)), SUBBASIN_shd%DA(STGRANKNEW(l))
+            call print_message(line)
+        end do
+    end if
 
     !> Reallocate the actual 'shd' variable.
     deallocate( &
@@ -255,6 +336,8 @@ subroutine extract_subbasins(shd, ierr)
     shd%DRDN = SUBBASIN_shd%DRDN(1:shd%NA)
     shd%ylat = SUBBASIN_shd%ylat(1:shd%NA)
     shd%xlng = SUBBASIN_shd%xlng(1:shd%NA)
+    fms%stmg%meta%rnk = STGRANKNEW
+    deallocate(RANKFIRST, RANKLAST, STGRANKNEW)
 
     !> Extract 'RNKGRD'.
     shd%RNKGRD = 0
@@ -274,10 +357,11 @@ subroutine extract_subbasins(shd, ierr)
     !> Print diagnostic information to screen.
     write(line, FMT_GEN) 'SUBBASIN', 'GRIDS'
     call print_echo_txt(line)
-    do l = 1, fms%stmg%n
-        write(line, FMT_GEN) l, count(SUBBASIN == l)
+    do l = 1, NSUBBSN
+        write(line, FMT_GEN) fms%stmg%meta%name(STMGID(l)), count(SUBBASIN == l)
         call print_echo_txt(line)
     end do
+    deallocate(SUBBASIN, STMGID)
 
     !> Print a summary of locations to file.
     write(line, FMT_GEN) fms%stmg%n
