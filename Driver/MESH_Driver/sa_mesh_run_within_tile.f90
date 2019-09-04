@@ -11,6 +11,11 @@ module sa_mesh_run_within_tile
 
     implicit none
 
+!>>>>>>beluga
+!todo: Generalize to apply for all transactions (e.g., moved to and managed by 'mpi_module').
+    integer, private, save :: itag = 0
+!<<<<<<beluga
+
     contains
 
     subroutine run_within_tile_init(fls, shd, cm)
@@ -118,7 +123,11 @@ module sa_mesh_run_within_tile
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
-        t = ic%ts_count*1000
+!>>>>>>beluga
+!        t = ic%ts_count*1000
+        t = itag
+        i = 0
+!<<<<<<beluga
 
         !> Other variables
         s = shd%lc%IGND
@@ -326,6 +335,9 @@ module sa_mesh_run_within_tile
         end if !(inp > 1 .and. ipid /= 0) then
 
         if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+!>>>>>>beluga
+        itag = t + i
+!<<<<<<beluga
 
     end subroutine
 
