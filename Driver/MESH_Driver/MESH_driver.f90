@@ -155,7 +155,7 @@ program RUNMESH
     type(CLIM_INFO) cm
 
     !> Basin totals for the run from RESUMEFLAG.
-    real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
+!-    real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
 
     !> End of run states for prognostic variables.
     real, dimension(:, :), allocatable :: tcan, rcan, sncan, gro, zpnd, tpnd, sno, tsno, albs, rhos
@@ -179,7 +179,7 @@ program RUNMESH
     type(ShedGridParams) shd2
     logical ltest
     integer, dimension(:), allocatable :: rankgeophytoshd
-    real, dimension(:), allocatable :: pre, evap, rofo, rofs, rofb
+    real, dimension(:), allocatable :: rofo, rofs, rofb
     integer ii1, ii2, n
     real y, x
 !<<<<<<GRIP-E.
@@ -289,7 +289,7 @@ program RUNMESH
         call print_error('Bad mapping from MESH_lss_database.r2c.')
         call program_abort()
     end if
-    allocate(pre(shd%NA), evap(shd%NA), rofo(shd%NA), rofs(shd%NA), rofb(shd%NA))
+    allocate(rofo(shd%NA), rofs(shd%NA), rofb(shd%NA))
     shd2%lc%ILG = shd2%NA*shd2%lc%NTYPE
     shd2%wc%ILG = shd2%NA*shd2%lc%NTYPE
     allocate(shd2%lc%ILMOS(shd2%lc%ILG), shd2%lc%JLMOS(shd2%lc%ILG), &
@@ -417,14 +417,14 @@ program RUNMESH
     call print_message('')
 
     !> Initialize basin totals for the run.
-    if (ISHEADNODE) then
-        TOTAL_PRE = 0.0
-        TOTAL_EVAP = 0.0
-        TOTAL_ROF = 0.0
-        TOTAL_ROFO = 0.0
-        TOTAL_ROFS = 0.0
-        TOTAL_ROFB = 0.0
-    end if
+!-    if (ISHEADNODE) then
+!-        TOTAL_PRE = 0.0
+!-        TOTAL_EVAP = 0.0
+!-        TOTAL_ROF = 0.0
+!-        TOTAL_ROFO = 0.0
+!-        TOTAL_ROFS = 0.0
+!-        TOTAL_ROFB = 0.0
+!-    end if
 
     !> Open output files.
     if (ISHEADNODE) then
@@ -934,19 +934,50 @@ program RUNMESH
         end if
     end if
 
+!>>>>>>GRIP-E.
+    !> Update variables to update initial storage.
+    if (ro%RUNBALWB .and. ISHEADNODE) then
+        do n = 1, shd%NA
+            if (associated(out%ts%grid%rcan)) out%ts%grid%rcan(n) = vs%grid%rcan(rankgeophytoshd(n))
+            if (associated(out%ts%grid%sncan)) out%ts%grid%sncan(n) = vs%grid%sncan(rankgeophytoshd(n))
+            if (associated(out%ts%grid%sno)) out%ts%grid%sno(n) = vs%grid%sno(rankgeophytoshd(n))
+            if (associated(out%ts%grid%wsno)) out%ts%grid%wsno(n) = vs%grid%wsno(rankgeophytoshd(n))
+            if (associated(out%ts%grid%pndw)) out%ts%grid%pndw(n) = vs%grid%pndw(rankgeophytoshd(n))
+!already on 'shd' grid            if (associated(out%ts%grid%lzs)) out%ts%grid%lzs(n) = vs%grid%lzs(rankgeophytoshd(n))
+            if (associated(out%ts%grid%dzs)) out%ts%grid%dzs(n) = vs%grid%dzs(rankgeophytoshd(n))
+            do j = 1, shd%lc%IGND
+                if (associated(out%ts%grid%lqws)) out%ts%grid%lqws(n, j) = vs%grid%lqws(rankgeophytoshd(n), j)
+                if (associated(out%ts%grid%fzws)) out%ts%grid%fzws(n, j) = vs%grid%fzws(rankgeophytoshd(n), j)
+            end do
+            if (associated(out%ts%basin%rcan)) vs%basin%rcan(n) = vs%grid%rcan(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%sncan)) vs%basin%sncan(n) = vs%grid%sncan(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%sno)) vs%basin%sno(n) = vs%grid%sno(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%wsno)) vs%basin%wsno(n) = vs%grid%wsno(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%pndw)) vs%basin%pndw(n) = vs%grid%pndw(rankgeophytoshd(n))*shd%FRAC(n)
+!updated in 'between_grid'            if (associated(out%ts%basin%lzs)) vs%basin%lzs(n) = vs%grid%lzs(rankgeophytoshd(n))*shd%FRAC(n)
+!updated in 'between_grid'            if (associated(out%ts%basin%dzs)) vs%basin%dzs(n) = vs%grid%dzs(rankgeophytoshd(n))*shd%FRAC(n)
+            do j = 1, shd%lc%IGND
+                if (associated(out%ts%basin%lqws)) vs%basin%lqws(n, j) = vs%grid%lqws(rankgeophytoshd(n), j)*shd%FRAC(n)
+                if (associated(out%ts%basin%fzws)) vs%basin%fzws(n, j) = vs%grid%fzws(rankgeophytoshd(n), j)*shd%FRAC(n)
+            end do
+        end do
+        call run_within_grid_stas_basin_update(fls, shd, cm)
+    end if
+!<<<<<<GRIP-E.
+
     !> Update output variables with initial states.
     call output_variables_reset(shd)
     call output_variables_update(shd)
 
     !> Calculate initial storage.
-    if (ro%RUNBALWB .and. ISHEADNODE) then
-        STG_INI = sum( &
-            (out%ts%grid%rcan(i1:i2) + out%ts%grid%sncan(i1:i2) + &
-             out%ts%grid%sno(i1:i2) + out%ts%grid%wsno(i1:i2) + out%ts%grid%pndw(i1:i2) + &
-             out%ts%grid%lzs(i1:i2) + out%ts%grid%dzs(i1:i2) + &
-             sum(out%ts%grid%lqws(i1:i2, :), 2) + sum(out%ts%grid%fzws(i1:i2, :), 2))*shd2%FRAC)
-        STG_INI = STG_INI/sum(shd2%FRAC)
-    end if
+!-    if (ro%RUNBALWB .and. ISHEADNODE) then
+!-        STG_INI = sum( &
+!-            (out%ts%grid%rcan(i1:i2) + out%ts%grid%sncan(i1:i2) + &
+!-             out%ts%grid%sno(i1:i2) + out%ts%grid%wsno(i1:i2) + out%ts%grid%pndw(i1:i2) + &
+!-             out%ts%grid%lzs(i1:i2) + out%ts%grid%dzs(i1:i2) + &
+!-             sum(out%ts%grid%lqws(i1:i2, :), 2) + sum(out%ts%grid%fzws(i1:i2, :), 2))*shd2%FRAC)
+!-        STG_INI = STG_INI/sum(shd2%FRAC)
+!-    end if
 
     !> Read in existing basin states for RESUMEFLAG.
     if (RESUMEFLAG == 4) then
@@ -966,8 +997,10 @@ program RUNMESH
         if (ISHEADNODE) then
 
             !> Water balance totals.
-            read(iun) TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-            read(iun) STG_INI
+            read(iun) &
+                out%tot%basin%prec(shd%NAA), out%tot%basin%evap(shd%NAA), out%tot%basin%rof(shd%NAA), &
+                out%tot%basin%rofo(shd%NAA), out%tot%basin%rofs(shd%NAA), out%tot%basin%rofb(shd%NAA)
+            read(iun) out%tot%basin%stg0w(shd%NAA)
 
             !> Daily streamflow values.
             read(iun) fms%stmg%qomeas%val
@@ -1024,21 +1057,117 @@ program RUNMESH
             call run_within_grid(fls, shd2, cm)
         end if
 
+        !> Update the output variables to deal with the grid mapping (overriding also prevents the auto-update via 'output_variables').
+        !> Update the internal runoff variables so the 'rff' and 'rchg' fields are updated in 'between_grid'.
+        !> Update un-accumulated basin value (basin average updated in 'between_grid').
 !todo: clean; generalize.
-        pre = 0.0
-        evap = 0.0
+!-        pre = 0.0
+!-        evap = 0.0
         rofo = 0.0
         rofs = 0.0
         rofb = 0.0
         do n = 1, shd%NA
-            pre(n) = vs%grid%pre(rankgeophytoshd(n))
-            evap(n) = vs%grid%evap(rankgeophytoshd(n))
+!-            pre(n) = vs%grid%pre(rankgeophytoshd(n))
+!-            evap(n) = vs%grid%evap(rankgeophytoshd(n))
+            if (associated(out%ts%grid%fsin)) out%ts%grid%fsin(n) = vs%grid%fsin(rankgeophytoshd(n))
+            if (associated(out%ts%grid%flin)) out%ts%grid%flin(n) = vs%grid%flin(rankgeophytoshd(n))
+            if (associated(out%ts%grid%ta)) out%ts%grid%ta(n) = vs%grid%ta(rankgeophytoshd(n))
+            if (associated(out%ts%grid%qa)) out%ts%grid%qa(n) = vs%grid%qa(rankgeophytoshd(n))
+            if (associated(out%ts%grid%pres)) out%ts%grid%pres(n) = vs%grid%pres(rankgeophytoshd(n))
+            if (associated(out%ts%grid%uv)) out%ts%grid%uv(n) = vs%grid%uv(rankgeophytoshd(n))
+            if (associated(out%ts%grid%pre)) out%ts%grid%pre(n) = vs%grid%pre(rankgeophytoshd(n))
+            if (associated(out%ts%grid%prec)) out%ts%grid%prec(n) = vs%grid%pre(rankgeophytoshd(n))*ic%dts
+            if (associated(out%ts%grid%evap)) out%ts%grid%evap(n) = vs%grid%evap(rankgeophytoshd(n))
+            if (associated(out%ts%grid%pevp)) out%ts%grid%pevp(n) = vs%grid%pevp(rankgeophytoshd(n))
+            if (associated(out%ts%grid%evpb)) out%ts%grid%evpb(n) = vs%grid%evpb(rankgeophytoshd(n))
+            if (associated(out%ts%grid%arrd)) out%ts%grid%arrd(n) = vs%grid%arrd(rankgeophytoshd(n))
+            if (associated(out%ts%grid%gro)) out%ts%grid%gro(n) = vs%grid%gro(rankgeophytoshd(n))
+            if (associated(out%ts%grid%rofo)) out%ts%grid%rofo(n) = vs%grid%rofo(rankgeophytoshd(n))
+            if (associated(out%ts%grid%rofs)) out%ts%grid%rofs(n) = vs%grid%rofs(rankgeophytoshd(n))
+            if (associated(out%ts%grid%rofb)) out%ts%grid%rofb(n) = vs%grid%rofb(rankgeophytoshd(n))
+            if (associated(out%ts%grid%rcan)) out%ts%grid%rcan(n) = vs%grid%rcan(rankgeophytoshd(n))
+            if (associated(out%ts%grid%sncan)) out%ts%grid%sncan(n) = vs%grid%sncan(rankgeophytoshd(n))
+            if (associated(out%ts%grid%zsno)) out%ts%grid%zsno(n) = vs%grid%zsno(rankgeophytoshd(n))
+            if (associated(out%ts%grid%rhosno)) out%ts%grid%rhosno(n) = vs%grid%rhos(rankgeophytoshd(n))
+            if (associated(out%ts%grid%sno)) out%ts%grid%sno(n) = vs%grid%sno(rankgeophytoshd(n))
+            if (associated(out%ts%grid%wsno)) out%ts%grid%wsno(n) = vs%grid%wsno(rankgeophytoshd(n))
+            if (associated(out%ts%grid%fsno)) out%ts%grid%fsno(n) = vs%grid%fsno(rankgeophytoshd(n))
+            if (associated(out%ts%grid%zpnd)) out%ts%grid%zpnd(n) = vs%grid%zpnd(rankgeophytoshd(n))
+            if (associated(out%ts%grid%pndw)) out%ts%grid%pndw(n) = vs%grid%pndw(rankgeophytoshd(n))
+!already on 'shd' grid            if (associated(out%ts%grid%lzs)) out%ts%grid%lzs(n) = vs%grid%lzs(rankgeophytoshd(n))
+            if (associated(out%ts%grid%dzs)) out%ts%grid%dzs(n) = vs%grid%dzs(rankgeophytoshd(n))
+            if (associated(out%ts%grid%thlq)) out%ts%grid%thlq(n, :) = vs%grid%thlq(rankgeophytoshd(n), :)
+            if (associated(out%ts%grid%thic)) out%ts%grid%thic(n, :) = vs%grid%thic(rankgeophytoshd(n), :)
+            if (associated(out%ts%grid%lqws)) out%ts%grid%lqws(n, :) = vs%grid%lqws(rankgeophytoshd(n), :)
+            if (associated(out%ts%grid%fzws)) out%ts%grid%fzws(n, :) = vs%grid%fzws(rankgeophytoshd(n), :)
+            if (associated(out%ts%grid%tcan)) out%ts%grid%tcan(n) = vs%grid%tcan(rankgeophytoshd(n))
+            if (associated(out%ts%grid%cmas)) out%ts%grid%cmas(n) = vs%grid%cmas(rankgeophytoshd(n))
+            if (associated(out%ts%grid%tsno)) out%ts%grid%tsno(n) = vs%grid%tsno(rankgeophytoshd(n))
+            if (associated(out%ts%grid%tpnd)) out%ts%grid%tpnd(n) = vs%grid%tpnd(rankgeophytoshd(n))
+            if (associated(out%ts%grid%alvs)) out%ts%grid%alvs(n) = vs%grid%alvs(rankgeophytoshd(n))
+            if (associated(out%ts%grid%alir)) out%ts%grid%alir(n) = vs%grid%alir(rankgeophytoshd(n))
+            if (associated(out%ts%grid%albt)) out%ts%grid%albt(n) = vs%grid%albt(rankgeophytoshd(n))
+            if (associated(out%ts%grid%gte)) out%ts%grid%gte(n) = vs%grid%gte(rankgeophytoshd(n))
+            if (associated(out%ts%grid%qh)) out%ts%grid%qh(n) = vs%grid%hfs(rankgeophytoshd(n))
+            if (associated(out%ts%grid%qe)) out%ts%grid%qe(n) = vs%grid%qevp(rankgeophytoshd(n))
+            if (associated(out%ts%grid%gzero)) out%ts%grid%gzero(n) = vs%grid%gzero(rankgeophytoshd(n))
+            if (associated(out%ts%grid%gflx)) out%ts%grid%gflx(n, :) = vs%grid%gflx(rankgeophytoshd(n), :)
+            if (associated(out%ts%grid%tbar)) out%ts%grid%tbar(n, :) = vs%grid%tbar(rankgeophytoshd(n), :)
             rofo(n) = vs%grid%rofo(rankgeophytoshd(n))
             rofs(n) = vs%grid%rofs(rankgeophytoshd(n))
             rofb(n) = vs%grid%rofb(rankgeophytoshd(n))
+            if (associated(out%ts%basin%fsin)) vs%basin%fsin(n) = vs%grid%fsin(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%flin)) vs%basin%flin(n) = vs%grid%flin(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%ta)) vs%basin%ta(n) = vs%grid%ta(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%qa)) vs%basin%qa(n) = vs%grid%qa(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%pres)) vs%basin%pres(n) = vs%grid%pres(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%uv)) vs%basin%uv(n) = vs%grid%uv(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%pre) .or. associated(out%ts%basin%prec)) then
+                vs%basin%pre(n) = vs%grid%pre(rankgeophytoshd(n))*shd%FRAC(n)
+            end if
+            if (associated(out%ts%basin%evap)) vs%basin%evap(n) = vs%grid%evap(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%pevp)) vs%basin%pevp(n) = vs%grid%pevp(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%evpb)) vs%basin%evpb(n) = vs%grid%evpb(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%arrd)) vs%basin%arrd(n) = vs%grid%arrd(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%gro)) vs%basin%gro(n) = vs%grid%gro(rankgeophytoshd(n))*shd%FRAC(n)
+!updated in 'between_grid'            if (associated(out%ts%basin%rofo))
+!updated in 'between_grid'            if (associated(out%ts%basin%rofs))
+!updated in 'between_grid'            if (associated(out%ts%basin%rofb))
+            if (associated(out%ts%basin%rcan)) vs%basin%rcan(n) = vs%grid%rcan(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%sncan)) vs%basin%sncan(n) = vs%grid%sncan(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%zsno)) vs%basin%zsno(n) = vs%grid%zsno(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%rhosno)) vs%basin%rhos(n) = vs%grid%rhos(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%sno)) vs%basin%sno(n) = vs%grid%sno(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%wsno)) vs%basin%wsno(n) = vs%grid%wsno(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%fsno)) vs%basin%fsno(n) = vs%grid%fsno(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%zpnd)) vs%basin%zpnd(n) = vs%grid%zpnd(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%pndw)) vs%basin%pndw(n) = vs%grid%pndw(rankgeophytoshd(n))*shd%FRAC(n)
+!updated in 'between_grid'            if (associated(out%ts%basin%lzs)) lzs
+!updated in 'between_grid'            if (associated(out%ts%basin%dzs)) dzs
+            do j = 1, shd%lc%IGND
+                if (associated(out%ts%basin%thlq)) vs%basin%thlq(n, j) = vs%grid%thlq(rankgeophytoshd(n), j)*shd%FRAC(n)
+                if (associated(out%ts%basin%thic)) vs%basin%thic(n, j) = vs%grid%thic(rankgeophytoshd(n), j)*shd%FRAC(n)
+                if (associated(out%ts%basin%lqws)) vs%basin%lqws(n, j) = vs%grid%lqws(rankgeophytoshd(n), j)*shd%FRAC(n)
+                if (associated(out%ts%basin%fzws)) vs%basin%fzws(n, j) = vs%grid%fzws(rankgeophytoshd(n), j)*shd%FRAC(n)
+            end do
+            if (associated(out%ts%basin%tcan)) vs%basin%tcan(n) = vs%grid%tcan(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%cmas)) vs%basin%cmas(n) = vs%grid%cmas(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%tsno)) vs%basin%tsno(n) = vs%grid%tsno(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%tpnd)) vs%basin%tpnd(n) = vs%grid%tpnd(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%alvs)) vs%basin%alvs(n) = vs%grid%alvs(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%alir)) vs%basin%alir(n) = vs%grid%alir(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%albt)) vs%basin%albt(n) = vs%grid%albt(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%gte)) vs%basin%gte(n) = vs%grid%gte(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%qh)) vs%basin%hfs(n) = vs%grid%hfs(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%qe)) vs%basin%qevp(n) = vs%grid%qevp(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%gzero)) vs%basin%gzero(n) = vs%grid%gzero(rankgeophytoshd(n))*shd%FRAC(n)
+            do j = 1, shd%lc%IGND
+                if (associated(out%ts%basin%gflx)) vs%basin%gflx(n, j) = vs%grid%gflx(rankgeophytoshd(n), j)*shd%FRAC(n)
+                if (associated(out%ts%basin%tbar)) vs%basin%tbar(n, j) = vs%grid%tbar(rankgeophytoshd(n), j)*shd%FRAC(n)
+            end do
         end do
-        vs%grid%pre = pre
-        vs%grid%evap = evap
+!-        vs%grid%pre = pre
+!-        vs%grid%evap = evap
         vs%grid%rofo = rofo
         vs%grid%rofs = rofs
         vs%grid%rofb = rofb
@@ -1297,19 +1426,19 @@ program RUNMESH
     if (ISHEADNODE) then
 
         !> Basin totals for the run.
-        if (ro%RUNBALWB) then
-            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%prec(i1:i2)*shd2%FRAC)/sum(shd2%FRAC)
-            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%evap(i1:i2)*shd2%FRAC)*ic%dts/sum(shd2%FRAC)
-            TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof(i1:i2)*shd2%FRAC)*ic%dts/sum(shd2%FRAC)
-            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%rofo(i1:i2)*shd2%FRAC)*ic%dts/sum(shd2%FRAC)
-            TOTAL_ROFS = TOTAL_ROFS + sum(out%tot%grid%rofs(i1:i2)*shd2%FRAC)*ic%dts/sum(shd2%FRAC)
-            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%rofb(i1:i2)*shd2%FRAC)*ic%dts/sum(shd2%FRAC)
-            STG_FIN = sum( &
-                (out%ts%grid%rcan(i1:i2) + out%ts%grid%sncan(i1:i2) + &
-                 out%ts%grid%sno(i1:i2) + out%ts%grid%wsno(i1:i2) + out%ts%grid%pndw(i1:i2) + &
-                 out%ts%grid%lzs(i1:i2) + out%ts%grid%dzs(i1:i2) + &
-                 sum(out%ts%grid%lqws(i1:i2, :), 2) + sum(out%ts%grid%fzws(i1:i2, :), 2))*shd2%FRAC)/sum(shd2%FRAC)
-        end if
+!-        if (ro%RUNBALWB) then
+!-            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%prec(i1:i2)*shd2%FRAC)/sum(shd2%FRAC)
+!-            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%evap(i1:i2)*shd2%FRAC)*ic%dts/sum(shd2%FRAC)
+!-            TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof(i1:i2)*shd2%FRAC)*ic%dts/sum(shd2%FRAC)
+!-            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%rofo(i1:i2)*shd2%FRAC)*ic%dts/sum(shd2%FRAC)
+!-            TOTAL_ROFS = TOTAL_ROFS + sum(out%tot%grid%rofs(i1:i2)*shd2%FRAC)*ic%dts/sum(shd2%FRAC)
+!-            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%rofb(i1:i2)*shd2%FRAC)*ic%dts/sum(shd2%FRAC)
+!-            STG_FIN = sum( &
+!-                (out%ts%grid%rcan(i1:i2) + out%ts%grid%sncan(i1:i2) + &
+!-                 out%ts%grid%sno(i1:i2) + out%ts%grid%wsno(i1:i2) + out%ts%grid%pndw(i1:i2) + &
+!-                 out%ts%grid%lzs(i1:i2) + out%ts%grid%dzs(i1:i2) + &
+!-                 sum(out%ts%grid%lqws(i1:i2, :), 2) + sum(out%ts%grid%fzws(i1:i2, :), 2))*shd2%FRAC)/sum(shd2%FRAC)
+!-        end if
 
         !> Save the current state of the model for SAVERESUMEFLAG.
         if (SAVERESUMEFLAG == 4) then
@@ -1326,8 +1455,10 @@ program RUNMESH
             write(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
 
             !> Water balance totals.
-            write(iun) TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-            write(iun) STG_INI
+            write(iun) &
+                out%tot%basin%prec(shd%NAA), out%tot%basin%evap(shd%NAA), out%tot%basin%rof(shd%NAA), &
+                out%tot%basin%rofo(shd%NAA), out%tot%basin%rofs(shd%NAA), out%tot%basin%rofb(shd%NAA)
+            write(iun) out%tot%basin%stg0w(shd%NAA)
 
             !> Daily streamflow values.
             write(iun) fms%stmg%qomeas%val
@@ -1470,20 +1601,20 @@ program RUNMESH
     call print_message('')
     call print_message('End of run totals')
     call print_message('')
-    write(line, FMT_GEN) TOTAL_PRE
+    write(line, FMT_GEN) out%tot%basin%prec(shd%NAA)
     call print_message_detail('Total Precipitation         (mm) =' // trim(line))
-    write(line, FMT_GEN) TOTAL_EVAP
+    write(line, FMT_GEN) out%tot%basin%evap(shd%NAA)*ic%dts
     call print_message_detail('Total Evaporation           (mm) =' // trim(line))
-    write(line, FMT_GEN) TOTAL_ROF
+    write(line, FMT_GEN) out%tot%basin%rof(shd%NAA)*ic%dts
     call print_message_detail('Total Runoff                (mm) =' // trim(line))
-    write(line, FMT_GEN) (STG_FIN - STG_INI), STG_INI, STG_FIN
+    write(line, FMT_GEN) out%tot%basin%dstgw(shd%NAA), out%tot%basin%stg0w(shd%NAA), out%tot%basin%stgw(shd%NAA)
     call print_message_detail('Storage(Change/Init/Final)  (mm) =' // trim(line))
     call print_message('')
-    write(line, FMT_GEN) TOTAL_ROFO
+    write(line, FMT_GEN) out%tot%basin%rofo(shd%NAA)*ic%dts
     call print_message_detail('Total Overland flow         (mm) =' // trim(line))
-    write(line, FMT_GEN) TOTAL_ROFS
+    write(line, FMT_GEN) out%tot%basin%rofs(shd%NAA)*ic%dts
     call print_message_detail('Total Interflow             (mm) =' // trim(line))
-    write(line, FMT_GEN) TOTAL_ROFB
+    write(line, FMT_GEN) out%tot%basin%rofb(shd%NAA)*ic%dts
     call print_message_detail('Total Baseflow              (mm) =' // trim(line))
     call print_message('')
 
