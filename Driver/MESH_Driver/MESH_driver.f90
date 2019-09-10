@@ -270,6 +270,7 @@ program RUNMESH
         call print_error("Missing 'Latitude' and 'Longitude' attributes from MESH_lss_database.r2c.")
         call program_abort()
     end if
+    shd2%AREA = 0.0
     allocate(rankgeophytoshd(shd%NA))
     rankgeophytoshd = 0
     do n = 1, shd%NA
@@ -278,10 +279,12 @@ program RUNMESH
         do i = 1, shd2%NA
             if (shd2%ylat(i) == y .and. shd2%xlng(i) == x) then
                 rankgeophytoshd(n) = i
+                shd2%AREA(i) = shd2%AREA(i) + shd%AREA(n)
                 exit
             end if
         end do
     end do
+    shd2%FRAC = shd2%AREA/shd2%AL/shd2%AL
     if (any(rankgeophytoshd == 0)) then
         call print_error('Bad mapping from MESH_lss_database.r2c.')
         call program_abort()
@@ -338,15 +341,19 @@ program RUNMESH
     call READ_PARAMETERS_HYDROLOGY(shd, fls, ierr)
     do k = 1, shd%NAA
         i = shd%IAK(k)
-        if (rtepm_iak%r1n(i) /= 0.0) rtepm%r1n(k) = rtepm_iak%r1n(i)
-        if (rtepm_iak%r2n(i) /= 0.0) rtepm%r2n(k) = rtepm_iak%r2n(i)
-        if (rtepm_iak%mndr(i) /= 0.0) rtepm%mndr(k) = rtepm_iak%mndr(i)
-        if (rtepm_iak%widep(i) /= 0.0) rtepm%widep(k) = rtepm_iak%widep(i)
-        if (rtepm_iak%aa2(i) /= 0.0) rtepm%aa2(k) = rtepm_iak%aa2(i)
-        if (rtepm_iak%aa3(i) /= 0.0) rtepm%aa3(k) = rtepm_iak%aa3(i)
-        if (rtepm_iak%aa4(i) /= 0.0) rtepm%aa4(k) = rtepm_iak%aa4(i)
-        if (bflm%pm_iak%pwr(i) /= 0.0) bflm%pm_grid%pwr(k) = bflm%pm_iak%pwr(i)
-        if (bflm%pm_iak%flz(i) /= 0.0) bflm%pm_grid%flz(k) = bflm%pm_iak%flz(i)
+        if (rteflg%PROCESS_ACTIVE) then
+            if (rtepm_iak%r1n(i) /= 0.0) rtepm%r1n(k) = rtepm_iak%r1n(i)
+            if (rtepm_iak%r2n(i) /= 0.0) rtepm%r2n(k) = rtepm_iak%r2n(i)
+            if (rtepm_iak%mndr(i) /= 0.0) rtepm%mndr(k) = rtepm_iak%mndr(i)
+            if (rtepm_iak%widep(i) /= 0.0) rtepm%widep(k) = rtepm_iak%widep(i)
+            if (rtepm_iak%aa2(i) /= 0.0) rtepm%aa2(k) = rtepm_iak%aa2(i)
+            if (rtepm_iak%aa3(i) /= 0.0) rtepm%aa3(k) = rtepm_iak%aa3(i)
+            if (rtepm_iak%aa4(i) /= 0.0) rtepm%aa4(k) = rtepm_iak%aa4(i)
+        end if
+        if (bflm%BASEFLOWFLAG == 2) then
+            if (bflm%pm_iak%pwr(i) /= 0.0) bflm%pm_grid%pwr(k) = bflm%pm_iak%pwr(i)
+            if (bflm%pm_iak%flz(i) /= 0.0) bflm%pm_grid%flz(k) = bflm%pm_iak%flz(i)
+        end if
     end do
 !<<<<<<GRIP-E.
 
@@ -915,6 +922,9 @@ program RUNMESH
 !>>>>>>GRIP-E.
 !reads MESH_initial_values.r2c to 'shd' grid -- routing.
         call read_initial_values_r2c(shd, 100, 'MESH_initial_values.r2c', ierr)
+        do k = 1, shd%lc%NML
+            vs%tile%lzs(k) = vs%grid%lzs(shd%lc%ILMOS(k))
+        end do
 !<<<<<<GRIP-E.
         call reset_tab()
         call MPI_Barrier(MPI_COMM_WORLD, z)

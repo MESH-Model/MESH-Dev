@@ -257,7 +257,10 @@ module sa_mesh_run_between_grid
                                 write(iun, 1010, advance = 'no') 'QOMEAS' // trim(adjustl(ffmti)), 'QOSIM' // trim(adjustl(ffmti))
                             end if
                             if (WF_RTE_fstflout%fout_bal) then
-                                write(iun, 1010, advance = 'no') 'RSIM' // trim(adjustl(ffmti)), 'STGCH' // trim(adjustl(ffmti))
+                                call output_variables_activate(out%d%basin, (/ VN_RFF, VN_RCHG /))
+                                write(iun, 1010, advance = 'no') &
+                                    'RFF' // trim(adjustl(ffmti)), 'RCHG' // trim(adjustl(ffmti)), &
+                                    'RSIM' // trim(adjustl(ffmti)), 'STGCH' // trim(adjustl(ffmti))
                             end if
                         end do
                         write(iun, *)
@@ -441,7 +444,10 @@ module sa_mesh_run_between_grid
                             out%ts%grid%qo(fms%stmg%meta%rnk(i))/real(RTE_TS/ic%dts)
                     end if
 !todo
-                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
+                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') &
+                        out%ts%basin%rff(fms%stmg%meta%rnk(i)), &
+                        out%ts%basin%rchg(fms%stmg%meta%rnk(i)), &
+                        out%NO_DATA, out%NO_DATA
                 end do
                 write(iun, *)
             end if
@@ -494,6 +500,8 @@ module sa_mesh_run_between_grid
                     if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') &
                         fms%stmg%qomeas%val(i), out%d%grid%qo(fms%stmg%meta%rnk(i))
                     if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') &
+                        out%d%basin%rff(fms%stmg%meta%rnk(i)), &
+                        out%d%basin%rchg(fms%stmg%meta%rnk(i)), &
                         WF_QO2_ACC_MM(fms%stmg%meta%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%meta%rnk(i))
                 end do
                 write(iun, *)
@@ -581,6 +589,8 @@ module sa_mesh_run_between_grid
         vs%basin%rofb(1:shd%NA) = vs%grid%rofb(1:shd%NA)*shd%FRAC
         vs%basin%stgw(1:shd%NA) = vs%grid%stgw(1:shd%NA)*shd%FRAC
         vs%basin%stge(1:shd%NA) = vs%grid%stge(1:shd%NA)*shd%FRAC
+        vs%basin%rff(1:shd%NA) = vs%grid%rff(1:shd%NA)*shd%FRAC
+        vs%basin%rchg(1:shd%NA) = vs%grid%rchg(1:shd%NA)*shd%FRAC
         frac = shd%FRAC
         where (vs%basin%albt(1:shd%NA) > 0.0)
             albtfrac = shd%FRAC
@@ -665,6 +675,8 @@ module sa_mesh_run_between_grid
                 vs%basin%rofb(ii) = vs%basin%rofb(ii) + vs%basin%rofb(i)
                 vs%basin%stgw(ii) = vs%basin%stgw(ii) + vs%basin%stgw(i)
                 vs%basin%stge(ii) = vs%basin%stge(ii) + vs%basin%stge(i)
+                vs%basin%rff(ii) = vs%basin%rff(ii) + vs%basin%rff(i)
+                vs%basin%rchg(ii) = vs%basin%rchg(ii) + vs%basin%rchg(i)
                 frac(ii) = frac(ii) + frac(i)
                 if (vs%basin%albt(i) > 0.0) albtfrac(ii) = albtfrac(ii) + albtfrac(i)
                 if (vs%basin%tpnd(i) > 0.0) tpndfrac(ii) = tpndfrac(ii) + tpndfrac(i)
@@ -734,6 +746,8 @@ module sa_mesh_run_between_grid
             vs%basin%rofb = vs%basin%rofb/frac
             vs%basin%stgw = vs%basin%stgw/frac
             vs%basin%stge = vs%basin%stge/frac
+            vs%basin%rff = vs%basin%rff/frac
+            vs%basin%rchg = vs%basin%rchg/frac
         end where
         do j = 1, 4
             where (frac > 0.0)
