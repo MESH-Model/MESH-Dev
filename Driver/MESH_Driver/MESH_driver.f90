@@ -422,7 +422,7 @@ program RUNMESH
     !> Open output files.
     if (ISHEADNODE) then
         call output_files_init(fls, shd)
-        call run_save_basin_output_init(fls, shd2, cm)
+        call run_save_basin_output_init(fls, shd, cm)
     end if
 
     FRAME_NO_NEW = 1
@@ -1099,7 +1099,7 @@ program RUNMESH
 
             !> Update output files.
             call output_files_update(fls, shd)
-            call run_save_basin_output(fls, shd2, cm)
+            call run_save_basin_output(fls, shd, cm)
 
             !> Metrics and pre-emption.
             if (ic%now%day /= ic%next%day .and. mtsflg%AUTOCALIBRATIONFLAG > 0) then
@@ -1260,7 +1260,7 @@ program RUNMESH
 
     !> Close output files.
     call output_files_finalize(fls, shd)
-    call run_save_basin_output_finalize(fls, shd2, cm)
+    call run_save_basin_output_finalize(fls, shd, cm)
 
     !> *********************************************************************
     !> Run is now over, print final results to the screen and close files
