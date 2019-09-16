@@ -129,7 +129,7 @@ C
           end if
           ZBOTW(k, j) = max(0.0, ZBOT(j) - DELZ(j)) + DELZW(k,j)
 C
-150     CONTINUE
+150     continue
 C
         if (SAND(k, 1) >= 0.0) then
           ALGWET(k) = 0.08 + 0.0006*SAND(k, 1)
@@ -185,9 +185,9 @@ C
             THFC(k, j) = THLRET(k, j)
             PSIWLT(k, j) = PSISAT(k, j)*(THLMIN(k, j)/
      &                     THPOR(k, j))**(-BI(k, j))
-          else if (SAND(k, j) >= 0) then
-		    if (SOILINIFLAG == 5) then
-			  THPOR(k, j) = WC_THPOR(m, j)
+          else if (SAND(k, j) >= 0.0) THEN
+            if (SOILINIFLAG == 5) then
+              THPOR(k, j) = WC_THPOR(m, j)
               THLRET(k, j) = WC_THLRET(m, j)
               THLMIN(k, j) = WC_THLMIN(m, j)
               BI(k, j) = WC_BI(m, j)
@@ -195,7 +195,7 @@ C
               GRKSAT(k, j) = WC_GRKSAT(m, j)
               HCPS(k, j) = WC_HCPS(m, j)
               TCS(k, j) = WC_TCS(m, j)
-			else
+            else
               THPOR(k, j) = (-0.126*SAND(k, j) + 48.9)/100.0
               THLRET(k, j) = 0.04
               THLMIN(k, j) = 0.04
@@ -213,11 +213,12 @@ C
      &                      HCPOM*THORG)/(1.0 - THPOR(k, j))
               TCS(k, j) = (TCSAND*THSAND + TCOM*THORG +
      &                     TCFINE*THFINE)/(1.0 - THPOR(k, j))
-			end if
+            end if
             THLRAT(k, j) = 0.5**(1.0/(2.0*BI(k, j) + 3.0))
-            THFC(k, j) = THPOR(k, j)*(1.157E-9/GRKSAT(k, j))**
-     &                   (1.0/(2.0*BI(k, j) + 3.0))
-            if (j == IG .and. SDEPTH(k) > (ZBOTW(k, j) - 0.01)) then
+            if (j /= IGDR(k)) then
+              THFC(k, j) = THPOR(k, j)*(1.157E-9/GRKSAT(k, j))**
+     &                     (1.0/(2.0*BI(k, j) + 3.0))
+            else
               AEXP = (BI(k, j) - 1.0)/BI(k, j)
               ABC = (3.0*BI(k, j) + 2.0)**AEXP -
      &              (2.0*BI(k, j) + 2.0)**AEXP
@@ -227,13 +228,6 @@ C
             end if
             PSIWLT(k, j) = PSISAT(k, j)*(max(0.5*THFC(k, j),
      &                     THLMIN(k, j))/THPOR(k, j))**(-BI(k, j))
-	      else
-		    print *
-			print '(A,/,A,F5.2,/,A8,I3,/,A8,I3,/,A8,I3)',
-     &            'SPECIFIED SAND PERCENTAGE IS NOT VALID',
-     &            '%SAND = ', SAND(k, j),
-     &            ' GRU: ', m, ' LAYER: ', j
-	        stop
           end if
 C
 300   continue

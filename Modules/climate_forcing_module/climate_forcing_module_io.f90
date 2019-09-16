@@ -1,44 +1,47 @@
-!>
-!> Description: Module to read climate forcing data from file.
-!>
+!> Description:
+!>  Module to read climate forcing data from file.
 module climate_forcing_io
 
     use climate_forcing_constants
     use climate_forcing_variabletypes
+    use print_routines
 
     implicit none
 
+    real, parameter, private :: NO_DATA = -999.999
+
     contains
 
+    !> Description:
+    !>  Open the climate forcing input file.
     !>
-    !> Description: Open the climate forcing input file.
+    !> Input/output variables:
+    !*  shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !*  cm: Climate forcing object. Contains the file name, format, and its unit.
+    !*  vid: Index of the climate forcing variable.
     !>
-    !> Inputs:
-    !>  - shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
-    !>  - cm: Climate forcing object. Contains the file name, format, and its unit.
-    !>  - vid: Index of the climate forcing variable.
-    !>
-    !> Outputs:
-    !>  - ENDDATA: Returns .true. if there was an error opening the file.
-    !>
-    function open_data(shd, cm, vid) result(ENDDATA)
+    !> Returns:
+    !*  ENDDATA: Returns .true. if there was an error opening the file.
+    logical function open_data(shd, cm, vid) result(ENDDATA)
 
-        use sa_mesh_shared_variables
+        !> 'shd_variables': For 'shd' variable.
+        use shd_variables
+
+        !> 'strings': For 'lowercase' function.
+        use strings, only: lowercase
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        integer vid
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: vid
 
         !> Input/Output variables.
-        type(clim_info) :: cm
-
-        !> Output variables.
-        logical ENDDATA
+        type(clim_info) cm
 
         !> Local variables.
         integer ierr
-        character(10) end_of_r2c_header
+        character(len = DEFAULT_LINE_LENGTH) line
 
+        !> Initialize the return variable.
         ENDDATA = .false.
 
         !> Return if the variable is not marked active.
@@ -52,20 +55,15 @@ module climate_forcing_io
 
                 !> Open the file.
                 cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname)) // '.r2c'
-                open(cm%dat(vid)%fiun, &
-                     file = trim(adjustl(cm%dat(vid)%fpath)), &
-                     status = 'old', &
-                     action = 'read', &
-                     form = 'formatted', &
-                     iostat = ierr)
+                open(cm%dat(vid)%fiun, file = cm%dat(vid)%fpath, action = 'read', status = 'old', iostat = ierr)
 
                 !> Return on an error.
                 if (ierr /= 0) goto 999
 
                 !> Skip the header of the 'r2c' format file.
-                end_of_r2c_header = ''
-                do while (end_of_r2c_header /= ':endHeader')
-                    read(cm%dat(vid)%fiun, '(a10)', end = 998) end_of_r2c_header
+                line = ''
+                do while (lowercase(line) /= ':endheader')
+                    read(cm%dat(vid)%fiun, '(a10)', end = 998) line
                 end do
 
                 !> Set the block type.
@@ -74,37 +72,23 @@ module climate_forcing_io
             !> CSV format.
             case (2)
                 cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname)) // '.csv'
-                open(cm%dat(vid)%fiun, &
-                     file = trim(adjustl(cm%dat(vid)%fpath)), &
-                     status = 'old', &
-                     action = 'read', &
-                     form = 'formatted', &
-                     iostat = ierr)
+                open(cm%dat(vid)%fiun, file = cm%dat(vid)%fpath, action = 'read', status = 'old', iostat = ierr)
                 if (ierr /= 0) goto 999
                 cm%dat(vid)%blocktype = cbk%GRU
 
             !> Binary sequential format.
             case (3)
                 cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname)) // '.seq'
-                open(cm%dat(vid)%fiun, &
-                     file = trim(adjustl(cm%dat(vid)%fpath)), &
-                     status = 'old', &
-                     action = 'read', &
-                     form = 'unformatted', &
-                     access = 'sequential', &
-                     iostat = ierr)
+                open( &
+                    cm%dat(vid)%fiun, file = cm%dat(vid)%fpath, action = 'read', status = 'old', &
+                    form = 'unformatted', access = 'sequential', iostat = ierr)
                 if (ierr /= 0) goto 999
                 cm%dat(vid)%blocktype = cbk%GRD
 
             !> ASCII format.
             case (4)
                 cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname)) // '.asc'
-                open(cm%dat(vid)%fiun, &
-                     file = trim(adjustl(cm%dat(vid)%fpath)), &
-                     status = 'old', &
-                     action = 'read', &
-                     form = 'formatted', &
-                     iostat = ierr)
+                open(cm%dat(vid)%fiun, file = cm%dat(vid)%fpath, action = 'read', status = 'old', iostat = ierr)
                 if (ierr /= 0) goto 999
                 cm%dat(vid)%blocktype = cbk%GRD
 
@@ -114,18 +98,13 @@ module climate_forcing_io
                 cm%dat(vid)%fname = 'basin_forcing'
                 cm%dat(vid)%fpath = 'basin_forcing.met'
                 cm%dat(vid)%blocktype = cbk%GRD
-                open(cm%dat(vid)%fiun, &
-                     file = trim(adjustl(cm%dat(vid)%fpath)), &
-                     status = 'old', &
-                     action = 'read', &
-                     form = 'formatted', &
-                     iostat = ierr)
+                open(cm%dat(vid)%fiun, file = cm%dat(vid)%fpath, action = 'read', status = 'old', iostat = ierr)
                 if (ierr /= 0) goto 999
 
             !> Unknown file format.
             case default
-                if (ro%VERBOSEMODE > 0) print 198, cm%dat(vid)%id_var, cm%dat(vid)%ffmt
-                stop
+                call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%id_var) // '): Unsupported file format.')
+                call program_abort()
 
         end select
 
@@ -148,124 +127,120 @@ module climate_forcing_io
         if (ierr /= 0) goto 997
 
         !> Flag that the file has been opened.
-        if (ro%VERBOSEMODE > 0) print 199, trim(adjustl(cm%dat(vid)%fpath))
         cm%dat(vid)%fopen = .true.
 
         return
 
-699     format(//1x, (a), ' not found.', &
-               /1x, 'Please adjust the MESH_input_run_options.ini file', &
-               /1x, 'or put the file in the correct location.', /)
+999     call print_error('Unable to open ' // trim(cm%dat(vid)%fpath) // ' or file not found.')
+        call program_abort()
 
-698     format(//1x, 'An error occurred reading the file ', (a), /)
+998     call print_error('Unable to read ' // trim(cm%dat(vid)%fpath) // ' or end of file.')
+        call program_abort()
 
-697     format(//1x, 'An error occurred allocating variables for the climate variable ', (a), /)
+997     call print_error('Unable to allocate blocks for reading ' // trim(cm%dat(vid)%fpath) // ' data into memory.')
+        call program_abort()
 
-199     format(1x, (a), ' found.')
+    end function
 
-198     format(//1x, 'The input forcing file format is not supported', &
-               /2x, (a), i4/)
-
-999     if (ro%VERBOSEMODE > 0) print 699, trim(adjustl(cm%dat(vid)%fpath))
-        ENDDATA = .true.
-        stop
-
-998     if (ro%VERBOSEMODE > 0) print 698, trim(adjustl(cm%dat(vid)%fpath))
-        ENDDATA = .true.
-        stop
-
-997     if (ro%VERBOSEMODE > 0) print 697, trim(adjustl(cm%dat(vid)%id_var))
-        stop
-
-    end function !open_data
-
+    !> Description:
+    !>  Load data for the climate forcing variable from file.
     !>
-    !> Description: Load data for the climate forcing variable from file.
+    !> Input/output variables:
+    !*  shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !*  cm: Climate forcing object. Contains the file name, format, and its unit.
+    !*  vid: Index of the climate forcing variable.
+    !*  iskip: Number of records to skip (default: 0).
     !>
-    !> Inputs:
-    !>  - shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
-    !>  - cm: Climate forcing object. Contains the file name, format, and its unit.
-    !>  - vid: Index of the climate forcing variable.
-    !>  - skip_data: .true. to skip data; .false. to store data.
-    !>
-    !> Outputs:
-    !>  - ENDDATA: Returns .true. if there was an error reading from the file.
-    !>
-    function load_data(shd, cm, vid, skip_data) result(ENDDATA)
+    !> Returns:
+    !*  ENDDATA: Returns .true. if there was an error reading from the file.
+    logical function load_data(shd, cm, vid, iskip) result(ENDDATA)
 
-        !> For: 'ShedGridParams' type, 'ro' run options for VERBOSEMODE.
-        use sa_mesh_shared_variables
+        !> 'shd_variables': For 'shd' variable.
+        use shd_variables
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        integer vid
-        logical skip_data
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: vid, iskip
 
         !> Input/Output variables.
-        type(clim_info) :: cm
-
-        !> Output variables.
-        logical ENDDATA
+        type(clim_info) cm
 
         !> Local variables.
-        integer ierr, t, j, i
-        real inr2c(shd%yCount, shd%xCount)
-        logical :: storedata = .true.
+        integer t, n, j, i
+        real GRD(shd%yCount, shd%xCount)
+        character(len = DEFAULT_LINE_LENGTH) line
 
-        !> Return if the file is not open or if it is not time to read new blocks.
-        if (.not. cm%dat(vid)%fopen .or. cm%dat(vid)%iblock > 1) return
-
-        !> Store data is 'skip_data' is not .true..
-        storedata = .not. skip_data
-
+        !> Initialize the return variable.
         ENDDATA = .false.
 
-        !> Reset the blocks.
-        if (storedata) cm%dat(vid)%blocks = 0.0
+        !> Return if the file is not open or if it is not time to read new blocks.
+        if (.not. cm%dat(vid)%fopen .or. cm%dat(vid)%iblock /= 1) return
 
-        !> The outer loop is the number of time-steps read into memory at once.
-        do t = 1, cm%dat(vid)%nblocks
+        !> Set 't' to the number of blocks to read or skip.
+        if (iskip > 0) then
+            n = iskip
+        else if (cm%dat(vid)%nblocks > 1) then
+            n = cm%dat(vid)%nblocks
+        else
+            n = 1
+        end if
 
-            !> Read data according to the format of the file.
-            select case (cm%dat(vid)%ffmt)
+        !> Reset the blocks to the NO_DATA value.
+        cm%dat(vid)%blocks = NO_DATA
 
-                !> ASCII R2C format.
-                case (1)
+        !> Read data according to the format of the file.
+        select case (cm%dat(vid)%ffmt)
+
+            !> ASCII R2C format.
+            case (1)
+                do t = 1, n
                     read(cm%dat(vid)%fiun, *, end = 999) !':Frame'
-                    read(cm%dat(vid)%fiun, *, end = 999) ((inr2c(i, j), j = 1, shd%xCount), i = 1, shd%yCount)
+                    read(cm%dat(vid)%fiun, *, end = 999) ((GRD(i, j), j = 1, shd%xCount), i = 1, shd%yCount)
                     read(cm%dat(vid)%fiun, *, end = 999) !':EndFrame'
-                    if (storedata) then
+                    if (iskip == 0) then
                         do i = 1, shd%NA
-                            cm%dat(vid)%blocks(i, t) = inr2c(shd%yyy(i), shd%xxx(i))
+                            cm%dat(vid)%blocks(i, t) = GRD(shd%yyy(i), shd%xxx(i))
                         end do
                     end if
+                end do
 
-                !> CSV format.
-                case (2)
-                    if (storedata) then
+            !> CSV format.
+            case (2)
+                do t = 1, n
+                    if (iskip == 0) then
                         read(cm%dat(vid)%fiun, *, end = 999) (cm%dat(vid)%blocks(j, t), j = 1, shd%lc%NTYPE)
                     else
                         read(cm%dat(vid)%fiun, *, end = 999)
                     end if
+                end do
 
-                !> Binary sequential format.
-                case (3)
-                    if (storedata) then
+            !> Binary sequential format.
+            case (3)
+                do t = 1, n
+                    if (iskip == 0) then
                         read(cm%dat(vid)%fiun, end = 999) !NTIME
                         read(cm%dat(vid)%fiun, end = 999) (cm%dat(vid)%blocks(i, t), i = 1, shd%NA)
                     else
                         read(cm%dat(vid)%fiun, end = 999)
                         read(cm%dat(vid)%fiun, end = 999)
                     end if
+                end do
 
-                !> ASCII format.
-                case (4)
-                    read(cm%dat(vid)%fiun, *, end = 999) (cm%dat(vid)%blocks(i, t), i = 1, shd%NA)
+            !> ASCII format.
+            case (4)
+                do t = 1, n
+                    if (iskip == 0) then
+                        read(cm%dat(vid)%fiun, *, end = 999) (cm%dat(vid)%blocks(i, t), i = 1, shd%NA)
+                    else
+                        read(cm%dat(vid)%fiun, *, end = 999)
+                    end if
+                end do
 
-                !> CLASS format MET file.
-                case (6)
-                    if (vid /= ck%MET) return
-                    if (storedata) then
+            !> CLASS format MET file.
+            case (6)
+                if (vid /= ck%MET) return
+                do t = 1, n
+                    if (iskip == 0) then
                         read(cm%dat(vid)%fiun, *, end = 999) i, i, i, i, &
                             cm%dat(ck%FB)%blocks(1, t), cm%dat(ck%FI)%blocks(1, t), cm%dat(ck%RT)%blocks(1, t), &
                             cm%dat(ck%TT)%blocks(1, t), cm%dat(ck%HU)%blocks(1, t), cm%dat(ck%UV)%blocks(1, t), &
@@ -274,78 +249,60 @@ module climate_forcing_io
                     else
                         read(cm%dat(vid)%fiun, *, end = 999)
                     end if
+                end do
 
-                !> Unknown file format.
-                case default
-                    if (ro%VERBOSEMODE > 0) print 199, cm%dat(vid)%id_var, cm%dat(vid)%ffmt
-                    stop
+            !> Unknown file format.
+            case default
+                call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%id_var) // '): Unsupported file format.')
+                call program_abort()
 
-            end select
-        end do
+        end select
 
         return
 
-199     format(//1x, 'The input forcing file format is not supported', &
-               /2x, (a), i4, /)
+999     continue
 
-999     ENDDATA = .true.
+    end function
 
-    end function !load_data
+    !> Description:
+    !>  Load data for the climate forcing variable from file.
+    !>
+    !> Input/output variables:
+    !*  shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !*  cm: Climate forcing object. Contains the file name, format, and its unit.
+    !*  vid: Index of the climate forcing variable.
+    !*  iskip: Number of records to skip (default: 0).
+    !>
+    !> Returns:
+    !*  ENDDATA: Returns .true. if there was an error updating the climate input forcing data.
+    logical function update_data(shd, cm, vid, iskip) result(ENDDATA)
 
-    !>
-    !> Description: Load data for the climate forcing variable from file.
-    !>
-    !> Inputs:
-    !>  - shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
-    !>  - cm: Climate forcing object. Contains the file name, format, and its unit.
-    !>  - vid: Index of the climate forcing variable.
-    !>  - skip_data: .true. to skip data; .false. to store data.
-    !>
-    !> Outputs:
-    !>  - ENDDATA: Returns .true. if there was an error updating the climate input forcing data.
-    !>
-    function update_data(shd, cm, vid, skip_data) result(ENDDATA)
-
-        !> For: 'ShedGridParams' type.
-        use sa_mesh_shared_variables
+        !> 'shd_variables': For 'shd' variable.
+        use shd_variables
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        integer ii1, ii2, vid
-        logical skip_data
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: vid, iskip
 
         !> Input/Output variables.
-        type(clim_info) :: cm
+        type(clim_info) cm
 
-        !> Ouput variables.
-        logical ENDDATA
-
-        !> Local variables.
-        logical :: storedata = .true.
-
-        !> Return if the file is not open or if it is not time to read new blocks.
-        if (.not. cm%dat(vid)%fopen .or. cm%dat(vid)%iblock > 1) return
-
-        !> Store data is 'skip_data' is not .true..
-        storedata = .not. skip_data
-
+        !> Initialize the return variable.
         ENDDATA = .false.
 
-        !> Read data (if needed).
-        if (load_data(shd, cm, vid, .not. storedata)) goto 999
+        !> Return if the file is not open.
+        if (.not. cm%dat(vid)%fopen) return
 
-        !> Update the counter of the current time-step.
-        if (cm%dat(vid)%nblocks > 1) then
-            cm%dat(vid)%iblock = cm%dat(vid)%iblock + 1
-            if (cm%dat(vid)%iblock > cm%dat(vid)%nblocks) then
-                cm%dat(vid)%iblock = 1
-            end if
-        end if
+        !> Read data (returns if the current block has already been read to memory).
+        ENDDATA = load_data(shd, cm, vid, iskip)
+
+        !> Return an error if the block contains the NO_DATA value.
+        if (any(cm%dat(vid)%blocks(:, cm%dat(vid)%iblock) == NO_DATA) .and. iskip == 0) goto 999
 
         return
 
 999     ENDDATA = .true.
 
-    end function !update_data
+    end function
 
 end module

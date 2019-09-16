@@ -51,7 +51,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !       attr_author     char(*)     Author of the file.
 !***********************************************************************
 
-      use sa_mesh_shared_variables
+      use sa_mesh_common
       use model_dates
       use model_files_variables
 
@@ -87,11 +87,11 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !                or
 !     1 frame for multiple classes
       if (no_frames > 1 .and. no_classes > 1) then
-        print *, 'Programming error'
-        print *, 'no_frames > 1 and no_classes > 1'
-        print *, 'This is not allowed'
-        print *
-        stop 'Program aborted due to programming error'
+        call print_error('Programming error')
+        call print_message('no_frames > 1 and no_classes > 1')
+        call print_message('This is not allowed')
+        call print_message('')
+        call program_abort()
 !       This can only be cause by misuse of this s/r
 !         in the calling program
       end if
@@ -113,17 +113,14 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
         open(iun, file=adjustl(trim(fls%fl(indx)%fn)),
      *    status='unknown', action='write', iostat=ierr)
 !     print*,' un fn et fln(fn) ',un,fn,fln(fn)
-        if (ro%VERBOSEMODE > 0) then
-          if (ro%DIAGNOSEMODE > 0) then
-            print 1121, iun, adjustl(trim(fls%fl(indx)%fn))
-          end if
-          if (ierr /= 0) then
-            print 1122, ierr
-            stop 'in write_r2c @ 83'
-          end if
+        if (DIAGNOSEMODE) then
+          call print_message('Opening: ' // trim(fls%fl(indx)%fn))
         end if
-1121  format(1x, 'Opened unit=', i5, ' filename ', (a))
-1122  format(3x, 'Error opening ios = ', i4)
+        if (ierr /= 0) then
+          call print_error(
+     *      'Unable to open file: ' // trim(trim(fls%fl(indx)%fn)))
+          call program_abort()
+        end if
         write(iun, 3005) '########################################'
         write(iun, 3005) ':FileType r2c  ASCII  EnSim 1.0         '
         write(iun, 3005) '#                                       '
@@ -286,13 +283,9 @@ c   endif
 
       end if
 
-      if (frame_no == no_frames .and. class_no == no_classes) then
-        close(iun)
-        if (ro%VERBOSEMODE > 0) then
-          print 1291, iun, adjustl(trim(fls%fl(indx)%fn))
-        end if
-      end if
-1291  format(3x, 'Closed unit=', i5, ' filename ', (a))
+!      if (frame_no == no_frames .and. class_no == no_classes) then
+!        close(iun)
+!      end if
 
       return
 

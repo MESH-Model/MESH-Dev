@@ -11,7 +11,7 @@ module RUNCLASS36_module
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
 
@@ -54,16 +54,16 @@ module RUNCLASS36_module
         if (ipid /= 0 .or. izero == 0) then
 
             !> Grab climate data.
-            cfi%FSVH(il1:il2) = cm%dat(ck%FB)%GAT(il1:il2)/2.0
-            cfi%FSIH(il1:il2) = cm%dat(ck%FB)%GAT(il1:il2)/2.0
-            cfi%FDL(il1:il2) = cm%dat(ck%FI)%GAT(il1:il2)
-            cfi%PRE(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)
-            cfi%TA(il1:il2) = cm%dat(ck%TT)%GAT(il1:il2)
-            cfi%UL(il1:il2) = cm%dat(ck%UV)%GAT(il1:il2)
-            cfi%PRES(il1:il2) = cm%dat(ck%P0)%GAT(il1:il2)
-            cfi%QA(il1:il2) = cm%dat(ck%HU)%GAT(il1:il2)
+            cfi%FSVH(il1:il2) = vs%tile%fsin(il1:il2)/2.0
+            cfi%FSIH(il1:il2) = vs%tile%fsin(il1:il2)/2.0
+            cfi%FDL(il1:il2) = vs%tile%flin(il1:il2)
+            cfi%PRE(il1:il2) = vs%tile%pre(il1:il2)
+            cfi%TA(il1:il2) = vs%tile%ta(il1:il2)
+            cfi%UL(il1:il2) = vs%tile%uv(il1:il2)
+            cfi%PRES(il1:il2) = vs%tile%pres(il1:il2)
+            cfi%QA(il1:il2) = vs%tile%qa(il1:il2)
 
-            cfi%VMOD = max(VMIN, cfi%UL)
+            cfi%VMOD(il1:il2) = max(VMIN, cfi%UL(il1:il2))
 
             !> This estimates the fractional cloud cover (FCLOGRD) by the basis
             !> of the solar zenith angle and the occurrence of precipitation.
@@ -86,25 +86,25 @@ module RUNCLASS36_module
             end do
 
             !> Grab states.
-            cpv%QAC(il1:il2) = stas%cnpy%qac(il1:il2)
-            cpv%RCAN(il1:il2) = stas%cnpy%rcan(il1:il2)
-            cpv%SNCAN(il1:il2) = stas%cnpy%sncan(il1:il2)
-            cpv%TAC(il1:il2) = stas%cnpy%tac(il1:il2)
-            cpv%TCAN(il1:il2) = stas%cnpy%tcan(il1:il2)
-            cpv%CMAI(il1:il2) = stas%cnpy%cmas(il1:il2)
-            cpv%GRO(il1:il2) = stas%cnpy%gro(il1:il2)
-            cpv%SNO(il1:il2) = stas%sno%sno(il1:il2)
-            cpv%ALBS(il1:il2) = stas%sno%albs(il1:il2)
-            cpv%RHOS(il1:il2) = stas%sno%rhos(il1:il2)
-            cpv%TSNO(il1:il2) = stas%sno%tsno(il1:il2)
-            cpv%WSNO(il1:il2) = stas%sno%wsno(il1:il2)
-            cpv%TPND(il1:il2) = stas%sfc%tpnd(il1:il2)
-            cpv%ZPND(il1:il2) = stas%sfc%zpnd(il1:il2)
-            cpv%TSFS(il1:il2, :) = stas%sfc%tsfs(il1:il2, :)
-            cpv%TBAS(il1:il2) = stas%sl%tbas(il1:il2)
-            cpv%THIC(il1:il2, :) = stas%sl%thic(il1:il2, :)
-            cpv%THLQ(il1:il2, :) = stas%sl%thlq(il1:il2, :)
-            cpv%TBAR(il1:il2, :) = stas%sl%tbar(il1:il2, :)
+            cpv%QAC(il1:il2) = vs%tile%qac(il1:il2)
+            cpv%RCAN(il1:il2) = vs%tile%rcan(il1:il2)
+            cpv%SNCAN(il1:il2) = vs%tile%sncan(il1:il2)
+            cpv%TAC(il1:il2) = vs%tile%tac(il1:il2)
+            cpv%TCAN(il1:il2) = vs%tile%tcan(il1:il2)
+            cpv%CMAI(il1:il2) = vs%tile%cmas(il1:il2)
+            cpv%GRO(il1:il2) = vs%tile%gro(il1:il2)
+            cpv%SNO(il1:il2) = vs%tile%sno(il1:il2)
+            cpv%ALBS(il1:il2) = vs%tile%albs(il1:il2)
+            cpv%RHOS(il1:il2) = vs%tile%rhos(il1:il2)
+            cpv%TSNO(il1:il2) = vs%tile%tsno(il1:il2)
+            cpv%WSNO(il1:il2) = vs%tile%wsno(il1:il2)
+            cpv%TPND(il1:il2) = vs%tile%tpnd(il1:il2)
+            cpv%ZPND(il1:il2) = vs%tile%zpnd(il1:il2)
+            cpv%TSFS(il1:il2, :) = vs%tile%tsfs(il1:il2, :)
+            cpv%TBAS(il1:il2) = vs%tile%tbas(il1:il2)
+            cpv%THIC(il1:il2, :) = vs%tile%thic(il1:il2, :)
+            cpv%THLQ(il1:il2, :) = vs%tile%thlq(il1:il2, :)
+            cpv%TBAR(il1:il2, :) = vs%tile%tbar(il1:il2, :)
 
             !> Initialize diagnostic variables for PBSM.
             if (pbsm%PROCESS_ACTIVE) then
@@ -283,7 +283,7 @@ module RUNCLASS36_module
             !> WATER BUDGET CALCULATIONS.
             call CLASSW(cpv%THLQ, cpv%THIC, cpv%TBAR, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
                         cdv%ROF, cdv%TROF, cpv%SNO, cpv%TSNO, cpv%RHOS, cpv%ALBS, &
-                        cpv%WSNO, cpv%ZPND, cpv%TPND, cpv%GRO, FRZCGAT, cpv%TBAS, cdv%GFLX, &
+                        cpv%WSNO, cpv%ZPND, cpv%TPND, cpv%GRO, cpv%TBAS, cdv%GFLX, &
                         cdv%PCFC, cdv%PCLC, cdv%PCPN, cdv%PCPG, cdv%QFCF, cdv%QFCL, &
                         cdv%QFN, cdv%QFG, cdv%QFC, cdv%HMFC, cdv%HMFG, cdv%HMFN, &
                         cdv%HTCC, cdv%HTCS, cdv%HTC, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
@@ -312,7 +312,7 @@ module RUNCLASS36_module
                         MANNGAT, DDGAT, ic%ts_daily, &
                         t0_ACC(NMELT), SI, TSI, INFILTYPE, SNOWMELTD, SNOWMELTD_LAST, &
                         MELTRUNOFF, SNOWINFIL, CUMSNOWINFILCS, CUMSNOWINFILGS, &
-                        SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, &
+                        SOIL_POR_MAX, SOIL_DEPTH, S0, T_ICE_LENS, FRZCGAT, &
 !FOR PDMROF
                         CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
                         ZPNDPRECS, ZPONDPREC, ZPONDPREG, ZPNDPREGS, &
@@ -336,7 +336,7 @@ module RUNCLASS36_module
                 cdv%SFCT, cdv%SFCU, cdv%SFCQ, &
                 catv%ZRFM, ZOMLCS, ZOMLNS, &
                 NML, &
-                shd, fls, cm)
+                fls, shd, cm)
 
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
@@ -361,50 +361,51 @@ module RUNCLASS36_module
                 WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                 cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, &
                 NML, &
-                shd, fls, cm)
+                fls, shd, cm)
 
             cdv%ROF = cdv%ROF - UMQ
 
         end if !(ipid /= 0 .or. izero == 0) then
 
-        !> WRITE FIELDS FROM CURRENT TIME STEP TO OUTPUT FILES.
-        if (WF_NUM_POINTS > 0) then
-            call CLASSOUT_update_files(shd)
-        end if
+        !> CLASS output files.
+        if (WF_NUM_POINTS > 0) call CLASSOUT_update_files(shd)
 
         !> Copy over state variables.
-        stas%cnpy%rcan(il1:il2) = cpv%RCAN(il1:il2)
-        stas%cnpy%sncan(il1:il2) = cpv%SNCAN(il1:il2)
-        stas%cnpy%cmas(il1:il2) = cpv%CMAI(il1:il2)
-        stas%cnpy%tac(il1:il2) = cpv%TAC(il1:il2)
-        stas%cnpy%tcan(il1:il2) = cpv%TCAN(il1:il2)
-        stas%cnpy%qac(il1:il2) = cpv%QAC(il1:il2)
-        stas%cnpy%gro(il1:il2) = cpv%GRO(il1:il2)
-        stas%sno%sno(il1:il2) = cpv%SNO(il1:il2)
-        stas%sno%albs(il1:il2) = cpv%ALBS(il1:il2)
-        stas%sno%fsno(il1:il2) = cdv%FSNO(il1:il2)
-        stas%sno%rhos(il1:il2) = cpv%RHOS(il1:il2)
-        stas%sno%wsno(il1:il2) = cpv%WSNO(il1:il2)
-        stas%sno%tsno(il1:il2) = cpv%TSNO(il1:il2)
-        stas%sfc%alvs(il1:il2) = cdv%ALVS(il1:il2)
-        stas%sfc%alir(il1:il2) = cdv%ALIR(il1:il2)
-        stas%sfc%gte(il1:il2) = cdv%GTE(il1:il2)
-        stas%sfc%zpnd(il1:il2) = cpv%ZPND(il1:il2)
-        stas%sfc%tpnd(il1:il2) = cpv%TPND(il1:il2)
-        stas%sfc%pevp(il1:il2) = cdv%PET(il1:il2)
-        stas%sfc%evap(il1:il2) = cdv%QFS(il1:il2)
-        stas%sfc%rofo(il1:il2) = cdv%ROFO(il1:il2)
-        stas%sfc%qevp(il1:il2) = cdv%QEVP(il1:il2)
-        stas%sfc%hfs(il1:il2) = cdv%HFS(il1:il2)
-        stas%sfc%gzero(il1:il2) = cdv%GFLX(il1:il2, 1)
-        stas%sfc%tsfs(il1:il2, :) = cpv%TSFS(il1:il2, :)
-        stas%sl%tbas(il1:il2) = cpv%TBAS(il1:il2)
-        stas%sl%rofs(il1:il2) = cdv%ROFS(il1:il2)
-        stas%sl%thic(il1:il2, :) = cpv%THIC(il1:il2, :)
-        stas%sl%thlq(il1:il2, :) = cpv%THLQ(il1:il2, :)
-        stas%sl%tbar(il1:il2, :) = cpv%TBAR(il1:il2, :)
-        stas%sl%gflx(il1:il2, :) = cdv%GFLX(il1:il2, :)
-        stas%lzs%rofb(il1:il2) = cdv%ROFB(il1:il2)
+        vs%tile%rcan(il1:il2) = cpv%RCAN(il1:il2)
+        vs%tile%sncan(il1:il2) = cpv%SNCAN(il1:il2)
+        vs%tile%cmas(il1:il2) = cpv%CMAI(il1:il2)
+        vs%tile%tac(il1:il2) = cpv%TAC(il1:il2)
+        vs%tile%tcan(il1:il2) = cpv%TCAN(il1:il2)
+        vs%tile%qac(il1:il2) = cpv%QAC(il1:il2)
+        vs%tile%gro(il1:il2) = cpv%GRO(il1:il2)
+        vs%tile%sno(il1:il2) = cpv%SNO(il1:il2)
+        vs%tile%albs(il1:il2) = cpv%ALBS(il1:il2)
+        vs%tile%fsno(il1:il2) = cdv%FSNO(il1:il2)
+        vs%tile%rhos(il1:il2) = cpv%RHOS(il1:il2)
+        vs%tile%wsno(il1:il2) = cpv%WSNO(il1:il2)
+        vs%tile%tsno(il1:il2) = cpv%TSNO(il1:il2)
+        vs%tile%alvs(il1:il2) = cdv%ALVS(il1:il2)
+        vs%tile%alir(il1:il2) = cdv%ALIR(il1:il2)
+        vs%tile%gte(il1:il2) = cdv%GTE(il1:il2)
+        vs%tile%zpnd(il1:il2) = cpv%ZPND(il1:il2)
+        vs%tile%tpnd(il1:il2) = cpv%TPND(il1:il2)
+        vs%tile%fstr(il1:il2) = &
+            FSTRCS(il1:il2)*cdv%FCS(il1:il2) + FSTRC(il1:il2)*cdv%FC(il1:il2) + &
+            FSTRG(il1:il2)*cdv%FG(il1:il2) + FSTRGS(il1:il2)*cdv%FGS(il1:il2)
+        vs%tile%pevp(il1:il2) = cdv%PET(il1:il2)
+        vs%tile%evap(il1:il2) = cdv%QFS(il1:il2)
+        vs%tile%rofo(il1:il2) = cdv%ROFO(il1:il2)
+        vs%tile%qevp(il1:il2) = cdv%QEVP(il1:il2)
+        vs%tile%hfs(il1:il2) = cdv%HFS(il1:il2)
+        vs%tile%gzero(il1:il2) = cdv%GFLX(il1:il2, 1)
+        vs%tile%tsfs(il1:il2, :) = cpv%TSFS(il1:il2, :)
+        vs%tile%tbas(il1:il2) = cpv%TBAS(il1:il2)
+        vs%tile%rofs(il1:il2) = cdv%ROFS(il1:il2)
+        vs%tile%thic(il1:il2, :) = cpv%THIC(il1:il2, :)
+        vs%tile%thlq(il1:il2, :) = cpv%THLQ(il1:il2, :)
+        vs%tile%tbar(il1:il2, :) = cpv%TBAR(il1:il2, :)
+        vs%tile%gflx(il1:il2, :) = cdv%GFLX(il1:il2, :)
+        vs%tile%rofb(il1:il2) = cdv%ROFB(il1:il2)
 
     end subroutine
 

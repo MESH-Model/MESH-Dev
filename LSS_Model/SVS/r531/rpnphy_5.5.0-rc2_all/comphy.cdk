@@ -1,6 +1,0 @@
-!
-      REAL CEVAP, CMELT, CCCTIM
-      COMMON/COMPHY/ CEVAP,   CMELT,   CCCTIM
-!
-!
-!

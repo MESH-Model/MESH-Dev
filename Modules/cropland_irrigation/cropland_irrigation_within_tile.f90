@@ -10,7 +10,7 @@ module cropland_irrigation_within_tile
 
         use mpi_module
         use model_files_variables
-        use sa_mesh_shared_variables
+        use sa_mesh_common
         use model_dates
         use climate_forcing
 
@@ -42,8 +42,8 @@ module cropland_irrigation_within_tile
                 ki = shd%lc%ILMOS(k)
 
                 !> Calc 'calc_ET0' (PEVP).
-                stas%sfc%pevp(k) = calc_ET0( &
-                    cm%dat(ck%TT)%GAT(k), cm%dat(ck%UV)%GAT(k), cm%dat(ck%HU)%GAT(k), cm%dat(ck%P0)%GAT(k), cm%dat(ck%FB)%GAT(k), &
+                vs%tile%pevp(k) = calc_ET0( &
+                    vs%tile%ta(k), vs%tile%uv(k), vs%tile%qa(k), vs%tile%pres(k), vs%tile%fsin(k), &
                     shd%ylat(ki), shd%xlng(ki), shd%ELEV(ki), &
                     pm%sfp%zrfm(k), &
                     pm%cp%fcan(k, 1), pm%cp%fcan(k, 2), pm%cp%fcan(k, 3), pm%cp%fcan(k, 4), &
@@ -53,7 +53,7 @@ module cropland_irrigation_within_tile
                 if (civ%jdini(k) == 0) then
 
                     !> Starting day of the growing season.
-                    if (cip%jdsow(k) == 0 .and. stas%cnpy%gro(k) > 0.0) then
+                    if (cip%jdsow(k) == 0 .and. vs%tile%gro(k) > 0.0) then
                         civ%jdini(k) = ic%now%jday
                     else
                         civ%jdini(k) = cip%jdsow(k)
@@ -86,18 +86,18 @@ module cropland_irrigation_within_tile
                         !> Daily.
                         if (btest(cifg%ts_flag, 0)) then
                             civ%vars(civ%fk%KDLY)%lqws2_mm(k) = civ%vars(civ%fk%KDLY)%lqws2_mm(k) + &
-                                (sum(stas%sl%lqws(k, :))*pm%cp%fcan(k, 3))/((3600.0/ic%dts)*24.0)
+                                (sum(vs%tile%lqws(k, :))*pm%cp%fcan(k, 3))/((3600.0/ic%dts)*24.0)
                         end if
 
                         !> Hourly.
                         if (btest(cifg%ts_flag, 2) .and. ic%ts_daily > (3600.0/ic%dts)*23.0) then
                             civ%vars(civ%fk%KHLY)%lqws2_mm(k) = civ%vars(civ%fk%KHLY)%lqws2_mm(k) + &
-                                (sum(stas%sl%lqws(k, :))*pm%cp%fcan(k, 3))/(3600.0/ic%dts)
+                                (sum(vs%tile%lqws(k, :))*pm%cp%fcan(k, 3))/(3600.0/ic%dts)
                         end if
 
                         !> Per time-step.
                         if (btest(cifg%ts_flag, 3) .and. ic%ts_daily == (3600.0/ic%dts)*24.0) then
-                            civ%vars(civ%fk%KTS)%lqws2_mm(k) = sum(stas%sl%lqws(k, :))*pm%cp%fcan(k, 3)
+                            civ%vars(civ%fk%KTS)%lqws2_mm(k) = sum(vs%tile%lqws(k, :))*pm%cp%fcan(k, 3)
                         end if
 
                     end if
@@ -116,9 +116,9 @@ module cropland_irrigation_within_tile
 
                         !> Accumulate states for the present period.
                         do ikey = civ%fk%kmin, civ%fk%kmax
-                            civ%vars(ikey)%pre_mm(k) = civ%vars(ikey)%pre_mm(k) + cm%dat(ck%RT)%GAT(k)*pm%cp%fcan(k, 3)*ic%dts
-                            civ%vars(ikey)%pevp_mm(k) = civ%vars(ikey)%pevp_mm(k) + stas%sfc%pevp(k)*pm%cp%fcan(k, 3)*ic%dts
-                            civ%vars(ikey)%lqws1_mm(k) = civ%vars(ikey)%lqws1_mm(k) + sum(stas%sl%lqws(k, :))*pm%cp%fcan(k, 3)
+                            civ%vars(ikey)%pre_mm(k) = civ%vars(ikey)%pre_mm(k) + vs%tile%pre(k)*pm%cp%fcan(k, 3)*ic%dts
+                            civ%vars(ikey)%pevp_mm(k) = civ%vars(ikey)%pevp_mm(k) + vs%tile%pevp(k)*pm%cp%fcan(k, 3)*ic%dts
+                            civ%vars(ikey)%lqws1_mm(k) = civ%vars(ikey)%lqws1_mm(k) + sum(vs%tile%lqws(k, :))*pm%cp%fcan(k, 3)
                         end do
 
                         !> Determine Kc.
@@ -133,7 +133,7 @@ module cropland_irrigation_within_tile
                         end if
 
                         !> Daily.
-                        if (btest(cifg%ts_flag, 0) .and. ic%ts_daily == (3600.0/ic%dts)*24) then
+                        if (btest(cifg%ts_flag, 0) .and. ic%now%day /= ic%next%day) then
                             civ%vars(civ%fk%KDLY)%lqws1_mm(k) = civ%vars(civ%fk%KDLY)%lqws1_mm(k)/ic%ts_daily
                             civ%vars(civ%fk%KDLY)%icu_mm(k) = (105.0*Kc*civ%vars(civ%fk%KDLY)%pevp_mm(k)) - &
                                 civ%vars(civ%fk%KDLY)%pre_mm(k) - &
@@ -145,7 +145,7 @@ module cropland_irrigation_within_tile
                         end if
 
                         !> Hourly.
-                        if (btest(cifg%ts_flag, 2) .and. ic%ts_hourly == (3600.0/ic%dts)) then
+                        if (btest(cifg%ts_flag, 2) .and. ic%now%hour /= ic%next%hour) then
                             civ%vars(civ%fk%KHLY)%lqws1_mm(k) = civ%vars(civ%fk%KHLY)%lqws1_mm(k)/ic%ts_hourly
                             civ%vars(civ%fk%KHLY)%icu_mm(k) = (105.0*Kc*civ%vars(civ%fk%KHLY)%pevp_mm(k)) - &
                                 civ%vars(civ%fk%KHLY)%pre_mm(k) - &
@@ -193,7 +193,7 @@ module cropland_irrigation_within_tile
                 call mpi_isend(civ%vars(ikey)%lqws2_mm(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
                 i = i + 1
 !todo: remove pevp (global var)
-                call mpi_isend(stas%sfc%pevp(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(vs%tile%pevp(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             end do
             lstat = .false.
             do while (.not. lstat)
@@ -219,7 +219,7 @@ module cropland_irrigation_within_tile
                     call mpi_irecv(civ%vars(ikey)%lqws2_mm(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
 !todo: remove pevp (global var)
-                    call mpi_irecv(stas%sfc%pevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(vs%tile%pevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end do
                 lstat = .false.
                 do while (.not. lstat)

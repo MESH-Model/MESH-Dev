@@ -1,5 +1,15 @@
 module sa_mesh_run_between_grid
 
+    !> 'model_files_variables' required for 'fls' object and file keys.
+    !> 'sa_mesh_common' required for common SA_MESH variables and routines.
+    !> 'climate_forcing' required for 'cm' variable.
+    !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
+    use model_files_variables
+    use sa_mesh_common
+    use climate_forcing
+    use mpi_module
+
+!temp: Outputs.
     use model_files_variabletypes, only: fl_ids
 
     implicit none
@@ -45,42 +55,32 @@ module sa_mesh_run_between_grid
     type(WF_RTE_fout_stfl), save :: WF_RTE_fstflout
     type(WF_RTE_fout_rsvr), save :: WF_RTE_frsvrout
 
-    real, dimension(:), allocatable :: WF_QHYD_AVG, WF_QHYD_CUM
-    real, dimension(:), allocatable :: WF_QSYN_AVG, WF_QSYN_CUM
-
-    !* WF_NODATA_VALUE: No data value for when the streamflow record does not exist.
-    real :: WF_NODATA_VALUE = -1.0
+    real, dimension(:), allocatable :: WF_QHYD_CUM
 
 !todo: Move to ro%?
     integer RTE_TS
 
-    real, dimension(:), allocatable :: WF_QO2_ACC_MM, WF_STORE2_ACC_MM
-
-    real, dimension(:), allocatable :: lake_elv_avg, reach_qi_avg, reach_s_avg, reach_qo_avg
+    real, dimension(:), allocatable :: WF_QO2_ACC, WF_QO2_ACC_MM, WF_STORE2_ACC_MM
 
     contains
 
-    subroutine run_between_grid_init(shd, fls, cm, stfl, rrls)
+    subroutine run_between_grid_init(fls, shd, cm)
 
-        use mpi_module
-        use model_files_variables
-        use sa_mesh_shared_variables
-        use FLAGS
-        use climate_forcing
-        use strings
-
-        !> Required for calls to processes.
+        !> Process modules.
         use SA_RTE_module
         use WF_ROUTE_config
         use rte_module
-        use save_basin_output
         use cropland_irrigation_between_grid
 
-        type(ShedGridParams) :: shd
-        type(fl_ids) :: fls
-        type(clim_info) :: cm
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
+!temp: Outputs.
+        use save_basin_output, only: STREAMFLOWOUTFLAG, REACHOUTFLAG
+        use FLAGS
+        use strings
+
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Local variables.
         integer, parameter :: MaxLenField = 20, MaxArgs = 20, MaxLenLine = 100
@@ -100,6 +100,7 @@ module sa_mesh_run_between_grid
             open(86, file = './' // trim(fls%GENDIR_OUT) // '/basin_SWE_alldays.csv')
         end if !(BASINSWEOUTFLAG > 0) then
 
+        RTE_TS = ic%dts
         if (WF_RTE_flgs%PROCESS_ACTIVE) RTE_TS = WF_RTE_flgs%RTE_TS
         if (rteflg%PROCESS_ACTIVE) RTE_TS = rteflg%RTE_TS
 
@@ -116,7 +117,8 @@ module sa_mesh_run_between_grid
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%fn = 'MESH_output_streamflow_ts.csv'
         WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun = 71
 
-        allocate(WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
+        allocate(WF_QO2_ACC(NA), WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
+        WF_QO2_ACC = 0.0
         WF_QO2_ACC_MM = 0.0
         WF_STORE2_ACC_MM = 0.0
 
@@ -126,18 +128,8 @@ module sa_mesh_run_between_grid
             WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun = 708
             WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%fn = 'MESH_output_reach_ts.csv'
             WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun = 708+NR
-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%fn = 'MESH_output_reach_ts.csv'
-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%iun = 708+(NR*2)
-
-            !> Allocate output variable for the driver.
-            rrls%nr = NR
-            allocate(rrls%rls(NR), rrls%store(NR), rrls%abst(NR))
-            rrls%rls = 0.0
-            rrls%store = 0.0
-            rrls%abst = 0.0
-
-            allocate(lake_elv_avg(NR), reach_qi_avg(NR), reach_s_avg(NR), reach_qo_avg(NR))
-            lake_elv_avg = 0.0; reach_qi_avg = 0.0; reach_s_avg = 0.0; reach_qo_avg = 0.0
+!            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%fn = 'MESH_output_reach_Hourly.csv'
+!            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%iun = 708+(NR*2)
 
             if (len_trim(REACHOUTFLAG) == 0) REACHOUTFLAG = 'REACHOUTFLAG default'
             call parse(REACHOUTFLAG, ' ', out_args, nargs)
@@ -169,6 +161,8 @@ module sa_mesh_run_between_grid
 
             !> Open output files for reaches.
             do j = WF_RTE_frsvrout%kmin, WF_RTE_frsvrout%kmax
+!temp: Code missing to write hourly values
+                if (j == WF_RTE_frsvrout%KHLY) cycle
                 if (btest(WF_RTE_frsvrout%freq, j)) then
                     do i = 1, fms%rsvr%n
                         iun = WF_RTE_frsvrout%fls%fl(j)%iun + i
@@ -202,18 +196,8 @@ module sa_mesh_run_between_grid
         end if
 
         if (NS > 0) then
-            allocate(WF_QHYD_AVG(NS), WF_QHYD_CUM(NS), &
-                     WF_QSYN_AVG(NS), WF_QSYN_CUM(NS))
-            WF_QSYN_AVG = 0.0
-            WF_QHYD_AVG = 0.0
-            WF_QSYN_CUM = 0.0
+            allocate(WF_QHYD_CUM(NS))
             WF_QHYD_CUM = 0.0
-
-            !> Allocate output variable for the driver.
-            stfl%ns = NS
-            allocate(stfl%qhyd(NS), stfl%qsyn(NS))
-            stfl%qhyd = 0.0
-            stfl%qsyn = 0.0
 
             if (len_trim(STREAMFLOWOUTFLAG) == 0) STREAMFLOWOUTFLAG = 'STREAMFLOWOUTFLAG default'
             call parse(STREAMFLOWOUTFLAG, ' ', out_args, nargs)
@@ -279,45 +263,44 @@ module sa_mesh_run_between_grid
             end do
         end if
 
+        !> Allocate output variables.
+        call output_variables_activate(out%d%grid, (/ VN_QI, VN_STGCH, VN_QO, VN_ZLVL /))
+
         !> Call processes.
         call SA_RTE_init(shd)
-        call WF_ROUTE_init(fls, shd, stfl, rrls)
-        call run_rte_init(fls, shd, stfl, rrls)
-        call run_save_basin_output_init(fls, shd, cm)
+        call WF_ROUTE_init(fls, shd)
+        call run_rte_init(fls, shd)
         call runci_between_grid_init(shd, fls)
+
+        !> Update basin variables.
+        call run_within_grid_stas_basin_update(fls, shd, cm)
 
 1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
-    subroutine run_between_grid(shd, fls, cm, stfl, rrls)
+    subroutine run_between_grid(fls, shd, cm)
 
-        use mpi_module
-        use model_files_variables
-        use sa_mesh_shared_variables
-        use FLAGS
-        use txt_io
-        use climate_forcing
-
-        !> Required for calls to processes.
+        !> Process modules.
         use SA_RTE_module
         use WF_ROUTE_module
         use rte_module
-        use save_basin_output, only: run_save_basin_output
-        use cropland_irrigation_between_grid, only: runci_between_grid
+        use cropland_irrigation_between_grid
 
-        type(ShedGridParams) :: shd
-        type(fl_ids) :: fls
-        type(clim_info) :: cm
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
+!temp: Outputs.
+        use FLAGS
+        use txt_io
+
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Local variables.
         integer k, ki, ierr
 
         !> Local variables.
         integer l, i, iun
-        logical writeout
 
         !> SCA variables
         real TOTAL_AREA, FRAC, basin_SCA, basin_SWE
@@ -352,10 +335,9 @@ module sa_mesh_run_between_grid
 
                 !> Assign a dummy value if no flow record exists.
                 if (ierr /= 0) then
-                    fms%stmg%qomeas%val = -1.0
+                    fms%stmg%qomeas%val = out%NO_DATA
                 end if
             end if
-            stfl%qhyd = fms%stmg%qomeas%val
         end if
 
         !> calculate and write the basin avg SCA similar to watclass3.0f5
@@ -371,8 +353,8 @@ module sa_mesh_run_between_grid
                 do k = 1, shd%lc%NML
                     ki = shd%lc%ILMOS(k)
                     FRAC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))
-                    basin_SCA = basin_SCA + stas%sno%fsno(k)*FRAC
-                    basin_SWE = basin_SWE + stas%sno%sno(k)*FRAC
+                    basin_SCA = basin_SCA + vs%tile%fsno(k)*FRAC
+                    basin_SWE = basin_SWE + vs%tile%sno(k)*FRAC
                 end do
                 basin_SCA = basin_SCA/TOTAL_AREA
                 basin_SWE = basin_SWE/TOTAL_AREA
@@ -384,177 +366,390 @@ module sa_mesh_run_between_grid
 
         end if !(ipid == 0) then
 
+        !> Update variables.
+        vs%grid%rff = (vs%grid%rofo + vs%grid%rofs)*ic%dts
+        vs%grid%rchg = vs%grid%rofb*ic%dts
+
         !> Call processes.
         call SA_RTE(shd)
-        call WF_ROUTE_between_grid(fls, shd, stfl, rrls)
-        call run_rte_between_grid(fls, shd, cm, stfl, rrls)
+        call WF_ROUTE_between_grid(fls, shd)
+        call run_rte_between_grid(fls, shd)
         call runci_between_grid(shd, fls, cm)
-        call run_save_basin_output(fls, shd, cm)
 
-        if (ic%ts_daily == 1) then
-            WF_QSYN_AVG = 0.0
-        end if
+        !> Update basin variables.
+        call run_within_grid_stas_basin_update(fls, shd, cm)
+
+        !> Update output variables.
+!todo: remove this when code for output files has moved.
+        call output_variables_update(shd)
 
         if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0) then
 
-            do i = 1, fms%stmg%n
-                stas_fms%stmg%qo(i) = stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
-                if (stas_fms%stmg%qo(i) > 0.0) then
-                    WF_QSYN_AVG(i) = WF_QSYN_AVG(i) + stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
-                    WF_QSYN_CUM(i) = WF_QSYN_CUM(i) + stas_grid%chnl%qo(fms%stmg%meta%rnk(i))
-                    WF_QHYD_AVG(i) = fms%stmg%qomeas%val(i) !(MAM)THIS SEEMS WORKING OKAY (AS IS THE CASE IN THE READING) FOR A DAILY STREAM FLOW DATA.
-                else
-                    WF_QSYN_AVG(i) = WF_NODATA_VALUE
-                    WF_QSYN_CUM(i) = WF_NODATA_VALUE
-                    WF_QHYD_AVG(i) = WF_NODATA_VALUE
-                end if
-            end do
             where (shd%DA > 0.0)
-                WF_QO2_ACC_MM = WF_QO2_ACC_MM + stas_grid%chnl%qo/shd%DA/1000.0*RTE_TS
-                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + stas_grid%chnl%stg/shd%DA/1000.0
+                WF_QO2_ACC_MM = WF_QO2_ACC_MM + vs%grid%qo/shd%DA/1000.0*RTE_TS
+                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + vs%grid%stgch/shd%DA/1000.0
             elsewhere
-                WF_QO2_ACC_MM = WF_NODATA_VALUE
-                WF_STORE2_ACC_MM = WF_NODATA_VALUE
+                WF_QO2_ACC_MM = out%NO_DATA
+                WF_STORE2_ACC_MM = out%NO_DATA
             end where
 
-            if (fms%rsvr%n > 0) then
-                if (all(stas_fms%rsvr%zlvl == 0.0)) then
-                    where (stas_fms%rsvr%stg > 0.0 .and. fms%rsvr%rls%area > 0.0)
-                        stas_fms%rsvr%zlvl = stas_fms%rsvr%stg/fms%rsvr%rls%area
-                        lake_elv_avg = lake_elv_avg + stas_fms%rsvr%zlvl
-                    elsewhere
-                        stas_fms%rsvr%zlvl = WF_NODATA_VALUE
-                        lake_elv_avg = WF_NODATA_VALUE
-                    end where
-                else
-                    lake_elv_avg = lake_elv_avg + stas_fms%rsvr%zlvl
-                end if
-                reach_qi_avg = reach_qi_avg + stas_fms%rsvr%qi
-                if (all(stas_fms%rsvr%stg == WF_NODATA_VALUE)) then
-                    reach_s_avg = WF_NODATA_VALUE
-                else
-                    reach_s_avg = reach_s_avg + stas_fms%rsvr%stg
-                end if
-                reach_qo_avg = reach_qo_avg + stas_fms%rsvr%qo
-            end if
-
             !> Write per time-step output for reaches.
+            !> Divide by number of time-steps in routing time-step to resolve issues when RTE_TS > ic%dts.
             if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KTS)) then
                 do l = 1, fms%rsvr%n
                     iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun + l
                     write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
-                    write(iun, 1010, advance = 'no') stas_fms%rsvr%qi(l), stas_fms%rsvr%stg(l), stas_fms%rsvr%qo(l)
+                    write(iun, 1010, advance = 'no') &
+                        out%ts%grid%qi(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+                        out%ts%grid%stgch(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+                        out%ts%grid%qo(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts)
                     write(iun, *)
                 end do
             end if
 
             !> Write per time-step output for streamflow.
+            !> Divide by number of time-steps in routing time-step to resolve issues when RTE_TS > ic%dts.
             if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KTS)) then
                 iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
                 do i = 1, fms%stmg%n
 !todo
-                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
-                    if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') fms%stmg%qomeas%val(i), stas_fms%stmg%qo(i)
+                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
+                    if (WF_RTE_fstflout%fout_hyd) then
+                        write(iun, 1010, advance = 'no') &
+                            fms%stmg%qomeas%val(i), &
+                            out%ts%grid%qo(fms%stmg%meta%rnk(i))/real(RTE_TS/ic%dts)
+                    end if
 !todo
-                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') WF_NODATA_VALUE, WF_NODATA_VALUE
+                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
                 end do
                 write(iun, *)
             end if
 
         end if
 
-        !> Determine if this is the last time-step of the hour in the day.
-        writeout = (mod(ic%ts_daily, 3600/ic%dts*24) == 0)
-
         !> This occurs the last time-step of the day.
-        if (writeout) then
+        if (ic%now%day /= ic%next%day) then
 
             if (fms%rsvr%n > 0) then
-                where (lake_elv_avg /= -1.0) lake_elv_avg = lake_elv_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
+                where (out%d%grid%stgch(fms%rsvr%meta%rnk(:)) > 0.0 .and. fms%rsvr%rls%area > 0.0)
+                    out%d%grid%zlvl(fms%rsvr%meta%rnk(:)) = out%d%grid%stgch(fms%rsvr%meta%rnk(:))/fms%rsvr%rls%area
+                elsewhere
+                    out%d%grid%zlvl(fms%rsvr%meta%rnk(:)) = out%NO_DATA
+                end where
                 iun = 707
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
-                write(iun, 1010, advance = 'no') (lake_elv_avg(l), l = 1, fms%rsvr%n)
+                write(iun, 1010, advance = 'no') (out%d%grid%zlvl(fms%rsvr%meta%rnk(l)), l = 1, fms%rsvr%n)
                 write(iun, *)
-                lake_elv_avg = 0.0
-                reach_qi_avg = reach_qi_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
-                where (reach_s_avg /= -1.0) reach_s_avg = reach_s_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
-                reach_qo_avg = reach_qo_avg/real(ic%ts_daily/(RTE_TS/ic%dts))
                 if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KDLY)) then
                     do l = 1, fms%rsvr%n
                         iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun + l
                         write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
-                        write(iun, 1010, advance = 'no') reach_qi_avg(l), reach_s_avg(l), reach_qo_avg(l)
+                        write(iun, 1010, advance = 'no') &
+                            out%d%grid%qi(fms%rsvr%meta%rnk(l)), &
+                            out%d%grid%stgch(fms%rsvr%meta%rnk(l)), &
+                            out%d%grid%qo(fms%rsvr%meta%rnk(l))
                         write(iun, *)
                     end do
                 end if
-                reach_qi_avg = 0.0
-                reach_s_avg = 0.0
-                reach_qo_avg = 0.0
             end if
 
             do i = 1, fms%stmg%n
-                if (WF_QHYD_AVG(i) /= WF_QHYD_AVG(i)) then
-                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + WF_QHYD_AVG(i)
+                if (fms%stmg%qomeas%val(i) /= fms%stmg%qomeas%val(i)) then
+                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + fms%stmg%qomeas%val(i)
                 else
-                    WF_QHYD_CUM(i) = WF_NODATA_VALUE
+                    WF_QHYD_CUM(i) = out%NO_DATA
                 end if
             end do
 
             !> Write daily output for streamflow.
             if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KDLY)) then
-                where (WF_QSYN_CUM /= WF_NODATA_VALUE) WF_QSYN_CUM = WF_QSYN_CUM/real(ic%ts_daily/(RTE_TS/ic%dts))
-                where (WF_QSYN_AVG /= WF_NODATA_VALUE) WF_QSYN_AVG = WF_QSYN_AVG/real(ic%ts_daily/(RTE_TS/ic%dts))
-                where (WF_STORE2_ACC_MM /= WF_NODATA_VALUE) WF_STORE2_ACC_MM = WF_STORE2_ACC_MM/ic%ts_count
+                WF_QO2_ACC = WF_QO2_ACC + out%d%grid%qo
+                where (WF_STORE2_ACC_MM /= out%NO_DATA) WF_STORE2_ACC_MM = WF_STORE2_ACC_MM/ic%ts_count
                 iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun
                 write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
                 do i = 1, fms%stmg%n
                     if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') &
-                        WF_QHYD_CUM(i), WF_QSYN_CUM(i)
+                        WF_QHYD_CUM(i), WF_QO2_ACC(fms%stmg%meta%rnk(i))
                     if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') &
-                        WF_QHYD_AVG(i), WF_QSYN_AVG(i)
+                        fms%stmg%qomeas%val(i), out%d%grid%qo(fms%stmg%meta%rnk(i))
                     if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') &
                         WF_QO2_ACC_MM(fms%stmg%meta%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%meta%rnk(i))
                 end do
                 write(iun, *)
             end if
-
-            !> Assign to the output variables.
-            stfl%qhyd = WF_QHYD_AVG
-            stfl%qsyn = WF_QSYN_AVG
-
         end if
 
 1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
-    subroutine run_between_grid_finalize(fls, shd, cm, stfl, rrls)
+    subroutine run_within_grid_stas_basin_update(fls, shd, cm)
 
-        use mpi_module
-        use model_files_variabletypes
-        use sa_mesh_shared_variables
-        use model_dates
-        use climate_forcing
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
-        !> Required for calls to processes.
-        use WF_ROUTE_config, only: WF_ROUTE_finalize
-        use rte_module, only: run_rte_finalize
-        use save_basin_output, only: run_save_basin_output_finalize
+        !> Local variables.
+        integer j, ii, i
+        real frac(shd%NA), albtfrac(shd%NA), tpndfrac(shd%NA), tsnofrac(shd%NA), tcanfrac(shd%NA)
 
-        type(fl_ids) :: fls
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
-        type(streamflow_hydrograph) :: stfl
-        type(reservoir_release) :: rrls
+        !> Return if not the head node or if grid processes are not active.
+        if (ipid /= 0 .or. .not. ro%RUNGRID) return
+
+        !> Initialize variables.
+        vs%basin%fsin = vs%grid%fsin*shd%FRAC
+        vs%basin%fsdr = vs%grid%fsdr*shd%FRAC
+        vs%basin%fsdff = vs%grid%fsdff*shd%FRAC
+        vs%basin%flin = vs%grid%flin*shd%FRAC
+        vs%basin%ta = vs%grid%ta*shd%FRAC
+        vs%basin%qa = vs%grid%qa*shd%FRAC
+        vs%basin%pres = vs%grid%pres*shd%FRAC
+        vs%basin%uv = vs%grid%uv*shd%FRAC
+        vs%basin%wdir = vs%grid%wdir*shd%FRAC
+        vs%basin%uu = vs%grid%uu*shd%FRAC
+        vs%basin%vv = vs%grid%vv*shd%FRAC
+        vs%basin%pre = vs%grid%pre*shd%FRAC
+        vs%basin%prern = vs%grid%prern*shd%FRAC
+        vs%basin%presn = vs%grid%presn*shd%FRAC
+        vs%basin%rcan = vs%grid%rcan*shd%FRAC
+        vs%basin%sncan = vs%grid%sncan*shd%FRAC
+        vs%basin%cmas = vs%grid%cmas*shd%FRAC
+        vs%basin%tac = vs%grid%tac*shd%FRAC
+        vs%basin%tcan = vs%grid%tcan*shd%FRAC
+        vs%basin%qac = vs%grid%qac*shd%FRAC
+        vs%basin%gro = vs%grid%gro*shd%FRAC
+        vs%basin%sno = vs%grid%sno*shd%FRAC
+        vs%basin%fsno = vs%grid%fsno*shd%FRAC
+        vs%basin%albs = vs%grid%albs*shd%FRAC
+        vs%basin%rhos = vs%grid%rhos*shd%FRAC
+        vs%basin%wsno = vs%grid%wsno*shd%FRAC
+        vs%basin%tsno = vs%grid%tsno*shd%FRAC
+        vs%basin%albt = vs%grid%albt*shd%FRAC
+        vs%basin%alvs = vs%grid%alvs*shd%FRAC
+        vs%basin%alir = vs%grid%alir*shd%FRAC
+        vs%basin%gte = vs%grid%gte*shd%FRAC
+        vs%basin%zpnd = vs%grid%zpnd*shd%FRAC
+        vs%basin%pndw = vs%grid%pndw*shd%FRAC
+        vs%basin%tpnd = vs%grid%tpnd*shd%FRAC
+        vs%basin%fstr = vs%grid%fstr*shd%FRAC
+        vs%basin%pevp = vs%grid%pevp*shd%FRAC
+        vs%basin%evap = vs%grid%evap*shd%FRAC
+        vs%basin%evpb = vs%grid%evpb*shd%FRAC
+        vs%basin%arrd = vs%grid%arrd*shd%FRAC
+        vs%basin%rofo = vs%grid%rofo*shd%FRAC
+        vs%basin%qevp = vs%grid%qevp*shd%FRAC
+        vs%basin%hfs = vs%grid%hfs*shd%FRAC
+        vs%basin%gzero = vs%grid%gzero*shd%FRAC
+        do j = 1, 4
+            vs%basin%tsfs(:, j) = vs%grid%tsfs(:, j)*shd%FRAC
+        end do
+        vs%basin%ggeo = vs%grid%ggeo*shd%FRAC
+        vs%basin%rofs = vs%grid%rofs*shd%FRAC
+        vs%basin%tbas = vs%grid%tbas*shd%FRAC
+        do j = 1, shd%lc%IGND
+            vs%basin%thic(:, j) = vs%grid%thic(:, j)*shd%FRAC
+            vs%basin%fzws(:, j) = vs%grid%fzws(:, j)*shd%FRAC
+            vs%basin%thlq(:, j) = vs%grid%thlq(:, j)*shd%FRAC
+            vs%basin%lqws(:, j) = vs%grid%lqws(:, j)*shd%FRAC
+            vs%basin%tbar(:, j) = vs%grid%tbar(:, j)*shd%FRAC
+            vs%basin%gflx(:, j) = vs%grid%gflx(:, j)*shd%FRAC
+        end do
+        vs%basin%lzs = vs%grid%lzs*shd%FRAC
+        vs%basin%dzs = vs%grid%dzs*shd%FRAC
+        vs%basin%rofb = vs%grid%rofb*shd%FRAC
+        vs%basin%stgw = vs%grid%stgw*shd%FRAC
+        vs%basin%stge = vs%grid%stge*shd%FRAC
+        frac = shd%FRAC
+        where (vs%basin%albt > 0.0)
+            albtfrac = shd%FRAC
+        elsewhere
+            albtfrac = 0.0
+        end where
+        where (vs%basin%tpnd > 0.0)
+            tpndfrac = shd%FRAC
+        elsewhere
+            tpndfrac = 0.0
+        end where
+        where (vs%basin%tsno > 0.0)
+            tsnofrac = shd%FRAC
+        elsewhere
+            tsnofrac = 0.0
+        end where
+        where (vs%basin%tcan > 0.0)
+            tcanfrac = shd%FRAC
+        elsewhere
+            tcanfrac = 0.0
+        end where
+
+        !> Update variables.
+        do i = 1, shd%NAA
+            ii = shd%NEXT(i)
+            if (ii > 0) then
+                vs%basin%fsin(ii) = vs%basin%fsin(ii) + vs%basin%fsin(i)
+                vs%basin%fsdr(ii) = vs%basin%fsdr(ii) + vs%basin%fsdr(i)
+                vs%basin%fsdff(ii) = vs%basin%fsdff(ii) + vs%basin%fsdff(i)
+                vs%basin%flin(ii) = vs%basin%flin(ii) + vs%basin%flin(i)
+                vs%basin%ta(ii) = vs%basin%ta(ii) + vs%basin%ta(i)
+                vs%basin%qa(ii) = vs%basin%qa(ii) + vs%basin%qa(i)
+                vs%basin%pres(ii) = vs%basin%pres(ii) + vs%basin%pres(i)
+                vs%basin%uv(ii) = vs%basin%uv(ii) + vs%basin%uv(i)
+                vs%basin%wdir(ii) = vs%basin%wdir(ii) + vs%basin%wdir(i)
+                vs%basin%uu(ii) = vs%basin%uu(ii) + vs%basin%uu(i)
+                vs%basin%vv(ii) = vs%basin%vv(ii) + vs%basin%vv(i)
+                vs%basin%pre(ii) = vs%basin%pre(ii) + vs%basin%pre(i)
+                vs%basin%prern(ii) = vs%basin%prern(ii) + vs%basin%prern(i)
+                vs%basin%presn(ii) = vs%basin%presn(ii) + vs%basin%presn(i)
+                vs%basin%rcan(ii) = vs%basin%rcan(ii) + vs%basin%rcan(i)
+                vs%basin%sncan(ii) = vs%basin%sncan(ii) + vs%basin%sncan(i)
+                vs%basin%cmas(ii) = vs%basin%cmas(ii) + vs%basin%cmas(i)
+                vs%basin%tac(ii) = vs%basin%tac(ii) + vs%basin%tac(i)
+                vs%basin%tcan(ii) = vs%basin%tcan(ii) + vs%basin%tcan(i)
+                vs%basin%qac(ii) = vs%basin%qac(ii) + vs%basin%qac(i)
+                vs%basin%gro(ii) = vs%basin%gro(ii) + vs%basin%gro(i)
+                vs%basin%sno(ii) = vs%basin%sno(ii) + vs%basin%sno(i)
+                vs%basin%fsno(ii) = vs%basin%fsno(ii) + vs%basin%fsno(i)
+                vs%basin%albs(ii) = vs%basin%albs(ii) + vs%basin%albs(i)
+                vs%basin%rhos(ii) = vs%basin%rhos(ii) + vs%basin%rhos(i)
+                vs%basin%wsno(ii) = vs%basin%wsno(ii) + vs%basin%wsno(i)
+                vs%basin%tsno(ii) = vs%basin%tsno(ii) + vs%basin%tsno(i)
+                vs%basin%albt(ii) = vs%basin%albt(ii) + vs%basin%albt(i)
+                vs%basin%alvs(ii) = vs%basin%alvs(ii) + vs%basin%alvs(i)
+                vs%basin%alir(ii) = vs%basin%alir(ii) + vs%basin%alir(i)
+                vs%basin%gte(ii) = vs%basin%gte(ii) + vs%basin%gte(i)
+                vs%basin%zpnd(ii) = vs%basin%zpnd(ii) + vs%basin%zpnd(i)
+                vs%basin%pndw(ii) = vs%basin%pndw(ii) + vs%basin%pndw(i)
+                vs%basin%tpnd(ii) = vs%basin%tpnd(ii) + vs%basin%tpnd(i)
+                vs%basin%fstr(ii) = vs%basin%fstr(ii) + vs%basin%fstr(i)
+                vs%basin%pevp(ii) = vs%basin%pevp(ii) + vs%basin%pevp(i)
+                vs%basin%evap(ii) = vs%basin%evap(ii) + vs%basin%evap(i)
+                vs%basin%evpb(ii) = vs%basin%evpb(ii) + vs%basin%evpb(i)
+                vs%basin%arrd(ii) = vs%basin%arrd(ii) + vs%basin%arrd(i)
+                vs%basin%rofo(ii) = vs%basin%rofo(ii) + vs%basin%rofo(i)
+                vs%basin%qevp(ii) = vs%basin%qevp(ii) + vs%basin%qevp(i)
+                vs%basin%hfs(ii) = vs%basin%hfs(ii) + vs%basin%hfs(i)
+                vs%basin%gzero(ii) = vs%basin%gzero(ii) + vs%basin%gzero(i)
+                vs%basin%tsfs(ii, :) = vs%basin%tsfs(ii, :) + vs%basin%tsfs(ii, :)
+                vs%basin%ggeo(ii) = vs%basin%ggeo(ii) + vs%basin%ggeo(i)
+                vs%basin%rofs(ii) = vs%basin%rofs(ii) + vs%basin%rofs(i)
+                vs%basin%tbas(ii) = vs%basin%tbas(ii) + vs%basin%tbas(i)
+                vs%basin%thic(ii, :) = vs%basin%thic(ii, :) + vs%basin%thic(i, :)
+                vs%basin%fzws(ii, :) = vs%basin%fzws(ii, :) + vs%basin%fzws(i, :)
+                vs%basin%thlq(ii, :) = vs%basin%thlq(ii, :) + vs%basin%thlq(i, :)
+                vs%basin%lqws(ii, :) = vs%basin%lqws(ii, :) + vs%basin%lqws(i, :)
+                vs%basin%tbar(ii, :) = vs%basin%tbar(ii, :) + vs%basin%tbar(i, :)
+                vs%basin%gflx(ii, :) = vs%basin%gflx(ii, :) + vs%basin%gflx(i, :)
+                vs%basin%lzs(ii) = vs%basin%lzs(ii) + vs%basin%lzs(i)
+                vs%basin%dzs(ii) = vs%basin%dzs(ii) + vs%basin%dzs(i)
+                vs%basin%rofb(ii) = vs%basin%rofb(ii) + vs%basin%rofb(i)
+                vs%basin%stgw(ii) = vs%basin%stgw(ii) + vs%basin%stgw(i)
+                vs%basin%stge(ii) = vs%basin%stge(ii) + vs%basin%stge(i)
+                frac(ii) = frac(ii) + frac(i)
+                if (vs%basin%albt(i) > 0.0) albtfrac(ii) = albtfrac(ii) + albtfrac(i)
+                if (vs%basin%tpnd(i) > 0.0) tpndfrac(ii) = tpndfrac(ii) + tpndfrac(i)
+                if (vs%basin%tsno(i) > 0.0) tsnofrac(ii) = tsnofrac(ii) + tsnofrac(i)
+                if (vs%basin%tcan(i) > 0.0) tcanfrac(ii) = tcanfrac(ii) + tcanfrac(i)
+            end if
+        end do
+
+        !> DA average.
+        where (frac > 0.0)
+            vs%basin%fsin = vs%basin%fsin/frac
+            vs%basin%fsdr = vs%basin%fsdr/frac
+            vs%basin%fsdff = vs%basin%fsdff/frac
+            vs%basin%flin = vs%basin%flin/frac
+            vs%basin%ta = vs%basin%ta/frac
+            vs%basin%qa = vs%basin%qa/frac
+            vs%basin%pres = vs%basin%pres/frac
+            vs%basin%uv = vs%basin%uv/frac
+            vs%basin%wdir = vs%basin%wdir/frac
+            vs%basin%uu = vs%basin%uu/frac
+            vs%basin%vv = vs%basin%vv/frac
+            vs%basin%pre = vs%basin%pre/frac
+            vs%basin%prern = vs%basin%prern/frac
+            vs%basin%presn = vs%basin%presn/frac
+            vs%basin%rcan = vs%basin%rcan/frac
+            vs%basin%sncan = vs%basin%sncan/frac
+            where (tcanfrac > 0.0)
+                vs%basin%cmas = vs%basin%cmas/tcanfrac
+                vs%basin%tac = vs%basin%tac/tcanfrac
+                vs%basin%tcan = vs%basin%tcan/tcanfrac
+                vs%basin%qac = vs%basin%qac/tcanfrac
+                vs%basin%gro = vs%basin%gro/tcanfrac
+            end where
+            vs%basin%sno = vs%basin%sno/frac
+            vs%basin%fsno = vs%basin%fsno/frac
+            vs%basin%wsno = vs%basin%wsno/frac
+            where (tsnofrac > 0.0)
+                vs%basin%albs = vs%basin%albs/tsnofrac
+                vs%basin%rhos = vs%basin%rhos/tsnofrac
+                vs%basin%tsno = vs%basin%tsno/tsnofrac
+            end where
+            where (albtfrac > 0.0)
+                vs%basin%albt = vs%basin%albt/albtfrac
+                vs%basin%alvs = vs%basin%alvs/albtfrac
+                vs%basin%alir = vs%basin%alir/albtfrac
+            end where
+            vs%basin%gte = vs%basin%gte/frac
+            vs%basin%zpnd = vs%basin%zpnd/frac
+            vs%basin%pndw = vs%basin%pndw/frac
+            where (tpndfrac > 0.0)
+                vs%basin%tpnd = vs%basin%tpnd/tpndfrac
+                vs%basin%fstr = vs%basin%fstr/tpndfrac
+            end where
+            vs%basin%pevp = vs%basin%pevp/frac
+            vs%basin%evap = vs%basin%evap/frac
+            vs%basin%evpb = vs%basin%evpb/frac
+            vs%basin%arrd = vs%basin%arrd/frac
+            vs%basin%rofo = vs%basin%rofo/frac
+            vs%basin%qevp = vs%basin%qevp/frac
+            vs%basin%hfs = vs%basin%hfs/frac
+            vs%basin%gzero = vs%basin%gzero/frac
+            vs%basin%ggeo = vs%basin%ggeo/frac
+            vs%basin%rofs = vs%basin%rofs/frac
+            vs%basin%tbas = vs%basin%tbas/frac
+            vs%basin%lzs = vs%basin%lzs/frac
+            vs%basin%dzs = vs%basin%dzs/frac
+            vs%basin%rofb = vs%basin%rofb/frac
+            vs%basin%stgw = vs%basin%stgw/frac
+            vs%basin%stge = vs%basin%stge/frac
+        end where
+        do j = 1, 4
+            where (frac > 0.0)
+                vs%basin%tsfs(:, j) = vs%basin%tsfs(:, j)/frac
+            end where
+        end do
+        do j = 1, shd%lc%IGND
+            where (frac > 0.0)
+                vs%basin%thic(:, j) = vs%basin%thic(:, j)/frac
+                vs%basin%fzws(:, j) = vs%basin%fzws(:, j)/frac
+                vs%basin%thlq(:, j) = vs%basin%thlq(:, j)/frac
+                vs%basin%lqws(:, j) = vs%basin%lqws(:, j)/frac
+                vs%basin%tbar(:, j) = vs%basin%tbar(:, j)/frac
+                vs%basin%gflx(:, j) = vs%basin%gflx(:, j)/frac
+            end where
+        end do
+
+    end subroutine
+
+    subroutine run_between_grid_finalize(fls, shd, cm)
+
+        !> Process modules.
+        use WF_ROUTE_config
+        use rte_module
+
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
 
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> Call processes.
-        call WF_ROUTE_finalize(fls, shd, stfl, rrls)
-        call run_rte_finalize(fls, shd, stfl, rrls)
-        call run_save_basin_output_finalize(fls, shd, cm)
+        call WF_ROUTE_finalize(fls, shd)
+        call run_rte_finalize(fls, shd)
 
     end subroutine
 

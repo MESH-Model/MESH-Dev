@@ -1,7 +1,0 @@
-this folder contains the input and output data related to a SVS experiment;
-if using SVS-type input data (hence a .intrp file),
-you can use Create_SASVS_outputs_bal.py to compute daily watershed averages of some important variables
-such as Evap., precip., temperature, soil moisture, etc.
-you can then use sasvs_strf_perfs.py (needs a file of streamflow observations)
-to plot the watershed outlet streamflow and compute hydrologic performances.
-See inside the scripts (update last lines) for usage.
