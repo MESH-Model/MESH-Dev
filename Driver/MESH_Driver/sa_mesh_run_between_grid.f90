@@ -512,7 +512,7 @@ module sa_mesh_run_between_grid
         vs%basin%vv = vs%grid%vv*shd%FRAC
         vs%basin%pre = vs%grid%pre*shd%FRAC
         vs%basin%prern = vs%grid%prern*shd%FRAC
-        vs%basin%presn = vs%grid%presn*shd%FRAC
+        vs%basin%presno = vs%grid%presno*shd%FRAC
         vs%basin%rcan = vs%grid%rcan*shd%FRAC
         vs%basin%sncan = vs%grid%sncan*shd%FRAC
         vs%basin%cmas = vs%grid%cmas*shd%FRAC
@@ -522,6 +522,7 @@ module sa_mesh_run_between_grid
         vs%basin%gro = vs%grid%gro*shd%FRAC
         vs%basin%sno = vs%grid%sno*shd%FRAC
         vs%basin%fsno = vs%grid%fsno*shd%FRAC
+        vs%basin%rofsno = vs%grid%rofsno*shd%FRAC
         vs%basin%albs = vs%grid%albs*shd%FRAC
         vs%basin%rhos = vs%grid%rhos*shd%FRAC
         vs%basin%wsno = vs%grid%wsno*shd%FRAC
@@ -600,7 +601,7 @@ module sa_mesh_run_between_grid
                 vs%basin%vv(ii) = vs%basin%vv(ii) + vs%basin%vv(i)
                 vs%basin%pre(ii) = vs%basin%pre(ii) + vs%basin%pre(i)
                 vs%basin%prern(ii) = vs%basin%prern(ii) + vs%basin%prern(i)
-                vs%basin%presn(ii) = vs%basin%presn(ii) + vs%basin%presn(i)
+                vs%basin%presno(ii) = vs%basin%presno(ii) + vs%basin%presno(i)
                 vs%basin%rcan(ii) = vs%basin%rcan(ii) + vs%basin%rcan(i)
                 vs%basin%sncan(ii) = vs%basin%sncan(ii) + vs%basin%sncan(i)
                 vs%basin%cmas(ii) = vs%basin%cmas(ii) + vs%basin%cmas(i)
@@ -610,6 +611,7 @@ module sa_mesh_run_between_grid
                 vs%basin%gro(ii) = vs%basin%gro(ii) + vs%basin%gro(i)
                 vs%basin%sno(ii) = vs%basin%sno(ii) + vs%basin%sno(i)
                 vs%basin%fsno(ii) = vs%basin%fsno(ii) + vs%basin%fsno(i)
+                vs%basin%rofsno(ii) = vs%basin%rofsno(ii) + vs%basin%rofsno(i)
                 vs%basin%albs(ii) = vs%basin%albs(ii) + vs%basin%albs(i)
                 vs%basin%rhos(ii) = vs%basin%rhos(ii) + vs%basin%rhos(i)
                 vs%basin%wsno(ii) = vs%basin%wsno(ii) + vs%basin%wsno(i)
@@ -668,7 +670,7 @@ module sa_mesh_run_between_grid
             vs%basin%vv = vs%basin%vv/frac
             vs%basin%pre = vs%basin%pre/frac
             vs%basin%prern = vs%basin%prern/frac
-            vs%basin%presn = vs%basin%presn/frac
+            vs%basin%presno = vs%basin%presno/frac
             vs%basin%rcan = vs%basin%rcan/frac
             vs%basin%sncan = vs%basin%sncan/frac
             where (tcanfrac > 0.0)
@@ -680,6 +682,7 @@ module sa_mesh_run_between_grid
             end where
             vs%basin%sno = vs%basin%sno/frac
             vs%basin%fsno = vs%basin%fsno/frac
+            vs%basin%rofsno = vs%basin%rofsno/frac
             vs%basin%wsno = vs%basin%wsno/frac
             where (tsnofrac > 0.0)
                 vs%basin%albs = vs%basin%albs/tsnofrac
