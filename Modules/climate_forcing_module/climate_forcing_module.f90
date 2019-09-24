@@ -452,48 +452,57 @@ module climate_forcing
         end do
 
         !> Distribute data from CLASS format MET file for variables not already active.
-        if (cm%dat(ck%MET)%factive) then
-            do vid = 1, 7
+!-        if (cm%dat(ck%MET)%factive) then
+
+            !> Update the input forcing data.
+!-            if (update_data(shd, cm, ck%MET, 0)) goto 999
+
+            !> Distribute the forcing fields.
+!-            do vid = 1, 7
 
                 !> Cycle if variable active (e.g., read from different file).
-                if (cm%dat(vid)%factive) cycle
+!-                if (cm%dat(vid)%factive) cycle
 
                 !> Extract data from the climate variable.
-                select case (cm%dat(vid)%blocktype)
+!-                select case (cm%dat(vid)%blocktype)
 
                     !> Block type: GRD (Grid).
-                    case (1)
-                        cm%dat(vid)%GRD = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
-                        do k = ii1, ii2
-                            cm%dat(vid)%GAT(k) = cm%dat(vid)%GRD(shd%lc%ILMOS(k))
-                        end do
-                        do k = ii1, ii2
-                            cm%dat(vid)%GRU(shd%lc%JLMOS(k)) = cm%dat(vid)%GAT(k)
-                        end do
+!-                    case (1)
+!-                        cm%dat(vid)%GRD = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
+!-                        do k = ii1, ii2
+!-                            cm%dat(vid)%GAT(k) = cm%dat(vid)%GRD(shd%lc%ILMOS(k))
+!-                        end do
+!-                        do k = ii1, ii2
+!-                            cm%dat(vid)%GRU(shd%lc%JLMOS(k)) = cm%dat(vid)%GAT(k)
+!-                        end do
 
                     !> Block type: GRU.
-                    case (2)
-                        cm%dat(vid)%GRU = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
-                        cm%dat(vid)%GRD = 0.0
-                        do k = ii1, ii2
-                            j = shd%lc%JLMOS(k)
-                            i = shd%lc%ILMOS(k)
-                            cm%dat(vid)%GAT(k) = cm%dat(vid)%GRU(j)
-                            cm%dat(vid)%GRD(i) = cm%dat(vid)%GRD(i) + shd%lc%ACLASS(i, j)*cm%dat(vid)%GRU(j)
-                        end do
+!-                    case (2)
+!-                        cm%dat(vid)%GRU = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
+!-                        cm%dat(vid)%GRD = 0.0
+!-                        do k = ii1, ii2
+!-                            j = shd%lc%JLMOS(k)
+!-                            i = shd%lc%ILMOS(k)
+!-                            cm%dat(vid)%GAT(k) = cm%dat(vid)%GRU(j)
+!-                            cm%dat(vid)%GRD(i) = cm%dat(vid)%GRD(i) + shd%lc%ACLASS(i, j)*cm%dat(vid)%GRU(j)
+!-                        end do
 
                     !> Block type: GAT (Land element).
-                    case (3)
-                        cm%dat(vid)%GAT = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
-                        cm%dat(vid)%GRD = 0.0
-                        do k = ii1, ii2
-                            j = shd%lc%JLMOS(k)
-                            i = shd%lc%ILMOS(k)
-                            cm%dat(vid)%GRD(i) = cm%dat(vid)%GRD(i) + shd%lc%ACLASS(i, j)*cm%dat(vid)%GAT(k)
-                            cm%dat(vid)%GRU(j) = cm%dat(vid)%GAT(k)
-                        end do
-                end select
-            end do
+!-                    case (3)
+!-                        cm%dat(vid)%GAT = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
+!-                        cm%dat(vid)%GRD = 0.0
+!-                        do k = ii1, ii2
+!-                            j = shd%lc%JLMOS(k)
+!-                            i = shd%lc%ILMOS(k)
+!-                            cm%dat(vid)%GRD(i) = cm%dat(vid)%GRD(i) + shd%lc%ACLASS(i, j)*cm%dat(vid)%GAT(k)
+!-                            cm%dat(vid)%GRU(j) = cm%dat(vid)%GAT(k)
+!-                        end do
+!-                end select
+!-            end do
+
+        !> Advance line if 'met' format file is active.
+        if (cm%dat(ck%MET)%factive) then
+            if (update_data(shd, cm, ck%MET, 1)) goto 999
         end if
 
         return

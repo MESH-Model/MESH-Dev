@@ -383,7 +383,7 @@ module sa_mesh_run_between_grid
 !todo: remove this when code for output files has moved.
         call output_variables_update(shd)
 
-        if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0) then
+        if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0 .and. ro%RUNCHNL) then
 
             where (shd%DA > 0.0)
                 WF_QO2_ACC_MM = WF_QO2_ACC_MM + vs%grid%qo/shd%DA/1000.0*RTE_TS
@@ -429,7 +429,7 @@ module sa_mesh_run_between_grid
         end if
 
         !> This occurs the last time-step of the day.
-        if (ic%now%day /= ic%next%day) then
+        if (ic%now%day /= ic%next%day .and. ro%RUNCHNL) then
 
             if (fms%rsvr%n > 0) then
                 where (out%d%grid%stgch(fms%rsvr%meta%rnk(:)) > 0.0 .and. fms%rsvr%rls%area > 0.0)
