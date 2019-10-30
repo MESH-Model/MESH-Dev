@@ -963,6 +963,7 @@ module output_variables
             end if
             if (associated(group%sno)) then
                 if (all(group%sno == out%NO_DATA)) group%sno = group_vs%sno
+                where (group%sno /= out%NO_DATA) group%stgw = group%stgw + group%sno
             end if
             if (associated(group%wsno)) then
                 if (all(group%wsno == out%NO_DATA)) group%wsno = group_vs%wsno

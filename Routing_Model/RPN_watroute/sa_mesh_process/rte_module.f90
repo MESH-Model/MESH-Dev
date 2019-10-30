@@ -518,19 +518,15 @@ module rte_module
             !> Read inital values from the file.
             if (RESUMEFLAG == 4) then
                 read(iun) fhr
-                read(iun) qo2
-                read(iun) store2
-                read(iun) qi2
-                if (fms%rsvr%n > 0) then
-                    read(iun) lake_elv(:, fhr)
-                else
-                    read(iun)
-                end if
             else
                 read(iun)
-                read(iun) qo2
-                read(iun) store2
-                read(iun) qi2
+            end if
+            read(iun) qo2
+            read(iun) store2
+            read(iun) qi2
+            if (fms%rsvr%n > 0) then
+                read(iun) lake_elv(:, fhr)
+            else
                 read(iun)
             end if
 

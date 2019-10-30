@@ -318,8 +318,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
             shd%lc%ACLASS(:, shd%lc%NTYPE) = 1.0; shd%lc%ACLASS(:, shd%lc%NTYPE + 1) = 0.0
 
             !> Force 'RUNMODE noroute' (overrides the run option).
-            ro%RUNCHNL = .false.
-            ro%RUNGRID = .false.
+!-            ro%RUNCHNL = .false.
+!-            ro%RUNGRID = .false.
 
         case default
 
