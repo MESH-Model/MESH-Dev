@@ -6,10 +6,13 @@
 !> Input variables:
 !*  iun: Unit of the input file.
 !*  fname: Full path to the file (default: './MESH_drainage_database.r2c').
+!*
+!> Output variables:
+!*  ierr: Return status.
 !>
 !> Input/output variables:
 !*  shd: Basin 'shed' object (properties).
-subroutine read_shed_r2c(shd, iun, fname)
+subroutine read_shed_r2c(shd, iun, fname, ierr)
 
     !> strings: For 'lowercase' function.
     !> sa_mesh_common: For common MESH variables and routines.
@@ -24,26 +27,35 @@ subroutine read_shed_r2c(shd, iun, fname)
     integer, intent(in) :: iun
     character(len = *), intent(in) :: fname
 
+    !> Output variables.
+    integer, intent(out) :: ierr
+
     !> Input/output variables.
     type(ShedGridParams) shd
 
     !> Local variables.
     type(ensim_keyword), dimension(:), allocatable :: vkeyword
     type(ensim_attr), dimension(:), allocatable :: vattr
-    integer nkeyword, nattr, l, x, y, z, ierr
+    integer nkeyword, nattr, l, x, y, z
     real, dimension(:, :), allocatable :: dat
     real, dimension(:), allocatable :: ffield
     character(len = DEFAULT_LINE_LENGTH) line
 
+    !> Initialize the return status.
+    ierr = 0
+
     !> Open the file and read the header.
+    call reset_tab()
     call print_message('READING: ' // trim(fname))
+    call increase_tab()
     call open_ensim_input(iun, fname, ierr)
-    if (ierr /= 0) call program_abort()
+    if (ierr /= 0) return
     call parse_header_ensim(iun, vkeyword, nkeyword, ierr)
-    if (ierr /= 0) call program_abort()
+    if (ierr /= 0) return
 
     !> Get keywords.
     ierr = 0
+    z = 0
     call get_keyword_value(iun, vkeyword, nkeyword, ':Projection', shd%CoordSys%Proj, z); if (z /= 0) ierr = z
     call get_keyword_value(iun, vkeyword, nkeyword, ':Ellipsoid', shd%CoordSys%Ellips, z); if (z /= 0) ierr = z
     call get_keyword_value(iun, vkeyword, nkeyword, ':Zone', shd%CoordSys%Zone, z); if (z /= 0) ierr = z
@@ -61,7 +73,7 @@ subroutine read_shed_r2c(shd, iun, fname)
 !+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':DebugGridNo', l, z); if (z /= 0) ierr = z
     if (ierr /= 0) then
         call print_error('Errors occurred reading attributes from: ' // trim(fname))
-        call program_abort()
+        return
     end if
 
     !> Adjust GRU count (exclude impervious).
@@ -85,22 +97,22 @@ subroutine read_shed_r2c(shd, iun, fname)
 !+            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
         case default
             call print_error('Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
-            call program_abort()
+            return
     end select
 
     !> Check grid dimension.
     if (shd%NA < 1 .or. shd%NAA < 1) then
         call print_error('No grids are defined inside the basin.')
         write(line, FMT_GEN) shd%NA
-        call print_message_detail('Number of grids read from file: ' // trim(adjustl(line)))
-        call program_abort()
+        call print_message('Number of grids read from file: ' // trim(adjustl(line)))
+        return
     end if
     if (shd%NAA >= shd%NA) then
-        call print_warning('No outlets exist in the basin.', PAD_3)
+        call print_warning('No outlets exist in the basin.')
         write(line, FMT_GEN) shd%NA
-        call print_message_detail('Total number of grids: ' // trim(adjustl(line)))
+        call print_message('Total number of grids: ' // trim(adjustl(line)))
         write(line, FMT_GEN) shd%NAA
-        call print_message_detail('Total number of grids inside the basin: ' // trim(adjustl(line)))
+        call print_message('Total number of grids inside the basin: ' // trim(adjustl(line)))
     end if
 
     !> Allocate and initialize variables.
@@ -111,7 +123,7 @@ subroutine read_shed_r2c(shd, iun, fname)
     if (ierr /= 0) then
         write(line, FMT_GEN) ierr
         call print_error("Unable to allocate 'shd' variables (error code: " // trim(adjustl(line)) // ").")
-        call program_abort()
+        return
     end if
     shd%RNKGRD = 0; shd%xxx = 0; shd%yyy = 0
     shd%IROUGH = 0
@@ -121,37 +133,38 @@ subroutine read_shed_r2c(shd, iun, fname)
     call parse_header_attribute_ensim(iun, vkeyword, nkeyword, vattr, nattr, ierr)
     if (ierr /= 0) then
         call print_error('Error reading attributes from the header in the file.')
-        call program_abort()
+        return
     end if
     if (nattr == 0) then
+        ierr = 1
         call print_error('No attributes were found in the file.')
-        call program_abort()
+        return
     end if
 
     !> Advance past the end of the header.
     call advance_past_header(iun, fname, ierr)
     if (ierr /= 0) then
         call print_error('Encountered premature end of file.')
-        call program_abort()
+        return
     end if
 
     !> Read and parse the attribute data.
     call load_data_r2c(iun, fname, vattr, nattr, shd%xCount, shd%yCount, .false., ierr)
     if (ierr /= 0) then
         call print_error('Error reading attribute values in the file.')
-        call program_abort()
+        return
     end if
 
     !> Find and assign 'RANK'.
     do l = 1, nattr
         if (lowercase(vattr(l)%attr) == 'rank') then
-            shd%RNKGRD = transpose(vattr(l)%val)
+            shd%RNKGRD = transpose(int(vattr(l)%val))
             exit
         end if
     end do
     if (all(shd%RNKGRD == 0)) then
         call print_error("Unable to read the 'RANK' attribute.")
-        call program_abort()
+        return
     end if
 
     !> Create the 'xxx' and 'yyy' reference tables.
@@ -176,7 +189,7 @@ subroutine read_shed_r2c(shd, iun, fname)
     if (ierr /= 0) then
         write(line, FMT_GEN) ierr
         call print_error("Unable to allocate 'shd' variables (error code: " // trim(adjustl(line)) // ").")
-        call program_abort()
+        return
     end if
     shd%NEXT = 0
     shd%IAK = 0; shd%SLOPE_CHNL = 0.0; shd%CHNL_LEN = 0.0; shd%ICHNL = 0; shd%IREACH = 0
@@ -190,11 +203,11 @@ subroutine read_shed_r2c(shd, iun, fname)
     do l = 1, (nattr - (shd%lc%NTYPE + 1))
 
         !> Assign the data to a vector.
-        if (DIAGNOSEMODE) call print_message_detail("Reading '" // trim(vattr(l)%attr) // "'.")
+        if (DIAGNOSEMODE) call print_message("Reading '" // trim(vattr(l)%attr) // "'.")
         call r2c_to_rank(iun, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, ierr)
         if (ierr /= 0) then
             call print_error("Unable to read the '" // trim(vattr(l)%attr) // "' attribute.")
-            call program_abort()
+            return
         end if
 
         !> Determine and assign to the variable.
@@ -235,10 +248,11 @@ subroutine read_shed_r2c(shd, iun, fname)
     do l = (nattr - shd%lc%NTYPE), nattr
 
         !> Assign the data to a vector.
-        call r2c_to_rank(iun, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, ierr)
-        if (ierr /= 0) then
+        z = 0
+        call r2c_to_rank(iun, vattr, nattr, l, shd%xxx, shd%yyy, shd%NA, ffield, shd%NA, z)
+        if (z /= 0) then
             write(line, FMT_GEN) l
-            call print_warning('Unable to read Attribute ' // trim(adjustl(line)) // '.', PAD_3)
+            call print_warning('Unable to read Attribute ' // trim(adjustl(line)) // '.')
             cycle
         end if
 

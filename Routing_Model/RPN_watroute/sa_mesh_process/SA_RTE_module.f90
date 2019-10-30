@@ -98,7 +98,7 @@ module SA_RTE_module
 
         !> For: Runoff (RFF).
         if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
-            call tile_connector(shd, (stas_grid%sfc%rofo + stas_grid%sl%rofs)*shd%FRAC*ic%dts, RFF, .true.)
+            call tile_connector(shd, (vs%grid%rofo + vs%grid%rofs)*shd%FRAC*ic%dts, RFF, .true.)
             if (writeout) then
                 call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, (frame_now + 1), 0, frame_now, 0, 6, RFF)
                 RFF = 0.0
@@ -107,7 +107,7 @@ module SA_RTE_module
 
         !> For: Recharge (RCH).
         if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
-            call tile_connector(shd, (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts, RCH, .true.)
+            call tile_connector(shd, vs%grid%rofb*shd%FRAC*ic%dts, RCH, .true.)
             if (writeout) then
                 call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, (frame_now + 1), 0, frame_now, 0, 6, RCH)
                 RCH = 0.0
@@ -145,7 +145,7 @@ module SA_RTE_module
         if (.not. SA_RTE_flgs%PROCESS_ACTIVE) return
 
         !> Print that the module is active.
-        call print_message('SA_RTE component ACTIVATED')
+        call print_message('SA_RTE component is ACTIVE.')
 
         !> Allocate and initialize the appropriate variables.
         if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then

@@ -185,7 +185,7 @@ C
             THFC(k, j) = THLRET(k, j)
             PSIWLT(k, j) = PSISAT(k, j)*(THLMIN(k, j)/
      &                     THPOR(k, j))**(-BI(k, j))
-          else if (SAND(k, j) > 0.0) THEN
+          else if (SAND(k, j) >= 0.0) THEN
             if (SOILINIFLAG == 5) then
               THPOR(k, j) = WC_THPOR(m, j)
               THLRET(k, j) = WC_THLRET(m, j)
@@ -228,13 +228,6 @@ C
             end if
             PSIWLT(k, j) = PSISAT(k, j)*(max(0.5*THFC(k, j),
      &                     THLMIN(k, j))/THPOR(k, j))**(-BI(k, j))
-          else
-            print *
-            print '(A,/,A,F5.2,/,A8,I3,/,A8,I3,/,A8,I3)',
-     &            'SPECIFIED SAND PERCENTAGE IS NOT VALID',
-     &            '%SAND = ', SAND(k, j),
-     &            ' GRU: ', m, ' LAYER: ', j
-            stop
           end if
 C
 300   continue

@@ -4,12 +4,11 @@
 !>  MESH_input_streamflow.txt.
 !>
 !> Input:
-!*  shd: Basin shed object, containing information about the grid
-!*      definition read from MESH_drainage_database.r2c.
-!*  iun: Unit of the input file (default: 100).
-!*  fname: Full path to the file (default: './MESH_input_parameters.r2c').
+!*  shd: Basin shed object containing grid and drainage properties.
+!*  iun: Unit of the input file.
+!*  fname: Full path to the file.
 !>
-subroutine read_streamflow_txt(shd, iun, fname)
+subroutine read_streamflow_txt(shd, iun, fname, ierr)
 
     use mpi_module
     use sa_mesh_common
@@ -21,8 +20,11 @@ subroutine read_streamflow_txt(shd, iun, fname)
     integer, intent(in) :: iun
     character(len = *), intent(in) :: fname
 
+    !> Output variables.
+    integer, intent(out) :: ierr
+
     !> Local variables.
-    integer i, ierr
+    integer i
     character(len = DEFAULT_LINE_LENGTH) line
 
     !> Streamflow attributes pulled from 'fms':
@@ -37,17 +39,18 @@ subroutine read_streamflow_txt(shd, iun, fname)
     !*  -   DA(n): Drainage area.
 
     !> Open the file.
-    call print_screen('READING: ' // trim(adjustl(fname)))
-    call print_echo_txt(fname)
+    call reset_tab()
+    call print_message('READING: ' // trim(adjustl(fname)))
+    call increase_tab()
     open(iun, file = fname, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
-        call print_error('Unable to open file. Check if the file exists.')
-        call program_abort()
+        call print_error('Unable to open the file. Check if the file exists.')
+        return
     end if
 
     !> Read the number of locations.
-    read(iun, *, err = 999)
-    read(iun, *, err = 999) &
+    read(iun, *, err = 98)
+    read(iun, *, err = 98) &
         fms%stmg%n, i, i, fms%stmg%qomeas%dts, fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, fms%stmg%qomeas%ihour
 
     !> Return if no locations were defined.
@@ -55,27 +58,27 @@ subroutine read_streamflow_txt(shd, iun, fname)
 
     !> Allocate configuration variables for the driver.
     call allocate_streamflow_gauge_location(fms%stmg, fms%stmg%n, ierr)
-    if (ierr /= 0) goto 998
+    if (ierr /= 0) then
+        call print_error('Unable to allocate variables.')
+        return
+    end if
 
     !> Read gauge location and name.
     do i = 1, fms%stmg%n
-        read(iun, *, err = 999) fms%stmg%meta%y(i), fms%stmg%meta%x(i), fms%stmg%meta%name(i)
+        read(iun, *, err = 98) fms%stmg%meta%y(i), fms%stmg%meta%x(i), fms%stmg%meta%name(i)
     end do
     fms%stmg%meta%y = fms%stmg%meta%y/60.0
     fms%stmg%meta%x = fms%stmg%meta%x/60.0
 
     return
 
-    !> Stop: Error allocating variables.
-998 call print_error('Unable to allocate variables.')
-    call program_abort()
-
     !> Stop: Premature end of file.
-999 call print_error('Unable to read from file.')
+98  ierr = 1
+    call print_error('Unable to read the file.')
     write(line, FMT_GEN) fms%rsvr%n
     call print_message('Number of gauge locations expected: ' // trim(adjustl(line)))
     write(line, FMT_GEN) i
     call print_message('Number found: ' // trim(adjustl(line)))
-    call program_abort()
+    return
 
 end subroutine

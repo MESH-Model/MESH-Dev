@@ -261,22 +261,22 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
       index=2
 
-      if(firstpass.eq.'y')then   !section added Apr. 28/06  nk
+!mesh_io      if(firstpass.eq.'y')then   !section added Apr. 28/06  nk
 !       check that qdwpr memory has been allocated
-        if(ireach(n).gt.0.or.res(n).gt.0)then
-          if(.not.allocated(qdwpr))then
-             print*
-             print*,'Memory not allocated for qdwpr'
-             print*,'No of reservoirs in the .rel file is 0'
-             print*,'but reaches in the map & shed files have been'
-             print*,'defined. This is a problem.'
-             print*,'Please either set all reach values = 0'
-             print*,'or code in the reservoir locations in the rel'
-             print*,'files'
-             stop 'Program aborted in route @ 279'
-          endif      
-        endif
-      endif
+!mesh_io        if(ireach(n).gt.0.or.res(n).gt.0)then
+!mesh_io          if(.not.allocated(qdwpr))then
+!mesh_io             print*
+!mesh_io             print*,'Memory not allocated for qdwpr'
+!mesh_io             print*,'No of reservoirs in the .rel file is 0'
+!mesh_io             print*,'but reaches in the map & shed files have been'
+!mesh_io             print*,'defined. This is a problem.'
+!mesh_io             print*,'Please either set all reach values = 0'
+!mesh_io             print*,'or code in the reservoir locations in the rel'
+!mesh_io             print*,'files'
+!mesh_io             stop 'Program aborted in route @ 279'
+!mesh_io          endif      
+!mesh_io        endif
+!mesh_io      endif
 
 !     CALCULATIONS START IN THE HIGHEST ELEMENT IN THE WATERSHED 
 !     AND PROCEED TO THE LOWEST.

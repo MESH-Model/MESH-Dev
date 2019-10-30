@@ -8,7 +8,7 @@ module sa_mesh_common
     use shd_variables
     use fm_variables
     use input_parameters
-    use state_variables
+    use model_variables
     use output_variables
 
     !> Utilities.

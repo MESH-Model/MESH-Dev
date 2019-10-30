@@ -1,7 +1,8 @@
 module variable_names
 
+    implicit none
+
     !> Meteorological forcing.
-    character(len = 10), parameter :: VN_PRE = 'PRE'
     character(len = 10), parameter :: VN_FSIN = 'FSIN'
     character(len = 10), parameter :: VN_FSVH = 'FSVH'
     character(len = 10), parameter :: VN_FSIH = 'FSIH'
@@ -15,6 +16,7 @@ module variable_names
     character(len = 10), parameter :: VN_VV = 'VV'
     character(len = 10), parameter :: VN_UV = 'UV'
     character(len = 10), parameter :: VN_WDIR = 'WDIR'
+    character(len = 10), parameter :: VN_PRE = 'PRE'
 
     !> Water balance.
     character(len = 10), parameter :: VN_PREC = 'PREC'
@@ -29,6 +31,8 @@ module variable_names
     character(len = 10), parameter :: VN_ROFB = 'ROFB'
     character(len = 10), parameter :: VN_RCAN = 'RCAN'
     character(len = 10), parameter :: VN_SNCAN = 'SNCAN'
+    character(len = 10), parameter :: VN_ZSNO = 'ZSNO'
+    character(len = 10), parameter :: VN_RHOSNO = 'RHOSNO'
     character(len = 10), parameter :: VN_SNO = 'SNO'
     character(len = 10), parameter :: VN_FSNO = 'FSNO'
     character(len = 10), parameter :: VN_WSNO = 'WSNO'
@@ -60,8 +64,6 @@ module variable_names
     character(len = 10), parameter :: VN_GZERO = 'GZERO'
     character(len = 10), parameter :: VN_GFLX = 'GFLX'
     character(len = 10), parameter :: VN_TBAR = 'TBAR'
-    character(len = 10), parameter :: VN_ALD = 'ALD'
-    character(len = 10), parameter :: VN_ZOD = 'ZOD'
     character(len = 10), parameter :: VN_STGE = 'STGE'
     character(len = 10), parameter :: VN_DSTGE = 'DSTGE'
 

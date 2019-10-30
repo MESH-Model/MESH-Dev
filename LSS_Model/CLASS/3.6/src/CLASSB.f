@@ -179,7 +179,7 @@ C
               THFC(I,M,J)=THLRET(I,M,J)
               PSIWLT(I,M,J)=PSISAT(I,M,J)*(THLMIN(I,M,J)/
      1            THPOR(I,M,J))**(-BI(I,M,J))
-          ELSEIF(SAND(I,M,J).GT.0) THEN
+          ELSEIF(SAND(I,M,J).GE.0.0) THEN
             IF (SOILINIFLAG == 5) THEN
               THPOR (I,M,J) = WC_THPOR (I,M,J)
               THLRET(I,M,J) = WC_THLRET(I,M,J)
@@ -222,13 +222,6 @@ C
               ENDIF
               PSIWLT(I,M,J)=PSISAT(I,M,J)*(MAX(0.5*THFC(I,M,J),
      1            THLMIN(I,M,J))/THPOR(I,M,J))**(-BI(I,M,J))
-          ELSE
-              PRINT*
-              PRINT('(A,/,A,F5.2,/,A8,I3,/,A8,I3,/,A8,I3)'),
-     1            "SPECIFIED SAND PERCENTAGE IS NOT VALID",
-     2            "%SAND = ",SAND(I,M,J), "GRID: ",I, 
-     3            "GRU: ", M, "LAYER: ", J
-              STOP
           ENDIF
 300   CONTINUE
 C

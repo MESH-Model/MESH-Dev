@@ -29,15 +29,23 @@ module output_files
 
     !> Description:
     !>  Keys for output file frequency.
+    !* STA: Static (once; for fields that do not change in time).
+    !* TOT: Accrued over the simulation.
+    !* DLY: Daily.
+    !* MLY: Monthly.
+    !* HLY: Hourly.
+    !* PTS: Per time-step.
+    !* YLY: Yearly.
+    !* SSL: Seasonal.
     type output_file_freqs
-        integer :: ACC = 1
+        integer :: STA = 0
+        integer :: TOT = 1
         integer :: DLY = 2
         integer :: MLY = 3
         integer :: HLY = 4
         integer :: PTS = 5
         integer :: YLY = 6
         integer :: SSL = 7
-        integer :: TOT = 8
     end type
 
     interface write_r2c_grid
@@ -651,10 +659,9 @@ module output_files
             allocate(group%grid%dat(shd%NA, t))
             group%grid%dat = 0.0
             if (field%ilvl > 0) then
-                call output_variables_allocate_field_pntr( &
-                    group%grid%src, out_group%grid, field%vname, shd%NA, shd%lc%IGND, field%ilvl)
+                call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src, field%ilvl)
             else
-                call output_variables_allocate_field_pntr(group%grid%src, out_group%grid, field%vname, shd%NA)
+                call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src)
             end if
 
             !> File name.
@@ -782,10 +789,9 @@ module output_files
             allocate(group%tile%dat(shd%lc%NML, t))
             group%tile%dat = 0.0
             if (field%ilvl > 0) then
-                call output_variables_allocate_field_pntr( &
-                    group%tile%src, out_group%tile, field%vname, shd%lc%NML, shd%lc%IGND, field%ilvl)
+                call output_variables_activate_pntr(out_group%tile, field%vname, group%tile%src, field%ilvl)
             else
-                call output_variables_allocate_field_pntr(group%tile%src, out_group%tile, field%vname, shd%lc%NML)
+                call output_variables_activate_pntr(out_group%tile, field%vname, group%tile%src)
             end if
 
             !> File name.
@@ -1402,40 +1408,72 @@ module output_files
                     if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSVH, args, nargs, z, -1, 0.5)
                 case (VN_FSIH)
                     if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSIH, args, nargs, z, -1, 0.5)
+                case (VN_FSDIR)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSDIR, args, nargs, z)
+                case (VN_FSDFF)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FSDFF, args, nargs, z)
                 case (VN_FLIN, 'FDL')
                     if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_FLIN, args, nargs, z)
-                case (VN_UV, 'UL')
-                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_UV, args, nargs, z)
                 case (VN_TA)
                     if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_TA, args, nargs, z)
                 case (VN_QA, 'HU')
                     if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_QA, args, nargs, z)
                 case (VN_PRES)
                     if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_PRES, args, nargs, z)
+                case (VN_UU)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_UU, args, nargs, z)
+                case (VN_VV)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_VV, args, nargs, z)
+                case (VN_UV, 'UL')
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_UV, args, nargs, z)
+                case (VN_WDIR)
+                    if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_WDIR, args, nargs, z)
                 case (VN_PRE)
                     if (ro%RUNCLIM) call output_files_append_field(fls, shd, ts, VN_PRE, args, nargs, z)
 
                 !> Water balance.
                 case (VN_PREC, 'Rainfall', 'Rain', 'Precipitation')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PREC, args, nargs, z, -1, real(ic%dts))
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PREC, args, nargs, z)
                 case (VN_EVAP, 'Evapotranspiration')
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_EVAP, args, nargs, z, -1, real(ic%dts))
+                case (VN_PEVP)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PEVP, args, nargs, z)
+                case (VN_EVPB)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_EVPB, args, nargs, z)
+                case (VN_ARRD)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ARRD, args, nargs, z)
+                case (VN_GRO)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_GRO, args, nargs, z)
                 case (VN_ROF, 'Runoff')
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ROF, args, nargs, z, -1, real(ic%dts))
+                case (VN_ROFO)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ROFO, args, nargs, z, -1, real(ic%dts))
+                case (VN_ROFS)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ROFS, args, nargs, z, -1, real(ic%dts))
+                case (VN_ROFB)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ROFB, args, nargs, z, -1, real(ic%dts))
                 case (VN_RCAN)
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_RCAN, args, nargs, z)
                 case (VN_SNCAN, 'SCAN')
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_SNCAN, args, nargs, z)
-                case (VN_PNDW)
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PNDW, args, nargs, z)
+                case (VN_ZSNO)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ZSNO, args, nargs, z)
+                case (VN_RHOSNO)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_RHOSNO, args, nargs, z)
                 case (VN_SNO)
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_SNO, args, nargs, z)
+                case (VN_FSNO)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_FSNO, args, nargs, z)
                 case (VN_WSNO)
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_WSNO, args, nargs, z)
-                case (VN_STGW, 'STG')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_STGW, args, nargs, z)
-                case (VN_DSTGW, 'DSTG')
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_DSTGW, args, nargs, z)
+                case (VN_ZPND)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ZPND, args, nargs, z)
+                case (VN_PNDW)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PNDW, args, nargs, z)
+                case (VN_LZS)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_LZS, args, nargs, z)
+                case (VN_DZS)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_DZS, args, nargs, z)
                 case (VN_THLQ)
                     if (ro%RUNBALWB) then
                         do j = 1, shd%lc%IGND
@@ -1460,12 +1498,44 @@ module output_files
                             call output_files_append_field(fls, shd, ts, VN_FZWS, args, nargs, z, j)
                         end do
                     end if
+                case (VN_ALWS)
+                    if (ro%RUNBALWB) then
+                        do j = 1, shd%lc%IGND
+                            call output_files_append_field(fls, shd, ts, VN_ALWS, args, nargs, z, j)
+                        end do
+                    end if
+                case (VN_STGW, 'STG')
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_STGW, args, nargs, z)
+                case (VN_DSTGW, 'DSTG')
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_DSTGW, args, nargs, z)
 
                 !> Energy balance.
+                case (VN_CMAS)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_CMAS, args, nargs, z)
+                case (VN_TCAN)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_TCAN, args, nargs, z)
+                case (VN_TSNO)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_TSNO, args, nargs, z)
+                case (VN_TPND)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_TPND, args, nargs, z)
+                case (VN_ALVS)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_ALVS, args, nargs, z)
+                case (VN_ALIR)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_ALIR, args, nargs, z)
+                case (VN_ALBT)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_ALBT, args, nargs, z)
+                case (VN_FSOUT)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_FSOUT, args, nargs, z)
+                case (VN_FLOUT)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_FLOUT, args, nargs, z)
+                case (VN_GTE)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_GTE, args, nargs, z)
                 case (VN_QH, 'HFS', 'SensibleHeat')
                     if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_QH, args, nargs, z)
                 case (VN_QE, 'QEVP', 'LatentHeat')
                     if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_QE, args, nargs, z)
+                case (VN_GZERO)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_GZERO, args, nargs, z)
                 case (VN_GFLX, 'HeatConduction')
                     if (ro%RUNBALEB) then
                         do j = 1, shd%lc%IGND
@@ -1478,12 +1548,24 @@ module output_files
                             call output_files_append_field(fls, shd, ts, VN_TBAR, args, nargs, z, j)
                         end do
                     end if
+                case (VN_STGE)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_STGE, args, nargs, z)
+                case (VN_DSTGE)
+                    if (ro%RUNBALEB) call output_files_append_field(fls, shd, ts, VN_DSTGE, args, nargs, z)
 
                 !> Channels and routing.
                 case (VN_RFF, 'WR_RUNOFF')
                     if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RFF, args, nargs, z, -1, real(ic%dts))
                 case (VN_RCHG, 'WR_RECHARGE')
                     if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs, z, -1, real(ic%dts))
+                case (VN_QI)
+                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_QI, args, nargs, z)
+                case (VN_STGCH)
+                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_STGCH, args, nargs, z)
+                case (VN_QO)
+                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_QO, args, nargs, z)
+                case (VN_ZLVL)
+                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_ZLVL, args, nargs, z)
 
                 !> Permafrost outputs (PERMAFROSTOUTFLAG).
                 case (PMFRSTVN_ALD)
@@ -1944,7 +2026,7 @@ module output_files
 
         !> Update fields and output files.
         do i = 1, size(fls_out%fls)
-            call output_files_update_field(fls, shd, fls_out%fls(i))
+            if (fls_out%fls(i)%ffreq /= fls_out%ffreq%sta) call output_files_update_field(fls, shd, fls_out%fls(i))
         end do
 
     end subroutine

@@ -1,9 +1,0 @@
-!
-!
-      REAL critmask, critsnow, critwater, critexture
-      REAL minicedp, critlac
-!
-      COMMON /SURFACEPAR/ critmask, critsnow, critwater, critexture, &
-                          minicedp, critlac
-!
-!

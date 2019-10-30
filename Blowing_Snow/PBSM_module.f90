@@ -126,10 +126,10 @@ module PBSM_module
 
         !> Set initial SnowAge & DrySnow values for PBSM calculations.
         do k = il1, il2
-            if (stas%sno%sno(k) <= 0.0) then
+            if (vs%tile%sno(k) <= 0.0) then
                 pbsm%vs%DrySnow(k) = 0.0   !1 = snowpack is dry (i.e. cold)
                 pbsm%vs%SnowAge(k) = 0.0   !hours since last snowfall
-            else if (cm%dat(ck%TT)%GAT(k) >= TFREZ) then
+            else if (vs%tile%ta(k) >= TFREZ) then
                 pbsm%vs%DrySnow(k) = 0.0
                 pbsm%vs%SnowAge(k) = 48.0   !assume 48 hours since last snowfall
             else
@@ -139,7 +139,7 @@ module PBSM_module
         end do
 
         !> Write summary to output file.
-        call print_message('PBSM (blowing snow) component ACTIVE.')
+        call print_message('PBSM (blowing snow) component is ACTIVE.')
         if (DIAGNOSEMODE) then
             call print_echo_txt('PBSMFLAG on')
             write(line, FMT_GEN) 'GRUs ->', (m, m = 1, shd%lc%NTYPE)
@@ -207,7 +207,7 @@ module PBSM_module
             WSNOCS, WSNOGS, &
             FC, FG, FCS, FGS, &
             pbsm%pm%fetch, pbsm%pm%N_S, pbsm%pm%A_S, pbsm%pm%Ht, &
-            SFCT, SFCU, SFCQ, cm%dat(ck%P0)%GAT, cm%dat(ck%RT)%GAT, &
+            SFCT, SFCU, SFCQ, vs%tile%pres, vs%tile%pre, &
             pbsm%vs%DrySnow, pbsm%vs%SnowAge, pbsm%vs%Drift, pbsm%vs%Subl, &
             pbsm%vs%TSNOds, &
             NML, il1, il2, ic%ts_count, ZRFM, ZOMLCS, ZOMLNS)

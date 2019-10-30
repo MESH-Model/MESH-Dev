@@ -84,7 +84,7 @@ module baseflow_module
         !> Summarize current BASEFLOWFLAG configuration to output.
         select case (bflm%BASEFLOWFLAG)
             case (1, 2)
-                call print_message('BASEFLOW component ACTIVATED')
+                call print_message('BASEFLOW component is ACTIVE.')
             case default
                 write(line, FMT_GEN) bflm%BASEFLOWFLAG
                 call print_warning('BASEFLOWFLAG ' // trim(adjustl(line)) // ' not supported.')
@@ -137,19 +137,19 @@ module baseflow_module
         end if
 
         !> Allocate and initialize local variables.
-        stas%lzs%ws = bflm%vs%WrchrgIni
-        stas_grid%lzs%ws = bflm%vs%WrchrgIni
+        vs%tile%lzs = bflm%vs%WrchrgIni
+        vs%grid%lzs = bflm%vs%WrchrgIni
         select case (bflm%BASEFLOWFLAG)
             case (1)
                 allocate(Wseep(NML), Wrchrg(NML), Qb(NML))
                 Wseep = 0.0
-                Wrchrg = stas%lzs%ws
+                Wrchrg = vs%tile%lzs
                 Qb = bflm%vs%QbIni
             case (2)
                 if (bflm%BUCKETFLAG == 1) then
                     allocate(dlz(NA), lzs(NA))
                     dlz = 0.0
-                    lzs = stas_grid%lzs%ws
+                    lzs = vs%grid%lzs
                     bflm%pm_grid%flz = 1.0 - (1.0 - bflm%pm_grid%flz)
                 end if
         end select
@@ -167,7 +167,7 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to resume states.')
                         call program_abort()
                     end if
-                    read(iun) stas%lzs%ws
+                    read(iun) vs%tile%lzs
                     read(iun) Qb
                     close(iun)
                 case (2)
@@ -180,7 +180,7 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to resume states.')
                         call program_abort()
                     end if
-                    read(iun) stas%lzs%ws
+                    read(iun) vs%tile%lzs
                     close(iun)
             end select
         end if
@@ -209,16 +209,16 @@ module baseflow_module
         !> Calculate contribution of baseflow to lower zone storage and redistribute runoff.
         select case (bflm%BASEFLOWFLAG)
             case (1)
-                Wseep(il1:il2) = stas%lzs%rofb(il1:il2)*3600.0
-                Wrchrg(il1:il2) = stas%lzs%ws(il1:il2)
+                Wseep(il1:il2) = vs%tile%rofb(il1:il2)*3600.0
+                Wrchrg(il1:il2) = vs%tile%lzs(il1:il2)
                 do k = il1, il2
                     call baseFlow_luo2012(Wseep(k), bflm%pm%dgw(k), Wrchrg(k), bflm%pm%agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
-                    stas%lzs%rofb(k) = Qb_new/3600.0
+                    vs%tile%rofb(k) = Qb_new/3600.0
                     Qb(k) = Qb_new
-                    stas%lzs%ws(k) = Wrchrg_new
+                    vs%tile%lzs(k) = Wrchrg_new
                 end do
             case (2)
-                stas%lzs%ws(il1:il2) = stas%lzs%ws(il1:il2) + stas%lzs%rofb(il1:il2)*ic%dts
+                vs%tile%lzs(il1:il2) = vs%tile%lzs(il1:il2) + vs%tile%rofb(il1:il2)*ic%dts
         end select
 
     end subroutine
@@ -246,15 +246,15 @@ module baseflow_module
         select case (bflm%BASEFLOWFLAG)
             case (2)
                 if ((bflm%dts - ic%dts*ic%ts_hourly) == 0) then
-                    lzs(i1:i2) = stas_grid%lzs%ws(i1:i2)
+                    lzs(i1:i2) = vs%grid%lzs(i1:i2)
                     call baseflow_wfqlz(bflm%pm_grid%flz, bflm%pm_grid%pwr, lzs, dlz, shd%NA, i1, i2)
                     dlz(i1:i2) = max(min(dlz(i1:i2), lzs(i1:i2)), 0.0)/real(bflm%dts/ic%dts)
                 end if
-                stas_grid%lzs%rofb(i1:i2) = dlz(i1:i2)/real(ic%dts)
-                stas_grid%lzs%ws(i1:i2) = stas_grid%lzs%ws(i1:i2) - stas_grid%lzs%rofb(i1:i2)*ic%dts
+                vs%grid%rofb(i1:i2) = dlz(i1:i2)/real(ic%dts)
+                vs%grid%lzs(i1:i2) = vs%grid%lzs(i1:i2) - vs%grid%rofb(i1:i2)*ic%dts
                 do k = il1, il2
-                    stas%lzs%rofb(k) = stas_grid%lzs%rofb(shd%lc%ILMOS(k))
-                    stas%lzs%ws(k) = stas_grid%lzs%ws(shd%lc%ILMOS(k))
+                    vs%tile%rofb(k) = vs%grid%rofb(shd%lc%ILMOS(k))
+                    vs%tile%lzs(k) = vs%grid%lzs(shd%lc%ILMOS(k))
                 end do
         end select
 
@@ -295,7 +295,7 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to save states.')
                         call program_abort()
                     end if
-                    write(iun) stas%lzs%ws
+                    write(iun) vs%tile%lzs
                     write(iun) Qb
                     close(iun)
                 case (2)
@@ -308,7 +308,7 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to save states.')
                         call program_abort()
                     end if
-                    write(iun) stas%lzs%ws
+                    write(iun) vs%tile%lzs
                     close(iun)
             end select
         end if

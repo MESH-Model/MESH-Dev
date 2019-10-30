@@ -10,7 +10,7 @@
 !*  iun: Unit of the input file (default: 100).
 !*  fname: Full path to the file (default: './MESH_input_parameters.r2c').
 !>
-subroutine read_parameters_csv(shd, iun, fname)
+subroutine read_parameters_csv(shd, iun, fname, ierr)
 
     !> strings: For 'readline', 'compact', 'parse', and 'lowercase' functions.
     !> sa_mesh_common: For common MESH variables and routines.
@@ -30,29 +30,35 @@ subroutine read_parameters_csv(shd, iun, fname)
     integer, intent(in) :: iun
     character(len = *), intent(in) :: fname
 
+    !> Output variables.
+    integer, intent(out) :: ierr
+
     !> Local variables.
-    integer nargs, n, i, istat, ierr
+    integer nargs, n, i, istat, z
     real fval
     character(len = DEFAULT_LINE_LENGTH) line
     character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
 
+    !> Initialize the return status.
+    ierr = 0
+
     !> Open the file.
-    call print_screen('READING: ' // trim(adjustl(fname)))
-    call print_echo_txt(fname)
+    call reset_tab()
+    call print_message('READING: ' // trim(adjustl(fname)))
+    call increase_tab()
     open(iun, file = fname, status = 'old', action = 'read', iostat = ierr)
     if (ierr /= 0) then
-        call print_error('Unable to open file. Check if the file exists.')
-        call program_abort()
+        call print_error('Unable to open the file. Check if the file exists.')
+        return
     end if
 
     !> Read and parse each line.
-    ierr = 0
     n = 0
-    do while (ierr == 0)
+    do while (z == 0)
 
         !> Compact and reduce the line to any instance of '#' or '!'.
-        call readline(iun, line, ierr)
-        if (ierr /= 0) exit
+        call readline(iun, line, z)
+        if (z /= 0) exit
         if (index(line, '#') > 2) line = line(1:index(line, '#') - 1)
         if (index(line, '!') > 2) line = line(1:index(line, '!') - 1)
         call compact(line)
@@ -67,7 +73,7 @@ subroutine read_parameters_csv(shd, iun, fname)
         if (nargs < 1) cycle
 
         !> Assign and distribute the field.
-        if (DIAGNOSEMODE) call print_message_detail('Reading parameter: ' // trim(adjustl(args(1))) // '.')
+        if (DIAGNOSEMODE) call print_message('Reading parameter: ' // trim(adjustl(args(1))) // '.')
         istat = 0
         select case (lowercase(args(1)))
 
@@ -154,13 +160,13 @@ subroutine read_parameters_csv(shd, iun, fname)
 
         !> Status flags.
         if (istat == 1 .and. DIAGNOSEMODE) then
-            call print_remark("'" // trim(adjustl(args(1))) // "' is present but inactive.", PAD_3)
+            call print_remark("'" // trim(adjustl(args(1))) // "' is present but inactive.")
         else if (istat == 2) then
-            call print_warning("'" // trim(adjustl(args(1))) // "' is not recognized.", PAD_3)
+            call print_warning("'" // trim(adjustl(args(1))) // "' is not recognized.")
         else if (istat == 3) then
-            call print_warning("'" // trim(adjustl(args(1))) // "' does not contain the expected number of values.", PAD_3)
+            call print_warning("'" // trim(adjustl(args(1))) // "' does not contain the expected number of values.")
         else if (istat /= 0) then
-            call print_warning("Error assigning '" // trim(adjustl(args(1))) // "' values.", PAD_3)
+            call print_warning("Error assigning '" // trim(adjustl(args(1))) // "' values.")
         else if (istat == 0) then
             n = n + 1
         end if
@@ -168,7 +174,7 @@ subroutine read_parameters_csv(shd, iun, fname)
 
     !> Print number of active parameters.
     write(line, FMT_GEN) n
-    call print_message_detail('Active parameters in file: ' // trim(adjustl(line)))
+    call print_message('Active parameters in file: ' // trim(adjustl(line)))
 
     !> Close the file to free the unit.
     close(iun)

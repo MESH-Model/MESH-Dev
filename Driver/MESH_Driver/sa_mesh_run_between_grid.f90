@@ -264,16 +264,16 @@ module sa_mesh_run_between_grid
         end if
 
         !> Allocate output variables.
-        call output_variables_allocate(out%d%grid%qi, shd%NA)
-        call output_variables_allocate(out%d%grid%stgch, shd%NA)
-        call output_variables_allocate(out%d%grid%qo, shd%NA)
-        call output_variables_allocate(out%d%grid%zlvl, shd%NA)
+        call output_variables_activate(out%d%grid, (/ VN_QI, VN_STGCH, VN_QO, VN_ZLVL /))
 
         !> Call processes.
         call SA_RTE_init(shd)
         call WF_ROUTE_init(fls, shd)
         call run_rte_init(fls, shd)
         call runci_between_grid_init(shd, fls)
+
+        !> Update basin variables.
+        call run_within_grid_stas_basin_update(fls, shd, cm)
 
 1010    format(9999(g15.7e2, ','))
 
@@ -353,8 +353,8 @@ module sa_mesh_run_between_grid
                 do k = 1, shd%lc%NML
                     ki = shd%lc%ILMOS(k)
                     FRAC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))
-                    basin_SCA = basin_SCA + stas%sno%fsno(k)*FRAC
-                    basin_SWE = basin_SWE + stas%sno%sno(k)*FRAC
+                    basin_SCA = basin_SCA + vs%tile%fsno(k)*FRAC
+                    basin_SWE = basin_SWE + vs%tile%sno(k)*FRAC
                 end do
                 basin_SCA = basin_SCA/TOTAL_AREA
                 basin_SWE = basin_SWE/TOTAL_AREA
@@ -367,8 +367,8 @@ module sa_mesh_run_between_grid
         end if !(ipid == 0) then
 
         !> Update variables.
-        stas_grid%chnl%rff = (stas_grid%sfc%rofo + stas_grid%sl%rofs)*ic%dts
-        stas_grid%chnl%rchg = (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*ic%dts
+        vs%grid%rff = (vs%grid%rofo + vs%grid%rofs)*ic%dts
+        vs%grid%rchg = vs%grid%rofb*ic%dts
 
         !> Call processes.
         call SA_RTE(shd)
@@ -376,15 +376,18 @@ module sa_mesh_run_between_grid
         call run_rte_between_grid(fls, shd)
         call runci_between_grid(shd, fls, cm)
 
+        !> Update basin variables.
+        call run_within_grid_stas_basin_update(fls, shd, cm)
+
         !> Update output variables.
 !todo: remove this when code for output files has moved.
-        call output_variables_update(shd, cm)
+        call output_variables_update(shd)
 
         if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0) then
 
             where (shd%DA > 0.0)
-                WF_QO2_ACC_MM = WF_QO2_ACC_MM + stas_grid%chnl%qo/shd%DA/1000.0*RTE_TS
-                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + stas_grid%chnl%stg/shd%DA/1000.0
+                WF_QO2_ACC_MM = WF_QO2_ACC_MM + vs%grid%qo/shd%DA/1000.0*RTE_TS
+                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + vs%grid%stgch/shd%DA/1000.0
             elsewhere
                 WF_QO2_ACC_MM = out%NO_DATA
                 WF_STORE2_ACC_MM = out%NO_DATA
@@ -478,6 +481,255 @@ module sa_mesh_run_between_grid
         end if
 
 1010    format(9999(g15.7e2, ','))
+
+    end subroutine
+
+    subroutine run_within_grid_stas_basin_update(fls, shd, cm)
+
+        !> Input/output variables.
+        type(fl_ids) fls
+        type(ShedGridParams) shd
+        type(clim_info) cm
+
+        !> Local variables.
+        integer j, ii, i
+        real frac(shd%NA), albtfrac(shd%NA), tpndfrac(shd%NA), tsnofrac(shd%NA), tcanfrac(shd%NA)
+
+        !> Return if not the head node or if grid processes are not active.
+        if (ipid /= 0 .or. .not. ro%RUNGRID) return
+
+        !> Initialize variables.
+        vs%basin%fsin = vs%grid%fsin*shd%FRAC
+        vs%basin%fsdr = vs%grid%fsdr*shd%FRAC
+        vs%basin%fsdff = vs%grid%fsdff*shd%FRAC
+        vs%basin%flin = vs%grid%flin*shd%FRAC
+        vs%basin%ta = vs%grid%ta*shd%FRAC
+        vs%basin%qa = vs%grid%qa*shd%FRAC
+        vs%basin%pres = vs%grid%pres*shd%FRAC
+        vs%basin%uv = vs%grid%uv*shd%FRAC
+        vs%basin%wdir = vs%grid%wdir*shd%FRAC
+        vs%basin%uu = vs%grid%uu*shd%FRAC
+        vs%basin%vv = vs%grid%vv*shd%FRAC
+        vs%basin%pre = vs%grid%pre*shd%FRAC
+        vs%basin%prern = vs%grid%prern*shd%FRAC
+        vs%basin%presn = vs%grid%presn*shd%FRAC
+        vs%basin%rcan = vs%grid%rcan*shd%FRAC
+        vs%basin%sncan = vs%grid%sncan*shd%FRAC
+        vs%basin%cmas = vs%grid%cmas*shd%FRAC
+        vs%basin%tac = vs%grid%tac*shd%FRAC
+        vs%basin%tcan = vs%grid%tcan*shd%FRAC
+        vs%basin%qac = vs%grid%qac*shd%FRAC
+        vs%basin%gro = vs%grid%gro*shd%FRAC
+        vs%basin%sno = vs%grid%sno*shd%FRAC
+        vs%basin%fsno = vs%grid%fsno*shd%FRAC
+        vs%basin%albs = vs%grid%albs*shd%FRAC
+        vs%basin%rhos = vs%grid%rhos*shd%FRAC
+        vs%basin%wsno = vs%grid%wsno*shd%FRAC
+        vs%basin%tsno = vs%grid%tsno*shd%FRAC
+        vs%basin%albt = vs%grid%albt*shd%FRAC
+        vs%basin%alvs = vs%grid%alvs*shd%FRAC
+        vs%basin%alir = vs%grid%alir*shd%FRAC
+        vs%basin%gte = vs%grid%gte*shd%FRAC
+        vs%basin%zpnd = vs%grid%zpnd*shd%FRAC
+        vs%basin%pndw = vs%grid%pndw*shd%FRAC
+        vs%basin%tpnd = vs%grid%tpnd*shd%FRAC
+        vs%basin%fstr = vs%grid%fstr*shd%FRAC
+        vs%basin%pevp = vs%grid%pevp*shd%FRAC
+        vs%basin%evap = vs%grid%evap*shd%FRAC
+        vs%basin%evpb = vs%grid%evpb*shd%FRAC
+        vs%basin%arrd = vs%grid%arrd*shd%FRAC
+        vs%basin%rofo = vs%grid%rofo*shd%FRAC
+        vs%basin%qevp = vs%grid%qevp*shd%FRAC
+        vs%basin%hfs = vs%grid%hfs*shd%FRAC
+        vs%basin%gzero = vs%grid%gzero*shd%FRAC
+        do j = 1, 4
+            vs%basin%tsfs(:, j) = vs%grid%tsfs(:, j)*shd%FRAC
+        end do
+        vs%basin%ggeo = vs%grid%ggeo*shd%FRAC
+        vs%basin%rofs = vs%grid%rofs*shd%FRAC
+        vs%basin%tbas = vs%grid%tbas*shd%FRAC
+        do j = 1, shd%lc%IGND
+            vs%basin%thic(:, j) = vs%grid%thic(:, j)*shd%FRAC
+            vs%basin%fzws(:, j) = vs%grid%fzws(:, j)*shd%FRAC
+            vs%basin%thlq(:, j) = vs%grid%thlq(:, j)*shd%FRAC
+            vs%basin%lqws(:, j) = vs%grid%lqws(:, j)*shd%FRAC
+            vs%basin%tbar(:, j) = vs%grid%tbar(:, j)*shd%FRAC
+            vs%basin%gflx(:, j) = vs%grid%gflx(:, j)*shd%FRAC
+        end do
+        vs%basin%lzs = vs%grid%lzs*shd%FRAC
+        vs%basin%dzs = vs%grid%dzs*shd%FRAC
+        vs%basin%rofb = vs%grid%rofb*shd%FRAC
+        vs%basin%stgw = vs%grid%stgw*shd%FRAC
+        vs%basin%stge = vs%grid%stge*shd%FRAC
+        frac = shd%FRAC
+        where (vs%basin%albt > 0.0)
+            albtfrac = shd%FRAC
+        elsewhere
+            albtfrac = 0.0
+        end where
+        where (vs%basin%tpnd > 0.0)
+            tpndfrac = shd%FRAC
+        elsewhere
+            tpndfrac = 0.0
+        end where
+        where (vs%basin%tsno > 0.0)
+            tsnofrac = shd%FRAC
+        elsewhere
+            tsnofrac = 0.0
+        end where
+        where (vs%basin%tcan > 0.0)
+            tcanfrac = shd%FRAC
+        elsewhere
+            tcanfrac = 0.0
+        end where
+
+        !> Update variables.
+        do i = 1, shd%NAA
+            ii = shd%NEXT(i)
+            if (ii > 0) then
+                vs%basin%fsin(ii) = vs%basin%fsin(ii) + vs%basin%fsin(i)
+                vs%basin%fsdr(ii) = vs%basin%fsdr(ii) + vs%basin%fsdr(i)
+                vs%basin%fsdff(ii) = vs%basin%fsdff(ii) + vs%basin%fsdff(i)
+                vs%basin%flin(ii) = vs%basin%flin(ii) + vs%basin%flin(i)
+                vs%basin%ta(ii) = vs%basin%ta(ii) + vs%basin%ta(i)
+                vs%basin%qa(ii) = vs%basin%qa(ii) + vs%basin%qa(i)
+                vs%basin%pres(ii) = vs%basin%pres(ii) + vs%basin%pres(i)
+                vs%basin%uv(ii) = vs%basin%uv(ii) + vs%basin%uv(i)
+                vs%basin%wdir(ii) = vs%basin%wdir(ii) + vs%basin%wdir(i)
+                vs%basin%uu(ii) = vs%basin%uu(ii) + vs%basin%uu(i)
+                vs%basin%vv(ii) = vs%basin%vv(ii) + vs%basin%vv(i)
+                vs%basin%pre(ii) = vs%basin%pre(ii) + vs%basin%pre(i)
+                vs%basin%prern(ii) = vs%basin%prern(ii) + vs%basin%prern(i)
+                vs%basin%presn(ii) = vs%basin%presn(ii) + vs%basin%presn(i)
+                vs%basin%rcan(ii) = vs%basin%rcan(ii) + vs%basin%rcan(i)
+                vs%basin%sncan(ii) = vs%basin%sncan(ii) + vs%basin%sncan(i)
+                vs%basin%cmas(ii) = vs%basin%cmas(ii) + vs%basin%cmas(i)
+                vs%basin%tac(ii) = vs%basin%tac(ii) + vs%basin%tac(i)
+                vs%basin%tcan(ii) = vs%basin%tcan(ii) + vs%basin%tcan(i)
+                vs%basin%qac(ii) = vs%basin%qac(ii) + vs%basin%qac(i)
+                vs%basin%gro(ii) = vs%basin%gro(ii) + vs%basin%gro(i)
+                vs%basin%sno(ii) = vs%basin%sno(ii) + vs%basin%sno(i)
+                vs%basin%fsno(ii) = vs%basin%fsno(ii) + vs%basin%fsno(i)
+                vs%basin%albs(ii) = vs%basin%albs(ii) + vs%basin%albs(i)
+                vs%basin%rhos(ii) = vs%basin%rhos(ii) + vs%basin%rhos(i)
+                vs%basin%wsno(ii) = vs%basin%wsno(ii) + vs%basin%wsno(i)
+                vs%basin%tsno(ii) = vs%basin%tsno(ii) + vs%basin%tsno(i)
+                vs%basin%albt(ii) = vs%basin%albt(ii) + vs%basin%albt(i)
+                vs%basin%alvs(ii) = vs%basin%alvs(ii) + vs%basin%alvs(i)
+                vs%basin%alir(ii) = vs%basin%alir(ii) + vs%basin%alir(i)
+                vs%basin%gte(ii) = vs%basin%gte(ii) + vs%basin%gte(i)
+                vs%basin%zpnd(ii) = vs%basin%zpnd(ii) + vs%basin%zpnd(i)
+                vs%basin%pndw(ii) = vs%basin%pndw(ii) + vs%basin%pndw(i)
+                vs%basin%tpnd(ii) = vs%basin%tpnd(ii) + vs%basin%tpnd(i)
+                vs%basin%fstr(ii) = vs%basin%fstr(ii) + vs%basin%fstr(i)
+                vs%basin%pevp(ii) = vs%basin%pevp(ii) + vs%basin%pevp(i)
+                vs%basin%evap(ii) = vs%basin%evap(ii) + vs%basin%evap(i)
+                vs%basin%evpb(ii) = vs%basin%evpb(ii) + vs%basin%evpb(i)
+                vs%basin%arrd(ii) = vs%basin%arrd(ii) + vs%basin%arrd(i)
+                vs%basin%rofo(ii) = vs%basin%rofo(ii) + vs%basin%rofo(i)
+                vs%basin%qevp(ii) = vs%basin%qevp(ii) + vs%basin%qevp(i)
+                vs%basin%hfs(ii) = vs%basin%hfs(ii) + vs%basin%hfs(i)
+                vs%basin%gzero(ii) = vs%basin%gzero(ii) + vs%basin%gzero(i)
+                vs%basin%tsfs(ii, :) = vs%basin%tsfs(ii, :) + vs%basin%tsfs(ii, :)
+                vs%basin%ggeo(ii) = vs%basin%ggeo(ii) + vs%basin%ggeo(i)
+                vs%basin%rofs(ii) = vs%basin%rofs(ii) + vs%basin%rofs(i)
+                vs%basin%tbas(ii) = vs%basin%tbas(ii) + vs%basin%tbas(i)
+                vs%basin%thic(ii, :) = vs%basin%thic(ii, :) + vs%basin%thic(i, :)
+                vs%basin%fzws(ii, :) = vs%basin%fzws(ii, :) + vs%basin%fzws(i, :)
+                vs%basin%thlq(ii, :) = vs%basin%thlq(ii, :) + vs%basin%thlq(i, :)
+                vs%basin%lqws(ii, :) = vs%basin%lqws(ii, :) + vs%basin%lqws(i, :)
+                vs%basin%tbar(ii, :) = vs%basin%tbar(ii, :) + vs%basin%tbar(i, :)
+                vs%basin%gflx(ii, :) = vs%basin%gflx(ii, :) + vs%basin%gflx(i, :)
+                vs%basin%lzs(ii) = vs%basin%lzs(ii) + vs%basin%lzs(i)
+                vs%basin%dzs(ii) = vs%basin%dzs(ii) + vs%basin%dzs(i)
+                vs%basin%rofb(ii) = vs%basin%rofb(ii) + vs%basin%rofb(i)
+                vs%basin%stgw(ii) = vs%basin%stgw(ii) + vs%basin%stgw(i)
+                vs%basin%stge(ii) = vs%basin%stge(ii) + vs%basin%stge(i)
+                frac(ii) = frac(ii) + frac(i)
+                if (vs%basin%albt(i) > 0.0) albtfrac(ii) = albtfrac(ii) + albtfrac(i)
+                if (vs%basin%tpnd(i) > 0.0) tpndfrac(ii) = tpndfrac(ii) + tpndfrac(i)
+                if (vs%basin%tsno(i) > 0.0) tsnofrac(ii) = tsnofrac(ii) + tsnofrac(i)
+                if (vs%basin%tcan(i) > 0.0) tcanfrac(ii) = tcanfrac(ii) + tcanfrac(i)
+            end if
+        end do
+
+        !> DA average.
+        where (frac > 0.0)
+            vs%basin%fsin = vs%basin%fsin/frac
+            vs%basin%fsdr = vs%basin%fsdr/frac
+            vs%basin%fsdff = vs%basin%fsdff/frac
+            vs%basin%flin = vs%basin%flin/frac
+            vs%basin%ta = vs%basin%ta/frac
+            vs%basin%qa = vs%basin%qa/frac
+            vs%basin%pres = vs%basin%pres/frac
+            vs%basin%uv = vs%basin%uv/frac
+            vs%basin%wdir = vs%basin%wdir/frac
+            vs%basin%uu = vs%basin%uu/frac
+            vs%basin%vv = vs%basin%vv/frac
+            vs%basin%pre = vs%basin%pre/frac
+            vs%basin%prern = vs%basin%prern/frac
+            vs%basin%presn = vs%basin%presn/frac
+            vs%basin%rcan = vs%basin%rcan/frac
+            vs%basin%sncan = vs%basin%sncan/frac
+            where (tcanfrac > 0.0)
+                vs%basin%cmas = vs%basin%cmas/tcanfrac
+                vs%basin%tac = vs%basin%tac/tcanfrac
+                vs%basin%tcan = vs%basin%tcan/tcanfrac
+                vs%basin%qac = vs%basin%qac/tcanfrac
+                vs%basin%gro = vs%basin%gro/tcanfrac
+            end where
+            vs%basin%sno = vs%basin%sno/frac
+            vs%basin%fsno = vs%basin%fsno/frac
+            vs%basin%wsno = vs%basin%wsno/frac
+            where (tsnofrac > 0.0)
+                vs%basin%albs = vs%basin%albs/tsnofrac
+                vs%basin%rhos = vs%basin%rhos/tsnofrac
+                vs%basin%tsno = vs%basin%tsno/tsnofrac
+            end where
+            where (albtfrac > 0.0)
+                vs%basin%albt = vs%basin%albt/albtfrac
+                vs%basin%alvs = vs%basin%alvs/albtfrac
+                vs%basin%alir = vs%basin%alir/albtfrac
+            end where
+            vs%basin%gte = vs%basin%gte/frac
+            vs%basin%zpnd = vs%basin%zpnd/frac
+            vs%basin%pndw = vs%basin%pndw/frac
+            where (tpndfrac > 0.0)
+                vs%basin%tpnd = vs%basin%tpnd/tpndfrac
+                vs%basin%fstr = vs%basin%fstr/tpndfrac
+            end where
+            vs%basin%pevp = vs%basin%pevp/frac
+            vs%basin%evap = vs%basin%evap/frac
+            vs%basin%evpb = vs%basin%evpb/frac
+            vs%basin%arrd = vs%basin%arrd/frac
+            vs%basin%rofo = vs%basin%rofo/frac
+            vs%basin%qevp = vs%basin%qevp/frac
+            vs%basin%hfs = vs%basin%hfs/frac
+            vs%basin%gzero = vs%basin%gzero/frac
+            vs%basin%ggeo = vs%basin%ggeo/frac
+            vs%basin%rofs = vs%basin%rofs/frac
+            vs%basin%tbas = vs%basin%tbas/frac
+            vs%basin%lzs = vs%basin%lzs/frac
+            vs%basin%dzs = vs%basin%dzs/frac
+            vs%basin%rofb = vs%basin%rofb/frac
+            vs%basin%stgw = vs%basin%stgw/frac
+            vs%basin%stge = vs%basin%stge/frac
+        end where
+        do j = 1, 4
+            where (frac > 0.0)
+                vs%basin%tsfs(:, j) = vs%basin%tsfs(:, j)/frac
+            end where
+        end do
+        do j = 1, shd%lc%IGND
+            where (frac > 0.0)
+                vs%basin%thic(:, j) = vs%basin%thic(:, j)/frac
+                vs%basin%fzws(:, j) = vs%basin%fzws(:, j)/frac
+                vs%basin%thlq(:, j) = vs%basin%thlq(:, j)/frac
+                vs%basin%lqws(:, j) = vs%basin%lqws(:, j)/frac
+                vs%basin%tbar(:, j) = vs%basin%tbar(:, j)/frac
+                vs%basin%gflx(:, j) = vs%basin%gflx(:, j)/frac
+            end where
+        end do
 
     end subroutine
 

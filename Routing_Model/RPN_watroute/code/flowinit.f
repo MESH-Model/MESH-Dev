@@ -629,6 +629,8 @@ c      stop 'program aborted in flowinit @ 164'
                    end do
                 endif
                 n=next(n)
+!              CHECK IN CASE (NAA == NA).
+                if(n.eq.next(n)) exit
              end do
           endif                 !inbsnflg
        end do
@@ -922,6 +924,8 @@ c      stop 'program aborted in flowinit @ 164'
      *                 datemp(n),qda(n),datemp(nnx),qda(nnx)
                endif
                n=next(n)
+!             CHECK IN CASE (NAA == NA).
+               if(n.eq.next(n)) exit
             end do
          endif                  ! inbsn
       end do
@@ -1052,6 +1056,8 @@ c      stop 'program aborted in flowinit @ 164'
             do while(.not.resflag.and.n.le.naa)
                qda(n)=qda(n)+qinit(k)
                n=next(n)
+!           CHECK IN CASE (NAA == NA).
+               if(n.eq.next(n)) exit
 !           CHECK TO SEE IF WE'VE RUN INTO ANOTHER RESERVOIR
 !           WE HAVE TO CHECK THEM ALL
                do mm=1,noresv
@@ -1369,7 +1375,7 @@ c         Copied over from runof6.for (thr=1):  AKB July 11, 2002
 !      m=1
 !      jan=1
 !      tot1=0.
-      qi2(n)=0.0
+      qi2(na)=0.0
 
       if(iopt.ge.2)then
          write(53,6010)
