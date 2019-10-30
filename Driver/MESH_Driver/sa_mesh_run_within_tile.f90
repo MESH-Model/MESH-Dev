@@ -136,18 +136,19 @@ module sa_mesh_run_within_tile
             i = i + 1
 
             !> Snow.
-            allocate(sno(6*iin))
+            allocate(sno(7*iin))
             sno((1 + iin*0):(iin*1)) = vs%tile%sno(ii1:ii2)
             sno((1 + iin*1):(iin*2)) = vs%tile%albs(ii1:ii2)
             sno((1 + iin*2):(iin*3)) = vs%tile%fsno(ii1:ii2)
             sno((1 + iin*3):(iin*4)) = vs%tile%rhos(ii1:ii2)
             sno((1 + iin*4):(iin*5)) = vs%tile%wsno(ii1:ii2)
             sno((1 + iin*5):(iin*6)) = vs%tile%tsno(ii1:ii2)
+            sno((1 + iin*6):(iin*7)) = vs%tile%rofsno(ii1:ii2)
             call MPI_Isend(sno, size(sno), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> Surface or at near surface.
-            allocate(sfc((13 + 4)*iin))
+            allocate(sfc((13 + 4 + 2)*iin))
             sfc((1 + iin*0):(iin*1)) = vs%tile%albt(ii1:ii2)
             sfc((1 + iin*1):(iin*2)) = vs%tile%alvs(ii1:ii2)
             sfc((1 + iin*2):(iin*3)) = vs%tile%alir(ii1:ii2)
@@ -164,6 +165,8 @@ module sa_mesh_run_within_tile
             do j = 0, 3
                 sfc((1 + iin*(13 + j)):(iin*(14 + j))) = vs%tile%tsfs(ii1:ii2, j + 1)
             end do
+            sfc((1 + iin*17):(iin*18)) = vs%tile%prern(ii1:ii2)
+            sfc((1 + iin*18):(iin*19)) = vs%tile%presno(ii1:ii2)
             call MPI_Isend(sfc, size(sfc), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
@@ -218,8 +221,8 @@ module sa_mesh_run_within_tile
 
                 !> Allocate temporary arrays.
                 allocate(cnpy(7*iin))
-                allocate(sno(6*iin))
-                allocate(sfc((13 + 4)*iin))
+                allocate(sno(7*iin))
+                allocate(sfc((13 + 4 + 2)*iin))
                 allocate(sl((2 + 4*s)*iin))
                 allocate(lz(iin))
                 allocate(dz(2*iin))
@@ -266,6 +269,7 @@ module sa_mesh_run_within_tile
                 vs%tile%rhos(ii1:ii2) = sno((1 + iin*3):(iin*4))
                 vs%tile%wsno(ii1:ii2) = sno((1 + iin*4):(iin*5))
                 vs%tile%tsno(ii1:ii2) = sno((1 + iin*5):(iin*6))
+                vs%tile%rofsno(ii1:ii2) = sno((1 + iin*6):(iin*7))
 
                 !> Surface or at near surface.
                 vs%tile%albt(ii1:ii2) = sfc((1 + iin*0):(iin*1))
@@ -284,6 +288,8 @@ module sa_mesh_run_within_tile
                 do j = 0, 3
                     vs%tile%tsfs(ii1:ii2, j + 1) = sfc((1 + iin*(13 + j)):(iin*(14 + j)))
                 end do
+                vs%tile%prern(ii1:ii2) = sfc((1 + iin*17):(iin*18))
+                vs%tile%presno(ii1:ii2) = sfc((1 + iin*18):(iin*19))
 
                 !> Soil layers.
                 vs%tile%tbas(ii1:ii2) = sl((1 + iin*0):(iin*1))
@@ -393,6 +399,7 @@ module sa_mesh_run_within_tile
         !> Reset variables non-prognostic variables.
         vs%tile%zsno(il1:il2) = 0.0
         vs%tile%fsno(il1:il2) = 0.0
+        vs%tile%rofsno(il1:il2) = 0.0
         vs%tile%albt(il1:il2) = 0.0
         vs%tile%alvs(il1:il2) = 0.0
         vs%tile%alir(il1:il2) = 0.0
