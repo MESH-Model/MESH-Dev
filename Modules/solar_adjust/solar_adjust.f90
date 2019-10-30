@@ -7,23 +7,22 @@
 !> Fortran code optimized/consolidated; subroutine isolated
 !>  ('program' component replaced by 'solar_adjust_module'): Feb 2, 2018.
 !>
-!> Parameters (options):
-!*  Trans: Mean transmissivity of the atmosphere.
-!*  Time_Zone: The time zone of the study area.
-!*  CalcFreq: Iterations per day (must divide the day into equal increments of minutes). [--].
-!>
-!*  rsrd_adjusted: Adjusted incoming shortwave radiation. [W m-2].
-!*  rlds_adjusted: Adjusted incoming longwave radiation. [W m-2].
+!*  rsrd_adjusted: Adjusted incoming short wave radiation. [W m-2].
+!*  rlds_adjusted: Adjusted incoming long wave radiation. [W m-2].
 !*  temp_adjusted: Adjusted air temperature. [K].
 !*  pres_adjusted: Adjusted barometric pressure. [Pa].
 !*  humd_adjusted: Adjusted specific humidity. [kg kg-1].
+!*  rain_adjusted: Adjusted precipitation. [mm s-1].
+!*  wind_adjusted: Adjusted wind speed. [m s-1].
+
 subroutine calc_rsrd_adjusted( &
     elev, xlng, ylat, slope, aspect, delta, &
-    nvals, Trans, Time_Zone, CalcFreq, &
-    rsrd_dtmin, rlds_dtmin, temp_dtmin, pres_dtmin, humd_dtmin, &
-    rsrd, rlds, temp, pres, humd, rsrd_adjusted, rlds_adjusted, &
-    temp_adjusted, pres_adjusted, humd_adjusted, &
-    now_year, now_jday, now_hour, now_mins, dtmins)
+    nvals, Time_Zone, CalcFreq, rsrd_dtmin, rlds_dtmin, &
+    temp_dtmin, pres_dtmin, humd_dtmin, rain_dtmin, wind_dtmin, &
+    rsrd, rlds, temp, pres, humd, rain, wind, rsrd_adjusted, &
+    rlds_adjusted, temp_adjusted, pres_adjusted, humd_adjusted, &
+    rain_adjusted, wind_adjusted, now_year, now_month, &
+    now_jday, now_hour, now_mins, dtmins)
 
     implicit none
 
@@ -35,11 +34,37 @@ subroutine calc_rsrd_adjusted( &
     real, parameter :: DEGtoRAD365 = 2.0*pi/365.0
     real, parameter :: EQTCons = (pi/180.0)*(360.0/365.0) ! A constant that will be used for the calculation of the equation of time.
 
+
+! !* Option 1: Tables of temperature lapse rate derived from the high resolution (2.5km by 2.5km) GEM run for the period Oct, 2016 - Sept, 2019
+
+      real tlapse(12), plapse(12), vapcoeff(12), lwlapse(12)
+
+      DATA tlapse / 5.458, 5.783, 5.591, 6.939, 8.082, 7.907, &
+                    6.632, 6.584, 6.094, 6.689, 7.060, 5.776 /
+
+      DATA plapse / 0.35, 0.35, 0.35, 0.30, 0.25, 0.20, &
+                    0.20, 0.20, 0.20, 0.25, 0.30, 0.35 /
+
+      DATA vapcoeff / 0.41, 0.42, 0.40, 0.39, 0.38, 0.36, &
+                      0.33, 0.33, 0.36, 0.37, 0.40, 0.40 /
+
+      DATA lwlapse / 7.29, 8.85, 4.84, 18.37, 32.23, 28.99, &
+                     36.34, 33.58, 25.99, 13.16, 0.54, 14.28 /
+
+! ! !* Option 2: Tables of temperature lapse rate, vapor pressure coefficient (Kunkel et al., 1989),and precipitation–elevation adjustment factors(Thornton et al.1997) for each months from Northern Hemisphere.
+
+      ! real tlapse(12), plapse(12), vapcoeff(12)
+      ! DATA tlapse / 4.40, 5.90, 7.10, 7.80, 8.10, 8.20, &
+                ! 8.10, 8.10, 7.70, 6.80, 5.50, 4.70 /
+      ! DATA plapse / 0.35, 0.35, 0.35, 0.30, 0.25, 0.20, &
+                ! 0.20, 0.20, 0.20, 0.25, 0.30, 0.35 /
+      ! DATA vapcoeff / 0.41, 0.42, 0.40, 0.39, 0.38, 0.36, &
+                  ! 0.33, 0.33, 0.36, 0.37, 0.40, 0.40 /
+
     !> Parameters.
-    !*  Trans: Mean transmissivity of the atmosphere.
     !*  Time_Zone: The time zone of the study area (+ to East and - to West).
     !*  CalcFreq: Iterations per day (must divide the day into equal increments of minutes). [--].
-    real, intent(in) :: Trans, Time_Zone
+    real, intent(in) :: Time_Zone
     integer, intent(in) :: CalcFreq
 
     !> Input variables.
@@ -56,6 +81,8 @@ subroutine calc_rsrd_adjusted( &
     !*  temp: air temperature (input). [K].
     !*  pres: barometric pressure (input). [Pa].
     !*  humd: specific humidity (input). [kg kg-1].
+    !*  rain: precipitation. [mm s-1].
+    !*  wind: wind speed. [m s-1].
     !*  xlng: Longitude. [degrees].
     !*  ylat: Latitude. [degrees].
     !*  gru_elev: Weighted average elevation of GRUs. [m].
@@ -63,35 +90,39 @@ subroutine calc_rsrd_adjusted( &
     !*  gru_slope: Weighted average slope of the surface. [--].
     !*  gru_aspect: Weighted average aspect of the surface.
     integer, intent(in) :: nvals, rsrd_dtmin, rlds_dtmin, temp_dtmin, &
-                           pres_dtmin, humd_dtmin, now_year, now_jday, &
+                           pres_dtmin, humd_dtmin, rain_dtmin, &
+                           wind_dtmin, now_year, now_month, now_jday, &
                            now_hour, now_mins, dtmins
 
-    real, dimension(nvals), intent(in) :: rsrd, rlds, temp, pres, humd
+    real, dimension(nvals), intent(in) :: rsrd, rlds, temp, pres, &
+                                          humd, rain, wind
     real, dimension(nvals), intent(in) :: elev, xlng, ylat, slope, &
                                           aspect, delta
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     integer, dimension(4) :: zkt = (/ 767, 768, 770, 773/)
+!   integer, dimension(4) :: zkt = (/ 767, 768, 770, 773/)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     !> Output variables.
     !*  rsrd_adjusted, rlds_adjusted, temp_adjusted, pres_adjusted, humd_adjusted: Adjusted incoming shortwave radiation for slope and aspect. [W m-2].
     !*  Adjusted air temperature. [K],  Adjusted barometric pressure. [Pa] & Adjusted specific humidity. [kg kg-1] for elevation difference.
-    real, dimension(nvals), intent(out) :: rsrd_adjusted
-    real, dimension(nvals), intent(out) :: rlds_adjusted
-    real, dimension(nvals), intent(out) :: temp_adjusted
-    real, dimension(nvals), intent(out) :: pres_adjusted
-    real, dimension(nvals), intent(out) :: humd_adjusted
+        real, dimension(nvals), intent(out) :: rsrd_adjusted
+        real, dimension(nvals), intent(out) :: rlds_adjusted
+        real, dimension(nvals), intent(out) :: temp_adjusted
+        real, dimension(nvals), intent(out) :: pres_adjusted
+        real, dimension(nvals), intent(out) :: humd_adjusted
+        real, dimension(nvals), intent(out) :: rain_adjusted
+        real, dimension(nvals), intent(out) :: wind_adjusted
 
     !> Working variables.
     integer MINS_int
-    real EQTVar, EQT, Dec, Rad_vec, Sol, Cdec, Sdec
+    real EQTVar, EQT, Dec, Rad_vec, Sol, Cdec, Sdec, Trans
     real, dimension(nvals) :: &
         Clat, Slat, x, y, z, SHVar, SH, Hr_Ang, t1, t2, t10, t20, &
-        Czen, ACzen, oam, diff, &
-        Iterr, cosxs0, cosxsL, Idir, Idiff, Sum_Idir, Sum_Diff, &
-        Sum_Flatd, Sum_Flatf, Qdirect, Qdiffuse, Qflat, &
-        Tnew, Told, esold, esnew, eaold, eanew, rhold
+        Czen, ACzen, oam, diff, Iterr, cosxs0, cosxsL, Idir, &
+        Idiff, Sum_Idir, Sum_Diff, Sum_Flatd, Sum_Flatf, Qdirect, &
+        Qdiffuse, Qflat, Tnew, Told, esold, esnew, eaold, eanew, &
+        rhold, Tdew_old, Tdew_new, epsilon_corr, rain_frac, windcorr
 
     !> Local variables.
     integer kk
@@ -113,11 +144,12 @@ subroutine calc_rsrd_adjusted( &
     t2 = (-x*Clat + z*Slat)*Sdec
     t10 = Clat*Cdec
     t20 = Slat*Sdec
+    Trans = 0.818 - (0.064*sin(2.0*pi*REAL(now_jday - 90)/365.0))        !*  Trans: Mean transmissivity of the atmosphere.
 
     !> Hour Angle calculation in now_jday day and the Hour Angle varies between -pi and pi and it is 0 at solar noon.
     EQTVar = EQTCons*REAL(now_jday - 81)
-    EQT = 9.87*sin(2.0*EQTVar) - 7.53*cos(EQTVar) - 1.50*sin(EQTVar)    ! the equation of time from SunAngle, http://www.susdesign.com/sunangle/
-!    SHVar = REAL(60.0*REAL(now_hour))                                   ! to run it on hourly bases
+    EQT = 9.87*sin(2.0*EQTVar) - 7.53*cos(EQTVar) - 1.50*sin(EQTVar)     ! the equation of time from SunAngle, http://www.susdesign.com/sunangle/
+!   SHVar = REAL(60.0*REAL(now_hour))                                    ! to run it on hourly bases
     SHVar = REAL(NINT(60.0*REAL(now_hour)) + now_mins)
     SHVar = SHVar + EQT + (4.0*xlng) - (60.0*Time_Zone)
     SH = MODULO(SHVar, 1440.0)
@@ -128,17 +160,12 @@ subroutine calc_rsrd_adjusted( &
         Hr_Ang = DEGtoRAD*(SH - 180.0)
     end where
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     write(9189,*)Hr_Ang(zkt)
-!     write(9189,'(1512(2x,f10.4))')Hr_Ang
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     !> Time-stepping (for integral).
     MINS_int = NINT(24.0*60.0/REAL(CalcFreq))
 
     !> Accumulate radiative fluxes.
     Sum_Idir = 0.0; Sum_Diff = 0.0; Sum_Flatd = 0.0; Sum_Flatf = 0.0
-!    do kk = 1, NINT(REAL(rsrd_dtmin)/REAL(MINS_int))                    ! to run it on hourly bases
+!    do kk = 1, NINT(REAL(rsrd_dtmin)/REAL(MINS_int))                   ! to run it on hourly bases
     do kk = 1, NINT(REAL(dtmins)/REAL(MINS_int))                        ! set to MESH run Time-stepping
         Czen = Cdec*Clat*cos(Hr_Ang) + Sdec*Slat                        ! cos of zenith angle
         ACzen = acos(Czen)/DEGtoRAD
@@ -185,72 +212,75 @@ subroutine calc_rsrd_adjusted( &
     elsewhere
         rsrd_adjusted = 0.0
     end where
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!! Other climate variables correction for elevation differences !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!!!!!!!! Other climate variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!* Option 1: Precipitation Conserved
+    rain_adjusted = rain
 
-    temp_adjusted = temp + (delta*(-6.0)/1000.0)                        !* Change 6.0 K/km is lapse rate (Bernier et al. 2011) and should be moved into MESH run file for calibration.
+!* Option 2: Precipitation correction using elevation based lapse  (Thornton, 1997)
+   ! rain_frac = plapse(now_month)*delta/1000.0
+   ! rain_adjusted = rain*(1.0 + rain_frac)/(1.0 - rain_frac)
 
-    rlds_adjusted = rlds - (delta*2.9/100.0)                            !* Change 2.9 or 2.8 W/m^2 / 100 m is lapse rate (Marty et al. 2002) and shall be moved into MESH run file for calibration.
-!   rlds_adjusted = rlds*((temp_adjusted/temp)**4)                      !* Based on Temperature adjustment.
+!* Option 1: Linear lapse rates (measured, seasonal, constant, neutral stability) using the table provided above.
+    temp_adjusted = temp - (delta*tlapse(now_month)/1000.0)
 
+! !* Option 2: Based on uniform monthly lapse rate of 6.0 K/km (Bernier et al. 2011) and it can be moved into MESH run file for calibration.
+   ! temp_adjusted = temp + (delta*(-6.0)/1000.0)
+
+!* Pressure correction for elevation differences.
     pres_adjusted = pres*exp(-(delta*GCons)/(RCons*temp_adjusted))
 
-    Told = temp - 273.16
-    Tnew = temp_adjusted - 273.16                                       ! Convert temperature from (Kelvin) to (degree C)
+!* Option 1: Specific humidity correction for elevation difference by conserving the relative humidity
+   Told = temp - 273.16                                                ! Convert temperature from (Kelvin) to (degree C)
+   Tnew = temp_adjusted - 273.16                                       ! Convert temperature from (Kelvin) to (degree C)
+   eaold = humd*pres/(0.378*humd + 0.622)
+   where (Told < 0.0)
+       esold = 611.0*exp(21.874*Told/(Told + 265.5))                   ! Used from CLASS V3.6 Mannual, page 79
+   elsewhere
+       esold = 611.0*exp(17.269*Told/(Told + 237.3))                   ! Used from CLASS V3.6 Mannual, page 79
+   end where
 
-    eaold = humd*pres/(0.378*humd + 0.622)
+   rhold = 100.0*eaold / esold
 
-    where (Told < 0.0)
-        esold = 611.0*exp(21.874*Told / (Told + 265.5))                ! Used from CLASS V3.6 Mannual, page 79
-    elsewhere
-        esold = 611.0*exp(17.269*Told / (Told + 237.3))                ! Used from CLASS V3.6 Mannual, page 79
-    end where
+   where (Tnew < 0.0)
+       esnew = 611.0*exp(21.874*Tnew/(Tnew + 265.5))                   ! Used from CLASS V3.6 Mannual, page 79
+   elsewhere
+       esnew = 611.0*exp(17.269*Tnew/(Tnew + 237.3))                   ! Used from CLASS V3.6 Mannual, page 79
+   end where
+   eanew = rhold*esnew/100.0
+   humd_adjusted = 0.622*eanew/(pres_adjusted - 0.378*eanew)
 
-    rhold = 100.0*eaold / esold
+! !* Option 2: Specific humidity correction for elevation difference using dew point temperature (Kunkel, 1989)
+   ! Told = temp - 273.16                                              !* Convert temperature from (Kelvin) to (degree C).
+   ! Tnew = temp_adjusted - 273.16                                     !* Convert temperature from (Kelvin) to (degree C).
+   ! eaold = humd*pres/(0.378*humd + 0.622)
 
-    where (Tnew < 0.0)
-        esnew = 611.0*exp(21.874*Tnew / (Tnew + 265.5))                ! Used from CLASS V3.6 Mannual, page 79
-    elsewhere
-        esnew = 611.0*exp(17.269*Tnew / (Tnew + 237.3))                ! Used from CLASS V3.6 Mannual, page 79
-    end where
+   ! where (Told .LE. 0.0)
+   ! Tdew_old = 272.55*LOG(eaold/611.15)/(22.452 - LOG(eaold/611.15))  ! Buck, 1981 for temperature less than or equal to zero.
+   ! Tdew_new = Tdew_old - (delta*vapcoeff(now_month)*272.55/22.452)/1000.0
+   ! eanew = 611.15*exp(22.452*Tdew_new/(Tdew_new + 272.55))
+   ! elsewhere
+   ! Tdew_old = 240.97*LOG(eaold/611.21)/(17.502 - LOG(eaold/611.21))  ! Buck, 1981 for temperatures above 0 °C.
+   ! Tdew_new = Tdew_old - (delta*vapcoeff(now_month)*240.97/17.502)/1000.0
+   ! eanew = 611.21*exp(17.502*Tdew_new/(Tdew_new + 240.97))
+   ! end where
+   ! humd_adjusted = 0.622*eanew/(pres_adjusted - 0.378*eanew)
 
-    eanew = rhold*esnew / 100.0
+!* Option 1: Incoming longwave  solar radiation correction for topography based on Stefan-Boltzmann law and Satterlund’s (1979) formula
+   epsilon_corr = ((100*eanew/temp_adjusted)**(1/7))/((100*eaold/temp)**(1/7))
+   rlds_adjusted = rlds*epsilon_corr*(temp_adjusted/temp)**4
 
-    humd_adjusted = 0.622*eanew/(pres_adjusted - 0.378*eanew)
+! !* Option 2: Based on developed lapsrate using GEM 2.5 km or (Marty et al. 2002) value of 2.9 W/m^2 / 100 m can be used.
+   ! rlds_adjusted = rlds - (delta*lwlapse(now_month)/1000.0)
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! added for check !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!         write(9190,*)elev(zkt)
-!         write(9191,*)aspect(zkt)
-!         write(9192,*)delta(zkt)
-!         write(9193,*)slope(zkt)
-!         write(9194,*)ylat(zkt)
-!         write(9195,*)xlng(zkt)
+!* Option 1: Precipitation Conserved
+   wind_adjusted = wind
 
-!         write(9200,*)rsrd_adjusted(zkt)
-!         write(9201,*)rlds_adjusted(zkt)
-!         write(9202,*)temp_adjusted(zkt)
-!         write(9203,*)pres_adjusted(zkt)
-!         write(9204,*)humd_adjusted(zkt)
-!         write(9205,*)wind_adjusted(zkt)
-!         write(9206,*)rain_adjusted(zkt)
-!         write(9207,*)temp(zkt)
-!         write(9208,*)pres(zkt)
-!         write(9209,*)humd(zkt)
-!         write(9300,*)rlds(zkt)
-
-!         write(9207,*)now_month
-!         write(9208,*)tlapse(now_month)
-
-!         write(9191,'(332(2x,f10.4))')rsrd_adjusted
-!         write(9192,'(332(2x,f10.4))')elev
-!         write(9193,'(332(2x,f10.4))')aspect
-!         write(9194,'(332(2x,f10.4))')slope
-!         write(9195,'(332(2x,f10.4))')ylat
-!         write(9196,'(332(2x,f10.4))')xlng
-!         write(9197,'(332(2x,f10.4))')temp_adjusted
-!         write(9198,'(332(2x,f10.4))')pres_adjusted
-!         write(9199,'(332(2x,f10.4))')humd_adjusted
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! !* Option 2: Using The wind weighting factor, used to modify the wind speed is given by Liston and Sturm (1998)
+!  windcorr = (1.0 + ((2.0*delta/10000.0)*exp(-3.0*(elev - delta)/10000.0)))
+!  wind_adjusted = wind * windcorr
 
     return
 
