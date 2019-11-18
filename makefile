@@ -90,7 +90,7 @@ OUT=sa_mesh
 # If MPI is enabled, switch to OMPI compiler and rename output.
 # Otherwise add MPI stub to 'OBJECTS'.
 ifeq ($(MPI),ompi)
-FC=mpifort
+FC=mpif90
 OUT=mpi_sa_mesh
 else
 OBJECTS:=	mpi_stub.o $(OBJECTS)

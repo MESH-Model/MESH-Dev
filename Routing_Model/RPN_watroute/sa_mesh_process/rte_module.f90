@@ -7,7 +7,7 @@ module rte_module
     !*  mindtmin: Minimum time step [s].
     !*  maxindex: Maximum number of interations in reducing the time step [--].
     !*  dtminfrac: Time-step reducing factor [--].
-    real(kind = 4) :: dtminusr = 1800.0, mindtmin = 10.0, maxindex = 50, dtminfrac = 0.75
+    real(kind = 4) :: dtminusr = 450.0, mindtmin = 60.0, maxindex = 50, dtminfrac = 0.75
 
     !> Convergence threshold.
     !*  convthreshusr: convergence level for channel routing.
@@ -578,7 +578,8 @@ module rte_module
         !> Local variables for dynamic time-stepping.
         real(kind = 4) qi2_strt(naa), qo2_strt(naa), route_dt, hr_div, sec_div, dtmin
         real tqi1, tqo1, tax, tqo2, tstore2, tstore1
-        integer indexi, no_dtold
+        integer indexi, no_dtold, i, j, ii
+	real, dimension(:), allocatable :: rsvr_inflow, inline_qi, inline_stgch, inline_qo
 
         !> Local diagnostic variables.
 !        integer year_last, month_last, day_last, hour_last
@@ -662,89 +663,15 @@ module rte_module
         end if
 
         !> If flow insertion, use simulated instead of flow inserted value at gauge location.
-        if (trim(strfw_option) == 'streamflow_insertion') then
-            do l = 1, no
-                n = fms%stmg%meta%rnk(l)
-                qo2_strt(n) = qo2sim(n)
-            end do
-        end if
+        do l = 1, no
+            n = fms%stmg%meta%rnk(l)
+            qo2_strt(n) = qo2sim(n)
+        end do
 
-        !> Calculate a dynamic dtmin by doing a quick and dirty routing
-        !> This helps to ensure that the routing solutions inside the route function
-        !> are able to converge to a solution
-        !> We are assuming that the channels are not overflowing, so if it turns out that
-        !> there is overbank flow/storage, then route may have to iterate a bit longer to
-        !> find the solution even if dtmin is relatively small
-!DD  Override the value calculated above by timer.f (fixed for all hours)
-        dtmin = dtminusr  ! specified by the user and read in by rte.f
-!        dtminfrac = 0.75
-!        maxindex = 50   ! Permit more loops in this version of the routing loop since qo2 has no weighting applied
-
-        do n = 1, naa
-
-            tqo1 = qo2(n)
-
-            !> If flow insertion, rely on simulated instead of possibly
-            !> inserted flow value at gauge location to estimate required time-step.
-            if (trim(strfw_option) == 'streamflow_insertion') then
-                do l = 1, no
-                    if (iflowgrid(l) == n) then
-                        tqo1 = qo2sim(n)
-                    end if
-                end do
-            end if
-!            tqo1 = 0.0
-
-            tqi1 = qi2(n)
-15          indexi = 0
-            if (dtmin <= mindtmin) exit
-            no_dt = max(int(3599.0/dtmin) + 1, 1)
-            route_dt = 3600.0/float(no_dt)
-            sec_div = route_dt/2.0
-            tax = store1(n)/rl(n)
-!            tqo2 = 0.0
-            tqo2 = max(tax, 0.0)**1.67*slope(n)/chawid(n)**0.667/r2n(n)
-
-            !> Use qi2 = 0.0 below to really constrain dtmin by keeping store2 low
-            !> We don't want to set qi2 to zero though because it is used in route
-            !> so we just use a hard-coded 0.0 in this equation
-!16          tstore2 = store1(n)
-16          tstore2 = store1(n) + (tqi1 + 0.0 - tqo1 - tqo2)*sec_div
-
-            !> Now check to see if this qo2 is large enough that it will cause problems
-            !> in the next time step when it is put into qo1.
-            !> This has been known to happen when there is a sudden reduction in qi2 compared to qi1
-!            tstore1 = tstore2
-            tstore1 = tstore2 + (-tqo2)*sec_div
-
-            !> If qo2 is so large that it's emptying the grid cell's storage in one time
-            !> step, then we need to reduce the size of the time step to prevent that from
-            !> happening. This is analogous to meeting the CFL condition in advection solvers.
-            !> However, if store1 was very small, then small or even slightly negative store2
-            !> might be a legitimate solution (i.e. the cell has actually dried up). So we'll let that go.
-            !> Note that we also need to reduce the time step if we anticipate that qo1 will be too large
-            !> in our next forecast/analysis time.
-            if (tstore2 < 0.0 .or. tstore1 < 0.0) then
-
-                !> Keep making qo2 smaller untill store2 becomes positive.
-                tqo2 = tqo2/2.0
-                indexi = indexi + 1
-
-                !> Reduce the time step by a factor of dtminfrac (default = 0.75, set above).
-                if (indexi > maxindex) then
-                    dtmin = dtmin*dtminfrac
-                    go to 15
-                end if
-
-                !> Redo the store2 calculation within the same iteration.
-                go to 16
-            end if
-
-        end do !n = 1, naa
-
-        !> Re-specifying dtmin as dtminusr cancels the effect of the code immediately above.
-        !> However, if the iteration loop in route is unstable, dtmin still decreases.
         dtmin = dtminusr
+
+        !> Allocate the variables for output.
+        allocate(inline_qi(na), inline_stgch(na), inline_qo(na))
 
         !> Let the time step be as small as mindtmin.
 17      dtmin = max(mindtmin, dtmin)
@@ -755,8 +682,18 @@ module rte_module
         hr_div = sec_div/3600.0
         exitstatus = 0
 
+        !> Initialize the variables for output.
+        inline_qi = 0.0; inline_stgch = 0.0; inline_qo = 0.0
+
         !> Override the value declared above (fixed for all hours).
         a6 = dtmin
+
+	! Restore the input values from the start of the time step in case of hour restarting
+	do n=1,naa
+            qi2(n) = qi2_strt(n)
+            qo2(n) = qo2_strt(n)
+            store2(n) = store2_strt(n)
+        end do
 
         !> The value of dtmin has been used to determine how many
         !> times route is called. Route will determine a new dtmin
@@ -768,6 +705,12 @@ module rte_module
         !> Prepare arrays for storing output (averaged over the routing time-step).
         if (.not. allocated(avr_qo)) allocate(avr_qo(na))
         avr_qo = 0.0
+
+!> Reset SA_MESH output variables (for averaging).
+        !> Setting these to zero also prevents updating from the state variables upon return.
+!        if (associated(out%ts%grid%qi)) out%ts%grid%qi = 0.0
+!        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = 0.0
+!        if (associated(out%ts%grid%qo)) out%ts%grid%qo = 0.0
 
         !> ROUTE ROUTES WATER THROUGH EACH SQUARE USING STORAGE ROUTING.
         !> rev. 9.3.11  Feb.  17/07  - NK: force hourly time steps for runoff
@@ -801,21 +744,35 @@ module rte_module
                     end do
                     dtmin = 3600.0/real(no_dt)
 
-                    !> Restore the input values from the start of the time step.
-                    qi2(1:naa) = qi2_strt(1:naa)
-                    qo2(1:naa) = qo2_strt(1:naa)
-                    store2(1:naa) = store2_strt(1:naa)
                     go to 17
 
                 end if
             end if
 
             !> Update MESH output variables (for averaging).
-            if (associated(out%ts%grid%qi)) out%ts%grid%qi = out%ts%grid%qi + qi2
-            if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = out%ts%grid%stgch + store2
-            if (associated(out%ts%grid%qo)) out%ts%grid%qo = out%ts%grid%qo + qo2
+            if (associated(out%ts%grid%qi)) inline_qi = inline_qi + qi2
+            if (associated(out%ts%grid%stgch)) inline_stgch = inline_stgch + store2
+
+!EG_MOD: Compute average flow based on qo1 and qo2
+!            if (associated(out%ts%grid%qo)) inline_qo = inline_qo + qo2
+	    if (associated(out%ts%grid%qo)) inline_qo = inline_qo + (qo1 + qo2) / 2.
 
         end do !n = 1, no_dt
+
+! EG_MOD: Compute total reservoir inflow (not including overlake inputs)
+
+	allocate(rsvr_inflow(fms%rsvr%n))
+	rsvr_inflow = 0.0
+
+	do j = 1, fms%rsvr%n
+  	  do i = 1, shd%NA
+    	    ii = shd%NEXT(i)
+    	    if (.not. ii > 0) cycle
+    	    if (shd%IREACH(ii) == j .and. shd%IREACH(i) == 0) then
+	      rsvr_inflow(j) = rsvr_inflow(j) + inline_qo(i)
+    	    end if
+  	  end do
+	end do
 
         !> Remember the last processed date/time in case need to output flow ICs after the time loop.
 !        year_last = year1
@@ -826,9 +783,22 @@ module rte_module
         !> Update SA_MESH output variables.
         !> Output variables are updated at every model time-step; multiply averages
         !> by the number of model time-steps in the routing time-step
-        if (associated(out%ts%grid%qi)) out%ts%grid%qi = out%ts%grid%qi/no_dt*(3600/ic%dts)
-        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = out%ts%grid%stgch/no_dt*(3600/ic%dts)
-        if (associated(out%ts%grid%qo)) out%ts%grid%qo = out%ts%grid%qo/no_dt*(3600/ic%dts) !same as avr_qo
+
+! EG_MOD: WE DO NOT COMPUTE RESERVOIR INFLOW THE SAME WAY ANYMORE
+!        if (associated(out%ts%grid%qi)) out%ts%grid%qi = inline_qi/no_dt*(3600/ic%dts)
+
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = inline_stgch/no_dt*(3600/ic%dts)
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = inline_qo/no_dt*(3600/ic%dts) !same as avr_qo
+
+! EG_MOD: THIS IS THE NEW WAY TO COMPUTE RESERVOIR INFLOW
+	if (associated(out%ts%grid%qi)) then
+            out%ts%grid%qi = inline_qi/no_dt*(3600/ic%dts)
+            do j = 1, fms%rsvr%n
+                out%ts%grid%qi(fms%rsvr%meta%rnk(j)) = rsvr_inflow(j)/no_dt*(3600/ic%dts)
+            end do
+        end if
+
+	deallocate(rsvr_inflow, inline_qi, inline_stgch, inline_qo)
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.

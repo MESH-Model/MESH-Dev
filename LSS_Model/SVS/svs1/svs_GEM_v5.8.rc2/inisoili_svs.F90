@@ -165,6 +165,9 @@ USE runsvs_mod
             zwfcint(i,k)  = zwfcint(i,k) + wfcint_geo(i,kk)  * weights( k , kk)
             
          enddo
+
+	 zksat  (i,k)  = zksat  (i,k)  * 2.2
+
       enddo
       ! compute thermal coeff. 
       ! for 1st model layer only --- here simply use 1st GEO soil texture !!! Do not map !

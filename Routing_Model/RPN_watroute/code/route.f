@@ -317,13 +317,14 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !       EG_MOD if flow insertion or flow diversion,
 !       initiate QO1 with qo2sim (simulated) due to possibility of modified qo2
 !       which could empty channel
-        if (trim(strfw_option)=='streamflow_insertion') then
+
+	if (iz.gt.1) then
+
           do l=1,no
             if(iflowgrid(l).eq.n)then
               qo1(n)=qo2sim(n)
             end if
           end do
-        end if
 
         repirr=0
         do l=1,nodiv
@@ -348,6 +349,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
               endif
           endif
         enddo
+        endif
       enddo      
 
       qi2(na)=0.0

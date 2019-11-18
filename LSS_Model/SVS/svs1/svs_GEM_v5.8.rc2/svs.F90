@@ -353,7 +353,7 @@ integer ptr, x, j, k
            bus(x(HUSURF,1,1)),   &  
            HRSURF,      &
            bus(x(HV,1,1)), DEL,     &
-           N )  
+           N, bus(x(WSAT,1,1)) )  
 !
 !
 ! calculate diagnostics at hghtm_diag=zu,hghtt_diag=zt

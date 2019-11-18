@@ -200,7 +200,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !        qo2(n)=82.2*(mean_elv-166.98)**1.87*(delta_elv)**0.36
 !     *        -retard_factor(mo1,2)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        mhu=store1(n)/117.4e+09+166.98
+        mhu=store2(n)/117.4e+09+166.98
         lake_elv(l,fhr)=mhu
         lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
@@ -230,7 +230,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !        qo2(n)=28.8*(stc-164.91)**2.28*(delta_elv)**0.305        
 !     *        -retard_factor(mo1,3)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        stc=store1(n)/1.11e+09+164.91
+        stc=store2(n)/1.11e+09+164.91
         lake_elv(l,fhr)=stc
         lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
@@ -249,7 +249,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
         qo2(n)=max(0.0, 558.3*levdiff**1.60-retard_factor(mo1,4))
 !        qo2(n)=558.3*(eri-169.86)**1.60-retard_factor(mo1,4)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        eri=store1(n)/25.7e+09+169.86  
+        eri=store2(n)/25.7e+09+169.86  
         lake_elv(l,fhr)=eri
         lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
@@ -270,7 +270,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !        qo2(n)=555.823*(ont-0.0014*real(2000-1985)-69.474)**1.5
 !     *        -retard_factor(mo1,5)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        ont=store1(n)/18.96e+09+69.474         
+        ont=store2(n)/18.96e+09+69.474         
         lake_elv(l,fhr)=ont
 	lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
@@ -292,7 +292,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 
         qo2(n)=max(0.0, sfactor*levdiff**b2(l)-retard_factor(mo1,6))
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        cha=store1(n)/reacharea+zflow
+        cha=store2(n)/reacharea+zflow
         lake_elv(l,fhr)=cha
         lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
@@ -335,7 +335,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
           store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
           lake_inflow(l,fhr)=qi2(n)
 
-          niv(l)=store1(n)/reacharea+zflow
+          niv(l)=store2(n)/reacharea+zflow
           lake_elv(l,fhr)=niv(l)
 
 !!!!!!!! OLD WAY: lake area and 0-flow level are both zero-valued in the reservoir template file
