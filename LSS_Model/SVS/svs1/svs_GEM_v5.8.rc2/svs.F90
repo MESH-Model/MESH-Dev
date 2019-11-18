@@ -321,7 +321,7 @@ integer ptr, x, j, k
 
       IF(KOUNT.EQ.1) then
          DO I=1,N
-            STOM_RS(I) = bus(x(RST,I,1))
+            STOM_RS(I) = bus(x(RST,I,1)) * 1.61
          ENDDO
          ! long-term ... define default value for rcctem in inisurf
       else
@@ -329,11 +329,11 @@ integer ptr, x, j, k
          IF( USE_PHOTO ) THEN
 
             DO I=1,N
-               STOM_RS(I) =  bus(x(RCCTEM,I,1))
+               STOM_RS(I) =  bus(x(RCCTEM,I,1)) * 1.61
             END DO
          ELSE
             DO I=1,N
-               STOM_RS(I) = bus(x(RST,I,1))
+               STOM_RS(I) = bus(x(RST,I,1)) * 1.61
             END DO
          ENDIF
       
@@ -353,7 +353,7 @@ integer ptr, x, j, k
            bus(x(HUSURF,1,1)),   &  
            HRSURF,      &
            bus(x(HV,1,1)), DEL,     &
-           N )  
+           N, bus(x(WSAT,1,1)) )  
 !
 !
 ! calculate diagnostics at hghtm_diag=zu,hghtt_diag=zt

@@ -22,7 +22,7 @@
                               HUSURF, & 
                               HRSURF, &       
                               HV, DEL,  &
-                              N)
+                              N, WSAT)
       use sfclayer_mod, only: sl_sfclayer,SL_OK
       use svs_configs
 !
@@ -30,9 +30,9 @@
 #include <arch_specific.hf>
 !
       INTEGER N
-      REAL Z0MBG,  Z0M_TO_Z0H
+      REAL Z0MBG,  Z0M_TO_Z0H, TEMPWSOIL
       REAL TGRS(N), TVGS(N), WR(N), THETAA(N), VMOD(N), VDIR(N), HU(N)
-      REAL PS(N), RS(N), Z0(N), WFC(N,NL_SVS)
+      REAL PS(N), RS(N), Z0(N), WFC(N,NL_SVS), WSAT(N,NL_SVS)
       REAL LAI(N), WRMAX(N), ZUSL(N), ZTSL(N), LAT(N)
       REAL FCOR(N), Z0HA(N)
       REAL RESAGR(N), RESAVG(N)
@@ -143,7 +143,8 @@ include "fintern.inc"
 !                        might need to change the calc. to use a deeper layer
       DO I=1,N
     
-        TEMP(I)   = PI*WD1(I)/WFC(I,1)
+!        TEMP(I)   = PI*WD1(I)/WFC(I,1)
+	TEMP(I)   = PI*WD1(I)/(((1.0-0.6)*WFC(I,1)+0.6*WSAT(I,1)))
         HRSURF(I) = 0.5 * ( 1.-COS(TEMP(I)) )  
 
       END DO 
@@ -185,7 +186,9 @@ include "fintern.inc"
 !                          for very humid soil (i.e., wg > wfc ),
 !                          we take hu=1
 !
-        IF ( WD1(I).GT.WFC(I,1) ) HRSURF(I) = 1.0
+!        IF ( WD1(I).GT.WFC(I,1) ) HRSURF(I) = 1.0
+	TEMPWSOIL = (1.0-0.6)*WFC(I,1) + 0.6 * WSAT(I,1)
+	IF ( WD1(I).GT.TEMPWSOIL ) HRSURF(I) = 1.0
 
 !
       END DO

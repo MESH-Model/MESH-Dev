@@ -138,7 +138,7 @@ USE runsvs_mod
       DATA VEGDAT/ &
                      0.00   , 0.00   , 0.00   , 0.90   , 0.99   , & 
                      0.90   , 0.90   , 0.99   , 0.90   , 0.50   , & 
-                     0.50   , 0.50   , 0.7    , 0.30   , -99.   , & 
+                     0.50   , 0.50   , 0.7    , 0.70   , -99.   , & 
                      -99.   , -99.   , -99.   , -99.   , 0.85   , & 
                      0.80   , 0.50   , 0.60   , 0.00   , 0.90   , & 
                      0.70   / 
@@ -496,6 +496,25 @@ USE runsvs_mod
            f(dlat), ni, nclass)
       call aggveglow(f(vegf), gammadat , gammadat, f(gamvl), &
            f(dlat), ni, nclass)
+
+	do i=1,ni
+		f(rootdp+i-1) = f(rootdp+i-1) * 0.67
+		f(d95+i-1) = f(d95+i-1) * 0.67
+		f(d50+i-1) = f(d50+i-1) * 0.5
+!		f(d50+i-1) = min(f(d50+i-1),f(rootdp+i-1)-0.2)
+		f(d50+i-1) = min(f(d50+i-1),f(d95+i-1)-0.05)
+		f(d50+i-1) = max(f(d50+i-1),0.01)
+		f(laivh+i-1) = f(laivh+i-1) * 3.3
+		f(laivl+i-1) = f(laivl+i-1) * 3.3
+                f(alvl+i-1) = f(alvl+i-1) * 1.1
+                f(alvl+i-1) = min(f(alvl+i-1),1.0)
+		f(alvh+i-1) = f(alvh+i-1) * 1.1
+		f(alvh+i-1) = min(f(alvh+i-1),1.0) 
+		zz0mvh(i) = zz0mvh(i) * 2.4
+		zz0mvl(i) = zz0mvl(i) * 2.4
+	enddo
+
+
 !
 !    Compute LOW and HIGH vegetation fractions as well as 
 !    DECIDUOUS and EVERGREEN (trees) vegetation fraction

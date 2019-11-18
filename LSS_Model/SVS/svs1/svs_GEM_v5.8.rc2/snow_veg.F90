@@ -265,7 +265,7 @@ include "fintern.inc"
 
       DO I=1,N
 !
-        RESA(I) = 1. / CTU(I)
+        RESA(I) = 1. / CTU(I) * 0.75
 !
       END DO
 
@@ -373,9 +373,9 @@ include "fintern.inc"
 !                         Common portion of the MELT and FREEZ TERMS
 !  
          ! "layer 1"
-         WORK_L1(I) = (TAVG(I)-TRPL) / ( ZCS(I)*CHLF*DT )
+         WORK_L1(I) = (TAVG(I)-TRPL) / ( ZCS(I)*CHLF*DT ) / 4.3
          ! "layer 2"
-         WORK_L2(I) = (TSNDT(I)-TRPL) / ( ZCS(I)*CHLF*DT )
+         WORK_L2(I) = (TSNDT(I)-TRPL) / ( ZCS(I)*CHLF*DT ) / 4.3
       END DO
 !
 !
@@ -452,7 +452,7 @@ include "fintern.inc"
       DO I=1,N
        
          IF (T2M(I).GT.TRPL.AND.SM(I).GT.0.0.AND.RR(I).GT.0.) THEN
-            MLTRAIN = ( T2M(I)-TRPL ) / ( 2.*ZCS(I)*CHLF*DT )
+            MLTRAIN = ( T2M(I)-TRPL ) / ( 2.*ZCS(I)*CHLF*DT ) / 4.3
            
             MELT_RAIN(I) = FMLTRAIN(I) * MLTRAIN
             
