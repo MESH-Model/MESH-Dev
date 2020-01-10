@@ -61,7 +61,7 @@ module climate_forcing
 !?        if (allocated(cm%dat)) deallocate(cm%dat)
 !?        allocate(cm%dat(cm%nclim))
 
-        !> Set the default file name.
+        !> Set the default file name and map the climate GRD/GAT/GRU variables to 'vs'.
         cm%dat(ck%FB)%fname = 'basin_shortwave'
         cm%dat(ck%FB)%GRD => vs%grid%fsin(1:shd%NA)
         cm%dat(ck%FB)%GAT => vs%tile%fsin(1:shd%lc%NML)
@@ -96,36 +96,9 @@ module climate_forcing
         !> Read from file to override default configuration.
         call open_config(cm)
 
-        !> Preparation for CLASS format MET file.
+        !> Allocate GRD/GAT/GRU variables because no equivalent 'vs' variables exist for 'MET'.
         if (cm%dat(ck%MET)%factive) then
-            if (.not. cm%dat(ck%FB)%factive) then
-!-                allocate(cm%dat(ck%FB)%GRD(shd%NA), cm%dat(ck%FB)%GAT(shd%lc%NML), cm%dat(ck%FB)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%FB)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%FI)%factive) then
-!-                allocate(cm%dat(ck%FI)%GRD(shd%NA), cm%dat(ck%FI)%GAT(shd%lc%NML), cm%dat(ck%FI)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%FI)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%RT)%factive) then
-!-                allocate(cm%dat(ck%RT)%GRD(shd%NA), cm%dat(ck%RT)%GAT(shd%lc%NML), cm%dat(ck%RT)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%RT)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%TT)%factive) then
-!-                allocate(cm%dat(ck%TT)%GRD(shd%NA), cm%dat(ck%TT)%GAT(shd%lc%NML), cm%dat(ck%TT)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%TT)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%UV)%factive) then
-!-                allocate(cm%dat(ck%UV)%GRD(shd%NA), cm%dat(ck%UV)%GAT(shd%lc%NML), cm%dat(ck%UV)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%UV)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%P0)%factive) then
-!-                allocate(cm%dat(ck%P0)%GRD(shd%NA), cm%dat(ck%P0)%GAT(shd%lc%NML), cm%dat(ck%P0)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%P0)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%HU)%factive) then
-!-                allocate(cm%dat(ck%HU)%GRD(shd%NA), cm%dat(ck%HU)%GAT(shd%lc%NML), cm%dat(ck%HU)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%HU)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
+            allocate(cm%dat(ck%MET)%GRD(shd%NA), cm%dat(ck%MET)%GAT(shd%lc%NML), cm%dat(ck%MET)%GRU(shd%lc%NTYPE))
         end if
 
         !> Initialize climate variables.
@@ -451,56 +424,7 @@ module climate_forcing
             end if
         end do
 
-        !> Distribute data from CLASS format MET file for variables not already active.
-!-        if (cm%dat(ck%MET)%factive) then
-
-            !> Update the input forcing data.
-!-            if (update_data(shd, cm, ck%MET, 0)) goto 999
-
-            !> Distribute the forcing fields.
-!-            do vid = 1, 7
-
-                !> Cycle if variable active (e.g., read from different file).
-!-                if (cm%dat(vid)%factive) cycle
-
-                !> Extract data from the climate variable.
-!-                select case (cm%dat(vid)%blocktype)
-
-                    !> Block type: GRD (Grid).
-!-                    case (1)
-!-                        cm%dat(vid)%GRD = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
-!-                        do k = ii1, ii2
-!-                            cm%dat(vid)%GAT(k) = cm%dat(vid)%GRD(shd%lc%ILMOS(k))
-!-                        end do
-!-                        do k = ii1, ii2
-!-                            cm%dat(vid)%GRU(shd%lc%JLMOS(k)) = cm%dat(vid)%GAT(k)
-!-                        end do
-
-                    !> Block type: GRU.
-!-                    case (2)
-!-                        cm%dat(vid)%GRU = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
-!-                        cm%dat(vid)%GRD = 0.0
-!-                        do k = ii1, ii2
-!-                            j = shd%lc%JLMOS(k)
-!-                            i = shd%lc%ILMOS(k)
-!-                            cm%dat(vid)%GAT(k) = cm%dat(vid)%GRU(j)
-!-                            cm%dat(vid)%GRD(i) = cm%dat(vid)%GRD(i) + shd%lc%ACLASS(i, j)*cm%dat(vid)%GRU(j)
-!-                        end do
-
-                    !> Block type: GAT (Land element).
-!-                    case (3)
-!-                        cm%dat(vid)%GAT = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
-!-                        cm%dat(vid)%GRD = 0.0
-!-                        do k = ii1, ii2
-!-                            j = shd%lc%JLMOS(k)
-!-                            i = shd%lc%ILMOS(k)
-!-                            cm%dat(vid)%GRD(i) = cm%dat(vid)%GRD(i) + shd%lc%ACLASS(i, j)*cm%dat(vid)%GAT(k)
-!-                            cm%dat(vid)%GRU(j) = cm%dat(vid)%GAT(k)
-!-                        end do
-!-                end select
-!-            end do
-
-        !> Advance line if 'met' format file is active.
+        !> Advance line if 'met' format file is active (special condition).
         if (cm%dat(ck%MET)%factive) then
             if (update_data(shd, cm, ck%MET, 1)) goto 999
         end if

@@ -92,14 +92,15 @@ module climate_forcing_io
                 if (ierr /= 0) goto 999
                 cm%dat(vid)%blocktype = cbk%GRD
 
-            !> CLASS format MET file.
+            !> CLASS 'MET' file.
             case (6)
-                if (vid /= ck%MET) return
                 cm%dat(vid)%fname = 'basin_forcing'
                 cm%dat(vid)%fpath = 'basin_forcing.met'
                 cm%dat(vid)%blocktype = cbk%GRD
-                open(cm%dat(vid)%fiun, file = cm%dat(vid)%fpath, action = 'read', status = 'old', iostat = ierr)
-                if (ierr /= 0) goto 999
+                if (vid == ck%MET) then
+                    open(cm%dat(vid)%fiun, file = cm%dat(vid)%fpath, action = 'read', status = 'old', iostat = ierr)
+                    if (ierr /= 0) goto 999
+                end if
 
             !> Unknown file format.
             case default
@@ -238,14 +239,16 @@ module climate_forcing_io
 
             !> CLASS format MET file.
             case (6)
-!-                if (vid /= ck%MET) return
                 do t = 1, n
                     if (iskip == 0) then
-                        read(cm%dat(vid)%fiun, *, end = 999) i, i, i, i, MET(1:7)
-!-                            cm%dat(ck%FB)%blocks(1, t), cm%dat(ck%FI)%blocks(1, t), cm%dat(ck%RT)%blocks(1, t), &
-!-                            cm%dat(ck%TT)%blocks(1, t), cm%dat(ck%HU)%blocks(1, t), cm%dat(ck%UV)%blocks(1, t), &
-!-                            cm%dat(ck%P0)%blocks(1, t)
-                        backspace(cm%dat(vid)%fiun)
+
+                        !> Read from the 'MET' file (to a generic array).
+                        read(cm%dat(ck%MET)%fiun, *, end = 999) i, i, i, i, MET(1:7)
+
+                        !> Backspace the record as other variables read independently.
+                        backspace(cm%dat(ck%MET)%fiun)
+
+                        !> Assign the appropriate field to the variable.
                         if (vid == ck%FB) then
                             cm%dat(ck%FB)%blocks(:, t) = MET(1)
                         else if (vid == ck%FI) then
@@ -260,10 +263,11 @@ module climate_forcing_io
                             cm%dat(ck%UV)%blocks(:, t) = MET(6)
                         else if (vid == ck%P0) then
                             cm%dat(ck%P0)%blocks(:, t) = MET(7)
-                        end if
+                        else if (vid == ck%MET) then
 
-                        !> Put something in the field to pass the ENDDATA check.
-!-                        cm%dat(vid)%blocks(1, t) = cm%dat(ck%TT)%blocks(1, t)
+                            !> Put something in the 'MET' field to pass the ENDDATA check.
+                            cm%dat(vid)%blocks(1, t) = cm%dat(ck%TT)%blocks(1, t)
+                        end if
                     else
                         read(cm%dat(vid)%fiun, *, end = 999)
                     end if
