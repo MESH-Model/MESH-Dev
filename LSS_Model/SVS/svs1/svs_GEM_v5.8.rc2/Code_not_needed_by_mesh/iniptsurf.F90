@@ -48,11 +48,11 @@ subroutine iniptsurf3(ni,nk)
 #include <rmnlib_basics.hf>
    include "thermoconsts.inc"
 
-   integer, parameter :: nb_agrege = 23
+   integer, parameter :: nb_agrege = 39
    integer, parameter :: nb_glaciers = 1
    integer, parameter :: nb_water = 4
    integer, parameter :: nb_ice = 2
-   integer, parameter :: nb_urb = 68
+   integer, parameter :: nb_urb = 94
 
    character(len=16) :: agrege_out(nb_agrege), &
         glaciers_out(nb_glaciers), water_out(nb_water), ice_out(nb_ice), &
@@ -66,11 +66,16 @@ subroutine iniptsurf3(ni,nk)
    ! liste des variables de surface a agreger
    data agrege_out   / &
         !  ces variables sont moyennees lineairement
-        'ALFAQ'    , 'ALFAT'    , 'ALVIS'    , 'BM'       , 'BT'       , &
-        'FC'       , 'FRV'      , 'FTEMP'    , 'FV'       , &
-        'FVAP'     , 'HST'      , 'ILMO'     , &
-        'QDIAG'    , 'QSURF'    , 'RUNOFFTOT', 'SNODP'    , 'TDIAG'    , &
-        'TSURF'    , 'UDIAG'    , 'VDIAG'    , &
+        'ALFAQ        ', 'ALFAT'    , 'ALVIS'    , 'BM'       , 'BT'       , &
+        'FC'        , 'FRV'      , 'FTEMP'    , 'FV'       , &
+        'FVAP'      , 'HST'      , 'ILMO'     , &
+        'QDIAG'     , 'QSURF'    , 'RUNOFFTOT', 'SNODP'    , 'TDIAG'    , &
+        'TSURF'     , 'UDIAG'    , 'VDIAG'    ,  &
+        'YUTCISUN'  , 'YUTCISHADE' ,             &
+        'YWBGTSUN'  , 'YWBGTSHADE' , 'YRADSUN', 'YRADSHADE',              &
+        'YTGLBSUN'  , 'YTGLBSHADE' , 'YTWETB' ,                           &
+        'YQ1' , 'YQ2' , 'YQ3' , 'YQ4' , 'YQ5' ,                          &
+        'YQ6' , 'YQ7' ,                                                  &
         
         !  le flux infrarouge emis par la surface, qui est
         !  proportionnel a TSRAD**4, est moyenne lineairement
@@ -96,7 +101,7 @@ subroutine iniptsurf3(ni,nk)
 
    ! liste des variables de sortie du module "urb"
    data urb_out      / &
-        'T_CANYON' , 'Q_CANYON' , 'U_CANYON' , 'TI_BLD'   , 'T_ROOF'   , &
+        'T_CANYON     ' , 'Q_CANYON' , 'U_CANYON' , 'TI_BLD'   , 'T_ROOF'   , &
         'T_ROAD'   , 'T_WALL'   , 'RN_TOWN'  , 'H_TOWN'   , 'LE_TOWN'  , &
         'G_TOWN'   , 'RN_ROOF'  , 'H_ROOF'   , 'LE_ROOF'  , 'G_ROOF'   , &
         'RN_ROAD'  , 'H_ROAD'   , 'LE_ROAD'  , 'G_ROAD'   , 'RN_WALL'  , &
@@ -106,11 +111,15 @@ subroutine iniptsurf3(ni,nk)
         'SROOF_TS' ,'SROAD_WSNOW','SROAD_T'  , 'SROAD_RHO', 'SROAD_ALB', &
         'SROAD_EMIS', 'SROAD_TS' , 'Z0_TOWN'  , 'Z0_ROOF'  , 'Z0_ROAD'  , &
         'BLD_HEIGHT','WALL_O_HOR','CAN_HW_RATIO','ALB_ROOF', 'ALB_ROAD' , &
-        'ALB_WALL' , 'EMIS_ROOF', 'EMIS_ROAD', 'EMIS_WALL', 'HC_ROOF'  , &
-        'HC_ROAD' , 'HC_WALL'  , 'TC_ROOF'  , 'TC_ROAD'  , 'TC_WALL'  , &
-        'D_ROAD'  , 'D_ROOF'   , 'D_WALL'   , 'H_TRAFFIC', 'H_INDUSTRY',&
-        'LE_TRAFFIC','LE_INDUSTRY', 'EMIS_TOWN' & 
-        /
+        'ALB_WALL' , 'EMIS_ROOF', 'EMIS_ROAD', 'EMIS_WALL', 'HC_ROOF'  ,  &
+        'HC_ROAD' , 'HC_WALL'  , 'TC_ROOF'  , 'TC_ROAD'  , 'TC_WALL'  ,   &
+        'D_ROAD'  , 'D_ROOF'   , 'D_WALL'   , 'H_TRAFFIC', 'H_INDUSTRY',  &
+        'LE_TRAFFIC','LE_INDUSTRY', 'EMIS_TOWN' ,'ZENITH' ,'YRADIN',      &
+        'YRADRFSUN', 'YRADRFSHADE','YUTCIIN','YUTCIRFSUN','YUTCIRFSHADE', &
+        'YUTCICIN','YWBGTRFSUN','YWBGTRFSHADE','YUTCICSUN','YUTCICSHADE', &
+        'YUTCICRFSUN','YUTCICRFSHADE','YTGLBRFSUN','YTGLBRFSHADE','YTWETBRF',&
+        'YTRFZT','YTRDZT','YURDZU' ,'YQ8','YQ9',                             &
+        'YQ10','YQ11' ,'YQ12' , 'YQ13'         /
 
    ier = sfcbus_init()
 

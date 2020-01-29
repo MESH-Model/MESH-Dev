@@ -238,7 +238,6 @@ integer ptr, x, j, k
 !           Make sure rootdp does not exceed total soil depth
             bus(x(ROOTDP,I,1))=min( bus(x(ROOTDP,I,1)) , DL_SVS(NL_SVS) )
          END DO
-
       ENDIF
 
       ! Calculate mask for VF26 , |LAT|<=50 have masklat50=1, otherwise masklat50=0
@@ -510,8 +509,8 @@ integer ptr, x, j, k
 
          CALL PHTSYN_SVS ( BUS(x(LAIVF26,1,1))  , BUS(x(VEGF   ,1,1)), &
                         BUS(x(TVEGE  ,1,1))  , BUS(x(PMOINS ,1,1)), &
-                        BUS(x(RESAVG ,1,1))  , BUS(x(HUMOINS,1,1)), &
-                        BUS(x(RNET_S ,1,1))  , BUS(x(WSOIL ,1,1)), &
+                        BUS(x(RESAVG ,1,1))  , BUS(x(HUMOINS,1,NK)), &
+                        zfsolis              , BUS(x(WSOIL ,1,1)), &
                         BUS(x(FROOTD ,1,1))  , SUNCOSA            , &
                         BUS(x(WFC    ,1,1))  , BUS(x(WWILT  ,1,1)), &
                         MASKLAT50            , BUS(x(VGCTEM ,1,1))  , &
@@ -556,6 +555,7 @@ integer ptr, x, j, k
 !
 !       CALCULATE LAND-ATMOSPHERE OUTCOMING WATER FLUX
         BUS(x(WFLUX,I,1)) = RHOA(I)*BUS(x(EFLUX,I,1))
+	BUS(x(ACCEVAP,I,1)) = BUS(x(ACCEVAP,I,1)) + BUS(x(WFLUX,I,1)) * DT
 !
 !       CALCULATE MEAN SNOW DEPTH FOR ESTHETIC PURPOSE ONLY
 !VV DEBUT MODIFICATION POUR MESH

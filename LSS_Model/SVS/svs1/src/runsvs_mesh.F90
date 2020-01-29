@@ -98,13 +98,18 @@ module runsvs_mesh
         sigma_t = 0.995
         observed_forcing = .false.
 
-        nl_svs = shd%lc%IGND
-        allocate(dl_svs(nl_svs))
+!        nl_svs = shd%lc%IGND
+        nl_svs = 7
+!        allocate(dl_svs(nl_svs))
+        allocate(dl_svs(shd%lc%IGND))
         dl_svs = shd%lc%sl%zbot
+
         call svs_bus_init(il2 - il1 + 1)
         bussiz = runsvs_busdim
         allocate(bus(bussiz))
         bus = 0.0
+
+        call init_soil_text_levels()
 
         !> Parse CLASS variables to bus.
         do k = 0, NG - 1
@@ -147,9 +152,18 @@ module runsvs_mesh
                 bus(vegf + 13*NG + k) = pm%cp%fcan(il1 + k, 4)
                 bus(vegf + 20*NG + k) = pm%cp%fcan(il1 + k, 5)
             end if
+
+! EG_MOD for 100% water pixels, assign another class of vegetation instead (here crops=class15)
+!	    if (bus(vegf + 2*NG + k) == 1.0) then
+!	       bus(vegf + 2*NG + k) = 0.0
+!	       bus(vegf + 14*NG + k) = 1.0
+!	    end if
+! FIN EG_MOD
+
             bus(slop + k) = max(pm%tp%xslp(il1 + k), 0.005)
             bus(draindens + k) = pm%hp%dd(il1 + k)!*0.001
-            bus(rootdp + k) = max(pm%slp%sdep(il1 + k), 0.5)
+!            bus(rootdp + k) = max(pm%slp%sdep(il1 + k), 0.5)
+!            bus(rootdp + k) = max(shd%lc%sl%zbot(nl_svs), 0.5)
 
             !> Compute weighted average of log z0 wrt vegetation
             !> (used for momentum only - local z0 used for temperature/humidity).
@@ -167,6 +181,7 @@ module runsvs_mesh
                 end if
             end if
             bus(z0 + k) = exp(bus(z0 + k))
+            bus(z0t + k) = bus(z0 + k)
 
             !> For soil texture we ignore negative numbers
             !> which signal special soils (organic/impermeable/glaciers).
@@ -203,7 +218,8 @@ module runsvs_mesh
 !                    bus(clay + j*NG + k) = max(pm%slp%clay(il1 + k, 3), 0.0)
 !                end do
 !            end if
-            do j = 1, nl_svs ! model layers
+!            do j = 1, nl_svs ! model layers
+            do j = 1, nl_stp ! soil texture levels
                 bus(sand + (j - 1)*NG + k) = max(pm%slp%sand(il1 + k, j), 0.0)
                 bus(clay + (j - 1)*NG + k) = max(pm%slp%clay(il1 + k, j), 0.0)
             end do
@@ -219,16 +235,21 @@ module runsvs_mesh
 !            do j = 3, 6
 !                bus(wsoil + j*NG + k) = vs%tile%thlq(il1 + k, 3)
 !            end do
-            do j = 1, KHYD ! permeable layers, min from runsvs_init
-                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), bus(wfc + k))
+
+! EG_MOD: WE HAVE TO INITIALIZE SOIL MOISTURE FOR ALL SVS LAYERS, NOT ONLY THE KHYD FIRST LAYERS
+!            do j = 1, KHYD ! permeable layers, min from runsvs_init
+            do j = 1, nl_svs
+! EG_MOD: WFC IS NOT KNOWN AT THIS POINT (COMPUTED LATER BY INISOILI_SVS); USE CRITWATER INSTEAD
+!                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), bus(wfc + k))
+                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), CRITWATER)
             end do
 
             !> Map soil temperature.
             !> CLASS layer  <->  SVS layer
             !>       1               1
             !>       2               2
-            bus(tsoil + k) = vs%tile%tbar(il1 + k, 1)! + tcdk
-            bus(tsoil + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
+!            bus(tsoil + k) = vs%tile%tbar(il1 + k, 1)! + tcdk
+!            bus(tsoil + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
             bus(tground + k) = vs%tile%tbar(il1 + k, 1)! + tcdk
             bus(tground + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
 !todo
@@ -302,11 +323,11 @@ module runsvs_mesh
             write(line, "('PERMEABLE LAYERS: ', i3)") KHYD
             call print_message(line)
             call print_message('SOIL MOISTURE:')
-            do j = 1, KHYD ! permeable layers
+            do j = 1, nl_svs ! permeable layers
                 write(line, "(' LAYER ', i3, ': ', f8.3)") j, bus(wsoil + (j - 1)*NG)
                 call print_message(line)
             end do
-            write(line, "('SOIL TEMPERATURE: ', 2f8.3)") bus(tsoil), bus(tsoil + NG)
+            write(line, "('SOIL TEMPERATURE: ', 2f8.3)") bus(tground), bus(tground + NG)
             call print_message(line)
             write(line, "('VEGETATION TEMP.: ', 2f8.3)") bus(tvege), bus(tvege + NG)
             call print_message(line)
@@ -340,7 +361,7 @@ module runsvs_mesh
         end if
 
         !> Initialize surface parameters.
-        call init_soil_text_levels()
+!        call init_soil_text_levels()
         call inisoili_svs(bus, bussiz, NG)
 !        call inisoili_svs(NG, 1)
 
@@ -469,6 +490,10 @@ module runsvs_mesh
         !> Update vegetation parameters as a function of julian day.
         call inicover_svs(bus, bussiz, kount, NG)
 
+        do k = 0, NG - 1
+            bus(rootdp + k) = max(bus(rootdp + k), 0.5)
+        end do
+
         !> Integrate SVS for one time step.
         call svs(bus, bussiz, bidon, 1, dt, kount, 1, NG, NG, 1)
 
@@ -502,10 +527,11 @@ module runsvs_mesh
             do j = 3, shd%lc%IGND
                 vs%tile%thlq(il1 + k, j) = bus(wsoil + (j - 1)*NG + k)
             end do
-            vs%tile%tbar(il1 + k, 1) = bus(tsoil + k)
+            vs%tile%tbar(il1 + k, 1) = bus(tground + k)
             do j = 2, shd%lc%IGND
-                vs%tile%tbar(il1 + k, j) = bus(tsoil + NG + k)
+                vs%tile%tbar(il1 + k, j) = bus(tground + NG + k)
             end do
+
 !-            vs%tile%gflx(il1 + k, :) =
             vs%tile%rofb(il1 + k) = max(0.0, bus(watflow + KHYD*NG + k))/ic%dts
         end do

@@ -50,6 +50,7 @@ subroutine aggveglow(fcover, tablen, tables, aggf, lat, ni, nclass)
 
       REAL totfract, table_val
       
+!
       DO i=1,ni
         aggf(i) = 0.0
       END DO

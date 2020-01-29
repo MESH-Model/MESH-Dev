@@ -36,7 +36,7 @@ module sfc_options
    real, parameter :: CRITEXTURE = 0.1
    real, parameter :: CRITLAC    = 0.01
    real, parameter :: CRITMASK   = 0.001
-   real, parameter :: CRITSNOW   = 0.0001  
+   real, parameter :: CRITSNOW   = 0.0001
    real, parameter :: CRITWATER  = 0.001
    real, parameter :: HIMIN      = 0.001
    real, parameter :: MINICEDP   = 0.05 
@@ -94,7 +94,7 @@ module sfc_options
    logical           :: drylaps     = .true.
    namelist /surface_cfgs/ drylaps
 
-   !# Set water temperature of ice-covered lakes to 0C for points north of
+   !# Set water temperature of ice-covered lakes to 0C for points north of 
    !# ice line if .true.
    !# needs an initialization file otherwise the model stops
    logical           :: icelac      = .false.
@@ -113,24 +113,33 @@ module sfc_options
    logical           :: isba_i1_minval = .true.
    namelist /surface_cfgs/ isba_i1_minval
 
-   !# If .true. apply temporary fix to ISBA
+   !# If .true. apply temporary fix to ISBA 
    !# * timestep dependent KCOEF
    !# * No PSN factor for meting and freezing
    logical           :: isba_melting_fix = .false.
    namelist /surface_cfgs/ isba_melting_fix
 
-   !# Deepest active (permeable) soil layer in SVS land surface scheme (schmsol=SVS)
+   !# If .true., do not consider "latent heat realease due to liquid water 
+   !# refreezing in the snowpack" in the surface energy budget WHEN the 
+   !# superficial surface temperature is above zero.
+   logical           :: isba_no_warm_sn_freez = .false.
+   namelist /surface_cfgs/ isba_no_warm_sn_freez
+
+   !# Last/Deepest soil layer considered during the accumulation of 
+   !# lateral flow and drainage. Drainage is taken as the vertical flux
+   !# leaving layer KHYD, and lateral flow as the sum of lateral flows from 
+   !# layers 1 to KHYD
 !VV DEBUT MODIFICATION POUR MESH
 !   integer           :: khyd    = -1
 !   namelist /surface_cfgs/ khyd
 !VV FIN MODIFICATION POUR MESH
 
-   !# Minimum fraction of leads in sea ice.&nbsp; Multiply ice fraction by (1.-leadfrac)
+   !# Minimum fraction of leads in sea ice.&nbsp; Multiply ice fraction by (1.-leadfrac) 
    real              :: leadfrac    = 0.03
    namelist /surface_cfgs/ leadfrac
 
-   !# Limit snow depth to 10 cm for calculation of heat conductivity of snow
-   !# over sea-ice and glacier if .true.
+   !# Limit snow depth to 10 cm for calculation of heat conductivity of snow 
+   !# over sea-ice and glacier if .true.  
    logical           :: limsnodp    = .false.
    namelist /surface_cfgs/ limsnodp
 
@@ -169,22 +178,25 @@ module sfc_options
         /)
 
    !#  Soil texture database/calculations for SVS land surface scheme
+   !# * 'CLASSIC' : 3 layers of sand & clay info
    !# * 'GSDE' : 8 layers of sand & clay info
    character(len=16) :: soiltext    = 'GSDE'
    namelist /surface_cfgs/ soiltext
    character(len=*), parameter :: SOILTEXT_OPT(3) = (/ &
-        'GSDE     ', &
-        'SLC      ', &
-	    'SOILGRIDS' /)
+        'GSDE     ',  &
+        'SLC      ',  &
+        'SOILGRIDS' &
+        /)
 
    !# Use snow albedo "I6" directly if .true.;
    !# Use snow age "XA" to calculate snow albedo if .false.
    logical           :: snoalb_anl  = .true.
    namelist /surface_cfgs/ snoalb_anl
 
-   !# Limit temperature inversions to 8K/40m in surface layer if .true.
+   !# Limit temperature inversions to 8K/40m in surface layer if .true.  
    logical           :: tdiaglim    = .false.
    namelist /surface_cfgs/ tdiaglim
+
 
    !# OPTION FOR CALCULATION of AVERAGE LAND SURFACE TEMPERATURE AND HUMIDITY IN SVS
    !# .FALSE. :  Area-average only calculation for sfc T and Hum.
@@ -205,12 +217,12 @@ module sfc_options
    logical           :: z0dir       = .false.
    namelist /surface_cfgs/ z0dir
 
-   !# Constant value of thermal roughness length (m) applied over water within
-   !# latitudinal band defined by z0tlat
+   !# Constant value of thermal roughness length (m) applied over water within 
+   !# latitudinal band defined by z0tlat 
    real              :: z0hcon      = 4.0e-5
    namelist /surface_cfgs/ z0hcon
 
-   !# Minimum value of momentum roughness length (m)
+   !# Minimum value of roughness length (m) over water 
    real              :: z0min       = 1.5e-5
    namelist /surface_cfgs/ z0min
 
@@ -220,11 +232,12 @@ module sfc_options
    character(len=16) :: z0mtype     = 'CHARNOCK'
    namelist /surface_cfgs/ z0mtype
    character(len=*), parameter :: Z0MTYPE_OPT(2) = (/ &
-        'CHARNOCK', 'BELJAARS' &
+        'CHARNOCK', &
+        'BELJAARS' &
         /)
 
    !# Latitude (2 elements, in degrees) used to specify Z0T over water
-   !# * If |lat| <= Z0TLAT(1) constant Z0T.
+   !# * If |lat| <= Z0TLAT(1) constant Z0T. 
    !# * If |lat| >= Z0TLAT(2) Charnock's relation.
    !# * In between, linear interpolation is used.
    real              :: z0tlat(2)   = 0.
@@ -244,9 +257,25 @@ module sfc_options
    namelist /surface_cfgs/ zua
 
 
+   !# Compute thermal stress indicators (comfort) if .true.
+   logical           :: thermal_stress = .false.
+   namelist /surface_cfgs/ thermal_stress
+
+   !# Adjust wind diagnostic in TEB with building height  if .true.
+   logical           :: urb_diagwind = .false.
+   namelist /surface_cfgs/ urb_diagwind
+
+   !# Adjust temperature diagnostic in TEB in the street  if .true.
+   logical           :: urb_diagtemp = .false.
+   namelist /surface_cfgs/ urb_diagtemp
+
+   !# Fix computation of tan(zenith) for sun angle in TEB
+   logical           :: urb_tanzen_fix = .false.
+   namelist /surface_cfgs/ urb_tanzen_fix
+
 contains
 
-!VVI DEBUT MODIFICATION POUR SA_MESH
+!VV DEBUT MODIFICATION POUR MESH
 !   function sfc_options_init() result(F_istat)
 !      use sfclayer_mod, only: sl_get, SL_OK
 !      implicit none 
@@ -264,7 +293,6 @@ contains
 !           call msg(MSG_ERROR,'(sfc_options_init) cannot retrieve AS, BETA or CI')
 !      return
 !   end function sfc_options_init
-!VV FIN MODIFICATION POUR SA_MESH
-
+!VV FIN MODIFICATION POUR MESH
 
 end module sfc_options

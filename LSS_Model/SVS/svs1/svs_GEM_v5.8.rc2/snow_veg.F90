@@ -126,7 +126,6 @@ include "isbapar.cdk"
       REAL CRMIN, CRMAX, TAUHOUR, RHOE, MYOMEGA
       REAL RSNOW_DAY, RHOICE, ANSMIN
       REAL FWOOD, MAX_EFLUX
-!
 
       real, dimension(n) :: lams, zcs, zqs, ctu, zqsat, zdqsat, zqsatt, &
            rora, a, b, c, tsnst, tsndt, rhomax, fmltrain, &
@@ -167,23 +166,23 @@ include "fintern.inc"
 !*            REFRESH ALL INPUT VARIABLES IF THERE IS NEGLIGIBLE SNOW
 !                -----------------------------------------------------
 !         CHECK THAT THIS INITIALIZATION MAKES SENSE
-!
+!          
 !         If no high vegetation present, reset all snow variables because they do not exist !
 !
 !         IF snow mass less than critsnowmass, but high vegetation present, reset snow variables, but
 !         send trace snow mass and liquid water content to runoff 
-!
       DO I=1,N
-	 IF (VEGH(I).GE.EPSILON_SVS) THEN
+         IF (VEGH(I).GE.EPSILON_SVS) THEN
+
             IF (SM(I).LT.CRITSNOWMASS) THEN
                ALPHAS(I)   = ANSMAX
                RHOSL(I)    = RHOSDEF
-!                             For snow temperature, set it to AIR temperature
-!                             capped at the triple point of water
+               !                             For snow temperature, set it to AIR temperature
+               !                             capped at the triple point of water
                TSNS(I)     = MIN(T(I),TRPL)
                TSND(I)     = MIN(T(I),TRPL)
 
-            !                             To conserve water, send trace snow mass and liquid water in snow pack to runoff before setting mass to zero
+               !                             To conserve water, send trace snow mass and liquid water in snow pack to runoff before setting mass to zero
                RSNOW_CRITMASS(I) = ( SM(I) + WL(I) ) / DT
             !                             Reset snow mass, liquid water and snow depth to zero
                SM(I)       = 0.  
@@ -200,11 +199,13 @@ include "fintern.inc"
             RHOSL(I)    = RHOSDEF
             TSNS(I)     = MIN(T(I),TRPL)
             TSND(I)     = MIN(T(I),TRPL)
-            WL(I)       = 0.
             SNODP(I)    = 0.
+            WL(I)       = 0.
+            SNODP(I)    = 0. 
             SM(I)       = 0.
-	    RSNOW_CRITMASS(I) = 0.       
-         END IF
+            RSNOW_CRITMASS(I) = 0.
+         ENDIF
+
       END DO
 !
 !
@@ -628,13 +629,14 @@ include "fintern.inc"
 !                               for the liquid water reaching the ground
 !
       DO I=1,N
-          IF(SM(I).ge.CRITSNOWMASS.or.SR(I).gt.0.0) THEN
+
+         IF(SM(I).ge.CRITSNOWMASS.or.SR(I).gt.0.0) THEN
             !if existing snow, or fresh snow fall
             WLT(I) = WL(I) + RVRUN(I) * DT - RSNOW(I)* DT - DSNOWDT(I)
             WLT(I) = MAX( 0.0, WLT(I) )
-	  ELSE
-	    WLT(I) = 0.0
-	  ENDIF
+         ELSE
+            WLT(I) = 0.0
+         ENDIF
       END DO
 !
 !
@@ -779,7 +781,9 @@ include "fintern.inc"
 !                 
 !
       DO I=1,N
-	 IF (VEGH(I).GE.EPSILON_SVS) THEN
+
+         IF (VEGH(I).GE.EPSILON_SVS) THEN
+
             IF (SM(I).LT.CRITSNOWMASS) THEN
                ALPHAS(I)   = ANSMAX
                RHOSL(I)    = RHOSDEF
@@ -787,7 +791,7 @@ include "fintern.inc"
                TSNS(I)     = 300.0
                TSND(I)     = 300.0
                TAVG(I)     = 300.0
-	       RNET(I)     = 0.0
+               RNET(I)     = 0.0
                HFLUX(I)    = 0.0
                LE(I)       = 0.0
                EFLUX(I)    = 0.0
@@ -818,9 +822,9 @@ include "fintern.inc"
             HFLUX(I)    = 0.0
             LE(I)       = 0.0
             EFLUX(I)    = 0.0
-	    RSNOW(I) = 0.0
-         END IF
-      END DO
+            RSNOW(I) = 0.0
+         ENDIF
+      ENDDO
 !
       RETURN
       END
