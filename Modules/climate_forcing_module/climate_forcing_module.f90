@@ -74,6 +74,14 @@ module climate_forcing
         cm%dat(ck%RT)%GRD => vs%grid%pre(1:shd%NA)
         cm%dat(ck%RT)%GAT => vs%tile%pre(1:shd%lc%NML)
         cm%dat(ck%RT)%GRU => vs%gru%pre(1:shd%lc%NTYPE)
+        cm%dat(ck%RR)%fname = 'basin_liquid_precip'
+        cm%dat(ck%RR)%GRD => vs%grid%prern(1:shd%NA)
+        cm%dat(ck%RR)%GAT => vs%tile%prern(1:shd%lc%NML)
+        cm%dat(ck%RR)%GRU => vs%gru%prern(1:shd%lc%NTYPE)
+        cm%dat(ck%SR)%fname = 'basin_solid_precip'
+        cm%dat(ck%SR)%GRD => vs%grid%presno(1:shd%NA)
+        cm%dat(ck%SR)%GAT => vs%tile%presno(1:shd%lc%NML)
+        cm%dat(ck%SR)%GRU => vs%gru%presno(1:shd%lc%NTYPE)
         cm%dat(ck%TT)%fname = 'basin_temperature'
         cm%dat(ck%TT)%GRD => vs%grid%ta(1:shd%NA)
         cm%dat(ck%TT)%GAT => vs%tile%ta(1:shd%lc%NML)
@@ -91,7 +99,13 @@ module climate_forcing
         cm%dat(ck%HU)%GAT => vs%tile%qa(1:shd%lc%NML)
         cm%dat(ck%HU)%GRU => vs%gru%qa(1:shd%lc%NTYPE)
         cm%dat(ck%N0)%fname = 'WR_runoff'
+        cm%dat(ck%N0)%GRD => vs%grid%rff(1:shd%NA)
+        cm%dat(ck%N0)%GAT => vs%tile%rff(1:shd%lc%NML)
+        cm%dat(ck%N0)%GRU => vs%gru%rff(1:shd%lc%NTYPE)
         cm%dat(ck%O1)%fname = 'WR_recharge'
+        cm%dat(ck%O1)%GRD => vs%grid%rchg(1:shd%NA)
+        cm%dat(ck%O1)%GAT => vs%tile%rchg(1:shd%lc%NML)
+        cm%dat(ck%O1)%GRU => vs%gru%rchg(1:shd%lc%NTYPE)
 
         !> Read from file to override default configuration.
         call open_config(cm)

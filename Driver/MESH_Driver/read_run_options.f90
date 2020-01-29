@@ -345,7 +345,16 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 cm%dat(ck%MET)%ffmt = 6
                                 cm%dat(ck%MET)%id_var = 'CLASSMET'
                                 cm%dat(ck%MET)%factive = .true.
-                                exit
+                            case ('rr_sr')
+                                cm%dat(ck%RR)%factive = .true.
+                                cm%dat(ck%RR)%id_var = 'RR'
+                                cm%dat(ck%RR)%ffmt = 6
+                                cm%dat(ck%SR)%factive = .true.
+                                cm%dat(ck%SR)%id_var = 'SR'
+                                cm%dat(ck%SR)%ffmt = 6
+                                cm%dat(ck%MET)%ffmt = 6
+                                cm%dat(ck%MET)%id_var = 'CLASSMET'
+                                cm%dat(ck%MET)%factive = .true.
                         end select
                     end do
                 case ('BASINSHORTWAVEFLAG')

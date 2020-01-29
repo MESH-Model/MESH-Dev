@@ -168,7 +168,7 @@ module climate_forcing_io
 
         !> Local variables.
         integer t, n, j, i
-        real GRD(shd%yCount, shd%xCount), MET(7)
+        real GRD(shd%yCount, shd%xCount), MET(9)
         character(len = DEFAULT_LINE_LENGTH) line
 
         !> Initialize the return variable.
@@ -243,7 +243,15 @@ module climate_forcing_io
                     if (iskip == 0) then
 
                         !> Read from the 'MET' file (to a generic array).
-                        read(cm%dat(ck%MET)%fiun, *, end = 999) i, i, i, i, MET(1:7)
+                        if (vid == ck%RR) then
+                            read(cm%dat(ck%MET)%fiun, *, end = 999) i, i, i, i, MET(1:9)
+                            cm%dat(ck%RR)%blocks(:, t) = MET(8)
+                        else if (vid == ck%SR) then
+                            read(cm%dat(ck%MET)%fiun, *, end = 999) i, i, i, i, MET(1:9)
+                            cm%dat(ck%SR)%blocks(:, t) = MET(9)
+                        else
+                            read(cm%dat(ck%MET)%fiun, *, end = 999) i, i, i, i, MET(1:7)
+                        end if
 
                         !> Backspace the record as other variables read independently.
                         backspace(cm%dat(ck%MET)%fiun)
