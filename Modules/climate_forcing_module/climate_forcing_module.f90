@@ -424,8 +424,8 @@ module climate_forcing
             end if
         end do
 
-        !> Advance line if 'met' format file is active (special condition).
-        if (cm%dat(ck%MET)%factive) then
+        !> Advance line if 'MET' format file is active (special condition).
+        if (cm%dat(ck%MET)%factive .and. cm%dat(ck%MET)%itimestep == 0) then
             if (update_data(shd, cm, ck%MET, 1)) goto 999
         end if
 

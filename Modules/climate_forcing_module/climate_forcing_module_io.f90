@@ -269,7 +269,9 @@ module climate_forcing_io
                             cm%dat(vid)%blocks(1, t) = cm%dat(ck%TT)%blocks(1, t)
                         end if
                     else
-                        read(cm%dat(vid)%fiun, *, end = 999)
+                        if (vid == ck%MET) then
+                            read(cm%dat(vid)%fiun, *, end = 999)
+                        end if
                     end if
                 end do
 
