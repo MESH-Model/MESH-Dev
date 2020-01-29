@@ -209,7 +209,7 @@ contains
        enddo
        ! last depth of soil texture database set to max depth of SVS 
        ! i.e, deepest soil texture measured extends to the bottom of last SVS layer
-       d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_slc(nl_stp) )    
+       d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_soilgrids(nl_stp) )    
 
     endif
     
