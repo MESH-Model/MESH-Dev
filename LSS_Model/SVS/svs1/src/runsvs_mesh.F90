@@ -118,11 +118,16 @@ module runsvs_mesh
             ki = shd%lc%ILMOS(il1 + k)
             kj = shd%lc%JLMOS(il1 + k)
 
-            !> Convert lat, lon to radian.
+            !> Convert lat, lon to Radian.
+            !> We need to give SVS the true longitude (from 0 to 360), not negative values.
 !            bus(dlat + k) = ((shd%yOrigin + shd%yDelta*shd%yyy(ki)) - shd%yDelta/2.0)*PI/180.0
 !            bus(dlon + k) = ((shd%xOrigin + shd%xDelta*shd%xxx(ki)) - shd%xDelta/2.0)*PI/180.0
             bus(dlat + k) = shd%ylat(ki)*PI/180.0
-            bus(dlon + k) = shd%xlng(ki)*PI/180.0
+            if (shd%xlng(ki) < 0.0) then
+                bus(dlon + k) = (shd%xlng(ki) + 360.0)*PI/180.0
+            else
+                bus(dlon + k) = shd%xlng(ki)*PI/180.0
+            end if
 
             !> Map CLASS parameters to SVS parameters.
             !* zusl: Height of wind forcing.
@@ -443,7 +448,10 @@ module runsvs_mesh
         end if
 
         !> Determine time stamps of current date.
-        kdt = kount*(dt*1.0D0)/3600.0D0
+        !> SVS relies on the date at the start of the run and the KOUNT variable,
+        !> to determine the Julian Day, which is used to compute the zenith solar angle.
+        !> There is no need to increment the date given to SVS.
+        kdt = 0 !kount*(dt*1.0D0)/3600.0D0
 
         !> Compute date valid.
         call incdatr(datecmc_v, datecmc_o, kdt)
