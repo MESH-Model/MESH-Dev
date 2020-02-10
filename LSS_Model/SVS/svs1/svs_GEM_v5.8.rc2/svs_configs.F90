@@ -291,7 +291,7 @@ contains
 
     integer k
 
-    if ( .not. allocated(delz) ) allocate( delz(nl_svs) )\
+    if ( .not. allocated(delz) ) allocate( delz(nl_svs) )
 
     DELZ(1)=DL_SVS(1)            
     DO K=2,NL_SVS        

@@ -169,7 +169,7 @@ module runsvs_mesh
 !	    end if
 ! FIN EG_MOD
 
-            bus(slop + k) = max(pm%tp%xslp(il1 + k), 0.005)
+            bus(slop + k) = min(max(pm%tp%xslp(il1 + k), 0.005), 1.0)
             bus(draindens + k) = pm%hp%dd(il1 + k)!*0.001
 !            bus(rootdp + k) = max(pm%slp%sdep(il1 + k), 0.5)
 !            bus(rootdp + k) = max(shd%lc%sl%zbot(nl_svs), 0.5)
