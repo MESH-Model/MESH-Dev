@@ -182,10 +182,11 @@ module sfc_options
    !# * 'GSDE' : 8 layers of sand & clay info
    character(len=16) :: soiltext    = 'GSDE'
    namelist /surface_cfgs/ soiltext
-   character(len=*), parameter :: SOILTEXT_OPT(3) = (/ &
+   character(len=*), parameter :: SOILTEXT_OPT(4) = (/ &
         'GSDE     ',  &
         'SLC      ',  &
-        'SOILGRIDS' &
+        'SOILGRIDS',  &
+        'NIL      ' &
         /)
 
    !# Use snow albedo "I6" directly if .true.;

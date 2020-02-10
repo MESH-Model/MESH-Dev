@@ -97,12 +97,16 @@ module runsvs_mesh
         sigma_u = 0.995
         sigma_t = 0.995
         observed_forcing = .false.
+        soiltext = 'NIL'
 
-!        nl_svs = shd%lc%IGND
-        nl_svs = 7
-!        allocate(dl_svs(nl_svs))
-        allocate(dl_svs(shd%lc%IGND))
-        dl_svs = shd%lc%sl%zbot
+        if (soiltext == 'NIL') then
+            nl_svs = shd%lc%IGND
+            allocate(dl_svs(nl_svs))
+            dl_svs = shd%lc%sl%zbot
+        else
+            nl_svs = NL_SVS_DEFAULT
+            dl_svs = DP_SVS_DEFAULT
+        end if
 
         call svs_bus_init(il2 - il1 + 1)
         bussiz = runsvs_busdim
@@ -356,6 +360,8 @@ module runsvs_mesh
                     else if (soiltext == 'SLC') then
                         write(line, "('- ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") trim(soiltext), dl_slc(jj), weights(j, jj)
                     else if (soiltext == 'SOILGRIDS') then
+                        write(line, "('- ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") trim(soiltext), dl_soilgrids(jj), weights(j, jj)
+                    else if (soiltext == 'NIL') then
                         write(line, "('- ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") trim(soiltext), dl_soilgrids(jj), weights(j, jj)
                     end if
                     call print_message(line)

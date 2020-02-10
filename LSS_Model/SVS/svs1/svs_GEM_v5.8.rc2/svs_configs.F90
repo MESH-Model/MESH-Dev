@@ -152,6 +152,14 @@ contains
        nl_stp = nl_soilgrids
        call weights_soil_texture()	
 
+    else if ( soiltext == "NIL" ) then
+
+       ! ENTRY  bus number of levels for clay & sand variables
+       nl_ste = nl_svs
+       ! PERMANENT PHYSICS bus number of levels for clay & sand variables
+       nl_stp = nl_svs
+       call weights_soil_texture()	
+
     endif
 
     return
@@ -211,6 +219,15 @@ contains
        ! i.e, deepest soil texture measured extends to the bottom of last SVS layer
        d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_soilgrids(nl_stp) )    
 
+    else if ( soiltext == "NIL" ) then
+     
+       do k=2,nl_stp
+          d_soil_texture(k)=dl_svs(k-1)
+       enddo
+       ! last depth of soil texture database set to max depth of SVS 
+       ! i.e, deepest soil texture measured extends to the bottom of last SVS layer
+       d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_svs(nl_stp) )    
+
     endif
     
     
@@ -258,6 +275,10 @@ contains
              do kk = 1, nl_stp ! database layers
                 write(unout, *) 'for SOILGRIDS layer kk=', kk,' depth=', dl_soilgrids(kk),' weight=', weights(k,kk)
 	     enddo
+          else if (soiltext == "NIL" ) then
+             do kk = 1, nl_stp ! database layers
+                write(unout, *) 'for NIL(dl_svs) layer kk=', kk,' depth=', dl_soilgrids(kk),' weight=', weights(k,kk)
+             enddo
           endif
        enddo
     endif
