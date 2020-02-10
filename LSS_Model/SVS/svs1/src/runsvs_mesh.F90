@@ -472,20 +472,18 @@ module runsvs_mesh
         !> Loop tiles.
         do k = 0, NG - 1
 
-!todo
-!+ Option 1
-!+ Rainfall and snowfall rate are read separetely
-!+            bus(rainrate + k) = cm%dat(ck%RR)%GAT(il1 + k)/1000.0
-!+            bus(snowrate + k) = cm%dat(ck%SR)%GAT(il1 + k)/1000.0
-!> Option 2
-!> Rainfall and snowfall rate are derived from total precipitation rate
-!> assuming a separation at 0 degC (as in GEM-Hydro)
             if(cm%dat(ck%TT)%GAT(il1 + k) > tcdk) then
                 bus(rainrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
                 bus(snowrate + k) = 0.0
             else
                 bus(rainrate + k) = 0.0
                 bus(snowrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
+            end if
+            if (associated(cm%dat(ck%RR)%GAT)) then
+                bus(rainrate + k) = cm%dat(ck%RR)%GAT(il1 + k)/1000.0
+            end if
+            if (associated(cm%dat(ck%SR)%GAT)) then
+                bus(snowrate + k) = cm%dat(ck%SR)%GAT(il1 + k)/1000.0
             end if
             bus(flusolis + k) = cm%dat(ck%FB)%GAT(il1 + k)
             bus(fdsi + k) = cm%dat(ck%FI)%GAT(il1 + k)
