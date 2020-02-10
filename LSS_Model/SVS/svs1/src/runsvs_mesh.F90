@@ -438,6 +438,7 @@ module runsvs_mesh
 
         !> Time-step.
         dt = real(ic%dts)
+        delt = real(ic%dts)
         kount = ic%ts_count - 1
 
         !> First time-step.
