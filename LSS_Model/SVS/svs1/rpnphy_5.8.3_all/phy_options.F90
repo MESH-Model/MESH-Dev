@@ -1,16 +1,16 @@
 !-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
 !                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
+!version 3 or (at your option) any later version that should be found at:
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
 !
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 !See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!You should have received a copy of the License/Disclaimer along with this software;
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
@@ -21,7 +21,7 @@ module phy_options
    implicit none
    public
    save
-   
+
    real,    parameter :: FACTDT            = 1.
 
    integer, parameter :: LEVMAX            = 200 !# NOMBRE MAXIMUM DE NIVEAUX POUR LA PHYSIQUE
@@ -112,21 +112,21 @@ module phy_options
         'NIL    ', 'SURFACE', 'PHYSIMP', 'CLEF   ', 'MOISTKE' &
         /)
 
-   !# (MOISTKE only) Apply factor fnn_reduc 
-   !# * .false.: everywhere 
+   !# (MOISTKE only) Apply factor fnn_reduc
+   !# * .false.: everywhere
    !# * .true.: over water only
    logical           :: fnn_mask     = .false.
    namelist /physics_cfgs/ fnn_mask
    namelist /physics_cfgs_p/ fnn_mask
 
-   !# (MOISTKE only) Reduction factor (between 0. and 1.) to be applied to the 
-   !# parameter FNN (turbulent flux enhancement due to boundary layer clouds) 
+   !# (MOISTKE only) Reduction factor (between 0. and 1.) to be applied to the
+   !# parameter FNN (turbulent flux enhancement due to boundary layer clouds)
    real              :: fnn_reduc    = 1.
    namelist /physics_cfgs/ fnn_reduc
    namelist /physics_cfgs_p/ fnn_reduc
 
-   !# (CLEF+CONRES only) Non-dimensional parameter (must be >= 1.) that controls 
-   !# the value of the flux enhancement factor in CONRES 
+   !# (CLEF+CONRES only) Non-dimensional parameter (must be >= 1.) that controls
+   !# the value of the flux enhancement factor in CONRES
    real              :: fnnmod       = 2.
    namelist /physics_cfgs/ fnnmod
    namelist /physics_cfgs_p/ fnnmod
@@ -146,7 +146,7 @@ module phy_options
         'NIL  ', 'GWD86', 'GWD95' &
         /)
 
-   !# Number of times the 3-point filter will be applied to smooth the GW flux profiles 
+   !# Number of times the 3-point filter will be applied to smooth the GW flux profiles
    integer           :: hines_flux_filter = 0
    namelist /physics_cfgs/ hines_flux_filter
    namelist /physics_cfgs_p/ hines_flux_filter
@@ -156,13 +156,18 @@ module phy_options
    namelist /physics_cfgs/ iheatcal
    namelist /physics_cfgs_p/ iheatcal
 
+   !# Allow overwrite of agregated ilmo value by ctmdiag
+   logical           :: ilmodiag     = .true.
+   namelist /physics_cfgs/ ilmodiag
+   namelist /physics_cfgs_p/ ilmodiag
+
    !# Comma-separated list of diagnostic level inputs to read.
-   !# Default: indiag_list_s(1) = 'DEFAULT LIST', 
+   !# Default: indiag_list_s(1) = 'DEFAULT LIST',
    !# expanded to: UU, VV, TT, HU + all dynamic Tracers
    character(len=32) :: indiag_list_s(128) = ' '
    namelist /physics_cfgs/ indiag_list_s
 
-   !# Initialize water content and cloud fraction seen by radiation for time 0 if .true. 
+   !# Initialize water content and cloud fraction seen by radiation for time 0 if .true.
    logical           :: inilwc       = .false.
    namelist /physics_cfgs/ inilwc
    namelist /physics_cfgs_p/ inilwc
@@ -182,7 +187,7 @@ module phy_options
    namelist /physics_cfgs/ kticefrac
    namelist /physics_cfgs_p/ kticefrac
 
-   !# Compute lightning diagnostics if .true. 
+   !# Compute lightning diagnostics if .true.
    !# (currently for Milbrandt-Yau microphysics only)
    logical           :: lightning_diag = .false.
    namelist /physics_cfgs/ lightning_diag
@@ -208,11 +213,31 @@ module phy_options
    namelist /physics_cfgs/ moyhr
    namelist /physics_cfgs_p/ moyhr
 
-   !# Number of frozen hydrometeor categories to use in the P3 microphysics 
+   !# Number of frozen hydrometeor categories to use in the P3 microphysics
    !# scheme (currently limited to <5)
-   integer           :: mp_p3_ncat   = 1
-   namelist /physics_cfgs/ mp_p3_ncat
-   namelist /physics_cfgs_p/ mp_p3_ncat
+   integer           :: p3_ncat = 1
+   namelist /physics_cfgs/ p3_ncat
+   namelist /physics_cfgs_p/ p3_ncat
+
+   !# maximum time step for microphysics (P3)
+   real           :: p3_dtmax = 60.
+   namelist /physics_cfgs/ p3_dtmax
+   namelist /physics_cfgs_p/ p3_dtmax
+
+   !# calibration factor for ice deposition in microphysics (P3)
+   real           :: p3_depfact = 1.0
+   namelist /physics_cfgs/ p3_depfact
+   namelist /physics_cfgs_p/ p3_depfact
+
+   !# calibration factor for ice sublimation in microphysics (P3)
+   real           :: p3_subfact = 1.0
+   namelist /physics_cfgs/ p3_subfact
+   namelist /physics_cfgs_p/ p3_subfact
+
+   !# switch for real-time debugging in microphysics (P3)
+   logical         :: p3_debug = .false.
+   namelist /physics_cfgs/ p3_debug
+   namelist /physics_cfgs_p/ p3_debug
 
    !# Switch for airmass type (1 = maritime, 2 = continental)
    integer           :: my_ccntype   = 1
@@ -304,13 +329,13 @@ module phy_options
    namelist /physics_cfgs/ non_oro
    namelist /physics_cfgs_p/ non_oro
 
-   !# Pressure (in Pa) that defines the bottom emission level for gravity waves 
+   !# Pressure (in Pa) that defines the bottom emission level for gravity waves
    real              :: non_oro_pbot = 61000.0
    namelist /physics_cfgs/ non_oro_pbot
    namelist /physics_cfgs_p/ non_oro_pbot
 
-   !# Number of timesteps for which surface fluxes "FC" and "FV" are 
-   !# gradually set from 0 to their full value in a "slow start fashion" 
+   !# Number of timesteps for which surface fluxes "FC" and "FV" are
+   !# gradually set from 0 to their full value in a "slow start fashion"
    !# at the beginning of a time integration
    integer           :: nsloflux     = 0
    namelist /physics_cfgs/ nsloflux
@@ -341,7 +366,7 @@ module phy_options
    namelist /physics_cfgs/ pbl_ktop
    namelist /physics_cfgs_p/ pbl_ktop
 
-   !# Use the mixing length to average the Richardson number profile of (potentially) 
+   !# Use the mixing length to average the Richardson number profile of (potentially)
    !# many layers to derive a "background" Ri estimate
    logical           :: pbl_ribkg    = .false.
    namelist /physics_cfgs/ pbl_ribkg
@@ -352,7 +377,7 @@ module phy_options
    namelist /physics_cfgs/ pbl_ricrit
    namelist /physics_cfgs_p/ pbl_ricrit
 
-   !# 
+   !#
    !# * 'NIL     ':
    !# * 'CONRES  ':
    !# * 'SHALOW  ':
@@ -370,12 +395,17 @@ module phy_options
    namelist /physics_cfgs/ pbl_tsplit
    namelist /physics_cfgs_p/ pbl_tsplit
 
+   !# Use of 2*dt in KTE calculation of moistke
+   logical           :: pbl_tkediff2dt = .false.
+   namelist /physics_cfgs/ pbl_tkediff2dt
+   namelist /physics_cfgs_p/ pbl_tkediff2dt
+
    !# Relaxation timescale (s) for mixing length smoothing
    real              :: pbl_zntau    = 7200.
    namelist /physics_cfgs/ pbl_zntau
    namelist /physics_cfgs_p/ pbl_zntau
 
-   !# Number of layers to split model layers into for the high vertical 
+   !# Number of layers to split model layers into for the high vertical
    !# resolution coupled PBL
    integer           :: pbl_zsplit   = 1
    namelist /physics_cfgs/ pbl_zsplit
@@ -404,16 +434,16 @@ module phy_options
    namelist /physics_cfgs/ phystat_2d_l
    namelist /physics_cfgs_p/ phystat_2d_l
 
-   !# Physic statistics output Frequency 
+   !# Physic statistics output Frequency
    character(len=16) :: phystat_freq_S = '0h'
    namelist /physics_cfgs/ phystat_freq_S
    namelist /physics_cfgs_p/ phystat_freq_S
 
-   !# Physic statistics output: bus variable list that should be included in physics 
+   !# Physic statistics output: bus variable list that should be included in physics
    !# "block" stats. Possible values:
    !# * Long varnames
    !# * Short varnames
-   !# * 'ALLVARS=EDPV': all variables from E, D, P, V buses (any combination of the 4 letters); 
+   !# * 'ALLVARS=EDPV': all variables from E, D, P, V buses (any combination of the 4 letters);
    character(len=32) :: phystat_list_s(1024) = ' '
    namelist /physics_cfgs/ phystat_list_s
 !!$   namelist /physics_cfgs_p/ phystat_list_s
@@ -476,11 +506,11 @@ module phy_options
         'NIL      ', 'OLDRAD   ', 'NEWRAD   ', 'CCCMARAD ', 'CCCMARAD2' &
         /)
 
-   !# List of levels on which IR and VIS radiation calculations are 
+   !# List of levels on which IR and VIS radiation calculations are
    !# performed (to save on CPU time) (for newrad only)
    integer           :: radnivl(LEVMAX+1) = 0
    namelist /physics_cfgs/ radnivl
-   
+
    !# Key for activation of the radiation along slopes
    logical           :: radslope     = .false.
    namelist /physics_cfgs/ radslope
@@ -496,31 +526,32 @@ module phy_options
    namelist /physics_cfgs/ rmscon
    namelist /physics_cfgs_p/ rmscon
 
-   !# water/ice phase for saturation calc. if .true.; 
+   !# water/ice phase for saturation calc. if .true.;
    !# water phase only for saturation calc. if .false.
    logical           :: satuco       = .true.
    namelist /physics_cfgs/ satuco
    namelist /physics_cfgs_p/ satuco
 
-   !# Sets the minimum value of the drag coefficient in the orographic 
+   !# Sets the minimum value of the drag coefficient in the orographic
    !# blocking scheme.
    real              :: sgo_cdmin    = 1.0
    namelist /physics_cfgs/ sgo_cdmin
    namelist /physics_cfgs_p/ sgo_cdmin
 
-   !# Turns on/off the non-linear amplification factor (depending on wind 
+   !# Turns on/off the non-linear amplification factor (depending on wind
    !# direction) of the drag coefficient in the orographic blocking scheme
    logical           :: sgo_nldirfac = .true.
    namelist /physics_cfgs/ sgo_nldirfac
    namelist /physics_cfgs_p/ sgo_nldirfac
 
-   !# Turns on/off the amplification factor (due to stability) of the drag 
+   !# Turns on/off the amplification factor (due to stability) of the drag
    !# coefficient in the orographic blocking scheme
    logical           :: sgo_stabfac  = .true.
    namelist /physics_cfgs/ sgo_stabfac
    namelist /physics_cfgs_p/ sgo_stabfac
 
-   !# Run ISCCP cloud simulator (cccmarad only) if .true.
+   !# (DEPRECATED) Run ISCCP cloud simulator (cccmarad only) if .true.
+   !# WARNING: This option is no longuer suppored, will be removed
    logical           :: simisccp     = .false.
    namelist /physics_cfgs/ simisccp
    namelist /physics_cfgs_p/ simisccp
@@ -541,9 +572,9 @@ module phy_options
         'MP_MY2    ', 'MP_P3     ', 'NIL       ' &
         /)
 
-   !# Special treatment of stratosphere; 
-   !# if .true. ignore convection/condensation tendencies where pressure is lower 
-   !# than topc or specific humidity is lower than minq as specified in nocld.cdk 
+   !# Special treatment of stratosphere;
+   !# if .true. ignore convection/condensation tendencies where pressure is lower
+   !# than topc or specific humidity is lower than minq as specified in nocld.cdk
    logical           :: stratos      = .false.
    namelist /physics_cfgs/ stratos
    namelist /physics_cfgs_p/ stratos
@@ -558,13 +589,13 @@ module phy_options
    namelist /physics_cfgs/ test_phy
    namelist /physics_cfgs_p/ test_phy
 
-   !# Use correct vertical levels (thermo) and offset (none) for 
+   !# Use correct vertical levels (thermo) and offset (none) for
    !# Bougeault-Lacarrere mixing length calculation
    logical           :: tmp_boujo_height_corr = .false.
    namelist /physics_cfgs/ tmp_boujo_height_corr
    namelist /physics_cfgs_p/ tmp_boujo_height_corr
 
-   !# (newrad only) Use TT(12000) instead of skin temp in downward IR 
+   !# (newrad only) Use TT(12000) instead of skin temp in downward IR
    !# flux calculation if .true.
    logical           :: ts_flxir     = .false.
    namelist /physics_cfgs/ ts_flxir
@@ -574,7 +605,7 @@ module phy_options
 !contains
 !
 !   function phy_options_init() result(F_istat)
-!      implicit none 
+!      implicit none
 !      integer :: F_istat
 !#include <rmnlib_basics.hf>
 !      logical, save :: init_L = .false.
@@ -584,6 +615,6 @@ module phy_options
 !      indiag_list_s(1) = 'DEFAULT LIST'
 !      return
 !   end function phy_options_init
-
 !!VV FIN MODIFICATION POUR SA_MESH
+
 end module phy_options

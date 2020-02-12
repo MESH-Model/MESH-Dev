@@ -92,14 +92,15 @@ module climate_forcing_io
                 if (ierr /= 0) goto 999
                 cm%dat(vid)%blocktype = cbk%GRD
 
-            !> CLASS format MET file.
+            !> CLASS 'MET' file.
             case (6)
-                if (vid /= ck%MET) return
                 cm%dat(vid)%fname = 'basin_forcing'
                 cm%dat(vid)%fpath = 'basin_forcing.met'
                 cm%dat(vid)%blocktype = cbk%GRD
-                open(cm%dat(vid)%fiun, file = cm%dat(vid)%fpath, action = 'read', status = 'old', iostat = ierr)
-                if (ierr /= 0) goto 999
+                if (vid == ck%MET) then
+                    open(cm%dat(vid)%fiun, file = cm%dat(vid)%fpath, action = 'read', status = 'old', iostat = ierr)
+                    if (ierr /= 0) goto 999
+                end if
 
             !> Unknown file format.
             case default
@@ -167,7 +168,7 @@ module climate_forcing_io
 
         !> Local variables.
         integer t, n, j, i
-        real GRD(shd%yCount, shd%xCount)
+        real GRD(shd%yCount, shd%xCount), MET(9)
         character(len = DEFAULT_LINE_LENGTH) line
 
         !> Initialize the return variable.
@@ -238,16 +239,47 @@ module climate_forcing_io
 
             !> CLASS format MET file.
             case (6)
-                if (vid /= ck%MET) return
                 do t = 1, n
                     if (iskip == 0) then
-                        read(cm%dat(vid)%fiun, *, end = 999) i, i, i, i, &
-                            cm%dat(ck%FB)%blocks(1, t), cm%dat(ck%FI)%blocks(1, t), cm%dat(ck%RT)%blocks(1, t), &
-                            cm%dat(ck%TT)%blocks(1, t), cm%dat(ck%HU)%blocks(1, t), cm%dat(ck%UV)%blocks(1, t), &
-                            cm%dat(ck%P0)%blocks(1, t)
-                        cm%dat(ck%TT)%blocks(1, t) = cm%dat(ck%TT)%blocks(1, t) + 273.16
+
+                        !> Read from the 'MET' file (to a generic array).
+                        if (vid == ck%RR) then
+                            read(cm%dat(ck%MET)%fiun, *, end = 999) i, i, i, i, MET(1:9)
+                            cm%dat(ck%RR)%blocks(:, t) = MET(8)
+                        else if (vid == ck%SR) then
+                            read(cm%dat(ck%MET)%fiun, *, end = 999) i, i, i, i, MET(1:9)
+                            cm%dat(ck%SR)%blocks(:, t) = MET(9)
+                        else
+                            read(cm%dat(ck%MET)%fiun, *, end = 999) i, i, i, i, MET(1:7)
+                        end if
+
+                        !> Backspace the record as other variables read independently.
+                        backspace(cm%dat(ck%MET)%fiun)
+
+                        !> Assign the appropriate field to the variable.
+                        if (vid == ck%FB) then
+                            cm%dat(ck%FB)%blocks(:, t) = MET(1)
+                        else if (vid == ck%FI) then
+                            cm%dat(ck%FI)%blocks(:, t) = MET(2)
+                        else if (vid == ck%RT) then
+                            cm%dat(ck%RT)%blocks(:, t) = MET(3)
+                        else if (vid == ck%TT) then
+                            cm%dat(ck%TT)%blocks(:, t) = MET(4) + 273.16
+                        else if (vid == ck%HU) then
+                            cm%dat(ck%HU)%blocks(:, t) = MET(5)
+                        else if (vid == ck%UV) then
+                            cm%dat(ck%UV)%blocks(:, t) = MET(6)
+                        else if (vid == ck%P0) then
+                            cm%dat(ck%P0)%blocks(:, t) = MET(7)
+                        else if (vid == ck%MET) then
+
+                            !> Put something in the 'MET' field to pass the ENDDATA check.
+                            cm%dat(vid)%blocks(1, t) = cm%dat(ck%TT)%blocks(1, t)
+                        end if
                     else
-                        read(cm%dat(vid)%fiun, *, end = 999)
+                        if (vid == ck%MET) then
+                            read(cm%dat(vid)%fiun, *, end = 999)
+                        end if
                     end if
                 end do
 

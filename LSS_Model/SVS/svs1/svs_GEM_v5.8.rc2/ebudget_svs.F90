@@ -41,7 +41,7 @@
       REAL WD1(N), WF(N)
       REAL RG(N), ALVG(N), RAT(N), THETAA(N), FCOR(N)
       REAL ZUSL(N), ZTSL(N)
-      REAL HU(N), PS(N), RHOA(N), WTA(N,indx_svs_ag), Z0(N), Z0H(N)
+      REAL HU(N), PS(N), RHOA(N), WTA(N,svs_tilesp1), Z0(N), Z0H(N)
       REAL HV(N), DEL(N), RS(N)
       REAL CG(N), CVP(N),  PSNG(N), EMIS(N)
       REAL LAI(N), GAMVEG(N), ALGR(N), EMGR(N)
@@ -412,6 +412,7 @@ include "fintern.inc"
 !
 !!       3B.     COEFFICIENTS FOR THE TIME INTEGRATION OF  TVGS
 !                     (i.e. VEGETATION SKIN TEMPERATURE)
+!
 !               --------------------------------------------
 !         CALCULATE ONLY IF VEGETATION NON-ZERO PRESENT, OTHERWISE USE BARE GROUND TO IMPOSE DEFAULT PHYSICAL VALUE
 !
@@ -422,49 +423,54 @@ include "fintern.inc"
 !
 !                            Thermodynamic functions
 !
+             
              ZQSATVG(I)  = FOQST( TVGS(I),PS(I) )
              ZDQSATVG(I) = FODQS( ZQSATVG(I),TVGS(I) )
 !
-!                              function zrsra
+!                              function zrsra      
 !
              RORAVG(I) = RHOA(I) / RESAVG(I)
 !
 !                              Fraction of high vegetation to total vegetation
-!          
-	     FRACH(I) =  MIN(   (VEGH(I)*PSNVH(I))/(VEGH(I)+VEGL(I)*(1-PSNG(I))) , 1.0) 
+!    
+             FRACH(I) =  MIN(   (VEGH(I)*PSNVH(I))/(VEGH(I)+VEGL(I)*(1-PSNG(I))) , 1.0) 
 !
 !                                        terms za, zb, and zc for the
 !                                              calculation of tvgs(t)
-!
              A3(I) = 1. / DT + CVP(I) *  & 
-                (4. * EMVG(I) * STEFAN * (TVGS(I)**3)  &  
-                +  RORAVG(I) * ZDQSATVG(I) * CHLC * HV(I) &  
-                +  RORAVG(I) * CPD )  & 
-                + 2. * PI / 86400.
+                    (4. * EMVG(I) * STEFAN * (TVGS(I)**3)  &  
+                    +  RORAVG(I) * ZDQSATVG(I) * CHLC * HV(I) &  
+                    +  RORAVG(I) * CPD )  & 
+                    + 2. * PI / 86400.
 !
              B3(I) = 1. / DT + CVP(I) *   &
-                (3. * EMVG(I) * STEFAN * (TVGS(I)** 3)  &   
-                + RORAVG(I) * ZDQSATVG(I) * CHLC* HV(I) )
+                    (3. * EMVG(I) * STEFAN * (TVGS(I)** 3)  &   
+                    + RORAVG(I) * ZDQSATVG(I) * CHLC* HV(I) )
            
 !
              C3(I) = 2. * PI * TVGD(I) / 86400. &   
-                + CVP(I) *  & 
-                ( RORAVG(I) * CPD * THETAA(I)  &  
-                + RG(I) * (1. - ALVGLAI(I)) + EMVG(I)*RAT(I)  & 
-                - RORAVG(I)  & 
-                * CHLC * HV(I) * (ZQSATVG(I)-HU(I)) )
+                     + CVP(I) *  & 
+                     ( RORAVG(I) * CPD * THETAA(I)  &  
+                     + RG(I) * (1. - ALVGLAI(I)) + EMVG(I)*RAT(I)  & 
+                     - RORAVG(I)  & 
+                     * CHLC * HV(I) * (ZQSATVG(I)-HU(I)) )
 
-            TVGST(I) =  ( TVGS(I)*B3(I) + C3(I) ) / A3(I)
-         ELSE  
-            ! NO VEGETATION -- USE BARE GROUND VALUES or ZERO to fill arrays to avoid numerical errors
-            ZQSATVG(I)  =  ZQSATGR(I)
-            ZDQSATVG(I) = ZDQSATGR(I)
-            RORAVG(I) = RORAGR(I)
-            FRACH(I) = 0.0
-            TVGST(I) = TGRST(I)
-         ENDIF
 
-      ENDDO
+
+             TVGST(I) =  ( TVGS(I)*B3(I) + C3(I) ) / A3(I)
+
+          ELSE
+             ! NO VEGETATION -- USE BARE GROUND VALUES or ZERO to fill arrays to avoid numerical errors
+             ZQSATVG(I)  =  ZQSATGR(I)
+             ZDQSATVG(I) = ZDQSATGR(I)
+             RORAVG(I) = RORAGR(I)
+             FRACH(I) = 0.0
+             TVGST(I) = TGRST(I)
+          ENDIF
+
+
+       ENDDO
+
 !
 !
 !!$!        4.     FREEZING AND MELTING TENDENCIES FOR SOIL WATER
@@ -595,15 +601,15 @@ include "fintern.inc"
         EG(I) = RHOA(I)*(HRSURF(I)* ZQSATGRT(I) - HU(I)) / RESAGR(I)
 
 !
-!
+! 
 !                                            FOR VEGETATION --- SET FLUXES TO ZERO if NO VEGETATION
-        IF(VEGH(I)+VEGL(I)*(1.-PSNG(I)).ge.EPSILON_SVS) THEN
+          IF(VEGH(I)+VEGL(I)*(1.-PSNG(I)).ge.EPSILON_SVS) THEN
 !
- 
+
 !                                            Latent heat of evaporation from
 !                                            vegetation
 !
-            LEVNOFRAC(I) = RHOA(I) * CHLC * HV(I) * (ZQSATVGT(I) - HU(I)) / RESAVG(I)
+             LEVNOFRAC(I) = RHOA(I) * CHLC * HV(I) * (ZQSATVGT(I) - HU(I)) / RESAVG(I)
 
 
 
@@ -612,47 +618,50 @@ include "fintern.inc"
 !                                            Latent heat of Transpiration
 !
 !
-            ZHV(I) = MAX(0.0 , SIGN(1.,ZQSATVGT(I) - HU(I)))
-            LETR(I) = ZHV(I) * (1. - DEL(I)) * RHOA(I)  &
-                      * CHLC * (VEGH(I) * (1. - PSNVHA(I)) + VEGL(I) * (1. - PSNG(I))) & 
-                      * (ZQSATVGT(I)  - HU(I)) / (RESAVG(I) + RS(I))
+             ZHV(I) = MAX(0.0 , SIGN(1.,ZQSATVGT(I) - HU(I)))
+             LETR(I) = ZHV(I) * (1. - DEL(I)) * RHOA(I)  &
+                       * CHLC * (VEGH(I) * (1. - PSNVHA(I)) + VEGL(I) * (1. - PSNG(I))) & 
+                       * (ZQSATVGT(I)  - HU(I)) / (RESAVG(I) + RS(I))
 !
 !                                           Transpiration rate (for hydro_svs.ftn)
 !
-            ETR(I) = RHOA(I)*ZHV(I)*(1. - DEL(I))*(ZQSATVGT(I) - HU(I))/(RESAVG(I) + RS(I))
+             ETR(I) = RHOA(I)*ZHV(I)*(1. - DEL(I))*(ZQSATVGT(I) - HU(I))/(RESAVG(I) + RS(I))
 
 
 !                                            Evapotranspiration rate from vege. (for hydro_svs.ftn)
 
-            EV(I) =  RHOA(I)*HV(I) * (ZQSATVGT(I) - HU(I)) / RESAVG(I)
+             EV(I) =  RHOA(I)*HV(I) * (ZQSATVGT(I) - HU(I)) / RESAVG(I)
 !
 !                                            Latent heat of evapotranspiration from
 !                                            vegetation
 !
-            LEVNOFRAC(I) = RHOA(I) * CHLC * HV(I) * (ZQSATVGT(I) - HU(I)) / RESAVG(I)
+             LEVNOFRAC(I) = RHOA(I) * CHLC * HV(I) * (ZQSATVGT(I) - HU(I)) / RESAVG(I)
 
-            !  EV is limited to WR/DT+RR+ETR to avoid negative WR in hydro_svs when direct evaporation exceeds rainrate
-            !  When snow is present, rain falls through vegetation to snow bank... so is not considered in evaporation... This is to conserve water budget.
+             !  EV is limited to WR/DT+RR+ETR to avoid negative WR in hydro_svs when direct evaporation exceeds rainrate
+             !  When snow is present, rain falls through vegetation to snow bank... so is not considered in evaporation... This is to conserve water budget.
 
-            IF( SNM(I).GE.CRITSNOWMASS .AND. SVM(I).GE. CRITSNOWMASS ) THEN
+
+             IF( SNM(I).GE.CRITSNOWMASS .AND. SVM(I).GE. CRITSNOWMASS ) THEN
                 !both snow packs exists, rain falls directly to snow
-                    EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
-            ELSE IF ( SNM(I).GE.CRITSNOWMASS .AND. SVM(I).LT.CRITSNOWMASS ) THEN
+                EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)))
+
+             ELSE IF ( SNM(I).GE.CRITSNOWMASS .AND. SVM(I).LT.CRITSNOWMASS ) THEN
                 ! only low vegetation snow pack present, rain for low vegetation portion
                 ! falls through to snow, rain for high vegetation portion is considered in evaporation
                 EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+ & 
                      RR(I)*VEGH(I)/(VEGH(I)+VEGL(I)*(1.-PSNG(I)))))
    
-            ELSE IF ( SNM(I).LT.CRITSNOWMASS .AND. SVM(I).GE.CRITSNOWMASS ) THEN
+             ELSE IF ( SNM(I).LT.CRITSNOWMASS .AND. SVM(I).GE.CRITSNOWMASS ) THEN
                 ! only high vegetation snow pack present, rain for high vegetation portion
                 ! falls through to snow, rain for low vegetation portion is considered in evaporation
                 EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+ &
                      RR(I)*(VEGL(I)*(1-PSNG(I))/(VEGH(I)+VEGL(I)*(1.-PSNG(I))))))
 
-            ELSE
-		! no snow present, all rain is considered evaporation
+             ELSE 
+                ! no snow present, all rain is considered evaporation
                 EV(I) = MIN (EV(I),(WR(I)/DT+ETR(I)+RR(I)))
-            ENDIF
+             ENDIF
+        
 
         ELSE
            ! NO VEGETATION --- SET FLUXES TO ZERO
@@ -662,7 +671,9 @@ include "fintern.inc"
            ETR(I) = 0.0
            EV(I) = 0.0
            LEVNOFRAC(I) = 0.0
-	ENDIF
+          
+        ENDIF
+
 !                                            Water vapor flux from vegetation
         EVF(I) =  WTA(I,indx_svs_vg)  * EV(I)/RHOA(I)
 !                                            Latent heat of evaporation from vegetation
@@ -728,22 +739,22 @@ include "fintern.inc"
 !
 !                                             Calculate land-tile-averaged specific humidity
 !
-	  ZQS(I) =     WTA(I,indx_svs_bg)      *    HRSURF(I)        * ZQSATGRT(I) & 
-		     + WTA(I,indx_svs_sn)                            * ZQSATSNO(I) &  
-                     + WTA(I,indx_svs_sv)                            * ZQSATSNV(I) &  
-                     + WTA(I,indx_svs_vg)      *        HV(I)        * ZQSATVGT(I) & 
-                     + WTA(I,indx_svs_vg)      *    (1.-HV(I))       * HU(I)
+           ZQS(I) =     WTA(I,indx_svs_bg)      *    HRSURF(I)        * ZQSATGRT(I) & 
+                      + WTA(I,indx_svs_sn)                            * ZQSATSNO(I) &  
+                      + WTA(I,indx_svs_sv)                            * ZQSATSNV(I) &  
+                      + WTA(I,indx_svs_vg)      *        HV(I)        * ZQSATVGT(I) & 
+                      + WTA(I,indx_svs_vg)      *    (1.-HV(I))       * HU(I)
 !
 !                                             Calculate land-tile-averaged surface temperature
 !                                             i.e., aggregate skin temperatures of diff.
 !                                             surfaces 
 !
-          TSA(I) = AG( WTA(I,indx_svs_bg), WTA(I,indx_svs_vg), &
-                     WTA(I,indx_svs_sn), WTA(I,indx_svs_sv), &
-                     TGRST(I),TVGST(I),TSNS(I),TSVS(I) )
+           TSA(I) = AG( WTA(I,indx_svs_bg), WTA(I,indx_svs_vg), &
+                        WTA(I,indx_svs_sn), WTA(I,indx_svs_sv), &
+                        TGRST(I),TVGST(I),TSNS(I),TSVS(I) )
 
-        ELSE
 
+        else
            ! Consider aerodynamic resistance in calc. of effective ("land-tile-averaged") land sfc 
            ! temperature and humidity (see svs_configs.ftn90)
 
@@ -769,6 +780,7 @@ include "fintern.inc"
                                      TGRST(I)/RESAGR(I), TVGST(I)/RESAVG(I), &
                                       TSNS(I)/RESASA(I),  TSVS(I)/RESASV(I) )
         endif
+
 
 !            Calculated averaged radiative Temperature
 

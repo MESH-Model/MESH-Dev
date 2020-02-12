@@ -406,7 +406,7 @@ module sa_mesh_run_between_grid
 !todo: remove this when code for output files has moved.
         call output_variables_update(shd)
 
-        if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0) then
+        if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0 .and. ro%RUNCHNL) then
 
             where (shd%DA > 0.0)
                 WF_QO2_ACC_MM = WF_QO2_ACC_MM + vs%grid%qo/shd%DA/1000.0*RTE_TS
@@ -455,7 +455,7 @@ module sa_mesh_run_between_grid
         end if
 
         !> This occurs the last time-step of the day.
-        if (ic%now%day /= ic%next%day) then
+        if (ic%now%day /= ic%next%day .and. ro%RUNCHNL) then
 
             if (fms%rsvr%n > 0) then
                 where (out%d%grid%stgch(fms%rsvr%meta%rnk(:)) > 0.0 .and. fms%rsvr%rls%area > 0.0)
@@ -541,7 +541,7 @@ module sa_mesh_run_between_grid
 !        vs%basin%vv(1:shd%NA) = vs%grid%vv(1:shd%NA)*shd%FRAC
 !        vs%basin%pre(1:shd%NA) = vs%grid%pre(1:shd%NA)*shd%FRAC
 !        vs%basin%prern(1:shd%NA) = vs%grid%prern(1:shd%NA)*shd%FRAC
-!        vs%basin%presn(1:shd%NA) = vs%grid%presn(1:shd%NA)*shd%FRAC
+!        vs%basin%presno(1:shd%NA) = vs%grid%presno(1:shd%NA)*shd%FRAC
 !        vs%basin%rcan(1:shd%NA) = vs%grid%rcan(1:shd%NA)*shd%FRAC
 !        vs%basin%sncan(1:shd%NA) = vs%grid%sncan(1:shd%NA)*shd%FRAC
 !        vs%basin%cmas(1:shd%NA) = vs%grid%cmas(1:shd%NA)*shd%FRAC
@@ -551,6 +551,7 @@ module sa_mesh_run_between_grid
 !        vs%basin%gro(1:shd%NA) = vs%grid%gro(1:shd%NA)*shd%FRAC
 !        vs%basin%sno(1:shd%NA) = vs%grid%sno(1:shd%NA)*shd%FRAC
 !        vs%basin%fsno(1:shd%NA) = vs%grid%fsno(1:shd%NA)*shd%FRAC
+!        vs%basin%rofsno(1:shd%NA) = vs%grid%rofsno(1:shd%NA)*shd%FRAC
 !        vs%basin%albs(1:shd%NA) = vs%grid%albs(1:shd%NA)*shd%FRAC
 !        vs%basin%rhos(1:shd%NA) = vs%grid%rhos(1:shd%NA)*shd%FRAC
 !        vs%basin%wsno(1:shd%NA) = vs%grid%wsno(1:shd%NA)*shd%FRAC
@@ -632,7 +633,7 @@ module sa_mesh_run_between_grid
                 vs%basin%vv(ii) = vs%basin%vv(ii) + vs%basin%vv(i)
                 vs%basin%pre(ii) = vs%basin%pre(ii) + vs%basin%pre(i)
                 vs%basin%prern(ii) = vs%basin%prern(ii) + vs%basin%prern(i)
-                vs%basin%presn(ii) = vs%basin%presn(ii) + vs%basin%presn(i)
+                vs%basin%presno(ii) = vs%basin%presno(ii) + vs%basin%presno(i)
                 vs%basin%rcan(ii) = vs%basin%rcan(ii) + vs%basin%rcan(i)
                 vs%basin%sncan(ii) = vs%basin%sncan(ii) + vs%basin%sncan(i)
                 vs%basin%cmas(ii) = vs%basin%cmas(ii) + vs%basin%cmas(i)
@@ -642,6 +643,7 @@ module sa_mesh_run_between_grid
                 vs%basin%gro(ii) = vs%basin%gro(ii) + vs%basin%gro(i)
                 vs%basin%sno(ii) = vs%basin%sno(ii) + vs%basin%sno(i)
                 vs%basin%fsno(ii) = vs%basin%fsno(ii) + vs%basin%fsno(i)
+                vs%basin%rofsno(ii) = vs%basin%rofsno(ii) + vs%basin%rofsno(i)
                 vs%basin%albs(ii) = vs%basin%albs(ii) + vs%basin%albs(i)
                 vs%basin%rhos(ii) = vs%basin%rhos(ii) + vs%basin%rhos(i)
                 vs%basin%wsno(ii) = vs%basin%wsno(ii) + vs%basin%wsno(i)
@@ -702,7 +704,7 @@ module sa_mesh_run_between_grid
             vs%basin%vv = vs%basin%vv/frac
             vs%basin%pre = vs%basin%pre/frac
             vs%basin%prern = vs%basin%prern/frac
-            vs%basin%presn = vs%basin%presn/frac
+            vs%basin%presno = vs%basin%presno/frac
             vs%basin%rcan = vs%basin%rcan/frac
             vs%basin%sncan = vs%basin%sncan/frac
             where (tcanfrac > 0.0)
@@ -714,6 +716,7 @@ module sa_mesh_run_between_grid
             end where
             vs%basin%sno = vs%basin%sno/frac
             vs%basin%fsno = vs%basin%fsno/frac
+            vs%basin%rofsno = vs%basin%rofsno/frac
             vs%basin%wsno = vs%basin%wsno/frac
             where (tsnofrac > 0.0)
                 vs%basin%albs = vs%basin%albs/tsnofrac

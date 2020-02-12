@@ -56,7 +56,7 @@ subroutine inisurf4(kount, ni, nk, trnch)
    real, pointer, dimension(:) :: zalen, zdhdx, zdhdxdy, zdhdxdyen, zdhdxen, zdhdy, zdhdyen, zepstfn, zglacen, zglacier, zglsea, zglsea0, zglseaen, zicedp, zicedpen, ziceline, zicelinen, zlhtg, zlhtgen, zmg, zmgen, zml, zresa, zsnoal, zsnoalen, zsnoagen, zsnoden, zsnoma, zsnoro, zsnoroen, ztsrad, ztwater, ztwateren, zwveg, zwvegen, zwsnow, zwsnowen, zz0en
    real, pointer, dimension(:,:) :: zalvis, zclay, zclayen, zisoil, zisoilen, zsand, zsanden, zsnodp, zsnodpen, ztglacen, ztglacier, ztmice, ztmicen, ztmoins, ztsoil, ztsoilen, zvegf, zvegfen, zwsoil, zwsoilen, zz0, zz0t
    ! SVS
-   real, pointer, dimension(:) :: zdrainaf, zdraindens, zdrnden, zfvapliqaf, zlaivh, zlaivhen, zlaivl, zlaivlen, zresavg, zslop, zslopen, zsnodpl,zsnodplen, zsnomaen, zsnval, zsnvalen, zsnvden, zsnvdp, zsnvdpen, zsnvma, zsnvmaen, zsnvro, zvegh, zveghen, zvegl, zveglen, zwsnv, zwsnven
+   real, pointer, dimension(:) :: zdrainaf, zdraindens, zdrnden, zemistg, zemistgen, zfvapliqaf, zlaivh, zlaivhen, zlaivl, zlaivlen, zresagr, zresavg, zresasa, zresasv, zslop, zslopen, zsnodenen, zsnodpl, zsnodplen, zsnomaen, zsnval, zsnvalen, zsnvden, zsnvdenen, zsnvdp, zsnvdpen, zsnvma, zsnvmaen, zsnvro, zvegh, zveghen, zvegl, zveglen, zwsnv, zwsnven
    real, pointer, dimension(:,:) :: zrunofftotaf, ztground, ztgrounden, ztsnow, ztsnowen, ztsnowveg, ztsnowvegen, ztvege, ztvegeen 
 
 
@@ -79,6 +79,8 @@ subroutine inisurf4(kount, ni, nk, trnch)
    MKPTR1D(zdrainaf,drainaf)
    MKPTR1D(zdraindens,draindens)
    MKPTR1D(zdrnden,drnden)
+   MKPTR1D(zemistg,emistg)
+   MKPTR1D(zemistgen,emistgen)
    MKPTR1D(zepstfn,epstfn)
    MKPTR1D(zfvapliqaf,fvapliqaf)
    MKPTR1D(zglacen,glacen)
@@ -100,26 +102,31 @@ subroutine inisurf4(kount, ni, nk, trnch)
    MKPTR1D(zmgen,mgen)
    MKPTR1D(zml,ml)
    MKPTR1D(zresa,resa)
+   MKPTR1D(zresagr,resagr)
    MKPTR1D(zresavg,resavg)
+   MKPTR1D(zresasa,resasa)
+   MKPTR1D(zresasv,resasv)
    MKPTR1D(zslop,slop)
    MKPTR1D(zslopen,slopen)
    MKPTR1D(zsnoal,snoal)
    MKPTR1D(zsnoalen,snoalen)
    MKPTR1D(zsnoagen,snoagen)
    MKPTR1D(zsnoden,snoden)
+   MKPTR1D(zsnodenen,snodenen)
    MKPTR1D(zsnodpl,snodpl)
    MKPTR1D(zsnodplen,snodplen)
    MKPTR1D(zsnoma,snoma)
-   MKPTR1D(zsnomaen,snomaen)
+   !MKPTR1D(zsnomaen,snomaen)
    MKPTR1D(zsnoro,snoro)
    MKPTR1D(zsnoroen,snoroen)
    MKPTR1D(zsnval,snval)
    MKPTR1D(zsnvalen,snvalen)
    MKPTR1D(zsnvden,snvden)
+   MKPTR1D(zsnvdenen,snvdenen)
    MKPTR1D(zsnvdp,snvdp)
    MKPTR1D(zsnvdpen,snvdpen)
    MKPTR1D(zsnvma,snvma)
-   MKPTR1D(zsnvmaen,snvmaen)
+   !MKPTR1D(zsnvmaen,snvmaen)
    MKPTR1D(zsnvro,snvro)
    MKPTR1D(ztsrad,tsrad)
    MKPTR1D(ztwater,twater)
@@ -510,9 +517,14 @@ subroutine inisurf4(kount, ni, nk, trnch)
                zwveg(i)           = zwvegen(i)
                zdrainaf(i)        = 0.0
                zdraindens(i)      = zdrnden(i)
+               if ( read_emis ) &
+                    zemistg(i)         = zemistgen(i)
                zwsnow(i)          = zwsnowen(i)
                zwsnv(i)           = zwsnven(i)
+               zresagr(i)         = 100.
                zresavg(i)         = 50.
+               zresasa(i)         = 100.
+               zresasv(i)         = 100.
                ztsnow(i,1)        = ztsnowen(i,1)
                ztsnow(i,2)        = ztsnowen(i,2)
                ztsnowveg(i,1)     = ztsnowvegen(i,1)
@@ -524,18 +536,23 @@ subroutine inisurf4(kount, ni, nk, trnch)
 !              Read in snow mass and snow depth, calc. densities in coherence
                zsnodpl(i) = zsnodplen(i)
                zsnvdp(i)  = zsnvdpen(i)
-               zsnoma(i)  = zsnomaen(i)
-               zsnvma(i)  = zsnvmaen(i)
+               !zsnoma(i)  = zsnomaen(i)
+               !zsnvma(i)  = zsnvmaen(i)
+               zsnoden(i) = zsnodenen(i)
+               zsnvden(i) = zsnvdenen(i)
+               zsnoma(i)  = zsnoden(i) * zsnodplen(i)
+               zsnvma(i)  = zsnvden(i) * zsnvdpen(i)
 
 !!$               zlaivh(i)          = zlaivhen(i)
 !!$               zlaivl(i)          = zlaivlen(i)
 !!$               zvegh(i)           = zveghen(i)
 !!$               zvegl(i)           = zveglen(i)
-               ! DDeacu: Ensure that slope is positive and set its minimum value             
+               ! DDeacu: Ensure that slope is positive and set its minimum value      
+               ! max. angle for slope is 45 degrees.       
                if ( zmg(i).gt.critmask ) then
-                  zslop(i)  = max( abs( zslopen(i) ) , 5.e-03 )
+                  zslop(i)  = min ( max( abs( zslopen(i) ) , 5.e-03 ) , 1.0 ) 
                else
-                  zslop(i)  = abs( zslopen(i) )
+                  zslop(i)  = 0.0
                endif
                
             endif
@@ -582,146 +599,45 @@ subroutine inisurf4(kount, ni, nk, trnch)
 !
 !VDIR NODEP
       kount_zero: if ( kount == 0 ) then
-         soil_data: if ( soiltext == "CLASSIC" ) then
-              ! CLASSIC METHOD
-!                           Sand and clay fractions of the soil
-!                           are taken as simple averages of the
-!                           first 3 layers
-!
-!VDIR NODEP
-
-              ! make coherence check here...
-          
-            DO i=1,ni
-
-                  watmask:if (zmg(i).lt.critmask) then
-                       ! OVER WATER...
-                     tempsand   = 0.0
-                     tempclay   = 0.0
+         soil_data: if ( soiltext == "GSDE" .or. soiltext == "SLC" &
+              .or. soiltext == "SOILGRIDS" ) then 
+            DO k=1,nl_stp
+               DO i=1,ni
+                  watmask2: if (zmg(i).lt.critmask) then
+                     ! OVER WATER...
+                     zsand  (i,k)    = 0.0
+                     zclay  (i,k)    = 0.0
                   else
-                     ! OVER LAND 
-                     tempsand  = ( zsanden(i,1) &
-                                 + zsanden(i,2) &
-                                 + zsanden(i,3) ) / 3. 
-
-                     tempclay  = ( zclayen(i,1) &
-                                 + zclayen(i,2) &
-                                 + zclayen(i,3) ) / 3. 
-
-                     if( tempsand + tempclay .lt. critexture ) then
-                        !                If no sand and clay component
-                        !                attribute to these points characteristics
-                        !                of typical loamy soils
-                        tempsand = 35.
-                        tempclay = 35.
-                        
-                     else
-                        !                 Minimum of 1% of sand and clay  
-
-                        tempsand = max( tempsand, 1.0)
-                        tempclay = max( tempclay, 1.0)
-
-                        if ( tempsand + tempclay .gt. 100.0 ) then
-                             ! reduce sand & clay  percentage proportionally 
-                           tempsum = tempsand + tempclay
-                           tempsand = tempsand / tempsum * 100.
-                           tempclay = tempclay / tempsum * 100.
-                        endif
-
-                     endif
+                     ! OVER LAND
                      
-                  endif watmask
-
-                  DO k =1 , nl_stp
-                     zsand(i,k) = tempsand
-                     zclay(i,k) = tempclay
-                  ENDDO
-
-               ENDDO
- !                           Initialize the soil characteristics
-!                           using the soil texture
-               call inisoili_svs( ni, trnch )
-
-
-        else if ( soiltext == "GSDE" ) then 
-          ! GSDE database
-           DO k=1,nl_stp
-              DO i=1,ni
-                 watmask2: if (zmg(i).lt.critmask) then
-                       ! OVER WATER...
-                       zsand  (i,k)    = 0.0
-                       zclay  (i,k)    = 0.0
-                    else
-                       ! OVER LAND
-
-                       if (zsanden(i,k)+zclayen(i,k).lt.critexture) then
+                     if (zsanden(i,k)+zclayen(i,k).lt.critexture) then
                         !                If no sand and clay component
                         !                attribute to these points characteristics
                         !                of typical loamy soils
-                          zsand(i,k) = 35.
-                          zclay(i,k) = 35.
-                       else 
+                        zsand(i,k) = 35.
+                        zclay(i,k) = 35.
+                     else 
                         !                 Minimum of 1% of sand and clay 
-                          zsand(i,k) =  max( zsanden(i,k) , 1.0) 
-                          
-                          zclay(i,k) =  max( zclayen(i,k) , 1.0)
-                          
-                          if ( zsand(i,k)+zclay(i,k).gt.100 ) then
-                             ! reduce sand & clay  percentage proportionally 
-                             tempsum= zsand(i,k) + zclay(i,k)
-                             zsand(i,k) = zsand(i,k)/tempsum * 100.
-                             zclay(i,k) = zclay(i,k)/tempsum * 100.
+                        zsand(i,k) =  max( zsanden(i,k) , 1.0) 
+                        
+                        zclay(i,k) =  max( zclayen(i,k) , 1.0)
+                        
+                        if ( zsand(i,k)+zclay(i,k).gt.100 ) then
+                           ! reduce sand & clay  percentage proportionally 
+                           tempsum= zsand(i,k) + zclay(i,k)
+                           zsand(i,k) = zsand(i,k)/tempsum * 100.
+                           zclay(i,k) = zclay(i,k)/tempsum * 100.
                         endif
-                       endif
-                    endif watmask2
-
+                     endif
+                  endif watmask2
+                  
                enddo
             enddo
-            ! read in texture, do coherence check 
             ! initialize soil characteristics 
-            call inisoili_svs_gsde( ni, trnch )
-  
-  else if ( soiltext == "SLC" ) then 
-          ! SLC database
-           DO k=1,nl_stp
-              DO i=1,ni
-                 watmask3: if (zmg(i).lt.critmask) then
-                       ! OVER WATER...
-                       zsand  (i,k)    = 0.0
-                       zclay  (i,k)    = 0.0
-                    else
-                       ! OVER LAND
-
-                       if (zsanden(i,k)+zclayen(i,k).lt.critexture) then
-                        !                If no sand and clay component
-                        !                attribute to these points characteristics
-                        !                of typical loamy soils
-                          zsand(i,k) = 35.
-                          zclay(i,k) = 35.
-                       else 
-                        !                 Minimum of 1% of sand and clay 
-                          zsand(i,k) =  max( zsanden(i,k) , 1.0) 
-                          
-                          zclay(i,k) =  max( zclayen(i,k) , 1.0)
-                          
-                          if ( zsand(i,k)+zclay(i,k).gt.100 ) then
-                             ! reduce sand & clay  percentage proportionally 
-                             tempsum= zsand(i,k) + zclay(i,k)
-                             zsand(i,k) = zsand(i,k)/tempsum * 100.
-                             zclay(i,k) = zclay(i,k)/tempsum * 100.
-                        endif
-                       endif
-                    endif watmask3
-
-               enddo
-            enddo
-            ! read in texture, do coherence check 
-            ! initialize soil characteristics 
-            call inisoili_svs_slc( ni, trnch )
+            call inisoili_svs( ni, trnch )
          endif soil_data
 
          ! Make sure the entry fields are coherent ...
-
          call coherence3(ni, trnch)
 
 

@@ -63,7 +63,11 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,dimension(n) :: wft,     wgeq,    wgt,    wlt,    wrt,    wst
    real,dimension(n) :: z0tot,   zc1,     zc2,    zcs
    real,dimension(n) :: my_ta,   my_ua,   my_va
-
+   real,dimension(n) :: zsca_sw, zref_sw_surf, zemit_lw_surf
+   real,dimension(n) :: zu10, zusr
+   real,dimension(n) :: zusurfzt, zvsurfzt, zqd
+   real,dimension(n) :: zzenith
+!
    real,pointer,dimension(:) :: cmu
    real,pointer,dimension(:) :: ctu
    real,pointer,dimension(:) :: hum
@@ -152,6 +156,29 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: zza
    real,pointer,dimension(:) :: zzusl
    real,pointer,dimension(:) :: zztsl
+
+   real,pointer,dimension(:) :: ZFSD
+   real,pointer,dimension(:) :: ZFSF
+   real,pointer,dimension(:) :: ZCOSZENI
+
+   real,pointer,dimension(:) :: ZUTCISUN
+   real,pointer,dimension(:) :: ZUTCISHADE
+   real,pointer,dimension(:) :: ZRADSUN
+   real,pointer,dimension(:) :: ZRADSHADE
+   real,pointer,dimension(:) :: ZWBGTSUN
+   real,pointer,dimension(:) :: ZWBGTSHADE
+   real,pointer,dimension(:) :: ZTGLBSUN
+   real,pointer,dimension(:) :: ZTGLBSHADE
+   real,pointer,dimension(:) :: ZTWETB
+!
+   real,pointer,dimension(:) :: ZQ1
+   real,pointer,dimension(:) :: ZQ2
+   real,pointer,dimension(:) :: ZQ3
+   real,pointer,dimension(:) :: ZQ4
+   real,pointer,dimension(:) :: ZQ5
+   real,pointer,dimension(:) :: ZQ6
+   real,pointer,dimension(:) :: ZQ7
+
    !      real,pointer,dimension(:,:) :: ts
    !------------------------------------------------------------------------
 
@@ -247,6 +274,27 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    zza      (1:n) => bus( x(za,1,1)           : )
    zzusl    (1:n) => bus( x(zusl,1,1)         : )
    zztsl    (1:n) => bus( x(ztsl,1,1)         : )
+
+   zfsd     (1:n) => bus( x( fsd,1,1)         : )
+   zfsf     (1:n) => bus( x( fsf,1,1)         : )
+   zcoszeni (1:n) => bus( x( Cang,1,1)        : )
+
+   zutcisun  (1:n) => bus( x( yutcisun     ,1,indx_sfc) : )
+   zutcishade(1:n) => bus( x( yutcishade   ,1,indx_sfc) : )
+   zwbgtsun  (1:n) => bus( x( ywbgtsun     ,1,indx_sfc) : )
+   zwbgtshade(1:n) => bus( x( ywbgtshade   ,1,indx_sfc) : )
+   ztglbsun  (1:n) => bus( x( ytglbsun     ,1,indx_sfc) : )
+   ztglbshade(1:n) => bus( x( ytglbshade   ,1,indx_sfc) : )
+   zradsun   (1:n) => bus( x( yradsun      ,1,indx_sfc) : )
+   zradshade (1:n) => bus( x( yradshade    ,1,indx_sfc) : )
+   ztwetb    (1:n) => bus( x( ytwetb       ,1,indx_sfc) : )
+   zq1       (1:n) => bus( x( yq1          ,1,indx_sfc) : )
+   zq2       (1:n) => bus( x( yq2          ,1,indx_sfc) : )
+   zq3       (1:n) => bus( x( yq3          ,1,indx_sfc) : )
+   zq4       (1:n) => bus( x( yq4          ,1,indx_sfc) : )
+   zq5       (1:n) => bus( x( yq5          ,1,indx_sfc) : )
+   zq6       (1:n) => bus( x( yq6          ,1,indx_sfc) : )
+   zq7       (1:n) => bus( x( yq7          ,1,indx_sfc) : )
 
    if (RADSLOPE) then
       zFSOLIS(1:n)   => bus( x(fluslop,1,1)      : )
@@ -417,6 +465,66 @@ subroutine isba3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       zRUNOFFTOT(i) = zOVERFL(i)
 
    end do
+
+!------------------------------------------------------
+   IF_THERMAL_STRESS: if (thermal_stress) then
+
+      ! Compute wind at the globe sensor level
+      i = sl_sfclayer(zthetaa,hum,vmod,vdir,zzusl,zztsl,ztsoil1,zqsurf, &
+           z0m,z0h,zdlat,zfcor, &
+           hghtm_diag=zt,hghtt_diag=zt, &
+           u_diag=zusurfzt,v_diag=zvsurfzt,tdiaglim=ISBA_TDIAGLIM)
+
+      if (i /= SL_OK) then
+         print*, 'Aborting in isba() because of error returned by sl_sfclayer()'
+         stop
+      endif
+
+
+      !   zusurfzt = zusurfzt * vmod0 / vmod
+      !   zvsurfzt = zvsurfzt * vmod0 / vmod
+
+      do i=1,N
+
+         if (abs(zzusl(i)-zu) <= 2.0) then
+            zu10(i) = sqrt(uum(i)**2+vvm(i)**2)
+         else
+            zu10(i) = sqrt(zudiag(i)**2+zvdiag(i)**2)
+         endif
+
+         ! wind  at SensoR level zubos at z=zt
+         if (abs(zusurfzt(i)) >= 0.1 .and. abs(zvsurfzt(i)) >= 0.1) then
+            zusr(i) = sqrt(zusurfzt(i)**2 + zvsurfzt(i)**2)
+         else
+            zusr(i) = zu10(i)
+         endif
+
+         zqd(i) = max(ZQDIAG(i), 1.e-6)
+
+         zref_sw_surf (i) = zalvis(i) * zfsolis(i)
+         zemit_lw_surf(i) = zfsolis(i) - zref_sw_surf (i) + zfdsi(i) - zrnet_s(i)
+
+         zzenith(i) = acos(zcoszeni(i))
+         if (zfsolis(i) > 0.0) then
+            zzenith(i) = min(zzenith(i), pi/2.)
+         else
+            zzenith(i) = max(zzenith(i), pi/2.)
+         endif
+
+      end do
+
+      call SURF_THERMAL_STRESS(ZTDIAG, zqd,            &
+           ZU10, zusr, psm,                             &
+           ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+           ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
+           Zutcisun ,Zutcishade,                       &
+           zwbgtsun, zwbgtshade,                       &
+           zradsun, zradshade,                         &
+           ztglbsun, ztglbshade, ztwetb,               &
+           ZQ1, ZQ2, ZQ3, ZQ4, ZQ5,                    &
+           ZQ6, ZQ7, N)
+
+   endif IF_THERMAL_STRESS
 
    !# FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
    call FILLAGG(BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_SOIL, &

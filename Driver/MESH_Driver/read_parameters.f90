@@ -406,7 +406,25 @@ subroutine read_parameters(fls, shd, cm, ierr)
         end do !k = 1, shd%lc%NML
     end if
 
-    !> Distribute soil variables to layers lower than the "last configured layer" and check for impermeable soils.
+    !> Determine the "last configured layer" read from file (CLASS default: 3).
+    if (NRSOILAYEREADFLAG > 3) then
+        ignd = min(NRSOILAYEREADFLAG, NSL)
+    else if (NRSOILAYEREADFLAG == 1) then
+        ignd = 0
+    else
+        ignd = 3
+    end if
+
+    !> Distribute soil variables to layers lower than the "last configured layer".
+    do j = 2, shd%lc%IGND
+        if (j > ignd .and. ignd > 0) then
+            where (pm%slp%sand(:, j) == 0.0) pm%slp%sand(:, j) = pm%slp%sand(:, ignd)
+            where (pm%slp%clay(:, j) == 0.0) pm%slp%clay(:, j) = pm%slp%clay(:, ignd)
+            where (pm%slp%orgm(:, j) == 0.0) pm%slp%orgm(:, j) = pm%slp%orgm(:, ignd)
+        end if
+    end do
+
+    !> Check for impermeable soils.
     if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
 
         !> Check the first layer for impermeable soils.
@@ -416,26 +434,8 @@ subroutine read_parameters(fls, shd, cm, ierr)
             pm%slp%orgm(:, 1) = -3.0
         end where
 
-        !> Determine the "last configured layer" read from file (CLASS default: 3).
-        if (NRSOILAYEREADFLAG > 3) then
-            ignd = min(NRSOILAYEREADFLAG, NSL)
-        else if (NRSOILAYEREADFLAG == 1) then
-            ignd = 0
-        else
-            ignd = 3
-        end if
-
-        !> Loop from layer 2 to check for impermeable soils.
+        !> Check for impermeable soils.
         do j = 2, shd%lc%IGND
-
-            !> Assign properties to layers lower than the "last configured layer" read from file.
-            if (j > ignd .and. ignd > 0) then
-                where (pm%slp%sand(:, j) == 0.0) pm%slp%sand(:, j) = pm%slp%sand(:, ignd)
-                where (pm%slp%clay(:, j) == 0.0) pm%slp%clay(:, j) = pm%slp%clay(:, ignd)
-                where (pm%slp%orgm(:, j) == 0.0) pm%slp%orgm(:, j) = pm%slp%orgm(:, ignd)
-            end if
-
-            !> Check for impermeable soils.
             where (pm%slp%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm%slp%sand(:, j) > -2.5)
                 pm%slp%sand(:, j) = -3.0
                 pm%slp%clay(:, j) = -3.0

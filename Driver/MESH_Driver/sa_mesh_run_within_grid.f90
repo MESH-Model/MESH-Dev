@@ -232,6 +232,8 @@ module sa_mesh_run_within_grid
         if (.not. ro%RUNTILE) return
 
         !> Initialize variables.
+        vs%grid%prern(i1:i2) = 0.0
+        vs%grid%presno(i1:i2) = 0.0
         vs%grid%rcan(i1:i2) = 0.0
         vs%grid%sncan(i1:i2) = 0.0
         vs%grid%cmas(i1:i2) = 0.0
@@ -240,6 +242,8 @@ module sa_mesh_run_within_grid
         vs%grid%zsno(i1:i2) = 0.0
         vs%grid%rhos(i1:i2) = 0.0
         vs%grid%sno(i1:i2) = 0.0
+        vs%grid%fsno(i1:i2) = 0.0
+        vs%grid%rofsno(i1:i2) = 0.0
         vs%grid%wsno(i1:i2) = 0.0
         vs%grid%tsno(i1:i2) = 0.0
         vs%grid%albt(i1:i2) = 0.0
@@ -279,6 +283,8 @@ module sa_mesh_run_within_grid
             ki = shd%lc%ILMOS(k)
             kj = shd%lc%JLMOS(k)
             frac = shd%lc%ACLASS(ki, kj)
+            vs%grid%prern(ki) = vs%grid%prern(ki) + vs%tile%prern(k)*frac
+            vs%grid%presno(ki) = vs%grid%presno(ki) + vs%tile%presno(k)*frac
             vs%grid%rcan(ki) = vs%grid%rcan(ki) + vs%tile%rcan(k)*frac
             vs%grid%sncan(ki) = vs%grid%sncan(ki) + vs%tile%sncan(k)*frac
             if (vs%tile%tcan(k) > 0.0) then
@@ -288,6 +294,8 @@ module sa_mesh_run_within_grid
                 fcan(ki) = fcan(ki) + frac
             end if
             vs%grid%sno(ki) = vs%grid%sno(ki) + vs%tile%sno(k)*frac
+            vs%grid%fsno(ki) = vs%grid%fsno(ki) + vs%tile%fsno(k)*frac
+            vs%grid%rofsno(ki) = vs%grid%rofsno(ki) + vs%tile%rofsno(k)*frac
             if (vs%tile%sno(k) > 0.0) then
                 vs%grid%wsno(ki) = vs%grid%wsno(ki) + vs%tile%wsno(k)*frac
                 vs%grid%tsno(ki) = vs%grid%tsno(ki) + vs%tile%tsno(k)*frac

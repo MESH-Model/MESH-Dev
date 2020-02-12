@@ -117,7 +117,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1555'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1615'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -1076,7 +1076,11 @@ program RUNMESH
             if (associated(out%ts%grid%pres)) out%ts%grid%pres(n) = vs%grid%pres(rankgeophytoshd(n))
             if (associated(out%ts%grid%uv)) out%ts%grid%uv(n) = vs%grid%uv(rankgeophytoshd(n))
             if (associated(out%ts%grid%pre)) out%ts%grid%pre(n) = vs%grid%pre(rankgeophytoshd(n))
+            if (associated(out%ts%grid%prern)) out%ts%grid%prern(n) = vs%grid%prern(rankgeophytoshd(n))
+            if (associated(out%ts%grid%presno)) out%ts%grid%presno(n) = vs%grid%presno(rankgeophytoshd(n))
             if (associated(out%ts%grid%prec)) out%ts%grid%prec(n) = vs%grid%pre(rankgeophytoshd(n))*ic%dts
+            if (associated(out%ts%grid%precrn)) out%ts%grid%precrn(n) = vs%grid%prern(rankgeophytoshd(n))*ic%dts
+            if (associated(out%ts%grid%precsno)) out%ts%grid%precsno(n) = vs%grid%presno(rankgeophytoshd(n))*ic%dts
             if (associated(out%ts%grid%evap)) out%ts%grid%evap(n) = vs%grid%evap(rankgeophytoshd(n))
             if (associated(out%ts%grid%pevp)) out%ts%grid%pevp(n) = vs%grid%pevp(rankgeophytoshd(n))
             if (associated(out%ts%grid%evpb)) out%ts%grid%evpb(n) = vs%grid%evpb(rankgeophytoshd(n))
@@ -1092,6 +1096,7 @@ program RUNMESH
             if (associated(out%ts%grid%sno)) out%ts%grid%sno(n) = vs%grid%sno(rankgeophytoshd(n))
             if (associated(out%ts%grid%wsno)) out%ts%grid%wsno(n) = vs%grid%wsno(rankgeophytoshd(n))
             if (associated(out%ts%grid%fsno)) out%ts%grid%fsno(n) = vs%grid%fsno(rankgeophytoshd(n))
+            if (associated(out%ts%grid%rofsno)) out%ts%grid%rofsno(n) = vs%grid%rofsno(rankgeophytoshd(n))
             if (associated(out%ts%grid%zpnd)) out%ts%grid%zpnd(n) = vs%grid%zpnd(rankgeophytoshd(n))
             if (associated(out%ts%grid%pndw)) out%ts%grid%pndw(n) = vs%grid%pndw(rankgeophytoshd(n))
 !already on 'shd' grid            if (associated(out%ts%grid%lzs)) out%ts%grid%lzs(n) = vs%grid%lzs(rankgeophytoshd(n))
@@ -1125,6 +1130,12 @@ program RUNMESH
             if (associated(out%ts%basin%pre) .or. associated(out%ts%basin%prec)) then
                 vs%basin%pre(n) = vs%grid%pre(rankgeophytoshd(n))*shd%FRAC(n)
             end if
+            if (associated(out%ts%basin%prern) .or. associated(out%ts%basin%precrn)) then
+                vs%basin%prern(n) = vs%grid%prern(rankgeophytoshd(n))*shd%FRAC(n)
+            end if
+            if (associated(out%ts%basin%presno) .or. associated(out%ts%basin%precsno)) then
+                vs%basin%presno(n) = vs%grid%presno(rankgeophytoshd(n))*shd%FRAC(n)
+            end if
             if (associated(out%ts%basin%evap)) vs%basin%evap(n) = vs%grid%evap(rankgeophytoshd(n))*shd%FRAC(n)
             if (associated(out%ts%basin%pevp)) vs%basin%pevp(n) = vs%grid%pevp(rankgeophytoshd(n))*shd%FRAC(n)
             if (associated(out%ts%basin%evpb)) vs%basin%evpb(n) = vs%grid%evpb(rankgeophytoshd(n))*shd%FRAC(n)
@@ -1140,6 +1151,7 @@ program RUNMESH
             if (associated(out%ts%basin%sno)) vs%basin%sno(n) = vs%grid%sno(rankgeophytoshd(n))*shd%FRAC(n)
             if (associated(out%ts%basin%wsno)) vs%basin%wsno(n) = vs%grid%wsno(rankgeophytoshd(n))*shd%FRAC(n)
             if (associated(out%ts%basin%fsno)) vs%basin%fsno(n) = vs%grid%fsno(rankgeophytoshd(n))*shd%FRAC(n)
+            if (associated(out%ts%basin%rofsno)) vs%basin%rofsno(n) = vs%grid%rofsno(rankgeophytoshd(n))*shd%FRAC(n)
             if (associated(out%ts%basin%zpnd)) vs%basin%zpnd(n) = vs%grid%zpnd(rankgeophytoshd(n))*shd%FRAC(n)
             if (associated(out%ts%basin%pndw)) vs%basin%pndw(n) = vs%grid%pndw(rankgeophytoshd(n))*shd%FRAC(n)
 !updated in 'between_grid'            if (associated(out%ts%basin%lzs)) lzs

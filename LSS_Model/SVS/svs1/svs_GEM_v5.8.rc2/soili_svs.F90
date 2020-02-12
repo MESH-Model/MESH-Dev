@@ -41,7 +41,7 @@
       REAL RHOSV(N), Z0MVH(N), VEGH(N), VEGL(N), SVM(N)
       REAL CGSAT(N), WSAT(N,NL_SVS), WWILT(N,NL_SVS), BCOEF(N,NL_SVS)
       REAL Z0(N)
-      REAL CG(N), WTA(N,indx_svs_ag)
+      REAL CG(N), WTA(N,svs_tilesp1)
       REAL PSNGRVL(N)
       REAL Z0H(N), ALGR(N), CLAY(N), SAND(N)
       REAL DECI(N), EVER(N), LAID(N)
@@ -346,27 +346,27 @@ include "isbapar.cdk"
 !
 !                        LEAF AREA INDEX CONSIDERING WOODY PART
 !
-            LAIVP(I) = MAX( ( VEGH(I)*MAX(LAIVH(I),0.1)+ VEGL(I)*(1.-PSNGRVL(I))*LAIVL(I)) &     
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))), EPSILON_SVS )
+            LAIVP(I) =MAX(  ( VEGH(I)*MAX(LAIVH(I),0.1)+ VEGL(I)*(1.-PSNGRVL(I))*LAIVL(I)) &     
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))) , EPSILON_SVS )
 !
 !                        THERMAL COEFFICIENT 
 !                        -- Impose min. of 1.0E-5 consistent with look-up table in inicove_svs
 !
-            CVA(I) = MAX( ( VEGH(I) * CVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * CVL(I)) &     
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))), 1.0E-5 )
+            CVA(I) = MAX(  ( VEGH(I) * CVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * CVL(I)) &     
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))) ,  1.0E-5 )
 !
 !                        ALBEDO
 !                        -- Impose min. of 0.12 consistent with look-up table in inicove_svs
 !
             ALVA(I) = MAX( ( VEGH(I) * ALVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * ALVL(I)) &     
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))), 0.12 )
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))) , 0.12 ) 
 !
 ! 
 !                        PARAMETER STOMATAL RESISTANCE
 !                        -- Impose min. of 30. consistent with look-up table in inicove_svs
 !
             RGLA(I) = MAX( ( VEGH(I) * RGLVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * RGLVL(I)) &     
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))), 30. )
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))) , 30. ) 
 !
 !                        LOCAL ROUGHNESS
 !
@@ -380,7 +380,7 @@ include "isbapar.cdk"
 !                        -- Impose min. of 100. consistent with look-up table in inicove_svs
 !
             STOMRA(I) = MAX( ( VEGH(I) * STOMRVH(I) + VEGL(I) * (1.-PSNGRVL(I)) * STOMRVL(I))  &    
-                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))), 100.0 )
+                              / (VEGH(I)+VEGL(I)*(1.-PSNGRVL(I))) , 100.0 )
 !
 !                        STOMATAL RESISTANCE PARAMETER
 !
@@ -401,7 +401,6 @@ include "isbapar.cdk"
             Z0HA(I) = Z0M_TO_Z0H * Z0(I)  
             STOMRA(I)= 100.
             GAMVA(I) = EPSILON_SVS
-
          ENDIF
 !                        
       END DO
@@ -435,6 +434,7 @@ include "isbapar.cdk"
              
           ELSE
 
+!         
 !                       Set the coefficients to lowest physical values found in look-up table 
 !                       to avoid division by zero
 !

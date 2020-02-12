@@ -97,14 +97,23 @@ module runsvs_mesh
         sigma_u = 0.995
         sigma_t = 0.995
         observed_forcing = .false.
+        soiltext = 'NIL'
 
-        nl_svs = shd%lc%IGND
-        allocate(dl_svs(nl_svs))
-        dl_svs = shd%lc%sl%zbot
+        if (soiltext == 'NIL') then
+            nl_svs = shd%lc%IGND
+            allocate(dl_svs(nl_svs))
+            dl_svs = shd%lc%sl%zbot
+        else
+            nl_svs = NL_SVS_DEFAULT
+            dl_svs = DP_SVS_DEFAULT
+        end if
+
         call svs_bus_init(il2 - il1 + 1)
         bussiz = runsvs_busdim
         allocate(bus(bussiz))
         bus = 0.0
+
+        call init_soil_text_levels()
 
         !> Parse CLASS variables to bus.
         do k = 0, NG - 1
@@ -113,11 +122,16 @@ module runsvs_mesh
             ki = shd%lc%ILMOS(il1 + k)
             kj = shd%lc%JLMOS(il1 + k)
 
-            !> Convert lat, lon to radian.
+            !> Convert lat, lon to Radian.
+            !> We need to give SVS the true longitude (from 0 to 360), not negative values.
 !            bus(dlat + k) = ((shd%yOrigin + shd%yDelta*shd%yyy(ki)) - shd%yDelta/2.0)*PI/180.0
 !            bus(dlon + k) = ((shd%xOrigin + shd%xDelta*shd%xxx(ki)) - shd%xDelta/2.0)*PI/180.0
             bus(dlat + k) = shd%ylat(ki)*PI/180.0
-            bus(dlon + k) = shd%xlng(ki)*PI/180.0
+            if (shd%xlng(ki) < 0.0) then
+                bus(dlon + k) = (shd%xlng(ki) + 360.0)*PI/180.0
+            else
+                bus(dlon + k) = shd%xlng(ki)*PI/180.0
+            end if
 
             !> Map CLASS parameters to SVS parameters.
             !* zusl: Height of wind forcing.
@@ -147,9 +161,18 @@ module runsvs_mesh
                 bus(vegf + 13*NG + k) = pm%cp%fcan(il1 + k, 4)
                 bus(vegf + 20*NG + k) = pm%cp%fcan(il1 + k, 5)
             end if
-            bus(slop + k) = max(pm%tp%xslp(il1 + k), 0.005)
+
+! EG_MOD for 100% water pixels, assign another class of vegetation instead (here crops=class15)
+!	    if (bus(vegf + 2*NG + k) == 1.0) then
+!	       bus(vegf + 2*NG + k) = 0.0
+!	       bus(vegf + 14*NG + k) = 1.0
+!	    end if
+! FIN EG_MOD
+
+            bus(slop + k) = min(max(pm%tp%xslp(il1 + k), 0.005), 1.0)
             bus(draindens + k) = pm%hp%dd(il1 + k)!*0.001
-            bus(rootdp + k) = max(pm%slp%sdep(il1 + k), 0.5)
+!            bus(rootdp + k) = max(pm%slp%sdep(il1 + k), 0.5)
+!            bus(rootdp + k) = max(shd%lc%sl%zbot(nl_svs), 0.5)
 
             !> Compute weighted average of log z0 wrt vegetation
             !> (used for momentum only - local z0 used for temperature/humidity).
@@ -167,6 +190,7 @@ module runsvs_mesh
                 end if
             end if
             bus(z0 + k) = exp(bus(z0 + k))
+            bus(z0t + k) = bus(z0 + k)
 
             !> For soil texture we ignore negative numbers
             !> which signal special soils (organic/impermeable/glaciers).
@@ -203,7 +227,8 @@ module runsvs_mesh
 !                    bus(clay + j*NG + k) = max(pm%slp%clay(il1 + k, 3), 0.0)
 !                end do
 !            end if
-            do j = 1, nl_svs ! model layers
+!            do j = 1, nl_svs ! model layers
+            do j = 1, nl_stp ! soil texture levels
                 bus(sand + (j - 1)*NG + k) = max(pm%slp%sand(il1 + k, j), 0.0)
                 bus(clay + (j - 1)*NG + k) = max(pm%slp%clay(il1 + k, j), 0.0)
             end do
@@ -219,16 +244,21 @@ module runsvs_mesh
 !            do j = 3, 6
 !                bus(wsoil + j*NG + k) = vs%tile%thlq(il1 + k, 3)
 !            end do
-            do j = 1, KHYD ! permeable layers, min from runsvs_init
-                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), bus(wfc + k))
+
+! EG_MOD: WE HAVE TO INITIALIZE SOIL MOISTURE FOR ALL SVS LAYERS, NOT ONLY THE KHYD FIRST LAYERS
+!            do j = 1, KHYD ! permeable layers, min from runsvs_init
+            do j = 1, nl_svs
+! EG_MOD: WFC IS NOT KNOWN AT THIS POINT (COMPUTED LATER BY INISOILI_SVS); USE CRITWATER INSTEAD
+!                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), bus(wfc + k))
+                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), CRITWATER)
             end do
 
             !> Map soil temperature.
             !> CLASS layer  <->  SVS layer
             !>       1               1
             !>       2               2
-            bus(tsoil + k) = vs%tile%tbar(il1 + k, 1)! + tcdk
-            bus(tsoil + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
+!            bus(tsoil + k) = vs%tile%tbar(il1 + k, 1)! + tcdk
+!            bus(tsoil + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
             bus(tground + k) = vs%tile%tbar(il1 + k, 1)! + tcdk
             bus(tground + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
 !todo
@@ -302,11 +332,11 @@ module runsvs_mesh
             write(line, "('PERMEABLE LAYERS: ', i3)") KHYD
             call print_message(line)
             call print_message('SOIL MOISTURE:')
-            do j = 1, KHYD ! permeable layers
+            do j = 1, nl_svs ! permeable layers
                 write(line, "(' LAYER ', i3, ': ', f8.3)") j, bus(wsoil + (j - 1)*NG)
                 call print_message(line)
             end do
-            write(line, "('SOIL TEMPERATURE: ', 2f8.3)") bus(tsoil), bus(tsoil + NG)
+            write(line, "('SOIL TEMPERATURE: ', 2f8.3)") bus(tground), bus(tground + NG)
             call print_message(line)
             write(line, "('VEGETATION TEMP.: ', 2f8.3)") bus(tvege), bus(tvege + NG)
             call print_message(line)
@@ -331,6 +361,8 @@ module runsvs_mesh
                         write(line, "('- ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") trim(soiltext), dl_slc(jj), weights(j, jj)
                     else if (soiltext == 'SOILGRIDS') then
                         write(line, "('- ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") trim(soiltext), dl_soilgrids(jj), weights(j, jj)
+                    else if (soiltext == 'NIL') then
+                        write(line, "('- ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") trim(soiltext), dl_soilgrids(jj), weights(j, jj)
                     end if
                     call print_message(line)
                 end do
@@ -340,7 +372,7 @@ module runsvs_mesh
         end if
 
         !> Initialize surface parameters.
-        call init_soil_text_levels()
+!        call init_soil_text_levels()
         call inisoili_svs(bus, bussiz, NG)
 !        call inisoili_svs(NG, 1)
 
@@ -412,6 +444,7 @@ module runsvs_mesh
 
         !> Time-step.
         dt = real(ic%dts)
+        delt = real(ic%dts)
         kount = ic%ts_count - 1
 
         !> First time-step.
@@ -422,7 +455,10 @@ module runsvs_mesh
         end if
 
         !> Determine time stamps of current date.
-        kdt = kount*(dt*1.0D0)/3600.0D0
+        !> SVS relies on the date at the start of the run and the KOUNT variable,
+        !> to determine the Julian Day, which is used to compute the zenith solar angle.
+        !> There is no need to increment the date given to SVS.
+        kdt = 0 !kount*(dt*1.0D0)/3600.0D0
 
         !> Compute date valid.
         call incdatr(datecmc_v, datecmc_o, kdt)
@@ -436,20 +472,18 @@ module runsvs_mesh
         !> Loop tiles.
         do k = 0, NG - 1
 
-!todo
-!+ Option 1
-!+ Rainfall and snowfall rate are read separetely
-!+            bus(rainrate + k) = cm%dat(ck%RR)%GAT(il1 + k)/1000.0
-!+            bus(snowrate + k) = cm%dat(ck%SR)%GAT(il1 + k)/1000.0
-!> Option 2
-!> Rainfall and snowfall rate are derived from total precipitation rate
-!> assuming a separation at 0 degC (as in GEM-Hydro)
             if(cm%dat(ck%TT)%GAT(il1 + k) > tcdk) then
                 bus(rainrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
                 bus(snowrate + k) = 0.0
             else
                 bus(rainrate + k) = 0.0
                 bus(snowrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
+            end if
+            if (associated(cm%dat(ck%RR)%GAT)) then
+                bus(rainrate + k) = cm%dat(ck%RR)%GAT(il1 + k)/1000.0
+            end if
+            if (associated(cm%dat(ck%SR)%GAT)) then
+                bus(snowrate + k) = cm%dat(ck%SR)%GAT(il1 + k)/1000.0
             end if
             bus(flusolis + k) = cm%dat(ck%FB)%GAT(il1 + k)
             bus(fdsi + k) = cm%dat(ck%FI)%GAT(il1 + k)
@@ -468,6 +502,10 @@ module runsvs_mesh
 
         !> Update vegetation parameters as a function of julian day.
         call inicover_svs(bus, bussiz, kount, NG)
+
+        do k = 0, NG - 1
+            bus(rootdp + k) = max(bus(rootdp + k), 0.5)
+        end do
 
         !> Integrate SVS for one time step.
         call svs(bus, bussiz, bidon, 1, dt, kount, 1, NG, NG, 1)
@@ -502,10 +540,11 @@ module runsvs_mesh
             do j = 3, shd%lc%IGND
                 vs%tile%thlq(il1 + k, j) = bus(wsoil + (j - 1)*NG + k)
             end do
-            vs%tile%tbar(il1 + k, 1) = bus(tsoil + k)
+            vs%tile%tbar(il1 + k, 1) = bus(tground + k)
             do j = 2, shd%lc%IGND
-                vs%tile%tbar(il1 + k, j) = bus(tsoil + NG + k)
+                vs%tile%tbar(il1 + k, j) = bus(tground + NG + k)
             end do
+
 !-            vs%tile%gflx(il1 + k, :) =
             vs%tile%rofb(il1 + k) = max(0.0, bus(watflow + KHYD*NG + k))/ic%dts
         end do

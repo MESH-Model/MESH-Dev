@@ -134,7 +134,7 @@
            !soil water potential at the soil boundries
             PSI(I,K)= MAX(PSISATBND(I,K)*SATBND(I,K)**(-BBND(I,K)),PSISATBND(I,K))
            !vertical flux of water between soil layers
-	   F(I,K+1)=DT*KHC(I,K)*(-BBND(I,K)*PSI(I,K)*DWDDZ_WDBND(I,K)+1.0)
+	    F(I,K+1)=DT*KHC(I,K)*(-BBND(I,K)*PSI(I,K)*DWDDZ_WDBND(I,K)+1.0)
          END DO
       END DO
 

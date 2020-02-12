@@ -52,7 +52,7 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
 !     !change size of V*_TYPE() arrays below
       integer i, m, k, type
 
-      REAL totfract, table_val
+      REAL totfract, table_val   
 !
 !
       DO i=1,ni

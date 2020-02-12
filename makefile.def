@@ -110,7 +110,7 @@ INC_DIRS+=-I$(CHANGES2PHY) -I$(PHY) -I$(SVS)
 DFLAG=-DRUNSVS
 # Core routines.
 OBJECTS+=	datec.o moduledate.o \
-			runsvs_mod_sa_mesh.o runsvs_utils.o runsvs_io_mesh.o \
+			runsvs_mod_sa_mesh.o runsvs_utils.o \
 			runsvs_init_mesh.o \
 			sfclayer_mod.o sfc_options.o svs_configs.o \
 			inicover_svs.o \
@@ -124,9 +124,7 @@ OBJECTS+=	datec.o moduledate.o \
 			aggcovernat.o juliand.o suncos1.o interpveg.o \
 			compz0.o difuvd2.o
 # For now, must manually specify one of following:
-#OBJECTS+=	inisoili_svs.o
-OBJECTS+=	inisoili_svs_gsde.o
-#OBJECTS+=	inisoili_svs_slc.o
+OBJECTS+=	inisoili_svs.o
 # SA_MESH modules.
 OBJECTS+=	runsvs_mesh.o
 

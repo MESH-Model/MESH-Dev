@@ -316,16 +316,45 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     do j = 2, nargs
                         select case (lowercase(args(j)))
                             case ('met')
-                                cm%dat(ck%FB)%factive = .false.
-                                cm%dat(ck%FI)%factive = .false.
-                                cm%dat(ck%RT)%factive = .false.
-                                cm%dat(ck%TT)%factive = .false.
-                                cm%dat(ck%UV)%factive = .false.
-                                cm%dat(ck%P0)%factive = .false.
-                                cm%dat(ck%HU)%factive = .false.
+
+                                !> Assign attributes for the 7 variables.
+                                !> To override these, respective 'BASIN' flags should list after 'BASINFORCINGFLAG'.
+                                cm%dat(ck%FB)%factive = .true.
+                                cm%dat(ck%FB)%id_var = 'FB'
+                                cm%dat(ck%FB)%ffmt = 6
+                                cm%dat(ck%FI)%factive = .true.
+                                cm%dat(ck%FI)%id_var = 'FI'
+                                cm%dat(ck%FI)%ffmt = 6
+                                cm%dat(ck%RT)%factive = .true.
+                                cm%dat(ck%RT)%id_var = 'RT'
+                                cm%dat(ck%RT)%ffmt = 6
+                                cm%dat(ck%TT)%factive = .true.
+                                cm%dat(ck%TT)%id_var = 'TT'
+                                cm%dat(ck%TT)%ffmt = 6
+                                cm%dat(ck%UV)%factive = .true.
+                                cm%dat(ck%UV)%id_var = 'UV'
+                                cm%dat(ck%UV)%ffmt = 6
+                                cm%dat(ck%P0)%factive = .true.
+                                cm%dat(ck%P0)%id_var = 'P0'
+                                cm%dat(ck%P0)%ffmt = 6
+                                cm%dat(ck%HU)%factive = .true.
+                                cm%dat(ck%HU)%id_var = 'HU'
+                                cm%dat(ck%HU)%ffmt = 6
+
+                                !> Activate the 'met' file.
                                 cm%dat(ck%MET)%ffmt = 6
+                                cm%dat(ck%MET)%id_var = 'CLASSMET'
                                 cm%dat(ck%MET)%factive = .true.
-                                exit
+                            case ('rr_sr')
+                                cm%dat(ck%RR)%factive = .true.
+                                cm%dat(ck%RR)%id_var = 'RR'
+                                cm%dat(ck%RR)%ffmt = 6
+                                cm%dat(ck%SR)%factive = .true.
+                                cm%dat(ck%SR)%id_var = 'SR'
+                                cm%dat(ck%SR)%ffmt = 6
+                                cm%dat(ck%MET)%ffmt = 6
+                                cm%dat(ck%MET)%id_var = 'CLASSMET'
+                                cm%dat(ck%MET)%factive = .true.
                         end select
                     end do
                 case ('BASINSHORTWAVEFLAG')

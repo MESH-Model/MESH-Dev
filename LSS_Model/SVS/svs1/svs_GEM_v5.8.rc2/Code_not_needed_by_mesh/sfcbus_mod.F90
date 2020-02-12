@@ -48,6 +48,7 @@ module sfcbus_mod
 
       SFCVAR(acoef, 'acoef')
       SFCVAR(acroot, 'acroot')
+      SFCVAR(accevap, 'accevap')
       SFCVAR(alb_road, 'alb_road')
       SFCVAR(alb_roaden, 'alb_roaden')
       SFCVAR(alb_roof, 'alb_roof')
@@ -74,6 +75,7 @@ module sfcbus_mod
       SFCVAR(c1sat, 'c1sat')
       SFCVAR(c2ref, 'c2ref')
       SFCVAR(c3ref, 'c3ref')
+      SFCVAR(cang, 'cang')
       SFCVAR(can_hw_ratio, 'can_hw_ratio')
       SFCVAR(cgsat, 'cgsat')
       SFCVAR(clay, 'clay')
@@ -116,6 +118,8 @@ module sfcbus_mod
       SFCVAR(emis_wall, 'emis_wall')
       SFCVAR(emis_wallen, 'emis_wallen')
       SFCVAR(emisgr, 'emisgr')
+      SFCVAR(emistg, 'emistg')
+      SFCVAR(emistgen, 'emistgen')
       SFCVAR(emisvh, 'emisvh')
       SFCVAR(emisvl, 'emisvl')
       SFCVAR(en, 'en')
@@ -134,6 +138,8 @@ module sfcbus_mod
       SFCVAR(fq, 'fq')
       SFCVAR(frootd, 'frootd')
       SFCVAR(frv, 'frv')
+      SFCVAR(fsd, 'fsd')
+      SFCVAR(fsf, 'fsf')
       SFCVAR(ftemp, 'ftemp')
       SFCVAR(fv, 'fv')
       SFCVAR(fvap, 'fvap')
@@ -247,6 +253,9 @@ module sfcbus_mod
       SFCVAR(resa, 'resa')
       SFCVAR(resagr, 'resagr')
       SFCVAR(resavg, 'resavg')
+      SFCVAR(resasa, 'resasa')
+      SFCVAR(resasv, 'resasv')
+      SFCVAR(resaef, 'resaef')
       SFCVAR(rgl, 'rgl')
       SFCVAR(rglvh, 'rglvh')
       SFCVAR(rglvl, 'rglvl')
@@ -280,22 +289,24 @@ module sfcbus_mod
       SFCVAR(snoal, 'snoal')
       SFCVAR(snoalen, 'snoalen')
       SFCVAR(snoden, 'snoden')
+      SFCVAR(snodenen, 'snodenen')
       SFCVAR(snodp, 'snodp')
       SFCVAR(snodpen, 'snodpen')
       SFCVAR(snodpl, 'snodpl')
       SFCVAR(snodplen, 'snodplen')
       SFCVAR(snoma, 'snoma')
-      SFCVAR(snomaen, 'snomaen')
+      !SFCVAR(snomaen, 'snomaen')
       SFCVAR(snoro, 'snoro')
       SFCVAR(snoroen, 'snoroen')
       SFCVAR(snowrate, 'snowrate')
       SFCVAR(snval, 'snval')
       SFCVAR(snvalen, 'snvalen')
       SFCVAR(snvden, 'snvden')
+      SFCVAR(snvdenen, 'snvdenen')
       SFCVAR(snvdp, 'snvdp')
       SFCVAR(snvdpen, 'snvdpen')
       SFCVAR(snvma, 'snvma')
-      SFCVAR(snvmaen, 'snvmaen')
+      !SFCVAR(snvmaen, 'snvmaen')
       SFCVAR(snvro, 'snvro')  
       SFCVAR(sroad_alb, 'sroad_alb')
       SFCVAR(sroad_alben, 'sroad_alben')
@@ -406,6 +417,47 @@ module sfcbus_mod
       SFCVAR(wvegen, 'wvegen')
       SFCVAR(wwilt, 'wwilt')
       SFCVAR(xcent, 'xcent')
+      SFCVAR(yradin       ,'yradin')
+      SFCVAR(yradsun      ,'yradsun')
+      SFCVAR(yradshade    ,'yradshade')
+      SFCVAR(yradrfsun    ,'yradrfsun')
+      SFCVAR(yradrfshade  ,'yradrfshade')
+      SFCVAR(yutciin      ,'yutciin')
+      SFCVAR(yutcisun     ,'yutcisun')
+      SFCVAR(yutcishade   ,'yutcishade')
+      SFCVAR(yutcirfsun   ,'yutcirfsun')
+      SFCVAR(yutcirfshade ,'yutcirfshade')
+      SFCVAR(ywbgtsun     ,'ywbgtsun')
+      SFCVAR(ywbgtshade   ,'ywbgtshade')
+      SFCVAR(ywbgtrfsun   ,'ywbgtrfsun')
+      SFCVAR(ywbgtrfshade ,'ywbgtrfshade')
+      SFCVAR(yutcicin     ,'yutcicin')
+      SFCVAR(yutcicsun    ,'yutcicsun')
+      SFCVAR(yutcicshade  ,'yutcicshade')
+      SFCVAR(yutcicrfsun  ,'yutcicrfsun')
+      SFCVAR(yutcicrfshade,'yutcicrfshade')
+      SFCVAR(ytglbsun     ,'ytglbsun')
+      SFCVAR(ytglbshade   ,'ytglbshade')
+      SFCVAR(ytglbrfsun   ,'ytglbrfsun')
+      SFCVAR(ytglbrfshade ,'ytglbrfshade')
+      SFCVAR(ytwetb   ,'ytwetb')
+      SFCVAR(ytwetbrf ,'ytwetbrf')
+      SFCVAR(ytrfzt   ,'ytrfzt')
+      SFCVAR(ytrdzt   ,'ytrdzt')
+      SFCVAR(yurdzu   ,'yurdzu')
+      SFCVAR(yQ1   ,'yQ1')
+      SFCVAR(yQ2   ,'yQ2')
+      SFCVAR(yQ3   ,'yQ3')
+      SFCVAR(yQ4   ,'yQ4')
+      SFCVAR(yQ5   ,'yQ5')
+      SFCVAR(yQ6   ,'yQ6')
+      SFCVAR(yQ7   ,'yQ7')
+      SFCVAR(yQ8   ,'yQ8')
+      SFCVAR(yQ9   ,'yQ9')
+      SFCVAR(yQ10  ,'yQ10')
+      SFCVAR(yQ11  ,'yQ11')
+      SFCVAR(yQ12  ,'yQ12')
+      SFCVAR(yQ13  ,'yQ13')
       SFCVAR(z0, 'z0')
       SFCVAR(z0_road, 'z0_road')
       SFCVAR(z0_roaden, 'z0_roaden')
@@ -468,65 +520,62 @@ module sfcbus_mod
 contains
 
 
-!VVI DEBUT MODIFICATION POUR SA_MESH
-!   function sfcbus_init() result(F_istat)
-!      use phy_itf, only: phymeta
-!      use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
-!      use sfc_options, only: schmurb
-!     implicit none
-!      integer :: F_istat
-!
-!!#include <msg.h>
-!#include <rmnlib_basics.hf>
-!#include <clib_interface_mu.hf>
-!
-!      integer :: i, istat, mulmax, idxmax
-!      type(PHYVAR_T) :: vl0(1)
-!      type(phymeta) :: mymeta
-!      type(phymetaplus) :: mymetaplus
-!
-!      F_istat = RMN_ERR
-!
-!      if (nsurf == 0) then
-!         idxmax = max(INDX_SOIL, INDX_GLACIER, INDX_WATER, INDX_ICE, INDX_AGREGE)
-!         if (schmurb /= 'NIL') idxmax = max(idxmax, INDX_URB)
-!         nsurf = idxmax - 1
-!      endif
-!      
-!      nvarsurf = size(transfer(vd, vl0))
-!      allocate(vl(nvarsurf))
-!      allocate(busptr(nvarsurf))
-!      vl = transfer(vd, vl)
-!      mulmax = 0
-!      do i = 1,nvarsurf
-!         vl(i)%i = i
-!         istat = clib_toupper(vl(i)%n)
-!         nullify(busptr(i)%ptr)
-!         istat = phygetmetaplus(mymetaplus, vl(i)%n, F_npath='V', F_bpath='DPVE', F_quiet=.true., F_shortmatch=.false.)
-!         if (istat >= 0) then
-!            mymeta = mymetaplus%meta
-!            !#TODO: put an upper bound on ptr so -C would bite!
-!            busptr(i)%ptr => mymetaplus%ptr(mymetaplus%index:,:)
-!            vl(i)%doagg_L = (mymeta%bus(1:1) /= 'E')
-!            vl(i)%mul = mymeta%fmul
-!            vl(i)%niveaux = mymeta%nk
-!            vl(i)%mosaik = mymeta%mosaic + 1
-!            mulmax = max(mulmax, vl(i)%mul)
-!         endif
-!         if (vl(i)%n == 'TSRAD') tsrad_i = i
-!         if (vl(i)%n == 'Z0')    z0_i = i
-!         if (vl(i)%n == 'Z0T')   z0t_i = i
-!
-!      enddo
-!      vd = transfer(vl, vd)
-! 
-!      allocate(statut(nvarsurf, mulmax))
-!      statut = 0
-!
-!      F_istat = RMN_OK
-!      return
-!   end function sfcbus_init
-!VVI FIN MODIFICATION POUR SA_MESH
+   function sfcbus_init() result(F_istat)
+      use phy_itf, only: phymeta
+      use phygetmetaplus_mod, only: phymetaplus, phygetmetaplus
+      use sfc_options, only: schmurb
+      implicit none
+      integer :: F_istat
 
+#include <msg.h>
+#include <rmnlib_basics.hf>
+#include <clib_interface_mu.hf>
+
+      integer :: i, istat, mulmax, idxmax
+      type(PHYVAR_T) :: vl0(1)
+      type(phymeta) :: mymeta
+      type(phymetaplus) :: mymetaplus
+
+      F_istat = RMN_ERR
+
+      if (nsurf == 0) then
+         idxmax = max(INDX_SOIL, INDX_GLACIER, INDX_WATER, INDX_ICE, INDX_AGREGE)
+         if (schmurb /= 'NIL') idxmax = max(idxmax, INDX_URB)
+         nsurf = idxmax - 1
+      endif
+      
+      nvarsurf = size(transfer(vd, vl0))
+      allocate(vl(nvarsurf))
+      allocate(busptr(nvarsurf))
+      vl = transfer(vd, vl)
+      mulmax = 0
+      do i = 1,nvarsurf
+         vl(i)%i = i
+         istat = clib_toupper(vl(i)%n)
+         nullify(busptr(i)%ptr)
+         istat = phygetmetaplus(mymetaplus, vl(i)%n, F_npath='V', F_bpath='DPVE', F_quiet=.true., F_shortmatch=.false.)
+         if (istat >= 0) then
+            mymeta = mymetaplus%meta
+            !#TODO: put an upper bound on ptr so -C would bite!
+            busptr(i)%ptr => mymetaplus%ptr(mymetaplus%index:,:)
+            vl(i)%doagg_L = (mymeta%bus(1:1) /= 'E')
+            vl(i)%mul = mymeta%fmul
+            vl(i)%niveaux = mymeta%nk
+            vl(i)%mosaik = mymeta%mosaic + 1
+            mulmax = max(mulmax, vl(i)%mul)
+         endif
+         if (vl(i)%n == 'TSRAD') tsrad_i = i
+         if (vl(i)%n == 'Z0')    z0_i = i
+         if (vl(i)%n == 'Z0T')   z0t_i = i
+
+      enddo
+      vd = transfer(vl, vd)
+ 
+      allocate(statut(nvarsurf, mulmax))
+      statut = 0
+
+      F_istat = RMN_OK
+      return
+   end function sfcbus_init
 
 end module sfcbus_mod

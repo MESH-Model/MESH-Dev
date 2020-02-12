@@ -17,9 +17,13 @@ module variable_names
     character(len = 10), parameter :: VN_UV = 'UV'
     character(len = 10), parameter :: VN_WDIR = 'WDIR'
     character(len = 10), parameter :: VN_PRE = 'PRE'
+    character(len = 10), parameter :: VN_PRERN = 'PRERN'
+    character(len = 10), parameter :: VN_PRESNO = 'PRESNO'
 
     !> Water balance.
     character(len = 10), parameter :: VN_PREC = 'PREC'
+    character(len = 10), parameter :: VN_PRECRN = 'PRECRN'
+    character(len = 10), parameter :: VN_PRECSNO = 'PRECSNO'
     character(len = 10), parameter :: VN_EVAP = 'EVAP'
     character(len = 10), parameter :: VN_PEVP = 'PEVP'
     character(len = 10), parameter :: VN_EVPB = 'EVPB'
@@ -35,6 +39,7 @@ module variable_names
     character(len = 10), parameter :: VN_RHOSNO = 'RHOSNO'
     character(len = 10), parameter :: VN_SNO = 'SNO'
     character(len = 10), parameter :: VN_FSNO = 'FSNO'
+    character(len = 10), parameter :: VN_ROFSNO = 'ROFSNO'
     character(len = 10), parameter :: VN_WSNO = 'WSNO'
     character(len = 10), parameter :: VN_ZPND = 'ZPND'
     character(len = 10), parameter :: VN_PNDW = 'PNDW'

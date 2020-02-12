@@ -78,9 +78,9 @@ c from WATCLASS 2.7 - I'm assuming they are correct still
 !-      wf_a3 = 0.43
 !-      wf_a4 = 1.0
 
-      do i=1,M_C
-         wf_r1(i)=2.0
-      enddo
+!-      do i=1,M_C
+!-         wf_r1(i)=2.0
+!-      enddo
 
 c if this is the first time through, initialize baseflows
 c ********************************************

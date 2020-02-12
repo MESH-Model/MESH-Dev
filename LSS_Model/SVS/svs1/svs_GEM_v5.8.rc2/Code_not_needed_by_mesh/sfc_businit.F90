@@ -53,29 +53,35 @@ subroutine sfc_businit(moyhr,n,nk)
         t_roofen, t_wall, t_wallen, tc_road, tc_roaden, tc_roof, tc_roofen, &
         tc_wall, tc_wallen, ti_bld, ti_blden, ti_road, ti_roaden, tsun, &
         u_canyon, wall_o_hor, wall_o_horen, ws_road, ws_roaden, ws_roof, &
-        ws_roofen, z0_road, z0_roaden, z0_roof, z0_roofen, z0_town, &
-        z0_townen, zenith
+        ws_roofen, yradin, yradrfsun, yradrfshade, yutciin, yutcirfsun,  &
+        yutcirfshade, ytrfzt, ytrdzt, yurdzu, ywbgtrfsun, ywbgtrfshade,  &
+        yutcicin, yutcicsun, yutcicshade, yutcicrfsun, yutcicrfshade,    &
+        ytglbrfsun, ytglbrfshade, ytwetbrf, yq8, yq9, yq10, yq11, yq12,  &
+        yq13, z0_road, z0_roaden, z0_roof, &
+        z0_roofen, z0_town, z0_townen, zenith
    integer :: acoef, alveg, bcoef, c1sat, c2ref, c3ref, clay, clayen, cveg, &
         eflux, fvapliq, fvapliqaf, gamveg, husurf, hv, iceline, icelinen, isoilen, lai, melts,  &
         meltsr, pcoef, psn, psng, psnv, resa, rgl, rnet_s, rst, runofftot, runofftotaf, sand, sanden, &
         snoagen, snoalen, snoma, snoro, snoroen, stomr, tsoil, tsoilen, vegf, &
-        vegfen, vegfrac, wfc, wsat, wsnow, wsnowen, wsoilen, wveg, wvegen, wwilt
+        vegfen, vegfrac, wfc, wsat, wsnow, wsnowen, wsoilen, wveg, wvegen, wwilt, accevap
    integer :: alen, cgsat, dsst, dtdiag, glacen, glacier, glsea0, glseaen, &
         icedp, icedpen, mgen, sfcwgt, skin_depth, skin_inc, snoal, snoden, &
-        snodp, snodpen, tglacen, tglacier, tmice, tmicen, tnolim, &
-        twater, twateren, urban, z0en
+        snodp, snodpen, tglacen, tglacier, tmice, tmicen, tnolim,          &
+        twater, twateren, urban, yradsun, yradshade, yutcisun, yutcishade, &
+        ywbgtsun, ywbgtshade, ytglbsun, ytglbshade, ytwetb, yQ1, yQ2, &
+        yq3, yq4, yq5, yq6, yq7, z0en
    character(len=2) :: nm, nagg, nrow
    !--------   FOR SVS -----------------
    character(len=2) :: ngl, nglp1, nstel, nstpl
    integer :: acroot, algr, alvl , alvh, avg_gwsol, co2i1, cvh, cvl, d50, d95, &
         deciduous, drnden, &
-        draindens, eg, emis, emisgr, emisvh, emisvl, er, etr, evergreen, &
+        draindens, eg, emis, emisgr, emistg, emistgen, emisvh, emisvl, er, etr, evergreen, &
         fbcof, frootd, gamvh, gamvl, grkef, grksat, hfluxsa, hfluxsv, &
         impervu, &
         khc, ksat, ksatc, laictem, laideci, laiva, laivf26, laivh, laivhen, laivl, &
         laivlen, latflaf, latflw, lesv, psi, psisat, psngrvl, psnvh, psnvha, &
-        rcctem, resagr, resavg, rglvh, rglvl, rnetsa, rnetsv, rsnowsa, &
-        rsnowsv, rveg, skyview, slop, slopen, snodpl, snodplen, snomaen, snval, snvalen, &
+        rcctem, resagr, resavg, resasa, resasv, resaef, rglvh, rglvl, rnetsa, rnetsv, rsnowsa, &
+        rsnowsv, rveg, skyview, slop, slopen, snodenen, snodpl, snodplen, snomaen, snval, snvalen, &
         snvden, snvdenen, snvdp, snvdpen, snvma, snvmaen, snvro, stomrvh, stomrvl, svs_wta,&
         tground, tgrounden, tsa, tsnavg, tsnow, tsnowen, tsnowveg, tsnowvegen, &
         tsvavg, tvege, tvegeen, vegh, veghen, vegl, veglen, vegtrans, vgctem, &
@@ -144,8 +150,24 @@ subroutine sfc_businit(moyhr,n,nk)
    call gesdict(n, nk, tnolim,       'VN=tnolim       ;ON=TNOL;VD=screen level temp without max on gradient      ;VS=row                    ;VB=p0')
    call gesdict(n, nk, twater,       'VN=twater       ;ON=TM  ;VD=sea surface temperature                        ;VS=row                    ;VB=p0')
    call gesdict(n, nk, twateren,     'VN=twateren     ;ON=8A  ;VD=SST temperature (E)                            ;VS=row                    ;VB=e1;IN=TM  ;')
-   call gesdict(n, nk, urban,        'VN=urban        ;ON=UR  ;VD=urban mask                                     ;VS=row                    ;VB=p0')
-
+   call gesdict(n, nk, urban,        'VN=urban        ;ON=URBF  ;VD=urban mask                                     ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yradsun,      'VN=yradsun      ;ON=RTSU;VD=MRT in the exposed sunny street (K)            ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, yradshade,    'VN=yradshade    ;ON=RTHD;VD=MRT in the shaded street (K)                   ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, yutcisun,     'VN=yutcisun     ;ON=DXSU;VD= UTCI in the exposed sunny street (C)          ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, yutcishade,   'VN=yutcishade   ;ON=DXHD;VD= UTCI in the shaded street (C)                 ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, ywbgtsun,     'VN=ywbgtsun     ;ON=GXSU;VD= WBGT in the exposed sunny street (C)          ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, ywbgtshade,   'VN=ywbgtshade   ;ON=GXHD;VD= WBGT in the shaded street (C)                 ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, ytglbsun,     'VN=ytglbsun     ;ON=GTSU;VD=TGlobe in the exposed sunny street (K)         ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, ytglbshade,   'VN=ytglbshade   ;ON=GTHD;VD=TGlobe in the shaded street (K)                ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, ytwetb,       'VN=ytwetb       ;ON=WBT  ;VD=Wet-Bulb Temp at zt above the ground (K)       ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, yQ1,          'VN=yQ1          ;ON=QSSU;VD= Contribution of direct solar rad (W/m2)       ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, yQ2,          'VN=yQ2          ;ON=QSSK;VD= Contribution of sky SW rad (W/m2)             ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, yQ3,          'VN=yQ3          ;ON=QLSK;VD= Contribution of sky LW rad (W/m2)             ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, yQ4,          'VN=yQ4          ;ON=QSRD;VD= Contribution of ground SW rad (W/m2)          ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, yQ5,          'VN=yQ5          ;ON=QLRD;VD= Contribution of ground LW rad (W/m2)          ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, yQ6,          'VN=yQ6          ;ON=QSWL;VD= Contribution of facet SW rad (W/m2)           ;VS=row*'//nagg//'@'//nm//';VB=p0')
+   Call gesdict (n, nk, yQ7,          'VN=yQ7          ;ON=QLWL;VD= Contribution of facet LW rad (W/m2)           ;VS=row*'//nagg//'@'//nm//';VB=p0')
+ 
    call gesdict(n, nk, z0en,         'VN=z0en         ;ON=2B  ;VD=roughness length (E)                           ;VS=row                    ;VB=e1;IN=ZP  ;')
 
    if (moyhr > 0) &
@@ -257,6 +279,9 @@ subroutine sfc_businit(moyhr,n,nk)
       call gesdict(n, nk, eg,           'VN=eg           ;ON=EG  ;VD=evapo. rate over bare grnd(no frac)            ;VS=row                    ;VB=v0') 
       call gesdict(n, nk, emis,         'VN=emis         ;ON=EMI1;VD=emissivity of nat surface                      ;VS=row                    ;VB=p0')
       call gesdict(n, nk, emisgr,       'VN=emisgr       ;ON=EMGR;VD=emissivity of bare ground                      ;VS=row                    ;VB=p0')
+      call gesdict(n, nk, emistg,       'VN=emistg       ;ON=EMTG;VD=emissivity land surface with no snow (read-in) ;VS=row                    ;VB=p0')
+      if (read_emis) &
+           call gesdict(n, nk, emistgen,     'VN=emistgen     ;ON=ETG1;VD=avg. emissivity land surface with no snow (E)  ;VS=row                    ;VB=e1; IN=EMIB;')
       call gesdict(n, nk, emisvh,       'VN=emisvh       ;ON=EMVH;VD=emissivity of high vegetation                  ;VS=row                    ;VB=p0') 
       call gesdict(n, nk, emisvl,       'VN=emisvl       ;ON=EMVL;VD=emissivity of low vegetation                   ;VS=row                    ;VB=p0')
       call gesdict(n, nk, er,           'VN=er           ;ON=ER  ;VD=evapo rate from leaves(no frac)                ;VS=row                    ;VB=v0')
@@ -265,6 +290,7 @@ subroutine sfc_businit(moyhr,n,nk)
       call gesdict(n, nk, fbcof,        'VN=fbcof        ;ON=3G  ;VD=parameter derived from bcoef                   ;VS=row*'//ngl//'          ;VB=p0')
       call gesdict(n, nk, frootd,       'VN=frootd       ;ON=FRTD;VD=deep soil layer root density                   ;VS=row*'//ngl//'          ;VB=p0')
       call gesdict(n, nk, fvapliq,      'VN=fvapliq      ;ON=HFLQ;VD=surf. evaporation (kg/m2 or mm)                ;VS=row                    ;VB=p0')
+      call gesdict(n, nk, accevap,      'VN=accevap      ;ON=ACWF;VD=accum. of actual surf. evap. (kg/m2 or mm)     ;VS=row                    ;VB=p0')
       call gesdict(n, nk, fvapliqaf,    'VN=fvapliqaf    ;ON=AHFL;VD=accum. surf. evaporation (HFLQ) (kg/m2 or mm)  ;VS=row                    ;VB=p0')
       call gesdict(n, nk, gamvh,        'VN=gamvh        ;ON=GGVH;VD=stomatal resistance parameter for high veg     ;VS=row                    ;VB=p0') 
       call gesdict(n, nk, gamvl,        'VN=gamvl        ;ON=GGVL;VD=stomatal resistance parameter for low veg      ;VS=row                    ;VB=p0')
@@ -306,6 +332,9 @@ subroutine sfc_businit(moyhr,n,nk)
       call gesdict(n, nk, rcctem,       'VN=rcctem       ;ON=RCC ;VD=stomatal resistance CTEM                       ;VS=row                    ;VB=p0')
       call gesdict(n, nk, resagr,       'VN=resagr       ;ON=RSGR;VD=aerodynamic resistance over bare ground        ;VS=row                    ;VB=p0')
       call gesdict(n, nk, resavg,       'VN=resavg       ;ON=RSVG;VD=aerodynamic resistance over veget.             ;VS=row                    ;VB=p0')
+      call gesdict(n, nk, resasa,       'VN=resasa       ;ON=RSSA;VD=aerodynamic resistance over snow               ;VS=row                    ;VB=p0')
+      call gesdict(n, nk, resasv,       'VN=resasv       ;ON=RSSV;VD=aerodynamic resistance over snow under veg     ;VS=row                    ;VB=p0')
+      call gesdict(n, nk, resaef,       'VN=resaef       ;ON=RSEF;VD=effective aerodynamic resistance               ;VS=row                    ;VB=p0')
       call gesdict(n, nk, rglvh,        'VN=rglvh        ;ON=RGVH;VD=parameter stomatal resistance for high veg     ;VS=row                    ;VB=p0')
       call gesdict(n, nk, rglvl,        'VN=rglvl        ;ON=RGVL;VD=parameter stomatal resistance for low veg      ;VS=row                    ;VB=p0')
       call gesdict(n, nk, rnet_s,       'VN=rnet_s       ;ON=NR  ;VD=net radiation (soil only)                      ;VS=row                    ;VB=v0')
@@ -326,20 +355,21 @@ subroutine sfc_businit(moyhr,n,nk)
       call gesdict(n, nk, snoal,        'VN=snoal        ;ON=SNAL;VD=snow-over-low-veg/bare-ground albedo           ;VS=row                    ;VB=p0        ;MIN=0')
       call gesdict(n, nk, snoalen,      'VN=snoalen      ;ON=5H  ;VD=snow-over-low-veg/bare-ground albedo (E)       ;VS=row                    ;VB=e1;IN=SNAL;MIN=0')
       call gesdict(n, nk, snoden,       'VN=snoden       ;ON=SNDN;VD=snow-over-low-veg/bare-ground density in kg/m3 ;VS=row                    ;VB=p0        ;MIN=0')
+      call gesdict(n, nk, snodenen,     'VN=snodenen     ;ON=MI12;VD=snow-over-low-veg/bare-grnd density (kg/m3) (E);VS=row                    ;VB=e1;IN=SNDN;MIN=0')
       call gesdict(n, nk, snodpl,       'VN=snodpl       ;ON=SNDP;VD=snow-over-low-veg/bare-ground depth            ;VS=row                    ;VB=p0        ;MIN=0')
       call gesdict(n, nk, snodplen,     'VN=snodplen     ;ON=MI05;VD=snow-over-low-veg/bare-ground depth (E)        ;VS=row                    ;VB=e1;IN=SNDP;MIN=0')
       call gesdict(n, nk, snoma,        'VN=snoma        ;ON=SNM ;VD=snow-over-low-veg/bare-ground mass             ;VS=row                    ;VB=p0        ;MIN=0')
-      call gesdict(n, nk, snomaen,      'VN=snomaen      ;ON=MI02;VD=snow-over-low-veg/bare-ground mass (E)         ;VS=row                    ;VB=e1;IN=SNM ;MIN=0')
+      !call gesdict(n, nk, snomaen,      'VN=snomaen      ;ON=MI02;VD=snow-over-low-veg/bare-ground mass (E)         ;VS=row                    ;VB=e1;IN=SNM ;MIN=0')
 
       call gesdict(n, nk, snoro,        'VN=snoro        ;ON=SNDR;VD=snow-over-low-veg/bare-ground relative density ;VS=row                    ;VB=p0        ;MIN=0')
       call gesdict(n, nk, snval,        'VN=snval        ;ON=SVAL;VD=snow-under-high-veg albedo                     ;VS=row                    ;VB=p0        ;MIN=0') 
       call gesdict(n, nk, snvalen,      'VN=snvalen      ;ON=MI03;VD=snow-under-high-veg albed (E)                  ;VS=row                    ;VB=e1;IN=SVAL;MIN=0') 
       call gesdict(n, nk, snvden,       'VN=snvden       ;ON=SVDN;VD=snow-under-high-veg density in kg/m3           ;VS=row                    ;VB=p0')
-      
+      call gesdict(n, nk, snvdenen,     'VN=snvdenen     ;ON=MI13;VD=snow-under-high-veg density in kg/m3 (E)       ;VS=row                    ;VB=e1;IN=SVDN;MIN=0')      
       call gesdict(n, nk, snvdp,        'VN=snvdp        ;ON=SVDP;VD=snow-under-high-veg depth                      ;VS=row                    ;VB=p0        ;MIN=0')
       call gesdict(n, nk, snvdpen,      'VN=snvdpen      ;ON=MI04;VD=snow-under-high-veg depth (E)                  ;VS=row                    ;VB=e1;IN=SVDP;MIN=0')
       call gesdict(n, nk, snvma,        'VN=snvma        ;ON=SVM ;VD=snow-under-high-veg mass                       ;VS=row                    ;VB=p0        ;MIN=0')
-      call gesdict(n, nk, snvmaen,      'VN=snvmaen      ;ON=MI09;VD=snow-under-high-veg mass (E)                   ;VS=row                    ;VB=e1;IN=SVM ;MIN=0')
+      !call gesdict(n, nk, snvmaen,      'VN=snvmaen      ;ON=MI09;VD=snow-under-high-veg mass (E)                   ;VS=row                    ;VB=e1;IN=SVM ;MIN=0')
       call gesdict(n, nk, snvro,        'VN=snvro        ;ON=SVDR;VD=snow-under-high-veg relative density           ;VS=row                    ;VB=p0')
       call gesdict(n, nk, stomrvh,      'VN=stomrvh      ;ON=RSVH;VD=min. stomatal resistance for high vegetation   ;VS=row                    ;VB=p0')
       call gesdict(n, nk, stomrvl,      'VN=stomrvl      ;ON=RSVL;VD=min. stomatal resistance for low vegetation    ;VS=row                    ;VB=p0')
@@ -504,6 +534,31 @@ subroutine sfc_businit(moyhr,n,nk)
    call gesdict(n, nk, ws_roaden,    'VN=ws_roaden    ;ON=4QEN; VD=road water reservoir (E)                      ;VS=row   ;VB=e1 ;IN=WSRD;MIN=0')
    call gesdict(n, nk, ws_roof,      'VN=ws_roof      ;ON=WSRF;VD=water content of roof reservoir                ;VS=row   ;VB=p0         ;MIN=0')
    call gesdict(n, nk, ws_roofen,    'VN=ws_roofen    ;ON=3QEN; VD=roof water reservoir (E)                      ;VS=row   ;VB=e1 ;IN=WSRF;MIN=0')
+   Call gesdict (n, nk, yradin,       'VN=yradin       ;ON=RTIN;VD=MRT inside building  (K)                       ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yradrfsun,    'VN=yradrfsun    ;ON=RTFS;VD=MRT on the exposed sunny roof (K)              ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yradrfshade,  'VN=yradrfshade  ;ON=RTFD;VD=MRT on the shaded roof (K)                     ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yutciin,      'VN=yutciin      ;ON=DXIN;VD= UTCI inside building  (C)                     ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yutcirfsun,   'VN=yutcirfsun   ;ON=DXFS;VD= UTCI on the exposed sunny roof (C)            ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yutcirfshade, 'VN=yutcirfshade ;ON=DXFD;VD= UTCI on the shaded roof (C)                   ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, ytrfzt,       'VN=ytrfzt       ;ON=T2RF;VD= Temperature at zt above the roof              ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, ytrdzt,       'VN=ytrdzt       ;ON=T2RD;VD= Temperature at zt above the ground            ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yurdzu,       'VN=yurdzu       ;ON=UVRD;VD= wind speed at zu above the ground (m/s)       ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, ywbgtrfsun,   'VN=ywbgtrfsun   ;ON=GXFS;VD= WBGT on the exposed sunny roof (C)            ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, ywbgtrfshade, 'VN=ywbgtrfshade ;ON=GXFD;VD= WBGT on the shaded roof (C)                   ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yutcicin,     'VN=yutcicin     ;ON=DCIN;VD= cumulative UTCI inside building  (C)          ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yutcicsun,    'VN=yutcicsun    ;ON=DCSU;VD= cumulative UTCI in the exposed sunny street   ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yutcicshade,  'VN=yutcicshade  ;ON=DCHD;VD= cumulative UTCI in the shaded street (C)      ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yutcicrfsun,  'VN=yutcicrfsun  ;ON=DCFS;VD= cumulative UTCI on the exposed sunny roof (C) ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yutcicrfshade,'VN=yutcicrfshade;ON=DCFD;VD= cumulative UTCI on the shaded roof (C)        ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, ytglbrfsun,   'VN=ytglbrfsun   ;ON=GTFS;VD=TGlobe on the exposed sunny roof (K)           ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, ytglbrfshade, 'VN=ytglbrfshade ;ON=GTFD;VD=TGlobe on the shaded roof (K)                  ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, ytwetbrf,     'VN=ytwetbrf     ;ON=WBRF;VD=Wet-Bulb Temperature at zt above the roof (K)  ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yQ8,          'VN=yQ8          ;ON=QSRF;VD= Contribution of roof SW rad (W/m2)            ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yQ9,          'VN=yQ9          ;ON=QLRF;VD= Contribution of roof LW rad (W/m2)            ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yQ10,         'VN=yQ10         ;ON=QSFK;VD= Contribution of sky on the roof SW rad (W/m2) ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yQ11,         'VN=yQ11         ;ON=QLFK;VD= Contribution of sky on the roof LW rad (W/m2) ;VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yQ12,         'VN=yQ12         ;ON=QSFW;VD= Contribution of wall on the roof SW rad (W/m2);VS=row                    ;VB=p0')
+   Call gesdict (n, nk, yQ13,         'VN=yQ13         ;ON=QLFW;VD= Contribution of wall on the roof LW rad (W/m2);VS=row                    ;VB=p0')
    call gesdict(n, nk, z0_road,      'VN=z0_road      ;ON=Z0RD;VD=aerodyn roughness length for road              ;VS=row   ;VB=p0')
    call gesdict(n, nk, z0_roaden,    'VN=z0_roaden    ;ON=TB8 ;VD=aerodyn roughness length for road (E)          ;VS=row   ;VB=e1; IN=Z0RD;')
    call gesdict(n, nk, z0_roof,      'VN=z0_roof      ;ON=Z0RF;VD=aerodyn roughness length for roof              ;VS=row   ;VB=p0')

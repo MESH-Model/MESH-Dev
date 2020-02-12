@@ -370,7 +370,9 @@ module RUNCLASS36_module
         !> CLASS output files.
         if (WF_NUM_POINTS > 0) call CLASSOUT_update_files(shd)
 
-        !> Copy over state variables.
+        !> Copy internal variables back to MESH.
+        vs%tile%prern(il1:il2) = catv%RPCP(il1:il2)*RHOW !from [m s-1] to [kg ms-2 s-1].
+        vs%tile%presno(il1:il2) = catv%SPCP(il1:il2)*catv%RHSI(il1:il2) !from [m s-1] to [kg ms-2 s-1].
         vs%tile%rcan(il1:il2) = cpv%RCAN(il1:il2)
         vs%tile%sncan(il1:il2) = cpv%SNCAN(il1:il2)
         vs%tile%cmas(il1:il2) = cpv%CMAI(il1:il2)
@@ -381,6 +383,7 @@ module RUNCLASS36_module
         vs%tile%sno(il1:il2) = cpv%SNO(il1:il2)
         vs%tile%albs(il1:il2) = cpv%ALBS(il1:il2)
         vs%tile%fsno(il1:il2) = cdv%FSNO(il1:il2)
+        vs%tile%rofsno(il1:il2) = cdv%ROFN(il1:il2)
         vs%tile%rhos(il1:il2) = cpv%RHOS(il1:il2)
         vs%tile%wsno(il1:il2) = cpv%WSNO(il1:il2)
         vs%tile%tsno(il1:il2) = cpv%TSNO(il1:il2)

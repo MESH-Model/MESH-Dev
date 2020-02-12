@@ -90,6 +90,9 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
    real,dimension(n) :: scr5,  scr6,  scr7, scr8, scr9, scr10,scr11
    real,dimension(n) :: tb,    vmod,  vdir, zsnodp_m
    real,dimension(n) :: my_ta,my_qa
+   real,dimension(n) :: zu10,zusr    ! for 1st momentum layer at 10m
+   real,dimension(n) :: zref_sw_surf, zemit_lw_surf , zzenith
+   real,dimension(n) :: zusurfzt, zvsurfzt, zqd
 
    real,dimension(n,nl) :: a, b, c, cap, cond, d, dz, sour, tp, z
 
@@ -102,6 +105,10 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
    real,pointer,dimension(:) :: zqdiag, zrainrate, zrunofftot
    real,pointer,dimension(:) :: zsnodp, zsnowrate, ztdiag
    real,pointer,dimension(:) :: ztsrad, zudiag, zvdiag, zfrv, zzusl, zztsl
+   real,pointer,dimension(:) :: zfsd, zfsf , zcoszeni
+   real,pointer,dimension(:) :: zutcisun, zutcishade, zwbgtsun, zwbgtshade
+   real,pointer,dimension(:) :: zradsun, zradshade, ztglbsun, ztglbshade
+   real,pointer,dimension(:) :: ztwetb, zq1, zq2, zq3, zq4, zq5, zq6, zq7
 
    real,pointer,dimension(:,:) :: t
 
@@ -163,6 +170,7 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
    z0m      (1:n) => bus( x(z0,1,indx_sfc)    : )
    zalfaq   (1:n) => bus( x(alfaq,1,1)        : )
    zalfat   (1:n) => bus( x(alfat,1,1)        : )
+   zcoszeni (1:n) => bus( x(cang,1,1)         : )
    zdlat    (1:n) => bus( x(dlat,1,1)         : )
    zfcor    (1:n) => bus( x(fcor,1,1)         : )
    zfdsi    (1:n) => bus( x(fdsi,1,1)         : )
@@ -180,6 +188,25 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
    zqdiag   (1:n) => bus( x(qdiag,1,1)        : )
    zzusl    (1:n) => bus( x(zusl,1,1)         : )
    zztsl    (1:n) => bus( x(ztsl,1,1)         : )
+!   zzenith (1:n)    => bus( x(zenith,1,1)     : )
+   zfsd (1:n)       => bus( x(fsd,1,1)         : )
+   zfsf (1:n)       => bus( x(fsf,1,1)         : )
+   zutcisun (1:n)   => bus( x(yutcisun,1,indx_sfc)    : )
+   zutcishade (1:n) => bus( x(yutcishade,1,indx_sfc)  : )
+   zwbgtsun (1:n)   => bus( x(ywbgtsun,1,indx_sfc)    : )
+   zwbgtshade (1:n) => bus( x(ywbgtshade,1,indx_sfc)  : )
+   zradsun (1:n)    => bus( x(yradsun,1,indx_sfc)     : )
+   zradshade (1:n)  => bus( x(yradshade,1,indx_sfc)   : )
+   ztglbsun (1:n)   => bus( x(ytglbsun,1,indx_sfc)    : )
+   ztglbshade (1:n) => bus( x(ytglbshade,1,indx_sfc)  : )
+   ztwetb (1:n)     => bus( x(ytwetb,1,indx_sfc)      : )
+   zq1 (1:n)        => bus( x(yq1,1,indx_sfc)         : )
+   zq2 (1:n)        => bus( x(yq2,1,indx_sfc)         : )
+   zq3 (1:n)        => bus( x(yq3,1,indx_sfc)         : )
+   zq4 (1:n)        => bus( x(yq4,1,indx_sfc)         : )
+   zq5 (1:n)        => bus( x(yq5,1,indx_sfc)         : )
+   zq6 (1:n)        => bus( x(yq6,1,indx_sfc)         : )
+   zq7 (1:n)        => bus( x(yq7,1,indx_sfc)         : )
 
    t(1:n,1:nl)    => bus( x(tmice,1,1)        : )
 
@@ -950,6 +977,64 @@ subroutine seaice2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, TRNCH, KOUNT, &
            ! ==> CM=ustar/vmod (ustar**2=tau/rho=CM*CM*vmod**2)
          endif
       endif
+
+!--------------------------------------
+!   8.     Heat Stress Indices
+!------------------------------------
+
+      IF_TERMAL_STRESS: if (thermal_stress) then
+
+         i = sl_sfclayer(th,hu,vmod,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
+              hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt, &
+              v_diag=zvsurfzt,tdiaglim=SEAICE_TDIAGLIM)
+
+         if (i /= SL_OK) then
+            print*, 'Aborting in seaice() because of error returned by sl_sfclayer()'
+            stop
+         endif
+
+
+         do I=1,N
+            if (abs(zzusl(i)-zu) <= 2.0) then
+               zu10(i) = sqrt(uu(i)**2+vv(i)**2)
+            else
+               zu10(i) = sqrt(zudiag(i)**2+zvdiag(i)**2)
+            endif
+
+            ! wind  at SensoR level zubos at z=zt
+            if (abs(zusurfzt(i)) >= 0.1 .and. abs(zvsurfzt(i)) >= 0.1) then
+               zusr(i) = sqrt(zusurfzt(i)**2 + zvsurfzt(i)**2)
+            else
+               zusr(i) = zu10(i)
+            endif
+
+            zqd(i) = max(ZQDIAG(i), 1.e-6)
+
+            zref_sw_surf(i)  = albsfc(i) * fsol(i)
+            zemit_lw_surf(i) = (1. -EMIST(I)) * zfdsi(i) + EMIST(I)*STEFAN *ztsrad(i)**4
+            !            zemit_lw_surf(i) = (1. -zemisr(i)) * zfdsi(i) + zemisr(i)*stefan*ztsrad(i)**4
+
+            zzenith(i) = acos(zcoszeni(i))
+            if (fsol(i) > 0.0) then
+               zzenith(i) = min(zzenith(i), pi/2.)
+            else
+               zzenith(i) = max(zzenith(i), pi/2.)
+            endif
+
+         end do
+
+         call SURF_THERMAL_STRESS(ZTDIAG, zqd,            &
+              ZU10,ZUSR,  ps,                             &
+              ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+              ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
+              Zutcisun ,Zutcishade,                       &
+              zwbgtsun, zwbgtshade,                       &
+              zradsun, zradshade,                         &
+              ztglbsun, ztglbshade, ztwetb,               &
+              ZQ1, ZQ2, ZQ3, ZQ4, ZQ5,                    &
+              ZQ6,ZQ7, N)
+
+      endif IF_TERMAL_STRESS
 
 !     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
       call FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_ICE, &
