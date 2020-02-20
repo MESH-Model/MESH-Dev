@@ -1421,15 +1421,17 @@ contains
     !
     ! Assign options Start and Count if present
     if (present(start)) then
-       if (size(start) /= idims) stop 'ERROR*** size of start does not equal dimensions of data. GetNcVar'
-       Rstart = start
+       if (size(start) < size(shape(dat))) stop 'ERROR*** start has less values than data has dimensions. GetNcVar'
+       if (size(start) > 5) stop 'ERROR*** start has dimension greater than 5. GetNcVar'
+       Rstart(1:size(start)) = start
     end if
     !
     if (present(a_count)) then
-       if (size(a_count) /= idims) stop 'ERROR*** size of a_count does not equal dimensions of data. GetNcVar'
-       Rcount = a_count
+       if (size(a_count) < size(shape(dat))) stop 'ERROR*** a_count has less values than data has dimensions. GetNcVar'
+       if (size(a_count) > 5) stop 'ERROR*** a_count has dimension greater than 5. GetNcVar'
+       Rcount(1:size(a_count)) = a_count
        do i=1, idims
-          if (size(Dat,i) /= Rcount(i)) stop 'ERROR*** size mismatch. Get_NcVar'
+          if (size(Dat,i) < Rcount(i)) stop 'ERROR*** try to read more data in dimension than there is. Get_NcVar'
        end do
     end if
     !
@@ -1497,15 +1499,17 @@ contains
     !
     ! Assign options Start and Count if present
     if (present(start)) then
-       if (size(start) /= idims) stop 'ERROR*** size of start does not equal dimensions of data. GetNcVar'
-       Rstart = start
+       if (size(start) < size(shape(dat))) stop 'ERROR*** start has less values than data has dimensions. GetNcVar'
+       if (size(start) > 5) stop 'ERROR*** start has dimension greater than 5. GetNcVar'
+       Rstart(1:size(start)) = start
     end if
     !
     if (present(a_count)) then
-       if (size(a_count) /= idims) stop 'ERROR*** size of a_count does not equal dimensions of data. GetNcVar'
-       Rcount = a_count
+       if (size(a_count) < size(shape(dat))) stop 'ERROR*** a_count has less values than data has dimensions. GetNcVar'
+       if (size(a_count) > 5) stop 'ERROR*** a_count has dimension greater than 5. GetNcVar'
+       Rcount(1:size(a_count)) = a_count
        do i=1, idims
-          if (size(Dat,i) /= Rcount(i)) stop 'ERROR*** size mismatch. Get_NcVar'
+          if (size(Dat,i) < Rcount(i)) stop 'ERROR*** try to read more data in dimension than there is. Get_NcVar'
        end do
     end if
     !
@@ -1573,15 +1577,17 @@ contains
     !
     ! Assign options Start and Count if present
     if (present(start)) then
-       if (size(start) /= idims) stop 'ERROR*** size of start does not equal dimensions of data. GetNcVar'
-       Rstart = start
+       if (size(start) < size(shape(dat))) stop 'ERROR*** start has less values than data has dimensions. GetNcVar'
+       if (size(start) > 5) stop 'ERROR*** start has dimension greater than 5. GetNcVar'
+       Rstart(1:size(start)) = start
     end if
     !
     if (present(a_count)) then
-       if (size(a_count) /= idims) stop 'ERROR*** size of a_count does not equal dimensions of data. GetNcVar'
-       Rcount = a_count
+       if (size(a_count) < size(shape(dat))) stop 'ERROR*** a_count has less values than data has dimensions. GetNcVar'
+       if (size(a_count) > 5) stop 'ERROR*** a_count has dimension greater than 5. GetNcVar'
+       Rcount(1:size(a_count)) = a_count
        do i=1, idims
-          if (size(Dat,i) /= Rcount(i)) stop 'ERROR*** size mismatch. Get_NcVar'
+          if (size(Dat,i) < Rcount(i)) stop 'ERROR*** try to read more data in dimension than there is. Get_NcVar'
        end do
     end if
     !
@@ -1649,15 +1655,17 @@ contains
     !
     ! Assign options Start and Count if present
     if (present(start)) then
-       if (size(start) /= idims) stop 'ERROR*** size of start does not equal dimensions of data. GetNcVar'
-       Rstart = start
+       if (size(start) < size(shape(dat))) stop 'ERROR*** start has less values than data has dimensions. GetNcVar'
+       if (size(start) > 5) stop 'ERROR*** start has dimension greater than 5. GetNcVar'
+       Rstart(1:size(start)) = start
     end if
     !
     if (present(a_count)) then
-       if (size(a_count) /= idims) stop 'ERROR*** size of a_count does not equal dimensions of data. GetNcVar'
-       Rcount = a_count
+       if (size(a_count) < size(shape(dat))) stop 'ERROR*** a_count has less values than data has dimensions. GetNcVar'
+       if (size(a_count) > 5) stop 'ERROR*** a_count has dimension greater than 5. GetNcVar'
+       Rcount(1:size(a_count)) = a_count
        do i=1, idims
-          if (size(Dat,i) /= Rcount(i)) stop 'ERROR*** size mismatch. Get_NcVar'
+          if (size(Dat,i) < Rcount(i)) stop 'ERROR*** try to read more data in dimension than there is. Get_NcVar'
        end do
     end if
     !
@@ -1725,15 +1733,17 @@ contains
     !
     ! Assign options Start and Count if present
     if (present(start)) then
-       if (size(start) /= idims) stop 'ERROR*** size of start does not equal dimensions of data. GetNcVar'
-       Rstart = start
+       if (size(start) < size(shape(dat))) stop 'ERROR*** start has less values than data has dimensions. GetNcVar'
+       if (size(start) > 5) stop 'ERROR*** start has dimension greater than 5. GetNcVar'
+       Rstart(1:size(start)) = start
     end if
     !
     if (present(a_count)) then
-       if (size(a_count) /= idims) stop 'ERROR*** size of a_count does not equal dimensions of data. GetNcVar'
-       Rcount = a_count
+       if (size(a_count) < size(shape(dat))) stop 'ERROR*** a_count has less values than data has dimensions. GetNcVar'
+       if (size(a_count) > 5) stop 'ERROR*** a_count has dimension greater than 5. GetNcVar'
+       Rcount(1:size(a_count)) = a_count
        do i=1, idims
-          if (size(Dat,i) /= Rcount(i)) stop 'ERROR*** size mismatch. Get_NcVar'
+          if (size(Dat,i) < Rcount(i)) stop 'ERROR*** try to read more data in dimension than there is. Get_NcVar'
        end do
     end if
     !

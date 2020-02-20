@@ -235,17 +235,21 @@ module climate_forcing_io
                          call program_abort()
                       case(4)
                          call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_i4, start=start, a_count=a_count, fid=cm%dat(vid)%fiun)  ! read only first value
+                         tt_1 = real(tt_i4(1),8)
+                         tt_2 = real(tt_i4(2),8)
                       case(5)
                          call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_sp, start=start, a_count=a_count, fid=cm%dat(vid)%fiun)  ! read only first value
+                         tt_1 = real(tt_sp(1),8)
+                         tt_2 = real(tt_sp(2),8)
                       case(6)
                          call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_dp, start=start, a_count=a_count, fid=cm%dat(vid)%fiun)  ! read only first value
+                         tt_1 = real(tt_dp(1),8)
+                         tt_2 = real(tt_dp(2),8)
                       case default
                          call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
                               '): Datatype of variable is unknown.')
                          call program_abort()
                       end select
-                      tt_1 = real(tt_dp(1),8)
-                      tt_2 = real(tt_dp(2),8)
                       if (trim(tunit) == 'seconds') then
                          jdate = jdate + tt_1/60./60./24.
                          tstep = int((tt_2-tt_1) / 60. + 0.5)        ! 0.5 takes care of correct rounding
@@ -537,22 +541,22 @@ module climate_forcing_io
                       !> set how much data will be read in each dimension
                       a_count = (/ size(GRD_tmp,1), size(GRD_tmp,2), size(GRD_tmp,3) /)
                       
-                      ! !> read <cm%dat(vid)%nblocks> timesteps of whole domain
-                      ! call Get_NcVar(                  &
-                      !      trim(cm%dat(vid)%fpath),    &  !          in:  filename
-                      !      trim(cm%dat(vid)%name_var), &  !          in:  variable name
-                      !      GRD_tmp,                    &  !          out: data
-                      !      start,                      &  ! optional in:  where to start reading
-                      !      a_count,                    &  ! optional in:  how much to read
-                      !      fid=cm%dat(vid)%fiun)          ! optional in:  file handle of opened file
+                      !> read <cm%dat(vid)%nblocks> timesteps of whole domain
+                      call Get_NcVar(                  &
+                           trim(cm%dat(vid)%fpath),    &  !          in:  filename
+                           trim(cm%dat(vid)%name_var), &  !          in:  variable name
+                           GRD_tmp,                    &  !          out: data
+                           start,                      &  ! optional in:  where to start reading
+                           a_count,                    &  ! optional in:  how much to read
+                           fid=cm%dat(vid)%fiun)          ! optional in:  file handle of opened file
                       
                       !> retrieve data
-                      call check(nf90_get_var( &
-                           cm%dat(vid)%fiun,   & ! in:           file handle of opened file
-                           cm%dat(vid)%varid,  & ! in:           variable id
-                           GRD_tmp,            & ! out:          data                 
-                           start=start,        & ! optional in:  where to start reading
-                           count=a_count))       ! optional in:  how much to read
+                      ! call check(nf90_get_var( &
+                      !      cm%dat(vid)%fiun,   & ! in:           file handle of opened file
+                      !      cm%dat(vid)%varid,  & ! in:           variable id
+                      !      GRD_tmp,            & ! out:          data                 
+                      !      start=start,        & ! optional in:  where to start reading
+                      !      count=a_count))       ! optional in:  how much to read
 
                       !> increase skip for next read
                       cm%dat(vid)%skip = cm%dat(vid)%skip + cm%dat(vid)%nblocks
