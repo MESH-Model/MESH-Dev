@@ -4,6 +4,7 @@ module output_files
     use model_dates
     use model_files_variables
     use variable_names
+    use mo_netcdf
 
     implicit none
 
@@ -18,6 +19,7 @@ module output_files
         integer :: CSV = 6
         integer :: TSI = 7
         integer :: TSK = 8
+        integer :: NC4 = 9
     end type
 
     !> Description:
@@ -58,6 +60,21 @@ module output_files
         module procedure write_seq_frame_int
     end interface
 
+    type nc_field
+        type(NcDataset) f
+        type(NcVariable) ts, v
+    end type
+
+    interface nc4_add_vname
+        module procedure nc4_add_vname_1d
+        module procedure nc4_add_vname_2d
+    end interface
+
+    interface nc4_write_field
+        module procedure nc4_write_field_1d
+        module procedure nc4_write_field_2d
+    end interface
+
     !> Description:
     !>  Data type for an output file.
     !>
@@ -71,6 +88,7 @@ module output_files
         character(len = DEFAULT_LINE_LENGTH) :: fname = ''
         real, dimension(:), pointer :: src => null()
         real, dimension(:, :), allocatable :: dat
+        type(nc_field) nc
     end type
 
     !> Description:
@@ -358,6 +376,404 @@ module output_files
         !> Open the file (write access).
         ierr = 0
         open(iun, file = fname, status = 'replace', form = 'formatted', action = 'write', iostat = ierr)
+
+    end subroutine
+
+    subroutine nc4_open_output(fname, nc, ierr)
+
+        !* mo_netcdf: For 'nc' datatypes (from JAMS library).
+        use mo_netcdf, only: NcDataset
+
+        !> Input variables.
+        character(len = *), intent(in) :: fname
+
+        !> Output variables.
+        type(NcDataset), intent(out) :: nc
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = 10) str10
+        character(len = 8) str8
+        character(len = 20) line
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Open the file with write access.
+        nc = NcDataset(fname, 'w')
+
+        !> Assign global meta attributes.
+        call nc%setAttribute('title', 'SA_MESH model outputs')
+        call nc%setAttribute('source', 'SA_MESH') !((version info, but somehow also configuration CLASS/SVS/etc..))
+        call date_and_time(str8, str10)
+        write(line, "(a4, '-', a2, '-', a2, 1x, a2, ':', a2, ':', a2)") &
+            str8(1:4), str8(5:6), str8(7:8), str10(1:2), str10(3:4), '00'
+        call nc%setAttribute('history', trim(adjustl(line)) // ' - Created.')
+        call nc%setAttribute('references', 'SA_MESH') !(('https://wiki.usask.ca/display/MESH/'))
+
+        !> Add coding convention.
+        call nc%setAttribute('Conventions', 'CF-1.6')
+
+    end subroutine
+
+    subroutine nc4_set_proj(nc, proj_name, datum, zone_id, ierr)
+
+        !* mo_netcdf: For 'nc' datatypes (from JAMS library).
+        !* strings: lower
+        use mo_netcdf, only: NcDataset, NcVariable
+        use strings, only: lowercase
+
+        !> Input variables.
+        character(len = *), intent(in) :: proj_name, datum
+        character(len = *), intent(in), optional :: zone_id
+
+        !> Input/output variables.
+        type(NcDataset) nc
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        type(NcVariable) p
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Create variable.
+        p = nc%setVariable('crs', 'i2', (/1/))
+
+        !> Assign projection.
+        select case (lowercase(proj_name))
+
+            !> Regular lat/lon.
+            case ('latlon', 'latlong')
+                call p%setAttribute('grid_mapping_name', 'latitude_longitude')
+                call p%setAttribute('longitude_of_prime_meridian', 0.0)
+
+                !> Ellipsoid/datum specification (from EnSim/GK manual; version: September, 2010).
+                select case (lowercase(datum))
+                    case ('wgs84')
+                        call p%setAttribute('semi_major_axis', 6378137.0)
+                        call p%setAttribute('inverse_flattening', 298.257223563)
+                    case ('wgs72')
+                        call p%setAttribute('semi_major_axis', 6378135.0)
+                        call p%setAttribute('inverse_flattening', 298.26)
+                    case ('grs80', 'nad83')
+                        call p%setAttribute('semi_major_axis', 6378137.0)
+                        call p%setAttribute('inverse_flattening', 298.257222101)
+                    case ('clarke1866', 'nad27')
+                        call p%setAttribute('semi_major_axis', 6378206.4)
+                        call p%setAttribute('inverse_flattening', 294.9786982)
+                    case ('sphere')
+                        call p%setAttribute('semi_major_axis', 6371000.0)
+                        call p%setAttribute('inverse_flattening', 0.0)
+                end select
+        end select
+
+    end subroutine
+
+    subroutine nc4_set_time(nc, ffreq, start_year, dim_t, ts, ierr)
+
+        !* mo_netcdf: For 'nc' datatypes (from JAMS library).
+        use mo_netcdf, only: NcDataset, NcDimension, NcVariable
+
+        !> Input variables.
+        integer, intent(in) :: ffreq, start_year
+
+        !> Input/output variables.
+        type(NcDataset) nc
+
+        !> Output variables.
+        type(NcDimension), intent(out) :: dim_t
+        type(NcVariable), intent(out) :: ts
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = 20) line
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Create dimension for 'ts'.
+        dim_t = nc%setDimension('time', -1)
+
+        !> Create variable.
+        ts = nc%setVariable('time', 'i4', (/dim_t/))
+
+        !> Set units based on 'ffreq'.
+        write(line, "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2)") &
+            ic%now%year, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins, 0
+        if (btest(ffreq, fls_out%ffreq%dly)) then
+            call ts%setAttribute('units', 'days since ' // trim(adjustl(line)))
+        else if (btest(ffreq, fls_out%ffreq%mly) .or. btest(ffreq, fls_out%ffreq%ssl)) then
+            call ts%setAttribute('units', 'months since ' // trim(adjustl(line)))
+        else if (btest(ffreq, fls_out%ffreq%yly)) then
+            call ts%setAttribute('units', 'years since ' // trim(adjustl(line)))
+        else if (btest(ffreq, fls_out%ffreq%hly)) then
+            call ts%setAttribute('units', 'hours since ' // trim(adjustl(line)))
+        else
+            call ts%setAttribute('units', 'seconds since ' // trim(adjustl(line)))
+        end if
+        call ts%setAttribute('long_name', 'time')
+        call ts%setAttribute('standard_name', 'time')
+        call ts%setAttribute('axis', 'T')
+        call ts%setAttribute('calendar', 'gregorian')
+
+    end subroutine
+
+    subroutine nc4_set_attr(v, standard_name, long_name, units, ierr)
+
+        !* mo_netcdf: For 'nc' datatypes (from JAMS library).
+        use mo_netcdf, only: NcVariable
+
+        !> Input variables.
+        character(len = *), intent(in) :: standard_name, long_name, units
+
+        !> Input/output variables.
+        type(NcVariable) v
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Assign the attributes.
+        call v%setAttribute('standard_name', standard_name)
+        call v%setAttribute('long_name', long_name)
+        call v%setAttribute('units', units)
+
+    end subroutine
+
+    subroutine nc4_add_vname_1d( &
+        shd, n, lon, lat, vname, long_name, units, ffreq, start_year, fill, fname, nc, ts, v, &
+        constmul, constadd, constrmax, constrmin, ierr)
+
+        !* mo_netcdf: For 'nc' datatypes (from JAMS library).
+        use mo_netcdf, only: NcDataset, NcDimension, NcVariable
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: n, ffreq, start_year
+        real, dimension(n), intent(in) :: lon, lat
+        real, intent(in) :: fill
+        character(len = *), intent(in) :: vname, long_name, units, fname
+
+        !> Input variables (optional).
+        real, intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        type(NcDataset), intent(out) :: nc
+        type(NcVariable), intent(out) :: ts, v
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        type(NcDimension) dim_n, dim_t
+        type(NcVariable) x, y
+        integer z
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Open the file (write access).
+        z = 0
+        call nc4_open_output(fname, nc, z)
+
+        !> Create necessary dimensions for fields.
+        dim_n = nc%setDimension('npoints', n)
+
+        !> Reference variables.
+        x = nc%setVariable('lon', 'sp', (/dim_n/))
+        y = nc%setVariable('lat', 'sp', (/dim_n/))
+
+        !> Time.
+        z = 0
+        call nc4_set_time(nc, ffreq, start_year, dim_t, ts, z)
+
+        !> Coordinates.
+        z = 0
+        call nc4_set_attr(y, 'latitude', 'latitude', 'degrees_north', z)
+        call nc4_set_attr(x, 'longitude', 'longitude', 'degrees_east', z)
+
+        !> Projection.
+        z = 0
+        call nc4_set_proj(nc, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, z)
+
+        !> Data.
+        z = 0
+        v = nc%setVariable(vname, 'sp', (/dim_n, dim_t/))
+        call nc4_set_attr(v, vname, long_name, units, z)
+        if (present(constmul)) call v%setAttribute('scale_factor', constmul)
+        if (present(constadd)) call v%setAttribute('add_offset', constadd)
+        if (present(constrmin)) call v%setAttribute('valid_min', constrmin)
+        if (present(constrmax)) call v%setAttribute('valid_max', constrmax)
+        call v%setAttribute('coordinates', 'lon lat')
+        call v%setAttribute('grid_mapping', 'crs')
+
+        !> Populate reference variables.
+        call x%putData(lon)
+        call y%putData(lat)
+
+    end subroutine
+
+    subroutine nc4_add_vname_2d( &
+        shd, vname, long_name, units, ffreq, start_year, fill, fname, nc, ts, v, &
+        constmul, constadd, constrmax, constrmin, ierr)
+
+        !* mo_netcdf: For 'nc' datatypes (from JAMS library).
+        use mo_netcdf, only: NcDataset, NcDimension, NcVariable
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: ffreq, start_year
+        real, intent(in) :: fill
+        character(len = *), intent(in) :: vname, long_name, units, fname
+
+        !> Input variables (optional).
+        real, intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        type(NcDataset), intent(out) :: nc
+        type(NcVariable), intent(out) :: ts, v
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        type(NcDimension) dim_x, dim_y, dim_t
+        type(NcVariable) x, y
+        integer n, z
+        real lon(shd%xCount), lat(shd%yCount)
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Open the file (write access).
+        z = 0
+        call nc4_open_output(fname, nc, z)
+
+        !> Create necessary dimensions for fields.
+        dim_x = nc%setDimension('nlon', shd%xCount)
+        dim_y = nc%setDimension('nlat', shd%yCount)
+
+        !> Reference variables.
+        x = nc%setVariable('lon', 'sp', (/dim_x/))
+        y = nc%setVariable('lat', 'sp', (/dim_y/))
+
+        !> Time.
+        z = 0
+        call nc4_set_time(nc, ffreq, start_year, dim_t, ts, z)
+
+        !> Coordinates.
+        z = 0
+        call nc4_set_attr(y, 'latitude', 'latitude', 'degrees_north', z)
+        call nc4_set_attr(x, 'longitude', 'longitude', 'degrees_east', z)
+
+        !> Projection.
+        z = 0
+        call nc4_set_proj(nc, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, z)
+
+        !> Data.
+        z = 0
+        v = nc%setVariable(vname, 'sp', (/dim_x, dim_y, dim_t/))
+        call nc4_set_attr(v, vname, long_name, units, z)
+        if (present(constmul)) call v%setAttribute('scale_factor', constmul)
+        if (present(constadd)) call v%setAttribute('add_offset', constadd)
+        if (present(constrmin)) call v%setAttribute('valid_min', constrmin)
+        if (present(constrmax)) call v%setAttribute('valid_max', constrmax)
+        call v%setAttribute('coordinates', 'lon lat')
+        call v%setAttribute('grid_mapping', 'crs')
+
+        !> Populate reference variables.
+        do n = 1, shd%xCount
+            lon(n) = (shd%xOrigin + shd%xDelta*n) - shd%xDelta/2.0
+        end do
+        call x%putData(lon)
+        do n = 1, shd%yCount
+            lat(n) = (shd%yOrigin + shd%yDelta*n) - shd%yDelta/2.0
+        end do
+        call y%putData(lat)
+
+    end subroutine
+
+    subroutine nc4_write_field_1d(shd, nc, ts, v, dat, i, dates, ierr)
+
+        !* mo_netcdf: For 'nc' datatypes (from JAMS library).
+        use mo_netcdf, only: NcDataset, NcVariable
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+        real, dimension(:, :), intent(in) :: dat
+        integer, dimension(:, :), intent(in) :: dates
+!temp
+        integer i
+
+        !> Input/output variables.
+        type(NcDataset) nc
+        type(NcVariable) ts, v
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        integer t, n, z
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Loop for time.
+        do t = 1, size(dat, 2)
+
+            !> Write time.
+            call ts%putData((dates(1, t) - 1), start = (/ dates(1, t) /))
+
+            !> Write data.
+            call v%putData(dat, start = (/ 1, dates(1, t) /))
+        end do
+
+    end subroutine
+
+    subroutine nc4_write_field_2d(shd, nc, ts, v, dat, dates, ierr)
+
+        !* mo_netcdf: For 'nc' datatypes (from JAMS library).
+        use mo_netcdf, only: NcDataset, NcVariable
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+        real, dimension(:, :), intent(in) :: dat
+        integer, dimension(:, :), intent(in) :: dates
+
+        !> Input/output variables.
+        type(NcDataset) nc
+        type(NcVariable) ts, v
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        integer t, n, z
+        real, dimension(shd%xCount, shd%yCount) :: r2c_grid
+        real fill
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Get the 'fill' value.
+        call v%getFillValue(fill)
+
+        !> Loop for time.
+        do t = 1, size(dat, 2)
+
+            !> Transfer data to temporary variable.
+            r2c_grid = fill
+            do n = 1, shd%NA
+                r2c_grid(shd%xxx(n), shd%yyy(n)) = dat(n, t)
+            end do
+
+            !> Write time.
+            call ts%putData((dates(1, t) - 1), start = (/ dates(1, t) /))
+
+            !> Write data.
+            call v%putData(r2c_grid, start = (/ 1, 1, dates(1, t) /))
+        end do
 
     end subroutine
 
@@ -775,6 +1191,26 @@ module output_files
                 end if
                 iun = iun + 1
             end if
+            if (btest(field%ffmt, fls_out%ffmt%nc4)) then
+                z = 0
+                lopen = .false.
+                inquire(file = trim(fname) // '_GRD.nc', opened = lopen)
+                if (.not. lopen) then
+                    call nc4_add_vname( &
+                        shd, field%vname, '', '', field%ffreq, ic%start%year, out%NO_DATA, trim(fname) // '_GRD.nc', &
+                        group%grid%nc%f, group%grid%nc%ts, group%grid%nc%v, &
+                        ierr = z)
+                    if (z /= 0) then
+                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '_GRD.nc')
+                        ierr = z
+                    end if
+                else
+                    call print_message_detail( &
+                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_GRD.nc')
+                    z = 1
+                end if
+                iun = iun + 1
+            end if
             if (z /= 0) ierr = z
 
             !> Update shared file unit.
@@ -1042,6 +1478,13 @@ module output_files
                 case ('csv')
                     if (.not. btest(field%ffmt, fls_out%ffmt%csv)) then
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%csv)**fls_out%ffmt%csv
+                    end if
+                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                    end if
+                case ('nc', 'netcdf', 'nc4')
+                    if (.not. btest(field%ffmt, fls_out%ffmt%nc4)) then
+                        field%ffmt = field%ffmt + radix(fls_out%ffmt%nc4)**fls_out%ffmt%nc4
                     end if
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
@@ -1735,6 +2178,17 @@ module output_files
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_GRD.ts')
+                    call program_abort()
+                end if
+                iun = iun + 1
+            end if
+            if (btest(field%ffmt, fls_out%ffmt%nc4)) then
+                z = 0
+                call nc4_write_field( &
+                    shd, group%grid%nc%f, group%grid%nc%ts, group%grid%nc%v, group%grid%dat, dates, &
+                    z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_GRD.nc')
                     call program_abort()
                 end if
                 iun = iun + 1
