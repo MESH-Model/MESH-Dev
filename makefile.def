@@ -19,6 +19,15 @@ INC_DIRS=
 OBJECTS=
 
 # ======================================================================
+# JAMS-CHS.
+# Paths.
+ifeq ($(NC),yes)
+VPATH+=	$(DIR_REPO)/Modules/jams_chs:
+# Core routines.
+OBJECTS+=	mo_kind.o mo_julian.o mo_netcdf.o mo_ncread.o
+endif
+
+# ======================================================================
 # Primitives for SA_MESH.
 # Paths.
 VPATH+=	$(DIR_REPO)/Driver/MESH_Driver: \
@@ -38,8 +47,7 @@ OBJECTS+=	mpi_flags.o mpi_shared_variables.o mpi_utilities.o \
 OBJECTS+=	precmod.o stringmod.o
 # I/O primitives.
 OBJECTS+=	print_routines.o program_end.o program_abort.o \
-			txt_io.o ensim_io.o \
-			mo_kind.o mo_julian.o mo_ncread.o 
+			txt_io.o ensim_io.o
 # Variables (common).
 OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			module_dates.o \

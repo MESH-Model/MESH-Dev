@@ -31,10 +31,6 @@ default: all
 #   - 'yes' to include debug options and disable compiler optimization.
 
 # ======================================================================
-# File/object names.
-include makefile.def
-
-# ======================================================================
 # Pre-configured compiler options.
 ifeq ($(filter gfortran,$(MAKECMDGOALS)),gfortran)
 DIST=
@@ -60,8 +56,9 @@ endif
 ifeq ($(filter netcdf,$(MAKECMDGOALS)),netcdf)
 # LIBNCO=-DNETCDF -I/usr/local/include -I/usr/local/netcdf-fortran-4.4.4-gfortran/include
 # LIBNCL=-L/usr/local/lib -lnetcdf -L/usr/local/netcdf-fortran-4.4.4-gfortran/lib -lnetcdff -L/usr/local/lib -lhdf5_hl -lhdf5 -L/usr/local/lib -lsz -L/usr/lib -lcurl -lz
-LIBNCO=-DNETCDF 
-LIBNCL=-lnetcdf -lnetcdff -lhdf5_hl -lhdf5 -lsz -lcurl -lz
+LIBNCO=-DNETCDF -I/usr/include
+LIBNCL=-L/usr/lib -lnetcdf -lnetcdff #-lhdf5_hl -lhdf5 -lsz -lcurl -lz
+NC=yes
 endif
 
 gfortran: all
@@ -71,6 +68,10 @@ mpi_gcc: all
 mpi_intel: all
 debug: all
 netcdf: all
+
+# ======================================================================
+# File/object names.
+include makefile.def
 
 # ======================================================================
 # Compiler and options.
