@@ -348,6 +348,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 cm%dat(n)%fname = trim(args(j)(7:))
                             end if
                         end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = trim(args(j)(7:))
+                            end if
+                        end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
                                 cm%dat(n)%name_var = trim(args(j)(10:))
@@ -407,6 +412,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fname=') then
                                 cm%dat(n)%fname = trim(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = trim(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
@@ -470,6 +480,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 cm%dat(n)%fname = trim(args(j)(7:))
                             end if
                         end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = trim(args(j)(7:))
+                            end if
+                        end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
                                 cm%dat(n)%name_var = trim(args(j)(10:))
@@ -529,6 +544,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fname=') then
                                 cm%dat(n)%fname = trim(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = trim(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
@@ -592,6 +612,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 cm%dat(n)%fname = trim(args(j)(7:))
                             end if
                         end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = trim(args(j)(7:))
+                            end if
+                        end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
                                 cm%dat(n)%name_var = trim(args(j)(10:))
@@ -653,6 +678,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 cm%dat(n)%fname = trim(args(j)(7:))
                             end if
                         end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = trim(args(j)(7:))
+                            end if
+                        end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
                                 cm%dat(n)%name_var = trim(args(j)(10:))
@@ -712,6 +742,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fname=') then
                                 cm%dat(n)%fname = trim(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = trim(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then

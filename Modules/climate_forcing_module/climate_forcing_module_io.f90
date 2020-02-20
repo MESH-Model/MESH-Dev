@@ -139,7 +139,10 @@ module climate_forcing_io
             !> netCDF format.
             case(7)
 #ifdef NETCDF                
-                cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname))   ! no file ending (*.nc) needs to be appended
+!-                cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname))   ! no file ending (*.nc) needs to be appended
+                if (len_trim(cm%dat(vid)%fpath) == 0) then
+                    cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname)) // '.nc'
+                end if
                 !> open and close file to see if it exists
                 ncid = NcOpen(cm%dat(vid)%fpath)
                 !> overwrite pre-assigned unit number of file.
