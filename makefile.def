@@ -24,7 +24,7 @@ OBJECTS=
 ifeq ($(NC),yes)
 VPATH+=	$(DIR_REPO)/Modules/jams_chs:
 # Core routines.
-OBJECTS+=	mo_kind.o mo_julian.o mo_netcdf.o mo_ncread.o
+OBJECTS+=	mo_kind.o mo_julian.o mo_netcdf.o
 endif
 
 # ======================================================================

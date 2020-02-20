@@ -1,6 +1,7 @@
 module climate_forcing_variabletypes
 
     use model_dates
+    use mo_netcdf, only: NcDataset, NcVariable
 
     implicit none
 
@@ -24,6 +25,11 @@ module climate_forcing_variabletypes
 !-        real, dimension(:, :), allocatable :: tfs
 
 !-    end type
+
+    type nc_field
+        type(NcDataset) f
+        type(NcVariable) ts, v
+    end type
 
     type clim_series
 
@@ -67,6 +73,7 @@ module climate_forcing_variabletypes
         integer        :: dim_order_case = 0
         real           :: time_shift     = 0.0
         integer        :: varid          = -9
+        type(nc_field) nc
 
         !* GRD: Values for forcing data (Bounds: 1: Grid).
         !>      Values are averaged to the grid-level for grid-based
