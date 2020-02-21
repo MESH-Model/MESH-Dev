@@ -4,7 +4,7 @@ module output_files
     use model_dates
     use model_files_variables
     use variable_names
-    use mo_netcdf
+!    use mo_netcdf
 
     implicit none
 
@@ -60,10 +60,10 @@ module output_files
         module procedure write_seq_frame_int
     end interface
 
-    type nc_field
-        type(NcDataset) f
-        type(NcVariable) ts, v
-    end type
+!    type nc_field
+!        type(NcDataset) f
+!        type(NcVariable) ts, v
+!    end type
 
     interface nc4_add_vname
         module procedure nc4_add_vname_1d
@@ -81,14 +81,18 @@ module output_files
     !> Variables:
     !*  iun: Unit of the file (must be unique; default: -1).
     !*  fname: Base file name (default: none).
+    !*  vid: Variable ID (default: none).
+    !*  tid: Time ID (default: none).
     !*  src: Source data (1: Index).
     !*  dat: Data (1: Index; 2: Time-series index).
     type output_file
         integer :: iun = -1
         character(len = DEFAULT_LINE_LENGTH) :: fname = ''
+        integer :: vid = -1
+        integer :: tid = -1
         real, dimension(:), pointer :: src => null()
         real, dimension(:, :), allocatable :: dat
-        type(nc_field) nc
+!        type(nc_field) nc
     end type
 
     !> Description:
@@ -378,17 +382,21 @@ module output_files
         open(iun, file = fname, status = 'replace', form = 'formatted', action = 'write', iostat = ierr)
 
     end subroutine
+#ifdef NETCDF
 
-    subroutine nc4_open_output(fname, nc, ierr)
+    subroutine nc4_open_output(fname, iun, ierr)
 
         !* mo_netcdf: For 'nc' datatypes (from JAMS library).
-        use mo_netcdf, only: NcDataset
+!        use mo_netcdf, only: NcDataset
+        !* netcdf: For netCDF library.
+        use netcdf
 
         !> Input variables.
         character(len = *), intent(in) :: fname
 
         !> Output variables.
-        type(NcDataset), intent(out) :: nc
+!        type(NcDataset), intent(out) :: nc
+        integer, intent(out) :: iun
         integer, intent(out) :: ierr
 
         !> Local variables.
@@ -397,160 +405,260 @@ module output_files
         character(len = 20) line
 
         !> Initialize output variable.
-        ierr = 0
+        ierr = NF90_NOERR
 
         !> Open the file with write access.
-        nc = NcDataset(fname, 'w')
+!        nc = NcDataset(fname, 'w')
+        ierr = nf90_create(fname, NF90_NETCDF4, iun)
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Unable to open file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
 
         !> Assign global meta attributes.
-        call nc%setAttribute('title', 'SA_MESH model outputs')
-        call nc%setAttribute('source', 'SA_MESH') !((version info, but somehow also configuration CLASS/SVS/etc..))
+        ierr = NF90_NOERR
+!        call nc%setAttribute('title', 'SA_MESH model outputs')
+!        call nc%setAttribute('source', 'SA_MESH') !((version info, but somehow also configuration CLASS/SVS/etc..))
         call date_and_time(str8, str10)
         write(line, "(a4, '-', a2, '-', a2, 1x, a2, ':', a2, ':', a2)") &
             str8(1:4), str8(5:6), str8(7:8), str10(1:2), str10(3:4), '00'
-        call nc%setAttribute('history', trim(adjustl(line)) // ' - Created.')
-        call nc%setAttribute('references', 'SA_MESH') !(('https://wiki.usask.ca/display/MESH/'))
+!        call nc%setAttribute('history', trim(adjustl(line)) // ' - Created.')
+!        call nc%setAttribute('references', 'SA_MESH') !(('https://wiki.usask.ca/display/MESH/'))
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'title', 'SA_MESH model outputs')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'source', 'SA_MESH') !((version info, but somehow also configuration CLASS/SVS/etc..))
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'history', trim(adjustl(line)) // ' - Created.')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'references', 'SA_MESH') !(('https://wiki.usask.ca/display/MESH/'))
 
         !> Add coding convention.
-        call nc%setAttribute('Conventions', 'CF-1.6')
+!        call nc%setAttribute('Conventions', 'CF-1.6')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'Conventions', 'CF-1.6')
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred writing attributes to file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
 
     end subroutine
 
-    subroutine nc4_set_proj(nc, proj_name, datum, zone_id, ierr)
+    subroutine nc4_set_proj(iun, fname, proj_name, datum, zone_id, ierr)
 
         !* mo_netcdf: For 'nc' datatypes (from JAMS library).
+        !* netcdf: For netCDF library.
         !* strings: lower
-        use mo_netcdf, only: NcDataset, NcVariable
+!        use mo_netcdf, only: NcDataset, NcVariable
+        use netcdf
         use strings, only: lowercase
 
         !> Input variables.
-        character(len = *), intent(in) :: proj_name, datum
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, proj_name, datum
         character(len = *), intent(in), optional :: zone_id
 
         !> Input/output variables.
-        type(NcDataset) nc
+!        type(NcDataset) nc
 
         !> Output variables.
         integer, intent(out) :: ierr
 
         !> Local variables.
-        type(NcVariable) p
+!        type(NcVariable) p
+        integer vid
 
         !> Initialize output variable.
-        ierr = 0
+        ierr = NF90_NOERR
 
         !> Create variable.
-        p = nc%setVariable('crs', 'i2', (/1/))
+!        p = nc%setVariable('crs', 'i2', (/1/))
+        ierr = nf90_def_var(iun, 'crs', NF90_INT, (/1/), vid)
+        if (ierr /= NF90_NOERR) then
+            call print_warning('An error occurred creating the projection in file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
 
         !> Assign projection.
+        ierr = NF90_NOERR
         select case (lowercase(proj_name))
 
             !> Regular lat/lon.
             case ('latlon', 'latlong')
-                call p%setAttribute('grid_mapping_name', 'latitude_longitude')
-                call p%setAttribute('longitude_of_prime_meridian', 0.0)
+!                call p%setAttribute('grid_mapping_name', 'latitude_longitude')
+!                call p%setAttribute('longitude_of_prime_meridian', 0.0)
+                if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'grid_mapping_name', 'latitude_longitude')
+                if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'longitude_of_prime_meridian', 0.0)
 
                 !> Ellipsoid/datum specification (from EnSim/GK manual; version: September, 2010).
                 select case (lowercase(datum))
                     case ('wgs84')
-                        call p%setAttribute('semi_major_axis', 6378137.0)
-                        call p%setAttribute('inverse_flattening', 298.257223563)
+!                        call p%setAttribute('semi_major_axis', 6378137.0)
+!                        call p%setAttribute('inverse_flattening', 298.257223563)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'semi_major_axis', 6378137.0)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'inverse_flattening', 298.257223563)
                     case ('wgs72')
-                        call p%setAttribute('semi_major_axis', 6378135.0)
-                        call p%setAttribute('inverse_flattening', 298.26)
+!                        call p%setAttribute('semi_major_axis', 6378135.0)
+!                        call p%setAttribute('inverse_flattening', 298.26)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'semi_major_axis', 6378135.0)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'inverse_flattening', 298.26)
                     case ('grs80', 'nad83')
-                        call p%setAttribute('semi_major_axis', 6378137.0)
-                        call p%setAttribute('inverse_flattening', 298.257222101)
+!                        call p%setAttribute('semi_major_axis', 6378137.0)
+!                        call p%setAttribute('inverse_flattening', 298.257222101)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'semi_major_axis', 6378137.0)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'inverse_flattening', 298.257222101)
                     case ('clarke1866', 'nad27')
-                        call p%setAttribute('semi_major_axis', 6378206.4)
-                        call p%setAttribute('inverse_flattening', 294.9786982)
+!                        call p%setAttribute('semi_major_axis', 6378206.4)
+!                        call p%setAttribute('inverse_flattening', 294.9786982)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'semi_major_axis', 6378206.4)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'inverse_flattening', 294.9786982)
                     case ('sphere')
-                        call p%setAttribute('semi_major_axis', 6371000.0)
-                        call p%setAttribute('inverse_flattening', 0.0)
+!                        call p%setAttribute('semi_major_axis', 6371000.0)
+!                        call p%setAttribute('inverse_flattening', 0.0)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'semi_major_axis', 6371000.0)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'inverse_flattening', 0.0)
                 end select
         end select
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred assigning a projection to file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
 
     end subroutine
 
-    subroutine nc4_set_time(nc, ffreq, start_year, dim_t, ts, ierr)
+    subroutine nc4_set_time(iun, fname, ffreq, start_year, did, vid, ierr)
 
         !* mo_netcdf: For 'nc' datatypes (from JAMS library).
-        use mo_netcdf, only: NcDataset, NcDimension, NcVariable
+        !* netcdf: For netCDF library.
+!        use mo_netcdf, only: NcDataset, NcDimension, NcVariable
+        use netcdf
 
         !> Input variables.
-        integer, intent(in) :: ffreq, start_year
+        integer, intent(in) :: iun, ffreq, start_year
+        character(len = *), intent(in) :: fname
 
         !> Input/output variables.
-        type(NcDataset) nc
+!        type(NcDataset) nc
 
         !> Output variables.
-        type(NcDimension), intent(out) :: dim_t
-        type(NcVariable), intent(out) :: ts
-        integer, intent(out) :: ierr
+!        type(NcDimension), intent(out) :: dim_t
+!        type(NcVariable), intent(out) :: ts
+        integer, intent(out) :: did, vid, ierr
 
         !> Local variables.
         character(len = 20) line
 
         !> Initialize output variable.
-        ierr = 0
+        ierr = NF90_NOERR
 
         !> Create dimension for 'ts'.
-        dim_t = nc%setDimension('time', -1)
+!        dim_t = nc%setDimension('time', -1)
+        ierr = nf90_def_dim(iun, 'time', NF90_UNLIMITED, did)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred dimensioning the time attribute in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
 
         !> Create variable.
-        ts = nc%setVariable('time', 'i4', (/dim_t/))
+!        ts = nc%setVariable('time', 'i4', (/dim_t/))
+        ierr = nf90_def_var(iun, 'time', NF90_INT, (/did/), vid)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred creating the time attribute in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
 
         !> Set units based on 'ffreq'.
         write(line, "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2)") &
             ic%now%year, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins, 0
         if (btest(ffreq, fls_out%ffreq%dly)) then
-            call ts%setAttribute('units', 'days since ' // trim(adjustl(line)))
+!            call ts%setAttribute('units', 'days since ' // trim(adjustl(line)))
+            ierr = nf90_put_att(iun, vid, 'units', 'days since ' // trim(adjustl(line)))
         else if (btest(ffreq, fls_out%ffreq%mly) .or. btest(ffreq, fls_out%ffreq%ssl)) then
-            call ts%setAttribute('units', 'months since ' // trim(adjustl(line)))
+!            call ts%setAttribute('units', 'months since ' // trim(adjustl(line)))
+            ierr = nf90_put_att(iun, vid, 'units', 'months since ' // trim(adjustl(line)))
         else if (btest(ffreq, fls_out%ffreq%yly)) then
-            call ts%setAttribute('units', 'years since ' // trim(adjustl(line)))
+!            call ts%setAttribute('units', 'years since ' // trim(adjustl(line)))
+            ierr = nf90_put_att(iun, vid, 'units', 'years since ' // trim(adjustl(line)))
         else if (btest(ffreq, fls_out%ffreq%hly)) then
-            call ts%setAttribute('units', 'hours since ' // trim(adjustl(line)))
+!            call ts%setAttribute('units', 'hours since ' // trim(adjustl(line)))
+            ierr = nf90_put_att(iun, vid, 'units', 'hours since ' // trim(adjustl(line)))
         else
-            call ts%setAttribute('units', 'seconds since ' // trim(adjustl(line)))
+!            call ts%setAttribute('units', 'seconds since ' // trim(adjustl(line)))
+            ierr = nf90_put_att(iun, vid, 'units', 'seconds since ' // trim(adjustl(line)))
         end if
-        call ts%setAttribute('long_name', 'time')
-        call ts%setAttribute('standard_name', 'time')
-        call ts%setAttribute('axis', 'T')
-        call ts%setAttribute('calendar', 'gregorian')
+!        call ts%setAttribute('long_name', 'time')
+!        call ts%setAttribute('standard_name', 'time')
+!        call ts%setAttribute('axis', 'T')
+!        call ts%setAttribute('calendar', 'gregorian')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'long_name', 'time')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'standard_name', 'time')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'axis', 'T')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'calendar', 'gregorian')
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred defining the time attribute in file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
 
     end subroutine
 
-    subroutine nc4_set_attr(v, standard_name, long_name, units, ierr)
+    subroutine nc4_set_attr(iun, fname, vid, standard_name, long_name, units, ierr)
 
         !* mo_netcdf: For 'nc' datatypes (from JAMS library).
-        use mo_netcdf, only: NcVariable
+        !* netcdf: For netCDF library.
+!        use mo_netcdf, only: NcVariable
+        use netcdf
 
         !> Input variables.
+        integer, intent(in) :: iun, vid
+        character(len = *), intent(in) :: fname
         character(len = *), intent(in) :: standard_name, long_name, units
 
         !> Input/output variables.
-        type(NcVariable) v
+!        type(NcVariable) v
 
         !> Output variables.
         integer, intent(out) :: ierr
 
         !> Initialize output variable.
-        ierr = 0
+        ierr = NF90_NOERR
 
         !> Assign the attributes.
-        call v%setAttribute('standard_name', standard_name)
-        call v%setAttribute('long_name', long_name)
-        call v%setAttribute('units', units)
+!        call v%setAttribute('standard_name', standard_name)
+!        call v%setAttribute('long_name', long_name)
+!        call v%setAttribute('units', units)
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'standard_name', standard_name)
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'long_name', long_name)
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'units', units)
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred assigning attributes for ' // trim(standard_name) // ' in file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
 
     end subroutine
 
     subroutine nc4_add_vname_1d( &
-        shd, n, lon, lat, vname, long_name, units, ffreq, start_year, fill, fname, nc, ts, v, &
+        shd, n, lon, lat, vname, long_name, units, ffreq, start_year, fill, fname, iun, tid, vid, &
         constmul, constadd, constrmax, constrmin, ierr)
 
         !* mo_netcdf: For 'nc' datatypes (from JAMS library).
-        use mo_netcdf, only: NcDataset, NcDimension, NcVariable
+        !* netcdf: For netCDF library.
+!        use mo_netcdf, only: NcDataset, NcDimension, NcVariable
+        use netcdf
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
@@ -563,65 +671,117 @@ module output_files
         real, intent(in), optional :: constmul, constadd, constrmax, constrmin
 
         !> Output variables.
-        type(NcDataset), intent(out) :: nc
-        type(NcVariable), intent(out) :: ts, v
-        integer, intent(out) :: ierr
+!        type(NcDataset), intent(out) :: nc
+!        type(NcVariable), intent(out) :: ts, v
+        integer, intent(out) :: iun, tid, vid, ierr
 
         !> Local variables.
-        type(NcDimension) dim_n, dim_t
-        type(NcVariable) x, y
-        integer z
+!        type(NcDimension) dim_n, dim_t
+!        type(NcVariable) x, y
+        integer did_n, did_t, vid_x, vid_y, z
 
         !> Initialize output variable.
-        ierr = 0
+        ierr = NF90_NOERR
 
         !> Open the file (write access).
         z = 0
-        call nc4_open_output(fname, nc, z)
+        call nc4_open_output(fname, iun, z)
+        if (z /= 0) return
 
         !> Create necessary dimensions for fields.
-        dim_n = nc%setDimension('npoints', n)
+!        dim_n = nc%setDimension('npoints', n)
+        ierr = nf90_def_dim(iun, 'npoints', n, did_n)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred dimensioning points in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
 
         !> Reference variables.
-        x = nc%setVariable('lon', 'sp', (/dim_n/))
-        y = nc%setVariable('lat', 'sp', (/dim_n/))
+!        x = nc%setVariable('lon', 'sp', (/dim_n/))
+!        y = nc%setVariable('lat', 'sp', (/dim_n/))
+        if (ierr == NF90_NOERR) ierr = nf90_def_var(iun, 'lon', NF90_FLOAT, (/did_n/), vid_x)
+        if (ierr == NF90_NOERR) ierr = nf90_def_var(iun, 'lat', NF90_FLOAT, (/did_n/), vid_y)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred creating location attributes in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
 
         !> Time.
         z = 0
-        call nc4_set_time(nc, ffreq, start_year, dim_t, ts, z)
+        call nc4_set_time(iun, fname, ffreq, start_year, did_t, tid, z)
+        if (z /= 0) return
 
         !> Coordinates.
         z = 0
-        call nc4_set_attr(y, 'latitude', 'latitude', 'degrees_north', z)
-        call nc4_set_attr(x, 'longitude', 'longitude', 'degrees_east', z)
+        if (z == 0) call nc4_set_attr(iun, fname, vid_x, 'longitude', 'longitude', 'degrees_east', z)
+        if (z == 0) call nc4_set_attr(iun, fname, vid_y, 'latitude', 'latitude', 'degrees_north', z)
+        if (z /= 0) return
 
         !> Projection.
         z = 0
-        call nc4_set_proj(nc, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, z)
+        call nc4_set_proj(iun, fname, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, z)
+        if (z /= 0) return
 
         !> Data.
+!        z = 0
+!        v = nc%setVariable(vname, 'sp', (/dim_n, dim_t/))
+        ierr = nf90_def_var(iun, vname, NF90_FLOAT, (/did_n, did_t/), vid)
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, '_FillValue', fill)
         z = 0
-        v = nc%setVariable(vname, 'sp', (/dim_n, dim_t/))
-        call nc4_set_attr(v, vname, long_name, units, z)
-        if (present(constmul)) call v%setAttribute('scale_factor', constmul)
-        if (present(constadd)) call v%setAttribute('add_offset', constadd)
-        if (present(constrmin)) call v%setAttribute('valid_min', constrmin)
-        if (present(constrmax)) call v%setAttribute('valid_max', constrmax)
-        call v%setAttribute('coordinates', 'lon lat')
-        call v%setAttribute('grid_mapping', 'crs')
+        call nc4_set_attr(iun, fname, vid, vname, long_name, units, z)
+        if (z /= 0) return
+!        if (present(constmul)) call v%setAttribute('scale_factor', constmul)
+!        if (present(constadd)) call v%setAttribute('add_offset', constadd)
+!        if (present(constrmin)) call v%setAttribute('valid_min', constrmin)
+!        if (present(constrmax)) call v%setAttribute('valid_max', constrmax)
+!        call v%setAttribute('coordinates', 'lon lat')
+!        call v%setAttribute('grid_mapping', 'crs')
+        if (present(constmul)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'scale_factor', constmul)
+        end if
+        if (present(constadd)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'add_offset', constadd)
+        end if
+        if (present(constrmin)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'valid_min', constrmin)
+        end if
+        if (present(constrmax)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'valid_max', constrmax)
+        end if
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'coordinates', 'lon lat')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'grid_mapping', 'crs')
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred assigning attributes for ' // trim(vname) // ' in file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
 
         !> Populate reference variables.
-        call x%putData(lon)
-        call y%putData(lat)
+!        call x%putData(lon)
+!        call y%putData(lat)
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid_x, lon)
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid_y, lat)
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred adding locations to file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
 
     end subroutine
 
     subroutine nc4_add_vname_2d( &
-        shd, vname, long_name, units, ffreq, start_year, fill, fname, nc, ts, v, &
+        shd, vname, long_name, units, ffreq, start_year, fill, fname, iun, tid, vid, &
         constmul, constadd, constrmax, constrmin, ierr)
 
         !* mo_netcdf: For 'nc' datatypes (from JAMS library).
-        use mo_netcdf, only: NcDataset, NcDimension, NcVariable
+        !* netcdf: For netCDF library.
+!        use mo_netcdf, only: NcDataset, NcDimension, NcVariable
+        use netcdf
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
@@ -633,82 +793,136 @@ module output_files
         real, intent(in), optional :: constmul, constadd, constrmax, constrmin
 
         !> Output variables.
-        type(NcDataset), intent(out) :: nc
-        type(NcVariable), intent(out) :: ts, v
-        integer, intent(out) :: ierr
+!        type(NcDataset), intent(out) :: nc
+!        type(NcVariable), intent(out) :: ts, v
+        integer, intent(out) :: iun, tid, vid, ierr
 
         !> Local variables.
-        type(NcDimension) dim_x, dim_y, dim_t
-        type(NcVariable) x, y
-        integer n, z
+!        type(NcDimension) dim_x, dim_y, dim_t
+!        type(NcVariable) x, y
+        integer did_x, did_y, did_t, vid_x, vid_y, n, z
         real lon(shd%xCount), lat(shd%yCount)
 
         !> Initialize output variable.
-        ierr = 0
+        ierr = NF90_NOERR
 
         !> Open the file (write access).
         z = 0
-        call nc4_open_output(fname, nc, z)
+        call nc4_open_output(fname, iun, z)
+        if (z /= 0) return
 
         !> Create necessary dimensions for fields.
-        dim_x = nc%setDimension('nlon', shd%xCount)
-        dim_y = nc%setDimension('nlat', shd%yCount)
+!        dim_x = nc%setDimension('nlon', shd%xCount)
+!        dim_y = nc%setDimension('nlat', shd%yCount)
+        ierr = nf90_def_dim(iun, 'nlon', shd%xCount, did_x)
+        ierr = nf90_def_dim(iun, 'nlat', shd%yCount, did_y)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred dimensioning locations in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
 
         !> Reference variables.
-        x = nc%setVariable('lon', 'sp', (/dim_x/))
-        y = nc%setVariable('lat', 'sp', (/dim_y/))
+!        x = nc%setVariable('lon', 'sp', (/dim_x/))
+!        y = nc%setVariable('lat', 'sp', (/dim_y/))
+        if (ierr == NF90_NOERR) ierr = nf90_def_var(iun, 'lon', NF90_FLOAT, (/did_x/), vid_x)
+        if (ierr == NF90_NOERR) ierr = nf90_def_var(iun, 'lat', NF90_FLOAT, (/did_y/), vid_y)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred creating location attributes in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
 
         !> Time.
         z = 0
-        call nc4_set_time(nc, ffreq, start_year, dim_t, ts, z)
+        call nc4_set_time(iun, fname, ffreq, start_year, did_t, tid, z)
+        if (z /= 0) return
 
         !> Coordinates.
         z = 0
-        call nc4_set_attr(y, 'latitude', 'latitude', 'degrees_north', z)
-        call nc4_set_attr(x, 'longitude', 'longitude', 'degrees_east', z)
+        if (z == 0) call nc4_set_attr(iun, fname, vid_x, 'longitude', 'longitude', 'degrees_east', z)
+        if (z == 0) call nc4_set_attr(iun, fname, vid_y, 'latitude', 'latitude', 'degrees_north', z)
+        if (z /= 0) return
 
         !> Projection.
         z = 0
-        call nc4_set_proj(nc, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, z)
+        call nc4_set_proj(iun, fname, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, z)
+        if (z /= 0) return
 
         !> Data.
+!        z = 0
+!        v = nc%setVariable(vname, 'sp', (/dim_x, dim_y, dim_t/))
+        ierr = nf90_def_var(iun, vname, NF90_FLOAT, (/did_x, did_y, did_t/), vid)
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, '_FillValue', fill)
         z = 0
-        v = nc%setVariable(vname, 'sp', (/dim_x, dim_y, dim_t/))
-        call nc4_set_attr(v, vname, long_name, units, z)
-        if (present(constmul)) call v%setAttribute('scale_factor', constmul)
-        if (present(constadd)) call v%setAttribute('add_offset', constadd)
-        if (present(constrmin)) call v%setAttribute('valid_min', constrmin)
-        if (present(constrmax)) call v%setAttribute('valid_max', constrmax)
-        call v%setAttribute('coordinates', 'lon lat')
-        call v%setAttribute('grid_mapping', 'crs')
+        call nc4_set_attr(iun, fname, vid, vname, long_name, units, z)
+        if (z /= 0) return
+!        if (present(constmul)) call v%setAttribute('scale_factor', constmul)
+!        if (present(constadd)) call v%setAttribute('add_offset', constadd)
+!        if (present(constrmin)) call v%setAttribute('valid_min', constrmin)
+!        if (present(constrmax)) call v%setAttribute('valid_max', constrmax)
+!        call v%setAttribute('coordinates', 'lon lat')
+!        call v%setAttribute('grid_mapping', 'crs')
+        if (present(constmul)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'scale_factor', constmul)
+        end if
+        if (present(constadd)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'add_offset', constadd)
+        end if
+        if (present(constrmin)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'valid_min', constrmin)
+        end if
+        if (present(constrmax)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'valid_max', constrmax)
+        end if
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'coordinates', 'lon lat')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'grid_mapping', 'crs')
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred assigning attributes for ' // trim(vname) // ' in file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
 
         !> Populate reference variables.
         do n = 1, shd%xCount
             lon(n) = (shd%xOrigin + shd%xDelta*n) - shd%xDelta/2.0
         end do
-        call x%putData(lon)
+!        call x%putData(lon)
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid_x, lon)
         do n = 1, shd%yCount
             lat(n) = (shd%yOrigin + shd%yDelta*n) - shd%yDelta/2.0
         end do
-        call y%putData(lat)
+!        call y%putData(lat)
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid_y, lat)
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred adding locations to file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
 
     end subroutine
 
-    subroutine nc4_write_field_1d(shd, nc, ts, v, dat, i, dates, ierr)
+    subroutine nc4_write_field_1d(shd, iun, tid, vid, dat, i, dates, ierr)
 
         !* mo_netcdf: For 'nc' datatypes (from JAMS library).
-        use mo_netcdf, only: NcDataset, NcVariable
+        !* netcdf: For netCDF library.
+!        use mo_netcdf, only: NcDataset, NcVariable
+        use netcdf
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: iun, tid, vid
         real, dimension(:, :), intent(in) :: dat
         integer, dimension(:, :), intent(in) :: dates
 !temp
         integer i
 
         !> Input/output variables.
-        type(NcDataset) nc
-        type(NcVariable) ts, v
+!        type(NcDataset) nc
+!        type(NcVariable) ts, v
 
         !> Output variables.
         integer, intent(out) :: ierr
@@ -717,33 +931,41 @@ module output_files
         integer t, n, z
 
         !> Initialize output variable.
-        ierr = 0
+        ierr = NF90_NOERR
 
         !> Loop for time.
         do t = 1, size(dat, 2)
 
             !> Write time.
-            call ts%putData((dates(1, t) - 1), start = (/ dates(1, t) /))
+!            call ts%putData((dates(1, t) - 1), start = (/ dates(1, t) /))
+            if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, tid, (dates(1, t) - 1), start = (/ dates(1, t) /))
 
             !> Write data.
-            call v%putData(dat, start = (/ 1, dates(1, t) /))
+!            call v%putData(dat, start = (/ 1, dates(1, t) /))
+            if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, dat, start = (/ 1, dates(1, t) /))
         end do
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
 
     end subroutine
 
-    subroutine nc4_write_field_2d(shd, nc, ts, v, dat, dates, ierr)
+    subroutine nc4_write_field_2d(shd, iun, tid, vid, dat, dates, ierr)
 
         !* mo_netcdf: For 'nc' datatypes (from JAMS library).
-        use mo_netcdf, only: NcDataset, NcVariable
+        !* netcdf: For netCDF library.
+!        use mo_netcdf, only: NcDataset, NcVariable
+        use netcdf
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: iun, tid, vid
         real, dimension(:, :), intent(in) :: dat
         integer, dimension(:, :), intent(in) :: dates
 
         !> Input/output variables.
-        type(NcDataset) nc
-        type(NcVariable) ts, v
+!        type(NcDataset) nc
+!        type(NcVariable) ts, v
 
         !> Output variables.
         integer, intent(out) :: ierr
@@ -754,10 +976,15 @@ module output_files
         real fill
 
         !> Initialize output variable.
-        ierr = 0
+        ierr = NF90_NOERR
 
         !> Get the 'fill' value.
-        call v%getFillValue(fill)
+!        call v%getFillValue(fill)
+        z = nf90_inquire_attribute(iun, vid, '_FillValue')
+        if (z == NF90_NOERR) ierr = nf90_get_att(iun, vid, '_FillValue', fill)
+        if (z /= NF90_NOERR .or. ierr /= NF90_NOERR) then
+            fill = NF90_FILL_FLOAT
+        end if
 
         !> Loop for time.
         do t = 1, size(dat, 2)
@@ -769,13 +996,19 @@ module output_files
             end do
 
             !> Write time.
-            call ts%putData((dates(1, t) - 1), start = (/ dates(1, t) /))
+!            call ts%putData((dates(1, t) - 1), start = (/ dates(1, t) /))
+            if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, tid, (dates(1, t) - 1), start = (/ dates(1, t) /))
 
             !> Write data.
-            call v%putData(r2c_grid, start = (/ 1, 1, dates(1, t) /))
+!            call v%putData(r2c_grid, start = (/ 1, 1, dates(1, t) /))
+            if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, r2c_grid, start = (/ 1, 1, dates(1, t) /))
         end do
 
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
     end subroutine
+#endif
 
     subroutine write_r2c_frame_start(iun, number, year, month, day, hour, mins, ierr)
 
@@ -1191,6 +1424,7 @@ module output_files
                 end if
                 iun = iun + 1
             end if
+#ifdef NETCDF
             if (btest(field%ffmt, fls_out%ffmt%nc4)) then
                 z = 0
                 lopen = .false.
@@ -1198,7 +1432,7 @@ module output_files
                 if (.not. lopen) then
                     call nc4_add_vname( &
                         shd, field%vname, '', '', field%ffreq, ic%start%year, out%NO_DATA, trim(fname) // '_GRD.nc', &
-                        group%grid%nc%f, group%grid%nc%ts, group%grid%nc%v, &
+                        group%grid%iun, group%grid%tid, group%grid%vid, &
                         ierr = z)
                     if (z /= 0) then
                         call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '_GRD.nc')
@@ -1211,6 +1445,7 @@ module output_files
                 end if
                 iun = iun + 1
             end if
+#endif
             if (z /= 0) ierr = z
 
             !> Update shared file unit.
@@ -1483,12 +1718,19 @@ module output_files
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                     end if
                 case ('nc', 'netcdf', 'nc4')
+#ifdef NETCDF
                     if (.not. btest(field%ffmt, fls_out%ffmt%nc4)) then
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%nc4)**fls_out%ffmt%nc4
                     end if
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                     end if
+#else
+                    call print_error( &
+                        "NetCDF format is specified for '" // trim(field%vname) // "' but the module is not active." // &
+                        " A version of MESH compiled with the NetCDF library must be used to create files in this format.")
+                    ierr = 1
+#endif
 
                 !> Order of the selection being saved.
                 case ('gridorder', 'shedorder')
@@ -2182,10 +2424,11 @@ module output_files
                 end if
                 iun = iun + 1
             end if
+#ifdef NETCDF
             if (btest(field%ffmt, fls_out%ffmt%nc4)) then
                 z = 0
                 call nc4_write_field( &
-                    shd, group%grid%nc%f, group%grid%nc%ts, group%grid%nc%v, group%grid%dat, dates, &
+                    shd, group%grid%iun, group%grid%tid, group%grid%vid, group%grid%dat, dates, &
                     z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_GRD.nc')
@@ -2193,6 +2436,7 @@ module output_files
                 end if
                 iun = iun + 1
             end if
+#endif
         end if
 
         !> Tile-based.

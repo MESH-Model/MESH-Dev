@@ -1,7 +1,7 @@
 module climate_forcing_variabletypes
 
     use model_dates
-    use mo_netcdf, only: NcDataset, NcVariable
+!    use mo_netcdf, only: NcDataset, NcVariable
 
     implicit none
 
@@ -26,10 +26,10 @@ module climate_forcing_variabletypes
 
 !-    end type
 
-    type nc_field
-        type(NcDataset) f
-        type(NcVariable) ts, v
-    end type
+!    type nc_field
+!        type(NcDataset) f
+!        type(NcVariable) ts, v
+!    end type
 
     type clim_series
 
@@ -62,7 +62,8 @@ module climate_forcing_variabletypes
         !*                 forcing data in local Central Standard Time (CST  = UTC+3.5): Saskatoon  --> time_shift = -6.0
         !*                 forcing data in local Eastern Standard Time (EST  = UTC-5):   Toronto    --> time_shift = -5.0
         !*                 forcing data in local Iran Standard Time    (IRST = UTC+3.5): Teheran    --> time_shift = +3.5
-        !* varid:          ID of variable in NetCDF (nf90_inq_varid)
+        !* vid: Variable ID (default: none).
+        !* tid: Time ID (default: none).
         character(200) :: name_var       = ''
         character(200) :: name_lat       = ''
         integer        :: ncol_lat       = 0
@@ -72,8 +73,9 @@ module climate_forcing_variabletypes
         integer        :: ncol_time      = 0  
         integer        :: dim_order_case = 0
         real           :: time_shift     = 0.0
-        integer        :: varid          = -9
-        type(nc_field) nc
+        integer :: vid = -1
+        integer :: tid = -1
+!        type(nc_field) nc
 
         !* GRD: Values for forcing data (Bounds: 1: Grid).
         !>      Values are averaged to the grid-level for grid-based
