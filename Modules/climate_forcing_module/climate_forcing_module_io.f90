@@ -23,11 +23,13 @@ module climate_forcing_io
     function open_data(shd, cm, vid) result(ENDDATA)
 
         !> 'shd_variables': For 'shd' variable.
+        !> 'parse_utilities': For 'parse_datetime' and 'precision' (via 'strings').
         !> 'netcdf': For netCDF library.
         use shd_variables
-        use mo_julian, only: &
-             date2dec, & ! converts date into fractional julian date
-             dec2date    ! converts fractional julian date into date
+        use parse_utilities
+!        use mo_julian, only: &
+!             date2dec, & ! converts date into fractional julian date
+!             dec2date    ! converts fractional julian date into date
 #ifdef NETCDF
 !        use mo_ncread, only: &
 !             NcOpen,         & ! Open NetCDF
@@ -62,21 +64,22 @@ module climate_forcing_io
 !        character(200), dimension(:), allocatable :: nc_dimname  ! names of dimensions of a variable
         integer,        dimension(:), allocatable :: nc_dimlen   ! length of dimension of a variable
 !        logical                                   :: dim_found   ! true if dimension is listed in options.ini
-        character(200)                            :: time_unit   ! units attribute of time,
+!        character(200)                            :: time_unit   ! units attribute of time,
+        character(len = DEFAULT_LINE_LENGTH) time_attribute, time_units, time_calendar
         !                                                        ! e.g. 'seconds since 1970-01-01 00:00:00.0'
         integer                                   :: dtype       ! type of variable 'time'
-        character(10)                             :: tunit, tdummy, tdate, thour  ! splits of time_unit
-        integer                                   :: yy, mm, dd  ! year, minute, day of time_unit
-        integer                                   :: hh, mi, ss  ! hour, minute, second of time_unit
-        real(8)                                   :: jdate       ! fractional julian date
-        real(8)                                   :: jdate_jan1  ! fractional julian date of Jan 1st
+!        character(10)                             :: tunit, tdummy, tdate, thour  ! splits of time_unit
+!        integer                                   :: yy, mm, dd  ! year, minute, day of time_unit
+!        integer                                   :: hh, mi, ss  ! hour, minute, second of time_unit
+!        real(8)                                   :: jdate       ! fractional julian date
+!        real(8)                                   :: jdate_jan1  ! fractional julian date of Jan 1st
         integer                                   :: ii          ! counter
-        integer, dimension(2)        :: tt_i4       ! first two value of time variable (integer)
-        real,    dimension(2)        :: tt_sp       ! first two value of time variable (single)
-        real(8), dimension(2)        :: tt_dp       ! first two value of time variable (double)
-        real(8)                                   :: tt_1, tt_2  ! first two value of time variable (used)
-        integer, dimension(1)                     :: start, a_count
-        integer                                   :: tstep       ! time step in netcdf file
+        integer t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds
+        integer(kind = ki4) tt_i4(2)
+        real(kind = kr4) tt_r4(2)
+        real(kind = kr8) tt_r8(2), t0_r8, t1_r8, t2_r8, dt_r8
+!        integer, dimension(1)                     :: start, a_count
+!        integer                                   :: tstep       ! time step in netcdf file
         integer                                   :: jday        ! julian day of first timestep in NetCDF
 !        type(NcDimension) dim_x, dim_y, dim_t
 !        type(NcDimension), allocatable :: dims(:)
@@ -283,29 +286,52 @@ module climate_forcing_io
                         trim(cm%dat(vid)%fpath))
                     call program_abort()
                 end if
-                ierr = nf90_get_att(cm%dat(vid)%fiun, cm%dat(vid)%tid, 'units', time_unit)
+                ierr = nf90_get_att(cm%dat(vid)%fiun, cm%dat(vid)%tid, 'units', time_attribute)
                 if (ierr /= NF90_NOERR) then
                     call print_error( &
                         "The units are missing for the '" // trim(cm%dat(vid)%name_time) // "' attribute in file: " // &
                         trim(cm%dat(vid)%fpath))
                     call program_abort()
                 end if
+                call parse_datetime(time_attribute, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, z)
+                ierr = nf90_get_att(cm%dat(vid)%fiun, cm%dat(vid)%tid, 'calendar', time_calendar)
+                if (ierr /= NF90_NOERR .or. lowercase(time_calendar) /= 'gregorian') then
+                    call print_warning( &
+                        "The reference calendar for '" // trim(cm%dat(vid)%name_time) // "' is not set or not equal to '" // &
+                        'Gregorian' // "' in file: " // trim(cm%dat(vid)%fpath))
+                end if
+                if (z /= 0) then
+                    call print_error( &
+                        "The format of the units of '" // trim(cm%dat(vid)%name_time) // "' is unsupported in file: " // &
+                        trim(cm%dat(vid)%fpath))
+                    call print_message('Expected format: [seconds/minutes/hours/days] since yyyy/MM/dd HH:mm:ss[.SSS]')
+                    call program_abort()
+                else if (t0_year < 1601) then
+                    write(line, FMT_GEN) t0_year
+                    call print_error( &
+                        'The reference year (' // trim(adjustl(line)) // ') is less than 1601.' // &
+                        ' The reference calendar does not correpond to the Gregorian calendar.')
+                    call print_message( &
+                        " The time-series of '" // trim(cm%dat(vid)%name_time) // "' cannot be processed in file: " // &
+                        trim(cm%dat(vid)%fpath))
+                    call program_abort()
+                end if
 !                      call Get_NcVarType(cm%dat(vid)%fpath, 'time', dtype, fid=cm%dat(vid)%fiun)
 
                       ! grep information from time unit string
-                      read(time_unit, *) tunit, tdummy, tdate, thour
-                      read(tdate(1:4), *) yy
-                      read(tdate(6:7), *) mm
-                      read(tdate(9:10), *) dd
-                      read(thour(1:2), *) hh
-                      read(thour(4:5), *) mi
-                      read(thour(7:8), *) ss
+!                      read(time_unit, *) tunit, tdummy, tdate, thour
+!                      read(tdate(1:4), *) yy
+!                      read(tdate(6:7), *) mm
+!                      read(tdate(9:10), *) dd
+!                      read(thour(1:2), *) hh
+!                      read(thour(4:5), *) mi
+!                      read(thour(7:8), *) ss
 
                       ! convert date in time unit string to julian date
-                      jdate = date2dec(dd = dd, mm = mm, yy = yy, hh = hh, nn = mi, ss = ss)
+!                      jdate = date2dec(dd = dd, mm = mm, yy = yy, hh = hh, nn = mi, ss = ss)
 
                       ! apply time shift
-                      jdate = jdate + cm%dat(vid)%time_shift/24.0
+!                      jdate = jdate + cm%dat(vid)%time_shift/24.0
 
                       ! read first two time values (for initial day and timestep)
 !                      start(1)   = 1
@@ -321,20 +347,26 @@ module climate_forcing_io
 !                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_i4, start=start, a_count=a_count, fid=cm%dat(vid)%fiun)  ! read only first value
 !                         call cm%dat(vid)%nc%ts%getData(tt_i4, start, a_count)
                             ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%tid, tt_i4, start = (/1/), count = (/2/))
-                            if (ierr == NF90_NOERR) tt_1 = real(tt_i4(1), 8)
-                            if (ierr == NF90_NOERR) tt_2 = real(tt_i4(2), 8)
+                            if (ierr == NF90_NOERR) then
+                                t1_r8 = real(tt_i4(1), kind = 8)
+                                t2_r8 = real(tt_i4(2), kind = 8)
+                            end if
                         case (NF90_FLOAT)
 !                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_sp, start=start, a_count=a_count, fid=cm%dat(vid)%fiun)  ! read only first value
 !                         call cm%dat(vid)%nc%ts%getData(tt_sp, start, a_count)
-                            ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%tid, tt_sp, start = (/1/), count = (/2/))
-                            if (ierr == NF90_NOERR) tt_1 = real(tt_sp(1), 8)
-                            if (ierr == NF90_NOERR) tt_2 = real(tt_sp(2), 8)
+                            ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%tid, tt_r4, start = (/1/), count = (/2/))
+                            if (ierr == NF90_NOERR) then
+                                t1_r8 = real(tt_r4(1), kind = 8)
+                                t2_r8 = real(tt_r4(2), kind = 8)
+                            end if
                         case (NF90_DOUBLE)
 !                         call Get_NcVar(cm%dat(vid)%fpath, 'time', tt_dp, start=start, a_count=a_count, fid=cm%dat(vid)%fiun)  ! read only first value
 !                         call cm%dat(vid)%nc%ts%getData(tt_dp, start, a_count)
-                            ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%tid, tt_dp, start = (/1/), count = (/2/))
-                            if (ierr == NF90_NOERR) tt_1 = real(tt_dp(1), 8)
-                            if (ierr == NF90_NOERR) tt_2 = real(tt_dp(2), 8)
+                            ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%tid, tt_r8, start = (/1/), count = (/2/))
+                            if (ierr == NF90_NOERR) then
+                                t1_r8 = tt_r8(1)
+                                t2_r8 = tt_r8(2)
+                            end if
                         case default
                             ierr = NF90_EBADTYPE
 !                         call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
@@ -348,58 +380,75 @@ module climate_forcing_io
                         trim(cm%dat(vid)%fpath))
                     call program_abort()
                 end if
-                      if (trim(tunit) == 'seconds') then
-                         jdate = jdate + tt_1/60./60./24.
-                         tstep = int((tt_2-tt_1) / 60. + 0.5)        ! 0.5 takes care of correct rounding
-                      else if (trim(tunit) == 'minutes') then
-                         jdate = jdate + tt_1/60./24.
-                         tstep = int(tt_2-tt_1 + 0.5)                ! 0.5 takes care of correct rounding
-                      else if (trim(tunit) == 'hours') then
-                         jdate = jdate + tt_1/24.
-                         tstep = int((tt_2-tt_1) * 60. + 0.5)        ! 0.5 takes care of correct rounding
-                      else if (trim(tunit) == 'days') then
-                         jdate = jdate + tt_1
-                         tstep = int((tt_2-tt_1) * 24. * 60. + 0.5)  ! 0.5 takes care of correct rounding
-                      end if
+                jday = get_jday(t0_month, t0_day, t0_year)
+                t0_r8 = real(jday_to_tsteps(t0_year, jday, t0_hour, t0_mins, (60*24)) + t0_seconds/60.0/60.0/24.0, kind = 8)
+                dt_r8 = t0_r8 + cm%dat(vid)%time_shift/24.0
+                read(time_attribute, *) time_units
+                select case (time_units)
+                    case ('seconds')
+                        dt_r8 = dt_r8 + t1_r8/60.0/60.0/24.0
+                        cm%dat(vid)%hf = int((t2_r8 - t1_r8)/60.0 + 0.5)        ! 0.5 takes care of correct rounding
+                    case ('minutes')
+                        dt_r8 = dt_r8 + t1_r8/60.0/24.0
+                        cm%dat(vid)%hf = int(t2_r8 - t1_r8 + 0.5)               ! 0.5 takes care of correct rounding
+                    case ('hours')
+                        dt_r8 = dt_r8 + t1_r8/24.0
+                        cm%dat(vid)%hf = int((t2_r8 - t1_r8)*60.0 + 0.5)        ! 0.5 takes care of correct rounding
+                    case ('days')
+                        dt_r8 = dt_r8 + t1_r8
+                        cm%dat(vid)%hf = int((t2_r8 - t1_r8)*24.0*60.0 + 0.5)   ! 0.5 takes care of correct rounding
+                    case default
+                        ierr = NF90_EINVAL
+                end select
+                if (ierr /= NF90_NOERR) then
+                    call print_error( &
+                        "The units of '" // trim(adjustl(time_units)) // "' are unsupported for '" // &
+                        trim(cm%dat(vid)%name_time) // "' in file: " // trim(cm%dat(vid)%fpath))
+                    call program_abort()
+                end if
 
                       ! convert julian day back to year, day, month, hour, minutes, seconds
-                      call dec2date(jdate, dd, mm, yy, hh, mi, ss)
-                      write(*,*) "  "
-                      write(*,'(A,A,A2,I4,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A6)') &
-                              "   first timestep in ",trim(cm%dat(vid)%fpath),": ",yy,"-",mm,"-",dd," ",hh,":",mi,":",ss," (UTC)"
+!                      call dec2date(jdate, dd, mm, yy, hh, mi, ss)
+                cm%dat(vid)%start_date%year = floor(dt_r8/365.25) + 1601
+                cm%dat(vid)%start_date%jday = floor(dt_r8) - floor((cm%dat(vid)%start_date%year - 1601)*365.25)
+                cm%dat(vid)%start_date%hour = floor(dt_r8 - floor(dt_r8))*24
+                cm%dat(vid)%start_date%mins = int(floor(dt_r8 - floor(dt_r8))*60.0*24.0 - cm%dat(vid)%start_date%hour*60.0 + 0.5)
+!                      write(*,*) "  "
+!                      write(*,'(A,A,A2,I4,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A6)') &
+!                              "   first timestep in ",trim(cm%dat(vid)%fpath),": ",yy,"-",mm,"-",dd," ",hh,":",mi,":",ss," (UTC)"
 
                       ! julian date of first day of that year (to determine julian day)
-                      jdate_jan1 = date2dec(dd=1, mm=1, yy=yy)
-                      jday = int(jdate - (jdate_jan1 - 1.))
+!                      jdate_jan1 = date2dec(dd=1, mm=1, yy=yy)
+!                      jday = int(jdate - (jdate_jan1 - 1.))
 
                       ! check if consistent with settings
-                      if ( yy   /= cm%dat(vid)%start_date%year .or. &
-                           jday /= cm%dat(vid)%start_date%jday .or. &
-                           hh   /= cm%dat(vid)%start_date%hour .or. &
-                           mi   /= cm%dat(vid)%start_date%mins) then
+!                      if ( yy   /= cm%dat(vid)%start_date%year .or. &
+!                           jday /= cm%dat(vid)%start_date%jday .or. &
+!                           hh   /= cm%dat(vid)%start_date%hour .or. &
+!                           mi   /= cm%dat(vid)%start_date%mins) then
                          ! write(*,'(A40,I4,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2,A1,I2.2)') &
                          !      "first timestep in NetCDF: ",yy,"-",mm,"-",dd," ",hh,":",mi,":",ss
-                         write(*,*)          "  "
-                         write(*,'(A40,I4)') "year       of first time step in NetCDF: ",yy
-                         write(*,'(A40,I4)') "year       of first time step in setup:  ",cm%dat(vid)%start_date%year
-                         write(*,'(A40,I3)') "julian day of first time step in NetCDF: ",jday
-                         write(*,'(A40,I3)') "julian day of first time step in setup:  ",cm%dat(vid)%start_date%jday
-                         write(*,'(A40,I2)') "hour       of first time step in NetCDF: ",hh
-                         write(*,'(A40,I2)') "hour       of first time step in setup:  ",cm%dat(vid)%start_date%hour
-                         write(*,'(A40,I2)') "minutes    of first time step in NetCDF: ",mi
-                         write(*,'(A40,I2)') "minutes    of first time step in setup:  ",cm%dat(vid)%start_date%mins
-                         call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
-                              '): The first timestep in NetCDF file does not match '// &
-                              'the first timestep specified in MESH_parameters_CLASS.ini.')
-                         call program_abort()
-                      end if
+!                         write(*,*)          "  "
+!                         write(*,'(A40,I4)') "year       of first time step in NetCDF: ",yy
+!                         write(*,'(A40,I4)') "year       of first time step in setup:  ",cm%dat(vid)%start_date%year
+!                         write(*,'(A40,I3)') "julian day of first time step in NetCDF: ",jday
+!                         write(*,'(A40,I3)') "julian day of first time step in setup:  ",cm%dat(vid)%start_date%jday
+!                         write(*,'(A40,I2)') "hour       of first time step in NetCDF: ",hh
+!                         write(*,'(A40,I2)') "hour       of first time step in setup:  ",cm%dat(vid)%start_date%hour
+!                         write(*,'(A40,I2)') "minutes    of first time step in NetCDF: ",mi
+!                         write(*,'(A40,I2)') "minutes    of first time step in setup:  ",cm%dat(vid)%start_date%mins
+!                         call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
+!                              '): The first timestep in NetCDF file does not match '// &
+!                              'the first timestep specified in MESH_parameters_CLASS.ini.')
+!                         call program_abort()
+!                      end if
 
-                      if ( tstep /= cm%dat(vid)%hf) then
-                         call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
-                              '): Time step in forcing file does not match HOURLYFLAG given in '// &
-                              'MESH_input_run_options.ini.')
-                         call program_abort()
-                      end if
+!                      if ( tstep /= cm%dat(vid)%hf) then
+!                         call print_error(trim(cm%dat(vid)%fpath) // ' (var=' // trim(cm%dat(vid)%name_var) // &
+!                              '): Time step in forcing file does not match HOURLYFLAG given in '// &
+!                              'MESH_input_run_options.ini.')
+!                         call program_abort()
+!                      end if
 !                   end if
 
                    !> check if dimension name is existing

@@ -19,15 +19,6 @@ INC_DIRS=
 OBJECTS=
 
 # ======================================================================
-# JAMS-CHS.
-# Paths.
-ifeq ($(NC),yes)
-VPATH+=	$(DIR_REPO)/Modules/jams_chs:
-# Core routines.
-OBJECTS+=	mo_kind.o mo_julian.o
-endif
-
-# ======================================================================
 # Primitives for SA_MESH.
 # Paths.
 VPATH+=	$(DIR_REPO)/Driver/MESH_Driver: \
