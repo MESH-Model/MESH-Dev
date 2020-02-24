@@ -345,32 +345,32 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = trim(args(j)(7:))
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = trim(args(j)(7:))
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = trim(args(j)(10:))
+                                cm%dat(n)%name_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = trim(args(j)(10:))
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = trim(args(j)(10:))
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
                             if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = trim(args(j)(11:))
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -411,32 +411,32 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = trim(args(j)(7:))
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = trim(args(j)(7:))
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = trim(args(j)(10:))
+                                cm%dat(n)%name_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = trim(args(j)(10:))
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = trim(args(j)(10:))
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
                             if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = trim(args(j)(11:))
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -477,32 +477,32 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = trim(args(j)(7:))
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = trim(args(j)(7:))
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = trim(args(j)(10:))
+                                cm%dat(n)%name_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = trim(args(j)(10:))
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = trim(args(j)(10:))
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
                             if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = trim(args(j)(11:))
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -543,32 +543,32 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = trim(args(j)(7:))
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = trim(args(j)(7:))
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = trim(args(j)(10:))
+                                cm%dat(n)%name_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = trim(args(j)(10:))
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = trim(args(j)(10:))
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
                             if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = trim(args(j)(11:))
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -609,32 +609,32 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = trim(args(j)(7:))
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = trim(args(j)(7:))
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = trim(args(j)(10:))
+                                cm%dat(n)%name_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = trim(args(j)(10:))
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = trim(args(j)(10:))
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
                             if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = trim(args(j)(11:))
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -675,32 +675,32 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = trim(args(j)(7:))
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = trim(args(j)(7:))
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = trim(args(j)(10:))
+                                cm%dat(n)%name_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = trim(args(j)(10:))
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = trim(args(j)(10:))
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
                             if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = trim(args(j)(11:))
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
@@ -741,32 +741,32 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = trim(args(j)(7:))
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 6) then
                             if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = trim(args(j)(7:))
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = trim(args(j)(10:))
+                                cm%dat(n)%name_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = trim(args(j)(10:))
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = trim(args(j)(10:))
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 10) then
                             if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = trim(args(j)(11:))
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
                             end if
                         end if
                         if (len_trim(args(j)) > 3) then
