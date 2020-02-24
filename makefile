@@ -31,6 +31,10 @@ default: all
 #   - 'yes' to include debug options and disable compiler optimization.
 
 # ======================================================================
+# File/object names.
+include makefile.def
+
+# ======================================================================
 # Pre-configured compiler options.
 ifeq ($(filter gfortran,$(MAKECMDGOALS)),gfortran)
 DIST=
@@ -48,7 +52,6 @@ else ifeq ($(filter mpi_intel,$(MAKECMDGOALS)),mpi_intel)
 DIST=intel
 MPI=ompi
 endif
-
 ifeq ($(filter debug,$(MAKECMDGOALS)),debug)
 DEBUG=yes
 endif
@@ -68,10 +71,6 @@ mpi_gcc: all
 mpi_intel: all
 debug: all
 netcdf: all
-
-# ======================================================================
-# File/object names.
-include makefile.def
 
 # ======================================================================
 # Compiler and options.

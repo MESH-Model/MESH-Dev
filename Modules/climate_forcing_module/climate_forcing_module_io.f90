@@ -45,18 +45,18 @@ module climate_forcing_io
 #endif
 
         !> Input variables.
-        type(ShedGridParams), intent(in)          :: shd
-        integer,              intent(in)          :: vid
+        type(ShedGridParams) shd
+        integer, intent(in) :: vid
 
         !> Input/Output variables.
-        type(clim_info),      intent(inout)       :: cm
+        type(clim_info) cm
 
         !> Output variables.
-        logical                                   :: ENDDATA
+        logical ENDDATA
 
         !> Local variables.
-        integer                                   :: ierr, z
-        character(len = DEFAULT_LINE_LENGTH)      :: line
+        integer z, ierr
+        character(len = DEFAULT_LINE_LENGTH) line
 
 #ifdef NETCDF
         !> Local variables for NetCDF support
@@ -137,7 +137,7 @@ module climate_forcing_io
 
             !> CLASS format MET file.
             case (6)
-                 if (vid /= ck%MET) return
+                if (vid /= ck%MET) return
                 cm%dat(vid)%fname = 'basin_forcing'
                 cm%dat(vid)%fpath = 'basin_forcing.met'
                 cm%dat(vid)%blocktype = cbk%GRD
@@ -585,18 +585,18 @@ module climate_forcing_io
     !>  Load data for the climate forcing variable from file.
     !>
     !> Input/output variables:
-    !*  shd:       Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
-    !*  cm:        Climate forcing object. Contains the file name, format, and its unit.
-    !*  vid:       Index of the climate forcing variable.
+    !*  shd: Basin shed object. Contains information about the number of grids, GRUs, and land elements. Used to allocate objects.
+    !*  cm: Climate forcing object. Contains the file name, format, and its unit.
+    !*  vid: Index of the climate forcing variable.
     !*  skip_data: .true. to skip data; .false. to store data.
     !>
     !> Returns:
     !*  ENDDATA: Returns .true. if there was an error reading from the file.
     function load_data(shd, cm, vid, skip_data) result(ENDDATA)
 
-      !> 'shd_variables': For 'shd' variable.
-      !> 'netcdf': For netCDF library.
-      use shd_variables
+        !> 'shd_variables': For 'shd' variable.
+        !> 'netcdf': For netCDF library.
+        use shd_variables
 #ifdef NETCDF
 !      use mo_ncread, only:        &
 !           NcOpen,                & ! Open NetCDF
@@ -614,21 +614,21 @@ module climate_forcing_io
 #endif
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        integer, intent(in)  :: vid
-        logical, intent(in)  :: skip_data
+        type(ShedGridParams) shd
+        integer, intent(in) :: vid
+        logical, intent(in) :: skip_data
 
         !> Input/Output variables.
-        type(clim_info)      :: cm
+        type(clim_info) cm
 
         !> Output variables.
-        logical              :: ENDDATA
+        logical ENDDATA
 
         !> Local variables.
-        integer                              :: t, j, i, ierr
-        real                                 :: GRD(shd%yCount, shd%xCount)
-        character(len = DEFAULT_LINE_LENGTH) :: line
-        logical                              :: storedata
+        integer t, j, i, ierr
+        real GRD(shd%yCount, shd%xCount)
+        character(len = DEFAULT_LINE_LENGTH) line
+        logical storedata
 
         !> Local variables for NetCDF
         real, dimension(:,:,:), allocatable  :: GRD_tmp  ! same as GRD but with mixed order of three dimensions
