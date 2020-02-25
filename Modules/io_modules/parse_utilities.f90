@@ -3,6 +3,7 @@
 !>  read from simple text and/or CSV format files.
 module parse_utilities
 
+    !> 'strings': For 'compact', 'parse' and 'value' functions.
     use strings
 
     implicit none
@@ -98,18 +99,25 @@ module parse_utilities
 
     end subroutine
 
-    !> Description: Parse the start time in the file header into individual components.
+    !> Description:
+    !>  Parse the start time in the file header into individual components.
+    !>
+    !> Input:
     !*  datetime: Date/time structure to parse.
+    !>
+    !> Output:
     !*  year: Year component of date.
     !*  month: Month component of date.
     !*  day: Day in month component of date.
     !*  hour: Hour in day component of date.
     !*  minutes: Minutes in hour component of date.
     !*  seconds: Seconds in minutes component of date.
-    !*  ierr: Return status.
+    !>
+    !> Error return:
+    !*  ierr: Return status (of 'error_keys' type value).
     subroutine parse_datetime(datetime, year, month, day, hour, minutes, seconds, ierr)
 
-        !> strings: For 'compact', 'parse' and 'value' function.
+        !> strings: For 'compact', 'parse' and 'value' functions.
         !> print_routines: For 'DEFAULT_LINE_LENGTH' and 'DEFAULT_FIELD_LENGTH' constants.
         use strings
         use print_routines

@@ -355,7 +355,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = adjustl(args(j)(10:))
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
@@ -421,7 +421,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = adjustl(args(j)(10:))
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
@@ -453,7 +453,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             if (args(j)(1:11) == 'time_shift=') then
                                 call value(args(j)(12:), cm%dat(n)%time_shift, z)
                             end if
-                        end if 
+                        end if
                     end do
                 case ('BASINRAINFLAG')
                     n = ck%RT
@@ -487,7 +487,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = adjustl(args(j)(10:))
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
@@ -519,7 +519,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             if (args(j)(1:11) == 'time_shift=') then
                                 call value(args(j)(12:), cm%dat(n)%time_shift, z)
                             end if
-                        end if 
+                        end if
                     end do
                 case ('BASINTEMPERATUREFLAG')
                     n = ck%TT
@@ -553,7 +553,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = adjustl(args(j)(10:))
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
@@ -585,7 +585,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             if (args(j)(1:11) == 'time_shift=') then
                                 call value(args(j)(12:), cm%dat(n)%time_shift, z)
                             end if
-                        end if 
+                        end if
                     end do
                 case ('BASINWINDFLAG')
                     n = ck%UV
@@ -619,7 +619,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = adjustl(args(j)(10:))
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
@@ -651,7 +651,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             if (args(j)(1:11) == 'time_shift=') then
                                 call value(args(j)(12:), cm%dat(n)%time_shift, z)
                             end if
-                        end if 
+                        end if
                     end do
                 case ('BASINPRESFLAG')
                     n = ck%P0
@@ -685,7 +685,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = adjustl(args(j)(10:))
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
@@ -717,7 +717,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             if (args(j)(1:11) == 'time_shift=') then
                                 call value(args(j)(12:), cm%dat(n)%time_shift, z)
                             end if
-                        end if 
+                        end if
                     end do
                 case ('BASINHUMIDITYFLAG')
                     n = ck%HU
@@ -751,7 +751,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         if (len_trim(args(j)) > 9) then
                             if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%name_var = adjustl(args(j)(10:))
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
                             end if
                         end if
                         if (len_trim(args(j)) > 9) then
@@ -783,7 +783,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             if (args(j)(1:11) == 'time_shift=') then
                                 call value(args(j)(12:), cm%dat(n)%time_shift, z)
                             end if
-                        end if 
+                        end if
                     end do
                 case ('BASINRUNOFFFLAG')
                 case ('BASINRECHARGEFLAG')

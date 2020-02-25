@@ -57,11 +57,8 @@ DEBUG=yes
 endif
 
 ifeq ($(filter netcdf,$(MAKECMDGOALS)),netcdf)
-# LIBNCO=-DNETCDF -I/usr/local/include -I/usr/local/netcdf-fortran-4.4.4-gfortran/include
-# LIBNCL=-L/usr/local/lib -lnetcdf -L/usr/local/netcdf-fortran-4.4.4-gfortran/lib -lnetcdff -L/usr/local/lib -lhdf5_hl -lhdf5 -L/usr/local/lib -lsz -L/usr/lib -lcurl -lz
 LIBNCO=-DNETCDF -I/usr/include
-LIBNCL=-L/usr/lib -lnetcdf -lnetcdff #-lhdf5_hl -lhdf5 -lsz -lcurl -lz
-NC=yes
+LIBNCL=-L/usr/lib -lnetcdf -lnetcdff
 endif
 
 gfortran: all
@@ -77,7 +74,7 @@ netcdf: all
 # 'FTN90PP' and 'FTN90PPOPT' required to compile 'ftn90' files.
 ifeq ($(DIST),intel)
 FC=ifort
-LFLAG=-c -g -traceback -check bounds -fpe0
+LFLAG=-c -g -fpp -traceback -check bounds -fpe0
 FTN90PP=-fpp -free
 FTN90PPOPT=-Tf
 else
@@ -89,7 +86,11 @@ endif
 
 # Override debugging options if 'DEBUG' not enabled.
 ifndef DEBUG
+ifeq ($(DIST),intel)
+LFLAG=-c -fpp -O2
+else
 LFLAG=-c -cpp -O2
+endif
 CLEANUP=@$(MAKE) -s clean DIST=$(DIST)
 endif
 

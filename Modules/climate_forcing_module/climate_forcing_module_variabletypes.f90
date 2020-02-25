@@ -1,7 +1,6 @@
 module climate_forcing_variabletypes
 
     use model_dates
-!    use mo_netcdf, only: NcDataset, NcVariable
 
     implicit none
 
@@ -26,11 +25,6 @@ module climate_forcing_variabletypes
 
 !-    end type
 
-!    type nc_field
-!        type(NcDataset) f
-!        type(NcVariable) ts, v
-!    end type
-
     type clim_series
 
         !* id_var: Climate variable name and ID.
@@ -48,34 +42,28 @@ module climate_forcing_variabletypes
         integer fiun
         logical :: fopen = .false.
 
-        !* name_var:       Name of variable                in (netcdf) input file.
-        !* name_lat:       Name of latitude  (y) dimension in (netcdf) input file.
-        !* name_lon:       Name of longitude (x) dimension in (netcdf) input file.
-        !* name_time:      Name of time      (t) dimension in (netcdf) input file.
-        !* ncol_lat:       Position of latitude  dimension for variable, ie. if var(time,lat,lon) --> ncol_lat  = 2.
-        !* ncol_lon:       Position of longitude dimension for variable, ie. if var(time,lat,lon) --> ncol_lon  = 3.
-        !* ncol_time:      Position of time      dimension for variable, ie. if var(time,lat,lon) --> ncol_time = 1.
-        !* dim_order_case: which order of dimensions: case 1 = (lon,lat,time), 2 = (lat,lon,time),
-        !*                                                 3 = (lon,time,lat), 4 = (lat,time,lon),
-        !*                                                 5 = (time,lon,lat), 6 = (time,lat,lon)
-        !* time_shift:     time shift of forcing data relative to UTC, i.e
-        !*                 forcing data in local Central Standard Time (CST  = UTC+3.5): Saskatoon  --> time_shift = -6.0
-        !*                 forcing data in local Eastern Standard Time (EST  = UTC-5):   Toronto    --> time_shift = -5.0
-        !*                 forcing data in local Iran Standard Time    (IRST = UTC+3.5): Teheran    --> time_shift = +3.5
+        !* name_lon: Name of the longitude (x) dimension when seeking the attribute from file (default: lon).
+        !* name_lat: Name of the latitude (y) dimension when seeking the attribute from file (default: lat).
+        !* name_time: Name of the time (t) dimension when seeking the attribute from file (default: time).
+        !* ncol_lon: Position of the longitude dimension in variable matrix (default: none).
+        !* ncol_lat: Position of the latitude dimension in variable matrix (default: none).
+        !* ncol_time: Position of the time dimension in variable matrix (default: none).
+        !* dim_order_case: Order of the dimensions in variable matrix,
+        !*  case 1 = (lon, lat, time), 2 = (lat, lon, time), 3 = (lon, time, lat)
+        !*  case 4 = (lat, time, lon), 5 = (time, lon, lat), 6 = (time, lat, lon)
+        !* time_shift: Time shift relative to apply to the dates of record (default: 0).
         !* vid: Variable ID (default: none).
         !* tid: Time ID (default: none).
-        character(200) :: name_var       = ''
-        character(200) :: name_lat       = ''
-        integer        :: ncol_lat       = 0
-        character(200) :: name_lon       = ''
-        integer        :: ncol_lon       = 0
-        character(200) :: name_time      = ''
-        integer        :: ncol_time      = 0  
-        integer        :: dim_order_case = 0
-        real           :: time_shift     = 0.0
+        character(200) :: name_lon = 'lon'
+        character(200) :: name_lat = 'lat'
+        character(200) :: name_time = 'time'
+        integer :: ncol_lon = 0
+        integer :: ncol_lat = 0
+        integer :: ncol_time = 0
+        integer :: dim_order_case = 0
+        real :: time_shift     = 0.0
         integer :: vid = -1
         integer :: tid = -1
-!        type(nc_field) nc
 
         !* GRD: Values for forcing data (Bounds: 1: Grid).
         !>      Values are averaged to the grid-level for grid-based
@@ -92,16 +80,15 @@ module climate_forcing_variabletypes
         !* blocktype: Type of data being stored (1 = GRD; 2 = GRU; 3 = GAT).
         !* blocks: Forcing data (Bounds: 1: Element; 2: nblocks).
         !* iblock: Index of the current block in data to memory [-].
-        !* skip: Number of frames that have been skipped at the start
+        !* iskip: Number of frames to skip or that have been skipped in the run (default: 0).
         integer :: nblocks = 1
         integer :: blocktype = 1
         real, dimension(:, :), allocatable :: blocks
         integer :: iblock = 1
-        integer :: skip = 0
+        integer :: iskip = 0
 
-        !* unit conversion: new_value = cm * old_value + ca
-        !* cm: Multiplicative conversion factor.
-        !* ca: Additive conversion factor.
+        !* cm: Multiplicative conversion factor where 'new_value = cm*old_value' (default: 1.0).
+        !* ca: Additive conversion factor where 'new_value = old_value + ca' (default: 0.0).
         real :: cm = 1.0
         real :: ca = 0.0
 
