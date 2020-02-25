@@ -47,9 +47,9 @@ module climate_forcing_io
         integer z, ierr
         character(len = DEFAULT_LINE_LENGTH) line
 #ifdef NETCDF
-        integer, dimension(:), allocatable :: nc_dimlen
         character(len = DEFAULT_LINE_LENGTH) time_attribute, time_units, time_calendar
-        integer ii, dtype, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, jday
+        integer, dimension(:), allocatable :: dimids
+        integer d, dtype, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, jday, ncol_lon, ncol_lat
         integer(kind = ki4) tt_i4(2)
         real(kind = kr4) tt_r4(2)
         real(kind = kr8) tt_r8(2), t0_r8, t1_r8, t2_r8, dt_r8
@@ -153,53 +153,99 @@ module climate_forcing_io
                     call program_abort()
                 end if
 
-                !> Check that the longitude dimension exists and contains the number of elements expected.
-                ierr = nf90_inq_dimid(cm%dat(vid)%fiun, cm%dat(vid)%name_lon, cm%dat(vid)%ncol_lon)
+                !> Get the dimensions of the variable.
+                ierr = nf90_inquire_variable(cm%dat(vid)%fiun, cm%dat(vid)%vid, ndims = cm%dat(vid)%ndims)
+                if (ierr == NF90_NOERR) then
+                    allocate(dimids(cm%dat(vid)%ndims), cm%dat(vid)%dim_length(cm%dat(vid)%ndims), stat = z)
+                    if (z == 0) ierr = nf90_inquire_variable(cm%dat(vid)%fiun, cm%dat(vid)%vid, dimids = dimids)
+                end if
                 if (ierr /= NF90_NOERR) then
                     call print_error( &
+                        "Unable to read dimensions of '" // trim(cm%dat(vid)%id_var) // "' in file: " // &
+                        trim(cm%dat(vid)%fpath))
+                    call program_abort()
+                end if
+
+                !> Check the dimensions.
+                !> Only variables with three dimensions are supported (combination of lat, lon, time).
+                !> Of the respective dimensions, compare to the expected length.
+                z = 0
+                do d = 1, cm%dat(vid)%ndims
+                    ierr = nf90_inquire_dimension(cm%dat(vid)%fiun, dimids(d), len = cm%dat(vid)%dim_length(d))
+                    if (ierr /= NF90_NOERR) exit
+                    ierr = nf90_inquire_dimension(cm%dat(vid)%fiun, dimids(d), name = line)
+                    if (ierr /= NF90_NOERR) exit
+                    if (line == cm%dat(vid)%name_lon) then
+
+                        !> Longitude.
+                        if (cm%dat(vid)%dim_length(d) /= shd%xCount) then
+                            call print_error( &
+                                "The model configuration contains a different number of '" // trim(cm%dat(vid)%name_lon) // &
+                                "' elements than in file: " // trim(cm%dat(vid)%fpath))
+                            call program_abort()
+                        end if
+                        ncol_lon = d
+                        z = z + radix(1)**1
+                    else if (line == cm%dat(vid)%name_lat) then
+
+                        !> Latitude.
+                        if (cm%dat(vid)%dim_length(d) /= shd%yCount) then
+                            call print_error( &
+                                "The model configuration contains a different number of '" // trim(cm%dat(vid)%name_lat) // &
+                                "' elements than in file: " // trim(cm%dat(vid)%fpath))
+                            call program_abort()
+                        end if
+                        ncol_lat = d
+                        z = z + radix(1)**2
+                    else if (line == cm%dat(vid)%name_time) then
+
+                        !> Time.
+                        !> Store the column order (used to update start position when reading).
+                        cm%dat(vid)%ncol_time = d
+                        cm%dat(vid)%tid = dimids(d)
+                        z = z + radix(1)**3
+
+                        !> Override the length to 'nblocks' (to control the number of time-steps read).
+                        cm%dat(vid)%dim_length(d) = cm%dat(vid)%nblocks
+                    end if
+                end do
+                if (ierr /= NF90_NOERR) then
+                    call print_error( &
+                        "Unable to read dimensions of '" // trim(cm%dat(vid)%id_var) // "' in file: " // &
+                        trim(cm%dat(vid)%fpath))
+                    call program_abort()
+                end if
+                if (.not. btest(z, 1)) then
+                    call print_warning( &
                         "A required attribute '" // trim(cm%dat(vid)%name_lon) // "' cound not be found in file: " // &
                         trim(cm%dat(vid)%fpath))
-                    call program_abort()
+                else
+                    z = z - radix(1)**1
                 end if
-                ierr = nf90_inquire_dimension(cm%dat(vid)%fiun, cm%dat(vid)%ncol_lon, len = z)
-                if (ierr /= NF90_NOERR .or. z /= shd%xCount) then
-                    call print_error( &
-                        "The model configuration contains a different number of '" // trim(cm%dat(vid)%name_lon) // &
-                        "' elements than in file: " // trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
-
-                !> Check that the latitude dimension exists and contains the number of elements expected.
-                ierr = nf90_inq_dimid(cm%dat(vid)%fiun, cm%dat(vid)%name_lat, cm%dat(vid)%ncol_lat)
-                if (ierr /= NF90_NOERR) then
-                    call print_error( &
+                if (.not. btest(z, 2)) then
+                    call print_warning( &
                         "A required attribute '" // trim(cm%dat(vid)%name_lat) // "' cound not be found in file: " // &
                         trim(cm%dat(vid)%fpath))
-                    call program_abort()
+                else
+                    z = z - radix(1)**2
                 end if
-                ierr = nf90_inquire_dimension(cm%dat(vid)%fiun, cm%dat(vid)%ncol_lat, len = z)
-                if (ierr /= NF90_NOERR .or. z /= shd%yCount) then
-                    call print_error( &
-                        "The model configuration contains a different number of '" // trim(cm%dat(vid)%name_lat) // &
-                        "' elements than in file: " // trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
-
-                !> Check that the time dimension exists.
-                ierr = nf90_inq_dimid(cm%dat(vid)%fiun, cm%dat(vid)%name_time, cm%dat(vid)%ncol_time)
-                if (ierr /= NF90_NOERR) then
-                    call print_error( &
+                if (.not. btest(z, 3)) then
+                    call print_warning( &
                         "A required attribute '" // trim(cm%dat(vid)%name_time) // "' cound not be found in file: " // &
                         trim(cm%dat(vid)%fpath))
-                    call program_abort()
+                else
+                    z = z - radix(1)**3
                 end if
-
-                !> Get the ID of the time dimension.
-                ierr = nf90_inq_varid(cm%dat(vid)%fiun, cm%dat(vid)%name_time, cm%dat(vid)%tid)
-                if (ierr /= NF90_NOERR) then
+                if (z /= 0 .or. cm%dat(vid)%ndims /= 3) then
                     call print_error( &
-                        "The variable '" // trim(cm%dat(vid)%name_time) // "' cound not be found in file: " // &
-                        trim(cm%dat(vid)%fpath))
+                        "The variable '" // trim(cm%dat(vid)%name_time) // "' must contain only three dimensions for" // &
+                        ' longitude, latitude, and time (in any order). The file must be pre-processed to remove' // &
+                        ' dimensions in excess of this number.')
+                    call print_message( &
+                        'If the file is compatible with this structure, the dimensions must be mapped' // &
+                        " using the 'name_lon', 'name_lat', and 'name_time' options where the names of these dimensions" // &
+                        " are different from the default names of 'lon', 'lat', and 'time', respectively" // &
+                        ' (via the input configuration files).')
                     call program_abort()
                 end if
 
@@ -305,66 +351,30 @@ module climate_forcing_io
                 cm%dat(vid)%start_date%jday = floor(dt_r8) - floor((cm%dat(vid)%start_date%year - 1601)*365.25)
                 cm%dat(vid)%start_date%hour = floor(dt_r8 - floor(dt_r8))*24
                 cm%dat(vid)%start_date%mins = int(floor(dt_r8 - floor(dt_r8))*60.0*24.0 - cm%dat(vid)%start_date%hour*60.0 + 0.5)
-                ierr = nf90_inquire_variable(cm%dat(vid)%fiun, cm%dat(vid)%vid, ndims = ii)
-                if (ierr == NF90_NOERR) then
-                    allocate(nc_dimlen(ii), stat = z)
-                    if (z == 0) ierr = nf90_inquire_variable(cm%dat(vid)%fiun, cm%dat(vid)%vid, dimids = nc_dimlen)
-                end if
-                if (ierr /= NF90_NOERR) then
-                    call print_error( &
-                        "Unable to read dimensions of '" // trim(cm%dat(vid)%id_var) // "' in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
-
-                !> Determine the order of the columns for the variable matrix (e.g., variable(lon, lat, time)).
-                if (ierr == NF90_NOERR) then
-                    do ii = 1, size(nc_dimlen)
-                        ierr = nf90_inquire_dimension(cm%dat(vid)%fiun, nc_dimlen(ii), name = line)
-                        if (ierr == NF90_NOERR) then
-                            if (line == cm%dat(vid)%name_lon) then
-                                cm%dat(vid)%ncol_lon = ii
-                            else if (line == cm%dat(vid)%name_lat) then
-                                cm%dat(vid)%ncol_lat = ii
-                            else if (line == cm%dat(vid)%name_time) then
-                                cm%dat(vid)%ncol_time = ii
-                            else
-                                ierr = NF90_EBADDIM
-                            end if
-                        else
-                            exit
-                        end if
-                    end do
-                end if
-                if (ierr /= NF90_NOERR) then
-                    call print_error( &
-                        "Unsupported data type for the '" // trim(cm%dat(vid)%name_time) // "' attribute in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
 
                 !> Assign an ID based on the order (for mapping when reading from the file).
-                if (cm%dat(vid)%ncol_lon == 1 .and. cm%dat(vid)%ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 3) then
-                    call print_message('   dim order case #1 --> (lon,lat,time)')
+                if (ncol_lon == 1 .and. ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 3) then
+                    if (DIAGNOSEMODE) call print_message('   dim order case #1 --> (lon,lat,time)')
                     cm%dat(vid)%dim_order_case = 1
-                else if (cm%dat(vid)%ncol_lon == 2 .and. cm%dat(vid)%ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 3) then
-                    call print_message('   dim order case #2 --> (lat,lon,time)')
+                else if (ncol_lon == 2 .and. ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 3) then
+                    if (DIAGNOSEMODE) call print_message('   dim order case #2 --> (lat,lon,time)')
                     cm%dat(vid)%dim_order_case = 2
-                else if (cm%dat(vid)%ncol_lon == 1 .and. cm%dat(vid)%ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 2) then
-                    call print_message('   dim order case #3 --> (lon,time,lat)')
+                else if (ncol_lon == 1 .and. ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 2) then
+                    if (DIAGNOSEMODE) call print_message('   dim order case #3 --> (lon,time,lat)')
                     cm%dat(vid)%dim_order_case = 3
-                else if (cm%dat(vid)%ncol_lon == 3 .and. cm%dat(vid)%ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 2) then
-                    call print_message('   dim order case #4 --> (lat,time,lon)')
+                else if (ncol_lon == 3 .and. ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 2) then
+                    if (DIAGNOSEMODE) call print_message('   dim order case #4 --> (lat,time,lon)')
                     cm%dat(vid)%dim_order_case = 4
-                else if (cm%dat(vid)%ncol_lon == 2 .and. cm%dat(vid)%ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 1) then
-                    call print_message('   dim order case #5 --> (time,lon,lat)')
+                else if (ncol_lon == 2 .and. ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 1) then
+                    if (DIAGNOSEMODE) call print_message('   dim order case #5 --> (time,lon,lat)')
                     cm%dat(vid)%dim_order_case = 5
-                else if (cm%dat(vid)%ncol_lon == 3 .and. cm%dat(vid)%ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 1) then
-                    call print_message('   dim order case #6 --> (time,lat,lon)')
+                else if (ncol_lon == 3 .and. ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 1) then
+                    if (DIAGNOSEMODE) call print_message('   dim order case #6 --> (time,lat,lon)')
                     cm%dat(vid)%dim_order_case = 6
                 else
                     call print_error( &
-                        trim(cm%dat(vid)%fpath) // ' (' // trim(cm%dat(vid)%id_var) // '): Weird order of dimensions.')
+                        "Unable to determine the order of dimensions of '" // trim(cm%dat(vid)%id_var) // "' in file: " // &
+                        trim(cm%dat(vid)%fpath))
                     call program_abort()
                 end if
 
@@ -458,7 +468,7 @@ module climate_forcing_io
         character(len = DEFAULT_LINE_LENGTH) line
         logical storedata
 #ifdef NETCDF
-        real, dimension(:, :, :), allocatable :: GRD_tmp
+        real, allocatable :: dat3(:, :, :)
         integer, dimension(3) :: start
 #endif
 
@@ -532,75 +542,61 @@ module climate_forcing_io
 
                         !> Allocate the temporary array considering the order of the dimensions in the variable.
                         !> Case default handled with exit when opening the file.
-                        select case(cm%dat(vid)%dim_order_case)
-                            case(1)
-                                allocate(GRD_tmp(shd%xCount, shd%yCount, cm%dat(vid)%nblocks))
-                            case(2)
-                                allocate(GRD_tmp(shd%yCount, shd%xCount, cm%dat(vid)%nblocks))
-                            case(3)
-                                allocate(GRD_tmp(shd%xCount, cm%dat(vid)%nblocks, shd%yCount))
-                            case(4)
-                                allocate(GRD_tmp(shd%yCount, cm%dat(vid)%nblocks, shd%xCount))
-                            case(5)
-                                allocate(GRD_tmp(cm%dat(vid)%nblocks, shd%xCount, shd%yCount))
-                            case(6)
-                                allocate(GRD_tmp(cm%dat(vid)%nblocks, shd%yCount, shd%xCount))
-                        end select
+                        allocate(dat3(cm%dat(vid)%dim_length(1), cm%dat(vid)%dim_length(2), cm%dat(vid)%dim_length(3)))
 
                         !> Set the starting position in each dimension (all at '1' except time).
                         start = 1
                         start(cm%dat(vid)%ncol_time) = cm%dat(vid)%iskip + 1
 
-                        !> Set the number of records to read in each dimension.
-                        ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%vid, GRD_tmp, start = start)
+                        !> Read data.
+                        ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%vid, dat3, start = start)
                         if (ierr == NF90_EINVALCOORDS) then
                             goto 999
                         else if (ierr /= NF90_NOERR) then
                             write(line, FMT_GEN) ierr
                             call print_error( &
-                                trim(cm%dat(vid)%fpath) // ' (' // trim(cm%dat(vid)%id_var) // '): Error reading from file (code ' &
-                                // trim(adjustl(line)) // ').')
-                            goto 999
+                                'Error reading from file (code ' // trim(adjustl(line)) // '): ' // trim(cm%dat(vid)%fpath))
+                            call program_abort()
                         end if
 
                         !> Map and save values from the temporary array.
                         !> Case default handled with exit when opening the file.
                         select case(cm%dat(vid)%dim_order_case)
 
-                            !> GRD = transpose(GRD_tmp(y:y, x:x, t)).
+                            !> GRD = transpose(dat3(y:y, x:x, t)).
                             case(1)
                                 do i = 1, shd%NA
-                                    cm%dat(vid)%blocks(i, :) = GRD_tmp(shd%xxx(i), shd%yyy(i), :)
+                                    cm%dat(vid)%blocks(i, :) = dat3(shd%xxx(i), shd%yyy(i), :)
                                 end do
 
-                            !> GRD = GRD_tmp(y, x, t).
+                            !> GRD = dat3(y, x, t).
                             case(2)
                                 do i = 1, shd%NA
-                                    cm%dat(vid)%blocks(i, :) = GRD_tmp(shd%yyy(i), shd%xxx(i), :)
+                                    cm%dat(vid)%blocks(i, :) = dat3(shd%yyy(i), shd%xxx(i), :)
                                 end do
 
-                            !> GRD = transpose(GRD_tmp(y:y, t, x:x)).
+                            !> GRD = transpose(dat3(y:y, t, x:x)).
                             case(3)
                                 do i = 1, shd%NA
-                                    cm%dat(vid)%blocks(i, :) = GRD_tmp(shd%xxx(i), :, shd%yyy(i))
+                                    cm%dat(vid)%blocks(i, :) = dat3(shd%xxx(i), :, shd%yyy(i))
                                 end do
 
-                            !> GRD = GRD_tmp(y:y, t, x:x).
+                            !> GRD = dat3(y:y, t, x:x).
                             case(4)
                                 do i = 1, shd%NA
-                                    cm%dat(vid)%blocks(i, :) = GRD_tmp(shd%yyy(i), :, shd%xxx(i))
+                                    cm%dat(vid)%blocks(i, :) = dat3(shd%yyy(i), :, shd%xxx(i))
                                 end do
 
-                            !> GRD = transpose(GRD_tmp(t, y:y, x:x)).
+                            !> GRD = transpose(dat3(t, y:y, x:x)).
                             case(5)
                                 do i = 1, shd%NA
-                                    cm%dat(vid)%blocks(i, :) = GRD_tmp(:, shd%xxx(i), shd%yyy(i))
+                                    cm%dat(vid)%blocks(i, :) = dat3(:, shd%xxx(i), shd%yyy(i))
                                 end do
 
-                            !> GRD = GRD_tmp(t, y:y, x:x).
+                            !> GRD = dat3(t, y:y, x:x).
                             case(6)
                                 do i = 1, shd%NA
-                                    cm%dat(vid)%blocks(i, :) = GRD_tmp(:, shd%yyy(i), shd%xxx(i))
+                                    cm%dat(vid)%blocks(i, :) = dat3(:, shd%yyy(i), shd%xxx(i))
                                 end do
                         end select
                     end if
