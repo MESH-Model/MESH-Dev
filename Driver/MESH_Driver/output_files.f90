@@ -18,6 +18,7 @@ module output_files
         integer :: CSV = 6
         integer :: TSI = 7
         integer :: TSK = 8
+        integer :: NC4 = 9
     end type
 
     !> Description:
@@ -57,6 +58,18 @@ module output_files
         module procedure write_seq_frame_real
         module procedure write_seq_frame_int
     end interface
+#ifdef NETCDF
+
+    interface nc4_add_vname
+        module procedure nc4_add_vname_1d
+        module procedure nc4_add_vname_2d
+    end interface
+
+    interface nc4_write_field
+        module procedure nc4_write_field_1d
+        module procedure nc4_write_field_2d
+    end interface
+#endif
 
     !> Description:
     !>  Data type for an output file.
@@ -64,11 +77,15 @@ module output_files
     !> Variables:
     !*  iun: Unit of the file (must be unique; default: -1).
     !*  fname: Base file name (default: none).
+    !*  vid: Variable ID (default: none).
+    !*  tid: Time ID (default: none).
     !*  src: Source data (1: Index).
     !*  dat: Data (1: Index; 2: Time-series index).
     type output_file
         integer :: iun = -1
         character(len = DEFAULT_LINE_LENGTH) :: fname = ''
+        integer :: vid = -1
+        integer :: tid = -1
         real, dimension(:), pointer :: src => null()
         real, dimension(:, :), allocatable :: dat
     end type
@@ -360,6 +377,523 @@ module output_files
         open(iun, file = fname, status = 'replace', form = 'formatted', action = 'write', iostat = ierr)
 
     end subroutine
+#ifdef NETCDF
+
+    subroutine nc4_open_output(fname, iun, ierr)
+
+        !* 'netcdf': For netCDF library.
+        use netcdf
+
+        !> Input variables.
+        character(len = *), intent(in) :: fname
+
+        !> Output variables.
+        integer, intent(out) :: iun
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = 10) str10
+        character(len = 8) str8
+        character(len = 20) line
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Open the file with write access.
+        ierr = nf90_create(fname, NF90_NETCDF4, iun)
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Unable to open file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Assign global meta attributes.
+        ierr = NF90_NOERR
+        call date_and_time(str8, str10)
+        write(line, "(a4, '-', a2, '-', a2, 1x, a2, ':', a2, ':', a2)") &
+            str8(1:4), str8(5:6), str8(7:8), str10(1:2), str10(3:4), '00'
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'title', 'SA_MESH model outputs')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'source', 'SA_MESH') !((version info, but somehow also configuration CLASS/SVS/etc..))
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'history', trim(adjustl(line)) // ' - Created.')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'references', 'SA_MESH') !(('https://wiki.usask.ca/display/MESH/'))
+
+        !> Add coding convention.
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'Conventions', 'CF-1.6')
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred writing attributes to file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_set_proj(iun, fname, proj_name, datum, zone_id, ierr)
+
+        !* 'netcdf': For netCDF library.
+        !* 'strings': lower
+        use netcdf
+        use strings, only: lowercase
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, proj_name, datum
+        character(len = *), intent(in), optional :: zone_id
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        integer vid
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Create variable.
+        ierr = nf90_def_var(iun, 'crs', NF90_INT, (/1/), vid)
+        if (ierr /= NF90_NOERR) then
+            call print_warning('An error occurred creating the projection in file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Assign projection.
+        ierr = NF90_NOERR
+        select case (lowercase(proj_name))
+
+            !> Regular lat/lon.
+            case ('latlon', 'latlong')
+                if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'grid_mapping_name', 'latitude_longitude')
+                if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'longitude_of_prime_meridian', 0.0)
+
+                !> Ellipsoid/datum specification (from EnSim/GK manual; version: September, 2010).
+                select case (lowercase(datum))
+                    case ('wgs84')
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'semi_major_axis', 6378137.0)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'inverse_flattening', 298.257223563)
+                    case ('wgs72')
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'semi_major_axis', 6378135.0)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'inverse_flattening', 298.26)
+                    case ('grs80', 'nad83')
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'semi_major_axis', 6378137.0)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'inverse_flattening', 298.257222101)
+                    case ('clarke1866', 'nad27')
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'semi_major_axis', 6378206.4)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'inverse_flattening', 294.9786982)
+                    case ('sphere')
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'semi_major_axis', 6371000.0)
+                        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'inverse_flattening', 0.0)
+                end select
+        end select
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred assigning a projection to file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_set_time(iun, fname, ffreq, start_year, did, vid, ierr)
+
+        !* 'netcdf': For netCDF library.
+        use netcdf
+
+        !> Input variables.
+        integer, intent(in) :: iun, ffreq, start_year
+        character(len = *), intent(in) :: fname
+
+        !> Output variables.
+        integer, intent(out) :: did, vid, ierr
+
+        !> Local variables.
+        character(len = 20) line
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Create dimension for 'ts'.
+        ierr = nf90_def_dim(iun, 'time', NF90_UNLIMITED, did)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred dimensioning the time attribute in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Create variable.
+        ierr = nf90_def_var(iun, 'time', NF90_INT, (/did/), vid)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred creating the time attribute in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Set units based on 'ffreq'.
+        write(line, "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2)") &
+            ic%now%year, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins, 0
+        if (btest(ffreq, fls_out%ffreq%dly)) then
+            ierr = nf90_put_att(iun, vid, 'units', 'days since ' // trim(adjustl(line)))
+        else if (btest(ffreq, fls_out%ffreq%mly) .or. btest(ffreq, fls_out%ffreq%ssl)) then
+            ierr = nf90_put_att(iun, vid, 'units', 'months since ' // trim(adjustl(line)))
+        else if (btest(ffreq, fls_out%ffreq%yly)) then
+            ierr = nf90_put_att(iun, vid, 'units', 'years since ' // trim(adjustl(line)))
+        else if (btest(ffreq, fls_out%ffreq%hly)) then
+            ierr = nf90_put_att(iun, vid, 'units', 'hours since ' // trim(adjustl(line)))
+        else
+            ierr = nf90_put_att(iun, vid, 'units', 'seconds since ' // trim(adjustl(line)))
+        end if
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'long_name', 'time')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'standard_name', 'time')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'axis', 'T')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'calendar', 'gregorian')
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred defining the time attribute in file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_set_attr(iun, fname, vid, standard_name, long_name, units, ierr)
+
+        !* 'netcdf': For netCDF library.
+        use netcdf
+
+        !> Input variables.
+        integer, intent(in) :: iun, vid
+        character(len = *), intent(in) :: fname
+        character(len = *), intent(in) :: standard_name, long_name, units
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Assign the attributes.
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'standard_name', standard_name)
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'long_name', long_name)
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'units', units)
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred assigning attributes for ' // trim(standard_name) // ' in file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_vname_1d( &
+        shd, n, lon, lat, vname, long_name, units, ffreq, start_year, fill, fname, iun, tid, vid, &
+        constmul, constadd, constrmax, constrmin, ierr)
+
+        !* 'netcdf': For netCDF library.
+        use netcdf
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: n, ffreq, start_year
+        real, dimension(n), intent(in) :: lon, lat
+        real, intent(in) :: fill
+        character(len = *), intent(in) :: vname, long_name, units, fname
+
+        !> Input variables (optional).
+        real, intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: iun, tid, vid, ierr
+
+        !> Local variables.
+        integer did_n, did_t, vid_x, vid_y, z
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Open the file (write access).
+        z = 0
+        call nc4_open_output(fname, iun, z)
+        if (z /= 0) return
+
+        !> Create necessary dimensions for fields.
+        ierr = nf90_def_dim(iun, 'npoints', n, did_n)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred dimensioning points in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reference variables.
+        if (ierr == NF90_NOERR) ierr = nf90_def_var(iun, 'lon', NF90_FLOAT, (/did_n/), vid_x)
+        if (ierr == NF90_NOERR) ierr = nf90_def_var(iun, 'lat', NF90_FLOAT, (/did_n/), vid_y)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred creating location attributes in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Time.
+        z = 0
+        call nc4_set_time(iun, fname, ffreq, start_year, did_t, tid, z)
+        if (z /= 0) return
+
+        !> Coordinates.
+        z = 0
+        if (z == 0) call nc4_set_attr(iun, fname, vid_x, 'longitude', 'longitude', 'degrees_east', z)
+        if (z == 0) call nc4_set_attr(iun, fname, vid_y, 'latitude', 'latitude', 'degrees_north', z)
+        if (z /= 0) return
+
+        !> Projection.
+        z = 0
+        call nc4_set_proj(iun, fname, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, z)
+        if (z /= 0) return
+
+        !> Data.
+        ierr = nf90_def_var(iun, vname, NF90_FLOAT, (/did_n, did_t/), vid)
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, '_FillValue', fill)
+        z = 0
+        call nc4_set_attr(iun, fname, vid, vname, long_name, units, z)
+        if (z /= 0) return
+        if (present(constmul)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'scale_factor', constmul)
+        end if
+        if (present(constadd)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'add_offset', constadd)
+        end if
+        if (present(constrmin)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'valid_min', constrmin)
+        end if
+        if (present(constrmax)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'valid_max', constrmax)
+        end if
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'coordinates', 'lon lat')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'grid_mapping', 'crs')
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred assigning attributes for ' // trim(vname) // ' in file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Populate reference variables.
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid_x, lon)
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid_y, lat)
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred adding locations to file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_vname_2d( &
+        shd, vname, long_name, units, ffreq, start_year, fill, fname, iun, tid, vid, &
+        constmul, constadd, constrmax, constrmin, ierr)
+
+        !* 'netcdf': For netCDF library.
+        use netcdf
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: ffreq, start_year
+        real, intent(in) :: fill
+        character(len = *), intent(in) :: vname, long_name, units, fname
+
+        !> Input variables (optional).
+        real, intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: iun, tid, vid, ierr
+
+        !> Local variables.
+        integer did_x, did_y, did_t, vid_x, vid_y, n, z
+        real lon(shd%xCount), lat(shd%yCount)
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Open the file (write access).
+        z = 0
+        call nc4_open_output(fname, iun, z)
+        if (z /= 0) return
+
+        !> Create necessary dimensions for fields.
+        ierr = nf90_def_dim(iun, 'lon', shd%xCount, did_x)
+        ierr = nf90_def_dim(iun, 'lat', shd%yCount, did_y)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred dimensioning locations in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reference variables.
+        if (ierr == NF90_NOERR) ierr = nf90_def_var(iun, 'lon', NF90_FLOAT, (/did_x/), vid_x)
+        if (ierr == NF90_NOERR) ierr = nf90_def_var(iun, 'lat', NF90_FLOAT, (/did_y/), vid_y)
+        if (ierr /= NF90_NOERR) then
+            call print_warning("An error occurred creating location attributes in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Time.
+        z = 0
+        call nc4_set_time(iun, fname, ffreq, start_year, did_t, tid, z)
+        if (z /= 0) return
+
+        !> Coordinates.
+        z = 0
+        if (z == 0) call nc4_set_attr(iun, fname, vid_x, 'longitude', 'longitude', 'degrees_east', z)
+        if (z == 0) call nc4_set_attr(iun, fname, vid_y, 'latitude', 'latitude', 'degrees_north', z)
+        if (z /= 0) return
+
+        !> Projection.
+        z = 0
+        call nc4_set_proj(iun, fname, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, z)
+        if (z /= 0) return
+
+        !> Data.
+        ierr = nf90_def_var(iun, vname, NF90_FLOAT, (/did_x, did_y, did_t/), vid)
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, '_FillValue', fill)
+        z = 0
+        call nc4_set_attr(iun, fname, vid, vname, long_name, units, z)
+        if (z /= 0) return
+        if (present(constmul)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'scale_factor', constmul)
+        end if
+        if (present(constadd)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'add_offset', constadd)
+        end if
+        if (present(constrmin)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'valid_min', constrmin)
+        end if
+        if (present(constrmax)) then
+            if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'valid_max', constrmax)
+        end if
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'coordinates', 'lon lat')
+        if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid, 'grid_mapping', 'crs')
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred assigning attributes for ' // trim(vname) // ' in file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Populate reference variables.
+        do n = 1, shd%xCount
+            lon(n) = (shd%xOrigin + shd%xDelta*n) - shd%xDelta/2.0
+        end do
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid_x, lon)
+        do n = 1, shd%yCount
+            lat(n) = (shd%yOrigin + shd%yDelta*n) - shd%yDelta/2.0
+        end do
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid_y, lat)
+        if (ierr /= NF90_NOERR) then
+            call print_warning('Errors occurred adding locations to file: ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_write_field_1d(shd, iun, tid, vid, dat, i, dates, ierr)
+
+        !* 'netcdf': For netCDF library.
+        use netcdf
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: iun, tid, vid
+        real, dimension(:, :), intent(in) :: dat
+        integer, dimension(:, :), intent(in) :: dates
+!temp
+        integer i
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        integer t, n, z
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Loop for time.
+        do t = 1, size(dat, 2)
+
+            !> Write time.
+            if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, tid, (dates(1, t) - 1), start = (/ dates(1, t) /))
+
+            !> Write data.
+            if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, dat, start = (/ 1, dates(1, t) /))
+        end do
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_write_field_2d(shd, iun, tid, vid, dat, dates, ierr)
+
+        !* 'netcdf': For netCDF library.
+        use netcdf
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: iun, tid, vid
+        real, dimension(:, :), intent(in) :: dat
+        integer, dimension(:, :), intent(in) :: dates
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        integer t, n, z
+        real, dimension(shd%xCount, shd%yCount) :: r2c_grid
+        real fill
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Get the 'fill' value.
+        z = nf90_inquire_attribute(iun, vid, '_FillValue')
+        if (z == NF90_NOERR) ierr = nf90_get_att(iun, vid, '_FillValue', fill)
+        if (z /= NF90_NOERR .or. ierr /= NF90_NOERR) then
+            fill = NF90_FILL_FLOAT
+        end if
+
+        !> Loop for time.
+        do t = 1, size(dat, 2)
+
+            !> Transfer data to temporary variable.
+            r2c_grid = fill
+            do n = 1, shd%NA
+                r2c_grid(shd%xxx(n), shd%yyy(n)) = dat(n, t)
+            end do
+
+            !> Write time.
+            if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, tid, (dates(1, t) - 1), start = (/ dates(1, t) /))
+
+            !> Write data.
+            if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, r2c_grid, start = (/ 1, 1, dates(1, t) /))
+        end do
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+#endif
 
     subroutine write_r2c_frame_start(iun, number, year, month, day, hour, mins, ierr)
 
@@ -774,6 +1308,28 @@ module output_files
                 end if
                 iun = iun + 1
             end if
+#ifdef NETCDF
+            if (btest(field%ffmt, fls_out%ffmt%nc4)) then
+                z = 0
+                lopen = .false.
+                inquire(file = trim(fname) // '_GRD.nc', opened = lopen)
+                if (.not. lopen) then
+                    call nc4_add_vname( &
+                        shd, field%vname, '', '', field%ffreq, ic%start%year, out%NO_DATA, trim(fname) // '_GRD.nc', &
+                        group%grid%iun, group%grid%tid, group%grid%vid, &
+                        ierr = z)
+                    if (z /= 0) then
+                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '_GRD.nc')
+                        ierr = z
+                    end if
+                else
+                    call print_message_detail( &
+                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_GRD.nc')
+                    z = 1
+                end if
+                iun = iun + 1
+            end if
+#endif
             if (z /= 0) ierr = z
 
             !> Update shared file unit.
@@ -1044,6 +1600,20 @@ module output_files
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                     end if
+                case ('nc', 'netcdf', 'nc4')
+#ifdef NETCDF
+                    if (.not. btest(field%ffmt, fls_out%ffmt%nc4)) then
+                        field%ffmt = field%ffmt + radix(fls_out%ffmt%nc4)**fls_out%ffmt%nc4
+                    end if
+                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                    end if
+#else
+                    call print_error( &
+                        "NetCDF format is specified for '" // trim(field%vname) // "' but the module is not active." // &
+                        ' A version of MESH compiled with the NetCDF library must be used to create files in this format.')
+                    ierr = 1
+#endif
 
                 !> Order of the selection being saved.
                 case ('gridorder', 'shedorder')
@@ -1751,6 +2321,19 @@ module output_files
                 end if
                 iun = iun + 1
             end if
+#ifdef NETCDF
+            if (btest(field%ffmt, fls_out%ffmt%nc4)) then
+                z = 0
+                call nc4_write_field( &
+                    shd, group%grid%iun, group%grid%tid, group%grid%vid, group%grid%dat, dates, &
+                    z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_GRD.nc')
+                    call program_abort()
+                end if
+                iun = iun + 1
+            end if
+#endif
         end if
 
         !> Tile-based.

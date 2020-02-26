@@ -42,6 +42,29 @@ module climate_forcing_variabletypes
         integer fiun
         logical :: fopen = .false.
 
+        !* name_lon: Name of the longitude (x) dimension when seeking the attribute from file (default: lon).
+        !* name_lat: Name of the latitude (y) dimension when seeking the attribute from file (default: lat).
+        !* name_time: Name of the time (t) dimension when seeking the attribute from file (default: time).
+        !* ncol_time: Position of the time dimension in variable matrix (default: none).
+        !* ndims: Number of dimensions (default: none).
+        !* dim_order_case: Order of the dimensions in variable matrix,
+        !*  case 1 = (lon, lat, time), 2 = (lat, lon, time), 3 = (lon, time, lat)
+        !*  case 4 = (lat, time, lon), 5 = (time, lon, lat), 6 = (time, lat, lon)
+        !* dim_length: Respective lengths of the dimensions (in dimension order) in variable matrix.
+        !* time_shift: Time shift relative to apply to the dates of record (default: 0).
+        !* vid: Variable ID (default: none).
+        !* tid: Time ID (default: none).
+        character(200) :: name_lon = 'lon'
+        character(200) :: name_lat = 'lat'
+        character(200) :: name_time = 'time'
+        integer :: ncol_time = 0
+        integer :: ndims = -1
+        integer :: dim_order_case = 0
+        integer, dimension(:), allocatable :: dim_length
+        real :: time_shift = 0.0
+        integer :: vid = -1
+        integer :: tid = -1
+
         !* GRD: Values for forcing data (Bounds: 1: Grid).
         !>      Values are averaged to the grid-level for grid-based
         !>      processing and certain output. These gridded values are
@@ -57,10 +80,17 @@ module climate_forcing_variabletypes
         !* blocktype: Type of data being stored (1 = GRD; 2 = GRU; 3 = GAT).
         !* blocks: Forcing data (Bounds: 1: Element; 2: nblocks).
         !* iblock: Index of the current block in data to memory [-].
+        !* iskip: Number of frames to skip or that have been skipped in the run (default: 0).
         integer :: nblocks = 1
         integer :: blocktype = 1
         real, dimension(:, :), allocatable :: blocks
         integer :: iblock = 1
+        integer :: iskip = 0
+
+        !* cm: Multiplicative conversion factor where 'new_value = cm*old_value' (default: 1.0).
+        !* ca: Additive conversion factor where 'new_value = old_value + ca' (default: 0.0).
+        real :: cm = 1.0
+        real :: ca = 0.0
 
         !* start_date: Starting date of the data in the file.
         !* hf: Increment of minutes passed in each frame of data [mins].

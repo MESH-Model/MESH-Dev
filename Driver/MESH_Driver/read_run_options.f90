@@ -358,6 +358,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end select
                     end do
                 case ('BASINSHORTWAVEFLAG')
+                    n = ck%FB
                     call value(args(2), cm%dat(ck%FB)%ffmt, z)
                     if (z == 0) cm%dat(ck%FB)%factive = .true.
                     cm%dat(ck%FB)%id_var = 'FB'
@@ -376,8 +377,54 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(5:), cm%dat(ck%FB)%nblocks, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fname=') then
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 10) then
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'cm=') then
+                                call value(args(j)(4:), cm%dat(n)%cm, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'ca=') then
+                                call value(args(j)(4:), cm%dat(n)%ca, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if
                     end do
                 case ('BASINLONGWAVEFLAG')
+                    n = ck%FI
                     call value(args(2), cm%dat(ck%FI)%ffmt, z)
                     if (z == 0) cm%dat(ck%FI)%factive = .true.
                     cm%dat(ck%FI)%id_var = 'FI'
@@ -396,8 +443,54 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(5:), cm%dat(ck%FI)%nblocks, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fname=') then
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 10) then
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'cm=') then
+                                call value(args(j)(4:), cm%dat(n)%cm, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'ca=') then
+                                call value(args(j)(4:), cm%dat(n)%ca, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if
                     end do
                 case ('BASINRAINFLAG')
+                    n = ck%RT
                     call value(args(2), cm%dat(ck%RT)%ffmt, z)
                     if (z == 0) cm%dat(ck%RT)%factive = .true.
                     cm%dat(ck%RT)%id_var = 'RT'
@@ -416,8 +509,54 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(5:), cm%dat(ck%RT)%nblocks, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fname=') then
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 10) then
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'cm=') then
+                                call value(args(j)(4:), cm%dat(n)%cm, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'ca=') then
+                                call value(args(j)(4:), cm%dat(n)%ca, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if
                     end do
                 case ('BASINTEMPERATUREFLAG')
+                    n = ck%TT
                     call value(args(2), cm%dat(ck%TT)%ffmt, z)
                     if (z == 0) cm%dat(ck%TT)%factive = .true.
                     cm%dat(ck%TT)%id_var = 'TT'
@@ -436,8 +575,54 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(5:), cm%dat(ck%TT)%nblocks, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fname=') then
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 10) then
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'cm=') then
+                                call value(args(j)(4:), cm%dat(n)%cm, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'ca=') then
+                                call value(args(j)(4:), cm%dat(n)%ca, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if
                     end do
                 case ('BASINWINDFLAG')
+                    n = ck%UV
                     call value(args(2), cm%dat(ck%UV)%ffmt, z)
                     if (z == 0) cm%dat(ck%UV)%factive = .true.
                     cm%dat(ck%UV)%id_var = 'UV'
@@ -456,8 +641,54 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(5:), cm%dat(ck%UV)%nblocks, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fname=') then
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 10) then
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'cm=') then
+                                call value(args(j)(4:), cm%dat(n)%cm, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'ca=') then
+                                call value(args(j)(4:), cm%dat(n)%ca, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if
                     end do
                 case ('BASINPRESFLAG')
+                    n = ck%P0
                     call value(args(2), cm%dat(ck%P0)%ffmt, z)
                     if (z == 0) cm%dat(ck%P0)%factive = .true.
                     cm%dat(ck%P0)%id_var = 'P0'
@@ -476,8 +707,54 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 call value(args(j)(5:), cm%dat(ck%P0)%nblocks, z)
                             end if
                         end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fname=') then
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 10) then
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'cm=') then
+                                call value(args(j)(4:), cm%dat(n)%cm, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'ca=') then
+                                call value(args(j)(4:), cm%dat(n)%ca, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
+                            end if
+                        end if
                     end do
                 case ('BASINHUMIDITYFLAG')
+                    n = ck%HU
                     call value(args(2), cm%dat(ck%HU)%ffmt, z)
                     if (z == 0) cm%dat(ck%HU)%factive = .true.
                     cm%dat(ck%HU)%id_var = 'HU'
@@ -494,6 +771,51 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         if (len_trim(args(j)) > 4) then
                             if (args(j)(1:4) == 'nts=') then
                                 call value(args(j)(5:), cm%dat(ck%HU)%nblocks, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fname=') then
+                                cm%dat(n)%fname = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+                            if (args(j)(1:6) == 'fpath=') then
+                                cm%dat(n)%fpath = adjustl(args(j)(7:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_var=') then
+                                cm%dat(n)%id_var = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lat=') then
+                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+                            if (args(j)(1:9) == 'name_lon=') then
+                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 10) then
+                            if (args(j)(1:10) == 'name_time=') then
+                                cm%dat(n)%name_time = adjustl(args(j)(11:))
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'cm=') then
+                                call value(args(j)(4:), cm%dat(n)%cm, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+                            if (args(j)(1:3) == 'ca=') then
+                                call value(args(j)(4:), cm%dat(n)%ca, z)
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 11) then
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
                             end if
                         end if
                     end do

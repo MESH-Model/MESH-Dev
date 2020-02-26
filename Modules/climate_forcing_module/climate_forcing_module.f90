@@ -51,7 +51,7 @@ module climate_forcing
         logical ENDDATA
 
         !> Local variables.
-        integer vid, iun, iskip, isteps1, isteps2, t, s, k, j, i, ierr
+        integer vid, iun, isteps1, isteps2, t, s, k, j, i, ierr
         character(len = DEFAULT_LINE_LENGTH) line
 
         ENDDATA = .false.
@@ -62,54 +62,76 @@ module climate_forcing
 !?        allocate(cm%dat(cm%nclim))
 
         !> Set the default file name and map the climate GRD/GAT/GRU variables to 'vs'.
-        cm%dat(ck%FB)%fname = 'basin_shortwave'
+        if (len_trim(cm%dat(ck%FB)%fname) == 0) then
+            cm%dat(ck%FB)%fname = 'basin_shortwave'
+        end if
         cm%dat(ck%FB)%GRD => vs%grid%fsin(1:shd%NA)
         cm%dat(ck%FB)%GAT => vs%tile%fsin(1:shd%lc%NML)
         cm%dat(ck%FB)%GRU => vs%gru%fsin(1:shd%lc%NTYPE)
-        cm%dat(ck%FI)%fname = 'basin_longwave'
+        if (len_trim(cm%dat(ck%FI)%fname) == 0) then
+            cm%dat(ck%FI)%fname = 'basin_longwave'
+        end if
         cm%dat(ck%FI)%GRD => vs%grid%flin(1:shd%NA)
         cm%dat(ck%FI)%GAT => vs%tile%flin(1:shd%lc%NML)
         cm%dat(ck%FI)%GRU => vs%gru%flin(1:shd%lc%NTYPE)
-        cm%dat(ck%RT)%fname = 'basin_rain'
+        if (len_trim(cm%dat(ck%RT)%fname) == 0) then
+            cm%dat(ck%RT)%fname = 'basin_rain'
+        end if
         cm%dat(ck%RT)%GRD => vs%grid%pre(1:shd%NA)
         cm%dat(ck%RT)%GAT => vs%tile%pre(1:shd%lc%NML)
         cm%dat(ck%RT)%GRU => vs%gru%pre(1:shd%lc%NTYPE)
         if (cm%dat(ck%RR)%factive) then
-            cm%dat(ck%RR)%fname = 'basin_liquid_precip'
+            if (len_trim(cm%dat(ck%RR)%fname) == 0) then
+                cm%dat(ck%RR)%fname = 'basin_liquid_precip'
+            end if
             cm%dat(ck%RR)%GRD => vs%grid%prern(1:shd%NA)
             cm%dat(ck%RR)%GAT => vs%tile%prern(1:shd%lc%NML)
             cm%dat(ck%RR)%GRU => vs%gru%prern(1:shd%lc%NTYPE)
         end if
         if (cm%dat(ck%SR)%factive) then
-            cm%dat(ck%SR)%fname = 'basin_solid_precip'
+            if (len_trim(cm%dat(ck%SR)%fname) == 0) then
+                cm%dat(ck%SR)%fname = 'basin_solid_precip'
+            end if
             cm%dat(ck%SR)%GRD => vs%grid%presno(1:shd%NA)
             cm%dat(ck%SR)%GAT => vs%tile%presno(1:shd%lc%NML)
             cm%dat(ck%SR)%GRU => vs%gru%presno(1:shd%lc%NTYPE)
         end if
-        cm%dat(ck%TT)%fname = 'basin_temperature'
+        if (len_trim(cm%dat(ck%TT)%fname) == 0) then
+            cm%dat(ck%TT)%fname = 'basin_temperature'
+        end if
         cm%dat(ck%TT)%GRD => vs%grid%ta(1:shd%NA)
         cm%dat(ck%TT)%GAT => vs%tile%ta(1:shd%lc%NML)
         cm%dat(ck%TT)%GRU => vs%gru%ta(1:shd%lc%NTYPE)
-        cm%dat(ck%UV)%fname = 'basin_wind'
+        if (len_trim(cm%dat(ck%UV)%fname) == 0) then
+            cm%dat(ck%UV)%fname = 'basin_wind'
+        end if
         cm%dat(ck%UV)%GRD => vs%grid%uv(1:shd%NA)
         cm%dat(ck%UV)%GAT => vs%tile%uv(1:shd%lc%NML)
         cm%dat(ck%UV)%GRU => vs%gru%uv(1:shd%lc%NTYPE)
-        cm%dat(ck%P0)%fname = 'basin_pres'
+        if (len_trim(cm%dat(ck%P0)%fname) == 0) then
+            cm%dat(ck%P0)%fname = 'basin_pres'
+        end if
         cm%dat(ck%P0)%GRD => vs%grid%pres(1:shd%NA)
         cm%dat(ck%P0)%GAT => vs%tile%pres(1:shd%lc%NML)
         cm%dat(ck%P0)%GRU => vs%gru%pres(1:shd%lc%NTYPE)
-        cm%dat(ck%HU)%fname = 'basin_humidity'
+        if (len_trim(cm%dat(ck%HU)%fname) == 0) then
+            cm%dat(ck%HU)%fname = 'basin_humidity'
+        end if
         cm%dat(ck%HU)%GRD => vs%grid%qa(1:shd%NA)
         cm%dat(ck%HU)%GAT => vs%tile%qa(1:shd%lc%NML)
         cm%dat(ck%HU)%GRU => vs%gru%qa(1:shd%lc%NTYPE)
         if (cm%dat(ck%N0)%factive) then
-            cm%dat(ck%N0)%fname = 'WR_runoff'
+            if (len_trim(cm%dat(ck%N0)%fname) == 0) then
+                cm%dat(ck%N0)%fname = 'WR_runoff'
+            end if
             cm%dat(ck%N0)%GRD => vs%grid%rff(1:shd%NA)
             cm%dat(ck%N0)%GAT => vs%tile%rff(1:shd%lc%NML)
             cm%dat(ck%N0)%GRU => vs%gru%rff(1:shd%lc%NTYPE)
         end if
         if (cm%dat(ck%O1)%factive) then
-            cm%dat(ck%O1)%fname = 'WR_recharge'
+            if (len_trim(cm%dat(ck%O1)%fname) == 0) then
+                cm%dat(ck%O1)%fname = 'WR_recharge'
+            end if
             cm%dat(ck%O1)%GRD => vs%grid%rchg(1:shd%NA)
             cm%dat(ck%O1)%GAT => vs%tile%rchg(1:shd%lc%NML)
             cm%dat(ck%O1)%GRU => vs%gru%rchg(1:shd%lc%NTYPE)
@@ -218,11 +240,11 @@ module climate_forcing
                 call print_message_detail('Simulation start date: ' // trim(line))
                 call program_abort()
             end if
-            iskip = (isteps2 - isteps1)
-            if (iskip > 0) then
-                write(line, FMT_GEN) iskip
+            cm%dat(vid)%iskip = (isteps2 - isteps1)
+            if (cm%dat(vid)%iskip > 0) then
+                write(line, FMT_GEN) cm%dat(vid)%iskip
                 call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
-                if (update_data(shd, cm, vid, iskip)) goto 999
+                if (update_data(shd, cm, vid, cm%dat(vid)%iskip)) goto 999
             end if
         end do
 
