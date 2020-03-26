@@ -206,7 +206,6 @@ module climate_forcing_io
                         !> Time.
                         !> Store the column order (used to update start position when reading).
                         cm%dat(vid)%ncol_time = d
-                        cm%dat(vid)%tid = dimids(d)
                         z = z + radix(1)**3
 
                         !> Override the length to 'nblocks' (to control the number of time-steps read).
@@ -255,6 +254,13 @@ module climate_forcing_io
 
                 !> Check the units of the time dimension.
                 !> Only dates of the Gregorian calendar type are supported.
+                ierr = nf90_inq_varid(cm%dat(vid)%fiun, cm%dat(vid)%name_time, cm%dat(vid)%tid)
+                if (ierr /= NF90_NOERR) then
+                    call print_error( &
+                        "The variable '" // trim(cm%dat(vid)%name_time) // "' cound not be found in file: " // &
+                        trim(cm%dat(vid)%fpath))
+                    call program_abort()
+                end if
                 ierr = nf90_get_att(cm%dat(vid)%fiun, cm%dat(vid)%tid, 'units', time_attribute)
                 if (ierr /= NF90_NOERR) then
                     call print_error( &
