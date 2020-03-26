@@ -6,6 +6,11 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     use model_files_variables
     use FLAGS
     use climate_forcing
+!>>nc
+#ifdef NETCDF
+    use nc_io
+#endif
+!<<nc
 
     implicit none
 
@@ -23,6 +28,16 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     real, dimension(:, :), allocatable :: grid
     character(len = DEFAULT_LINE_LENGTH) line, field
     character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
+!>>nc
+    logical :: SHDTONCFLAG = .false.
+    logical :: STOPAFTERSHDFLAG = .false.
+    real, dimension(:), allocatable :: dat1_r(:), dat2_r(:, :), dat3_r(:, :, :)
+    integer, dimension(:), allocatable :: dat2_i(:, :)
+    character(len = DEFAULT_FIELD_LENGTH), allocatable :: dat1_c(:)
+    real, parameter :: NO_DATA = -999.999
+    integer, parameter :: NO_DATA_INT = -999
+    character(len = 1), parameter :: NO_DATA_CHAR = achar(0)
+!<<nc
 
     !> SUBBASINFLAG.
     integer, dimension(:), allocatable :: SUBBASIN
@@ -64,6 +79,10 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     !> Assign default configuration
     SHDFILEFMT = 1
     SHDTOMAPFLAG = .false.
+!>>nc
+    SHDTONCFLAG = .false.
+    STOPAFTERSHDFLAG = .false.
+!<<nc
 
     !> Parse 'SHDFILEFLAG'.
     call parse(SHDFILEFLAG, ' ', args, n)
@@ -76,6 +95,14 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
                     SHDFILEFMT = 2
                 case ('to_map')
                     SHDTOMAPFLAG = .true.
+!>>nc
+                case ('to_nc')
+                    SHDTONCFLAG = .true.
+                case ('3', 'nc')
+                    SHDFILEFMT = 3
+                case ('stop_after_processing', 'stop')
+                    STOPAFTERSHDFLAG = .true.
+!<<nc
             end select
         end do
     end if
@@ -219,6 +246,144 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
             close(iun)
             deallocate(grid)
         end if
+!>>nc
+#ifdef NETCDF
+
+        !> netCDF file (conversion).
+        if (SHDTONCFLAG .and. ISHEADNODE) then
+            z = 0
+            line = 'MESH_drainage_database.nc'
+            call reset_tab()
+            call print_message('SAVING: ' // trim(line))
+            call increase_tab()
+            call nc4_open_output(line, iun, z)
+            if (z == 0) call nc4_add_proj(iun, line, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, z)
+            allocate(dat1_r(shd%xCount))
+            do n = 1, shd%xCount
+                dat1_r(n) = (shd%xOrigin + shd%xDelta*n) - shd%xDelta/2.0
+            end do
+            if (z == 0) call nc4_define_dimension(iun, line, 'lon', x, z, dim_length = size(dat1_r))
+            if (z == 0) then
+                call nc4_add_variable_n_nf90_float(iun, line, 'longitude', 'longitude', 'degrees_east', NO_DATA, dat1_r, x, n, z)
+            end if
+            deallocate(dat1_r)
+            allocate(dat1_r(shd%yCount))
+            do n = 1, shd%yCount
+                dat1_r(n) = (shd%yOrigin + shd%yDelta*n) - shd%yDelta/2.0
+            end do
+            if (z == 0) call nc4_define_dimension(iun, line, 'lat', y, z, dim_length = size(dat1_r))
+            if (z == 0) then
+                call nc4_add_variable_n_nf90_float(iun, line, 'latitude', 'latitude', 'degrees_north', NO_DATA, dat1_r, y, n, z)
+            end if
+            deallocate(dat1_r)
+            allocate(dat2_r(shd%xCount, shd%yCount), dat2_i(shd%xCount, shd%yCount))
+            if (z == 0) then
+                dat2_i = NO_DATA_INT
+                do n = 1, shd%NA
+                    dat2_i(shd%xxx(n), shd%yyy(n)) = n
+                end do
+                call nc4_add_variable_xy(iun, line, 'Rank', 'Grid order', '1', NO_DATA_INT, dat2_i, x, y, j, z)
+            end if
+            if (z == 0) then
+                dat2_i = NO_DATA_INT
+                do n = 1, shd%NA
+                    dat2_i(shd%xxx(n), shd%yyy(n)) = shd%NEXT(n)
+                end do
+                call nc4_add_variable_xy(iun, line, 'Next', 'Receiving grid', '1', NO_DATA_INT, dat2_i, x, y, j, z)
+            end if
+            if (z == 0) then
+                dat2_r = NO_DATA
+                do n = 1, shd%NA
+                    dat2_r(shd%xxx(n), shd%yyy(n)) = shd%DA(n)
+                end do
+                call nc4_add_variable_xy(iun, line, 'DA', 'Drainage area', 'km**2', NO_DATA, dat2_r, x, y, j, z)
+            end if
+            if (z == 0) then
+                dat2_r = NO_DATA
+                do n = 1, shd%NA
+                    dat2_r(shd%xxx(n), shd%yyy(n)) = shd%BNKFLL(n)
+                end do
+                call nc4_add_variable_xy(iun, line, 'Bankfull', 'Bankfull capacity', 'm**3', NO_DATA, dat2_r, x, y, j, z)
+            end if
+            if (z == 0) then
+                dat2_r = NO_DATA
+                do n = 1, shd%NA
+                    dat2_r(shd%xxx(n), shd%yyy(n)) = shd%SLOPE_CHNL(n)
+                end do
+                call nc4_add_variable_xy(iun, line, 'ChnlSlope', 'Channel slope', 'm m**-1', NO_DATA, dat2_r, x, y, j, z)
+            end if
+            if (z == 0) then
+                dat2_r = NO_DATA
+                do n = 1, shd%NA
+                    dat2_r(shd%xxx(n), shd%yyy(n)) = shd%ELEV(n)
+                end do
+                call nc4_add_variable_xy(iun, line, 'Elev', 'Mean elevation', 'm', NO_DATA, dat2_r, x, y, j, z)
+            end if
+            if (z == 0) then
+                dat2_r = NO_DATA
+                do n = 1, shd%NA
+                    dat2_r(shd%xxx(n), shd%yyy(n)) = shd%CHNL_LEN(n)
+                end do
+                call nc4_add_variable_xy(iun, line, 'ChnlLength', 'Channel length', 'm', NO_DATA, dat2_r, x, y, j, z)
+            end if
+            if (z == 0) then
+                dat2_i = NO_DATA_INT
+                do n = 1, shd%NA
+                    dat2_i(shd%xxx(n), shd%yyy(n)) = shd%IAK(n)
+                end do
+                call nc4_add_variable_xy(iun, line, 'IAK', 'River class', '1', NO_DATA_INT, dat2_i, x, y, j, z)
+            end if
+            if (z == 0) then
+                dat2_i = NO_DATA_INT
+                do n = 1, shd%NA
+                    dat2_i(shd%xxx(n), shd%yyy(n)) = shd%ICHNL(n)
+                end do
+                call nc4_add_variable_xy(iun, line, 'Chnl', 'Channel index', '1', NO_DATA_INT, dat2_i, x, y, j, z)
+            end if
+            if (z == 0) then
+                dat2_i = NO_DATA_INT
+                do n = 1, shd%NA
+                    dat2_i(shd%xxx(n), shd%yyy(n)) = shd%IREACH(n)
+                end do
+                call nc4_add_variable_xy(iun, line, 'Reach', 'Reach ID', '1', NO_DATA_INT, dat2_i, x, y, j, z)
+            end if
+            if (z == 0) then
+                dat2_r = NO_DATA
+                do n = 1, shd%NA
+                    dat2_r(shd%xxx(n), shd%yyy(n)) = shd%AREA(n)
+                end do
+                call nc4_add_variable_xy(iun, line, 'GridArea', 'Area', 'm**2', NO_DATA, dat2_r, x, y, j, z)
+            end if
+            allocate(dat3_r(shd%xCount, shd%yCount, (shd%lc%NTYPE + 1)), dat1_c(shd%lc%NTYPE + 1))
+            if (z == 0) then
+                dat1_c = NO_DATA_CHAR
+                dat3_r = NO_DATA
+                do m = 1, shd%lc%NTYPE + 1
+                    do n = 1, shd%NA
+                        dat3_r(shd%xxx(n), shd%yyy(n), m) = shd%lc%ACLASS(n, m)
+                    end do
+                    write(field, FMT_GEN) m
+                    dat1_c(m) = 'GRU' // trim(adjustl(field))
+                end do
+            end if
+            if (z == 0) call nc4_define_dimension(iun, line, 'DEFAULT_FIELD_LENGTH', l, z, dim_length = DEFAULT_FIELD_LENGTH)
+            if (z == 0) call nc4_define_dimension(iun, line, 'gru', m, z, dim_length = (shd%lc%NTYPE + 1))
+            if (z == 0) call nc4_add_variable_n(iun, line, 'gru', 'Grouped Response Unit', '1', NO_DATA_CHAR, dat1_c, l, m, j, z)
+            if (z == 0) then
+                call nc4_add_variable_xym(iun, line, 'LandClass', 'Land class fraction', '1', NO_DATA, dat3_r, x, y, m, j, z)
+            end if
+            deallocate(dat3_r, dat1_c)
+            if (z == 0) then
+                call nc4_close_file(iun, line, z)
+            end if
+            if (z /= 0) then
+                call print_error('An error occured writing the file: ' // trim(line))
+                ierr = 1
+                return
+            end if
+        end if
+#endif
+!<<nc
 
 !> *********************************************************************
 !> Open and read in values from MESH_input_drainage_database.txt file
@@ -320,6 +485,14 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
             !> Force 'RUNMODE noroute' (overrides the run option).
 !-            ro%RUNCHNL = .false.
 !-            ro%RUNGRID = .false.
+!>>nc
+#ifdef NETCDF
+
+        !> netCDF file (conversion).
+        case (3)
+            call read_shed_nc(shd, 'MESH_drainage_database.nc', ierr)
+            if (ierr /= 0) return
+#endif
 
         case default
 
@@ -467,13 +640,23 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     !> after that Diana uses RADJGRD (the value of latitude in radians) so
     !> after DEGLAT is used to calculate RADJGRD is it no longer used.  This
     !> is how it was in the original CLASS code.
-    allocate(shd%ylat(shd%NA), shd%xlng(shd%NA))
-    do i = 1, shd%NA
+    if (.not. allocated(shd%ylat)) then
+        allocate(shd%ylat(shd%NA))
+        shd%ylat = 0.0
+    end if
+    if (.not. allocated(shd%xlng)) then
+        allocate(shd%xlng(shd%NA))
+        shd%xlng = 0.0
+    end if
+!    allocate(shd%ylat(shd%NA), shd%xlng(shd%NA))
+!    do i = 1, shd%NA
         !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
         !LONGLENGTH = shd%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
-        shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
-        shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
-    end do
+!        shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
+!        shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
+!    end do
+    if (all(shd%ylat == 0.0)) shd%ylat = (shd%yOrigin + shd%yDelta*shd%yyy) - shd%yDelta/2.0
+    if (all(shd%xlng == 0.0)) shd%xlng = (shd%xOrigin + shd%xDelta*shd%xxx) - shd%xDelta/2.0
 
     !> If no sub-grid variability is active.
     if (.not. ro%RUNTILE) then
@@ -576,6 +759,13 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     call print_message('Number of land-based tiles: ' // trim(adjustl(line)))
     write(line, FMT_GEN) shd%NRVR
     call print_message('Number of river classes: ' // trim(adjustl(line)))
+!>>nc
+    if (STOPAFTERSHDFLAG) then
+        call reset_tab()
+        call print_remark('Stop requested after processing for: ' // trim(fls%fl(mfk%f20)%fn))
+        call program_end()
+    end if
+!<<nc
 
     !> Open and read in soil depths from file.
     call READ_SOIL_LEVELS(fls, shd, ierr)
