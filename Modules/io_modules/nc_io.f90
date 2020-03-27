@@ -16,7 +16,21 @@ module nc_io
     implicit none
 
     interface nc4_get_start_time
-        module procedure nc4_get_start_time_nf90_int
+        module procedure nc4_get_time_nf90_int
+    end interface
+
+    interface nc4_get_attribute
+        module procedure nc4_get_attribute_nf90_int
+        module procedure nc4_get_attribute_nf90_float
+        module procedure nc4_get_attribute_nf90_double
+        module procedure nc4_get_attribute_nf90_char
+    end interface
+
+    interface nc4_get_variable_scalar
+        module procedure nc4_get_variable_scalar_nf90_int
+        module procedure nc4_get_variable_scalar_nf90_float
+        module procedure nc4_get_variable_scalar_nf90_double
+        module procedure nc4_get_variable_scalar_nf90_char
     end interface
 
     interface nc4_get_variable_n
@@ -50,8 +64,22 @@ module nc_io
         module procedure nc4_add_time_nf90_double
     end interface
 
+    interface nc4_add_attribute
+        module procedure nc4_add_attribute_nf90_int
+        module procedure nc4_add_attribute_nf90_float
+        module procedure nc4_add_attribute_nf90_double
+        module procedure nc4_add_attribute_nf90_char
+    end interface
+
     interface nc4_add_dimension
         module procedure nc4_define_dimension
+    end interface
+
+    interface nc4_add_variable_scalar
+        module procedure nc4_add_variable_scalar_nf90_int
+        module procedure nc4_add_variable_scalar_nf90_float
+        module procedure nc4_add_variable_scalar_nf90_double
+        module procedure nc4_add_variable_scalar_nf90_char
     end interface
 
     interface nc4_add_variable_n
@@ -225,7 +253,7 @@ module nc_io
 
     end subroutine
 
-    subroutine nc4_get_start_time_nf90_int( &
+    subroutine nc4_get_time_nf90_int( &
         iun, fname, year, jday, month, day, hour, minutes, seconds, ierr, &
         time_shift, name_time)
 
@@ -247,7 +275,7 @@ module nc_io
         integer t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, dtype, vid, z
         integer(kind = FourByteInt) tt_i4(2)
         real(kind = FourByteReal) tt_r4(2)
-        real(kind = EightByteReal) tt_r8(2), t0_r8, t1_r8, t2_r8, dt_r8
+        real(kind = EightByteReal) tt_r8(2), t0_r8, t1_r8
 
         !> Initialize output variable.
         ierr = NF90_NOERR
@@ -311,22 +339,19 @@ module nc_io
         if (ierr == NF90_NOERR) then
             select case (dtype)
                 case (NF90_INT)
-                    ierr = nf90_get_var(iun, vid, tt_i4, start = (/1/), count = (/2/))
+                    ierr = nf90_get_var(iun, vid, tt_i4, start = (/1/), count = (/1/))
                     if (ierr == NF90_NOERR) then
                         t1_r8 = real(tt_i4(1), kind = EightByteReal)
-                        t2_r8 = real(tt_i4(2), kind = EightByteReal)
                     end if
                 case (NF90_FLOAT)
-                    ierr = nf90_get_var(iun, vid, tt_r4, start = (/1/), count = (/2/))
+                    ierr = nf90_get_var(iun, vid, tt_r4, start = (/1/), count = (/1/))
                     if (ierr == NF90_NOERR) then
                         t1_r8 = real(tt_r4(1), kind = EightByteReal)
-                        t2_r8 = real(tt_r4(2), kind = EightByteReal)
                     end if
                 case (NF90_DOUBLE)
-                    ierr = nf90_get_var(iun, vid, tt_r8, start = (/1/), count = (/2/))
+                    ierr = nf90_get_var(iun, vid, tt_r8, start = (/1/), count = (/1/))
                     if (ierr == NF90_NOERR) then
                         t1_r8 = tt_r8(1)
-                        t2_r8 = tt_r8(2)
                     end if
                 case default
                     ierr = NF90_EBADTYPE
@@ -341,20 +366,20 @@ module nc_io
         !> Calculate the reference date from the units of the time dimension.
         !> Only units of seconds, minutes, hours, and days are supported.
         jday = get_jday(t0_month, t0_day, t0_year)
-        t0_r8 = real(jday_to_tsteps(t0_year, jday, t0_hour, t0_mins, (60*24)) + t0_seconds/60.0/60.0/24.0, kind = 8)
+        t0_r8 = get_jdate(t0_year, jday)*24.0 + t0_hour + t0_mins/60.0 + t0_seconds/60.0/60.0
         if (present(time_shift)) then
-            dt_r8 = t0_r8 + time_shift/24.0
+            t0_r8 = t0_r8 + time_shift
         end if
         read(units_attribute, *) time_units
         select case (time_units)
             case ('seconds')
-                dt_r8 = dt_r8 + t1_r8/60.0/60.0/24.0
+                t0_r8 = t0_r8 + t1_r8/60.0/60.0
             case ('minutes')
-                dt_r8 = dt_r8 + t1_r8/60.0/24.0
+                t0_r8 = t0_r8 + t1_r8/60.0
             case ('hours')
-                dt_r8 = dt_r8 + t1_r8/24.0
+                t0_r8 = t0_r8 + t1_r8
             case ('days')
-                dt_r8 = dt_r8 + t1_r8
+                t0_r8 = t0_r8 + t1_r8*24.0
             case default
                 ierr = NF90_EINVAL
         end select
@@ -368,12 +393,188 @@ module nc_io
 
         !> Calculate the date of the first record in the file.
         !> Assumes dates increase along the time dimension.
-        year = floor(dt_r8/365.25) + 1601
-        jday = floor(dt_r8) - floor((year - 1601)*365.25)
+        year = floor(t0_r8/24.0/365.25) + 1601
+        jday = floor(t0_r8/24.0) - floor((year - 1601)*365.25)
         call Julian2MonthDay(jday, year, month, day)
-        hour = floor(dt_r8 - floor(dt_r8))*24
-        minutes = int(floor(dt_r8 - floor(dt_r8))*60.0*24.0 - hour*60.0 + 0.5)
-        seconds = 0
+        hour = floor(t0_r8) - get_jdate(year, jday)*24
+        minutes = floor((t0_r8 - floor(t0_r8))*60.0)
+        seconds = floor((t0_r8 - floor(t0_r8))*60.0*60.0 - minutes*60.0)
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_attribute_nf90_int(iun, fname, attribute_name, attribute_value, ierr, vid)
+
+        !* 'strings': lower
+        use strings, only: lowercase
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, attribute_name
+        integer, intent(in), optional :: vid
+
+        !> Output variables.
+        integer(kind = FourByteInt), intent(out) :: attribute_value
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer v
+
+        !> Initialize output variables.
+        ierr = NF90_NOERR
+
+        !> Assign the variable ID.
+        if (present(vid)) then
+            v = vid
+        else
+            v = NF90_GLOBAL
+        end if
+
+        !> Get the attribute value.
+        ierr = nf90_get_att(iun, v, attribute_name, attribute_value)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the attribute '" // trim(attribute_name) // "' in file (Code: " &
+                // trim(adjustl(code)) // "): " // trim(fname))
+            attribute_value = NF90_FILL_INT
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_attribute_nf90_float(iun, fname, attribute_name, attribute_value, ierr, vid)
+
+        !* 'strings': lower
+        use strings, only: lowercase
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, attribute_name
+        integer, intent(in), optional :: vid
+
+        !> Output variables.
+        real(kind = FourByteReal), intent(out) :: attribute_value
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer v
+
+        !> Initialize output variables.
+        ierr = NF90_NOERR
+
+        !> Assign the variable ID.
+        if (present(vid)) then
+            v = vid
+        else
+            v = NF90_GLOBAL
+        end if
+
+        !> Get the attribute value.
+        ierr = nf90_get_att(iun, v, attribute_name, attribute_value)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the attribute '" // trim(attribute_name) // "' in file (Code: " &
+                // trim(adjustl(code)) // "): " // trim(fname))
+            attribute_value = NF90_FILL_FLOAT
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_attribute_nf90_double(iun, fname, attribute_name, attribute_value, ierr, vid)
+
+        !* 'strings': lower
+        use strings, only: lowercase
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, attribute_name
+        integer, intent(in), optional :: vid
+
+        !> Output variables.
+        real(kind = EightByteReal), intent(out) :: attribute_value
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer v
+
+        !> Initialize output variables.
+        ierr = NF90_NOERR
+
+        !> Assign the variable ID.
+        if (present(vid)) then
+            v = vid
+        else
+            v = NF90_GLOBAL
+        end if
+
+        !> Get the attribute value.
+        ierr = nf90_get_att(iun, v, attribute_name, attribute_value)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the attribute '" // trim(attribute_name) // "' in file (Code: " &
+                // trim(adjustl(code)) // "): " // trim(fname))
+            attribute_value = NF90_FILL_DOUBLE
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_attribute_nf90_char(iun, fname, attribute_name, attribute_value, ierr, vid)
+
+        !* 'strings': lower
+        use strings, only: lowercase
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, attribute_name
+        integer, intent(in), optional :: vid
+
+        !> Output variables.
+        character(len = *), intent(out) :: attribute_value
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer v
+
+        !> Initialize output variables.
+        ierr = NF90_NOERR
+
+        !> Assign the variable ID.
+        if (present(vid)) then
+            v = vid
+        else
+            v = NF90_GLOBAL
+        end if
+
+        !> Get the attribute value.
+        ierr = nf90_get_att(iun, v, attribute_name, attribute_value)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the attribute '" // trim(attribute_name) // "' in file (Code: " &
+                // trim(adjustl(code)) // "): " // trim(fname))
+            attribute_value = NF90_FILL_CHAR
+        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -421,6 +622,436 @@ module nc_io
                 ierr = 1
                 return
             end if
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_variable_scalar_nf90_int(iun, fname, standard_name, dat, ierr, vid, units, fill)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name
+
+        !> Output variables.
+        integer(kind = FourByteInt), intent(out) :: dat
+        integer, intent(out) :: ierr
+
+        !> Output variables (optional).
+        integer, intent(out), optional :: vid
+        integer(kind = FourByteInt), intent(out), optional :: fill
+        character(len = DEFAULT_LINE_LENGTH), intent(out), optional :: units
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+        integer dtype, v
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Get the ID of the variable.
+        ierr = nf90_inq_varid(iun, standard_name, v)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "The variable '" // trim(standard_name) // "' cound not be found in file (Code: " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+        if (present(vid)) vid = v
+
+        !> Check the data type of the variable.
+        dtype = 0
+        ierr = nf90_inquire_variable(iun, v, xtype = dtype)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the data type of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+        else if (dtype /= NF90_INT) then
+            call print_error( &
+                "The data type of '" // trim(standard_name) // "' is different from the expected data type of 'int' " // &
+                "in file: " // trim(fname))
+            ierr = 1
+        end if
+        if (ierr /= NF90_NOERR) then
+            ierr = 1
+            return
+        end if
+
+        !> Get the units of the variable.
+        if (present(units)) then
+            ierr = nf90_get_att(iun, v, 'units', units)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the units of '" // trim(standard_name) // "' in file (Code: " // &
+                    trim(adjustl(code)) // "): " // trim(fname))
+                units = ''
+            end if
+        end if
+
+        !> Get the fill value of the variable.
+        if (present(fill)) then
+            ierr = nf90_get_att(iun, v, '_FillValue', fill)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the fill value of '" // trim(standard_name) // "' in file (Code: " &
+                    // trim(adjustl(code)) // "): " // trim(fname))
+                fill = NF90_FILL_INT
+            end if
+        end if
+
+        !> Read variable.
+        ierr = nf90_get_var(iun, v, dat)
+        if (ierr /= NF90_NOERR) then
+            call print_error("An error occurred reading '" // trim(standard_name) // "' in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_variable_scalar_nf90_float(iun, fname, standard_name, dat, ierr, vid, units, fill)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name
+
+        !> Output variables.
+        real(kind = FourByteReal), intent(out) :: dat
+        integer, intent(out) :: ierr
+
+        !> Output variables (optional).
+        integer, intent(out), optional :: vid
+        real(kind = FourByteReal), intent(out), optional :: fill
+        character(len = DEFAULT_LINE_LENGTH), intent(out), optional :: units
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+        integer dtype, v
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Get the ID of the variable.
+        ierr = nf90_inq_varid(iun, standard_name, v)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "The variable '" // trim(standard_name) // "' cound not be found in file (Code: " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+        if (present(vid)) vid = v
+
+        !> Check the data type of the variable.
+        dtype = 0
+        ierr = nf90_inquire_variable(iun, v, xtype = dtype)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the data type of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+        else if (dtype /= NF90_FLOAT) then
+            call print_error( &
+                "The data type of '" // trim(standard_name) // "' is different from the expected data type of 'float' " // &
+                "in file: " // trim(fname))
+            ierr = 1
+        end if
+        if (ierr /= NF90_NOERR) then
+            ierr = 1
+            return
+        end if
+
+        !> Get the units of the variable.
+        if (present(units)) then
+            ierr = nf90_get_att(iun, v, 'units', units)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the units of '" // trim(standard_name) // "' in file (Code: " // &
+                    trim(adjustl(code)) // "): " // trim(fname))
+                units = ''
+            end if
+        end if
+
+        !> Get the fill value of the variable.
+        if (present(fill)) then
+            ierr = nf90_get_att(iun, v, '_FillValue', fill)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the fill value of '" // trim(standard_name) // "' in file (Code: " &
+                    // trim(adjustl(code)) // "): " // trim(fname))
+                fill = NF90_FILL_FLOAT
+            end if
+        end if
+
+        !> Read variable.
+        ierr = nf90_get_var(iun, v, dat)
+        if (ierr /= NF90_NOERR) then
+            call print_error("An error occurred reading '" // trim(standard_name) // "' in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_variable_scalar_nf90_double(iun, fname, standard_name, dat, ierr, vid, units, fill)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name
+
+        !> Output variables.
+        real(kind = EightByteReal), intent(out) :: dat
+        integer, intent(out) :: ierr
+
+        !> Output variables (optional).
+        integer, intent(out), optional :: vid
+        real(kind = EightByteReal), intent(out), optional :: fill
+        character(len = DEFAULT_LINE_LENGTH), intent(out), optional :: units
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+        integer dtype, v
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Get the ID of the variable.
+        ierr = nf90_inq_varid(iun, standard_name, v)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "The variable '" // trim(standard_name) // "' cound not be found in file (Code: " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+        if (present(vid)) vid = v
+
+        !> Check the data type of the variable.
+        dtype = 0
+        ierr = nf90_inquire_variable(iun, v, xtype = dtype)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the data type of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+        else if (dtype /= NF90_DOUBLE) then
+            call print_error( &
+                "The data type of '" // trim(standard_name) // "' is different from the expected data type of 'double' " // &
+                "in file: " // trim(fname))
+            ierr = 1
+        end if
+        if (ierr /= NF90_NOERR) then
+            ierr = 1
+            return
+        end if
+
+        !> Get the units of the variable.
+        if (present(units)) then
+            ierr = nf90_get_att(iun, v, 'units', units)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the units of '" // trim(standard_name) // "' in file (Code: " // &
+                    trim(adjustl(code)) // "): " // trim(fname))
+                units = ''
+            end if
+        end if
+
+        !> Get the fill value of the variable.
+        if (present(fill)) then
+            ierr = nf90_get_att(iun, v, '_FillValue', fill)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the fill value of '" // trim(standard_name) // "' in file (Code: " &
+                    // trim(adjustl(code)) // "): " // trim(fname))
+                fill = NF90_FILL_FLOAT
+            end if
+        end if
+
+        !> Read variable.
+        ierr = nf90_get_var(iun, v, dat)
+        if (ierr /= NF90_NOERR) then
+            call print_error("An error occurred reading '" // trim(standard_name) // "' in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_variable_scalar_nf90_char(iun, fname, standard_name, dat, ierr, vid, units, fill, name_dim_char_length)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name
+
+        !> Input variables (optional).
+        character(len = *), intent(in), optional :: name_dim_char_length
+
+        !> Output variables.
+        character(len = *), intent(out) :: dat
+        integer, intent(out) :: ierr
+
+        !> Output variables (optional).
+        integer, intent(out), optional :: vid
+        character(len = 1), intent(out), optional :: fill
+        character(len = DEFAULT_LINE_LENGTH), intent(out), optional :: units
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) dname_c, field, code
+        integer, dimension(:), allocatable :: dimids
+        integer ndims, dim_len, dtype, v
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Check that the variable exists in the file.
+        ierr = nf90_inq_varid(iun, standard_name, v)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "The variable '" // trim(standard_name) // "' cound not be found in file (Code: " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+        if (present(vid)) vid = v
+
+        !> Check the data type of the variable.
+        dtype = 0
+        ierr = nf90_inquire_variable(iun, v, xtype = dtype)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the data type of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+        else if (dtype /= NF90_CHAR) then
+            call print_error( &
+                "The data type of '" // trim(standard_name) // "' is different from the expected data type of 'char' " // &
+                "in file: " // trim(fname))
+            ierr = 1
+        end if
+        if (ierr /= NF90_NOERR) then
+            ierr = 1
+            return
+        end if
+
+        !> Get the units of the variable.
+        if (present(units)) then
+            ierr = nf90_get_att(iun, v, 'units', units)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the units of '" // trim(standard_name) // "' in file (Code: " // &
+                    trim(adjustl(code)) // "): " // trim(fname))
+                units = ''
+            end if
+        end if
+
+        !> Get the fill value of the variable.
+        if (present(fill)) then
+            ierr = nf90_get_att(iun, v, '_FillValue', fill)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the fill value of '" // trim(standard_name) // "' in file (Code: " &
+                    // trim(adjustl(code)) // "): " // trim(fname))
+                fill = NF90_FILL_CHAR
+            end if
+        end if
+
+        !> Get the dimensions of the variable.
+        ndims = 0
+        ierr = nf90_inquire_variable(iun, v, ndims = ndims)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the dimensions of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+        else if (ndims /= 1 .and. ndims /= 0) then
+            write(field, FMT_GEN) ndims
+            call print_error( &
+                "The number of dimensions (" // trim(adjustl(field)) // ") is not supported for the scalar data type of '" // &
+                "char" // "' for '" // trim(standard_name) // "' in file: " // trim(fname))
+            ierr = 1
+        end if
+        if (ierr /= NF90_NOERR) then
+            ierr = 1
+            return
+        end if
+
+        !> Multi-character string.
+        if (ndims > 0) then
+
+            !> Check the dimension name.
+            if (present(name_dim_char_length)) then
+                dname_c = trim(name_dim_char_length)
+            else
+                dname_c = 'DEFAULT_FIELD_LENGTH'
+            end if
+            allocate(dimids(ndims), stat = ierr)
+            if (ierr == 0) ierr = nf90_inquire_variable(iun, v, dimids = dimids)
+            if (ierr == 0) ierr = nf90_inquire_dimension(iun, dimids(1), name = field)
+            if (ierr == NF90_NOERR) then
+                if (lowercase(field) /= lowercase(dname_c)) then
+                    call print_warning( &
+                        "The name of the dimension '" // trim(field) // "' does not match the expected name '" // trim(dname_c) // &
+                        " for '" // trim(standard_name) // "' in file: " // trim(fname))
+                end if
+            end if
+            if (ierr /= NF90_NOERR) then
+                ierr = 1
+                return
+            end if
+
+            !> Get the size of the dimension.
+            ierr = nf90_inquire_dimension(iun, dimids(1), len = dim_len)
+            if (ierr /= NF90_NOERR) then
+                call print_error( &
+                    "Unable to get the size of the dimension '" // trim(field) // "' for '" // trim(standard_name) // &
+                    "' in file (Code: " // trim(adjustl(code)) // "): " // trim(fname))
+                ierr = 1
+                return
+            end if
+
+            !> Check the string length.
+            if (len(dat) /= dim_len) then
+                write(code, FMT_GEN) len(dat)
+                write(field, FMT_GEN) dim_len
+                call print_error( &
+                    "The length of the character-string (" // trim(adjustl(field)) // ") for '" // trim(standard_name) // &
+                    "' is different from the expected length of (" // trim(adjustl(code)) // ") in file: " // trim(fname))
+                ierr = 1
+                return
+            end if
+        end if
+
+        !> Read variable.
+        if (ierr == 0) ierr = nf90_get_var(iun, v, dat)
+        if (ierr /= NF90_NOERR) then
+            call print_error("An error occurred reading '" // trim(standard_name) // "' in file: " // trim(fname))
+            ierr = 1
+            return
         end if
 
         !> Reset 'ierr.'
@@ -2880,6 +3511,178 @@ module nc_io
 
 !    end subroutine
 
+    subroutine nc4_add_attribute_nf90_int(iun, fname, attribute_name, attribute_value, ierr, vid)
+
+        !* 'strings': lower
+        use strings, only: lowercase
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, attribute_name
+        integer(kind = FourByteInt), intent(in) :: attribute_value
+        integer, intent(in), optional :: vid
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer v
+
+        !> Initialize output variables.
+        ierr = NF90_NOERR
+
+        !> Assign the variable ID.
+        if (present(vid)) then
+            v = vid
+        else
+            v = NF90_GLOBAL
+        end if
+
+        !> Get the attribute value.
+        ierr = nf90_put_att(iun, v, attribute_name, attribute_value)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred writing the attribute '" // trim(attribute_name) // "' in file (Code: " &
+                // trim(adjustl(code)) // "): " // trim(fname))
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_attribute_nf90_float(iun, fname, attribute_name, attribute_value, ierr, vid)
+
+        !* 'strings': lower
+        use strings, only: lowercase
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, attribute_name
+        real(kind = FourByteReal), intent(in) :: attribute_value
+        integer, intent(in), optional :: vid
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer v
+
+        !> Initialize output variables.
+        ierr = NF90_NOERR
+
+        !> Assign the variable ID.
+        if (present(vid)) then
+            v = vid
+        else
+            v = NF90_GLOBAL
+        end if
+
+        !> Get the attribute value.
+        ierr = nf90_put_att(iun, v, attribute_name, attribute_value)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred writing the attribute '" // trim(attribute_name) // "' in file (Code: " &
+                // trim(adjustl(code)) // "): " // trim(fname))
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_attribute_nf90_double(iun, fname, attribute_name, attribute_value, ierr, vid)
+
+        !* 'strings': lower
+        use strings, only: lowercase
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, attribute_name
+        real(kind = EightByteReal), intent(in) :: attribute_value
+        integer, intent(in), optional :: vid
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer v
+
+        !> Initialize output variables.
+        ierr = NF90_NOERR
+
+        !> Assign the variable ID.
+        if (present(vid)) then
+            v = vid
+        else
+            v = NF90_GLOBAL
+        end if
+
+        !> Get the attribute value.
+        ierr = nf90_put_att(iun, v, attribute_name, attribute_value)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred writing the attribute '" // trim(attribute_name) // "' in file (Code: " &
+                // trim(adjustl(code)) // "): " // trim(fname))
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_attribute_nf90_char(iun, fname, attribute_name, attribute_value, ierr, vid)
+
+        !* 'strings': lower
+        use strings, only: lowercase
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, attribute_name
+        character(len = *), intent(in) :: attribute_value
+        integer, intent(in), optional :: vid
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer v
+
+        !> Initialize output variables.
+        ierr = NF90_NOERR
+
+        !> Assign the variable ID.
+        if (present(vid)) then
+            v = vid
+        else
+            v = NF90_GLOBAL
+        end if
+
+        !> Get the attribute value.
+        ierr = nf90_put_att(iun, v, attribute_name, attribute_value)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred writing the attribute '" // trim(attribute_name) // "' in file (Code: " &
+                // trim(adjustl(code)) // "): " // trim(fname))
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
     subroutine nc4_set_variable_standard_name(iun, fname, vid, standard_name, long_name, units, ierr)
 
         !> Input variables.
@@ -3139,6 +3942,297 @@ module nc_io
             call print_warning( &
                 'Errors occurred setting attributes for ' // trim(standard_name) // ' in file (Code ' // trim(adjustl(code)) // &
                 '): ' // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_define_variable_scalar_nf90_int( &
+        iun, fname, standard_name, long_name, units, fill, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        integer(kind = FourByteInt), intent(in) :: fill
+
+        !> Input variables (optional).
+        integer(kind = FourByteInt), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Create variable.
+        ierr = nf90_def_var(iun, standard_name, NF90_INT, (/0/), vid)
+
+        !> Assign attributes.
+        if (ierr == NF90_NOERR) then
+            call nc4_set_variable_attributes_nf90_int( &
+                iun, fname, vid, standard_name, long_name, units, fill, ierr, &
+                constmul, constadd, constrmax, constrmin)
+            if (ierr == 0) ierr = NF90_NOERR
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_define_variable_scalar_nf90_float( &
+        iun, fname, standard_name, long_name, units, fill, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        real(kind = FourByteReal), intent(in) :: fill
+
+        !> Input variables (optional).
+        real(kind = FourByteReal), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Create variable.
+        ierr = nf90_def_var(iun, standard_name, NF90_FLOAT, (/0/), vid)
+
+        !> Assign attributes.
+        if (ierr == NF90_NOERR) then
+            call nc4_set_variable_attributes_nf90_float( &
+                iun, fname, vid, standard_name, long_name, units, fill, ierr, &
+                constmul, constadd, constrmax, constrmin)
+            if (ierr == 0) ierr = NF90_NOERR
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_define_variable_scalar_nf90_double( &
+        iun, fname, standard_name, long_name, units, fill, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        real(kind = EightByteReal), intent(in) :: fill
+
+        !> Input variables (optional).
+        real(kind = EightByteReal), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Create variable.
+        ierr = nf90_def_var(iun, standard_name, NF90_DOUBLE, (/0/), vid)
+
+        !> Assign attributes.
+        if (ierr == NF90_NOERR) then
+            call nc4_set_variable_attributes_nf90_double( &
+                iun, fname, vid, standard_name, long_name, units, fill, ierr, &
+                constmul, constadd, constrmax, constrmin)
+            if (ierr == 0) ierr = NF90_NOERR
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_define_variable_scalar_nf90_char( &
+        iun, fname, standard_name, long_name, units, fill, did_c, vid, ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, did_c
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        character(len = *), intent(in) :: fill
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Create variable.
+        ierr = nf90_def_var(iun, standard_name, NF90_CHAR, (/did_c/), vid)
+
+        !> Assign attributes.
+        if (ierr == NF90_NOERR) then
+            call nc4_set_variable_attributes_nf90_char( &
+                iun, fname, vid, standard_name, long_name, units, fill, ierr)
+            if (ierr == 0) ierr = NF90_NOERR
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_variable_scalar_nf90_int( &
+        iun, fname, standard_name, long_name, units, fill, dat, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        integer(kind = FourByteInt), intent(in) :: dat, fill
+
+        !> Input variables (optional).
+        integer(kind = FourByteInt), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Define variable.
+        call nc4_define_variable_scalar_nf90_int(iun, fname, standard_name, long_name, units, fill, vid, ierr)
+        if (ierr == 0) ierr = NF90_NOERR
+
+        !> Write data.
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, dat)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "Errors occurred writing data for '" // trim(standard_name) // "' in file (Code " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_variable_scalar_nf90_float( &
+        iun, fname, standard_name, long_name, units, fill, dat, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        real(kind = FourByteReal), intent(in) :: dat, fill
+
+        !> Input variables (optional).
+        real(kind = FourByteReal), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Define variable.
+        call nc4_define_variable_scalar_nf90_float(iun, fname, standard_name, long_name, units, fill, vid, ierr)
+        if (ierr == 0) ierr = NF90_NOERR
+
+        !> Write data.
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, dat)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "Errors occurred writing data for '" // trim(standard_name) // "' in file (Code " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_variable_scalar_nf90_double( &
+        iun, fname, standard_name, long_name, units, fill, dat, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        real(kind = EightByteReal), intent(in) :: dat, fill
+
+        !> Input variables (optional).
+        real(kind = EightByteReal), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Define variable.
+        call nc4_define_variable_scalar_nf90_double(iun, fname, standard_name, long_name, units, fill, vid, ierr)
+        if (ierr == 0) ierr = NF90_NOERR
+
+        !> Write data.
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, dat)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "Errors occurred writing data for '" // trim(standard_name) // "' in file (Code " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_variable_scalar_nf90_char( &
+        iun, fname, standard_name, long_name, units, fill, dat, did_c, vid, ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, did_c
+        character(len = *), intent(in) :: fname, standard_name, long_name, units, dat
+        character(len = 1), intent(in) :: fill
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Define variable.
+        call nc4_define_variable_scalar_nf90_char(iun, fname, standard_name, long_name, units, fill, did_c, vid, ierr)
+        if (ierr == 0) ierr = NF90_NOERR
+
+        !> Write data.
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, dat)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "Errors occurred writing data for '" // trim(standard_name) // "' in file (Code " // trim(adjustl(code)) // &
+                "): " // trim(fname))
             ierr = 1
             return
         end if

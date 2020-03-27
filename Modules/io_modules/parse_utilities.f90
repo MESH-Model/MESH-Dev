@@ -119,8 +119,10 @@ module parse_utilities
 
         !> strings: For 'compact', 'parse' and 'value' functions.
         !> print_routines: For 'DEFAULT_LINE_LENGTH' and 'DEFAULT_FIELD_LENGTH' constants.
+        !> module_dates: For 'get_jday' and 'get_jdate' functions.
         use strings
         use print_routines
+        use model_dates
 
         !> Input variables.
         character(len = *), intent(in) :: datetime
@@ -129,13 +131,14 @@ module parse_utilities
         integer, intent(out) :: year, month, day, hour, minutes, seconds, ierr
 
         !> Local variables.
-        integer nargs, n, i, z
+        integer nargs, j, h, m, n, i, z
+        real(kind = 8) dt
         character(len = DEFAULT_FIELD_LENGTH), dimension(DEFAULT_LINE_LENGTH/DEFAULT_FIELD_LENGTH) :: args
         character(len = DEFAULT_LINE_LENGTH) line
         character(len = DEFAULT_FIELD_LENGTH) ctmp
 
         !> Initially set the values to zero.
-        year = 0; month = 0; day = 0; hour = 0; minutes = 0
+        year = 0; month = 0; day = 0; hour = 0; minutes = 0; seconds = 0
 
         !> Initialize the return status.
         ierr = 0
@@ -175,9 +178,47 @@ module parse_utilities
             z = 0
             if (index(ctmp, ':') > 1) then
                 call value(ctmp(1:(index(ctmp, ':') - 1)), hour, z)
-                if (z == 0 .and. index(ctmp, ':') /= index(ctmp, ':', back = .true.)) then
-                    call value(ctmp((index(ctmp, ':') + 1):(index(ctmp, ':', back = .true.) - 1)), minutes, z)
+                if (index(ctmp, ':') /= index(ctmp, ':', back = .true.)) then
+                    if (z == 0) call value(ctmp((index(ctmp, ':') + 1):(index(ctmp, ':', back = .true.) - 1)), minutes, z)
                     if (z == 0) call value(ctmp((index(ctmp, ':', back = .true.) + 1):len(ctmp)), seconds, z)
+                else
+                    if (z == 0) call value(ctmp((index(ctmp, ':') + 1):len(ctmp)), minutes, z)
+                end if
+
+                !> Check for time-zone signature (e.g., -6, -06, -530, -0530, -6:00, -06:00).
+                if ((n + 1) <= nargs) then
+                    ctmp = adjustl(args(n + 1))
+                    h = 0
+                    m = 0
+                    if (index(ctmp, ':') > 1) then
+
+                        !> Format contains ':'.
+                        if (z == 0) call value(ctmp(1:(index(ctmp, ':') - 1)), h, z)
+                        if (z == 0) call value(ctmp((index(ctmp, ':') + 1):len(ctmp)), m, z)
+                    else
+                        if (z == 0) call value(ctmp, h, z)
+                        if (z == 0) then
+
+                            !> Format is '-530' or '-0530' (or format is '-6' or '-06' and value is used as-is).
+                            if (abs(h) > 99) then
+                                m = h - floor(h/100.0)*100
+                                h = floor(h/100.0)
+                            end if
+                        end if
+                    end if
+
+                    !> Calculate the adjustment using 'h' and 'm' to convert to UTC+00.
+                    if (z == 0) then
+                        j = get_jday(month, day, year)
+                        dt = get_jdate(year, j)*24.0 + hour + minutes/60.0 + seconds/60.0/60.0
+                        dt = dt - (h + m/60.0)
+                        year = floor(dt/24.0/365.25) + 1601
+                        j = floor(dt/24.0) - floor((year - 1601)*365.25)
+                        call Julian2MonthDay(j, year, month, day)
+                        hour = floor(dt) - get_jdate(year, j)*24
+                        minutes = floor((dt - floor(dt))*60.0)
+                        seconds = floor((dt - floor(dt))*60.0*60.0 - minutes*60.0)
+                    end if
                 end if
             end if
             if (z /= 0) then
