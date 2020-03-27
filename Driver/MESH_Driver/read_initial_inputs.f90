@@ -38,6 +38,9 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     integer, parameter :: NO_DATA_INT = -999
     character(len = 1), parameter :: NO_DATA_CHAR = achar(0)
 !<<nc
+!>>fews
+    logical ltest
+!<<fews
 
     !> SUBBASINFLAG.
     integer, dimension(:), allocatable :: SUBBASIN
@@ -812,6 +815,14 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         ic%start%jday = cm%start_date%jday
         ic%start%hour = cm%start_date%hour
         ic%start%mins = cm%start_date%mins
+    end if
+
+    !> Read 'FEWS' configuration file if one exists.
+    inquire(file = 'runinfo.nc', exist = ltest)
+    if (ltest) then
+        call reset_tab()
+        call print_remark("A 'FEWS' configuration file 'runinfo.nc' exists and will override user-provided configuration.")
+        call read_fews_runinfo_nc('runinfo.nc', ierr)
     end if
 
     !> Initialize the current time-step.
