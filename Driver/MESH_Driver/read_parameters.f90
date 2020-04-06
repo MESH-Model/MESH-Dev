@@ -187,6 +187,8 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**1
             case ('csv')
                 INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**2
+            case ('txt')
+                INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**3
         end select
     end do
 
@@ -209,6 +211,12 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> Read from the 'csv' file.
     if (btest(INPUTPARAMSFORMFLAG, 2)) then
         call read_parameters_csv(shd, 100, 'MESH_parameters.csv', ierr)
+        if (ierr /= 0) return
+    end if
+
+    !> Read from the 'txt' file.
+    if (btest(INPUTPARAMSFORMFLAG, 3)) then
+        call read_parameters_csv(shd, 100, 'MESH_parameters.txt', ierr)
         if (ierr /= 0) return
     end if
 
