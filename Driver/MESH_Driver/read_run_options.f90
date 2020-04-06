@@ -33,6 +33,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 
     !> Local variables.
     integer CONFLAGS, IROVAL, iun, nargs, n, j, i, z
+    real IROVALR
     character(len = DEFAULT_LINE_LENGTH) line
     character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
 
@@ -315,48 +316,267 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                 case ('BASINFORCINGFLAG')
                     do j = 2, nargs
                         select case (lowercase(args(j)))
+
+                            !> ASCII R2C format.
+                            case ('r2c')
+
+                                !> Assign the format to all variables.
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%ffmt = 1
+                                end do
+
+                            !> CSV format.
+                            case ('csv')
+
+                                !> Assign the format to all variables.
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%ffmt = 2
+                                end do
+
+                            !> Binary sequential format.
+                            case ('seq')
+
+                                !> Assign the format to all variables.
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%ffmt = 3
+                                end do
+
+                            !> CLASS 'MET' file.
                             case ('met')
 
-                                !> Assign attributes for the 7 variables.
-                                !> To override these, respective 'BASIN' flags should list after 'BASINFORCINGFLAG'.
-                                cm%dat(ck%FB)%factive = .true.
-                                cm%dat(ck%FB)%id_var = 'FB'
-                                cm%dat(ck%FB)%ffmt = 6
-                                cm%dat(ck%FI)%factive = .true.
-                                cm%dat(ck%FI)%id_var = 'FI'
-                                cm%dat(ck%FI)%ffmt = 6
-                                cm%dat(ck%RT)%factive = .true.
-                                cm%dat(ck%RT)%id_var = 'RT'
-                                cm%dat(ck%RT)%ffmt = 6
-                                cm%dat(ck%TT)%factive = .true.
-                                cm%dat(ck%TT)%id_var = 'TT'
-                                cm%dat(ck%TT)%ffmt = 6
-                                cm%dat(ck%UV)%factive = .true.
-                                cm%dat(ck%UV)%id_var = 'UV'
-                                cm%dat(ck%UV)%ffmt = 6
-                                cm%dat(ck%P0)%factive = .true.
-                                cm%dat(ck%P0)%id_var = 'P0'
-                                cm%dat(ck%P0)%ffmt = 6
-                                cm%dat(ck%HU)%factive = .true.
-                                cm%dat(ck%HU)%id_var = 'HU'
-                                cm%dat(ck%HU)%ffmt = 6
-
-                                !> Activate the 'met' file.
-                                cm%dat(ck%MET)%ffmt = 6
+                                !> Activate the 'MET' format file.
                                 cm%dat(ck%MET)%id_var = 'CLASSMET'
                                 cm%dat(ck%MET)%factive = .true.
+
+                                !> Assign the format to all variables.
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%ffmt = 6
+                                end do
+
+                            !> netCDF format.
+                            case ('nc')
+
+                                !> Assign the format to all variables.
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%ffmt = 7
+                                end do
+
+                            !> Separate liquid/solid precipitation fields.
                             case ('rr_sr')
                                 cm%dat(ck%RR)%factive = .true.
                                 cm%dat(ck%RR)%id_var = 'RR'
-                                cm%dat(ck%RR)%ffmt = 6
                                 cm%dat(ck%SR)%factive = .true.
                                 cm%dat(ck%SR)%id_var = 'SR'
-                                cm%dat(ck%SR)%ffmt = 6
-                                cm%dat(ck%MET)%ffmt = 6
-                                cm%dat(ck%MET)%id_var = 'CLASSMET'
-                                cm%dat(ck%MET)%factive = .true.
+
+                            !> Deactivate climate variables.
+                            case ('no_clim')
+                                if (.not. cm%dat(ck%MET)%factive) then
+                                    cm%dat(ck%FB)%ffmt = -1
+                                    cm%dat(ck%FI)%ffmt = -1
+                                    cm%dat(ck%RT)%ffmt = -1
+                                    cm%dat(ck%TT)%ffmt = -1
+                                    cm%dat(ck%UV)%ffmt = -1
+                                    cm%dat(ck%P0)%ffmt = -1
+                                    cm%dat(ck%HU)%ffmt = -1
+                                end if
                         end select
+                        if (len_trim(args(j)) > 3) then
+
+                            !> Frame length/file time-stepping.
+                            if (args(j)(1:3) == 'hf=') then
+                                call value(args(j)(4:), IROVAL, z)
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%hf = IROVAL
+                                end do
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 11) then
+
+                            !> First date of record.
+                            if (args(j)(1:11) == 'start_date=') then
+                                if (len_trim(args(j)) >= 15) then
+                                    call value(args(j)(12:15), cm%start_date%year, z)
+                                    if (z == 0) then
+                                        if (len_trim(args(j)) >= 17) then
+                                            call value(args(j)(16:17), cm%start_date%month, z)
+                                            if (z == 0) then
+                                                if (len_trim(args(j)) >= 19) then
+                                                    call value(args(j)(18:19), cm%start_date%day, z)
+                                                    if (z == 0) then
+                                                        if (len_trim(args(j)) >= 21) then
+                                                            call value(args(j)(20:21), cm%start_date%hour, z)
+                                                            if (z == 0) then
+                                                                if (len_trim(args(j)) >= 23) then
+                                                                    call value(args(j)(22:23), cm%start_date%mins, z)
+                                                                else
+                                                                    cm%start_date%mins = 0
+                                                                end if
+                                                            end if
+                                                        else
+                                                            cm%start_date%hour = 0
+                                                        end if
+                                                    end if
+                                                else
+                                                    cm%start_date%day = 1
+                                                end if
+                                                cm%start_date%jday = get_jday( &
+                                                    cm%start_date%month, cm%start_date%day, cm%start_date%year)
+                                            end if
+                                        else
+                                            cm%start_date%month = 1
+                                        end if
+                                    end if
+                                end if
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 4) then
+
+                            !> Number of frames to read in to memory.
+                            if (args(j)(1:4) == 'nts=') then
+                                call value(args(j)(5:), IROVAL, z)
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%nblocks = IROVAL
+                                end do
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+
+                            !> Base file name (without extension).
+                            if (args(j)(1:6) == 'fname=') then
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%fname = adjustl(args(j)(7:))
+                                end do
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 6) then
+
+                            !> Full path including file name and extension.
+                            if (args(j)(1:6) == 'fpath=') then
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%fpath = adjustl(args(j)(7:))
+                                end do
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+
+                            !> Variable name.
+                            if (args(j)(1:9) == 'name_var=') then
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%id_var = adjustl(args(j)(10:))
+                                end do
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+
+                            !> Name of latitude dimension (for specific formats).
+                            if (args(j)(1:9) == 'name_lat=') then
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%name_lat = adjustl(args(j)(10:))
+                                end do
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 9) then
+
+                            !> Name of longitude dimension (for specific formats).
+                            if (args(j)(1:9) == 'name_lon=') then
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%name_lon = adjustl(args(j)(10:))
+                                end do
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 10) then
+
+                            !> Name of time dimension (for specific formats).
+                            if (args(j)(1:10) == 'name_time=') then
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%name_time = adjustl(args(j)(11:))
+                                end do
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+
+                            !> Data multiplier.
+                            if (args(j)(1:3) == 'cm=') then
+                                call value(args(j)(4:), IROVALR, z)
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%cm = IROVALR
+                                end do
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 3) then
+
+                            !> Data additive factor.
+                            if (args(j)(1:3) == 'ca=') then
+                                call value(args(j)(4:), IROVALR, z)
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%ca = IROVALR
+                                end do
+                            end if
+                        end if
+                        if (len_trim(args(j)) > 11) then
+
+                            !> Time shift to apply to time-stamps (for specific formats).
+                            if (args(j)(1:11) == 'time_shift=') then
+                                call value(args(j)(12:), IROVAL, z)
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%time_shift = IROVAL
+                                end do
+                            end if
+                        end if
                     end do
+
+                    !> Activate climate variables if a file format has been specified.
+                    !> Deactivate climate variables if a file format was nullified via the 'no_clim' option.
+                    !> To override this behaviour, respective 'BASIN' flags should list after 'BASINFORCINGFLAG'.
+                    n = ck%FB
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = 'FB'
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%FI
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = 'FI'
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%RT
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = 'RT'
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%TT
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = 'TT'
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%UV
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = 'UV'
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%P0
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = 'P0'
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%HU
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = 'HU'
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
                 case ('BASINSHORTWAVEFLAG')
                     n = ck%FB
                     call value(args(2), cm%dat(ck%FB)%ffmt, z)
