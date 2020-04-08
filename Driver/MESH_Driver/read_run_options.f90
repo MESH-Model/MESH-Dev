@@ -1262,7 +1262,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
         call print_screen('REMARK: The number of folders for CLASS output is greater than ten and will impact performance.')
     end if
     read (iun, *, err = 98)
-    if (WF_NUM_POINTS > 0 .and. RUNCLASS36_flgs%PROCESS_ACTIVE) then
+    if (WF_NUM_POINTS > 0) then
         allocate(op%DIR_OUT(WF_NUM_POINTS), op%N_OUT(WF_NUM_POINTS), &
                  op%II_OUT(WF_NUM_POINTS), op%K_OUT(WF_NUM_POINTS), stat = ierr)
 

@@ -13,6 +13,10 @@ module runsvs_mesh
     use svs_configs
     use sfc_options
 
+    !> To re-use 'op' variable.
+!todo: Replace with a generic structure to remove dependency between sub-models.
+    use RUNCLASS36_save_output, only: WF_NUM_POINTS, op
+
     implicit none
 
 !    integer, parameter :: fid_ini = 50
@@ -163,9 +167,10 @@ module runsvs_mesh
 !#include "surfcon.cdk"
 #include "thermoconsts.inc"
 
-        integer k, ki, kj, j, jj, m
+        integer iun, k, ki, kj, j, jj, m, i, z
         real tempz0(svs_mesh%c%NLANDCLASS), sumfcanz0
         character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) level
 
         integer, external :: newdate
 !        external incdatr
@@ -582,6 +587,127 @@ module runsvs_mesh
 !        end if
 
 !1010    format(9999(g15.7e2, ','))
+
+        !> Diagnostic point outputs (if active).
+        if (ISHEADNODE .and. WF_NUM_POINTS > 0) then
+
+            !> Print summary.
+            call reset_tab()
+            call print_message('')
+            call print_message('Found these locations for diagnostic outputs:')
+            write(line, FMT_GEN) 'Folder', 'Grid No.', 'GRU'
+            call print_message_detail(line)
+            do i = 1, WF_NUM_POINTS
+                write(line, FMT_GEN) op%DIR_OUT(i), op%N_OUT(i), op%II_OUT(i)
+                call print_message_detail(line)
+            end do
+
+            !> Sanity checks.
+            do i = 1, WF_NUM_POINTS
+                if (i < WF_NUM_POINTS) then
+
+                    !> Check for repeated points.
+                    do j = i + 1, WF_NUM_POINTS
+                        if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
+                            write(line, "('Grid ', i5, ', GRU ', i4)") op%N_OUT(i), op%II_OUT(i)
+                            call print_error('Output is repeated for ' // trim(adjustl(line)))
+                            call program_abort()
+                        end if
+                    end do
+                else
+
+                    !> Check that the output path exists.
+                    write(line, FMT_GEN) ipid
+                    z = 0
+                    open( &
+                        100, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/tmp' // trim(adjustl(line)), status = 'unknown', &
+                        iostat = z)
+                    if (z /= 0) then
+                        write(line, FMT_GEN) i
+                        call print_error('The output folder for point ' // trim(adjustl(line)) // ' does not exist.')
+                        call print_message('Location: ' // trim(adjustl(op%DIR_OUT(i))), PAD_3)
+                        call program_abort()
+                    else
+                        close(100, status = 'delete')
+                    end if
+                end if
+
+                !> Check that point lies inside the basin.
+                if (op%N_OUT(i) > shd%NAA) then
+                    write(line, FMT_GEN) i
+                    call print_error('Output point ' // trim(adjustl(line)) // ' is outside the basin.')
+                    write(line, FMT_GEN) shd%NAA
+                    call print_message('Number of grids inside the basin: ' // trim(adjustl(line)), PAD_3)
+                    call program_abort()
+                end if
+            end do
+
+            !> Find the NML index that corresponds to the location.
+            op%K_OUT = 0
+            do k = il1, il2
+                do i = 1, WF_NUM_POINTS
+                    if (op%N_OUT(i) == shd%lc%ILMOS(k) .and. op%II_OUT(i) == shd%lc%JLMOS(k)) op%K_OUT(i) = k
+                end do
+            end do
+
+            !> Open the files if the GAT-index of the output point resides on this node.
+            do i = 1, WF_NUM_POINTS
+                if ((ipid /= 0 .or. izero == 0) .and. (op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2)) then
+
+                    !> Open output files and write header.
+                    iun = 150 + i*10
+
+                    !> 'ts' output file.
+                    iun = iun + 1
+                    open(iun, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/svs_output_ts.csv')
+                    write(iun, FMT_CSV, advance = 'no') &
+                        'YEAR', 'JDAY', 'HOUR', 'MINS', &
+                        'RAINRATE', 'SNOWRATE', 'FLUSOLIS', 'FDSI', 'TMOINS', 'HUMOINS', &
+                        'UMOINS', 'VMOINS', 'PMOINS', &
+                        'FC', 'FL', 'FTEMP', 'FV', 'FVAP', 'HFLUXSA', &
+                        'HFLUXSV', 'LEG', 'LER', 'LES', 'LESV', 'LETR', &
+                        'LEV', 'MELTS', 'MELTSR', 'RNET_S', 'RNETSA', 'RNETSV', &
+                        'RSNOWSA', 'RSNOWSV', &
+                        VN_SVS_SNOAL, VN_SVS_SNODEN, VN_SVS_SNODPL, 'SNOMA', 'SNORO', &
+                        VN_SVS_SNVAL, VN_SVS_SNVDEN, VN_SVS_SNVDP, 'SNVMA', 'SNVRO', &
+                        'TDIAG'
+                    do j = 1, svs_mesh%vs%kthermal
+                        write(level, FMT_GEN) j
+                        write(iun, FMT_CSV, advance = 'no') &
+                            trim(VN_SVS_TGROUND) // trim(adjustl(level))
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        'THETAA', 'TSA'
+                    do j = 0, 1
+                        write(level, FMT_GEN) j
+                        write(iun, FMT_CSV, advance = 'no') &
+                            trim(VN_SVS_TSNOW) // trim(adjustl(level)), &
+                            trim(VN_SVS_TSNOWVEG) // trim(adjustl(level))
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        VN_SVS_WSNOW, VN_SVS_WSNV
+                    do j = 0, 1
+                        write(level, FMT_GEN) j
+                        write(iun, FMT_CSV, advance = 'no') &
+                            trim(VN_SVS_TVEGE) // trim(adjustl(level))
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        VN_SVS_WVEG, &
+                        'WWILT', 'ALVIS', 'ALVH', 'ALVL', 'ALGR', &
+                        'PSNGRVL', 'PSNVH', 'PSNVHA'
+                    do j = 1, svs_mesh%vs%khyd
+                        write(level, FMT_GEN) j
+                        write(iun, FMT_CSV, advance = 'no') &
+                            trim(VN_SVS_ISOIL) // trim(adjustl(level)), &
+                            trim(VN_SVS_WSOIL) // trim(adjustl(level)), &
+                            'LATFLW' // trim(adjustl(level))
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        'WATFLOW', 'DRAINAF'
+                    write(iun, *)
+                end if
+            end do
+        end if
 !<<<svs_output
 
     end subroutine
@@ -609,7 +735,7 @@ module runsvs_mesh
         integer datecmc_v, date_v, hour_v, istat, kount, bidon
         real(kind = 8) kdt
 
-        integer k, ki, kj, j
+        integer iun, k, ki, kj, j, i
         real FRAC
 
         integer, external :: newdate
@@ -781,6 +907,66 @@ module runsvs_mesh
 !        end if
 
 !1010    format(9999(g15.7e2, ','))
+
+        !> Diagnostic point outputs (if active).
+        if (ISHEADNODE .and. WF_NUM_POINTS > 0) then
+
+            !> Write to files if the GAT-index of the output point resides on this node.
+            do i = 1, WF_NUM_POINTS
+                if ((ipid /= 0 .or. izero == 0) .and. (op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2)) then
+
+                    !> Grab the identity of the tile (offset relative to node-indexing).
+                    k = op%K_OUT(i) - il1
+
+                    !> Write data.
+                    iun = 150 + i*10
+
+                    !> 'ts' output file.
+                    iun = iun + 1
+                    write(iun, FMT_CSV, advance = 'no') &
+                        ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
+                        bus(rainrate + k), bus(snowrate + k), bus(flusolis + k), bus(fdsi + k), bus(tmoins + k), bus(humoins + k), &
+                        bus(umoins + k), bus(vmoins + k), bus(pmoins + k), &
+                        bus(fc + k), bus(fl + k), bus(ftemp + k), bus(fv + k), bus(fvap + k), bus(hfluxsa + k), &
+                        bus(hfluxsv + k), bus(leg + k), bus(ler + k), bus(les + k), bus(lesv + k), bus(letr + k), &
+                        bus(lev + k), bus(melts + k), bus(meltsr + k), bus(rnet_s + k), bus(rnetsa + k), bus(rnetsv + k), &
+                        bus(rsnowsa + k), bus(rsnowsv + k), &
+                        bus(snoal + k), bus(snoden + k), bus(snodpl + k), bus(snoma + k), bus(snoro + k), &
+                        bus(snval + k), bus(snvden + k), bus(snvdp + k), bus(snvma + k), bus(snvro + k), &
+                        bus(tdiag + k)
+                    do j = 1, svs_mesh%vs%kthermal
+                        write(iun, FMT_CSV, advance = 'no') &
+                            bus(tground + (j - 1)*NG + k)
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        bus(thetaa + k), bus(tsa + k)
+                    do j = 0, 1
+                        write(iun, FMT_CSV, advance = 'no') &
+                            bus(tsnow + j*NG + k), &
+                            bus(tsnowveg + j*NG + k)
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        bus(wsnow + k), bus(wsnv + k)
+                    do j = 0, 1
+                        write(iun, FMT_CSV, advance = 'no') &
+                            bus(tvege + j*NG + k)
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        bus(wveg + k), &
+                        bus(wwilt + k), bus(alvis + k), bus(alvh + k), bus(alvl + k), bus(algr + k), &
+                        bus(psngrvl + k), bus(psnvh + k), bus(psnvha + k)
+                    do j = 1, svs_mesh%vs%khyd
+                        write(iun, FMT_CSV, advance = 'no') &
+                            bus(isoil + (j - 1)*NG + k), &
+                            bus(wsoil + (j - 1)*NG + k), &
+                            bus(latflw + (j - 1)*NG + k)
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        bus(watflow + KHYD*NG + k), bus(drainaf + k)
+                    write(iun, *)
+                end if
+            end do
+        end if
 !<<<svs_output
 
     end subroutine
