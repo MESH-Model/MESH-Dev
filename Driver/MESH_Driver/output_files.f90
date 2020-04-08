@@ -84,6 +84,7 @@ module output_files
     type output_file
         integer :: iun = -1
         character(len = DEFAULT_LINE_LENGTH) :: fname = ''
+        integer :: nid = -1
         integer :: vid = -1
         integer :: tid = -1
         real, dimension(:), pointer :: src => null()
@@ -135,12 +136,15 @@ module output_files
         character(len = DEFAULT_FIELD_LENGTH) :: delim = ''
         character(len = DEFAULT_FIELD_LENGTH) :: order = 'unknown'
         character(len = DEFAULT_FIELD_LENGTH) :: gru_mask = ''
+        integer :: pts_length = 0
+        integer :: pts_aggregator = 0
+        integer :: pts_counter = 0
         logical :: in_mem = .false.
         logical :: apply_frac = .false.
         logical :: print_date = .true.
         integer, dimension(:), allocatable :: tsi, tsk
         integer, dimension(:), allocatable :: gru
-        type(output_group) y, m, s, d, h
+        type(output_group) y, m, s, d, h, pts
     end type
 
     !> Description:
@@ -150,7 +154,7 @@ module output_files
     !*  y, m, d, h: Dates (1: Index; 2: Time-series index).
     !*  iter_s: Numbers of iterations passed for seasonal output.
     type output_dates
-        integer, dimension(:, :), allocatable :: y, m, s, d, h
+        integer, dimension(:, :), allocatable :: y, m, s, d, h, pts
         integer iter_s(12)
     end type
 
@@ -1016,7 +1020,7 @@ module output_files
         do t = 1, size(dat, 2)
 
             !> Transfer data to temporary variable.
-            r2c_grid = 0.0
+            r2c_grid = out%NO_DATA
             do i = 1, shd%NA
                 r2c_grid(shd%yyy(i), shd%xxx(i)) = dat(i, t)
             end do
@@ -1138,7 +1142,7 @@ module output_files
                 case ('shedorder')
 
                     !> Transfer data to temporary array.
-                    dat_grid = 0.0
+                    dat_grid = out%NO_DATA
                     do i = 1, shd%NA
                         dat_grid((shd%yyy(i) - 1)*shd%yCount + shd%xxx(i)) = dat(i, t)
                     end do
@@ -1191,7 +1195,7 @@ module output_files
 
             !> Allocate 'dat' and assign 'src'.
             allocate(group%grid%dat(shd%NA, t))
-            group%grid%dat = 0.0
+            group%grid%dat = out%NO_DATA
             if (field%ilvl > 0) then
                 call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src, field%ilvl)
             else
@@ -1316,7 +1320,7 @@ module output_files
                 if (.not. lopen) then
                     call nc4_add_vname( &
                         shd, field%vname, '', '', field%ffreq, ic%start%year, out%NO_DATA, trim(fname) // '_GRD.nc', &
-                        group%grid%iun, group%grid%tid, group%grid%vid, &
+                        group%grid%nid, group%grid%tid, group%grid%vid, &
                         ierr = z)
                     if (z /= 0) then
                         call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '_GRD.nc')
@@ -1327,7 +1331,6 @@ module output_files
                         'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_GRD.nc')
                     z = 1
                 end if
-                iun = iun + 1
             end if
 #endif
             if (z /= 0) ierr = z
@@ -1343,7 +1346,7 @@ module output_files
 
             !> Allocate 'dat' and assign 'src'.
             allocate(group%tile%dat(shd%lc%NML, t))
-            group%tile%dat = 0.0
+            group%tile%dat = out%NO_DATA
             if (field%ilvl > 0) then
                 call output_variables_activate_pntr(out_group%tile, field%vname, group%tile%src, field%ilvl)
             else
@@ -1384,6 +1387,9 @@ module output_files
 
     subroutine output_files_allocate_field(fls, shd, ts, field, ierr)
 
+        !> 'strings': For 'uppercase' function.
+        use strings
+
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
@@ -1398,6 +1404,7 @@ module output_files
         !> Local variables.
         integer t, z
         character(len = DEFAULT_LINE_LENGTH) fname
+        character(len = DEFAULT_FIELD_LENGTH) label
 
         !> Set 't = 1' for the case when 'in_mem' is not active.
         t = 1
@@ -1405,7 +1412,7 @@ module output_files
         !> Create base file name for field.
         fname = trim(fls%GENDIR_OUT) // '/' // trim(field%vname)
 
-        !> Allocate data fields.
+        !> Allocate data fields to existing output variable frequencies.
         ierr = 0
         if (btest(field%ffreq, fls_out%ffreq%yly)) then
             if (field%in_mem) t = ts%nyears
@@ -1429,6 +1436,14 @@ module output_files
             if (field%in_mem) t = ts%nr_days*24
             field%h%fname = trim(fname) // '_H'
             call output_files_allocate_group(fls, shd, out%h, field, field%h, t, z)
+            if (z /= 0) ierr = z
+        end if
+
+        !> Per 'n' time-steps (user-defined).
+        if (btest(field%ffreq, fls_out%ffreq%pts)) then
+            write(label, FMT_GEN) field%pts_length
+            field%pts%fname = trim(fname) // '_PTS-' // trim(adjustl(label)) // 'M_' // trim(uppercase(field%fn))
+            call output_files_allocate_group(fls, shd, out%ts, field, field%pts, t, z)
             if (z /= 0) ierr = z
         end if
 
@@ -1525,7 +1540,7 @@ module output_files
         integer, intent(out) :: ierr
 
         !> Local variables.
-        integer n, j, i
+        integer n, j, i, z
         character(len = DEFAULT_FIELD_LENGTH) str
 
         !> Mark the field as active and assign default attributes.
@@ -1535,177 +1550,188 @@ module output_files
 
         !> Condition output based on 'args' flags.
         ierr = 0
+        z = 0
         do i = 2, nargs
+
+            !> Skip numeric options for arguments.
             if (.not. is_letter(args(i))) cycle
 
             !> Parse options.
             str = lowercase(args(i))
-            select case (str)
 
-                !> File output frequencies.
-                case ('y')
+            !> Multi-word options.
+            if (str(1:4) == 'pts=') then
+
+                !> Per 'n' time-steps (user-defined in minutes).
+                call value(str(5:), field%pts_length, z)
+                if (z == 0 .and. .not. btest(field%ffreq, fls_out%ffreq%pts)) then
+                    field%ffreq = field%ffreq + radix(fls_out%ffreq%pts)**fls_out%ffreq%pts
+                end if
+            else
+
+                !> Single-word options.
+                select case (str)
+
+                    !> File output frequencies.
+                    case ('y')
                     if (.not. btest(field%ffreq, fls_out%ffreq%yly)) then
                         field%ffreq = field%ffreq + radix(fls_out%ffreq%yly)**fls_out%ffreq%yly
-                    end if
-                case ('m')
+                        end if
+                    case ('m')
                     if (.not. btest(field%ffreq, fls_out%ffreq%mly)) then
                         field%ffreq = field%ffreq + radix(fls_out%ffreq%mly)**fls_out%ffreq%mly
-                    end if
-                case ('s')
+                        end if
+                    case ('s')
                     if (.not. btest(field%ffreq, fls_out%ffreq%mly)) then
                         field%ffreq = field%ffreq + radix(fls_out%ffreq%mly)**fls_out%ffreq%mly
-                    end if
+                        end if
                     if (.not. btest(field%ffreq, fls_out%ffreq%ssl)) then
                         field%ffreq = field%ffreq + radix(fls_out%ffreq%ssl)**fls_out%ffreq%ssl
-                    end if
-                case ('d')
+                        end if
+                    case ('d')
                     if (.not. btest(field%ffreq, fls_out%ffreq%dly)) then
                         field%ffreq = field%ffreq + radix(fls_out%ffreq%dly)**fls_out%ffreq%dly
-                    end if
-                case ('h')
+                        end if
+                    case ('h')
                     if (.not. btest(field%ffreq, fls_out%ffreq%hly)) then
                         field%ffreq = field%ffreq + radix(fls_out%ffreq%hly)**fls_out%ffreq%hly
-                    end if
-                case ('ts')
-                    if (.not. btest(field%ffreq, fls_out%ffreq%pts)) then
-                        field%ffreq = field%ffreq + radix(fls_out%ffreq%pts)**fls_out%ffreq%pts
-                    end if
+                        end if
 
-                !> File formats.
-                case ('r2c')
+                    !> File formats.
+                    case ('r2c')
                     if (.not. btest(field%ffmt, fls_out%ffmt%r2c)) then
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%r2c)**fls_out%ffmt%r2c
-                    end if
+                        end if
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
-                    end if
-                case ('seq', 'binseq')
+                        end if
+                    case ('seq', 'binseq')
                     if (.not. btest(field%ffmt, fls_out%ffmt%seq)) then
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%seq)**fls_out%ffmt%seq
-                    end if
+                        end if
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
-                    end if
-                case ('txt')
+                        end if
+                    case ('txt')
                     if (.not. btest(field%ffmt, fls_out%ffmt%txt)) then
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%txt)**fls_out%ffmt%txt
-                    end if
+                        end if
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
-                    end if
-                case ('csv')
+                        end if
+                    case ('csv')
                     if (.not. btest(field%ffmt, fls_out%ffmt%csv)) then
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%csv)**fls_out%ffmt%csv
-                    end if
+                        end if
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
-                    end if
-                case ('nc', 'netcdf', 'nc4')
+                        end if
+                    case ('nc', 'netcdf', 'nc4')
 #ifdef NETCDF
                     if (.not. btest(field%ffmt, fls_out%ffmt%nc4)) then
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%nc4)**fls_out%ffmt%nc4
-                    end if
+                        end if
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
-                    end if
+                        end if
 #else
-                    call print_error( &
-                        "NetCDF format is specified for '" // trim(field%vname) // "' but the module is not active." // &
-                        ' A version of MESH compiled with the NetCDF library must be used to create files in this format.')
-                    ierr = 1
+                        call print_error( &
+                            "NetCDF format is specified for '" // trim(field%vname) // "' but the module is not active." // &
+                            ' A version of MESH compiled with the NetCDF library must be used to create files in this format.')
+                        ierr = 1
+                        return
 #endif
 
-                !> Order of the selection being saved.
-                case ('gridorder', 'shedorder')
-                    field%order = adjustl(str)
+                    !> Order of the selection being saved.
+                    case ('gridorder', 'shedorder')
+                        field%order = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
-                    end if
+                        end if
 
-                !> Point outputs for by grid or NML.
-                case ('tsi')
-                    field%order = adjustl(str)
+                    !> Point outputs for by grid or NML.
+                    case ('tsi')
+                        field%order = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
-                    end if
+                        end if
                     if (.not. btest(field%ffmt, fls_out%ffmt%tsi)) then
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%tsi)**fls_out%ffmt%tsi
-                    end if
-                    call output_files_parse_indices(args, nargs, field%tsi, i, ierr)
-                case ('tsk')
-                    field%order = adjustl(str)
+                        end if
+                        call output_files_parse_indices(args, nargs, field%tsi, i, z)
+                    case ('tsk')
+                        field%order = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
-                    end if
+                        end if
                     if (.not. btest(field%ffmt, fls_out%ffmt%tsk)) then
                         field%ffmt = field%ffmt + radix(fls_out%ffmt%tsk)**fls_out%ffmt%tsk
-                    end if
-                    call output_files_parse_indices(args, nargs, field%tsk, i, ierr)
+                        end if
+                        call output_files_parse_indices(args, nargs, field%tsk, i, z)
 
-                !> Grid outputs conditioned by GRU.
-                case ('gru')
-                    field%gru_mask = adjustl(str)
+                    !> Grid outputs conditioned by GRU.
+                    case ('gru')
+                        field%gru_mask = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
-                    end if
+                        end if
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
-                    end if
-                    call output_files_parse_indices(args, nargs, field%gru, i, ierr)
-                case ('gru_include')
-                    field%gru_mask = adjustl(str)
+                        end if
+                        call output_files_parse_indices(args, nargs, field%gru, i, z)
+                    case ('gru_include')
+                        field%gru_mask = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
-                    end if
+                        end if
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
-                    end if
-                    call output_files_parse_indices(args, nargs, field%gru, i, ierr)
-                case ('gru_exclude')
-                    field%gru_mask = adjustl(str)
+                        end if
+                        call output_files_parse_indices(args, nargs, field%gru, i, z)
+                    case ('gru_exclude')
+                        field%gru_mask = adjustl(str)
                     if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
-                    end if
+                        end if
                     if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
                         field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
-                    end if
-                    call output_files_parse_indices(args, nargs, field%gru, i, ierr)
+                        end if
+                        call output_files_parse_indices(args, nargs, field%gru, i, z)
 
-                !> Read into memory.
-                case ('in_mem')
-                    field%in_mem = .true.
+                    !> Read into memory.
+                    case ('in_mem')
+                        field%in_mem = .true.
 
-                !> Option to apply fractional cell area.
-                case ('frac', 'apply_frac')
-                    field%apply_frac = .true.
+                    !> Option to apply fractional cell area.
+                    case ('frac', 'apply_frac')
+                        field%apply_frac = .true.
 
-                !> Print leading date-stamp.
-                case ('print_date', 'printdate')
-                    field%print_date = .true.
-                case ('no_date')
-                    field%print_date = .false.
+                    !> Print leading date-stamp.
+                    case ('print_date', 'printdate')
+                        field%print_date = .true.
+                    case ('no_date')
+                        field%print_date = .false.
 
-                !> Function.
-                case ('cum', 'acc', 'avg')
-                    call print_remark( &
-                        "The option '" // trim(adjustl(args(i))) // "' has been depreciated and has no effect" // &
-                        " (Variable '" // trim(field%vname) // "').", PAD_3)
-                case ('max', 'min')
-                    field%fn = adjustl(str)
+                    !> Function.
+                    case ('cum', 'acc', 'sum')
+                        field%fn = 'sum'
+                    case ('avg', 'max', 'min')
+                        field%fn = adjustl(str)
 
-                !> Permafrost option (dealt with elsewhere).
-                case ('ttol')
+                    !> Permafrost option (dealt with elsewhere).
+                    case ('ttol')
 
-                !> Not recognized.
-                case default
-                    call print_remark( &
-                        "The option '" // trim(adjustl(args(i))) // "' is not recognized for output" // &
-                        " (Variable '" // trim(field%vname) // "').", PAD_3)
-            end select
+                    !> Not recognized.
+                    case default
+                        call print_remark( &
+                            "The option '" // trim(adjustl(args(i))) // "' is not recognized for output" // &
+                            " (Variable '" // trim(field%vname) // "').", PAD_3)
+                end select
+            end if
         end do
 
         !> Check for 'value' conversion error.
-        if (ierr /= 0) then
+        if (z /= 0) then
             call print_warning("Errors occurred parsing options of '" // trim(field%vname) // "'.", PAD_3)
         end if
 
@@ -1763,6 +1789,18 @@ module output_files
                     ' or exceeds the number of GRUs identified in the basin.', PAD_3)
             end if
         end if
+        if (len_trim(field%fn) > 0 .and. .not. btest(field%ffreq, fls_out%ffreq%pts)) then
+            call print_warning( &
+                "The option '" // trim(field%fn) // "' is only supported with the 'pts' option " // &
+                "but the frequency format is not active for this variable " //&
+                "and this modifier has no effect (Variable '" // trim(field%vname) // "').", PAD_3)
+            field%fn = ''
+        else if (btest(field%ffreq, fls_out%ffreq%pts) .and. len_trim(field%fn) == 0) then
+            call print_remark( &
+                "The 'pts' frequency format is active but no aggregation option is specified. " // &
+                "The default aggregation option of 'avg' is assumed (Variable '" // trim(field%vname) // "').", PAD_3)
+            field%fn = 'avg'
+        end if
 
         !> Allocate output fields and open output files.
         ierr = 0
@@ -1791,15 +1829,29 @@ module output_files
         !> Local variables.
         integer n, i
         type(output_field), dimension(:), allocatable :: tmp
+        character(DEFAULT_FIELD_LENGTH) str
 
         !> Count attributes that require separate files.
         n = 0
         do i = 2, nargs
+
+            !> Skip numeric options for arguments.
             if (.not. is_letter(args(i))) cycle
-            select case (lowercase(args(i)))
-                case ('y', 'm', 's', 'd', 'h', 'ts', 'r2c', 'seq', 'binseq', 'txt', 'csv', 'tsi', 'tsk')
-                    n = 1
-            end select
+
+            !> Pre-parse options.
+            str = lowercase(args(i))
+
+            !> Multi-word options.
+            if (str(1:4) == 'pts=') then
+                n = 1
+            else
+
+                !> Single-word options.
+                select case (lowercase(args(i)))
+                    case ('y', 'm', 's', 'd', 'h', 'r2c', 'seq', 'binseq', 'txt', 'csv', 'tsi', 'tsk')
+                        n = 1
+                end select
+            end if
         end do
 
         !> Exit if no files exist to create.
@@ -1889,6 +1941,10 @@ module output_files
             if (btest(field%fgroup, fls_out%fgroup%tile) .and. associated(pfld%h_tile)) fls_out%fls(n)%h%tile%src => pfld%h_tile
             if (btest(field%fgroup, fls_out%fgroup%grid) .and. associated(pfld%h_grid)) fls_out%fls(n)%h%grid%src => pfld%h_grid
         end if
+        if (btest(field%ffreq, fls_out%ffreq%pts)) then
+            if (btest(field%fgroup, fls_out%fgroup%tile) .and. associated(pfld%m_tile)) fls_out%fls(n)%pts%tile%src => pfld%ts_tile
+            if (btest(field%fgroup, fls_out%fgroup%grid) .and. associated(pfld%m_grid)) fls_out%fls(n)%pts%grid%src => pfld%ts_grid
+        end if
         if (btest(field%ffreq, fls_out%ffreq%ssl)) then
             if (btest(field%fgroup, fls_out%fgroup%tile) .and. associated(pfld%m_tile)) fls_out%fls(n)%s%tile%src => pfld%m_tile
             if (btest(field%fgroup, fls_out%fgroup%grid) .and. associated(pfld%m_grid)) fls_out%fls(n)%s%grid%src => pfld%m_grid
@@ -1932,6 +1988,7 @@ module output_files
             allocate(fls_out%dates%d(6, 1))
             allocate(fls_out%dates%h(6, 1))
         end if
+        allocate(fls_out%dates%pts(6, 1))
         allocate(fls_out%dates%s(6, 12))
         fls_out%dates%iter_s = 0
 
@@ -2242,7 +2299,8 @@ module output_files
                 ierr = z
                 write(line, FMT_GEN) i
                 call print_message_detail( &
-                    "ERROR: Errors occurred while reading '" // trim(args(1)) // "' (Line " // trim(adjustl(line)) // ').')
+                    "ERROR: Errors occurred while applying the output configuration for '" // trim(args(1)) // &
+                    "' (Line " // trim(adjustl(line)) // ').')
             end if
         end do
         close(iun)
@@ -2325,13 +2383,12 @@ module output_files
             if (btest(field%ffmt, fls_out%ffmt%nc4)) then
                 z = 0
                 call nc4_write_field( &
-                    shd, group%grid%iun, group%grid%tid, group%grid%vid, group%grid%dat, dates, &
+                    shd, group%grid%nid, group%grid%tid, group%grid%vid, group%grid%dat, dates, &
                     z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_GRD.nc')
                     call program_abort()
                 end if
-                iun = iun + 1
             end if
 #endif
         end if
@@ -2440,17 +2497,27 @@ module output_files
             return
         end if
 
-        !> Apply transforms and update values.
-        select case (fn)
-            case ('max')
-                file%dat(:, t) = max(file%dat(:, t), (cfactorm*file%src + cfactora))
-            case ('min')
-                file%dat(:, t) = min(file%dat(:, t), (cfactorm*file%src + cfactora))
-            case ('sum')
-                file%dat(:, t) = file%dat(:, t) + (cfactorm*file%src + cfactora)
-            case default
-                file%dat(:, t) = (cfactorm*file%src + cfactora)
-        end select
+        !> Apply value regardless of transform in the first time-step.
+        if (all(file%dat(:, t) == out%NO_DATA)) then
+            file%dat(:, t) = (cfactorm*file%src + cfactora)
+        else
+
+            !> Apply transforms and update values.
+            select case (fn)
+                case ('max')
+                    where (file%dat(:, t) /= out%NO_DATA)
+                        file%dat(:, t) = max(file%dat(:, t), (cfactorm*file%src + cfactora))
+                    end where
+                case ('min')
+                    where (file%dat(:, t) /= out%NO_DATA)
+                        file%dat(:, t) = min(file%dat(:, t), (cfactorm*file%src + cfactora))
+                    end where
+                case ('sum')
+                    where (file%dat(:, t) /= out%NO_DATA)
+                        file%dat(:, t) = file%dat(:, t) + (cfactorm*file%src + cfactora)
+                    end where
+            end select
+        end if
 
     end subroutine
 
@@ -2530,7 +2597,7 @@ module output_files
         !> Set 't = 1' for the case when 'in_mem' is not active.
         t = 1
 
-        !> Update data fields.
+        !> Update data fields for existing output variable frequencies.
         if (btest(field%ffreq, fls_out%ffreq%yly)) then
             if (ic%now%year /= ic%next%year) then
                 if (field%in_mem) t = ic%iter%year
@@ -2569,6 +2636,36 @@ module output_files
             end if
             if ((ic%now%hour /= ic%next%hour .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, field, field%h, fls_out%dates%h)
+            end if
+        end if
+
+        !> Per 'n' time-steps (user-defined).
+        if (btest(field%ffreq, fls_out%ffreq%pts)) then
+
+            !> Update group.
+            t = 1
+            if (field%fn == 'sum' .or. field%fn == 'avg') then
+                call output_files_update_group(fls, shd, field, field%pts, t, field%cfactorm, field%cfactora, 'sum')
+            else
+                call output_files_update_group(fls, shd, field, field%pts, t, field%cfactorm, field%cfactora, field%fn)
+            end if
+            if (field%pts_aggregator == 0) then
+                field%pts_counter = field%pts_counter + 1
+                call output_files_update_dates( &
+                    fls_out%dates%pts, t, field%pts_counter, ic%now%year, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins)
+            end if
+            field%pts_aggregator = field%pts_aggregator + ic%dtmins
+            if (field%pts_aggregator >= field%pts_length) then
+                if (btest(field%fgroup, fls_out%fgroup%grid) .and. field%fn == 'avg') then
+                    field%pts%grid%dat(:, t) = field%pts%grid%dat(:, t)/(field%pts_aggregator/ic%dtmins)
+                end if
+                if (btest(field%fgroup, fls_out%fgroup%tile) .and. field%fn == 'avg') then
+                    field%pts%tile%dat(:, t) = field%pts%tile%dat(:, t)/(field%pts_aggregator/ic%dtmins)
+                end if
+                call output_files_update_file(fls, shd, field, field%pts, fls_out%dates%pts)
+                field%pts_aggregator = 0
+                if (btest(field%fgroup, fls_out%fgroup%grid)) field%pts%grid%dat(:, t) = out%NO_DATA
+                if (btest(field%fgroup, fls_out%fgroup%tile)) field%pts%tile%dat(:, t) = out%NO_DATA
             end if
         end if
 

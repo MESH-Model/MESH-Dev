@@ -634,7 +634,9 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     !> Initialize the current time-step.
     ic%now%year = ic%start%year
     ic%now%jday = ic%start%jday
-    call julian2monthday(ic%now%jday, ic%now%year, ic%now%month, ic%now%day)
+    call julian2monthday(ic%start%jday, ic%start%year, ic%start%month, ic%start%day)
+    ic%now%month = ic%start%month
+    ic%now%day = ic%start%day
     ic%now%hour = ic%start%hour
     ic%now%mins = ic%start%mins
 

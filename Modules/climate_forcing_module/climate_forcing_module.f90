@@ -51,7 +51,7 @@ module climate_forcing
         logical ENDDATA
 
         !> Local variables.
-        integer vid, iun, isteps1, isteps2, t, s, k, j, i, ierr
+        integer vid, iun, isteps1, isteps2, month, day, t, s, k, j, i, ierr
         character(len = DEFAULT_LINE_LENGTH) line
 
         ENDDATA = .false.
@@ -234,9 +234,16 @@ module climate_forcing
                 call print_error('The first record occurs after the simulation start date.')
                 call print_message( &
                     'The record must start on or after the simulation start date.')
-                write(line, "(i5, i4)") cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday
+                call Julian2MonthDay(cm%dat(vid)%start_date%jday, cm%dat(vid)%start_date%year, month, day)
+                write(line, "(i4, '/', i2.2, '/', i2.2, ' ', i2.2, ':', i2.2, ' (', 4i4, ')')") &
+                    cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%month, cm%dat(vid)%start_date%day, &
+                    cm%dat(vid)%start_date%hour, cm%dat(vid)%start_date%mins, &
+                    cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday, &
+                    cm%dat(vid)%start_date%hour, cm%dat(vid)%start_date%mins
                 call print_message_detail('First record occurs on: ' // trim(line))
-                write(line, "(i5, i4)") ic%start%year, ic%start%jday
+                write(line, "(i4, '/', i2.2, '/', i2.2, ' ', i2.2, ':', i2.2, ' (', 4i4, ')')") &
+                    ic%start%year, ic%start%month, ic%start%day, ic%start%hour, ic%start%mins, &
+                    ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
                 call print_message_detail('Simulation start date: ' // trim(line))
                 call program_abort()
             end if
