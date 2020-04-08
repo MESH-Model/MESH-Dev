@@ -183,6 +183,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
         select case (args(n))
             case ('only')
                 INPUTPARAMSFORMFLAG = 0
+            case ('none')
+                INPUTPARAMSFORMFLAG = 0
+                exit
             case ('r2c')
                 INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**1
             case ('csv')
@@ -192,11 +195,17 @@ subroutine read_parameters(fls, shd, cm, ierr)
         end select
     end do
 
-    !> Check for a bad value of INPUTPARAMSFORMFLAG.
+    !> Check for a bad value of INPUTPARAMSFORMFLAG (unless all modules are disabled).
     if (INPUTPARAMSFORMFLAG == 0) then
-        ierr = 1
-        call print_error('Unrecognized parameter file format. Revise INPUTPARAMSFORMFLAG in ' // trim(fls%fl(mfk%f53)%fn) // '.')
-        return
+        if (.not. ro%RUNLSS .and. .not. ro%RUNCHNL) then
+            call print_remark('No parameter files specified.')
+            return
+        else
+            ierr = 1
+            call print_error( &
+                'Unrecognized parameter file format. Revise INPUTPARAMSFORMFLAG in ' // trim(fls%fl(mfk%f53)%fn) // '.')
+            return
+        end if
     end if
 
     !> Read from the 'ini' files.

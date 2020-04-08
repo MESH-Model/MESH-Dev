@@ -1212,6 +1212,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             case ('nolss')
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
                                 svs_mesh%PROCESS_ACTIVE = .false.
+                                ro%RUNLSS = .false.
                             case ('runrte')
                                 WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                 rteflg%PROCESS_ACTIVE = .true.
