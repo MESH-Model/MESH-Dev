@@ -184,7 +184,7 @@ module runsvs_mesh
         sigma_u = svs_mesh%vs%sigma_u
         sigma_t = svs_mesh%vs%sigma_t
         observed_forcing = svs_mesh%vs%observed_forcing
-        soiltext = 'NIL'
+        soiltext = svs_mesh%vs%soiltext
 
         if (soiltext == 'NIL') then
             nl_svs = shd%lc%IGND
@@ -215,7 +215,7 @@ module runsvs_mesh
 !            bus(dlat + k) = ((shd%yOrigin + shd%yDelta*shd%yyy(ki)) - shd%yDelta/2.0)*PI/180.0
 !            bus(dlon + k) = ((shd%xOrigin + shd%xDelta*shd%xxx(ki)) - shd%xDelta/2.0)*PI/180.0
             bus(dlat + k) = shd%ylat(ki)*PI/180.0
-            if (allocated(svs_mesh%vs%deglat)) bus(dlat + k) = svs_mesh%vs%deglat(il1 + k)
+            if (allocated(svs_mesh%vs%deglat)) bus(dlat + k) = svs_mesh%vs%deglat(il1 + k)*PI/180.0
             if (shd%xlng(ki) < 0.0) then
                 bus(dlon + k) = (shd%xlng(ki) + 360.0)*PI/180.0
             else
