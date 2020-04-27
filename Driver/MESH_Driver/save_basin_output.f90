@@ -1082,7 +1082,7 @@ module save_basin_output
         call output_variables_activate( &
             series%basin, (/ &
                 VN_FSIN, VN_FSOUT, VN_ALBT, VN_FLIN, VN_FLOUT, VN_GTE, VN_QH, VN_QE, VN_GZERO, &
-                VN_TA, VN_TCAN, VN_CMAS, VN_TSNO, VN_TPND, VN_TBAR, VN_QA, VN_UV /))
+                VN_TA, VN_TCAN, VN_CMAS, VN_TSNO, VN_TPND, VN_TBAR, VN_QA, VN_UV, VN_PRES /))
 
     end subroutine
 
@@ -1295,7 +1295,7 @@ module save_basin_output
             write(ffmti, '(i3)') j
             write(fik, 1010, advance = 'no') 'TBAR' // trim(adjustl(ffmti))
         end do
-        write(fik, 1010, advance = 'no') 'QA', 'UV'
+        write(fik, 1010, advance = 'no') 'QA', 'UV', 'PRES'
         write(fik, 1010)
 
 1010    format(9999(g15.7e2, ','))
@@ -1363,7 +1363,7 @@ module save_basin_output
             series%basin%gzero(ina), &
             ta, tcan, cmas, &
             tsno, tpnd, &
-            (tbar(j), j = 1, shd%lc%IGND), series%basin%qa(ina), series%basin%uv(ina)
+            (tbar(j), j = 1, shd%lc%IGND), series%basin%qa(ina), series%basin%uv(ina), series%basin%pres(ina)
 
 1010    format(9999(g15.7e2, ','))
 
