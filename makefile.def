@@ -155,11 +155,12 @@ OBJECTS+=	read_initial_inputs.o \
 			read_basin_structures.o \
 			read_streamflow_txt.o read_streamflow_tb0.o read_reservoir_txt.o read_reservoir_tb0.o \
 			read_soil_ini.o \
-			read_initial_values_r2c.o \
+			read_initial_values_r2c.o read_initial_values_nc.o \
 			read_initial_states.o \
 			module_files.o
 # Output routines.
 OBJECTS+=	WRITE_R2C_HEADER.o write_r2c.o \
+			save_initial_values_nc.o \
 			output_files.o save_basin_output.o
 # MESH driver.
 OBJECTS+=	read_run_options.o read_fews_runinfo_nc.o \

@@ -787,6 +787,9 @@ program RUNMESH
             if (ISHEADNODE) call program_abort()
         end if
     end if
+    if (RESUMEFLAG == 6) then
+        call read_initial_states_nc(fls, shd, ierr)
+    end if
 
     !> Update output variables with initial states.
     call output_variables_reset(shd)
@@ -1168,6 +1171,11 @@ program RUNMESH
             close(iun)
 
         end if !(SAVERESUMEFLAG == 4) then
+
+        !> Save state file.
+        if (SAVERESUMEFLAG == 6) then
+            call save_initial_states_nc(fls, shd, ierr)
+        end if
 
         !> Write data to the output summary file.
         if (ECHOTXTMODE) then
