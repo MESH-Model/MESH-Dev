@@ -129,8 +129,8 @@ module output_variables
     !>  Type for process modules to integrate with output fields.
     type output_fields_surrogate
         real, dimension(:), pointer :: &
-            y_tile => null(), m_tile => null(), d_tile => null(), h_tile => null(), &
-            y_grid => null(), m_grid => null(), d_grid => null(), h_grid => null()
+            y_tile => null(), m_tile => null(), d_tile => null(), h_tile => null(), ts_tile => null(), &
+            y_grid => null(), m_grid => null(), d_grid => null(), h_grid => null(), ts_grid => null()
     end type
 
     !> Description:

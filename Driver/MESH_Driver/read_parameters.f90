@@ -183,18 +183,29 @@ subroutine read_parameters(fls, shd, cm, ierr)
         select case (args(n))
             case ('only')
                 INPUTPARAMSFORMFLAG = 0
+            case ('none')
+                INPUTPARAMSFORMFLAG = 0
+                exit
             case ('r2c')
                 INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**1
             case ('csv')
                 INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**2
+            case ('txt')
+                INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**3
         end select
     end do
 
-    !> Check for a bad value of INPUTPARAMSFORMFLAG.
+    !> Check for a bad value of INPUTPARAMSFORMFLAG (unless all modules are disabled).
     if (INPUTPARAMSFORMFLAG == 0) then
-        ierr = 1
-        call print_error('Unrecognized parameter file format. Revise INPUTPARAMSFORMFLAG in ' // trim(fls%fl(mfk%f53)%fn) // '.')
-        return
+        if (.not. ro%RUNLSS .and. .not. ro%RUNCHNL) then
+            call print_remark('No parameter files specified.')
+            return
+        else
+            ierr = 1
+            call print_error( &
+                'Unrecognized parameter file format. Revise INPUTPARAMSFORMFLAG in ' // trim(fls%fl(mfk%f53)%fn) // '.')
+            return
+        end if
     end if
 
     !> Read from the 'ini' files.
@@ -209,6 +220,12 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> Read from the 'csv' file.
     if (btest(INPUTPARAMSFORMFLAG, 2)) then
         call read_parameters_csv(shd, 100, 'MESH_parameters.csv', ierr)
+        if (ierr /= 0) return
+    end if
+
+    !> Read from the 'txt' file.
+    if (btest(INPUTPARAMSFORMFLAG, 3)) then
+        call read_parameters_csv(shd, 100, 'MESH_parameters.txt', ierr)
         if (ierr /= 0) return
     end if
 

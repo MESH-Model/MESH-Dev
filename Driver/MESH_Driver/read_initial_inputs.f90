@@ -771,7 +771,14 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 !<<nc
 
     !> Open and read in soil depths from file.
-    call READ_SOIL_LEVELS(fls, shd, ierr)
+    if (ro%RUNLSS) then
+        call READ_SOIL_LEVELS(fls, shd, ierr)
+    else
+        shd%lc%IGND = 1
+        allocate(shd%lc%sl%DELZ(shd%lc%IGND), shd%lc%sl%ZBOT(shd%lc%IGND))
+        shd%lc%sl%DELZ = 0.0
+        shd%lc%sl%ZBOT = 0.0
+    end if
     if (ierr /= 0) return
 
     !> Print a summary of levels to file.
@@ -828,7 +835,9 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     !> Initialize the current time-step.
     ic%now%year = ic%start%year
     ic%now%jday = ic%start%jday
-    call julian2monthday(ic%now%jday, ic%now%year, ic%now%month, ic%now%day)
+    call julian2monthday(ic%start%jday, ic%start%year, ic%start%month, ic%start%day)
+    ic%now%month = ic%start%month
+    ic%now%day = ic%start%day
     ic%now%hour = ic%start%hour
     ic%now%mins = ic%start%mins
 

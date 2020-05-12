@@ -27,7 +27,9 @@ module svs_configs
 !  real, parameter, dimension(nl_svs) :: dl_svs =  (/ 0.05, 0.1, 0.2, 0.4, 1.0, 2.0, 3.0 /) 
 
   ! Number of last active (permeable) layer
-  integer, parameter :: khyd = 6
+!VV DEBUT MODIFICATION POUR MESH
+!  integer, parameter :: khyd = 6
+  integer :: khyd = 6
 !VV FIN MODIFICATION POUR MESH
 
   ! Thicknesses of layers in METERS
