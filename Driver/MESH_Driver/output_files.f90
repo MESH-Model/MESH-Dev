@@ -1574,65 +1574,65 @@ module output_files
 
                     !> File output frequencies.
                     case ('y')
-                    if (.not. btest(field%ffreq, fls_out%ffreq%yly)) then
-                        field%ffreq = field%ffreq + radix(fls_out%ffreq%yly)**fls_out%ffreq%yly
+                        if (.not. btest(field%ffreq, fls_out%ffreq%yly)) then
+                            field%ffreq = field%ffreq + radix(fls_out%ffreq%yly)**fls_out%ffreq%yly
                         end if
                     case ('m')
-                    if (.not. btest(field%ffreq, fls_out%ffreq%mly)) then
-                        field%ffreq = field%ffreq + radix(fls_out%ffreq%mly)**fls_out%ffreq%mly
+                        if (.not. btest(field%ffreq, fls_out%ffreq%mly)) then
+                            field%ffreq = field%ffreq + radix(fls_out%ffreq%mly)**fls_out%ffreq%mly
                         end if
                     case ('s')
-                    if (.not. btest(field%ffreq, fls_out%ffreq%mly)) then
-                        field%ffreq = field%ffreq + radix(fls_out%ffreq%mly)**fls_out%ffreq%mly
+                        if (.not. btest(field%ffreq, fls_out%ffreq%mly)) then
+                            field%ffreq = field%ffreq + radix(fls_out%ffreq%mly)**fls_out%ffreq%mly
                         end if
-                    if (.not. btest(field%ffreq, fls_out%ffreq%ssl)) then
-                        field%ffreq = field%ffreq + radix(fls_out%ffreq%ssl)**fls_out%ffreq%ssl
+                        if (.not. btest(field%ffreq, fls_out%ffreq%ssl)) then
+                            field%ffreq = field%ffreq + radix(fls_out%ffreq%ssl)**fls_out%ffreq%ssl
                         end if
                     case ('d')
-                    if (.not. btest(field%ffreq, fls_out%ffreq%dly)) then
-                        field%ffreq = field%ffreq + radix(fls_out%ffreq%dly)**fls_out%ffreq%dly
+                        if (.not. btest(field%ffreq, fls_out%ffreq%dly)) then
+                            field%ffreq = field%ffreq + radix(fls_out%ffreq%dly)**fls_out%ffreq%dly
                         end if
                     case ('h')
-                    if (.not. btest(field%ffreq, fls_out%ffreq%hly)) then
-                        field%ffreq = field%ffreq + radix(fls_out%ffreq%hly)**fls_out%ffreq%hly
+                        if (.not. btest(field%ffreq, fls_out%ffreq%hly)) then
+                            field%ffreq = field%ffreq + radix(fls_out%ffreq%hly)**fls_out%ffreq%hly
                         end if
 
                     !> File formats.
                     case ('r2c')
-                    if (.not. btest(field%ffmt, fls_out%ffmt%r2c)) then
-                        field%ffmt = field%ffmt + radix(fls_out%ffmt%r2c)**fls_out%ffmt%r2c
+                        if (.not. btest(field%ffmt, fls_out%ffmt%r2c)) then
+                            field%ffmt = field%ffmt + radix(fls_out%ffmt%r2c)**fls_out%ffmt%r2c
                         end if
-                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                        if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                         end if
                     case ('seq', 'binseq')
-                    if (.not. btest(field%ffmt, fls_out%ffmt%seq)) then
-                        field%ffmt = field%ffmt + radix(fls_out%ffmt%seq)**fls_out%ffmt%seq
+                        if (.not. btest(field%ffmt, fls_out%ffmt%seq)) then
+                            field%ffmt = field%ffmt + radix(fls_out%ffmt%seq)**fls_out%ffmt%seq
                         end if
-                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                        if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                         end if
                     case ('txt')
-                    if (.not. btest(field%ffmt, fls_out%ffmt%txt)) then
-                        field%ffmt = field%ffmt + radix(fls_out%ffmt%txt)**fls_out%ffmt%txt
+                        if (.not. btest(field%ffmt, fls_out%ffmt%txt)) then
+                            field%ffmt = field%ffmt + radix(fls_out%ffmt%txt)**fls_out%ffmt%txt
                         end if
-                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                        if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                         end if
                     case ('csv')
-                    if (.not. btest(field%ffmt, fls_out%ffmt%csv)) then
-                        field%ffmt = field%ffmt + radix(fls_out%ffmt%csv)**fls_out%ffmt%csv
+                        if (.not. btest(field%ffmt, fls_out%ffmt%csv)) then
+                            field%ffmt = field%ffmt + radix(fls_out%ffmt%csv)**fls_out%ffmt%csv
                         end if
-                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                        if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                         end if
                     case ('nc', 'netcdf', 'nc4')
 #ifdef NETCDF
-                    if (.not. btest(field%ffmt, fls_out%ffmt%nc4)) then
-                        field%ffmt = field%ffmt + radix(fls_out%ffmt%nc4)**fls_out%ffmt%nc4
+                        if (.not. btest(field%ffmt, fls_out%ffmt%nc4)) then
+                            field%ffmt = field%ffmt + radix(fls_out%ffmt%nc4)**fls_out%ffmt%nc4
                         end if
-                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                        if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                         end if
 #else
                         call print_error( &
@@ -1645,56 +1645,56 @@ module output_files
                     !> Order of the selection being saved.
                     case ('gridorder', 'shedorder')
                         field%order = adjustl(str)
-                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                        if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                         end if
 
                     !> Point outputs for by grid or NML.
                     case ('tsi')
                         field%order = adjustl(str)
-                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                        if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                         end if
-                    if (.not. btest(field%ffmt, fls_out%ffmt%tsi)) then
-                        field%ffmt = field%ffmt + radix(fls_out%ffmt%tsi)**fls_out%ffmt%tsi
+                        if (.not. btest(field%ffmt, fls_out%ffmt%tsi)) then
+                            field%ffmt = field%ffmt + radix(fls_out%ffmt%tsi)**fls_out%ffmt%tsi
                         end if
                         call output_files_parse_indices(args, nargs, field%tsi, i, z)
                     case ('tsk')
                         field%order = adjustl(str)
-                    if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
+                        if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
                         end if
-                    if (.not. btest(field%ffmt, fls_out%ffmt%tsk)) then
-                        field%ffmt = field%ffmt + radix(fls_out%ffmt%tsk)**fls_out%ffmt%tsk
+                        if (.not. btest(field%ffmt, fls_out%ffmt%tsk)) then
+                            field%ffmt = field%ffmt + radix(fls_out%ffmt%tsk)**fls_out%ffmt%tsk
                         end if
                         call output_files_parse_indices(args, nargs, field%tsk, i, z)
 
                     !> Grid outputs conditioned by GRU.
                     case ('gru')
                         field%gru_mask = adjustl(str)
-                    if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
+                        if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
                         end if
-                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                        if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                         end if
                         call output_files_parse_indices(args, nargs, field%gru, i, z)
                     case ('gru_include')
                         field%gru_mask = adjustl(str)
-                    if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
+                        if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
                         end if
-                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                        if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                         end if
                         call output_files_parse_indices(args, nargs, field%gru, i, z)
                     case ('gru_exclude')
                         field%gru_mask = adjustl(str)
-                    if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
+                        if (.not. btest(field%fgroup, fls_out%fgroup%tile)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%tile)**fls_out%fgroup%tile
                         end if
-                    if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
-                        field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
+                        if (.not. btest(field%fgroup, fls_out%fgroup%grid)) then
+                            field%fgroup = field%fgroup + radix(fls_out%fgroup%grid)**fls_out%fgroup%grid
                         end if
                         call output_files_parse_indices(args, nargs, field%gru, i, z)
 
@@ -1942,8 +1942,8 @@ module output_files
             if (btest(field%fgroup, fls_out%fgroup%grid) .and. associated(pfld%h_grid)) fls_out%fls(n)%h%grid%src => pfld%h_grid
         end if
         if (btest(field%ffreq, fls_out%ffreq%pts)) then
-            if (btest(field%fgroup, fls_out%fgroup%tile) .and. associated(pfld%m_tile)) fls_out%fls(n)%pts%tile%src => pfld%ts_tile
-            if (btest(field%fgroup, fls_out%fgroup%grid) .and. associated(pfld%m_grid)) fls_out%fls(n)%pts%grid%src => pfld%ts_grid
+            if (btest(field%fgroup, fls_out%fgroup%tile) .and. associated(pfld%ts_tile)) fls_out%fls(n)%pts%tile%src => pfld%ts_tile
+            if (btest(field%fgroup, fls_out%fgroup%grid) .and. associated(pfld%ts_grid)) fls_out%fls(n)%pts%grid%src => pfld%ts_grid
         end if
         if (btest(field%ffreq, fls_out%ffreq%ssl)) then
             if (btest(field%fgroup, fls_out%fgroup%tile) .and. associated(pfld%m_tile)) fls_out%fls(n)%s%tile%src => pfld%m_tile
@@ -2323,8 +2323,10 @@ module output_files
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
         type(output_field), intent(in) :: field
-        type(output_group), intent(in) :: group
         integer, dimension(:, :), intent(in) :: dates
+
+        !> Input/output variables.
+        type(output_group) group
 
         !> Local variables.
         integer iun, z
@@ -2391,6 +2393,9 @@ module output_files
                 end if
             end if
 #endif
+
+            !> Reset 'dat' for the next time-step.
+            group%grid%dat = out%NO_DATA
         end if
 
         !> Tile-based.
@@ -2407,6 +2412,9 @@ module output_files
                 end if
                 iun = iun + 1
             end if
+
+            !> Reset 'dat' for the next time-step.
+            group%tile%dat = out%NO_DATA
         end if
 
     end subroutine
@@ -2432,7 +2440,7 @@ module output_files
             .not. allocated(field%gru)) return
 
         !> Filter grid outputs by GRU (requires pulling from tile output variables).
-        group%grid%dat = 0.0
+        group%grid%dat(:, t) = 0.0
         select case (field%gru_mask)
             case ('gru_include')
 
@@ -2469,6 +2477,7 @@ module output_files
             case default
 
                 !> Only the specified GRU.
+                group%grid%dat(:, t) = out%NO_DATA
                 do k = 1, shd%lc%NML
                     if (field%gru(1) == shd%lc%JLMOS(k)) group%grid%dat(shd%lc%ILMOS(k), t) = group%tile%dat(k, t)
                 end do
@@ -2550,7 +2559,9 @@ module output_files
             if (allocated(field%gru)) call output_files_filter_group(fls, shd, field, group, t)
 
             !> Apply frac.
-            if (field%apply_frac) group%grid%dat(:, t) = group%grid%dat(:, t)*shd%FRAC
+            if (field%apply_frac) then
+                where (group%grid%dat(:, t) /= out%NO_DATA) group%grid%dat(:, t) = group%grid%dat(:, t)*shd%FRAC
+            end if
         end if
 
     end subroutine
@@ -2664,8 +2675,6 @@ module output_files
                 end if
                 call output_files_update_file(fls, shd, field, field%pts, fls_out%dates%pts)
                 field%pts_aggregator = 0
-                if (btest(field%fgroup, fls_out%fgroup%grid)) field%pts%grid%dat(:, t) = out%NO_DATA
-                if (btest(field%fgroup, fls_out%fgroup%tile)) field%pts%tile%dat(:, t) = out%NO_DATA
             end if
         end if
 
