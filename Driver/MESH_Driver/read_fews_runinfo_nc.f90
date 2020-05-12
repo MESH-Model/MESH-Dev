@@ -7,19 +7,24 @@
 !*
 !> Output variables:
 !*  ierr: Return status.
-subroutine read_fews_runinfo_nc(fname, ierr)
+subroutine read_fews_runinfo_nc(fname, cm, ierr)
 
     !> 'strings': For 'lowercase' function.
     !> 'sa_mesh_common': For common MESH variables, constants, and routines.
     !> 'nc_io': For routines to read 'r2c' format file.
     use strings
     use sa_mesh_common
+    use climate_forcing
+    use FLAGS
     use nc_io
 
     implicit none
 
     !> Input variables.
     character(len = *), intent(in) :: fname
+
+    !> Input/output variables.
+    type(CLIM_INFO) cm
 
     !> Output variables.
     integer, intent(out) :: ierr
@@ -86,6 +91,59 @@ subroutine read_fews_runinfo_nc(fname, ierr)
     if (z /= 0) then
         call print_warning('Errors occured reading from the file: ' // trim(fname))
     end if
+
+    !> Overrides.
+    cm%dat(ck%FB)%factive = .true.
+    cm%dat(ck%FB)%id_var = 'FSIN'
+    cm%dat(ck%FB)%ffmt = 7
+    cm%dat(ck%FB)%name_lat = 'y'
+    cm%dat(ck%FB)%name_lon = 'x'
+    cm%dat(ck%FB)%name_time = 'time'
+    cm%dat(ck%FB)%time_shift = t
+    cm%dat(ck%FI)%factive = .true.
+    cm%dat(ck%FI)%id_var = 'FLIN'
+    cm%dat(ck%FI)%ffmt = 7
+    cm%dat(ck%FI)%name_lat = 'y'
+    cm%dat(ck%FI)%name_lon = 'x'
+    cm%dat(ck%FI)%name_time = 'time'
+    cm%dat(ck%FI)%time_shift = t
+    cm%dat(ck%RT)%factive = .true.
+    cm%dat(ck%RT)%id_var = 'PRE'
+    cm%dat(ck%RT)%ffmt = 7
+    cm%dat(ck%RT)%name_lat = 'y'
+    cm%dat(ck%RT)%name_lon = 'x'
+    cm%dat(ck%RT)%name_time = 'time'
+    cm%dat(ck%RT)%time_shift = t
+    cm%dat(ck%TT)%factive = .true.
+    cm%dat(ck%TT)%id_var = 'TA'
+    cm%dat(ck%TT)%ffmt = 7
+    cm%dat(ck%TT)%name_lat = 'y'
+    cm%dat(ck%TT)%name_lon = 'x'
+    cm%dat(ck%TT)%name_time = 'time'
+    cm%dat(ck%TT)%time_shift = t
+    cm%dat(ck%UV)%factive = .true.
+    cm%dat(ck%UV)%id_var = 'UV'
+    cm%dat(ck%UV)%ffmt = 7
+    cm%dat(ck%UV)%name_lat = 'y'
+    cm%dat(ck%UV)%name_lon = 'x'
+    cm%dat(ck%UV)%name_time = 'time'
+    cm%dat(ck%UV)%time_shift = t
+    cm%dat(ck%P0)%factive = .true.
+    cm%dat(ck%P0)%id_var = 'PRES'
+    cm%dat(ck%P0)%ffmt = 7
+    cm%dat(ck%P0)%name_lat = 'y'
+    cm%dat(ck%P0)%name_lon = 'x'
+    cm%dat(ck%P0)%name_time = 'time'
+    cm%dat(ck%P0)%time_shift = t
+    cm%dat(ck%HU)%factive = .true.
+    cm%dat(ck%HU)%id_var = 'QA'
+    cm%dat(ck%HU)%ffmt = 7
+    cm%dat(ck%HU)%name_lat = 'y'
+    cm%dat(ck%HU)%name_lon = 'x'
+    cm%dat(ck%HU)%name_time = 'time'
+    cm%dat(ck%HU)%time_shift = t
+    RESUMEFLAG = 6
+    SAVERESUMEFLAG = 6
 
     !> Close the file to free the unit.
     call nc4_close_file(iun, fname, ierr)

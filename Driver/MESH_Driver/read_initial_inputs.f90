@@ -824,13 +824,15 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         ic%start%mins = cm%start_date%mins
     end if
 
+!>>fews
     !> Read 'FEWS' configuration file if one exists.
     inquire(file = 'runinfo.nc', exist = ltest)
     if (ltest) then
         call reset_tab()
         call print_remark("A 'FEWS' configuration file 'runinfo.nc' exists and will override user-provided configuration.")
-        call read_fews_runinfo_nc('runinfo.nc', ierr)
+        call read_fews_runinfo_nc('runinfo.nc', cm, ierr)
     end if
+!<<fews
 
     !> Initialize the current time-step.
     ic%now%year = ic%start%year
