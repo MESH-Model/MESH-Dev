@@ -196,7 +196,7 @@ C-----MAXIMUM STORAGE---------------------------------
 C-----CRITICAL POND DEPTH CORRESPONDING TO ZPNDPRE--------
                  SMXMCMN = SMAX - CMIN(i)
                  CSTR(i) = CMIN(i) + CMXMCMN * (1.0 -
-     1         ((SMAX - ZPNDPRE(i)) / SMXMCMN) ** IBP1)
+     1         max((SMAX - ZPNDPRE(i)) / SMXMCMN, 0.0) ** IBP1)
 
 C-----CONTRIBUTING AREA FRACTION - DIAGNOSTIC ARRAY--------
               FSTR(i) = 1.0 - (1.0 - CSTR(i)/CMAX(i))**B(i)
