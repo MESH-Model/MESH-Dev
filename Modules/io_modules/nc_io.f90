@@ -52,6 +52,12 @@ module nc_io
         module procedure nc4_get_variable_xym_nf90_double
     end interface
 
+    interface nc4_get_variable_xylm
+        module procedure nc4_get_variable_xylm_nf90_int
+        module procedure nc4_get_variable_xylm_nf90_float
+        module procedure nc4_get_variable_xylm_nf90_double
+    end interface
+
     interface nc4_get_variable_xyt
         module procedure nc4_get_variable_xyt_nf90_int
         module procedure nc4_get_variable_xyt_nf90_float
@@ -109,6 +115,15 @@ module nc_io
         module procedure nc4_add_variable_xym_nf90_int
         module procedure nc4_add_variable_xym_nf90_float
         module procedure nc4_add_variable_xym_nf90_double
+    end interface
+
+    interface nc4_add_variable_xylm
+        module procedure nc4_define_variable_xylm_nf90_int
+        module procedure nc4_define_variable_xylm_nf90_float
+        module procedure nc4_define_variable_xylm_nf90_double
+        module procedure nc4_add_variable_xylm_nf90_int
+        module procedure nc4_add_variable_xylm_nf90_float
+        module procedure nc4_add_variable_xylm_nf90_double
     end interface
 
     interface nc4_add_variable_xyt
@@ -2566,6 +2581,1171 @@ module nc_io
 
     end subroutine
 
+    subroutine nc4_get_xylm_order( &
+        iun, fname, standard_name, vid, dim_x, dim_y, dim_l, dim_m, dim_lengths, ierr, &
+        name_x, name_y, name_l, name_m)
+
+        !> Input variables.
+        integer, intent(in) :: iun, vid
+        character(len = *), intent(in) :: fname, standard_name
+
+        !> Input variables (optional).
+        character(len = *), intent(in), optional :: name_x, name_y, name_l, name_m
+
+        !> Output variables.
+        integer, intent(out) :: dim_x, dim_y, dim_l, dim_m, ierr
+        integer, dimension(:), allocatable, intent(out) :: dim_lengths
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) dname_x, dname_y, dname_l, dname_m, field, code
+        integer, dimension(:), allocatable :: dimids
+        integer ndims, i, z
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Get the dimensions of the variable.
+        ndims = 3
+        ierr = nf90_inquire_variable(iun, vid, ndims = ndims)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the dimensions of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+        else if (ndims /= 4) then
+            write(field, FMT_GEN) ndims
+            call print_error( &
+                "The number of dimensions (" // trim(adjustl(field)) // ") does not match the expected number of dimensions " // &
+                "of 4 for '" // trim(standard_name) // "' in file: " // trim(fname))
+            ierr = 1
+        end if
+        if (ierr /= NF90_NOERR) then
+            ierr = 1
+            return
+        end if
+
+        !> Get information about the dimensions.
+        if (present(name_x)) then
+            dname_x = trim(name_x)
+        else
+            dname_x = 'lon'
+        end if
+        dim_x = 0
+        if (present(name_y)) then
+            dname_y = trim(name_y)
+        else
+            dname_y = 'lat'
+        end if
+        dim_y = 0
+        if (present(name_l)) then
+            dname_l = trim(name_l)
+        else
+            dname_l = 'level'
+        end if
+        dim_l = 0
+        if (present(name_m)) then
+            dname_m = trim(name_m)
+        else
+            dname_m = 'gru'
+        end if
+        dim_m = 0
+        if (allocated(dim_lengths)) deallocate(dim_lengths, stat = ierr)
+        if (ierr == 0) allocate(dimids(ndims), dim_lengths(ndims), stat = ierr)
+        if (ierr == 0) ierr = nf90_inquire_variable(iun, vid, dimids = dimids)
+        do i = 1, ndims
+            if (ierr == 0) ierr = nf90_inquire_dimension(iun, dimids(i), name = field, len = dim_lengths(i))
+            if (ierr == NF90_NOERR) then
+                if (lowercase(field) == lowercase(dname_x)) then
+                    dim_x = i
+                else if (lowercase(field) == lowercase(dname_y)) then
+                    dim_y = i
+                else if (lowercase(field) == lowercase(dname_l)) then
+                    dim_l = i
+                else if (lowercase(field) == lowercase(dname_m)) then
+                    dim_m = i
+                end if
+            else
+                exit
+            end if
+        end do
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading properties of the dimensions of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+        z = 0
+        if (dim_x == 0) then
+            call print_error( &
+                "A dimension of the variable is not mapped to the expected 'x' dimension ('" // trim(dname_x) // "') in file: " // &
+                trim(fname))
+            z = 1
+        end if
+        if (dim_y == 0) then
+            call print_error( &
+                "A dimension of the variable is not mapped to the expected 'y' dimension ('" // trim(dname_y) // "') in file: " // &
+                trim(fname))
+            z = 1
+        end if
+        if (dim_l == 0) then
+            call print_error( &
+                "A dimension of the variable is not mapped to the expected 'l' dimension ('" // trim(dname_l) // "') in file: " // &
+                trim(fname))
+            z = 1
+        end if
+        if (dim_m == 0) then
+            call print_error( &
+                "A dimension of the variable is not mapped to the expected 'm' dimension ('" // trim(dname_m) // "') in file: " // &
+                trim(fname))
+            z = 1
+        end if
+        if (z /= 0) then
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_variable_xylm_nf90_int( &
+        iun, fname, standard_name, dat, units, fill, ierr, &
+        dim_x, dim_y, dim_l, dim_m, name_x, name_y, name_l, name_m)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: dim_x, dim_y, dim_l, dim_m
+        character(len = *), intent(in), optional :: name_x, name_y, name_l, name_m
+
+        !> Output variables.
+        character(len = *), intent(out) :: units
+        integer(kind = FourByteInt), intent(out) :: fill
+        integer, intent(out) :: ierr
+
+        !> Input/output variable.
+        integer(kind = FourByteInt) :: dat(:, :, :, :)
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+        integer(kind = FourByteInt), allocatable :: dat4(:, :, :, :)
+        integer, dimension(:), allocatable :: dim_lengths
+        integer vid, dtype, x, y, l, m, i
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Check that the variable 'id_var' exists in the file.
+        ierr = nf90_inq_varid(iun, standard_name, vid)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "The variable '" // trim(standard_name) // "' cound not be found in file (Code: " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Get the order of the dimensions.
+        call nc4_get_xylm_order(iun, fname, standard_name, vid, x, y, l, m, dim_lengths, ierr, name_x, name_y, name_l, name_m)
+        if (ierr /= 0) return
+        if (present(dim_x)) x = dim_x
+        if (present(dim_y)) y = dim_y
+        if (present(dim_l)) l = dim_l
+        if (present(dim_m)) m = dim_m
+
+        !> Check the data type of the variable.
+        dtype = 0
+        ierr = nf90_inquire_variable(iun, vid, xtype = dtype)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the data type of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+        else if (dtype /= NF90_INT) then
+            call print_error( &
+                "The data type of '" // trim(standard_name) // "' is different from the expected data type of 'int' " // &
+                "in file: " // trim(fname))
+            ierr = 1
+        end if
+        if (ierr /= NF90_NOERR) then
+            ierr = 1
+            return
+        end if
+
+        !> Get the units of the variable.
+        ierr = nf90_get_att(iun, vid, 'units', units)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "An error occurred reading the units of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+            units = ''
+        end if
+
+        !> Get the fill value of the variable.
+        ierr = nf90_get_att(iun, vid, '_FillValue', fill)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "An error occurred reading the fill value of '" // trim(standard_name) // "' in file (Code: " &
+                // trim(adjustl(code)) // "): " // trim(fname))
+            fill = NF90_FILL_INT
+        end if
+
+        !> Read variable.
+        allocate(dat4(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)), stat = ierr)
+        if (ierr == 0) ierr = nf90_get_var(iun, vid, dat4)
+        if (ierr /= NF90_NOERR) then
+            call print_error("An error occurred reading '" // trim(standard_name) // "' in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+        if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, y, m, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 1 .and. l == 4 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(y, x, m, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 1 .and. y == 3 .and. l == 4 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, m, y, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 1 .and. l == 4 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(y, m, x, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 3 .and. l == 4 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(m, x, y, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 2 .and. l == 4 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(m, y, x, l)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+        if (x == 4 .and. y == 2 .and. l == 1 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(l, x, y, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 1 .and. l == 2 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(y, l, x, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 3 .and. l == 1 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(l, x, m, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 1 .and. l == 3 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(y, m, l, x)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 3 .and. l == 2 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(m, l, x, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 2 .and. l == 3 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(m, y, l, x)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+        if (x == 1 .and. y == 4 .and. l == 2 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, l, y, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 4 .and. l == 1 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(l, y, x, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 1 .and. y == 4 .and. l == 3 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, m, l, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 4 .and. l == 1 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(l, y, m, x)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 4 .and. l == 3 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(m, x, l, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 4 .and. l == 2 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(m, l, y, x)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+        if (x == 1 .and. y == 2 .and. l == 3 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, y, l, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 1 .and. l == 3 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(y, x, l, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 1 .and. y == 3 .and. l == 2 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, l, m, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 1 .and. l == 2 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(y, l, m, x)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 3 .and. l == 1 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(l, m, x, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 2 .and. l == 1 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(l, m, y, x)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_variable_xylm_nf90_float( &
+        iun, fname, standard_name, dat, units, fill, ierr, &
+        dim_x, dim_y, dim_l, dim_m, name_x, name_y, name_l, name_m)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: dim_x, dim_y, dim_l, dim_m
+        character(len = *), intent(in), optional :: name_x, name_y, name_l, name_m
+
+        !> Output variables.
+        character(len = *), intent(out) :: units
+        real(kind = FourByteReal), intent(out) :: fill
+        integer, intent(out) :: ierr
+
+        !> Input/output variable.
+        real(kind = FourByteReal) :: dat(:, :, :, :)
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+        real(kind = FourByteReal), allocatable :: dat4(:, :, :, :)
+        integer, dimension(:), allocatable :: dim_lengths
+        integer vid, dtype, x, y, l, m, i
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Check that the variable 'id_var' exists in the file.
+        ierr = nf90_inq_varid(iun, standard_name, vid)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "The variable '" // trim(standard_name) // "' cound not be found in file (Code: " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Get the order of the dimensions.
+        call nc4_get_xylm_order(iun, fname, standard_name, vid, x, y, l, m, dim_lengths, ierr, name_x, name_y, name_l, name_m)
+        if (ierr /= 0) return
+        if (present(dim_x)) x = dim_x
+        if (present(dim_y)) y = dim_y
+        if (present(dim_l)) l = dim_l
+        if (present(dim_m)) m = dim_m
+
+        !> Check the data type of the variable.
+        dtype = 0
+        ierr = nf90_inquire_variable(iun, vid, xtype = dtype)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the data type of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+        else if (dtype /= NF90_FLOAT) then
+            call print_error( &
+                "The data type of '" // trim(standard_name) // "' is different from the expected data type of 'float' " // &
+                "in file: " // trim(fname))
+            ierr = 1
+        end if
+        if (ierr /= NF90_NOERR) then
+            ierr = 1
+            return
+        end if
+
+        !> Get the units of the variable.
+        ierr = nf90_get_att(iun, vid, 'units', units)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "An error occurred reading the units of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+            units = ''
+        end if
+
+        !> Get the fill value of the variable.
+        ierr = nf90_get_att(iun, vid, '_FillValue', fill)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "An error occurred reading the fill value of '" // trim(standard_name) // "' in file (Code: " &
+                // trim(adjustl(code)) // "): " // trim(fname))
+            fill = NF90_FILL_FLOAT
+        end if
+
+        !> Read variable.
+        allocate(dat4(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)), stat = ierr)
+        if (ierr == 0) ierr = nf90_get_var(iun, vid, dat4)
+        if (ierr /= NF90_NOERR) then
+            call print_error("An error occurred reading '" // trim(standard_name) // "' in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+        if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, y, m, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 1 .and. l == 4 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(y, x, m, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 1 .and. y == 3 .and. l == 4 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, m, y, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 1 .and. l == 4 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(y, m, x, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 3 .and. l == 4 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(m, x, y, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 2 .and. l == 4 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(m, y, x, l)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+        if (x == 4 .and. y == 2 .and. l == 1 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(l, x, y, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 1 .and. l == 2 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(y, l, x, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 3 .and. l == 1 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(l, x, m, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 1 .and. l == 3 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(y, m, l, x)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 3 .and. l == 2 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(m, l, x, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 2 .and. l == 3 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(m, y, l, x)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+        if (x == 1 .and. y == 4 .and. l == 2 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, l, y, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 4 .and. l == 1 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(l, y, x, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 1 .and. y == 4 .and. l == 3 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, m, l, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 4 .and. l == 1 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(l, y, m, x)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 4 .and. l == 3 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(m, x, l, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 4 .and. l == 2 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(m, l, y, x)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+        if (x == 1 .and. y == 2 .and. l == 3 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, y, l, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 1 .and. l == 3 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(y, x, l, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 1 .and. y == 3 .and. l == 2 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, l, m, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 1 .and. l == 2 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(y, l, m, x)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 3 .and. l == 1 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(l, m, x, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 2 .and. l == 1 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(l, m, y, x)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_variable_xylm_nf90_double( &
+        iun, fname, standard_name, dat, units, fill, ierr, &
+        dim_x, dim_y, dim_l, dim_m, name_x, name_y, name_l, name_m)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: dim_x, dim_y, dim_l, dim_m
+        character(len = *), intent(in), optional :: name_x, name_y, name_l, name_m
+
+        !> Output variables.
+        character(len = *), intent(out) :: units
+        real(kind = EightByteReal), intent(out) :: fill
+        integer, intent(out) :: ierr
+
+        !> Input/output variable.
+        real(kind = EightByteReal) :: dat(:, :, :, :)
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+        real(kind = EightByteReal), allocatable :: dat4(:, :, :, :)
+        integer, dimension(:), allocatable :: dim_lengths
+        integer vid, dtype, x, y, l, m, i
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Check that the variable 'id_var' exists in the file.
+        ierr = nf90_inq_varid(iun, standard_name, vid)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "The variable '" // trim(standard_name) // "' cound not be found in file (Code: " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Get the order of the dimensions.
+        call nc4_get_xylm_order(iun, fname, standard_name, vid, x, y, l, m, dim_lengths, ierr, name_x, name_y, name_l, name_m)
+        if (ierr /= 0) return
+        if (present(dim_x)) x = dim_x
+        if (present(dim_y)) y = dim_y
+        if (present(dim_l)) l = dim_l
+        if (present(dim_m)) m = dim_m
+
+        !> Check the data type of the variable.
+        dtype = 0
+        ierr = nf90_inquire_variable(iun, vid, xtype = dtype)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading the data type of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+        else if (dtype /= NF90_DOUBLE) then
+            call print_error( &
+                "The data type of '" // trim(standard_name) // "' is different from the expected data type of 'double' " // &
+                "in file: " // trim(fname))
+            ierr = 1
+        end if
+        if (ierr /= NF90_NOERR) then
+            ierr = 1
+            return
+        end if
+
+        !> Get the units of the variable.
+        ierr = nf90_get_att(iun, vid, 'units', units)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "An error occurred reading the units of '" // trim(standard_name) // "' in file (Code: " // &
+                trim(adjustl(code)) // "): " // trim(fname))
+            units = ''
+        end if
+
+        !> Get the fill value of the variable.
+        ierr = nf90_get_att(iun, vid, '_FillValue', fill)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "An error occurred reading the fill value of '" // trim(standard_name) // "' in file (Code: " &
+                // trim(adjustl(code)) // "): " // trim(fname))
+            fill = NF90_FILL_DOUBLE
+        end if
+
+        !> Read variable.
+        allocate(dat4(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)), stat = ierr)
+        if (ierr == 0) ierr = nf90_get_var(iun, vid, dat4)
+        if (ierr /= NF90_NOERR) then
+            call print_error("An error occurred reading '" // trim(standard_name) // "' in file: " // trim(fname))
+            ierr = 1
+            return
+        end if
+        if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, y, m, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 1 .and. l == 4 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(y, x, m, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 1 .and. y == 3 .and. l == 4 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, m, y, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 1 .and. l == 4 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(y, m, x, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 3 .and. l == 4 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(m, x, y, l)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 2 .and. l == 4 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(4)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(m, y, x, l)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+        if (x == 4 .and. y == 2 .and. l == 1 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(l, x, y, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 1 .and. l == 2 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(y, l, x, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 3 .and. l == 1 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(l, x, m, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 1 .and. l == 3 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(y, m, l, x)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 3 .and. l == 2 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(m, l, x, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 4 .and. y == 2 .and. l == 3 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(4)
+                            dat(x, y, l, m) = dat4(m, y, l, x)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+        if (x == 1 .and. y == 4 .and. l == 2 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, l, y, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 4 .and. l == 1 .and. m == 3) then
+            do m = 1, dim_lengths(3)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(l, y, x, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 1 .and. y == 4 .and. l == 3 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, m, l, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 4 .and. l == 1 .and. m == 2) then
+            do m = 1, dim_lengths(2)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(l, y, m, x)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 4 .and. l == 3 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(m, x, l, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 4 .and. l == 2 .and. m == 1) then
+            do m = 1, dim_lengths(1)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(4)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(m, l, y, x)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+        if (x == 1 .and. y == 2 .and. l == 3 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, y, l, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 1 .and. l == 3 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(3)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(y, x, l, m)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 1 .and. y == 3 .and. l == 2 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(1)
+                            dat(x, y, l, m) = dat4(x, l, m, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 1 .and. l == 2 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(2)
+                    do y = 1, dim_lengths(1)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(y, l, m, x)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 2 .and. y == 3 .and. l == 1 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(3)
+                        do x = 1, dim_lengths(2)
+                            dat(x, y, l, m) = dat4(l, m, x, y)
+                        end do
+                    end do
+                end do
+            end do
+        else if (x == 3 .and. y == 2 .and. l == 1 .and. m == 4) then
+            do m = 1, dim_lengths(4)
+                do l = 1, dim_lengths(1)
+                    do y = 1, dim_lengths(2)
+                        do x = 1, dim_lengths(3)
+                            dat(x, y, l, m) = dat4(l, m, y, x)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
     subroutine nc4_get_xyt_order(iun, fname, standard_name, vid, dim_x, dim_y, dim_t, dim_lengths, ierr, name_x, name_y, name_t)
 
         !> Input variables.
@@ -3296,14 +4476,14 @@ module nc_io
         !> Set units based on 'ts_freq'.
         write(line, "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2)") &
             ic%now%year, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins, 0
-        if (btest(ts_freq, IO_FREQ_DLY)) then
+        if (btest(ts_freq, IO_FREQ_MLY) .or. btest(ts_freq, IO_FREQ_SSL) .or. btest(ts_freq, IO_FREQ_DLY)) then
             ierr = nf90_put_att(iun, vid_t, 'units', 'days since ' // trim(adjustl(line)))
-        else if (btest(ts_freq, IO_FREQ_MLY) .or. btest(ts_freq, IO_FREQ_SSL)) then
-            ierr = nf90_put_att(iun, vid_t, 'units', 'months since ' // trim(adjustl(line)))
         else if (btest(ts_freq, IO_FREQ_YLY)) then
             ierr = nf90_put_att(iun, vid_t, 'units', 'years since ' // trim(adjustl(line)))
         else if (btest(ts_freq, IO_FREQ_HLY)) then
             ierr = nf90_put_att(iun, vid_t, 'units', 'hours since ' // trim(adjustl(line)))
+        else if (btest(ts_freq, IO_FREQ_PTS)) then
+            ierr = nf90_put_att(iun, vid_t, 'units', 'minutes since ' // trim(adjustl(line)))
         else
             ierr = nf90_put_att(iun, vid_t, 'units', 'seconds since ' // trim(adjustl(line)))
         end if
@@ -4919,7 +6099,7 @@ module nc_io
         ierr = NF90_NOERR
 
         !> Define variable.
-        call nc4_define_variable_xyt_nf90_int(iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_m, vid, ierr)
+        call nc4_define_variable_xym_nf90_int(iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_m, vid, ierr)
         if (ierr == 0) ierr = NF90_NOERR
 
         !> Write data.
@@ -4960,7 +6140,7 @@ module nc_io
         ierr = NF90_NOERR
 
         !> Define variable.
-        call nc4_define_variable_xyt_nf90_float(iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_m, vid, ierr)
+        call nc4_define_variable_xym_nf90_float(iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_m, vid, ierr)
         if (ierr == 0) ierr = NF90_NOERR
 
         !> Write data.
@@ -5001,7 +6181,253 @@ module nc_io
         ierr = NF90_NOERR
 
         !> Define variable.
-        call nc4_define_variable_xyt_nf90_double(iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_m, vid, ierr)
+        call nc4_define_variable_xym_nf90_double(iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_m, vid, ierr)
+        if (ierr == 0) ierr = NF90_NOERR
+
+        !> Write data.
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, dat)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "Errors occurred writing data for '" // trim(standard_name) // "' in file (Code " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_define_variable_xylm_nf90_int( &
+        iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_l, did_m, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun, did_x, did_y, did_l, did_m
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        integer(kind = FourByteInt), intent(in) :: fill
+
+        !> Input variables (optional).
+        integer(kind = FourByteInt), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Create variable.
+        ierr = nf90_def_var(iun, standard_name, NF90_INT, (/did_x, did_y, did_l, did_m/), vid)
+
+        !> Coordinate reference (longitude latitude).
+        if (ierr == NF90_NOERR) then
+            call nc4_set_crs(iun, fname, vid, standard_name, 'longitude latitude', ierr)
+            if (ierr == 0) ierr = NF90_NOERR
+        end if
+
+        !> Assign attributes.
+        if (ierr == NF90_NOERR) then
+            call nc4_set_variable_attributes_nf90_int( &
+                iun, fname, vid, standard_name, long_name, units, fill, ierr, &
+                constmul, constadd, constrmax, constrmin)
+            if (ierr == 0) ierr = NF90_NOERR
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_define_variable_xylm_nf90_float( &
+        iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_l, did_m, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun, did_x, did_y, did_l, did_m
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        real(kind = FourByteReal), intent(in) :: fill
+
+        !> Input variables (optional).
+        real(kind = FourByteReal), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Create variable.
+        ierr = nf90_def_var(iun, standard_name, NF90_FLOAT, (/did_x, did_y, did_l, did_m/), vid)
+
+        !> Coordinate reference (longitude latitude).
+        if (ierr == NF90_NOERR) then
+            call nc4_set_crs(iun, fname, vid, standard_name, 'longitude latitude', ierr)
+            if (ierr == 0) ierr = NF90_NOERR
+        end if
+
+        !> Assign attributes.
+        if (ierr == NF90_NOERR) then
+            call nc4_set_variable_attributes_nf90_float( &
+                iun, fname, vid, standard_name, long_name, units, fill, ierr, &
+                constmul, constadd, constrmax, constrmin)
+            if (ierr == 0) ierr = NF90_NOERR
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_define_variable_xylm_nf90_double( &
+        iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_l, did_m, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun, did_x, did_y, did_l, did_m
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        real(kind = EightByteReal), intent(in) :: fill
+
+        !> Input variables (optional).
+        real(kind = EightByteReal), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Create variable.
+        ierr = nf90_def_var(iun, standard_name, NF90_DOUBLE, (/did_x, did_y, did_l, did_m/), vid)
+
+        !> Coordinate reference (longitude latitude).
+        if (ierr == NF90_NOERR) then
+            call nc4_set_crs(iun, fname, vid, standard_name, 'longitude latitude', ierr)
+            if (ierr == 0) ierr = NF90_NOERR
+        end if
+
+        !> Assign attributes.
+        if (ierr == NF90_NOERR) then
+            call nc4_set_variable_attributes_nf90_double( &
+                iun, fname, vid, standard_name, long_name, units, fill, ierr, &
+                constmul, constadd, constrmax, constrmin)
+            if (ierr == 0) ierr = NF90_NOERR
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_variable_xylm_nf90_int( &
+        iun, fname, standard_name, long_name, units, fill, dat, did_x, did_y, did_l, did_m, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun, did_x, did_y, did_l, did_m
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        integer(kind = FourByteInt), intent(in) :: dat(:, :, :, :), fill
+
+        !> Input variables (optional).
+        integer(kind = FourByteInt), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Define variable.
+        call nc4_define_variable_xylm_nf90_int( &
+            iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_l, did_m, vid, ierr)
+        if (ierr == 0) ierr = NF90_NOERR
+
+        !> Write data.
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, dat)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "Errors occurred writing data for '" // trim(standard_name) // "' in file (Code " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_variable_xylm_nf90_float( &
+        iun, fname, standard_name, long_name, units, fill, dat, did_x, did_y, did_l, did_m, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun, did_x, did_y, did_l, did_m
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        real(kind = FourByteReal), intent(in) :: dat(:, :, :, :), fill
+
+        !> Input variables (optional).
+        real(kind = FourByteReal), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Define variable.
+        call nc4_define_variable_xylm_nf90_float( &
+            iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_l, did_m, vid, ierr)
+        if (ierr == 0) ierr = NF90_NOERR
+
+        !> Write data.
+        if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, dat)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_warning( &
+                "Errors occurred writing data for '" // trim(standard_name) // "' in file (Code " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Reset 'ierr.'
+        if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_add_variable_xylm_nf90_double( &
+        iun, fname, standard_name, long_name, units, fill, dat, did_x, did_y, did_l, did_m, vid, ierr, &
+        constmul, constadd, constrmax, constrmin)
+
+        !> Input variables.
+        integer, intent(in) :: iun, did_x, did_y, did_l, did_m
+        character(len = *), intent(in) :: fname, standard_name, long_name, units
+        real(kind = EightByteReal), intent(in) :: dat(:, :, :, :), fill
+
+        !> Input variables (optional).
+        real(kind = EightByteReal), intent(in), optional :: constmul, constadd, constrmax, constrmin
+
+        !> Output variables.
+        integer, intent(out) :: vid, ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Define variable.
+        call nc4_define_variable_xylm_nf90_double( &
+            iun, fname, standard_name, long_name, units, fill, did_x, did_y, did_l, did_m, vid, ierr)
         if (ierr == 0) ierr = NF90_NOERR
 
         !> Write data.
@@ -5557,11 +6983,11 @@ module nc_io
 
     end subroutine
 
-    subroutine nc4_write_field_xyt_nf90_float(shd, iun, tid, vid, dat, dates, ierr)
+    subroutine nc4_write_field_xyt_nf90_float(shd, iun, ffreq, tid, vid, dat, dates, ierr)
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
-        integer, intent(in) :: iun, tid, vid
+        integer, intent(in) :: iun, ffreq, tid, vid
         real(kind = FourByteReal), dimension(:, :), intent(in) :: dat
         integer, dimension(:, :), intent(in) :: dates
 
@@ -5571,6 +6997,7 @@ module nc_io
         !> Local variables.
         integer t, n, z
         real, dimension(shd%xCount, shd%yCount) :: r2c_grid
+        real(kind = EightByteReal) jdate_r8, t0_r8, t1_r8
         real fill
 
         !> Initialize output variable.
@@ -5583,6 +7010,20 @@ module nc_io
             fill = NF90_FILL_FLOAT
         end if
 
+        !> Calculate reference time.
+        jdate_r8 = ((ic%start%year - 1) - 1601)*365.25 + get_jday(ic%start%month, ic%start%day, ic%start%year)
+        if (btest(ffreq, IO_FREQ_MLY) .or. btest(ffreq, IO_FREQ_SSL) .or. btest(ffreq, IO_FREQ_DLY)) then
+            t0_r8 = jdate_r8
+        else if (btest(ffreq, IO_FREQ_YLY)) then
+            t0_r8 = ic%start%year
+        else if (btest(ffreq, IO_FREQ_HLY)) then
+            t0_r8 = jdate_r8*24.0 + ic%start%hour + ic%start%mins/60.0
+        else if (btest(ffreq, IO_FREQ_PTS)) then
+            t0_r8 = jdate_r8*24.0*60.0 + ic%start%hour*60.0 + ic%start%mins
+        else
+            t0_r8 = jdate_r8*24.0*60.0*60.0 + ic%start%hour*60.0*60.0 + ic%start%mins*60.0
+        end if
+
         !> Loop for time.
         do t = 1, size(dat, 2)
 
@@ -5592,8 +7033,27 @@ module nc_io
                 r2c_grid(shd%xxx(n), shd%yyy(n)) = dat(n, t)
             end do
 
+            !> Calculate offset from reference time.
+            !>  dates(2, t) -> year
+            !>  dates(3, t) -> month
+            !>  dates(4, t) -> day
+            !>  dates(5, t) -> hour
+            !>  dates(6, t) -> mins
+            jdate_r8 = ((dates(2, t) - 1) - 1601)*365.25 + get_jday(dates(3, t), dates(4, t), dates(2, t))
+            if (btest(ffreq, IO_FREQ_MLY) .or. btest(ffreq, IO_FREQ_SSL) .or. btest(ffreq, IO_FREQ_DLY)) then
+                t1_r8 = jdate_r8
+            else if (btest(ffreq, IO_FREQ_YLY)) then
+                t1_r8 = dates(2, t)
+            else if (btest(ffreq, IO_FREQ_HLY)) then
+                t1_r8 = jdate_r8*24.0 + dates(5, t) + dates(6, t)/60.0
+            else if (btest(ffreq, IO_FREQ_PTS)) then
+                t1_r8 = jdate_r8*24.0*60.0 + dates(5, t)*60.0 + dates(6, t)
+            else
+                t1_r8 = jdate_r8*24.0*60.0*60.0 + dates(5, t)*60.0*60.0 + dates(6, t)*60.0
+            end if
+
             !> Write time.
-            if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, tid, (dates(1, t) - 1), start = (/ dates(1, t) /))
+            if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, tid, int(t1_r8 - t0_r8), start = (/ dates(1, t) /))
 
             !> Write data.
             if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, vid, r2c_grid, start = (/ 1, 1, dates(1, t) /))
