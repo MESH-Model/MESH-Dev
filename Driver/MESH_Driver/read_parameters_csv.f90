@@ -14,7 +14,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
 
     !> strings: For 'readline', 'compact', 'parse', 'uppercase' and 'lowercase' functions.
     !> sa_mesh_common: For common MESH variables and routines.
-    !> parse_utilities: For 'assign_line_args_vector' function.
+    !> parse_utilities: For 'assign_line_args' function.
     use strings
     use sa_mesh_common
     use parse_utilities
@@ -36,11 +36,10 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
     integer, intent(out) :: ierr
 
     !> Local variables.
-    integer nargs, p, n, j, i, ignd, istat, iconv, z
-    real fval
+    integer nargs, n, p, b, k, j, i, ignd, icondition, istat, z
     character(len = DEFAULT_LINE_LENGTH) line
-    character(len = DEFAULT_FIELD_LENGTH) field1, field2
     character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
+    character(len = DEFAULT_FIELD_LENGTH) field1, field2, field3
 
     !> Initialize the return status.
     ierr = 0
@@ -53,6 +52,15 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
     if (ierr /= 0) then
         call print_error('Unable to open the file. Check if the file exists.')
         return
+    end if
+
+    !> Determine the number of values to read for soil-related variables.
+    if (NRSOILAYEREADFLAG > 3) then
+        ignd = min(NRSOILAYEREADFLAG, shd%lc%IGND)
+    else if (NRSOILAYEREADFLAG == 1) then
+        ignd = shd%lc%IGND
+    else
+        ignd = 3
     end if
 
     !> Read and parse each line.
@@ -76,586 +84,789 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
         !> Cycle if no arguments exist.
         if (nargs < 1) cycle
 
+        !> Reset variables used for message passing.
+        icondition = 0
+        field1 = ''
+        field2 = ''
+        field3 = ''
+        istat = pstat%NORMAL_STATUS
+        p = 0
+        b = 0
+
+        !> Shift 'nargs' by 1 to account for the leading field name.
+        nargs = nargs - 1
+
         !> Assign and distribute the field.
         if (DIAGNOSEMODE) call print_message('Reading parameter: ' // trim(adjustl(args(1))) // '.')
-        istat = 0
         select case (uppercase(args(1)))
 
             !> SVS (unique variables).
             case (VN_SVS_DEGLAT)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%deglat)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%deglat(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%deglat = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%deglat, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%deglat, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_DEGLNG)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%deglng)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%deglng(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%deglng = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%deglng, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%deglng, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_OBSERVED_FORCING)
-                p = 1
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (lowercase(args(2)) == 'height' .or. lowercase(args(2)) == 'on' .or. lowercase(args(2)) == '.true.') then
-                        svs_mesh%vs%observed_forcing = .true.
-                    else
-                        svs_mesh%vs%observed_forcing = .false.
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (lowercase(args(2)) == 'height') then
+                        args(2) = '.true.'
                     end if
+                    p = 1
+                    call assign_line_args(svs_mesh%vs%observed_forcing, args(2:), nargs, istat)
                 end if
             case (VN_SVS_ZUSL)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%zusl)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%zusl(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%zusl = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%zusl, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%zusl, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_ZTSL)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%ztsl)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%ztsl(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%ztsl = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%ztsl, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%ztsl, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_SIGMA_U)
-                p = 1
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call value(args(2), svs_mesh%vs%sigma_u, iconv)
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    p = 1
+                    call assign_line_args(svs_mesh%vs%sigma_u, args(2:), nargs, istat)
                 end if
             case (VN_SVS_SIGMA_T)
-                p = 1
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call value(args(2), svs_mesh%vs%sigma_t, iconv)
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    p = 1
+                    call assign_line_args(svs_mesh%vs%sigma_t, args(2:), nargs, istat)
                 end if
             case (VN_SVS_SLOP)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%slop)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%slop(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%slop = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%slop, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%slop, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_DRAINDENS)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%draindens)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%draindens(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%draindens = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%draindens, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%draindens, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_SOILTEXT)
-                p = 1
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    svs_mesh%vs%soiltext = trim(adjustl(args(2)))
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    p = 1
+                    call assign_line_args(svs_mesh%vs%soiltext, args(2:), nargs, istat)
                 end if
             case (VN_SVS_KHYD)
-                p = 1
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call value(args(2), svs_mesh%vs%khyd, iconv)
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    p = 1
+                    call assign_line_args(svs_mesh%vs%khyd, args(2:), nargs, istat)
                 end if
             case (VN_SVS_SAND)
-                if (NRSOILAYEREADFLAG > 3) then
-                    p = min(NRSOILAYEREADFLAG, shd%lc%IGND)
-                else if (NRSOILAYEREADFLAG == 1) then
-                    p = shd%lc%IGND
-                else
-                    p = 3
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%sand)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        if (shd%lc%NML /= 1) then
+                            field1 = adjustl(VN_SVS_SAND)
+                            field2 = adjustl(VN_SVS_SAND_N)
+                            field3 = 'points'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%sand(1, shd%lc%IGND))
+                        if (shd%lc%NTYPE /= 1) then
+                            field1 = adjustl(VN_SVS_SAND)
+                            field2 = adjustl(VN_SVS_SAND_N)
+                            field3 = 'GRUs'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%sand = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%sand(1, 1:p), p, args(2:), nargs, iconv)
-                    if (p < shd%lc%IGND) then
-                        do j = (p + 1), shd%lc%IGND
-                            svs_mesh%vs%sand(:, j) = svs_mesh%vs%sand(:, p)
-                            svs_mesh%vs%sand(:, j) = svs_mesh%vs%sand(:, p)
-                            svs_mesh%vs%sand(:, j) = svs_mesh%vs%sand(:, p)
-                        end do
+                    b = shd%lc%IGND
+                    call assign_line_args(svs_mesh%vs%sand, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    b = ignd
+                end if
+            case (VN_SVS_SAND_N)
+                if (.not. svs_mesh%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    call assign_line_args(k, args(2:2), 1, istat)
+                    istat = pstat%NORMAL_STATUS
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%lc%NTYPE
                     end if
+                    nargs = nargs - 1
+                    b = shd%lc%IGND
+                    call assign_line_args(svs_mesh%vs%sand, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    b = ignd
                 end if
             case (VN_SVS_CLAY)
-                if (NRSOILAYEREADFLAG > 3) then
-                    p = min(NRSOILAYEREADFLAG, shd%lc%IGND)
-                else if (NRSOILAYEREADFLAG == 1) then
-                    p = 0
-                else
-                    p = 3
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%clay)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        if (shd%lc%NML /= 1) then
+                            field1 = adjustl(VN_SVS_CLAY)
+                            field2 = adjustl(VN_SVS_CLAY_N)
+                            field3 = 'points'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%clay(1, shd%lc%IGND))
+                        if (shd%lc%NTYPE /= 1) then
+                            field1 = adjustl(VN_SVS_CLAY)
+                            field2 = adjustl(VN_SVS_CLAY_N)
+                            field3 = 'GRUs'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%clay = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%clay(1, 1:p), p, args(2:), nargs, iconv)
-                    if (p < shd%lc%IGND) then
-                        do j = (p + 1), shd%lc%IGND
-                            svs_mesh%vs%clay(:, j) = svs_mesh%vs%clay(:, p)
-                            svs_mesh%vs%clay(:, j) = svs_mesh%vs%clay(:, p)
-                            svs_mesh%vs%clay(:, j) = svs_mesh%vs%clay(:, p)
-                        end do
+                    b = shd%lc%IGND
+                    call assign_line_args(svs_mesh%vs%clay, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    b = ignd
+                end if
+            case (VN_SVS_CLAY_N)
+                if (.not. svs_mesh%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    call assign_line_args(k, args(2:2), 1, istat)
+                    istat = pstat%NORMAL_STATUS
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%lc%NTYPE
                     end if
+                    nargs = nargs - 1
+                    b = shd%lc%IGND
+                    call assign_line_args(svs_mesh%vs%clay, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    b = ignd
                 end if
             case (VN_SVS_WSOIL)
-                if (NRSOILAYEREADFLAG > 3) then
-                    p = min(NRSOILAYEREADFLAG, shd%lc%IGND)
-                else if (NRSOILAYEREADFLAG == 1) then
-                    p = 0
-                else
-                    p = 3
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%wsoil)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        if (shd%lc%NML /= 1) then
+                            field1 = adjustl(VN_SVS_WSOIL)
+                            field2 = adjustl(VN_SVS_WSOIL_N)
+                            field3 = 'points'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%wsoil(1, shd%lc%IGND))
+                        if (shd%lc%NTYPE /= 1) then
+                            field1 = adjustl(VN_SVS_WSOIL)
+                            field2 = adjustl(VN_SVS_WSOIL_N)
+                            field3 = 'GRUs'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%wsoil = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%wsoil(1, 1:p), p, args(2:), nargs, iconv)
-                    if (p < shd%lc%IGND) then
-                        do j = (p + 1), shd%lc%IGND
-                            svs_mesh%vs%wsoil(:, j) = svs_mesh%vs%wsoil(:, p)
-                            svs_mesh%vs%wsoil(:, j) = svs_mesh%vs%wsoil(:, p)
-                            svs_mesh%vs%wsoil(:, j) = svs_mesh%vs%wsoil(:, p)
-                        end do
+                    b = shd%lc%IGND
+                    call assign_line_args(svs_mesh%vs%wsoil, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    b = ignd
+                end if
+            case (VN_SVS_WSOIL_N)
+                if (.not. svs_mesh%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    call assign_line_args(k, args(2:2), 1, istat)
+                    istat = pstat%NORMAL_STATUS
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%lc%NTYPE
                     end if
+                    nargs = nargs - 1
+                    b = shd%lc%IGND
+                    call assign_line_args(svs_mesh%vs%wsoil, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    b = ignd
                 end if
             case (VN_SVS_ISOIL)
-                if (NRSOILAYEREADFLAG > 3) then
-                    p = min(NRSOILAYEREADFLAG, shd%lc%IGND)
-                else if (NRSOILAYEREADFLAG == 1) then
-                    p = 0
-                else
-                    p = 3
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%isoil)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        if (shd%lc%NML /= 1) then
+                            field1 = adjustl(VN_SVS_ISOIL)
+                            field2 = adjustl(VN_SVS_ISOIL_N)
+                            field3 = 'points'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%isoil(1, shd%lc%IGND))
+                        if (shd%lc%NTYPE /= 1) then
+                            field1 = adjustl(VN_SVS_ISOIL)
+                            field2 = adjustl(VN_SVS_ISOIL_N)
+                            field3 = 'GRUs'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%isoil = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%isoil(1, 1:p), p, args(2:), nargs, iconv)
-                    if (p < shd%lc%IGND) then
-                        do j = (p + 1), shd%lc%IGND
-                            svs_mesh%vs%isoil(:, j) = svs_mesh%vs%isoil(:, p)
-                            svs_mesh%vs%isoil(:, j) = svs_mesh%vs%isoil(:, p)
-                            svs_mesh%vs%isoil(:, j) = svs_mesh%vs%isoil(:, p)
-                        end do
+                    b = shd%lc%IGND
+                    call assign_line_args(svs_mesh%vs%isoil, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    b = ignd
+                end if
+            case (VN_SVS_ISOIL_N)
+                if (.not. svs_mesh%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    call assign_line_args(k, args(2:2), 1, istat)
+                    istat = pstat%NORMAL_STATUS
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%lc%NTYPE
                     end if
+                    nargs = nargs - 1
+                    b = shd%lc%IGND
+                    call assign_line_args(svs_mesh%vs%isoil, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    b = ignd
                 end if
             case (VN_SVS_TGROUND)
-                p = svs_mesh%vs%kthermal
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%tground)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        if (shd%lc%NML /= 1) then
+                            field1 = adjustl(VN_SVS_TGROUND)
+                            field2 = adjustl(VN_SVS_TGROUND_N)
+                            field3 = 'points'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%tground(1, p))
+                        if (shd%lc%NTYPE /= 1) then
+                            field1 = adjustl(VN_SVS_TGROUND)
+                            field2 = adjustl(VN_SVS_TGROUND_N)
+                            field3 = 'GRUs'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%tground = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%tground(1, :), p, args(2:), nargs, iconv)
+                    b = svs_mesh%vs%kthermal
+                    call assign_line_args(svs_mesh%vs%tground, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                end if
+            case (VN_SVS_TGROUND_N)
+                if (.not. svs_mesh%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    call assign_line_args(k, args(2:2), 1, istat)
+                    istat = pstat%NORMAL_STATUS
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%lc%NTYPE
+                    end if
+                    nargs = nargs - 1
+                    b = svs_mesh%vs%kthermal
+                    call assign_line_args(svs_mesh%vs%tground, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_VF)
-                p = svs_mesh%c%NLANDCLASS
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%vf)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        if (shd%lc%NML /= 1) then
+                            field1 = adjustl(VN_SVS_VF)
+                            field2 = adjustl(VN_SVS_VF_N)
+                            field3 = 'points'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%vf(1, p))
+                        if (shd%lc%NTYPE /= 1) then
+                            field1 = adjustl(VN_SVS_VF)
+                            field2 = adjustl(VN_SVS_VF_N)
+                            field3 = 'GRUs'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%vf = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%vf(1, :), p, args(2:), nargs, iconv)
+                    b = svs_mesh%c%NLANDCLASS
+                    call assign_line_args(svs_mesh%vs%vf, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                end if
+            case (VN_SVS_VF_N)
+                if (.not. svs_mesh%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    call assign_line_args(k, args(2:2), 1, istat)
+                    istat = pstat%NORMAL_STATUS
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%lc%NTYPE
+                    end if
+                    nargs = nargs - 1
+                    b = svs_mesh%c%NLANDCLASS
+                    call assign_line_args(svs_mesh%vs%vf, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_Z0V, 'Z0')
-                p = svs_mesh%c%NLANDCLASS
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%z0v)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        if (shd%lc%NML /= 1) then
+                            field1 = adjustl(VN_SVS_Z0V)
+                            field2 = adjustl(VN_SVS_Z0V_N)
+                            field3 = 'points'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%z0v(1, p))
+                        if (shd%lc%NTYPE /= 1) then
+                            field1 = adjustl(VN_SVS_Z0V)
+                            field2 = adjustl(VN_SVS_Z0V_N)
+                            field3 = 'GRUs'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%z0v = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%z0v(1, :), p, args(2:), nargs, iconv)
+                    b = svs_mesh%c%NLANDCLASS
+                    call assign_line_args(svs_mesh%vs%z0v, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                end if
+            case (VN_SVS_Z0V_N)
+                if (.not. svs_mesh%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    call assign_line_args(k, args(2:2), 1, istat)
+                    istat = pstat%NORMAL_STATUS
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%lc%NTYPE
+                    end if
+                    nargs = nargs - 1
+                    b = svs_mesh%c%NLANDCLASS
+                    call assign_line_args(svs_mesh%vs%z0v, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_TVEGE)
-                p = 2
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%tvege)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        if (shd%lc%NML /= 1) then
+                            field1 = adjustl(VN_SVS_TVEGE)
+                            field2 = adjustl(VN_SVS_TVEGE_N)
+                            field3 = 'points'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%tvege(1, p))
+                        if (shd%lc%NTYPE /= 1) then
+                            field1 = adjustl(VN_SVS_TVEGE)
+                            field2 = adjustl(VN_SVS_TVEGE_N)
+                            field3 = 'GRUs'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%tvege = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%tvege(1, :), p, args(2:), nargs, iconv)
+                    b = 2
+                    call assign_line_args(svs_mesh%vs%tvege, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                end if
+            case (VN_SVS_TVEGE_N)
+                if (.not. svs_mesh%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    call assign_line_args(k, args(2:2), 1, istat)
+                    istat = pstat%NORMAL_STATUS
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%lc%NTYPE
+                    end if
+                    nargs = nargs - 1
+                    b = 2
+                    call assign_line_args(svs_mesh%vs%tvege, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_WVEG)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%wveg)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%wveg(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%wveg = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%wveg, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%wveg, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_TSNOW)
-                p = 2
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%tsnow)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        if (shd%lc%NML /= 1) then
+                            field1 = adjustl(VN_SVS_TSNOW)
+                            field2 = adjustl(VN_SVS_TSNOW_N)
+                            field3 = 'points'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%tsnow(1, p))
+                        if (shd%lc%NTYPE /= 1) then
+                            field1 = adjustl(VN_SVS_TSNOW)
+                            field2 = adjustl(VN_SVS_TSNOW_N)
+                            field3 = 'GRUs'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%tsnow = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%tsnow(1, :), p, args(2:), nargs, iconv)
+                    b = 2
+                    call assign_line_args(svs_mesh%vs%tsnow, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                end if
+            case (VN_SVS_TSNOW_N)
+                if (.not. svs_mesh%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    call assign_line_args(k, args(2:2), 1, istat)
+                    istat = pstat%NORMAL_STATUS
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%lc%NTYPE
+                    end if
+                    nargs = nargs - 1
+                    b = 2
+                    call assign_line_args(svs_mesh%vs%tsnow, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_SNODPL)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%snodpl)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%snodpl(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%snodpl = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%snodpl, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%snodpl, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_SNODEN)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%snoden)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%snoden(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%snoden = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%snoden, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%snoden, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_SNOAL)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%snoal)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%snoal(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%snoal = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%snoal, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%snoal, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_WSNOW)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%wsnow)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%wsnow(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%wsnow = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%wsnow, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%wsnow, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_TSNOWVEG)
-                p = 2
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%tsnowveg)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        if (shd%lc%NML /= 1) then
+                            field1 = adjustl(VN_SVS_TSNOWVEG)
+                            field2 = adjustl(VN_SVS_TSNOWVEG_N)
+                            field3 = 'points'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%tsnowveg(1, p))
+                        if (shd%lc%NTYPE /= 1) then
+                            field1 = adjustl(VN_SVS_TSNOWVEG)
+                            field2 = adjustl(VN_SVS_TSNOWVEG_N)
+                            field3 = 'GRUs'
+                            icondition = 1
+                        end if
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%tsnowveg = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%tsnowveg(1, :), p, args(2:), nargs, iconv)
+                    b = 2
+                    call assign_line_args(svs_mesh%vs%tsnowveg, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                end if
+            case (VN_SVS_TSNOWVEG_N)
+                if (.not. svs_mesh%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    call assign_line_args(k, args(2:2), 1, istat)
+                    istat = pstat%NORMAL_STATUS
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%lc%NTYPE
+                    end if
+                    nargs = nargs - 1
+                    b = 2
+                    call assign_line_args(svs_mesh%vs%tsnowveg, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_SNVDP)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%snvdp)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%snvdp(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%snvdp = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%snvdp, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%snvdp, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_SNVDEN)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%snvden)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%snvden(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%snvden = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%snvden, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%snvden, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_SNVAL)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%snval)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%snval(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%snval = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%snval, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%snval, p, args(2:), nargs, istat)
                 end if
             case (VN_SVS_WSNV)
-                if (SHDFILEFMT == 2) then
-                    p = shd%lc%NML
-                else
-                    p = shd%lc%NTYPE
-                end if
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    if (allocated(svs_mesh%vs%wsnv)) then
-                        istat = 3
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
                     else
-                        allocate(svs_mesh%vs%wsnv(p))
+                        p = shd%lc%NTYPE
                     end if
-                    svs_mesh%vs%wsnv = 0.0
-                    call assign_line_args_vector(svs_mesh%vs%wsnv, p, args(2:), nargs, iconv)
+                    call assign_line_args(svs_mesh%vs%wsnv, p, args(2:), nargs, istat)
                 end if
 
             !> BASEFLOWFLAG == 2 (lower zone storage).
             case ('PWR')
-                p = shd%NRVR
-                if (.not. bflm%BASEFLOWFLAG /= 2) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call assign_line_args_vector(bflm%pm_iak%pwr, p, args(2:), nargs, iconv)
+                if (bflm%BASEFLOWFLAG /= 2) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%NRVR
+                    end if
+                    call assign_line_args(bflm%pm_iak%pwr, p, args(2:), nargs, istat)
                 end if
             case ('FLZ')
-                p = shd%NRVR
-                if (.not. bflm%BASEFLOWFLAG /= 2) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call assign_line_args_vector(bflm%pm_iak%flz, p, args(2:), nargs, iconv)
+                if (bflm%BASEFLOWFLAG /= 2) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%NRVR
+                    end if
+                    call assign_line_args(bflm%pm_iak%flz, p, args(2:), nargs, istat)
                 end if
 
             !> RPN RTE (Watflood, 2007).
             case ('R2N')
-                p = shd%NRVR
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call assign_line_args_vector(rtepm_iak%r2n, p, args(2:), nargs, iconv)
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%NRVR
+                    end if
+                    call assign_line_args(rtepm_iak%r2n, p, args(2:), nargs, istat)
                 end if
             case ('R1N')
-                p = shd%NRVR
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call assign_line_args_vector(rtepm_iak%r1n, p, args(2:), nargs, iconv)
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%NRVR
+                    end if
+                    call assign_line_args(rtepm_iak%r1n, p, args(2:), nargs, istat)
                 end if
             case ('MNDR')
-                p = shd%NRVR
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call assign_line_args_vector(rtepm_iak%mndr, p, args(2:), nargs, iconv)
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%NRVR
+                    end if
+                    call assign_line_args(rtepm_iak%mndr, p, args(2:), nargs, istat)
                 end if
             case ('AA2')
-                p = shd%NRVR
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call assign_line_args_vector(rtepm_iak%aa2, p, args(2:), nargs, iconv)
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%NRVR
+                    end if
+                    call assign_line_args(rtepm_iak%aa2, p, args(2:), nargs, istat)
                 end if
             case ('AA3')
-                p = shd%NRVR
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call assign_line_args_vector(rtepm_iak%aa3, p, args(2:), nargs, iconv)
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%NRVR
+                    end if
+                    call assign_line_args(rtepm_iak%aa3, p, args(2:), nargs, istat)
                 end if
             case ('AA4')
-                p = shd%NRVR
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call assign_line_args_vector(rtepm_iak%aa4, p, args(2:), nargs, iconv)
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%NRVR
+                    end if
+                    call assign_line_args(rtepm_iak%aa4, p, args(2:), nargs, istat)
                 end if
             case ('WIDEP')
-                p = shd%NRVR
                 if (.not. rteflg%PROCESS_ACTIVE) then
-                    istat = 1
-                else if ((nargs - 1) == p) then
-                    call assign_line_args_vector(rtepm_iak%widep, p, args(2:), nargs, iconv)
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    if (SHDFILEFMT == 2) then
+                        p = shd%lc%NML
+                    else
+                        p = shd%NRVR
+                    end if
+                    call assign_line_args(rtepm_iak%widep, p, args(2:), nargs, istat)
                 end if
 
             !> Unrecognized.
             case default
-                istat = 2
+                istat = istat + radix(istat)**pstat%UNRECOGNIZED
         end select
 
-        !> Status flags.
-        if (istat == 1 .and. DIAGNOSEMODE) then
+        !> Messages (non-fatal, non-warning).
+        if (icondition == 1 .and. len_trim(field1) /= 0 .and. len_trim(field2) /= 0 .and. len_trim(field3) /= 0) then
+                call print_warning( &
+                    "Multiple " // trim(field3) // " exist but the uniform " // trim(field1) // " parameter is used. " // &
+                    "The same values will be applied to all " // trim(field3) // " in the domain. " // &
+                    "To assign values to specific " // trim(field3) // ", use the " // trim(field2) // " parameter instead.")
+        end if
+
+        !> Status flags (fatal and/or warning).
+        if (btest(istat, pstat%INACTIVE) .and. DIAGNOSEMODE) then
             call print_remark("'" // trim(adjustl(args(1))) // "' is present but inactive.")
-        else if (istat == 2) then
+        else if (btest(istat, pstat%UNRECOGNIZED)) then
             call print_warning("'" // trim(adjustl(args(1))) // "' is not recognized.")
-        else if (istat == 3) then
-            call print_remark("'" // trim(adjustl(args(1))) // &
-                "' was already assigned but has been overwritten by a succeeding entry in the list.")
-        else if ((nargs - 1) > p) then
-            write(field1, FMT_GEN) (nargs - 1)
-            write(field2, FMT_GEN) p
-            call print_warning( &
-                "'" // trim(adjustl(args(1))) // "' contains " // trim(adjustl(field1)) // " fields but only " // &
-                trim(adjustl(field2)) // " are being used.")
-        else if ((nargs - 1) /= p) then
-            write(field1, FMT_GEN) (nargs - 1)
-            write(field2, FMT_GEN) p
-            call print_warning( &
-                "'" // trim(adjustl(args(1))) // "' only contains " // trim(adjustl(field1)) // " fields when " // &
-                trim(adjustl(field2)) // " are expected.")
-        else if (istat /= 0) then
-            call print_warning("An error occured reading '" // trim(adjustl(args(1))) // "' from the file.")
-        else if (iconv /= 0) then
-            call print_warning("An error occured assigning '" // trim(adjustl(args(1))) // "' values.")
-        else if (istat == 0) then
+        else
+            if (p /= 0) then
+                if ((b == 0 .and. nargs > p) .or. (b > 0 .and. nargs > b)) then
+                    write(field1, FMT_GEN) nargs
+                    if (b > 0) then
+                        write(field2, FMT_GEN) b
+                    else
+                        write(field2, FMT_GEN) p
+                    end if
+                    call print_warning( &
+                        "'" // trim(adjustl(args(1))) // "' contains " // trim(adjustl(field1)) // " fields but only " // &
+                        trim(adjustl(field2)) // " are being used.")
+                else if ((b == 0 .and. nargs /= p) .or. (b > 0 .and. nargs /= b)) then
+                    write(field1, FMT_GEN) nargs
+                    if (b > 0) then
+                        write(field2, FMT_GEN) b
+                    else
+                        write(field2, FMT_GEN) p
+                    end if
+                    call print_warning( &
+                        "'" // trim(adjustl(args(1))) // "' only contains " // trim(adjustl(field1)) // " fields when " // &
+                        trim(adjustl(field2)) // " are expected.")
+                end if
+            end if
+            if (btest(istat, pstat%OVERWRITING_FIELD) .and. DIAGNOSEMODE) then
+                call print_remark("Overwriting or updating the existing '" // trim(adjustl(args(1))) // "' value.")
+            end if
+            if (btest(istat, pstat%MISMATCHED_PRECISION)) then
+                call print_warning( &
+                    "The precision or length of '" // trim(adjustl(args(1))) // "' values exceeds the precision or length " // &
+                    "of the assigned field. Truncation may have occurred.")
+            end if
+            if (btest(istat, pstat%CONVERSION_ERROR)) then
+                call print_warning("An error occured assigning '" // trim(adjustl(args(1))) // "' values.")
+            end if
+            if (btest(istat, pstat%ALLOCATION_ERROR)) then
+                call print_message("ERROR: An error occured allocating '" // trim(adjustl(args(1))) // "'.")
+                ierr = 1
+            end if
+            if (btest(istat, pstat%MISMATCHED_BOUNDS)) then
+                call print_message("ERROR: Mismatched bounds encountered while assigning '" // trim(adjustl(args(1))) // "'.")
+                ierr = 1
+            end if
             n = n + 1
         end if
     end do
