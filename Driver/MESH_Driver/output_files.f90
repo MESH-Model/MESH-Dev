@@ -2192,9 +2192,9 @@ module output_files
 
                 !> Channels and routing.
                 case (VN_RFF, 'WR_RUNOFF')
-                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RFF, args, nargs, z, -1, real(ic%dts))
+                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RFF, args, nargs, z)
                 case (VN_RCHG, 'WR_RECHARGE')
-                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs, z, -1, real(ic%dts))
+                    if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs, z)
                 case (VN_QI)
                     if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_QI, args, nargs, z)
                 case (VN_STGCH)
