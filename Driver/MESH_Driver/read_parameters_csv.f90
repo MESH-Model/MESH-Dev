@@ -805,6 +805,41 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     end if
                     call assign_line_args(rtepm_iak%widep, p, args(2:), nargs, istat)
                 end if
+            case ('DTMINUSR')
+                if (.not. rteflg%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    p = 1
+                    call assign_line_args(rteflg%dtminusr, args(2:), nargs, istat)
+                end if
+            case ('MINDTMIN')
+                if (.not. rteflg%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    p = 1
+                    call assign_line_args(rteflg%mindtmin, args(2:), nargs, istat)
+                end if
+            case ('MAXINDEX')
+                if (.not. rteflg%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    p = 1
+                    call assign_line_args(rteflg%maxindex, args(2:), nargs, istat)
+                end if
+            case ('DTMINFRAC')
+                if (.not. rteflg%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    p = 1
+                    call assign_line_args(rteflg%dtminfrac, args(2:), nargs, istat)
+                end if
+            case ('CONVTHRESHUSR')
+                if (.not. rteflg%PROCESS_ACTIVE) then
+                    istat = istat + radix(istat)**pstat%INACTIVE
+                else
+                    p = 1
+                    call assign_line_args(rteflg%convthreshusr, args(2:), nargs, istat)
+                end if
 
             !> Unrecognized.
             case default
