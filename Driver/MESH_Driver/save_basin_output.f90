@@ -71,6 +71,7 @@ module save_basin_output
     type BasinOutputConfigFlag
         integer :: t = 1
         integer, dimension(:), allocatable :: n, ns, nr
+        logical :: fout_header = .true.
     end type
 
     type BasinOutputConfig
@@ -177,7 +178,9 @@ module save_basin_output
                  file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(fls%fl(mfk%f900)%fn)), &
                  iostat = ierr)
             call allocate_water_balance_out(shd, out%d)
-            call write_water_balance_header(fls, shd, fls%fl(mfk%f900)%iun, 86400)
+            if (bnoflg%wb%fout_header) then
+                call write_water_balance_header(fls, shd, fls%fl(mfk%f900)%iun, 86400)
+            end if
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
@@ -186,7 +189,9 @@ module save_basin_output
                              file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Gauge' // &
                                     trim(adjustl(nc)) // '.csv', &
                              iostat = ierr)
-                        call write_water_balance_header(fls, shd, (fls%fl(mfk%f900)%iun*1000 + n), 86400)
+                        if (bnoflg%wb%fout_header) then
+                            call write_water_balance_header(fls, shd, (fls%fl(mfk%f900)%iun*1000 + n), 86400)
+                        end if
                     end if
                 end do
             end if
@@ -194,14 +199,18 @@ module save_basin_output
         if (btest(bnoflg%eb%t, 0)) then
             open(901, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance.csv')
             call allocate_energy_balance_out(shd, out%d)
-            call write_energy_balance_header(fls, shd, 901, 86400)
+            if (bnoflg%eb%fout_header) then
+                call write_energy_balance_header(fls, shd, 901, 86400)
+            end if
         end if
 
         !> Monthly.
         if (btest(bnoflg%wb%t, 1)) then
             open(902, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly.csv')
             call allocate_water_balance_out(shd, out%m)
-            call write_water_balance_header(fls, shd, 902, 86400)
+            if (bnoflg%wb%fout_header) then
+                call write_water_balance_header(fls, shd, 902, 86400)
+            end if
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
@@ -210,7 +219,9 @@ module save_basin_output
                              file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly_Gauge' // &
                                     trim(adjustl(nc)) // '.csv', &
                              iostat = ierr)
-                        call write_water_balance_header(fls, shd, (902*1000 + n), 86400)
+                        if (bnoflg%wb%fout_header) then
+                            call write_water_balance_header(fls, shd, (902*1000 + n), 86400)
+                        end if
                     end if
                 end do
             end if
@@ -218,14 +229,18 @@ module save_basin_output
         if (btest(bnoflg%eb%t, 1)) then
             open(905, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance_Monthly.csv')
             call allocate_energy_balance_out(shd, out%m)
-            call write_energy_balance_header(fls, shd, 905, 86400)
+            if (bnoflg%eb%fout_header) then
+                call write_energy_balance_header(fls, shd, 905, 86400)
+            end if
         end if
 
         !> Hourly.
         if (btest(bnoflg%wb%t, 2)) then
             open(903, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Hourly.csv')
             call allocate_water_balance_out(shd, out%h)
-            call write_water_balance_header(fls, shd, 903, 3600)
+            if (bnoflg%wb%fout_header) then
+                call write_water_balance_header(fls, shd, 903, 3600)
+            end if
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
@@ -234,7 +249,9 @@ module save_basin_output
                              file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Hourly_Gauge' // &
                                     trim(adjustl(nc)) // '.csv', &
                              iostat = ierr)
-                        call write_water_balance_header(fls, shd, (903*1000 + n), 3600)
+                        if (bnoflg%wb%fout_header) then
+                            call write_water_balance_header(fls, shd, (903*1000 + n), 3600)
+                        end if
                     end if
                 end do
             end if
@@ -242,14 +259,18 @@ module save_basin_output
         if (btest(bnoflg%eb%t, 2)) then
             open(906, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance_Hourly.csv')
             call allocate_energy_balance_out(shd, out%h)
-            call write_energy_balance_header(fls, shd, 906, 3600)
+            if (bnoflg%eb%fout_header) then
+                call write_energy_balance_header(fls, shd, 906, 3600)
+            end if
         end if
 
         !> Per time-step.
         if (btest(bnoflg%wb%t, 3)) then
             open(904, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_ts.csv')
             call allocate_water_balance_out(shd, out%ts)
-            call write_water_balance_header(fls, shd, 904, ic%dts)
+            if (bnoflg%wb%fout_header) then
+                call write_water_balance_header(fls, shd, 904, ic%dts)
+            end if
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
@@ -258,7 +279,9 @@ module save_basin_output
                              file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_ts_Gauge' // &
                                     trim(adjustl(nc)) // '.csv', &
                              iostat = ierr)
-                        call write_water_balance_header(fls, shd, (904*1000 + n), ic%dts)
+                        if (bnoflg%wb%fout_header) then
+                            call write_water_balance_header(fls, shd, (904*1000 + n), ic%dts)
+                        end if
                     end if
                 end do
             end if
@@ -266,7 +289,9 @@ module save_basin_output
         if (btest(bnoflg%eb%t, 3)) then
             open(907, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_energy_balance_ts.csv')
             call allocate_energy_balance_out(shd, out%ts)
-            call write_energy_balance_header(fls, shd, 907, ic%dts)
+            if (bnoflg%eb%fout_header) then
+                call write_energy_balance_header(fls, shd, 907, ic%dts)
+            end if
         end if
 
         !> Calculate initial storage and aggregate through neighbouring cells.
@@ -709,6 +734,8 @@ module save_basin_output
                             if (flg%n(i - j) > shd%NAA) flg%n(i - j) = 0
                         end do
                     end if
+                case ('no_header')
+                    flg%fout_header = .false.
             end select
         end do
 
