@@ -26,6 +26,13 @@ module nc_io
         module procedure nc4_get_attribute_nf90_char
     end interface
 
+    interface nc4_map_variable
+        module procedure nc4_map_variable_dat2
+        module procedure nc4_map_variable_dat3
+        module procedure nc4_map_variable_dat4
+        module procedure nc4_map_variable_dat5
+    end interface
+
     interface nc4_get_variable_scalar
         module procedure nc4_get_variable_scalar_nf90_int
         module procedure nc4_get_variable_scalar_nf90_float
@@ -326,10 +333,10 @@ module nc_io
         !> Only dates of the Gregorian calendar type are supported.
         call parse_datetime(units_attribute, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, z)
         ierr = nf90_get_att(iun, vid, 'calendar', time_calendar)
-        if (ierr /= NF90_NOERR .or. lowercase(time_calendar) /= 'gregorian') then
+        if (ierr /= NF90_NOERR .or. lowercase(time_calendar) /= 'gregorian' .or. lowercase(time_calendar) /= 'standard') then
             call print_warning( &
                 "The reference calendar for '" // trim(vname) // "' is not set or not equal to '" // &
-                'Gregorian' // "' in file: " // trim(fname))
+                "'gregorian' or 'standard'" // "' in file: " // trim(fname))
         end if
         if (z /= 0) then
             call print_error("The format of the units of '" // trim(vname) // "' is unsupported in file: " // trim(fname))
@@ -609,9 +616,7 @@ module nc_io
         integer, intent(out), optional :: dim_length
 
         !> Local variables.
-        character(len = DEFAULT_FIELD_LENGTH) dname, field, code
-        integer, dimension(:), allocatable :: dimids
-        integer dim_len, ndims, dtype, vid
+        character(len = DEFAULT_FIELD_LENGTH) code
 
         !> Initialize output variable.
         ierr = NF90_NOERR
@@ -641,6 +646,2151 @@ module nc_io
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
+
+    end subroutine
+
+    subroutine nc4_get_variable(iun, fname, standard_name, vid, long_name, units, dtype, dimids, ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *) fname, standard_name
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Output variables (optional).
+        character(len = *), intent(out), optional :: long_name, units
+        integer, intent(out), optional :: vid, dtype
+        integer, dimension(:), allocatable, intent(out), optional :: dimids
+
+        !> Local variables.
+        integer ndims
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Get the ID of the variable.
+        ierr = nf90_inq_varid(iun, standard_name, vid)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "The variable '" // trim(standard_name) // "' cound not be found in file (Code: " // trim(adjustl(code)) // &
+                "): " // trim(fname))
+            ierr = 1
+            return
+        end if
+
+        !> Get the long name of the variable.
+        if (present(long_name)) then
+            ierr = nf90_get_att(iun, vid, 'long_name', long_name)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the long_name of '" // trim(standard_name) // "' in file (Code: " // &
+                    trim(adjustl(code)) // "): " // trim(fname))
+                long_name = ''
+            end if
+        end if
+
+        !> Get the units of the variable.
+        if (present(units)) then
+            ierr = nf90_get_att(iun, vid, 'units', units)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the units of '" // trim(standard_name) // "' in file (Code: " // &
+                    trim(adjustl(code)) // "): " // trim(fname))
+                units = ''
+            end if
+        end if
+
+        !> Get the data type of the variable.
+        if (present(dtype)) then
+            dtype = 0
+            ierr = nf90_inquire_variable(iun, vid, xtype = dtype)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_error( &
+                    "An error occurred reading the data type of '" // trim(standard_name) // "' in file (Code: " // &
+                    trim(adjustl(code)) // "): " // trim(fname))
+            end if
+        end if
+
+        !> Get the dimension IDs of the variable.
+        if (present(dimids)) then
+            ierr = nf90_inquire_variable(iun, vid, ndims = ndims)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the number of dimensions of '" // trim(standard_name) // "' in file (Code: " &
+                    // trim(adjustl(code)) // "): " // trim(fname))
+            else
+                if (allocated(dimids)) deallocate(dimids)
+                allocate(dimids(ndims), stat = ierr)
+                if (ierr /= 0) then
+                    write(code, FMT_GEN) ierr
+                    call print_warning( &
+                        "An error occurred allocating dimensions for '" // trim(standard_name) // "' in file (Code: " &
+                        // trim(adjustl(code)) // "): " // trim(fname))
+                else
+                    ierr = nf90_inquire_variable(iun, vid, dimids = dimids)
+                    if (ierr /= NF90_NOERR) then
+                        write(code, FMT_GEN) ierr
+                        call print_warning( &
+                            "An error occurred reading the dimension IDs of '" // trim(standard_name) // "' in file (Code: " &
+                            // trim(adjustl(code)) // "): " // trim(fname))
+                    end if
+                end if
+            end if
+        end if
+
+    end subroutine
+
+    subroutine nc4_get_dimension_ids( &
+        iun, fname, standard_name, dim1_name, dim1_order, &
+        dim2_name, dim2_order, dim3_name, dim3_order, dim4_name, dim4_order, dim5_name, dim5_order, &
+        dim6_name, dim6_order, dim7_name, dim7_order, &
+        ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, standard_name, dim1_name
+
+        !> Input variables (optional).
+        character(len = *), intent(in), optional :: dim2_name, dim3_name, dim4_name, dim5_name, dim6_name, dim7_name
+
+        !> Output variables.
+        integer, intent(out) :: dim1_order, ierr
+
+        !> Output variables (optional).
+        integer, intent(out), optional :: dim2_order, dim3_order, dim4_order, dim5_order, dim6_order, dim7_order
+
+        !> Local variables.
+        integer i, z
+        integer, dimension(:), allocatable :: dimids
+        character(len = DEFAULT_FIELD_LENGTH) field, code, dim_name
+
+        !> Initialize output variable.
+        ierr = NF90_NOERR
+
+        !> Get the dimension IDs of the variable.
+        call nc4_get_variable(iun, fname, standard_name, dimids = dimids, ierr = ierr)
+
+        !> Assign the IDs of the dimensions.
+        z = 0
+        do i = 1, size(dimids)
+
+            !> Get the dimension name.
+            z = nf90_inquire_dimension(iun, dimids(i), dim_name)
+            if (z /= NF90_NOERR) then
+                write(field, FMT_GEN) i
+                write(code, FMT_GEN) z
+                call print_warning( &
+                    "An error occurred reading the name of dimension " // trim(adjustl(field)) // " of '" // &
+                    trim(standard_name) // "' in file (Code: " // trim(adjustl(code)) // "): " // trim(fname))
+                ierr = 1
+                z = 0
+            else
+
+                !> Check against the provided names.
+                if (lowercase(dim_name) == lowercase(dim1_name)) then
+                    dim1_order = i
+                else if (present(dim2_name)) then
+                    if (lowercase(dim_name) == lowercase(dim2_name)) then
+                        if (present(dim2_order)) dim2_order = i
+                    else if (present(dim3_name)) then
+                        if (lowercase(dim_name) == lowercase(dim3_name)) then
+                            if (present(dim3_order)) dim3_order = i
+                        else if (present(dim4_name)) then
+                            if (lowercase(dim_name) == lowercase(dim4_name)) then
+                                if (present(dim4_order)) dim4_order = i
+                            else if (present(dim5_name)) then
+                                if (lowercase(dim_name) == lowercase(dim5_name)) then
+                                    if (present(dim5_order)) dim5_order = i
+                                else if (present(dim6_name)) then
+                                    if (lowercase(dim_name) == lowercase(dim6_name)) then
+                                        if (present(dim6_order)) dim6_order = i
+                                    else if (present(dim7_name)) then
+                                        if (lowercase(dim_name) == lowercase(dim7_name)) then
+                                            if (present(dim7_order)) dim7_order = i
+                                        else
+                                            z = 1
+                                        end if
+                                    else
+                                        z = 1
+                                    end if
+                                else
+                                    z = 1
+                                end if
+                            else
+                                z = 1
+                            end if
+                        else
+                            z = 1
+                        end if
+                    else
+                        z = 1
+                    end if
+                else
+                    z = 1
+                end if
+
+                !> Check for unassigned dimension.
+                if (z /= 0) then
+                    call print_warning( &
+                        "The dimension '" // trim(adjustl(dim_name)) // "' was not recognized in '" // &
+                        trim(standard_name) // "' in file (Code: " // trim(adjustl(code)) // "): " // trim(fname))
+                    z = 0
+                end if
+            end if
+        end do
+
+    end subroutine
+
+    subroutine nc4_map_variable_dat2( &
+        iun, fname, standard_name, dat, dat2, &
+        dim1_order, dim2_order, &
+        ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, dim1_order, dim2_order
+        character(len = *), intent(in) :: fname, standard_name
+        real(kind = EightByteReal), dimension(:, :), intent(in) :: dat2
+
+        !> Input output variables.
+        real(kind = EightByteReal), dimension(:, :) :: dat
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer i, z
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Check variable dimensions.
+        z = 0
+        do i = 1, size(shape(dat))
+            if (dim1_order == i .and. size(dat2, dim1_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim1_order
+                z = 1
+            else if (dim2_order == i .and. size(dat2, dim2_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim2_order
+                z = 1
+            end if
+            if (z /= 0) then
+                write(field, FMT_GEN) i
+                call print_error( &
+                    "The size of the variable in dimension " // trim(adjustl(field)) // " is different from the mapped column " // &
+                    trim(adjustl(code)) // " from the source variable of '" // trim(standard_name) // "' in file: " // trim(fname))
+                ierr = 1
+                z = 0
+            end if
+        end do
+        if (ierr /= 0) return
+
+        !> Map the field.
+        if (dim1_order == 1 .and. dim2_order == 2) then
+            dat = dat2
+        else
+            dat = transpose(dat2)
+        end if
+
+    end subroutine
+
+    subroutine nc4_map_variable_dat3( &
+        iun, fname, standard_name, dat, dat3, &
+        dim1_order, dim2_order, dim3_order, &
+        ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, dim1_order, dim2_order, dim3_order
+        character(len = *), intent(in) :: fname, standard_name
+        real(kind = EightByteReal), dimension(:, :, :), intent(in) :: dat3
+
+        !> Input output variables.
+        real(kind = EightByteReal), dimension(:, :, :) :: dat
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer d1, d2, d3, i, z
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Check variable dimensions.
+        z = 0
+        do i = 1, size(shape(dat))
+            if (dim1_order == i .and. size(dat3, dim1_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim1_order
+                z = 1
+            else if (dim2_order == i .and. size(dat3, dim2_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim2_order
+                z = 1
+            else if (dim3_order == i .and. size(dat3, dim3_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim3_order
+                z = 1
+            end if
+            if (z /= 0) then
+                write(field, FMT_GEN) i
+                call print_error( &
+                    "The size of the variable in dimension " // trim(adjustl(field)) // " is different from the mapped column " // &
+                    trim(adjustl(code)) // " from the source variable of '" // trim(standard_name) // "' in file: " // trim(fname))
+                ierr = 1
+                z = 0
+            end if
+        end do
+        if (ierr /= 0) return
+
+        !> Map the field.
+        if (dim1_order == 1 .and. dim2_order == 2 .and. dim3_order == 3) then
+            do d3 = 1, size(dat3, dim3_order)
+                do d2 = 1, size(dat3, dim2_order)
+                    do d1 = 1, size(dat3, dim1_order)
+                        dat(d1, d2, d3) = dat3(d1, d2, d3)
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 1 .and. dim3_order == 3) then
+            do d3 = 1, size(dat3, dim3_order)
+                do d1 = 1, size(dat3, dim1_order)
+                    do d2 = 1, size(dat3, dim2_order)
+                        dat(d1, d2, d3) = dat3(d2, d1, d3)
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 3 .and. dim3_order == 2) then
+            do d2 = 1, size(dat3, dim2_order)
+                do d3 = 1, size(dat3, dim3_order)
+                    do d1 = 1, size(dat3, dim1_order)
+                        dat(d1, d2, d3) = dat3(d1, d3, d2)
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 1 .and. dim3_order == 2) then
+            do d1 = 1, size(dat3, dim1_order)
+                do d3 = 1, size(dat3, dim3_order)
+                    do d2 = 1, size(dat3, dim2_order)
+                        dat(d1, d2, d3) = dat3(d2, d3, d1)
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 3 .and. dim3_order == 1) then
+            do d2 = 1, size(dat3, dim2_order)
+                do d1 = 1, size(dat3, dim1_order)
+                    do d3 = 1, size(dat3, dim3_order)
+                        dat(d1, d2, d3) = dat3(d3, d1, d2)
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 2 .and. dim3_order == 1) then
+            do d1 = 1, size(dat3, dim1_order)
+                do d2 = 1, size(dat3, dim2_order)
+                    do d3 = 1, size(dat3, dim3_order)
+                        dat(d1, d2, d3) = dat3(d3, d2, d1)
+                    end do
+                end do
+            end do
+        end if
+
+    end subroutine
+
+    subroutine nc4_map_variable_dat4( &
+        iun, fname, standard_name, dat, dat4, &
+        dim1_order, dim2_order, dim3_order, dim4_order, &
+        ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, dim1_order, dim2_order, dim3_order, dim4_order
+        character(len = *), intent(in) :: fname, standard_name
+        real(kind = EightByteReal), dimension(:, :, :, :), intent(in) :: dat4
+
+        !> Input output variables.
+        real(kind = EightByteReal), dimension(:, :, :, :) :: dat
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer d1, d2, d3, d4, i, z
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Check variable dimensions.
+        z = 0
+        do i = 1, size(shape(dat))
+            if (dim1_order == i .and. size(dat4, dim1_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim1_order
+                z = 1
+            else if (dim2_order == i .and. size(dat4, dim2_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim2_order
+                z = 1
+            else if (dim3_order == i .and. size(dat4, dim3_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim3_order
+                z = 1
+            else if (dim4_order == i .and. size(dat4, dim4_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim4_order
+                z = 1
+            end if
+            if (z /= 0) then
+                write(field, FMT_GEN) i
+                call print_error( &
+                    "The size of the variable in dimension " // trim(adjustl(field)) // " is different from the mapped column " // &
+                    trim(adjustl(code)) // " from the source variable of '" // trim(standard_name) // "' in file: " // trim(fname))
+                ierr = 1
+                z = 0
+            end if
+        end do
+        if (ierr /= 0) return
+
+        !> Map the field.
+        if (dim1_order == 1 .and. dim2_order == 2 .and. dim3_order == 3 .and. dim4_order == 4) then
+            do d4 = 1, size(dat4, dim4_order)
+                do d3 = 1, size(dat4, dim3_order)
+                    do d2 = 1, size(dat4, dim2_order)
+                        do d1 = 1, size(dat4, dim1_order)
+                            dat(d1, d2, d3, d4) = dat4(d1, d2, d3, d4)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 1 .and. dim3_order == 3 .and. dim4_order == 4) then
+            do d4 = 1, size(dat4, dim4_order)
+                do d3 = 1, size(dat4, dim3_order)
+                    do d1 = 1, size(dat4, dim1_order)
+                        do d2 = 1, size(dat4, dim2_order)
+                            dat(d1, d2, d3, d4) = dat4(d2, d1, d3, d4)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 3 .and. dim3_order == 2 .and. dim4_order == 4) then
+            do d4 = 1, size(dat4, dim4_order)
+                do d2 = 1, size(dat4, dim2_order)
+                    do d3 = 1, size(dat4, dim3_order)
+                        do d1 = 1, size(dat4, dim1_order)
+                            dat(d1, d2, d3, d4) = dat4(d1, d3, d2, d4)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 1 .and. dim3_order == 2 .and. dim4_order == 4) then
+            do d4 = 1, size(dat4, dim4_order)
+                do d1 = 1, size(dat4, dim1_order)
+                    do d3 = 1, size(dat4, dim3_order)
+                        do d2 = 1, size(dat4, dim2_order)
+                            dat(d1, d2, d3, d4) = dat4(d2, d3, d1, d4)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 3 .and. dim3_order == 1 .and. dim4_order == 4) then
+            do d4 = 1, size(dat4, dim4_order)
+                do d2 = 1, size(dat4, dim2_order)
+                    do d1 = 1, size(dat4, dim1_order)
+                        do d3 = 1, size(dat4, dim3_order)
+                            dat(d1, d2, d3, d4) = dat4(d3, d1, d2, d4)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 2 .and. dim3_order == 1 .and. dim4_order == 4) then
+            do d4 = 1, size(dat4, dim4_order)
+                do d1 = 1, size(dat4, dim1_order)
+                    do d2 = 1, size(dat4, dim2_order)
+                        do d3 = 1, size(dat4, dim3_order)
+                            dat(d1, d2, d3, d4) = dat4(d3, d2, d1, d4)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 2 .and. dim3_order == 4 .and. dim4_order == 3) then
+            do d3 = 1, size(dat4, dim3_order)
+                do d4 = 1, size(dat4, dim4_order)
+                    do d2 = 1, size(dat4, dim2_order)
+                        do d1 = 1, size(dat4, dim1_order)
+                            dat(d1, d2, d3, d4) = dat4(d1, d2, d4, d3)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 1 .and. dim3_order == 4 .and. dim4_order == 3) then
+            do d3 = 1, size(dat4, dim3_order)
+                do d4 = 1, size(dat4, dim4_order)
+                    do d1 = 1, size(dat4, dim1_order)
+                        do d2 = 1, size(dat4, dim2_order)
+                            dat(d1, d2, d3, d4) = dat4(d2, d1, d4, d3)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 4 .and. dim3_order == 2 .and. dim4_order == 3) then
+            do d2 = 1, size(dat4, dim2_order)
+                do d4 = 1, size(dat4, dim4_order)
+                    do d3 = 1, size(dat4, dim3_order)
+                        do d1 = 1, size(dat4, dim1_order)
+                            dat(d1, d2, d3, d4) = dat4(d1, d3, d4, d2)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 1 .and. dim3_order == 2 .and. dim4_order == 3) then
+            do d1 = 1, size(dat4, dim1_order)
+                do d4 = 1, size(dat4, dim4_order)
+                    do d3 = 1, size(dat4, dim3_order)
+                        do d2 = 1, size(dat4, dim2_order)
+                            dat(d1, d2, d3, d4) = dat4(d2, d3, d4, d1)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 4 .and. dim3_order == 1 .and. dim4_order == 3) then
+            do d2 = 1, size(dat4, dim2_order)
+                do d4 = 1, size(dat4, dim4_order)
+                    do d1 = 1, size(dat4, dim1_order)
+                        do d3 = 1, size(dat4, dim3_order)
+                            dat(d1, d2, d3, d4) = dat4(d3, d1, d4, d2)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 2 .and. dim3_order == 1 .and. dim4_order == 3) then
+            do d1 = 1, size(dat4, dim1_order)
+                do d4 = 1, size(dat4, dim4_order)
+                    do d2 = 1, size(dat4, dim2_order)
+                        do d3 = 1, size(dat4, dim3_order)
+                            dat(d1, d2, d3, d4) = dat4(d3, d2, d4, d1)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 4 .and. dim3_order == 3 .and. dim4_order == 2) then
+            do d2 = 1, size(dat4, dim2_order)
+                do d3 = 1, size(dat4, dim3_order)
+                    do d4 = 1, size(dat4, dim4_order)
+                        do d1 = 1, size(dat4, dim1_order)
+                            dat(d1, d2, d3, d4) = dat4(d1, d4, d3, d2)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 1 .and. dim3_order == 3 .and. dim4_order == 2) then
+            do d1 = 1, size(dat4, dim1_order)
+                do d3 = 1, size(dat4, dim3_order)
+                    do d4 = 1, size(dat4, dim4_order)
+                        do d2 = 1, size(dat4, dim2_order)
+                            dat(d1, d2, d3, d4) = dat4(d2, d4, d3, d1)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 3 .and. dim3_order == 4 .and. dim4_order == 2) then
+            do d3 = 1, size(dat4, dim3_order)
+                do d2 = 1, size(dat4, dim2_order)
+                    do d4 = 1, size(dat4, dim4_order)
+                        do d1 = 1, size(dat4, dim1_order)
+                            dat(d1, d2, d3, d4) = dat4(d1, d4, d2, d3)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 1 .and. dim3_order == 4 .and. dim4_order == 2) then
+            do d3 = 1, size(dat4, dim3_order)
+                do d1 = 1, size(dat4, dim1_order)
+                    do d4 = 1, size(dat4, dim4_order)
+                        do d2 = 1, size(dat4, dim2_order)
+                            dat(d1, d2, d3, d4) = dat4(d2, d4, d1, d3)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 3 .and. dim3_order == 1 .and. dim4_order == 2) then
+            do d1 = 1, size(dat4, dim1_order)
+                do d2 = 1, size(dat4, dim2_order)
+                    do d4 = 1, size(dat4, dim4_order)
+                        do d3 = 1, size(dat4, dim3_order)
+                            dat(d1, d2, d3, d4) = dat4(d3, d4, d2, d1)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 4 .and. dim3_order == 1 .and. dim4_order == 2) then
+            do d2 = 1, size(dat4, dim2_order)
+                do d1 = 1, size(dat4, dim1_order)
+                    do d4 = 1, size(dat4, dim4_order)
+                        do d3 = 1, size(dat4, dim3_order)
+                            dat(d1, d2, d3, d4) = dat4(d3, d4, d1, d2)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 2 .and. dim3_order == 3 .and. dim4_order == 1) then
+            do d1 = 1, size(dat4, dim1_order)
+                do d3 = 1, size(dat4, dim3_order)
+                    do d2 = 1, size(dat4, dim2_order)
+                        do d4 = 1, size(dat4, dim4_order)
+                            dat(d1, d2, d3, d4) = dat4(d4, d2, d3, d1)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 4 .and. dim3_order == 3 .and. dim4_order == 1) then
+            do d2 = 1, size(dat4, dim2_order)
+                do d3 = 1, size(dat4, dim3_order)
+                    do d1 = 1, size(dat4, dim1_order)
+                        do d4 = 1, size(dat4, dim4_order)
+                            dat(d1, d2, d3, d4) = dat4(d4, d1, d3, d2)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 3 .and. dim3_order == 2 .and. dim4_order == 1) then
+            do d1 = 1, size(dat4, dim1_order)
+                do d2 = 1, size(dat4, dim2_order)
+                    do d3 = 1, size(dat4, dim3_order)
+                        do d4 = 1, size(dat4, dim4_order)
+                            dat(d1, d2, d3, d4) = dat4(d4, d3, d2, d1)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 4 .and. dim3_order == 2 .and. dim4_order == 1) then
+            do d2 = 1, size(dat4, dim2_order)
+                do d1 = 1, size(dat4, dim1_order)
+                    do d3 = 1, size(dat4, dim3_order)
+                        do d4 = 1, size(dat4, dim4_order)
+                            dat(d1, d2, d3, d4) = dat4(d4, d3, d1, d2)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 3 .and. dim3_order == 4 .and. dim4_order == 1) then
+            do d3 = 1, size(dat4, dim3_order)
+                do d2 = 1, size(dat4, dim2_order)
+                    do d1 = 1, size(dat4, dim1_order)
+                        do d4 = 1, size(dat4, dim4_order)
+                            dat(d1, d2, d3, d4) = dat4(d4, d1, d2, d3)
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 2 .and. dim3_order == 4 .and. dim4_order == 1) then
+            do d3 = 1, size(dat4, dim3_order)
+                do d1 = 1, size(dat4, dim1_order)
+                    do d2 = 1, size(dat4, dim2_order)
+                        do d4 = 1, size(dat4, dim4_order)
+                            dat(d1, d2, d3, d4) = dat4(d4, d2, d1, d3)
+                        end do
+                    end do
+                end do
+            end do
+        end if
+
+    end subroutine
+
+    subroutine nc4_map_variable_dat5( &
+        iun, fname, standard_name, dat, dat5, &
+        dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, &
+        ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order
+        character(len = *), intent(in) :: fname, standard_name
+        real(kind = EightByteReal), dimension(:, :, :, :, :), intent(in) :: dat5
+
+        !> Input output variables.
+        real(kind = EightByteReal), dimension(:, :, :, :, :) :: dat
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+        integer d1, d2, d3, d4, d5, i, z
+
+        !> Initialize output variable.
+        ierr = 0
+
+        !> Check variable dimensions.
+        z = 0
+        do i = 1, size(shape(dat))
+            if (dim1_order == i .and. size(dat5, dim1_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim1_order
+                z = 1
+            else if (dim2_order == i .and. size(dat5, dim2_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim2_order
+                z = 1
+            else if (dim3_order == i .and. size(dat5, dim3_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim3_order
+                z = 1
+            else if (dim4_order == i .and. size(dat5, dim4_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim4_order
+                z = 1
+            else if (dim5_order == i .and. size(dat5, dim5_order) /= size(dat, i)) then
+                write(code, FMT_GEN) dim5_order
+                z = 1
+            end if
+            if (z /= 0) then
+                write(field, FMT_GEN) i
+                call print_error( &
+                    "The size of the variable in dimension " // trim(adjustl(field)) // " is different from the mapped column " // &
+                    trim(adjustl(code)) // " from the source variable of '" // trim(standard_name) // "' in file: " // trim(fname))
+                ierr = 1
+                z = 0
+            end if
+        end do
+        if (ierr /= 0) return
+
+        !> Map the field.
+        if (dim1_order == 1 .and. dim2_order == 2 .and. dim3_order == 3 .and. dim4_order == 4 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d2, d3, d4, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 1 .and. dim3_order == 3 .and. dim4_order == 4 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                         do d1 = 1, size(dat5, dim1_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d1, d3, d4, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 3 .and. dim3_order == 2 .and. dim4_order == 4 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d3, d2, d4, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 1 .and. dim3_order == 2 .and. dim4_order == 4 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d3, d1, d4, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 3 .and. dim3_order == 1 .and. dim4_order == 4 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d1, d2, d4, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 2 .and. dim3_order == 1 .and. dim4_order == 4 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d2, d1, d4, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 2 .and. dim3_order == 4 .and. dim4_order == 3 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d2, d4, d3, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 1 .and. dim3_order == 4 .and. dim4_order == 3 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d1, d4, d3, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 4 .and. dim3_order == 2 .and. dim4_order == 3 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d3, d4, d2, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 1 .and. dim3_order == 2 .and. dim4_order == 3 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d3, d4, d1, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 4 .and. dim3_order == 1 .and. dim4_order == 3 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d1, d4, d2, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 2 .and. dim3_order == 1 .and. dim4_order == 3 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d2, d4, d1, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 4 .and. dim3_order == 3 .and. dim4_order == 2 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d4, d3, d2, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 1 .and. dim3_order == 3 .and. dim4_order == 2 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d4, d3, d1, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 3 .and. dim3_order == 4 .and. dim4_order == 2 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d4, d2, d3, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 1 .and. dim3_order == 4 .and. dim4_order == 2 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d4, d1, d3, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 3 .and. dim3_order == 1 .and. dim4_order == 2 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d4, d2, d1, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 4 .and. dim3_order == 1 .and. dim4_order == 2 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d4, d1, d2, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 2 .and. dim3_order == 3 .and. dim4_order == 1 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d2, d3, d1, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 4 .and. dim3_order == 3 .and. dim4_order == 1 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d1, d3, d2, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 3 .and. dim3_order == 2 .and. dim4_order == 1 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d3, d2, d1, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 4 .and. dim3_order == 2 .and. dim4_order == 1 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d3, d1, d2, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 3 .and. dim3_order == 4 .and. dim4_order == 1 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d1, d2, d3, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 2 .and. dim3_order == 4 .and. dim4_order == 1 .and. dim5_order == 5) then
+            do d5 = 1, size(dat5, dim5_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d2, d1, d3, d5)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 2 .and. dim3_order == 3 .and. dim4_order == 5 .and. dim5_order == 4) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d2, d3, d5, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 1 .and. dim3_order == 3 .and. dim4_order == 5 .and. dim5_order == 4) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d1, d3, d5, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 3 .and. dim3_order == 2 .and. dim4_order == 5 .and. dim5_order == 4) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d3, d2, d5, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 1 .and. dim3_order == 2 .and. dim4_order == 5 .and. dim5_order == 4) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d3, d1, d5, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 3 .and. dim3_order == 1 .and. dim4_order == 5 .and. dim5_order == 4) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d1, d2, d5, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 2 .and. dim3_order == 1 .and. dim4_order == 5 .and. dim5_order == 4) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d2, d1, d5, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 2 .and. dim3_order == 5 .and. dim4_order == 3 .and. dim5_order == 4) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d2, d4, d5, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 1 .and. dim3_order == 5 .and. dim4_order == 3 .and. dim5_order == 4) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d1, d4, d5, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 5 .and. dim3_order == 2 .and. dim4_order == 3 .and. dim5_order == 4) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d3, d4, d5, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 1 .and. dim3_order == 2 .and. dim4_order == 3 .and. dim5_order == 4) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d3, d4, d5, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 5 .and. dim3_order == 1 .and. dim4_order == 3 .and. dim5_order == 4) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d1, d4, d5, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 2 .and. dim3_order == 1 .and. dim4_order == 3 .and. dim5_order == 4) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d2, d4, d5, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 5 .and. dim3_order == 3 .and. dim4_order == 2 .and. dim5_order == 4) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d4, d3, d5, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 1 .and. dim3_order == 3 .and. dim4_order == 2 .and. dim5_order == 4) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d4, d3, d5, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 3 .and. dim3_order == 5 .and. dim4_order == 2 .and. dim5_order == 4) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d4, d2, d5, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 1 .and. dim3_order == 5 .and. dim4_order == 2 .and. dim5_order == 4) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d4, d1, d5, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 3 .and. dim3_order == 1 .and. dim4_order == 2 .and. dim5_order == 4) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d4, d2, d5, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 5 .and. dim3_order == 1 .and. dim4_order == 2 .and. dim5_order == 4) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d4, d1, d5, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 2 .and. dim3_order == 3 .and. dim4_order == 1 .and. dim5_order == 4) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d2, d3, d5, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 5 .and. dim3_order == 3 .and. dim4_order == 1 .and. dim5_order == 4) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d1, d3, d5, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 3 .and. dim3_order == 2 .and. dim4_order == 1 .and. dim5_order == 4) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d3, d2, d5, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 5 .and. dim3_order == 2 .and. dim4_order == 1 .and. dim5_order == 4) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d3, d1, d5, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 3 .and. dim3_order == 5 .and. dim4_order == 1 .and. dim5_order == 4) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d1, d2, d5, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 2 .and. dim3_order == 5 .and. dim4_order == 1 .and. dim5_order == 4) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d5 = 1, size(dat5, dim5_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d2, d1, d5, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 2 .and. dim3_order == 5 .and. dim4_order == 4 .and. dim5_order == 3) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d2, d5, d4, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 1 .and. dim3_order == 5 .and. dim4_order == 4 .and. dim5_order == 3) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d1, d5, d4, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 5 .and. dim3_order == 2 .and. dim4_order == 4 .and. dim5_order == 3) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d3, d5, d4, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 1 .and. dim3_order == 2 .and. dim4_order == 4 .and. dim5_order == 3) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d3, d5, d4, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 5 .and. dim3_order == 1 .and. dim4_order == 4 .and. dim5_order == 3) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d1, d5, d4, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 2 .and. dim3_order == 1 .and. dim4_order == 4 .and. dim5_order == 3) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d2, d5, d4, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 2 .and. dim3_order == 4 .and. dim4_order == 5 .and. dim5_order == 3) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d2, d5, d3, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 1 .and. dim3_order == 4 .and. dim4_order == 5 .and. dim5_order == 3) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d1, d5, d3, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 4 .and. dim3_order == 2 .and. dim4_order == 5 .and. dim5_order == 3) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d3, d5, d2, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 1 .and. dim3_order == 2 .and. dim4_order == 5 .and. dim5_order == 3) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d3, d5, d1, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 4 .and. dim3_order == 1 .and. dim4_order == 5 .and. dim5_order == 3) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d1, d5, d2, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 2 .and. dim3_order == 1 .and. dim4_order == 5 .and. dim5_order == 3) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d2, d5, d1, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 4 .and. dim3_order == 5 .and. dim4_order == 2 .and. dim5_order == 3) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d4, d5, d2, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 1 .and. dim3_order == 5 .and. dim4_order == 2 .and. dim5_order == 3) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d4, d5, d1, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 5 .and. dim3_order == 4 .and. dim4_order == 2 .and. dim5_order == 3) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d4, d5, d3, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 1 .and. dim3_order == 4 .and. dim4_order == 2 .and. dim5_order == 3) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d4, d5, d3, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 5 .and. dim3_order == 1 .and. dim4_order == 2 .and. dim5_order == 3) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d4, d5, d1, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 4 .and. dim3_order == 1 .and. dim4_order == 2 .and. dim5_order == 3) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d4, d5, d2, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 2 .and. dim3_order == 5 .and. dim4_order == 1 .and. dim5_order == 3) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d2, d5, d1, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 4 .and. dim3_order == 5 .and. dim4_order == 1 .and. dim5_order == 3) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d1, d5, d2, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 5 .and. dim3_order == 2 .and. dim4_order == 1 .and. dim5_order == 3) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d3, d5, d1, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 4 .and. dim3_order == 2 .and. dim4_order == 1 .and. dim5_order == 3) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d3, d5, d2, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 5 .and. dim3_order == 4 .and. dim4_order == 1 .and. dim5_order == 3) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d1, d5, d3, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 2 .and. dim3_order == 4 .and. dim4_order == 1 .and. dim5_order == 3) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d5 = 1, size(dat5, dim5_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d2, d5, d3, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 5 .and. dim3_order == 3 .and. dim4_order == 4 .and. dim5_order == 2) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d5, d3, d4, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 1 .and. dim3_order == 3 .and. dim4_order == 4 .and. dim5_order == 2) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d5, d3, d4, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 3 .and. dim3_order == 5 .and. dim4_order == 4 .and. dim5_order == 2) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d5, d2, d4, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 1 .and. dim3_order == 5 .and. dim4_order == 4 .and. dim5_order == 2) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d5, d1, d4, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 3 .and. dim3_order == 1 .and. dim4_order == 4 .and. dim5_order == 2) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d5, d2, d4, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 5 .and. dim3_order == 1 .and. dim4_order == 4 .and. dim5_order == 2) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d5, d1, d4, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 5 .and. dim3_order == 4 .and. dim4_order == 3 .and. dim5_order == 2) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d5, d4, d3, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 1 .and. dim3_order == 4 .and. dim4_order == 3 .and. dim5_order == 2) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d5, d4, d3, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 4 .and. dim3_order == 5 .and. dim4_order == 3 .and. dim5_order == 2) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d5, d4, d2, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 1 .and. dim3_order == 5 .and. dim4_order == 3 .and. dim5_order == 2) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d5, d4, d1, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 4 .and. dim3_order == 1 .and. dim4_order == 3 .and. dim5_order == 2) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d5, d4, d2, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 5 .and. dim3_order == 1 .and. dim4_order == 3 .and. dim5_order == 2) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d5, d4, d1, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 4 .and. dim3_order == 3 .and. dim4_order == 5 .and. dim5_order == 2) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d5, d3, d2, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 1 .and. dim3_order == 3 .and. dim4_order == 5 .and. dim5_order == 2) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d5, d3, d1, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 1 .and. dim2_order == 3 .and. dim3_order == 4 .and. dim4_order == 5 .and. dim5_order == 2) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d1 = 1, size(dat5, dim1_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d1, d5, d2, d3, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 1 .and. dim3_order == 4 .and. dim4_order == 5 .and. dim5_order == 2) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d2 = 1, size(dat5, dim2_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d2, d5, d1, d3, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 3 .and. dim3_order == 1 .and. dim4_order == 5 .and. dim5_order == 2) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d5, d2, d1, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 4 .and. dim3_order == 1 .and. dim4_order == 5 .and. dim5_order == 2) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d3 = 1, size(dat5, dim3_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d3, d5, d1, d2, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 5 .and. dim3_order == 3 .and. dim4_order == 1 .and. dim5_order == 2) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d5, d3, d1, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 4 .and. dim3_order == 3 .and. dim4_order == 1 .and. dim5_order == 2) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d5, d3, d2, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 3 .and. dim3_order == 5 .and. dim4_order == 1 .and. dim5_order == 2) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d5, d2, d1, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 4 .and. dim3_order == 5 .and. dim4_order == 1 .and. dim5_order == 2) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d5, d1, d2, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 3 .and. dim3_order == 4 .and. dim4_order == 1 .and. dim5_order == 2) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d5, d2, d3, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 5 .and. dim3_order == 4 .and. dim4_order == 1 .and. dim5_order == 2) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d5 = 1, size(dat5, dim5_order)
+                            do d4 = 1, size(dat5, dim4_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d4, d5, d1, d3, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 2 .and. dim3_order == 3 .and. dim4_order == 4 .and. dim5_order == 1) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d2, d3, d4, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 5 .and. dim3_order == 3 .and. dim4_order == 4 .and. dim5_order == 1) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                         do d1 = 1, size(dat5, dim1_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d1, d3, d4, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 3 .and. dim3_order == 2 .and. dim4_order == 4 .and. dim5_order == 1) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d3, d2, d4, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 5 .and. dim3_order == 2 .and. dim4_order == 4 .and. dim5_order == 1) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d3, d1, d4, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 3 .and. dim3_order == 5 .and. dim4_order == 4 .and. dim5_order == 1) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d1, d2, d4, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 2 .and. dim3_order == 5 .and. dim4_order == 4 .and. dim5_order == 1) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d4 = 1, size(dat5, dim4_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d2, d1, d4, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 2 .and. dim3_order == 4 .and. dim4_order == 3 .and. dim5_order == 1) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d2, d4, d3, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 5 .and. dim3_order == 4 .and. dim4_order == 3 .and. dim5_order == 1) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d1, d4, d3, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 4 .and. dim3_order == 2 .and. dim4_order == 3 .and. dim5_order == 1) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d3, d4, d2, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 5 .and. dim3_order == 2 .and. dim4_order == 3 .and. dim5_order == 1) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d3, d4, d1, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 4 .and. dim3_order == 5 .and. dim4_order == 3 .and. dim5_order == 1) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d1, d4, d2, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 2 .and. dim3_order == 5 .and. dim4_order == 3 .and. dim5_order == 1) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d4 = 1, size(dat5, dim4_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d2, d4, d1, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 4 .and. dim3_order == 3 .and. dim4_order == 2 .and. dim5_order == 1) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d4, d3, d2, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 5 .and. dim3_order == 3 .and. dim4_order == 2 .and. dim5_order == 1) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d4, d3, d1, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 5 .and. dim2_order == 3 .and. dim3_order == 4 .and. dim4_order == 2 .and. dim5_order == 1) then
+            do d1 = 1, size(dat5, dim1_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d4, d2, d3, d1)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 5 .and. dim3_order == 4 .and. dim4_order == 2 .and. dim5_order == 1) then
+            do d2 = 1, size(dat5, dim2_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d4, d1, d3, d2)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 3 .and. dim3_order == 5 .and. dim4_order == 2 .and. dim5_order == 1) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d4, d2, d1, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 4 .and. dim3_order == 5 .and. dim4_order == 2 .and. dim5_order == 1) then
+            do d3 = 1, size(dat5, dim3_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d4 = 1, size(dat5, dim4_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d4, d1, d2, d3)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 2 .and. dim3_order == 3 .and. dim4_order == 5 .and. dim5_order == 1) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d2, d3, d1, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 4 .and. dim3_order == 3 .and. dim4_order == 5 .and. dim5_order == 1) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d3 = 1, size(dat5, dim3_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d1, d3, d2, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 4 .and. dim2_order == 3 .and. dim3_order == 2 .and. dim4_order == 5 .and. dim5_order == 1) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d1 = 1, size(dat5, dim1_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d3, d2, d1, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 4 .and. dim3_order == 2 .and. dim4_order == 5 .and. dim5_order == 1) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d2 = 1, size(dat5, dim2_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d3 = 1, size(dat5, dim3_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d3, d1, d2, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 2 .and. dim2_order == 3 .and. dim3_order == 4 .and. dim4_order == 5 .and. dim5_order == 1) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d2 = 1, size(dat5, dim2_order)
+                        do d1 = 1, size(dat5, dim1_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d1, d2, d3, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        else if (dim1_order == 3 .and. dim2_order == 2 .and. dim3_order == 4 .and. dim4_order == 5 .and. dim5_order == 1) then
+            do d4 = 1, size(dat5, dim4_order)
+                do d3 = 1, size(dat5, dim3_order)
+                    do d1 = 1, size(dat5, dim1_order)
+                        do d2 = 1, size(dat5, dim2_order)
+                            do d5 = 1, size(dat5, dim5_order)
+                                dat(d1, d2, d3, d4, d5) = dat5(d5, d2, d1, d3, d4)
+                            end do
+                        end do
+                    end do
+                end do
+            end do
+        end if
 
     end subroutine
 
@@ -1745,7 +3895,8 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        integer(kind = FourByteInt), allocatable :: dat2(:, :)
+        real(kind = EightByteReal), dimension(size(dat, 1), size(dat, 2)) :: d
+        real(kind = EightByteReal), allocatable :: dat2(:, :)
         integer, dimension(:), allocatable :: dim_lengths
         integer vid, dtype, x, y, i
 
@@ -1816,6 +3967,9 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, d, dat2, x, y, ierr)
+        dat = int(d, kind = FourByteInt)
+        return
         if (x == 1 .and. y == 2) then
             dat = dat2
         else
@@ -1846,7 +4000,8 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        real(kind = FourByteReal), allocatable :: dat2(:, :)
+        real(kind = EightByteReal), dimension(size(dat, 1), size(dat, 2)) :: d
+        real(kind = EightByteReal), allocatable :: dat2(:, :)
         integer, dimension(:), allocatable :: dim_lengths
         integer vid, dtype, x, y, i
 
@@ -1917,6 +4072,8 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, d, dat2, x, y, ierr)
+        dat = real(d, kind = FourByteReal)
         if (x == 1 .and. y == 2) then
             dat = dat2
         else
@@ -2018,6 +4175,8 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, dat, dat2, x, y, ierr)
+        return
         if (x == 1 .and. y == 2) then
             dat = dat2
         else
@@ -2162,7 +4321,8 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        integer(kind = FourByteInt), allocatable :: dat3(:, :, :)
+        real(kind = EightByteReal), dimension(size(dat, 1), size(dat, 2), size(dat, 3)) :: d
+        real(kind = EightByteReal), allocatable :: dat3(:, :, :)
         integer, dimension(:), allocatable :: dim_lengths
         integer vid, dtype, x, y, m, i
 
@@ -2234,6 +4394,9 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, d, dat3, x, y, m, ierr)
+        dat = int(d, kind = FourByteInt)
+        return
         if (x == 1 .and. y == 2 .and. m == 3) then
             do m = 1, dim_lengths(3)
                 do y = 1, dim_lengths(2)
@@ -2308,7 +4471,8 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        real(kind = FourByteReal), allocatable :: dat3(:, :, :)
+        real(kind = EightByteReal), dimension(size(dat, 1), size(dat, 2), size(dat, 3)) :: d
+        real(kind = EightByteReal), allocatable :: dat3(:, :, :)
         integer, dimension(:), allocatable :: dim_lengths
         integer vid, dtype, x, y, m, i
 
@@ -2380,6 +4544,9 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, d, dat3, x, y, m, ierr)
+        dat = real(d, kind = FourByteReal)
+        return
         if (x == 1 .and. y == 2 .and. m == 3) then
             do m = 1, dim_lengths(3)
                 do y = 1, dim_lengths(2)
@@ -2526,6 +4693,8 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, dat, dat3, x, y, m, ierr)
+        return
         if (x == 1 .and. y == 2 .and. m == 3) then
             do m = 1, dim_lengths(3)
                 do y = 1, dim_lengths(2)
@@ -2733,7 +4902,8 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        integer(kind = FourByteInt), allocatable :: dat4(:, :, :, :)
+        real(kind = EightByteReal), dimension(size(dat, 1), size(dat, 2), size(dat, 3), size(dat, 4)) :: d
+        real(kind = EightByteReal), allocatable :: dat4(:, :, :, :)
         integer, dimension(:), allocatable :: dim_lengths
         integer vid, dtype, x, y, l, m, i
 
@@ -2806,6 +4976,9 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, d, dat4, x, y, l, m, ierr)
+        dat = int(d, kind = FourByteInt)
+        return
         if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
             do m = 1, dim_lengths(3)
                 do l = 1, dim_lengths(4)
@@ -3078,7 +5251,8 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        real(kind = FourByteReal), allocatable :: dat4(:, :, :, :)
+        real(kind = EightByteReal), dimension(size(dat, 1), size(dat, 2), size(dat, 3), size(dat, 4)) :: d
+        real(kind = EightByteReal), allocatable :: dat4(:, :, :, :)
         integer, dimension(:), allocatable :: dim_lengths
         integer vid, dtype, x, y, l, m, i
 
@@ -3151,6 +5325,9 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, d, dat4, x, y, l, m, ierr)
+        dat = real(d, kind = FourByteReal)
+        return
         if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
             do m = 1, dim_lengths(3)
                 do l = 1, dim_lengths(4)
@@ -3496,6 +5673,8 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, dat, dat4, x, y, l, m, ierr)
+        return
         if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
             do m = 1, dim_lengths(3)
                 do l = 1, dim_lengths(4)
@@ -3879,7 +6058,8 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        integer(kind = FourByteInt), allocatable :: dat3(:, :, :)
+        real(kind = EightByteReal), dimension(size(dat, 1), size(dat, 2), size(dat, 3)) :: d
+        real(kind = EightByteReal), allocatable :: dat3(:, :, :)
         integer, dimension(:), allocatable :: dim_lengths
         integer vid, dtype, x, y, t, i
 
@@ -3951,6 +6131,9 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, d, dat3, x, y, t, ierr)
+        dat = int(d, kind = FourByteInt)
+        return
         if (x == 1 .and. y == 2 .and. t == 3) then
             do t = 1, dim_lengths(3)
                 do y = 1, dim_lengths(2)
@@ -4025,7 +6208,8 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        real(kind = FourByteReal), allocatable :: dat3(:, :, :)
+        real(kind = EightByteReal), dimension(size(dat, 1), size(dat, 2), size(dat, 3)) :: d
+        real(kind = EightByteReal), allocatable :: dat3(:, :, :)
         integer, dimension(:), allocatable :: dim_lengths
         integer vid, dtype, x, y, t, i
 
@@ -4097,6 +6281,9 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, d, dat3, x, y, t, ierr)
+        dat = real(d, kind = FourByteReal)
+        return
         if (x == 1 .and. y == 2 .and. t == 3) then
             do t = 1, dim_lengths(3)
                 do y = 1, dim_lengths(2)
@@ -4243,6 +6430,8 @@ module nc_io
             ierr = 1
             return
         end if
+        call nc4_map_variable(iun, fname, standard_name, dat, dat3, x, y, t, ierr)
+        return
         if (x == 1 .and. y == 2 .and. t == 3) then
             do t = 1, dim_lengths(3)
                 do y = 1, dim_lengths(2)
