@@ -139,6 +139,7 @@ module rte_module
 !                 sl1(na), sl2(na)
                  ichnl(na), ireach(na), &
                  grid_area(na), frac(na), aclass(na, ntype + 1), &
+                 nhyd(ycount, xcount), &
                  glacier_flag(na))
         xxx = shd%xxx
         yyy = shd%yyy
@@ -157,6 +158,7 @@ module rte_module
         grid_area = shd%AREA
         frac = shd%FRAC
         aclass = 0.0; aclass(:, 1:ntype) = shd%lc%ACLASS
+        nhyd = 0
         glacier_flag = 'n'
 
         !> Allocate and assign parameter values.
@@ -393,11 +395,11 @@ module rte_module
         end if
 
         !> Channel and reservoir initialization.
-        if (fms%rsvr%n > 0 .or. fms%stmg%n > 0) then
+        if ((fms%rsvr%n > 0 .or. fms%stmg%n > 0) .and. RESUMEFLAG == 0) then
             allocate(nbasin(ycount, xcount), r(na, ntype + 1), p(ycount,xcount), inbsnflg(no + noresv))
             nbasin = 0; p = 0.0; inbsnflg = 1
             if (fms%stmg%n > 0) then
-                allocate(iy(no), jx(no), nhyd(ycount, xcount), nlow(no), nxtbasin(no), area(no))
+                allocate(iy(no), jx(no), nlow(no), nxtbasin(no), area(no))
                 iy = fms%stmg%meta%iy
                 jx = fms%stmg%meta%jx
                 nxtbasin = 0
