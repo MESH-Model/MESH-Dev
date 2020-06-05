@@ -64,7 +64,7 @@ module runsvs_mesh
             5.0, 0.1, 0.1, 0.1, 1.75, 0.5 /)
     end type
 
-    !> SVS variables names (for I/O).
+    !> SVS variables names for I/O (direct variables).
     character(len = *), parameter, public :: VN_SVS_DEGLAT = 'DEGLAT'
     character(len = *), parameter, public :: VN_SVS_DEGLNG = 'DEGLNG'
     character(len = *), parameter, public :: VN_SVS_OBSERVED_FORCING = 'OBSERVED_FORCING'
@@ -97,6 +97,18 @@ module runsvs_mesh
     character(len = *), parameter, public :: VN_SVS_SNVDEN = 'SNVDEN'
     character(len = *), parameter, public :: VN_SVS_SNVAL = 'SNVAL'
     character(len = *), parameter, public :: VN_SVS_WSNV = 'WSNV'
+
+    !> SVS variables names for I/O (modifiers/special conditions).
+    character(len = *), parameter, public :: VN_SVS_SAND_N = 'SAND_N'
+    character(len = *), parameter, public :: VN_SVS_CLAY_N = 'CLAY_N'
+    character(len = *), parameter, public :: VN_SVS_WSOIL_N = 'WSOIL_N'
+    character(len = *), parameter, public :: VN_SVS_ISOIL_N = 'ISOIL_N'
+    character(len = *), parameter, public :: VN_SVS_TGROUND_N = 'TGROUND_N'
+    character(len = *), parameter, public :: VN_SVS_VF_N = 'VF_N'
+    character(len = *), parameter, public :: VN_SVS_Z0V_N = 'Z0V_N'
+    character(len = *), parameter, public :: VN_SVS_TVEGE_N = 'TVEGE_N'
+    character(len = *), parameter, public :: VN_SVS_TSNOW_N = 'TSNOW_N'
+    character(len = *), parameter, public :: VN_SVS_TSNOWVEG_N = 'TSNOWVEG_N'
 
     !> SVS variables (for I/O).
     type runsvs_mesh_variables
@@ -167,7 +179,7 @@ module runsvs_mesh
 !#include "surfcon.cdk"
 #include "thermoconsts.inc"
 
-        integer iun, k, ki, kj, j, jj, m, i, z
+        integer iun, isvs, k, ki, kj, j, jj, m, i, z
         real tempz0(svs_mesh%c%NLANDCLASS), sumfcanz0
         character(len = DEFAULT_LINE_LENGTH) line
         character(len = DEFAULT_FIELD_LENGTH) level
@@ -206,26 +218,35 @@ module runsvs_mesh
         !> Parse CLASS variables to bus.
         do k = 0, NG - 1
 
-            !> Basic configuration.
+            !> MESH grid.
             ki = shd%lc%ILMOS(il1 + k)
+
+            !> MESH GRU.
             kj = shd%lc%JLMOS(il1 + k)
+
+            !> Determine the index to pull from the 'vs' input variable group.
+            if (SHDFILEFMT == 2) then
+                isvs = il1 + k
+            else
+                isvs = kj
+            end if
 
             !> Convert lat, lon to Radian.
             !> We need to give SVS the true longitude (from 0 to 360), not negative values.
 !            bus(dlat + k) = ((shd%yOrigin + shd%yDelta*shd%yyy(ki)) - shd%yDelta/2.0)*PI/180.0
 !            bus(dlon + k) = ((shd%xOrigin + shd%xDelta*shd%xxx(ki)) - shd%xDelta/2.0)*PI/180.0
             bus(dlat + k) = shd%ylat(ki)*PI/180.0
-            if (allocated(svs_mesh%vs%deglat)) bus(dlat + k) = svs_mesh%vs%deglat(il1 + k)*PI/180.0
+            if (allocated(svs_mesh%vs%deglat)) bus(dlat + k) = svs_mesh%vs%deglat(isvs)*PI/180.0
             if (shd%xlng(ki) < 0.0) then
                 bus(dlon + k) = (shd%xlng(ki) + 360.0)*PI/180.0
             else
                 bus(dlon + k) = shd%xlng(ki)*PI/180.0
             end if
             if (allocated(svs_mesh%vs%deglng)) then
-                if (svs_mesh%vs%deglng(il1 + k) < 0.0) then
-                    bus(dlon + k) = (svs_mesh%vs%deglng(il1 + k) + 360.0)*PI/180.0
+                if (svs_mesh%vs%deglng(isvs) < 0.0) then
+                    bus(dlon + k) = (svs_mesh%vs%deglng(isvs) + 360.0)*PI/180.0
                 else
-                    bus(dlon + k) = svs_mesh%vs%deglng(il1 + k)*PI/180.0
+                    bus(dlon + k) = svs_mesh%vs%deglng(isvs)*PI/180.0
                 end if
             end if
 
@@ -234,9 +255,9 @@ module runsvs_mesh
             !* ztsl: Height of temperature forcing.
             if (observed_forcing) then
                 bus(zusl + k) = pm%sfp%zrfm(il1 + k)
-                if (allocated(svs_mesh%vs%zusl)) bus(zusl + k) = svs_mesh%vs%zusl(il1 + k)
+                if (allocated(svs_mesh%vs%zusl)) bus(zusl + k) = svs_mesh%vs%zusl(isvs)
                 bus(ztsl + k) = pm%sfp%zrfh(il1 + k)
-                if (allocated(svs_mesh%vs%ztsl)) bus(ztsl + k) = svs_mesh%vs%ztsl(il1 + k)
+                if (allocated(svs_mesh%vs%ztsl)) bus(ztsl + k) = svs_mesh%vs%ztsl(isvs)
             end if
 
             !> Parameters.
@@ -250,7 +271,7 @@ module runsvs_mesh
             !* rootdp: Max depth of root zone.
             if (allocated(svs_mesh%vs%vf)) then
                 do m = 1199, 1174, -1
-                    bus(vegf + (1199 - m)*NG + k) = svs_mesh%vs%vf(il1 + k, 1200 - m)
+                    bus(vegf + (1199 - m)*NG + k) = svs_mesh%vs%vf(isvs, 1200 - m)
                 end do
             else
                 bus(vegf + 3*NG + k) = pm%cp%fcan(il1 + k, 1)
@@ -268,16 +289,16 @@ module runsvs_mesh
 ! FIN EG_MOD
 
             bus(slop + k) = min(max(pm%tp%xslp(il1 + k), 0.005), 1.0)
-            if (allocated(svs_mesh%vs%slop)) bus(slop + k) = min(max(svs_mesh%vs%slop(il1 + k), 0.005), 1.0)
+            if (allocated(svs_mesh%vs%slop)) bus(slop + k) = min(max(svs_mesh%vs%slop(isvs), 0.005), 1.0)
             bus(draindens + k) = pm%hp%dd(il1 + k)!*0.001
-            if (allocated(svs_mesh%vs%draindens)) bus(draindens + k) = svs_mesh%vs%draindens(il1 + k)
+            if (allocated(svs_mesh%vs%draindens)) bus(draindens + k) = svs_mesh%vs%draindens(isvs)
 !            bus(rootdp + k) = max(pm%slp%sdep(il1 + k), 0.5)
 !            bus(rootdp + k) = max(shd%lc%sl%zbot(nl_svs), 0.5)
 
             !> Compute weighted average of log z0 wrt vegetation
             !> (used for momentum only - local z0 used for temperature/humidity).
             if (allocated(svs_mesh%vs%lnz0)) then
-                bus(z0 + k) = svs_mesh%vs%lnz0(il1 + k)
+                bus(z0 + k) = svs_mesh%vs%lnz0(isvs)
             else
                 bus(z0 + k) = 0.0
                 sumfcanz0 = 0.0
@@ -293,7 +314,7 @@ module runsvs_mesh
             end if
             if (bus(z0 + k) == 0.0) then
                 tempz0 = svs_mesh%c%Z0DAT
-                if (allocated(svs_mesh%vs%z0v)) tempz0 = svs_mesh%vs%z0v(il1 + k, :)
+                if (allocated(svs_mesh%vs%z0v)) tempz0 = svs_mesh%vs%z0v(isvs, :)
                 bus(z0 + k) = 0.0
                 sumfcanz0 = 0.0
                 do m = 1199, 1174, -1
@@ -348,9 +369,9 @@ module runsvs_mesh
 !            do j = 1, nl_svs ! model layers
             do j = 1, nl_stp ! soil texture levels
                 bus(sand + (j - 1)*NG + k) = max(pm%slp%sand(il1 + k, j), 0.0)
-                if (allocated(svs_mesh%vs%sand)) bus(sand + (j - 1)*NG + k) = svs_mesh%vs%sand(il1 + k, j)
+                if (allocated(svs_mesh%vs%sand)) bus(sand + (j - 1)*NG + k) = svs_mesh%vs%sand(isvs, j)
                 bus(clay + (j - 1)*NG + k) = max(pm%slp%clay(il1 + k, j), 0.0)
-                if (allocated(svs_mesh%vs%clay)) bus(clay + (j - 1)*NG + k) = svs_mesh%vs%clay(il1 + k, j)
+                if (allocated(svs_mesh%vs%clay)) bus(clay + (j - 1)*NG + k) = svs_mesh%vs%clay(isvs, j)
             end do
 
             !> Map soil moisture.
@@ -371,9 +392,9 @@ module runsvs_mesh
 ! EG_MOD: WFC IS NOT KNOWN AT THIS POINT (COMPUTED LATER BY INISOILI_SVS); USE CRITWATER INSTEAD
 !                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), bus(wfc + k))
                 bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), CRITWATER)
-                if (allocated(svs_mesh%vs%wsoil)) bus(wsoil + (j - 1)*NG + k) = max(svs_mesh%vs%wsoil(il1 + k, j), CRITWATER)
+                if (allocated(svs_mesh%vs%wsoil)) bus(wsoil + (j - 1)*NG + k) = max(svs_mesh%vs%wsoil(isvs, j), CRITWATER)
                 bus(isoil + (j - 1)*NG + k) = vs%tile%thic(il1 + k, j)
-                if (allocated(svs_mesh%vs%isoil)) bus(isoil + (j - 1)*NG + k) = svs_mesh%vs%isoil(il1 + k, j)
+                if (allocated(svs_mesh%vs%isoil)) bus(isoil + (j - 1)*NG + k) = svs_mesh%vs%isoil(isvs, j)
             end do
 
             !> Map soil temperature.
@@ -386,17 +407,17 @@ module runsvs_mesh
             bus(tground + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
             if (allocated(svs_mesh%vs%tground)) then
                 do j = 1, svs_mesh%vs%kthermal
-                    bus(tground + (j - 1)*NG + k) = svs_mesh%vs%tground(il1 + k, j)
+                    bus(tground + (j - 1)*NG + k) = svs_mesh%vs%tground(isvs, j)
                 end do
             end if
 
             !> Map vegetation temperature.
             do j = 0, 1
                 bus(tvege + j*NG + k) = vs%tile%tcan(il1 + k)! + tcdk
-                if (allocated(svs_mesh%vs%tvege)) bus(tvege + j*NG + k) = svs_mesh%vs%tvege(il1 + k, j + 1)
+                if (allocated(svs_mesh%vs%tvege)) bus(tvege + j*NG + k) = svs_mesh%vs%tvege(isvs, j + 1)
             end do
             bus(wveg + k) = vs%tile%rcan(il1 + k)
-            if (allocated(svs_mesh%vs%wveg)) bus(wveg + k) = svs_mesh%vs%wveg(il1 + k)
+            if (allocated(svs_mesh%vs%wveg)) bus(wveg + k) = svs_mesh%vs%wveg(isvs)
 
             !> Map snow properties.
             !* snoro: Density (kg/m3) to relative density wrt ice.
@@ -417,25 +438,25 @@ module runsvs_mesh
                 bus(wsnv + k) = vs%tile%wsno(il1 + k)
             end if
             if (allocated(svs_mesh%vs%snodpl)) then
-                if (svs_mesh%vs%snodpl(il1 + k) > 0.0) then
+                if (svs_mesh%vs%snodpl(isvs) > 0.0) then
                     do j = 0, 1
-                        if (allocated(svs_mesh%vs%tsnow)) bus(tsnow + j*NG + k) = svs_mesh%vs%tsnow(il1 + k, j + 1)
+                        if (allocated(svs_mesh%vs%tsnow)) bus(tsnow + j*NG + k) = svs_mesh%vs%tsnow(isvs, j + 1)
                     end do
-                    bus(snodpl + k) = svs_mesh%vs%snodpl(il1 + k)
-                    if (allocated(svs_mesh%vs%snoden)) bus(snoden + k) = svs_mesh%vs%snoden(il1 + k)
-                    if (allocated(svs_mesh%vs%snoal)) bus(snoal + k) = svs_mesh%vs%snoal(il1 + k)
-                    if (allocated(svs_mesh%vs%wsnow)) bus(wsnow + k) = svs_mesh%vs%wsnow(il1 + k)
+                    bus(snodpl + k) = svs_mesh%vs%snodpl(isvs)
+                    if (allocated(svs_mesh%vs%snoden)) bus(snoden + k) = svs_mesh%vs%snoden(isvs)
+                    if (allocated(svs_mesh%vs%snoal)) bus(snoal + k) = svs_mesh%vs%snoal(isvs)
+                    if (allocated(svs_mesh%vs%wsnow)) bus(wsnow + k) = svs_mesh%vs%wsnow(isvs)
                 end if
             end if
             if (allocated(svs_mesh%vs%snvdp)) then
-                if (svs_mesh%vs%snvdp(il1 + k) > 0.0) then
+                if (svs_mesh%vs%snvdp(isvs) > 0.0) then
                     do j = 0, 1
-                        if (allocated(svs_mesh%vs%tsnowveg)) bus(tsnowveg + j*NG + k) = svs_mesh%vs%tsnowveg(il1 + k, j + 1)
+                        if (allocated(svs_mesh%vs%tsnowveg)) bus(tsnowveg + j*NG + k) = svs_mesh%vs%tsnowveg(isvs, j + 1)
                     end do
-                    bus(snodp + k) = svs_mesh%vs%snvdp(il1 + k)
-                    if (allocated(svs_mesh%vs%snvden)) bus(snvden + k) = svs_mesh%vs%snvden(il1 + k)
-                    if (allocated(svs_mesh%vs%snval)) bus(snval + k) = svs_mesh%vs%snval(il1 + k)
-                    if (allocated(svs_mesh%vs%wsnv)) bus(wsnv + k) = svs_mesh%vs%wsnv(il1 + k)
+                    bus(snodp + k) = svs_mesh%vs%snvdp(isvs)
+                    if (allocated(svs_mesh%vs%snvden)) bus(snvden + k) = svs_mesh%vs%snvden(isvs)
+                    if (allocated(svs_mesh%vs%snval)) bus(snval + k) = svs_mesh%vs%snval(isvs)
+                    if (allocated(svs_mesh%vs%wsnv)) bus(wsnv + k) = svs_mesh%vs%wsnv(isvs)
                 end if
             end if
 

@@ -6,6 +6,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     use model_files_variables
     use FLAGS
     use climate_forcing
+    use parse_utilities
 !>>nc
 #ifdef NETCDF
     use nc_io
@@ -465,8 +466,11 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         !> Point mode (location read from CLASS.ini).
         case (2)
 
+            !> Assign presumed projection.
+            shd%CoordSys%Proj = 'LATLONG'
+            shd%CoordSys%Ellips = 'GRS80'
+
             !> Assign no projection or grid properties.
-            shd%CoordSys%Proj = 'none'; shd%CoordSys%Ellips = 'none'; shd%CoordSys%Zone = 'none'
             shd%xOrigin = 0.0; shd%xDelta = 1.0; shd%xCount = 1; shd%jxMin = 0; shd%jxMax = 1; shd%GRDE = 1.0
             shd%yOrigin = 0.0; shd%yDelta = 1.0; shd%yCount = 1; shd%iyMin = 0; shd%iyMax = 1; shd%GRDN = 1.0
             shd%AL = 1.0
@@ -643,23 +647,84 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     !> after that Diana uses RADJGRD (the value of latitude in radians) so
     !> after DEGLAT is used to calculate RADJGRD is it no longer used.  This
     !> is how it was in the original CLASS code.
-    if (.not. allocated(shd%ylat)) then
-        allocate(shd%ylat(shd%NA))
-        shd%ylat = 0.0
-    end if
-    if (.not. allocated(shd%xlng)) then
-        allocate(shd%xlng(shd%NA))
-        shd%xlng = 0.0
-    end if
-!    allocate(shd%ylat(shd%NA), shd%xlng(shd%NA))
-!    do i = 1, shd%NA
+!-    allocate(shd%ylat(shd%NA), shd%xlng(shd%NA))
+!-    do i = 1, shd%NA
         !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
         !LONGLENGTH = shd%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
-!        shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
-!        shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
-!    end do
-    if (all(shd%ylat == 0.0)) shd%ylat = (shd%yOrigin + shd%yDelta*shd%yyy) - shd%yDelta/2.0
-    if (all(shd%xlng == 0.0)) shd%xlng = (shd%xOrigin + shd%xDelta*shd%xxx) - shd%xDelta/2.0
+!-        shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
+!-        shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
+!-    end do
+    if (.not. allocated(shd%ylat)) then
+        z = 0
+        call allocate_variable(shd%ylat, shd%NA, z)
+        if (btest(z, pstat%ALLOCATION_ERROR)) then
+            call print_message("ERROR: An error occurred allocating the 'ylat' variable.")
+            ierr = z
+        end if
+    end if
+    if (.not. allocated(shd%xlng)) then
+        z = 0
+        call allocate_variable(shd%xlng, shd%NA, z)
+        if (btest(z, pstat%ALLOCATION_ERROR)) then
+            call print_message("ERROR: An error occurred allocating the 'xlng' variable.")
+            ierr = z
+        end if
+    end if
+    if (ierr /= 0) return
+    select case (lowercase(shd%CoordSys%Proj))
+        case ('latlong')
+            z = 0
+            call check_allocated(shd%ylat, shd%NA, z)
+            if (.not. btest(z, pstat%ASSIGNED)) then
+                shd%ylat = (shd%yOrigin + shd%yDelta*shd%yyy) - shd%yDelta/2.0
+            end if
+            z = 0
+            call check_allocated(shd%xlng, shd%NA, z)
+            if (.not. btest(z, pstat%ASSIGNED)) then
+                shd%xlng = (shd%xOrigin + shd%xDelta*shd%xxx) - shd%xDelta/2.0
+            end if
+            shd%iyMin = int(shd%yOrigin*60.0)
+            shd%iyMax = int((shd%yOrigin + shd%yCount*shd%yDelta)*60.0)
+            shd%jxMin = int(shd%xOrigin*60.0)
+            shd%jxMax = int((shd%xOrigin + shd%xCount*shd%xDelta)*60.0)
+            shd%GRDE = shd%xDelta*60.0
+            shd%GRDN = shd%yDelta*60.0
+!?        case ('utm')
+!?            shd%GRDE = shd%xDelta/1000.0
+!?            shd%GRDN = shd%yDelta/1000.0
+!?            shd%jxMin = int(shd%xOrigin/1000.0)
+!?            shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
+!?            shd%iyMin = int(shd%yOrigin/1000.0)
+!?            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
+        case ('rotlatlong')
+            z = 0
+            call check_allocated(shd%ylat, shd%NA, z)
+            if (.not. btest(z, pstat%ASSIGNED)) then
+                call print_message( &
+                    "ERROR: Latitudes in regular degrees have not been defined for the domain in '" // trim(shd%CoordSys%Proj) // &
+                    "' projection. Coordinates are not automatically calculated for domains in '" // trim(shd%CoordSys%Proj) // &
+                    "' projection, and must be provided as an attribute in the drainage database file.")
+                ierr = 1
+            end if
+            z = 0
+            call check_allocated(shd%xlng, shd%NA, z)
+            if (.not. btest(z, pstat%ASSIGNED)) then
+                call print_message( &
+                    "ERROR: Longitudes in regular degrees have not been defined for the domain in '" // trim(shd%CoordSys%Proj) // &
+                    "' projection. Coordinates are not automatically calculated for domains in '" // trim(shd%CoordSys%Proj) // &
+                    "' projection, and must be provided as an attribute in the drainage database file.")
+                ierr = 1
+            end if
+        case default
+            call print_message('ERROR: Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
+            ierr = 1
+    end select
+    if (ierr /= 0) return
+
+    !> Convert longitudes from (0:360) to (-180:180).
+    where (shd%xlng > 180.0)
+        shd%xlng = shd%xlng - 360.0
+    end where
 
     !> If no sub-grid variability is active.
     if (.not. ro%RUNTILE) then

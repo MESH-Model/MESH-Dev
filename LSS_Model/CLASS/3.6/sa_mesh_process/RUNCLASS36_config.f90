@@ -598,13 +598,19 @@ module RUNCLASS36_config
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
 
+        !> For GRU-based end of run prognostic variables.
+        real, dimension(:, :), allocatable :: tcan, rcan, sncan, gro, zpnd, tpnd, sno, tsno, albs, rhos
+        real, dimension(:, :, :), allocatable :: tbar, thlq, thic
+        integer, dimension(:), allocatable :: kc
+        character cfmt*3, cfmtt*1000
+
         !> For SAVERESUMEFLAG 3
         real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
             RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
             TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW
         real(kind = 4), dimension(:, :, :), allocatable :: TBARROW, THICROW, THLQROW, TSFSROW
 
-        integer NA, NTYPE, NSL, k, ik, jk, iun, ierr
+        integer NA, NTYPE, NML, NSL, m, k, ik, jk, j, i, ignd, iun, ierr
 
         !> Return if the process is not marked active.
         if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
@@ -615,7 +621,128 @@ module RUNCLASS36_config
         !> Local indices.
         NA = shd%NA
         NTYPE = shd%lc%NTYPE
+        NML = shd%lc%NML
         NSL = shd%lc%IGND
+
+        !> Write data to the output summary file.
+        if (ECHOTXTMODE) then
+
+            !> CLASS states for prognostic variables.
+            allocate(tcan(3, NTYPE), rcan(3, NTYPE), sncan(3, NTYPE), gro(3, NTYPE), zpnd(3, NTYPE), tpnd(3, NTYPE), &
+                     sno(3, NTYPE), tsno(3, NTYPE), albs(3, NTYPE), rhos(3, NTYPE), &
+                     tbar(3, NTYPE, NSL), thlq(3, NTYPE, NSL), thic(3, NTYPE, NSL), kc(NTYPE))
+            tcan = 0.0; rcan = 0.0; sncan = 0.0; gro = 0.0; zpnd = 0.0; tpnd = 0.0
+            sno = 0.0; tsno = 0.0; albs = 0.0; rhos = 0.0
+            tbar = 0.0; thlq = 0.0; thic = 0.0; kc = 0
+
+            !> Loop through the GRUs.
+            do m = 1, NTYPE
+
+                !> Cycle if the GRU does not exist.
+                if (count(shd%lc%JLMOS(1:NML) == m) == 0) cycle
+
+                !> Canopy.
+                tcan(3, m) = maxval(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m)
+                if (tcan(3, m) > 0.0) then
+                    tcan(1, m) = sum(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%tcan /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tcan /= 0.0)
+                    tcan(2, m) = minval(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tcan /= 0.0)
+                end if
+                where (tcan < 173.16 .or. tcan > 373.16 .or. tcan == 0.0) tcan = 273.16
+                rcan(2, m) = minval(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)
+                rcan(3, m) = maxval(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)
+                rcan(1, m) = sum(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                sncan(2, m) = minval(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)
+                sncan(3, m) = maxval(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)
+                sncan(1, m) = sum(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                gro(2, m) = minval(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)
+                gro(3, m) = maxval(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)
+                gro(1, m) = sum(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+
+                !> Ponded water at surface.
+                zpnd(2, m) = minval(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)
+                zpnd(3, m) = maxval(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)
+                zpnd(1, m) = sum(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                tpnd(3, m) = maxval(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m)
+                if (tpnd(3, m) > 0.0) then
+                    tpnd(1, m) = sum(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%tpnd /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tpnd /= 0.0)
+                    tpnd(2, m) = minval(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tpnd /= 0.0)
+                end if
+                where (tpnd < 173.16 .or. tpnd > 373.16 .or. tpnd == 0.0) tpnd = 273.16
+
+                !> Snow.
+                sno(2, m) = minval(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)
+                sno(3, m) = maxval(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)
+                sno(1, m) = sum(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                tsno(3, m) = maxval(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m)
+                if (tsno(3, m) > 0.0) then
+                    tsno(1, m) = sum(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%tsno /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tsno /= 0.0)
+                    tsno(2, m) = minval(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tsno /= 0.0)
+                end if
+                where (tsno < 173.16 .or. tsno > 373.16 .or. tsno == 0.0) tsno = 273.16
+                if (sno(3, m) > 0.0) then
+                    albs(1, m) = sum(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%sno > 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+                    albs(2, m) = minval(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+                    albs(3, m) = maxval(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+                end if
+                rhos(3, m) = maxval(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m)
+                if (rhos(3, m) > 0.0) then
+                    rhos(1, m) = sum(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%rhos /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhos /= 0.0)
+                    rhos(2, m) = minval(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhos /= 0.0)
+                end if
+
+                !> Soil.
+                do j = 1, NSL
+                    tbar(1, m, j) = sum(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                    tbar(2, m, j) = minval(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
+                    tbar(3, m, j) = maxval(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thlq(1, m, j) = sum(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                    thlq(2, m, j) = minval(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thlq(3, m, j) = maxval(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thic(1, m, j) = sum(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                    thic(2, m, j) = minval(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thic(3, m, j) = maxval(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)
+                end do
+            end do
+
+            !> Write to file.
+            if (NRSOILAYEREADFLAG > 3) then
+                ignd = min(NRSOILAYEREADFLAG, NSL)
+            else if (NRSOILAYEREADFLAG == 1) then
+                ignd = NSL
+            else
+                ignd = 3
+            end if
+            write(cfmt, '(i3)') ignd
+            write(ECHO_TXT_IUN, *)
+            write(ECHO_TXT_IUN, '(a)') 'End of run prognostic states'
+            write(ECHO_TXT_IUN, '(3x, (a), i4)') 'Number of GRUs: ', NTYPE
+            do i = 1, 3
+                write(ECHO_TXT_IUN, *)
+                select case (i)
+                    case (1); write(ECHO_TXT_IUN, '(a)') 'Average values'
+                    case (2); write(ECHO_TXT_IUN, '(a)') 'Minimum values'
+                    case (3); write(ECHO_TXT_IUN, '(a)') 'Maximum values'
+                end select
+                do m = 1, NTYPE
+                    write(ECHO_TXT_IUN, "(3x, 'GRU ', i3, ':')") m
+                    cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), 3(f10.3), " // &
+                            "2x, '!> TBAR(1:" // trim(adjustl(cfmt)) // ")/TCAN/TSNO/TPND')"
+                    write(ECHO_TXT_IUN, cfmtt) ((tbar(i, m, j) - 273.16), j = 1, ignd), &
+                        (tcan(i, m) - 273.16), (tsno(i, m) - 273.16), (tpnd(i, m) - 273.16)
+                    cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), " // trim(adjustl(cfmt)) // "(f10.3), f10.3, " // &
+                            "2x, '!> THLQ(1:" // trim(adjustl(cfmt)) // ")/THIC(1:" // trim(adjustl(cfmt)) // ")/ZPND')"
+                    write(ECHO_TXT_IUN, cfmtt) (thlq(i, m, j), j = 1, ignd), (thic(i, m, j), j = 1, ignd), zpnd(i, m)
+                    write(ECHO_TXT_IUN, "(6(f10.3), 2x, '!> RCAN/SNCAN/SNO/ALBS/RHOS/GRO')") &
+                        rcan(i, m), sncan(i, m), sno(i, m), albs(i, m), rhos(i, m), gro(i, m)
+                end do
+            end do
+
+        end if
 
         !> Save the state of prognostic variables to file.
         select case (SAVERESUMEFLAG)

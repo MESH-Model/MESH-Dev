@@ -20,6 +20,7 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
     use strings
     use sa_mesh_common
     use ensim_io
+    use parse_utilities
 
     implicit none
 
@@ -58,7 +59,19 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
     z = 0
     call get_keyword_value(iun, vkeyword, nkeyword, ':Projection', shd%CoordSys%Proj, z); if (z /= 0) ierr = z
     call get_keyword_value(iun, vkeyword, nkeyword, ':Ellipsoid', shd%CoordSys%Ellips, z); if (z /= 0) ierr = z
-    call get_keyword_value(iun, vkeyword, nkeyword, ':Zone', shd%CoordSys%Zone, z); if (z /= 0) ierr = z
+    select case (lowercase(shd%CoordSys%Proj))
+        case ('utm')
+            call get_keyword_value(iun, vkeyword, nkeyword, ':Zone', shd%CoordSys%Zone, z); if (z /= 0) ierr = z
+        case ('rotlatlong')
+            call get_keyword_value(iun, vkeyword, nkeyword, ':CentreLatitude', shd%CoordSys%CentreLatitude, z)
+            if (z /= 0) ierr = z
+            call get_keyword_value(iun, vkeyword, nkeyword, ':CentreLongitude', shd%CoordSys%CentreLongitude, z)
+            if (z /= 0) ierr = z
+            call get_keyword_value(iun, vkeyword, nkeyword, ':RotationLatitude', shd%CoordSys%RotationLatitude, z)
+            if (z /= 0) ierr = z
+            call get_keyword_value(iun, vkeyword, nkeyword, ':RotationLongitude', shd%CoordSys%RotationLongitude, z)
+            if (z /= 0) ierr = z
+    end select
     call get_keyword_value(iun, vkeyword, nkeyword, ':xCount', shd%xCount, z); if (z /= 0) ierr = z
     call get_keyword_value(iun, vkeyword, nkeyword, ':xOrigin', shd%xOrigin, z); if (z /= 0) ierr = z
     call get_keyword_value(iun, vkeyword, nkeyword, ':xDelta', shd%xDelta, z); if (z /= 0) ierr = z
@@ -70,7 +83,7 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
     call get_keyword_value(iun, vkeyword, nkeyword, ':NumGridsInBasin', shd%NAA, z); if (z /= 0) ierr = z
     call get_keyword_value(iun, vkeyword, nkeyword, ':NumRiverClasses', shd%NRVR, z); if (z /= 0) ierr = z
     call get_keyword_value(iun, vkeyword, nkeyword, ':ClassCount', shd%lc%NTYPE, z); if (z /= 0) ierr = z
-!+    call get_keyword_value(iun, fname, vkeyword, nkeyword, ':DebugGridNo', l, z); if (z /= 0) ierr = z
+    call get_keyword_value(iun, vkeyword, nkeyword, ':DebugGridNo', shd%DebugGridNo, z); if (z /= 0) ierr = z
     if (ierr /= 0) then
         call print_error('Errors occurred reading attributes from: ' // trim(fname))
         return
@@ -80,25 +93,25 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
     shd%lc%NTYPE = shd%lc%NTYPE - 1
 
     !> Calculate additional grid attributes.
-    select case (lowercase(shd%CoordSys%Proj))
-        case ('latlong')
-            shd%iyMin = int(shd%yOrigin*60.0)
-            shd%iyMax = int((shd%yOrigin + shd%yCount*shd%yDelta)*60.0)
-            shd%jxMin = int(shd%xOrigin*60.0)
-            shd%jxMax = int((shd%xOrigin + shd%xCount*shd%xDelta)*60.0)
-            shd%GRDE = shd%xDelta*60.0
-            shd%GRDN = shd%yDelta*60.0
-!+        case ('utm')
-!+            shd%GRDE = shd%xDelta/1000.0
-!+            shd%GRDN = shd%yDelta/1000.0
-!+            shd%jxMin = int(shd%xOrigin/1000.0)
-!+            shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
-!+            shd%iyMin = int(shd%yOrigin/1000.0)
-!+            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
-        case default
-            call print_error('Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
-            return
-    end select
+!-    select case (lowercase(shd%CoordSys%Proj))
+!-        case ('latlong')
+!-            shd%iyMin = int(shd%yOrigin*60.0)
+!-            shd%iyMax = int((shd%yOrigin + shd%yCount*shd%yDelta)*60.0)
+!-            shd%jxMin = int(shd%xOrigin*60.0)
+!-            shd%jxMax = int((shd%xOrigin + shd%xCount*shd%xDelta)*60.0)
+!-            shd%GRDE = shd%xDelta*60.0
+!-            shd%GRDN = shd%yDelta*60.0
+!-        case ('utm')
+!-            shd%GRDE = shd%xDelta/1000.0
+!-            shd%GRDN = shd%yDelta/1000.0
+!-            shd%jxMin = int(shd%xOrigin/1000.0)
+!-            shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
+!-            shd%iyMin = int(shd%yOrigin/1000.0)
+!-            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
+!-        case default
+!-            call print_error('Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
+!-            return
+!-    end select
 
     !> Check grid dimension.
     if (shd%NA < 1 .or. shd%NAA < 1) then
@@ -241,8 +254,26 @@ subroutine read_shed_r2c(shd, iun, fname, ierr)
 
                 !> Convert DD from km/km^2 to m/m^2; WATROF expects m/m^2.
                 shd%DRDN = ffield/1000.0
+            case ('latitude')
+                call allocate_variable(shd%ylat, shd%NA, z)
+                if (btest(z, pstat%ALLOCATION_ERROR)) then
+                    ierr = z
+                else
+                    shd%ylat = ffield
+                end if
+            case ('longitude')
+                call allocate_variable(shd%xlng, shd%NA, z)
+                if (btest(z, pstat%ALLOCATION_ERROR)) then
+                    ierr = z
+                else
+                    shd%xlng = ffield
+                end if
         end select
     end do
+    if (ierr /= 0) then
+        call print_error('Errors occurred assigning attributes from: ' // trim(fname))
+        return
+    end if
 
     !> Scan and assign land cover (GRU) classes.
     do l = (nattr - shd%lc%NTYPE), nattr

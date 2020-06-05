@@ -142,10 +142,26 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls, ierr)
                     end do
                 case ('rte')
                     do j = 2, nargs
-                        select case (lowercase(args(j)))
-                            case ('cap_shd')
-                                rteflg%cap_shd = 1
-                        end select
+
+                        !> Multi-word options.
+                        if (lowercase(args(j)(1:9)) == 'dtminusr=') then
+                            call value(args(j)(10:), rteflg%dtminusr, z)
+                        else if (lowercase(args(j)(1:9)) == 'mindtmin=') then
+                            call value(args(j)(10:), rteflg%mindtmin, z)
+                        else if (lowercase(args(j)(1:9)) == 'maxindex=') then
+                            call value(args(j)(10:), rteflg%maxindex, z)
+                        else if (lowercase(args(j)(1:10)) == 'dtminfrac=') then
+                            call value(args(j)(11:), rteflg%dtminfrac, z)
+                        else if (lowercase(args(j)(1:14)) == 'convthreshusr=') then
+                            call value(args(j)(15:), rteflg%convthreshusr, z)
+
+                        !> Single-word options.
+                        else
+                            select case (lowercase(args(j)))
+                                case ('cap_shd')
+                                    rteflg%cap_shd = 1
+                            end select
+                        end if
                     end do
                 case ('controlled_reservoir')
                     do j = 2, nargs

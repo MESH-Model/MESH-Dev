@@ -19,6 +19,7 @@ subroutine read_shed_nc(shd, fname, ierr)
     use strings
     use sa_mesh_common
     use nc_io
+    use parse_utilities
 
     implicit none
 
@@ -158,16 +159,37 @@ subroutine read_shed_nc(shd, fname, ierr)
     end if
 
     !> Map coordinates.
-    allocate(shd%xlng(shd%NA), shd%ylat(shd%NA), stat = ierr)
-    if (ierr == 0) then
+    z = 0
+    call allocate_variable(shd%ylat, shd%NA, z)
+    if (btest(z, pstat%ALLOCATION_ERROR)) then
+        ierr = z
+        call print_error("Unable to allocate the 'ylat' variable (error code: " // trim(adjustl(line)) // ").")
+        goto 999
+    else
         do n = 1, shd%NA
-            shd%xlng(n) = lon(shd%xxx(n))
             shd%ylat(n) = lat(shd%yyy(n))
         end do
-    else
-        call print_error("Unable to allocate 'xlng' and 'ylat' variables (error code: " // trim(adjustl(line)) // ").")
-        goto 999
     end if
+    call allocate_variable(shd%xlng, shd%NA, z)
+    if (btest(z, pstat%ALLOCATION_ERROR)) then
+        ierr = z
+        call print_error("Unable to allocate the 'xlng' variable (error code: " // trim(adjustl(line)) // ").")
+        goto 999
+    else
+        do n = 1, shd%NA
+            shd%xlng(n) = lon(shd%xxx(n))
+        end do
+    end if
+!-    allocate(shd%xlng(shd%NA), shd%ylat(shd%NA), stat = ierr)
+!-    if (ierr == 0) then
+!-        do n = 1, shd%NA
+!-            shd%xlng(n) = lon(shd%xxx(n))
+!-            shd%ylat(n) = lat(shd%yyy(n))
+!-        end do
+!-    else
+!-        call print_error("Unable to allocate 'xlng' and 'ylat' variables (error code: " // trim(adjustl(line)) // ").")
+!-        goto 999
+!-    end if
 
     !> Allocate and initialize variables.
     allocate( &
@@ -215,26 +237,26 @@ subroutine read_shed_nc(shd, fname, ierr)
     shd%lc%NTYPE = shd%lc%NTYPE - 1
 
     !> Calculate additional grid attributes.
-    select case (lowercase(shd%CoordSys%Proj))
-        case ('latlong')
-            shd%iyMin = int(shd%yOrigin*60.0)
-            shd%iyMax = int((shd%yOrigin + shd%yCount*shd%yDelta)*60.0)
-            shd%jxMin = int(shd%xOrigin*60.0)
-            shd%jxMax = int((shd%xOrigin + shd%xCount*shd%xDelta)*60.0)
-            shd%GRDE = shd%xDelta*60.0
-            shd%GRDN = shd%yDelta*60.0
-!+        case ('utm')
-!+            shd%GRDE = shd%xDelta/1000.0
-!+            shd%GRDN = shd%yDelta/1000.0
-!+            shd%jxMin = int(shd%xOrigin/1000.0)
-!+            shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
-!+            shd%iyMin = int(shd%yOrigin/1000.0)
-!+            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
-        case default
-            call print_error('Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
-            ierr = 1
-            goto 999
-    end select
+!-    select case (lowercase(shd%CoordSys%Proj))
+!-        case ('latlong')
+!-            shd%iyMin = int(shd%yOrigin*60.0)
+!-            shd%iyMax = int((shd%yOrigin + shd%yCount*shd%yDelta)*60.0)
+!-            shd%jxMin = int(shd%xOrigin*60.0)
+!-            shd%jxMax = int((shd%xOrigin + shd%xCount*shd%xDelta)*60.0)
+!-            shd%GRDE = shd%xDelta*60.0
+!-            shd%GRDN = shd%yDelta*60.0
+!-        case ('utm')
+!-            shd%GRDE = shd%xDelta/1000.0
+!-            shd%GRDN = shd%yDelta/1000.0
+!-            shd%jxMin = int(shd%xOrigin/1000.0)
+!-            shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
+!-            shd%iyMin = int(shd%yOrigin/1000.0)
+!-            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
+!-        case default
+!-            call print_error('Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
+!-            ierr = 1
+!-            goto 999
+!-    end select
 
     !> Check grid dimension.
     if (shd%NA < 1 .or. shd%NAA < 1) then
