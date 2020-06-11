@@ -3969,12 +3969,12 @@ module nc_io
         end if
         call nc4_map_variable(iun, fname, standard_name, d, dat2, x, y, ierr)
         dat = int(d, kind = FourByteInt)
-        return
-        if (x == 1 .and. y == 2) then
-            dat = dat2
-        else
-            dat = transpose(dat2)
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2) then
+!-            dat = dat2
+!-        else
+!-            dat = transpose(dat2)
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -4074,11 +4074,12 @@ module nc_io
         end if
         call nc4_map_variable(iun, fname, standard_name, d, dat2, x, y, ierr)
         dat = real(d, kind = FourByteReal)
-        if (x == 1 .and. y == 2) then
-            dat = dat2
-        else
-            dat = transpose(dat2)
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2) then
+!-            dat = dat2
+!-        else
+!-            dat = transpose(dat2)
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -4176,12 +4177,12 @@ module nc_io
             return
         end if
         call nc4_map_variable(iun, fname, standard_name, dat, dat2, x, y, ierr)
-        return
-        if (x == 1 .and. y == 2) then
-            dat = dat2
-        else
-            dat = transpose(dat2)
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2) then
+!-            dat = dat2
+!-        else
+!-            dat = transpose(dat2)
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -4396,56 +4397,56 @@ module nc_io
         end if
         call nc4_map_variable(iun, fname, standard_name, d, dat3, x, y, m, ierr)
         dat = int(d, kind = FourByteInt)
-        return
-        if (x == 1 .and. y == 2 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, m) = dat3(x, y, m)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, m) = dat3(y, x, m)
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, m) = dat3(x, m, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, m) = dat3(y, m, x)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, m) = dat3(m, x, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, m) = dat3(m, y, x)
-                    end do
-                end do
-            end do
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, m) = dat3(x, y, m)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, m) = dat3(y, x, m)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, m) = dat3(x, m, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, m) = dat3(y, m, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, m) = dat3(m, x, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, m) = dat3(m, y, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -4546,56 +4547,56 @@ module nc_io
         end if
         call nc4_map_variable(iun, fname, standard_name, d, dat3, x, y, m, ierr)
         dat = real(d, kind = FourByteReal)
-        return
-        if (x == 1 .and. y == 2 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, m) = dat3(x, y, m)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, m) = dat3(y, x, m)
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, m) = dat3(x, m, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, m) = dat3(y, m, x)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, m) = dat3(m, x, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, m) = dat3(m, y, x)
-                    end do
-                end do
-            end do
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, m) = dat3(x, y, m)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, m) = dat3(y, x, m)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, m) = dat3(x, m, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, m) = dat3(y, m, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, m) = dat3(m, x, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, m) = dat3(m, y, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -4694,56 +4695,56 @@ module nc_io
             return
         end if
         call nc4_map_variable(iun, fname, standard_name, dat, dat3, x, y, m, ierr)
-        return
-        if (x == 1 .and. y == 2 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, m) = dat3(x, y, m)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, m) = dat3(y, x, m)
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, m) = dat3(x, m, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, m) = dat3(y, m, x)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, m) = dat3(m, x, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, m) = dat3(m, y, x)
-                    end do
-                end do
-            end do
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, m) = dat3(x, y, m)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, m) = dat3(y, x, m)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, m) = dat3(x, m, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, m) = dat3(y, m, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, m) = dat3(m, x, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, m) = dat3(m, y, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -4978,251 +4979,251 @@ module nc_io
         end if
         call nc4_map_variable(iun, fname, standard_name, d, dat4, x, y, l, m, ierr)
         dat = int(d, kind = FourByteInt)
-        return
-        if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, y, m, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. l == 4 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(y, x, m, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. l == 4 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, m, y, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. l == 4 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(y, m, x, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. l == 4 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(m, x, y, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. l == 4 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(m, y, x, l)
-                        end do
-                    end do
-                end do
-            end do
-        end if
-        if (x == 4 .and. y == 2 .and. l == 1 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(l, x, y, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 1 .and. l == 2 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(y, l, x, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 3 .and. l == 1 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(l, x, m, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 1 .and. l == 3 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(y, m, l, x)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 3 .and. l == 2 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(m, l, x, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 2 .and. l == 3 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(m, y, l, x)
-                        end do
-                    end do
-                end do
-            end do
-        end if
-        if (x == 1 .and. y == 4 .and. l == 2 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, l, y, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 4 .and. l == 1 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(l, y, x, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 4 .and. l == 3 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, m, l, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 4 .and. l == 1 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(l, y, m, x)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 4 .and. l == 3 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(m, x, l, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 4 .and. l == 2 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(m, l, y, x)
-                        end do
-                    end do
-                end do
-            end do
-        end if
-        if (x == 1 .and. y == 2 .and. l == 3 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, y, l, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. l == 3 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(y, x, l, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. l == 2 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, l, m, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. l == 2 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(y, l, m, x)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. l == 1 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(l, m, x, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. l == 1 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(l, m, y, x)
-                        end do
-                    end do
-                end do
-            end do
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, y, m, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. l == 4 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(y, x, m, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. l == 4 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, m, y, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. l == 4 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(y, m, x, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. l == 4 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(m, x, y, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. l == 4 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(m, y, x, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
+!-        if (x == 4 .and. y == 2 .and. l == 1 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(l, x, y, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 1 .and. l == 2 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(y, l, x, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 3 .and. l == 1 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(l, x, m, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 1 .and. l == 3 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(y, m, l, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 3 .and. l == 2 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(m, l, x, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 2 .and. l == 3 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(m, y, l, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
+!-        if (x == 1 .and. y == 4 .and. l == 2 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, l, y, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 4 .and. l == 1 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(l, y, x, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 4 .and. l == 3 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, m, l, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 4 .and. l == 1 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(l, y, m, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 4 .and. l == 3 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(m, x, l, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 4 .and. l == 2 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(m, l, y, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
+!-        if (x == 1 .and. y == 2 .and. l == 3 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, y, l, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. l == 3 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(y, x, l, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. l == 2 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, l, m, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. l == 2 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(y, l, m, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. l == 1 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(l, m, x, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. l == 1 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(l, m, y, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -5327,251 +5328,251 @@ module nc_io
         end if
         call nc4_map_variable(iun, fname, standard_name, d, dat4, x, y, l, m, ierr)
         dat = real(d, kind = FourByteReal)
-        return
-        if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, y, m, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. l == 4 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(y, x, m, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. l == 4 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, m, y, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. l == 4 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(y, m, x, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. l == 4 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(m, x, y, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. l == 4 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(m, y, x, l)
-                        end do
-                    end do
-                end do
-            end do
-        end if
-        if (x == 4 .and. y == 2 .and. l == 1 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(l, x, y, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 1 .and. l == 2 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(y, l, x, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 3 .and. l == 1 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(l, x, m, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 1 .and. l == 3 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(y, m, l, x)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 3 .and. l == 2 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(m, l, x, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 2 .and. l == 3 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(m, y, l, x)
-                        end do
-                    end do
-                end do
-            end do
-        end if
-        if (x == 1 .and. y == 4 .and. l == 2 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, l, y, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 4 .and. l == 1 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(l, y, x, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 4 .and. l == 3 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, m, l, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 4 .and. l == 1 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(l, y, m, x)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 4 .and. l == 3 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(m, x, l, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 4 .and. l == 2 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(m, l, y, x)
-                        end do
-                    end do
-                end do
-            end do
-        end if
-        if (x == 1 .and. y == 2 .and. l == 3 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, y, l, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. l == 3 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(y, x, l, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. l == 2 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, l, m, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. l == 2 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(y, l, m, x)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. l == 1 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(l, m, x, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. l == 1 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(l, m, y, x)
-                        end do
-                    end do
-                end do
-            end do
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, y, m, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. l == 4 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(y, x, m, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. l == 4 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, m, y, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. l == 4 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(y, m, x, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. l == 4 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(m, x, y, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. l == 4 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(m, y, x, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
+!-        if (x == 4 .and. y == 2 .and. l == 1 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(l, x, y, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 1 .and. l == 2 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(y, l, x, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 3 .and. l == 1 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(l, x, m, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 1 .and. l == 3 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(y, m, l, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 3 .and. l == 2 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(m, l, x, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 2 .and. l == 3 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(m, y, l, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
+!-        if (x == 1 .and. y == 4 .and. l == 2 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, l, y, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 4 .and. l == 1 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(l, y, x, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 4 .and. l == 3 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, m, l, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 4 .and. l == 1 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(l, y, m, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 4 .and. l == 3 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(m, x, l, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 4 .and. l == 2 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(m, l, y, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
+!-        if (x == 1 .and. y == 2 .and. l == 3 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, y, l, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. l == 3 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(y, x, l, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. l == 2 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, l, m, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. l == 2 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(y, l, m, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. l == 1 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(l, m, x, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. l == 1 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(l, m, y, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -5674,251 +5675,251 @@ module nc_io
             return
         end if
         call nc4_map_variable(iun, fname, standard_name, dat, dat4, x, y, l, m, ierr)
-        return
-        if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, y, m, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. l == 4 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(y, x, m, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. l == 4 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, m, y, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. l == 4 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(y, m, x, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. l == 4 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(m, x, y, l)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. l == 4 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(4)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(m, y, x, l)
-                        end do
-                    end do
-                end do
-            end do
-        end if
-        if (x == 4 .and. y == 2 .and. l == 1 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(l, x, y, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 1 .and. l == 2 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(y, l, x, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 3 .and. l == 1 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(l, x, m, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 1 .and. l == 3 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(y, m, l, x)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 3 .and. l == 2 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(m, l, x, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 4 .and. y == 2 .and. l == 3 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(4)
-                            dat(x, y, l, m) = dat4(m, y, l, x)
-                        end do
-                    end do
-                end do
-            end do
-        end if
-        if (x == 1 .and. y == 4 .and. l == 2 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, l, y, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 4 .and. l == 1 .and. m == 3) then
-            do m = 1, dim_lengths(3)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(l, y, x, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 4 .and. l == 3 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, m, l, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 4 .and. l == 1 .and. m == 2) then
-            do m = 1, dim_lengths(2)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(l, y, m, x)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 4 .and. l == 3 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(m, x, l, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 4 .and. l == 2 .and. m == 1) then
-            do m = 1, dim_lengths(1)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(4)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(m, l, y, x)
-                        end do
-                    end do
-                end do
-            end do
-        end if
-        if (x == 1 .and. y == 2 .and. l == 3 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, y, l, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. l == 3 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(3)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(y, x, l, m)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. l == 2 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(1)
-                            dat(x, y, l, m) = dat4(x, l, m, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. l == 2 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(2)
-                    do y = 1, dim_lengths(1)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(y, l, m, x)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. l == 1 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(3)
-                        do x = 1, dim_lengths(2)
-                            dat(x, y, l, m) = dat4(l, m, x, y)
-                        end do
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. l == 1 .and. m == 4) then
-            do m = 1, dim_lengths(4)
-                do l = 1, dim_lengths(1)
-                    do y = 1, dim_lengths(2)
-                        do x = 1, dim_lengths(3)
-                            dat(x, y, l, m) = dat4(l, m, y, x)
-                        end do
-                    end do
-                end do
-            end do
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2 .and. l == 4 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, y, m, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. l == 4 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(y, x, m, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. l == 4 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, m, y, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. l == 4 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(y, m, x, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. l == 4 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(m, x, y, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. l == 4 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(4)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(m, y, x, l)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
+!-        if (x == 4 .and. y == 2 .and. l == 1 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(l, x, y, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 1 .and. l == 2 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(y, l, x, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 3 .and. l == 1 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(l, x, m, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 1 .and. l == 3 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(y, m, l, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 3 .and. l == 2 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(m, l, x, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 4 .and. y == 2 .and. l == 3 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(4)
+!-                            dat(x, y, l, m) = dat4(m, y, l, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
+!-        if (x == 1 .and. y == 4 .and. l == 2 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, l, y, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 4 .and. l == 1 .and. m == 3) then
+!-            do m = 1, dim_lengths(3)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(l, y, x, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 4 .and. l == 3 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, m, l, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 4 .and. l == 1 .and. m == 2) then
+!-            do m = 1, dim_lengths(2)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(l, y, m, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 4 .and. l == 3 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(m, x, l, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 4 .and. l == 2 .and. m == 1) then
+!-            do m = 1, dim_lengths(1)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(4)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(m, l, y, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
+!-        if (x == 1 .and. y == 2 .and. l == 3 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, y, l, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. l == 3 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(3)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(y, x, l, m)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. l == 2 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(1)
+!-                            dat(x, y, l, m) = dat4(x, l, m, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. l == 2 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(2)
+!-                    do y = 1, dim_lengths(1)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(y, l, m, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. l == 1 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(3)
+!-                        do x = 1, dim_lengths(2)
+!-                            dat(x, y, l, m) = dat4(l, m, x, y)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. l == 1 .and. m == 4) then
+!-            do m = 1, dim_lengths(4)
+!-                do l = 1, dim_lengths(1)
+!-                    do y = 1, dim_lengths(2)
+!-                        do x = 1, dim_lengths(3)
+!-                            dat(x, y, l, m) = dat4(l, m, y, x)
+!-                        end do
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -6133,56 +6134,56 @@ module nc_io
         end if
         call nc4_map_variable(iun, fname, standard_name, d, dat3, x, y, t, ierr)
         dat = int(d, kind = FourByteInt)
-        return
-        if (x == 1 .and. y == 2 .and. t == 3) then
-            do t = 1, dim_lengths(3)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, t) = dat3(x, y, t)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. t == 3) then
-            do t = 1, dim_lengths(3)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, t) = dat3(y, x, t)
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. t == 2) then
-            do t = 1, dim_lengths(2)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, t) = dat3(x, t, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. t == 2) then
-            do t = 1, dim_lengths(2)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, t) = dat3(y, t, x)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. t == 1) then
-            do t = 1, dim_lengths(1)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, t) = dat3(t, x, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. t == 1) then
-            do t = 1, dim_lengths(1)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, t) = dat3(t, y, x)
-                    end do
-                end do
-            end do
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2 .and. t == 3) then
+!-            do t = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, t) = dat3(x, y, t)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. t == 3) then
+!-            do t = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, t) = dat3(y, x, t)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. t == 2) then
+!-            do t = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, t) = dat3(x, t, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. t == 2) then
+!-            do t = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, t) = dat3(y, t, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. t == 1) then
+!-            do t = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, t) = dat3(t, x, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. t == 1) then
+!-            do t = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, t) = dat3(t, y, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -6283,56 +6284,56 @@ module nc_io
         end if
         call nc4_map_variable(iun, fname, standard_name, d, dat3, x, y, t, ierr)
         dat = real(d, kind = FourByteReal)
-        return
-        if (x == 1 .and. y == 2 .and. t == 3) then
-            do t = 1, dim_lengths(3)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, t) = dat3(x, y, t)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. t == 3) then
-            do t = 1, dim_lengths(3)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, t) = dat3(y, x, t)
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. t == 2) then
-            do t = 1, dim_lengths(2)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, t) = dat3(x, t, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. t == 2) then
-            do t = 1, dim_lengths(2)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, t) = dat3(y, t, x)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. t == 1) then
-            do t = 1, dim_lengths(1)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, t) = dat3(t, x, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. t == 1) then
-            do t = 1, dim_lengths(1)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, t) = dat3(t, y, x)
-                    end do
-                end do
-            end do
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2 .and. t == 3) then
+!-            do t = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, t) = dat3(x, y, t)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. t == 3) then
+!-            do t = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, t) = dat3(y, x, t)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. t == 2) then
+!-            do t = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, t) = dat3(x, t, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. t == 2) then
+!-            do t = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, t) = dat3(y, t, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. t == 1) then
+!-            do t = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, t) = dat3(t, x, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. t == 1) then
+!-            do t = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, t) = dat3(t, y, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -6431,56 +6432,56 @@ module nc_io
             return
         end if
         call nc4_map_variable(iun, fname, standard_name, dat, dat3, x, y, t, ierr)
-        return
-        if (x == 1 .and. y == 2 .and. t == 3) then
-            do t = 1, dim_lengths(3)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, t) = dat3(x, y, t)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 1 .and. t == 3) then
-            do t = 1, dim_lengths(3)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, t) = dat3(y, x, t)
-                    end do
-                end do
-            end do
-        else if (x == 1 .and. y == 3 .and. t == 2) then
-            do t = 1, dim_lengths(2)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(1)
-                        dat(x, y, t) = dat3(x, t, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 1 .and. t == 2) then
-            do t = 1, dim_lengths(2)
-                do y = 1, dim_lengths(1)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, t) = dat3(y, t, x)
-                    end do
-                end do
-            end do
-        else if (x == 2 .and. y == 3 .and. t == 1) then
-            do t = 1, dim_lengths(1)
-                do y = 1, dim_lengths(3)
-                    do x = 1, dim_lengths(2)
-                        dat(x, y, t) = dat3(t, x, y)
-                    end do
-                end do
-            end do
-        else if (x == 3 .and. y == 2 .and. t == 1) then
-            do t = 1, dim_lengths(1)
-                do y = 1, dim_lengths(2)
-                    do x = 1, dim_lengths(3)
-                        dat(x, y, t) = dat3(t, y, x)
-                    end do
-                end do
-            end do
-        end if
+!-        return
+!-        if (x == 1 .and. y == 2 .and. t == 3) then
+!-            do t = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, t) = dat3(x, y, t)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 1 .and. t == 3) then
+!-            do t = 1, dim_lengths(3)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, t) = dat3(y, x, t)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 1 .and. y == 3 .and. t == 2) then
+!-            do t = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(1)
+!-                        dat(x, y, t) = dat3(x, t, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 1 .and. t == 2) then
+!-            do t = 1, dim_lengths(2)
+!-                do y = 1, dim_lengths(1)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, t) = dat3(y, t, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 2 .and. y == 3 .and. t == 1) then
+!-            do t = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(3)
+!-                    do x = 1, dim_lengths(2)
+!-                        dat(x, y, t) = dat3(t, x, y)
+!-                    end do
+!-                end do
+!-            end do
+!-        else if (x == 3 .and. y == 2 .and. t == 1) then
+!-            do t = 1, dim_lengths(1)
+!-                do y = 1, dim_lengths(2)
+!-                    do x = 1, dim_lengths(3)
+!-                        dat(x, y, t) = dat3(t, y, x)
+!-                    end do
+!-                end do
+!-            end do
+!-        end if
 
         !> Reset 'ierr.'
         if (ierr == NF90_NOERR) ierr = 0
@@ -6665,17 +6666,18 @@ module nc_io
         !> Set units based on 'ts_freq'.
         write(line, "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2)") &
             ic%now%year, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins, 0
-        if (btest(ts_freq, IO_FREQ_MLY) .or. btest(ts_freq, IO_FREQ_SSL) .or. btest(ts_freq, IO_FREQ_DLY)) then
-            ierr = nf90_put_att(iun, vid_t, 'units', 'days since ' // trim(adjustl(line)))
-        else if (btest(ts_freq, IO_FREQ_YLY)) then
-            ierr = nf90_put_att(iun, vid_t, 'units', 'years since ' // trim(adjustl(line)))
-        else if (btest(ts_freq, IO_FREQ_HLY)) then
-            ierr = nf90_put_att(iun, vid_t, 'units', 'hours since ' // trim(adjustl(line)))
-        else if (btest(ts_freq, IO_FREQ_PTS)) then
-            ierr = nf90_put_att(iun, vid_t, 'units', 'minutes since ' // trim(adjustl(line)))
-        else
-            ierr = nf90_put_att(iun, vid_t, 'units', 'seconds since ' // trim(adjustl(line)))
-        end if
+        select case (ts_freq)
+            case (IO_FREQ_MLY, IO_FREQ_SSL, IO_FREQ_DLY)
+                ierr = nf90_put_att(iun, vid_t, 'units', 'days since ' // trim(adjustl(line)))
+            case (IO_FREQ_YLY)
+                ierr = nf90_put_att(iun, vid_t, 'units', 'years since ' // trim(adjustl(line)))
+            case (IO_FREQ_HLY)
+                ierr = nf90_put_att(iun, vid_t, 'units', 'hours since ' // trim(adjustl(line)))
+            case (IO_FREQ_PTS)
+                ierr = nf90_put_att(iun, vid_t, 'units', 'minutes since ' // trim(adjustl(line)))
+            case default
+                ierr = nf90_put_att(iun, vid_t, 'units', 'seconds since ' // trim(adjustl(line)))
+        end select
         if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid_t, 'long_name', 'time')
         if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid_t, 'standard_name', 'time')
         if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, vid_t, 'axis', 'T')
@@ -9201,17 +9203,18 @@ module nc_io
 
         !> Calculate reference time.
         jdate_r8 = ((ic%start%year - 1) - 1601)*365.25 + get_jday(ic%start%month, ic%start%day, ic%start%year)
-        if (btest(ffreq, IO_FREQ_MLY) .or. btest(ffreq, IO_FREQ_SSL) .or. btest(ffreq, IO_FREQ_DLY)) then
-            t0_r8 = jdate_r8
-        else if (btest(ffreq, IO_FREQ_YLY)) then
-            t0_r8 = ic%start%year
-        else if (btest(ffreq, IO_FREQ_HLY)) then
-            t0_r8 = jdate_r8*24.0 + ic%start%hour + ic%start%mins/60.0
-        else if (btest(ffreq, IO_FREQ_PTS)) then
-            t0_r8 = jdate_r8*24.0*60.0 + ic%start%hour*60.0 + ic%start%mins
-        else
-            t0_r8 = jdate_r8*24.0*60.0*60.0 + ic%start%hour*60.0*60.0 + ic%start%mins*60.0
-        end if
+        select case (ffreq)
+            case (IO_FREQ_MLY, IO_FREQ_SSL, IO_FREQ_DLY)
+                t0_r8 = jdate_r8
+            case (IO_FREQ_YLY)
+                t0_r8 = ic%start%year
+            case (IO_FREQ_HLY)
+                t0_r8 = jdate_r8*24.0 + ic%start%hour + ic%start%mins/60.0
+            case (IO_FREQ_PTS)
+                t0_r8 = jdate_r8*24.0*60.0 + ic%start%hour*60.0 + ic%start%mins
+            case default
+                t0_r8 = jdate_r8*24.0*60.0*60.0 + ic%start%hour*60.0*60.0 + ic%start%mins*60.0
+        end select
 
         !> Loop for time.
         do t = 1, size(dat, 2)
@@ -9229,17 +9232,18 @@ module nc_io
             !>  dates(5, t) -> hour
             !>  dates(6, t) -> mins
             jdate_r8 = ((dates(2, t) - 1) - 1601)*365.25 + get_jday(dates(3, t), dates(4, t), dates(2, t))
-            if (btest(ffreq, IO_FREQ_MLY) .or. btest(ffreq, IO_FREQ_SSL) .or. btest(ffreq, IO_FREQ_DLY)) then
-                t1_r8 = jdate_r8
-            else if (btest(ffreq, IO_FREQ_YLY)) then
-                t1_r8 = dates(2, t)
-            else if (btest(ffreq, IO_FREQ_HLY)) then
-                t1_r8 = jdate_r8*24.0 + dates(5, t) + dates(6, t)/60.0
-            else if (btest(ffreq, IO_FREQ_PTS)) then
-                t1_r8 = jdate_r8*24.0*60.0 + dates(5, t)*60.0 + dates(6, t)
-            else
-                t1_r8 = jdate_r8*24.0*60.0*60.0 + dates(5, t)*60.0*60.0 + dates(6, t)*60.0
-            end if
+            select case (ffreq)
+                case (IO_FREQ_MLY, IO_FREQ_SSL, IO_FREQ_DLY)
+                    t1_r8 = jdate_r8
+                case (IO_FREQ_YLY)
+                    t1_r8 = dates(2, t)
+                case (IO_FREQ_HLY)
+                    t1_r8 = jdate_r8*24.0 + dates(5, t) + dates(6, t)/60.0
+                case (IO_FREQ_PTS)
+                    t1_r8 = jdate_r8*24.0*60.0 + dates(5, t)*60.0 + dates(6, t)
+                case default
+                    t1_r8 = jdate_r8*24.0*60.0*60.0 + dates(5, t)*60.0*60.0 + dates(6, t)*60.0
+            end select
 
             !> Write time.
             if (ierr == NF90_NOERR) ierr = nf90_put_var(iun, tid, int(t1_r8 - t0_r8), start = (/ dates(1, t) /))

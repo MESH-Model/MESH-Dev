@@ -638,13 +638,13 @@ module output_files
     end subroutine
 !<<<<<temporarily_here
 
-    subroutine output_files_allocate_group(fls, shd, out_group, field, group, t, ierr)
+    subroutine output_files_allocate_group(fls, shd, ffreq, out_group, field, group, t, ierr)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: ffreq, t
         type(output_series), intent(in) :: out_group
-        integer, intent(in) :: t
 
         !> Input/output variables.
         type(output_field) field
@@ -796,7 +796,7 @@ module output_files
                 inquire(file = trim(fname) // '_GRD.nc', opened = lopen)
                 if (.not. lopen) then
                     call nc4_add_vname( &
-                        shd, field%vname, '', '', field%ffreq, ic%start%year, out%NO_DATA, trim(fname) // '_GRD.nc', &
+                        shd, field%vname, '', '', ffreq, ic%start%year, out%NO_DATA, trim(fname) // '_GRD.nc', &
                         group%grid%nid, group%grid%tid, group%grid%vid, &
                         ierr = z)
                     if (z /= 0) then
@@ -894,25 +894,25 @@ module output_files
         if (btest(field%ffreq, IO_FREQ_YLY)) then
             if (field%in_mem) t = ts%nyears
             field%y%fname = trim(fname) // '_Y'
-            call output_files_allocate_group(fls, shd, out%y, field, field%y, t, z)
+            call output_files_allocate_group(fls, shd, IO_FREQ_YLY, out%y, field, field%y, t, z)
             if (z /= 0) ierr = z
         end if
         if (btest(field%ffreq, IO_FREQ_MLY)) then
             if (field%in_mem) t = ts%nmonths
             field%m%fname = trim(fname) // '_M'
-            call output_files_allocate_group(fls, shd, out%m, field, field%m, t, z)
+            call output_files_allocate_group(fls, shd, IO_FREQ_MLY, out%m, field, field%m, t, z)
             if (z /= 0) ierr = z
         end if
         if (btest(field%ffreq, IO_FREQ_DLY)) then
             if (field%in_mem) t = ts%nr_days
             field%d%fname = trim(fname) // '_D'
-            call output_files_allocate_group(fls, shd, out%d, field, field%d, t, z)
+            call output_files_allocate_group(fls, shd, IO_FREQ_DLY, out%d, field, field%d, t, z)
             if (z /= 0) ierr = z
         end if
         if (btest(field%ffreq, IO_FREQ_HLY)) then
             if (field%in_mem) t = ts%nr_days*24
             field%h%fname = trim(fname) // '_H'
-            call output_files_allocate_group(fls, shd, out%h, field, field%h, t, z)
+            call output_files_allocate_group(fls, shd, IO_FREQ_HLY, out%h, field, field%h, t, z)
             if (z /= 0) ierr = z
         end if
 
@@ -920,7 +920,7 @@ module output_files
         if (btest(field%ffreq, IO_FREQ_PTS)) then
             write(label, FMT_GEN) field%pts_length
             field%pts%fname = trim(fname) // '_PTS-' // trim(adjustl(label)) // 'M_' // trim(uppercase(field%fn))
-            call output_files_allocate_group(fls, shd, out%ts, field, field%pts, t, z)
+            call output_files_allocate_group(fls, shd, IO_FREQ_PTS, out%ts, field, field%pts, t, z)
             if (z /= 0) ierr = z
         end if
 
@@ -928,7 +928,7 @@ module output_files
         if (btest(field%ffreq, IO_FREQ_SSL)) then
             t = 12
             field%s%fname = trim(fname) // '_S'
-            call output_files_allocate_group(fls, shd, out%m, field, field%s, t, z)
+            call output_files_allocate_group(fls, shd, IO_FREQ_SSL, out%m, field, field%s, t, z)
             if (z /= 0) ierr = z
         end if
 
@@ -1794,11 +1794,12 @@ module output_files
 
     end subroutine
 
-    subroutine output_files_update_file(fls, shd, field, group, dates)
+    subroutine output_files_update_file(fls, shd, ffreq, field, group, dates)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: ffreq
         type(output_field), intent(in) :: field
         integer, dimension(:, :), intent(in) :: dates
 
@@ -1862,7 +1863,7 @@ module output_files
             if (btest(field%ffmt, IO_TYPE_NC4)) then
                 z = 0
                 call nc4_write_field( &
-                    shd, group%grid%nid, field%ffreq, group%grid%tid, group%grid%vid, group%grid%dat, dates, &
+                    shd, group%grid%nid, ffreq, group%grid%tid, group%grid%vid, group%grid%dat, dates, &
                     z)
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_GRD.nc')
@@ -2093,7 +2094,7 @@ module output_files
                 call output_files_update_group(fls, shd, field, field%y, t, field%cfactorm, field%cfactora, field%fn)
             end if
             if ((ic%now%year /= ic%next%year .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
-                call output_files_update_file(fls, shd, field, field%y, fls_out%dates%y)
+                call output_files_update_file(fls, shd, IO_FREQ_YLY, field, field%y, fls_out%dates%y)
             end if
         end if
         if (btest(field%ffreq, IO_FREQ_MLY)) then
@@ -2103,7 +2104,7 @@ module output_files
                 call output_files_update_group(fls, shd, field, field%m, t, field%cfactorm, field%cfactora, field%fn)
             end if
             if ((ic%now%month /= ic%next%month .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
-                call output_files_update_file(fls, shd, field, field%m, fls_out%dates%m)
+                call output_files_update_file(fls, shd, IO_FREQ_MLY, field, field%m, fls_out%dates%m)
             end if
         end if
         if (btest(field%ffreq, IO_FREQ_DLY)) then
@@ -2113,7 +2114,7 @@ module output_files
                 call output_files_update_group(fls, shd, field, field%d, t, field%cfactorm, field%cfactora, field%fn)
             end if
             if ((ic%now%day /= ic%next%day .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
-                call output_files_update_file(fls, shd, field, field%d, fls_out%dates%d)
+                call output_files_update_file(fls, shd, IO_FREQ_DLY, field, field%d, fls_out%dates%d)
             end if
         end if
         if (btest(field%ffreq, IO_FREQ_HLY)) then
@@ -2123,7 +2124,7 @@ module output_files
                 call output_files_update_group(fls, shd, field, field%h, t, field%cfactorm, field%cfactora, field%fn)
             end if
             if ((ic%now%hour /= ic%next%hour .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
-                call output_files_update_file(fls, shd, field, field%h, fls_out%dates%h)
+                call output_files_update_file(fls, shd, IO_FREQ_HLY, field, field%h, fls_out%dates%h)
             end if
         end if
 
@@ -2150,7 +2151,9 @@ module output_files
                 if (btest(field%fgroup, DATA_TYPE_TILE) .and. field%fn == 'avg') then
                     field%pts%tile%dat(:, t) = field%pts%tile%dat(:, t)/(field%pts_aggregator/ic%dtmins)
                 end if
-                call output_files_update_file(fls, shd, field, field%pts, fls_out%dates%pts)
+                if ((.not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
+                    call output_files_update_file(fls, shd, IO_FREQ_PTS, field, field%pts, fls_out%dates%pts)
+                end if
                 field%pts_aggregator = 0
             end if
         end if
@@ -2173,7 +2176,7 @@ module output_files
                         field%s%tile%dat(:, t) = field%s%tile%dat(:, t)/fls_out%dates%iter_s(t)
                     end if
                 end do
-                call output_files_update_file(fls, shd, field, field%s, fls_out%dates%s)
+                call output_files_update_file(fls, shd, IO_FREQ_SSL, field, field%s, fls_out%dates%s)
             end if
         end if
 
