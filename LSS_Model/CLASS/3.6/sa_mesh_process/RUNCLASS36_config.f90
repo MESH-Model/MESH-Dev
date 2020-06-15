@@ -509,7 +509,7 @@ module RUNCLASS36_config
             MELTRUNOFF = 0.0
             SI = 0.20
             TSI = -0.10
-            do k = il2, il2
+            do k = il1, il2
                 FRZCGAT(k) = hp%FRZCROW(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             end do
         end if
