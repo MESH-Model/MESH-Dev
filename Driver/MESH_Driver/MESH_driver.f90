@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1664'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1670'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -824,8 +824,10 @@ program RUNMESH
             read(iun) STG_INI
 
             !> Daily streamflow values.
-            read(iun) fms%stmg%qomeas%val
-            read(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
+            if (fms%stmg%n > 0) then
+                read(iun) fms%stmg%qomeas%val
+                read(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
+            end if
 
         end if
 
@@ -1161,8 +1163,10 @@ program RUNMESH
             write(iun) STG_INI
 
             !> Daily streamflow values.
-            write(iun) fms%stmg%qomeas%val
-            write(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
+            if (fms%stmg%n > 0) then
+                write(iun) fms%stmg%qomeas%val
+                write(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
+            end if
 
             !> Close the file to free the unit.
             close(iun)
