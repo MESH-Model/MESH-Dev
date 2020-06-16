@@ -1,14 +1,24 @@
 module runsvs_mesh
 
     !> MESH modules.
+    !*  mpi_module: Required for 'il1' and 'il2' indexing.
+    !*  model_files_variables: Required for 'fls' object.
+    !*  sa_mesh_common: Required for MESH variables and common routines.
+    !*  model_dates: Required for 'ic' counter.
     use mpi_module
     use model_files_variables
     use sa_mesh_common
+!todo: Replace 'cm' instance with 'vs' counterparts.
     use climate_forcing
     use model_dates
 
-    !> SVS modules.
+    !> SVS modules (created for MESH).
+    !*  runsvs_mod: Required for 'bus' variable.
+    !*  runsvs_utils: Required for 'RUNSVS_OPT' variables and 'surflayerheight' and 'compvirttemp' functions.
     use runsvs_mod
+    use runsvs_utils
+
+    !> SVS modules.
 !    use phy_options
     use svs_configs
     use sfc_options
@@ -157,14 +167,19 @@ module runsvs_mesh
 
     private
 
-    public runsvs_mesh_init, runsvs_mesh_within_tile
+    public runsvs_mesh_init, runsvs_mesh_within_tile, runsvs_mesh_finalize
 
     contains
 
     subroutine runsvs_mesh_init(shd, fls, cm)
 
+        !> MESH modules.
+        !*  FLAGS: Required for 'RESUMEFLAG'.
+        use FLAGS, only: RESUMEFLAG
+
+        !> SVS modules.
 !        use runsvs_mod
-        use runsvs_utils
+!        use runsvs_utils
 !        use phy_options
 !        use svs_configs
 !        use sfc_options
@@ -179,7 +194,7 @@ module runsvs_mesh
 !#include "surfcon.cdk"
 #include "thermoconsts.inc"
 
-        integer iun, isvs, k, ki, kj, j, jj, m, i, z
+        integer iun, isvs, istat, k, ki, kj, j, jj, m, i, z
         real tempz0(svs_mesh%c%NLANDCLASS), sumfcanz0
         character(len = DEFAULT_LINE_LENGTH) line
         character(len = DEFAULT_FIELD_LENGTH) level
@@ -583,6 +598,11 @@ module runsvs_mesh
         !> Initialize variables.
         call runsvs_init(bus, bussiz)
 
+        !> Calculate reference start date 'datecmc_o'.
+        dateo = ic%start%year*10000 + ic%start%month*100 + ic%start%day
+        houro = ic%start%hour*1000000 + ic%start%mins*10000
+        istat = newdate(datecmc_o, dateo, houro, 3)
+
 !>>>svs_output
 !        if (ISHEADNODE) then
 
@@ -731,12 +751,94 @@ module runsvs_mesh
         end if
 !<<<svs_output
 
+        !> Resume states.
+        select case (RESUMEFLAG)
+            case (3, 4, 5)
+                call runsvs_mesh_resume_states_seq(shd, fls)
+        end select
+
+    end subroutine
+
+    subroutine runsvs_mesh_resume_states_seq(shd, fls)
+
+        !> MESH modules.
+        !*  FLAGS: Required for 'RESUMEFLAG'.
+        use FLAGS, only: RESUMEFLAG
+
+        !> Input variables.
+        type(ShedGridParams) shd
+        type(fl_ids) fls
+
+        !> Local variables.
+        integer iun, j, k, z, ierr
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Open the resume state file with read access.
+!+        call reset_tab()
+!+        call print_message('READING: ' // trim(fls%fl(mfk%f883)%fn))
+!+        call increase_tab()
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(fls%fl(mfk%f883)%fn) // '.svs', status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+        if (ierr /= 0) then
+            write(code, FMT_GEN) ierr
+            call print_error('Unable to open the file (Code: ' // trim(adjustl(code)) // ').')
+            call program_abort()
+        end if
+
+        !> Resume states from file.
+        z = 0
+
+        !> Resume the reference start date 'datecmc_o'.
+        !> The MESH resume date and counters are read after reading this
+        !>  file, so this date must be resumed separately.
+        !> Only resume the date if model dates are also resumed.
+        if (RESUMEFLAG == 4) then
+            read(iun, iostat = z) datecmc_o
+        else
+            read(iun, iostat = z)
+        end if
+
+        !> Resume temperatures.
+        if (z == 0) read(iun, iostat = z) ((bus(tground + (j - 1)*NG + k), j = 1, svs_mesh%vs%kthermal), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((bus(tvege + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((bus(tsnow + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((bus(tsnowveg + j*NG + k), j = 0, 1), k = 0, NG - 1)
+
+        !> Resume moisture.
+        if (z == 0) read(iun, iostat = z) ((bus(wsoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((bus(isoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
+
+        !> Resume snow variables.
+        if (z == 0) read(iun, iostat = z) (bus(snoma + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snvma + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(wsnow + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(wsnv + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snoal + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snval + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snoden + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snvden + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snodpl + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snvdp + k), k = 0, NG - 1)
+
+        !> Resume 'other'.
+        if (z == 0) read(iun, iostat = z) (bus(wveg + k), k = 0, NG - 1)
+
+        !> Close the file to free the unit.
+        close(iun)
+
+        !> Check for read errors.
+        if (z /= 0) then
+            call print_warning('Errors occurred resuming states from file.')
+        end if
+
     end subroutine
 
     subroutine runsvs_mesh_within_tile(shd, fls, cm)
 
+        !> SVS modules.
 !        use runsvs_mod
-        use runsvs_utils
+!        use runsvs_utils
 !        use svs_configs
 !        use sfc_options
 !        use runsvs_io
@@ -773,11 +875,11 @@ module runsvs_mesh
         kount = ic%ts_count - 1
 
         !> First time-step.
-        if (kount == 0) then
-            dateo = ic%now%year*10000 + ic%now%month*100 + ic%now%day
-            houro = ic%now%hour*1000000 + ic%now%mins*10000
-            istat = newdate(datecmc_o, dateo, houro, 3)
-        end if
+!-        if (kount == 0) then
+!-            dateo = ic%now%year*10000 + ic%now%month*100 + ic%now%day
+!-            houro = ic%now%hour*1000000 + ic%now%mins*10000
+!-            istat = newdate(datecmc_o, dateo, houro, 3)
+!-        end if
 
         !> Determine time stamps of current date.
         !> SVS relies on the date at the start of the run and the KOUNT variable,
@@ -989,6 +1091,96 @@ module runsvs_mesh
             end do
         end if
 !<<<svs_output
+
+    end subroutine
+
+    subroutine runsvs_mesh_finalize(shd, fls)
+
+        !> MESH modules.
+        !*  FLAGS: Required for 'SAVERESUMEFLAG'.
+        use FLAGS, only: SAVERESUMEFLAG
+
+        !> Input variables.
+        type(ShedGridParams) shd
+        type(fl_ids) fls
+
+        !> Save states.
+        select case (SAVERESUMEFLAG)
+            case (3, 4, 5)
+                call runsvs_mesh_save_states_seq(shd, fls)
+        end select
+
+    end subroutine
+
+    subroutine runsvs_mesh_save_states_seq(shd, fls)
+
+        !> MESH modules.
+        !*  FLAGS: Required for 'SAVERESUMEFLAG'.
+        use FLAGS, only: SAVERESUMEFLAG
+
+        !> Input variables.
+        type(ShedGridParams) shd
+        type(fl_ids) fls
+
+        !> Local variables.
+        integer iun, j, k, z, ierr
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Open the resume state file with write access.
+!+        call reset_tab()
+!+        call print_message('SAVING: ' // trim(fls%fl(mfk%f883)%fn))
+!+        call increase_tab()
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(fls%fl(mfk%f883)%fn) // '.svs', status = 'replace', action = 'write', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+        if (ierr /= 0) then
+            write(code, FMT_GEN) ierr
+            call print_error('Unable to open the file (Code: ' // trim(adjustl(code)) // ').')
+            call program_abort()
+        end if
+
+        !> Save states to file.
+        z = 0
+
+        !> Save the reference start date 'datecmc_o'.
+        !> The MESH resume date and counters are read after reading the
+        !>  SVS resume file, so this date must be saved separately.
+        !> Save the date regardless of option so the file is compatible
+        !>  with all resume options.
+        write(iun, iostat = z) datecmc_o
+
+        !> Save temperatures.
+        if (z == 0) write(iun, iostat = z) ((bus(tground + (j - 1)*NG + k), j = 1, svs_mesh%vs%kthermal), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((bus(tvege + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((bus(tsnow + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((bus(tsnowveg + j*NG + k), j = 0, 1), k = 0, NG - 1)
+
+        !> Save moisture.
+        if (z == 0) write(iun, iostat = z) ((bus(wsoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((bus(isoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
+
+        !> Save snow variables.
+        if (z == 0) write(iun, iostat = z) (bus(snoma + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snvma + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(wsnow + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(wsnv + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snoal + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snval + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snoden + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snvden + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snodpl + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snvdp + k), k = 0, NG - 1)
+
+        !> Save 'other'.
+        if (z == 0) write(iun, iostat = z) (bus(wveg + k), k = 0, NG - 1)
+
+        !> Close the file to free the unit.
+        close(iun)
+
+        !> Check for write errors.
+        if (z /= 0) then
+            call print_warning('Errors occurred saving states to file.')
+        end if
 
     end subroutine
 

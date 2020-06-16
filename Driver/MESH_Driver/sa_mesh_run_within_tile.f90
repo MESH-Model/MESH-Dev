@@ -464,6 +464,7 @@ module sa_mesh_run_within_tile
 
         !> Process modules.
         use RUNCLASS36_config
+        use runsvs_mesh
         use baseflow_module
 
         !> Input/output variables.
@@ -477,6 +478,7 @@ module sa_mesh_run_within_tile
         !> Call processes.
         call RUNCLASS36_finalize(fls, shd, cm)
         call bflm_finalize(fls, shd, cm)
+        call runsvs_mesh_finalize(shd, fls)
 
     end subroutine
 
