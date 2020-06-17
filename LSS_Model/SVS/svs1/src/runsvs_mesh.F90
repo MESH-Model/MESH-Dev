@@ -204,7 +204,7 @@ module runsvs_mesh
         external svs, inicover_svs
 !        external inisoili_svs, phyopt_initdata, runsvs_init
 
-        !> Return if the process is not marked active or if not the head node.
+        !> Return if the process is not marked active.
         if (.not. svs_mesh%PROCESS_ACTIVE) return
 
         !> Initialize common blocks, read options and configuration file.
@@ -773,6 +773,9 @@ module runsvs_mesh
         integer iun, j, k, z, ierr
         character(len = DEFAULT_FIELD_LENGTH) code
 
+        !> Return if the process is not marked active.
+        if (.not. svs_mesh%PROCESS_ACTIVE) return
+
         !> Open the resume state file with read access.
 !+        call reset_tab()
 !+        call print_message('READING: ' // trim(fls%fl(mfk%f883)%fn))
@@ -866,7 +869,7 @@ module runsvs_mesh
         external svs, inicover_svs
 !        external inisoili_svs, phyopt_initdata, runsvs_init
 
-        !> Return if the process is not active or if not the head node.
+        !> Return if the process is not active or if the head node.
         if (.not. svs_mesh%PROCESS_ACTIVE .or. .not. (ipid /= 0 .or. izero == 0)) return
 
         !> Time-step.
@@ -1104,6 +1107,9 @@ module runsvs_mesh
         type(ShedGridParams) shd
         type(fl_ids) fls
 
+        !> Return if the process is not marked active.
+        if (.not. svs_mesh%PROCESS_ACTIVE) return
+
         !> Save states.
         select case (SAVERESUMEFLAG)
             case (3, 4, 5)
@@ -1125,6 +1131,12 @@ module runsvs_mesh
         !> Local variables.
         integer iun, j, k, z, ierr
         character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Return if the process is not marked active.
+        if (.not. svs_mesh%PROCESS_ACTIVE) return
+
+        !> Return if not the head node (only the head node should write output).
+        if (.not. ISHEADNODE) return
 
         !> Open the resume state file with write access.
 !+        call reset_tab()
