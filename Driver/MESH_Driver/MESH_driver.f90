@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1671'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1673'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -132,8 +132,8 @@ program RUNMESH
 !todo: clean up comments and arrange variables a bit better
 
 !> START ENSIM == FOR ENSIM == FOR ENSIM == FOR ENSIM ==
-    integer(kind = 4) ensim_month, ensim_day
-    integer(kind = 4) WFO_SEQ
+    integer ensim_month, ensim_day
+    integer WFO_SEQ
 !> == ENSIM == ENSIM == ENSIM == ENSIM == ENSIM ==
 
     integer iun, i, j, k, l, m, u, z

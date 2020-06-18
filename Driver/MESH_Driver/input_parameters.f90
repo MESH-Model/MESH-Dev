@@ -24,8 +24,8 @@ module input_parameters
     !*  xslp: Estimated average slope of the GRU. [--].
     !*  mid: Mosaic type of the tile. [--].
     type tile_parameters
-        real(kind = 4), dimension(:), allocatable :: gc, fare, xslp
-        integer(kind = 4), dimension(:), allocatable :: mid, iwf
+        real, dimension(:), allocatable :: gc, fare, xslp
+        integer, dimension(:), allocatable :: mid, iwf
     end type
 
     !> Type: Canopy parameters.
@@ -48,8 +48,8 @@ module input_parameters
     !*  psga: Soil moisture suction coefficient 'A' used in the calculation of the stomatal resistance of the vegetation category. [--].
     !*  psgb: Soil moisture suction coefficient 'B' used in the calculation of the stomatal resistance of the vegetation category. [--].
     type canopy_parameters
-        real(kind = 4), dimension(:, :), allocatable :: fcan, z0or, lnz0, alvc, alic
-        real(kind = 4), dimension(:, :), allocatable :: lamx, lamn, cmas, root, rsmn, qa50, vpda, vpdb, psga, psgb
+        real, dimension(:, :), allocatable :: fcan, z0or, lnz0, alvc, alic
+        real, dimension(:, :), allocatable :: lamx, lamn, cmas, root, rsmn, qa50, vpda, vpdb, psga, psgb
     end type
 
     !> Type: Surface parameters.
@@ -61,7 +61,7 @@ module input_parameters
     !*  zrfm: Reference height (measurement height) for wind speed. [m].
     !*  zplg: Maximum depth of liquid water allowed to be stored on the ground surface for snow-free areas. [m].
     type surface_parameters
-        real(kind = 4), dimension(:), allocatable :: zbld, zrfh, zrfm, zplg
+        real, dimension(:), allocatable :: zbld, zrfh, zrfm, zplg
     end type
 
     !> Type: Snow parameters.
@@ -71,7 +71,7 @@ module input_parameters
     !*  zsnl: Minimum depth to consider 100% cover of snow on the ground surface. [m].
     !*  zpls: Maximum depth of liquid water allowed to be stored on the ground surface for snow-covered areas. [m].
     type snow_parameters
-        real(kind = 4), dimension(:), allocatable :: zsnl, zpls
+        real, dimension(:), allocatable :: zsnl, zpls
     end type
 
     !> Type: Soil parameters.
@@ -98,9 +98,9 @@ module input_parameters
     !*  hcps: Volumetric heat capacity of soil matter. [J m-3 K-1].
     !*  tcs: Thermal conductivity of soil. [W m-1 K-1].
     type soil_parameters
-        real(kind = 4), dimension(:), allocatable :: sdep, alwet, aldry
-        real(kind = 4), dimension(:), allocatable :: delz, zbot
-        real(kind = 4), dimension(:, :), allocatable :: sand, clay, orgm, &
+        real, dimension(:), allocatable :: sdep, alwet, aldry
+        real, dimension(:), allocatable :: delz, zbot
+        real, dimension(:, :), allocatable :: sand, clay, orgm, &
             thpor, thlret, thlmin, thlrat, bi, psisat, psiwlt, grksat, thfc, hcps, tcs
     end type
 
@@ -114,7 +114,7 @@ module input_parameters
     !*  mann: Manning's n. [s m-1/3].
     !*  ks: Saturated surface soil conductivity. [m s-1].
     type hydraulic_parameters
-        real(kind = 4), dimension(:), allocatable :: drn, dd, grkf, mann, ks
+        real, dimension(:), allocatable :: drn, dd, grkf, mann, ks
     end type
 
     !> Type: parameters
