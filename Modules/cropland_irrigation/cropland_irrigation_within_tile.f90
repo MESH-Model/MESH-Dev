@@ -21,13 +21,13 @@ module cropland_irrigation_within_tile
         real, external :: calc_ET0
 
         !> For MPI exchange.
-        integer ipid_recv, itag, ierrcode, istop, u, invars, iiln, ii1, ii2, ierr
+        integer ipid_recv, ierrcode, istop, u, invars, iiln, ii1, ii2, ierr
         integer, dimension(:), allocatable :: irqst
         integer, dimension(:, :), allocatable :: imstat
         logical lstat
 
         !> Local variables.
-        integer k, ki, i, ikey
+        integer k, ki, t, i, ikey
         real Kc
 
         !> Return if the cropland irrigation module is not active.
@@ -176,7 +176,6 @@ module cropland_irrigation_within_tile
         !> Gather variables from parallel nodes.
 
         !> Send/receive process.
-        itag = ic%ts_count*1000
         invars = 3*(civ%fk%kmax - civ%fk%kmin + 1)
 
         if (inp > 1 .and. ipid /= 0) then
@@ -186,6 +185,7 @@ module cropland_irrigation_within_tile
             if (allocated(imstat)) deallocate(imstat)
             allocate(irqst(invars), imstat(mpi_status_size, invars))
             irqst = mpi_request_null
+            t = itag
             i = 1
             do ikey = civ%fk%kmin, civ%fk%kmax
                 call mpi_isend(civ%vars(ikey)%icu_mm(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
@@ -212,6 +212,7 @@ module cropland_irrigation_within_tile
                 irqst = mpi_request_null
                 imstat = 0
                 call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iiln)
+                t = itag
                 i = 1
                 do ikey = civ%fk%kmin, civ%fk%kmax
                     call mpi_irecv(civ%vars(ikey)%icu_mm(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
@@ -229,7 +230,12 @@ module cropland_irrigation_within_tile
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, ierr)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 
