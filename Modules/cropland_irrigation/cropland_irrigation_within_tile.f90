@@ -45,8 +45,8 @@ module cropland_irrigation_within_tile
                 vs%tile%pevp(k) = calc_ET0( &
                     vs%tile%ta(k), vs%tile%uv(k), vs%tile%qa(k), vs%tile%pres(k), vs%tile%fsin(k), &
                     shd%ylat(ki), shd%xlng(ki), shd%ELEV(ki), &
-                    pm%sfp%zrfm(k), &
-                    pm%cp%fcan(k, 1), pm%cp%fcan(k, 2), pm%cp%fcan(k, 3), pm%cp%fcan(k, 4), &
+                    pm%tile%zrfm(k), &
+                    pm%tile%fcan(k, 1), pm%tile%fcan(k, 2), pm%tile%fcan(k, 3), pm%tile%fcan(k, 4), &
                     ic%now%jday, ic%now%hour)
 
                 !> Activate the new growing season.
@@ -86,18 +86,18 @@ module cropland_irrigation_within_tile
                         !> Daily.
                         if (btest(cifg%ts_flag, 0)) then
                             civ%vars(civ%fk%KDLY)%lqws2_mm(k) = civ%vars(civ%fk%KDLY)%lqws2_mm(k) + &
-                                (sum(vs%tile%lqws(k, :))*pm%cp%fcan(k, 3))/((3600.0/ic%dts)*24.0)
+                                (sum(vs%tile%lqws(k, :))*pm%tile%fcan(k, 3))/((3600.0/ic%dts)*24.0)
                         end if
 
                         !> Hourly.
                         if (btest(cifg%ts_flag, 2) .and. ic%ts_daily > (3600.0/ic%dts)*23.0) then
                             civ%vars(civ%fk%KHLY)%lqws2_mm(k) = civ%vars(civ%fk%KHLY)%lqws2_mm(k) + &
-                                (sum(vs%tile%lqws(k, :))*pm%cp%fcan(k, 3))/(3600.0/ic%dts)
+                                (sum(vs%tile%lqws(k, :))*pm%tile%fcan(k, 3))/(3600.0/ic%dts)
                         end if
 
                         !> Per time-step.
                         if (btest(cifg%ts_flag, 3) .and. ic%ts_daily == (3600.0/ic%dts)*24.0) then
-                            civ%vars(civ%fk%KTS)%lqws2_mm(k) = sum(vs%tile%lqws(k, :))*pm%cp%fcan(k, 3)
+                            civ%vars(civ%fk%KTS)%lqws2_mm(k) = sum(vs%tile%lqws(k, :))*pm%tile%fcan(k, 3)
                         end if
 
                     end if
@@ -116,9 +116,9 @@ module cropland_irrigation_within_tile
 
                         !> Accumulate states for the present period.
                         do ikey = civ%fk%kmin, civ%fk%kmax
-                            civ%vars(ikey)%pre_mm(k) = civ%vars(ikey)%pre_mm(k) + vs%tile%pre(k)*pm%cp%fcan(k, 3)*ic%dts
-                            civ%vars(ikey)%pevp_mm(k) = civ%vars(ikey)%pevp_mm(k) + vs%tile%pevp(k)*pm%cp%fcan(k, 3)*ic%dts
-                            civ%vars(ikey)%lqws1_mm(k) = civ%vars(ikey)%lqws1_mm(k) + sum(vs%tile%lqws(k, :))*pm%cp%fcan(k, 3)
+                            civ%vars(ikey)%pre_mm(k) = civ%vars(ikey)%pre_mm(k) + vs%tile%pre(k)*pm%tile%fcan(k, 3)*ic%dts
+                            civ%vars(ikey)%pevp_mm(k) = civ%vars(ikey)%pevp_mm(k) + vs%tile%pevp(k)*pm%tile%fcan(k, 3)*ic%dts
+                            civ%vars(ikey)%lqws1_mm(k) = civ%vars(ikey)%lqws1_mm(k) + sum(vs%tile%lqws(k, :))*pm%tile%fcan(k, 3)
                         end do
 
                         !> Determine Kc.

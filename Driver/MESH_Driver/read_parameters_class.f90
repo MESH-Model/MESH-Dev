@@ -56,7 +56,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
     read(iun, '(2x, 6a4)', err = 98) NAME1, NAME2, NAME3, NAME4, NAME5, NAME6
     read(iun, '(2x, 6a4)', err = 98) PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
     read(iun, *, err = 98) &
-        DEGLAT, DEGLON, pm_gru%sfp%zrfm(1), pm_gru%sfp%zrfh(1), pm_gru%sfp%zbld(1), pm_gru%tp%gc(1), shd%wc%ILG, i, m
+        DEGLAT, DEGLON, pm%gru%zrfm(1), pm%gru%zrfh(1), pm%gru%zbld(1), pm%gru%gc(1), shd%wc%ILG, i, m
 
     !> Check that the number of GRUs matches the drainage database value.
     if (NTYPE /= m .and. NTYPE > 0) then
@@ -96,18 +96,18 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
 
     !> Populate temporary variables from file.
     do m = 1, NTYPE
-        read(iun, *, err = 98) (pm_gru%cp%fcan(m, j), j = 1, ICP1), (pm_gru%cp%lamx(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%lnz0(m, j), j = 1, ICP1), (pm_gru%cp%lamn(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%alvc(m, j), j = 1, ICP1), (pm_gru%cp%cmas(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%alic(m, j), j = 1, ICP1), (pm_gru%cp%root(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%rsmn(m, j), j = 1, ICAN), (pm_gru%cp%qa50(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%vpda(m, j), j = 1, ICAN), (pm_gru%cp%vpdb(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%psga(m, j), j = 1, ICAN), (pm_gru%cp%psgb(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) pm_gru%hp%drn(m), pm_gru%slp%sdep(m), pm_gru%tp%fare(m), pm_gru%hp%dd(m)
-        read(iun, *, err = 98) pm_gru%tp%xslp(m), pm_gru%hp%grkf(m), pm_gru%hp%mann(m), pm_gru%hp%ks(m), pm_gru%tp%mid(m)
-        read(iun, *, err = 98) (pm_gru%slp%sand(m, j), j = 1, ignd)
-        read(iun, *, err = 98) (pm_gru%slp%clay(m, j), j = 1, ignd)
-        read(iun, *, err = 98) (pm_gru%slp%orgm(m, j), j = 1, ignd)
+        read(iun, *, err = 98) (pm%gru%fcan(m, j), j = 1, ICP1), (pm%gru%lamx(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%lnz0(m, j), j = 1, ICP1), (pm%gru%lamn(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%alvc(m, j), j = 1, ICP1), (pm%gru%cmas(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%alic(m, j), j = 1, ICP1), (pm%gru%root(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%rsmn(m, j), j = 1, ICAN), (pm%gru%qa50(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%vpda(m, j), j = 1, ICAN), (pm%gru%vpdb(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%psga(m, j), j = 1, ICAN), (pm%gru%psgb(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) pm%gru%drn(m), pm%gru%sdep(m), pm%gru%fare(m), pm%gru%dd(m)
+        read(iun, *, err = 98) pm%gru%xslp(m), pm%gru%grkf(m), pm%gru%mann(m), pm%gru%ks(m), pm%gru%mid(m)
+        read(iun, *, err = 98) (pm%gru%sand(m, j), j = 1, ignd)
+        read(iun, *, err = 98) (pm%gru%clay(m, j), j = 1, ignd)
+        read(iun, *, err = 98) (pm%gru%orgm(m, j), j = 1, ignd)
         read(iun, *, err = 98) &
             (vs%gru%tbar(m, j), j = 1, ignd), vs%gru%tcan(m), vs%gru%tsno(m), vs%gru%tpnd(m)
         read(iun, *, err = 98) (vs%gru%thlq(m, j), j = 1, ignd), (vs%gru%thic(m, j), j = 1, ignd), vs%gru%zpnd(m)

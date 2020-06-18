@@ -269,9 +269,9 @@ module runsvs_mesh
             !* zusl: Height of wind forcing.
             !* ztsl: Height of temperature forcing.
             if (observed_forcing) then
-                bus(zusl + k) = pm%sfp%zrfm(il1 + k)
+                bus(zusl + k) = pm%tile%zrfm(il1 + k)
                 if (allocated(svs_mesh%vs%zusl)) bus(zusl + k) = svs_mesh%vs%zusl(isvs)
-                bus(ztsl + k) = pm%sfp%zrfh(il1 + k)
+                bus(ztsl + k) = pm%tile%zrfh(il1 + k)
                 if (allocated(svs_mesh%vs%ztsl)) bus(ztsl + k) = svs_mesh%vs%ztsl(isvs)
             end if
 
@@ -289,11 +289,11 @@ module runsvs_mesh
                     bus(vegf + (1199 - m)*NG + k) = svs_mesh%vs%vf(isvs, 1200 - m)
                 end do
             else
-                bus(vegf + 3*NG + k) = pm%cp%fcan(il1 + k, 1)
-                bus(vegf + 6*NG + k) = pm%cp%fcan(il1 + k, 2)
-                bus(vegf + 14*NG + k) = pm%cp%fcan(il1 + k, 3)
-                bus(vegf + 13*NG + k) = pm%cp%fcan(il1 + k, 4)
-                bus(vegf + 20*NG + k) = pm%cp%fcan(il1 + k, 5)
+                bus(vegf + 3*NG + k) = pm%tile%fcan(il1 + k, 1)
+                bus(vegf + 6*NG + k) = pm%tile%fcan(il1 + k, 2)
+                bus(vegf + 14*NG + k) = pm%tile%fcan(il1 + k, 3)
+                bus(vegf + 13*NG + k) = pm%tile%fcan(il1 + k, 4)
+                bus(vegf + 20*NG + k) = pm%tile%fcan(il1 + k, 5)
             end if
 
 ! EG_MOD for 100% water pixels, assign another class of vegetation instead (here crops=class15)
@@ -303,11 +303,11 @@ module runsvs_mesh
 !	    end if
 ! FIN EG_MOD
 
-            bus(slop + k) = min(max(pm%tp%xslp(il1 + k), 0.005), 1.0)
+            bus(slop + k) = min(max(pm%tile%xslp(il1 + k), 0.005), 1.0)
             if (allocated(svs_mesh%vs%slop)) bus(slop + k) = min(max(svs_mesh%vs%slop(isvs), 0.005), 1.0)
-            bus(draindens + k) = pm%hp%dd(il1 + k)!*0.001
+            bus(draindens + k) = pm%tile%dd(il1 + k)!*0.001
             if (allocated(svs_mesh%vs%draindens)) bus(draindens + k) = svs_mesh%vs%draindens(isvs)
-!            bus(rootdp + k) = max(pm%slp%sdep(il1 + k), 0.5)
+!            bus(rootdp + k) = max(pm%tile%sdep(il1 + k), 0.5)
 !            bus(rootdp + k) = max(shd%lc%sl%zbot(nl_svs), 0.5)
 
             !> Compute weighted average of log z0 wrt vegetation
@@ -318,8 +318,8 @@ module runsvs_mesh
                 bus(z0 + k) = 0.0
                 sumfcanz0 = 0.0
                 do j = 1, 5
-                    bus(z0 + k) = bus(z0 + k) + pm%cp%fcan(il1 + k, j)*pm%cp%lnz0(il1 + k, j)
-                    sumfcanz0 = sumfcanz0 + pm%cp%fcan(il1 + k, j)
+                    bus(z0 + k) = bus(z0 + k) + pm%tile%fcan(il1 + k, j)*pm%tile%lnz0(il1 + k, j)
+                    sumfcanz0 = sumfcanz0 + pm%tile%fcan(il1 + k, j)
                 end do
                 if (sumfcanz0 > 0.0) then
                     bus(z0 + k) = bus(z0 + k)/sumfcanz0
@@ -360,32 +360,32 @@ module runsvs_mesh
             !>       3              5
             !>       4              6
             !>       5              7
-!            bus(sand + k) = max(pm%slp%sand(il1 + k, 1), 0.0)
-!            bus(sand + NG + k) = max(pm%slp%sand(il1 + k, 1), 0.0)
-!            bus(sand + 2*NG + k) = max(pm%slp%sand(il1 + k, 2), 0.0)
-!            bus(clay + k) = max(pm%slp%clay(il1 + k, 1), 0.0)
-!            bus(clay + NG + k) = max(pm%slp%clay(il1 + k, 1), 0.0)
-!            bus(clay + 2*NG + k) = max(pm%slp%clay(il1 + k, 2), 0.0)
+!            bus(sand + k) = max(pm%tile%sand(il1 + k, 1), 0.0)
+!            bus(sand + NG + k) = max(pm%tile%sand(il1 + k, 1), 0.0)
+!            bus(sand + 2*NG + k) = max(pm%tile%sand(il1 + k, 2), 0.0)
+!            bus(clay + k) = max(pm%tile%clay(il1 + k, 1), 0.0)
+!            bus(clay + NG + k) = max(pm%tile%clay(il1 + k, 1), 0.0)
+!            bus(clay + 2*NG + k) = max(pm%tile%clay(il1 + k, 2), 0.0)
 !            if (shd%lc%IGND >= 5) then
-!                bus(sand + 3*NG + k) = max(pm%slp%sand(il1 + k, 2), 0.0)
-!                bus(sand + 4*NG + k) = max(pm%slp%sand(il1 + k, 3), 0.0)
-!                bus(sand + 5*NG + k) = max(pm%slp%sand(il1 + k, 4), 0.0)
-!                bus(sand + 6*NG + k) = max(pm%slp%sand(il1 + k, 5), 0.0)
-!                bus(clay + 3*NG + k) = max(pm%slp%clay(il1 + k, 2), 0.0)
-!                bus(clay + 4*NG + k) = max(pm%slp%clay(il1 + k, 3), 0.0)
-!                bus(clay + 5*NG + k) = max(pm%slp%clay(il1 + k, 4), 0.0)
-!                bus(clay + 6*NG + k) = max(pm%slp%clay(il1 + k, 5), 0.0)
+!                bus(sand + 3*NG + k) = max(pm%tile%sand(il1 + k, 2), 0.0)
+!                bus(sand + 4*NG + k) = max(pm%tile%sand(il1 + k, 3), 0.0)
+!                bus(sand + 5*NG + k) = max(pm%tile%sand(il1 + k, 4), 0.0)
+!                bus(sand + 6*NG + k) = max(pm%tile%sand(il1 + k, 5), 0.0)
+!                bus(clay + 3*NG + k) = max(pm%tile%clay(il1 + k, 2), 0.0)
+!                bus(clay + 4*NG + k) = max(pm%tile%clay(il1 + k, 3), 0.0)
+!                bus(clay + 5*NG + k) = max(pm%tile%clay(il1 + k, 4), 0.0)
+!                bus(clay + 6*NG + k) = max(pm%tile%clay(il1 + k, 5), 0.0)
 !            else
 !                do j = 3, 6
-!                    bus(sand + j*NG + k) = max(pm%slp%sand(il1 + k, 3), 0.0)
-!                    bus(clay + j*NG + k) = max(pm%slp%clay(il1 + k, 3), 0.0)
+!                    bus(sand + j*NG + k) = max(pm%tile%sand(il1 + k, 3), 0.0)
+!                    bus(clay + j*NG + k) = max(pm%tile%clay(il1 + k, 3), 0.0)
 !                end do
 !            end if
 !            do j = 1, nl_svs ! model layers
             do j = 1, nl_stp ! soil texture levels
-                bus(sand + (j - 1)*NG + k) = max(pm%slp%sand(il1 + k, j), 0.0)
+                bus(sand + (j - 1)*NG + k) = max(pm%tile%sand(il1 + k, j), 0.0)
                 if (allocated(svs_mesh%vs%sand)) bus(sand + (j - 1)*NG + k) = svs_mesh%vs%sand(isvs, j)
-                bus(clay + (j - 1)*NG + k) = max(pm%slp%clay(il1 + k, j), 0.0)
+                bus(clay + (j - 1)*NG + k) = max(pm%tile%clay(il1 + k, j), 0.0)
                 if (allocated(svs_mesh%vs%clay)) bus(clay + (j - 1)*NG + k) = svs_mesh%vs%clay(isvs, j)
             end do
 
