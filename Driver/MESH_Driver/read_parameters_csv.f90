@@ -892,10 +892,10 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     "of the assigned field. Truncation may have occurred.")
             end if
             if (btest(istat, pstat%CONVERSION_ERROR)) then
-                call print_warning("An error occured assigning '" // trim(adjustl(args(1))) // "' values.")
+                call print_warning("An error occurred assigning '" // trim(adjustl(args(1))) // "' values.")
             end if
             if (btest(istat, pstat%ALLOCATION_ERROR)) then
-                call print_message("ERROR: An error occured allocating '" // trim(adjustl(args(1))) // "'.")
+                call print_message("ERROR: An error occurred allocating '" // trim(adjustl(args(1))) // "'.")
                 ierr = 1
             end if
             if (btest(istat, pstat%MISMATCHED_BOUNDS)) then
