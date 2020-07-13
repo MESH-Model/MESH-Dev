@@ -136,7 +136,7 @@ module RUNCLASS36_variables
             ILMO, PCFC, PCLC, PCPG, PCPN, PET, QEVP, QFCF, QFCL, QFG, &
             QFN, QFS, QFX, QG, ROF, ROFB, ROFC, ROFN, ROFO, ROFS, &
             ROVG, SFCQ, SFCT, SFCU, SFCV, TFX, TROB, TROF, TROO, TROS, &
-            TSF, UE, WTAB, WTRC, WTRG, WTRS
+            TSF, UE, WTAB, WTRC, WTRG, WTRS, ICE, TICE
         real, dimension(:, :), allocatable :: &
             GFLX, HMFG, HTC, QFC
     end type

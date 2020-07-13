@@ -178,6 +178,8 @@ module RUNCLASS36_module
             cdv%QFC = 0.0
             cdv%GFLX = 0.0
             cdv%ITCT = 0
+            cdv%ICE = 0.0
+            cdv%TICE = 0.0
 
             call CLASSI(catv%VPD, catv%TADP, catv%PADR, catv%RHOA, catv%RHSI, &
                         catv%RPCP, catv%TRPC, catv%SPCP, catv%TSPC, cfi%TA, cfi%QA, &
@@ -194,6 +196,7 @@ module RUNCLASS36_module
                         cdv%QFC, cdv%ROF, cdv%WTRG, cpv%CMAI, cpv%RCAN, cpv%SNCAN, &
                         cpv%TCAN, cpv%SNO, cpv%WSNO, cpv%TSNO, cpv%THLQ, cpv%THIC, &
                         csfv%HCPS, csfv%THP, csfv%DELZW, cpv%TBAR, cpv%ZPND, cpv%TPND, &
+                        cdv%ICE, cdv%TICE, &
                         shd%lc%sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                         il1, il2, NML, IGND, ic%ts_count, &
                         pbsm%vs%Drift, pbsm%vs%Subl)
@@ -288,7 +291,7 @@ module RUNCLASS36_module
                         cdv%QFN, cdv%QFG, cdv%QFC, cdv%HMFC, cdv%HMFG, cdv%HMFN, &
                         cdv%HTCC, cdv%HTCS, cdv%HTC, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
                         cdv%WTRS, cdv%WTRG, cdv%ROFO, cdv%ROFS, cdv%ROFB, &
-                        cdv%TROO, cdv%TROS, cdv%TROB, cdv%QFS, &
+                        cdv%TROO, cdv%TROS, cdv%TROB, cdv%QFS, cdv%ICE, cdv%TICE, &
                         TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
                         THICEC, THICEG, HCPC, HCPG, catv%RPCP, catv%TRPC, &
                         catv%SPCP, catv%TSPC, cfi%PRE, cfi%TA, catv%RHSI, catv%GGEO, &
@@ -349,6 +352,7 @@ module RUNCLASS36_module
                         cdv%QFC, cdv%ROF, cdv%WTRG, cpv%CMAI, cpv%RCAN, cpv%SNCAN, &
                         cpv%TCAN, cpv%SNO, cpv%WSNO, cpv%TSNO, cpv%THLQ, cpv%THIC, &
                         csfv%HCPS, csfv%THP, csfv%DELZW, cpv%TBAR, cpv%ZPND, cpv%TPND, &
+                        cdv%ICE, cdv%TICE, &
                         shd%lc%sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                         il1, il2, NML, IGND, ic%ts_count, &
                         pbsm%vs%Drift, pbsm%vs%Subl)

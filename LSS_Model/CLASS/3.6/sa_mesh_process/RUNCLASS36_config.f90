@@ -321,7 +321,7 @@ module RUNCLASS36_config
                  cdv%QFX(NML), cdv%QG(NML), cdv%ROF(NML), cdv%ROFB(NML), cdv%ROFC(NML), cdv%ROFN(NML), cdv%ROFO(NML), &
                  cdv%ROFS(NML), cdv%ROVG(NML), cdv%SFCQ(NML), cdv%SFCT(NML), cdv%SFCU(NML), cdv%SFCV(NML), cdv%TFX(NML), &
                  cdv%TROB(NML), cdv%TROF(NML), cdv%TROO(NML), cdv%TROS(NML), cdv%TSF(NML), cdv%UE(NML), cdv%WTAB(NML), &
-                 cdv%WTRC(NML), cdv%WTRG(NML), cdv%WTRS(NML))
+                 cdv%WTRC(NML), cdv%WTRG(NML), cdv%WTRS(NML), cdv%ICE(NML), cdv%TICE(NML))
         allocate(cdv%GFLX(NML, NSL), cdv%HMFG(NML, NSL), cdv%HTC(NML, NSL), cdv%QFC(NML, NSL))
 
         !> Read an initial value for geothermal flux from file.
