@@ -94,6 +94,7 @@ module RUNCLASS36_config
 
         integer NA, NTYPE, NML, NSL, l, k, ik, jk, m, j, i, iun, ierr
         real FRAC
+        character(len = DEFAULT_LINE_LENGTH) line
 
         !> For RESUMEFLAG 3
         real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
@@ -300,6 +301,9 @@ module RUNCLASS36_config
                  csfv%ROOT(NML, ICAN), csfv%RSMN(NML, ICAN), csfv%VPDA(NML, ICAN), csfv%VPDB(NML, ICAN))
         allocate(csfv%ALIC(NML, ICP1), csfv%ALVC(NML, ICP1), csfv%FCAN(NML, ICP1), csfv%LNZ0(NML, ICP1))
 
+        !> Glacier variables.
+        allocate(cglv%FREZTH(NML), cglv%SNDEPLIM(NML), cglv%SNDENLIM(NML))
+
         !> Atmospheric variables.
         allocate(catv%CSZ(NML), catv%DLON(NML), catv%FCLO(NML), catv%GC(NML), catv%GGEO(NML), catv%PADR(NML), catv%RADJ(NML), &
                  catv%RHOA(NML), catv%RHSI(NML), catv%RPCP(NML), catv%RPRE(NML), catv%SPCP(NML), catv%SPRE(NML), catv%TADP(NML), &
@@ -490,6 +494,54 @@ module RUNCLASS36_config
         csfv%ZSNL(il1:il2) = pm%tile%zsnl(il1:il2)
         csfv%ZPLG(il1:il2) = pm%tile%zplg(il1:il2)
         csfv%ZPLS(il1:il2) = pm%tile%zpls(il1:il2)
+        if (allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
+            if (DIAGNOSEMODE) then
+                call print_message('ICEBAL_FREEZE_THRESHOLD (FREZTH) override is ACTIVE.')
+                if (allocated(RUNCLASS36_flgs%pm%constant%FREZTH)) then
+                    write(line, FMT_GEN) 'Uniform value: ', RUNCLASS36_flgs%pm%constant%FREZTH
+                    call print_message(line, PAD_3)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%gru%FREZTH)) then
+                    write(line, FMT_GEN) 'GRU value: ', (RUNCLASS36_flgs%pm%gru%FREZTH(j), j = 1, NTYPE)
+                    call print_message(line, PAD_3)
+                end if
+            end if
+            cglv%FREZTH(il1:il2) = RUNCLASS36_flgs%pm%tile%FREZTH(il1:il2)
+        else
+            cglv%FREZTH(il1:il2) = -2.0
+        end if
+        if (allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
+            if (DIAGNOSEMODE) then
+                call print_message('ICEBAL_SNOW_DEPTH_LIMIT (SNDEPLIM) override is ACTIVE.')
+                if (allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
+                    write(line, FMT_GEN) 'Uniform value: ', RUNCLASS36_flgs%pm%constant%SNDEPLIM
+                    call print_message(line, PAD_3)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%gru%SNDEPLIM)) then
+                    write(line, FMT_GEN) 'GRU value: ', (RUNCLASS36_flgs%pm%gru%SNDEPLIM(j), j = 1, NTYPE)
+                    call print_message(line, PAD_3)
+                end if
+            end if
+            cglv%SNDEPLIM(il1:il2) = RUNCLASS36_flgs%pm%tile%SNDEPLIM(il1:il2)
+        else
+            cglv%SNDEPLIM(il1:il2) = 100.0
+        end if
+        if (allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
+            if (DIAGNOSEMODE) then
+                call print_message('ICEBAL_SNOW_DENSITY_LIMIT (SNDENLIM) override is ACTIVE.')
+                if (allocated(RUNCLASS36_flgs%pm%constant%SNDENLIM)) then
+                    write(line, FMT_GEN) 'Uniform value: ', RUNCLASS36_flgs%pm%constant%SNDENLIM
+                    call print_message(line, PAD_3)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%gru%SNDENLIM)) then
+                    write(line, FMT_GEN) 'GRU value: ', (RUNCLASS36_flgs%pm%gru%SNDENLIM(j), j = 1, NTYPE)
+                    call print_message(line, PAD_3)
+                end if
+            end if
+            cglv%SNDENLIM(il1:il2) = RUNCLASS36_flgs%pm%tile%SNDENLIM(il1:il2)
+        else
+            cglv%SNDENLIM(il1:il2) = 900.0
+        end if
 
         cdv%ITCT = 0
 

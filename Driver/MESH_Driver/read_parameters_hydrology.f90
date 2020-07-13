@@ -805,6 +805,44 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls, ierr)
                                 end do
                             end if
 
+                        !> ICEBAL constants.
+                        case ('frezth', 'icebal_freeze_threshold')
+                            if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                if (.not. allocated(RUNCLASS36_flgs%pm%gru%FREZTH)) then
+                                    allocate(RUNCLASS36_flgs%pm%gru%FREZTH(NTYPE))
+                                end if
+                                do j = 1, NTYPE
+                                    call value(args(j + 1), RUNCLASS36_flgs%pm%gru%FREZTH(j), z)
+                                    if (z /= 0) goto 931
+                                end do
+                            end if
+                        case ('sndeplim', 'icebal_snow_depth_limit')
+                            if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                if (.not. allocated(RUNCLASS36_flgs%pm%gru%SNDEPLIM)) then
+                                    allocate(RUNCLASS36_flgs%pm%gru%SNDEPLIM(NTYPE))
+                                end if
+                                do j = 1, NTYPE
+                                    call value(args(j + 1), RUNCLASS36_flgs%pm%gru%SNDEPLIM(j), z)
+                                    if (z /= 0) goto 931
+                                end do
+                            end if
+                        case ('sndenlim', 'icebal_snow_density_limit')
+                            if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) then
+                                ikey = 1
+                            else
+                                if (.not. allocated(RUNCLASS36_flgs%pm%gru%SNDENLIM)) then
+                                    allocate(RUNCLASS36_flgs%pm%gru%SNDENLIM(NTYPE))
+                                end if
+                                do j = 1, NTYPE
+                                    call value(args(j + 1), RUNCLASS36_flgs%pm%gru%SNDENLIM(j), z)
+                                    if (z /= 0) goto 931
+                                end do
+                            end if
+
                         !> BASEFLOWFLAG == 1 (lower zone storage).
 
                         !> dgwsh.

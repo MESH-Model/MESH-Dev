@@ -248,6 +248,24 @@ subroutine read_parameters(fls, shd, cm, ierr)
     if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
         pm%tile%zbld(:) = pm%gru%zbld(1)
         pm%tile%gc(:) = pm%gru%gc(1)
+        if (allocated(RUNCLASS36_flgs%pm%constant%FREZTH)) then
+            if (.not. allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
+                allocate(RUNCLASS36_flgs%pm%tile%FREZTH(shd%lc%NML))
+            end if
+            RUNCLASS36_flgs%pm%tile%FREZTH(:) = RUNCLASS36_flgs%pm%constant%FREZTH(1)
+        end if
+        if (allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
+            if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
+                allocate(RUNCLASS36_flgs%pm%tile%SNDEPLIM(shd%lc%NML))
+            end if
+            RUNCLASS36_flgs%pm%tile%SNDEPLIM(:) = RUNCLASS36_flgs%pm%constant%SNDEPLIM(1)
+        end if
+        if (allocated(RUNCLASS36_flgs%pm%constant%SNDENLIM)) then
+            if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
+                allocate(RUNCLASS36_flgs%pm%tile%SNDENLIM(shd%lc%NML))
+            end if
+            RUNCLASS36_flgs%pm%tile%SNDENLIM(:) = RUNCLASS36_flgs%pm%constant%SNDENLIM(1)
+        end if
     end if
 
     !> Parameters.
@@ -295,6 +313,24 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 pm%tile%zsnl(k) = pm%gru%zsnl(i)
                 pm%tile%zplg(k) = pm%gru%zplg(i)
                 pm%tile%zpls(k) = pm%gru%zpls(i)
+                if (allocated(RUNCLASS36_flgs%pm%gru%FREZTH)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%FREZTH(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%FREZTH(k) = RUNCLASS36_flgs%pm%gru%FREZTH(i)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%gru%SNDEPLIM)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%SNDEPLIM(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%SNDEPLIM(k) = RUNCLASS36_flgs%pm%gru%SNDEPLIM(i)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%gru%SNDENLIM)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%SNDENLIM(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%SNDENLIM(k) = RUNCLASS36_flgs%pm%gru%SNDENLIM(i)
+                end if
             end if
 
             !> BASEFLOWFLAG 1 (Luo, 2012).
@@ -400,6 +436,24 @@ subroutine read_parameters(fls, shd, cm, ierr)
             !> RUNCLASS36.
             if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
                 if (pm%grid%iwf(i) /= -1) pm%tile%iwf(k) = pm%grid%iwf(i)
+                if (allocated(RUNCLASS36_flgs%pm%grid%FREZTH)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%FREZTH(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%FREZTH(k) = RUNCLASS36_flgs%pm%grid%FREZTH(i)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%grid%SNDEPLIM)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%SNDEPLIM(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%SNDEPLIM(k) = RUNCLASS36_flgs%pm%grid%SNDEPLIM(i)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%grid%SNDENLIM)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%SNDENLIM(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%SNDENLIM(k) = RUNCLASS36_flgs%pm%grid%SNDENLIM(i)
+                end if
             end if
 
             !> BASEFLOWFLAG == 2 (lower zone storage).

@@ -23,6 +23,7 @@
      M                  THPOR,  THLRET, THLMIN, BI,     PSISAT, GRKSAT,
      N                  THLRAT, THFC,   XDRAIN, HCPS,   DELZ,   
      O                  DELZW,  ZBOTW,  XSLOPE, XDRAINH, WFSURF, KSAT,
+     +                  FREZTH, SNDEPLIM, SNDENLIM,
      P                  ISAND,  IGDR,
      Q                  IWF,    ILG,    IL1,    IL2,    N,
      R                  JL,     IC,     IG,     IGP1,   IGP2,
@@ -44,6 +45,8 @@
      3                  TSNOWC,TSNOWG,RHOSC,RHOSG,
      4                  XSNOWC,XSNOWG,XSNOCS,XSNOGS)
 C                                                                        
+C     * JUN 10/20 - D.PRINCZ.   CHANGED THRESHOLD AND LIMITS IN CHECKS
+C                               TO CONFIGURABLE VALUES (ICEBAL).
 C     * DEC 09/11 - M.MEKONNEN. FOR PDMROF.
 C     * OCT 18/11 - M.LAZARE.   PASS IN IGDR THROUGH CALLS TO
 C     *                         GRDRAN/GRINFL (ORIGINATES NOW
@@ -192,6 +195,13 @@ C
      4     WFSURF(ILG),   KSAT(ILG),   DELZ  (IG), BULK_FC(ILG,IG)
 C
       INTEGER             ISAND(ILG,IG), IGDR  (ILG)
+C
+C     * THRESHOLDS AND LIMITS FOR ICEBAL.
+C           FREZTH=-2.0
+C           SNDEPLIM=100.
+C           SNDENLIM=900.
+C
+      REAL, INTENT(IN) :: FREZTH(ILG), SNDEPLIM(ILG), SNDENLIM(ILG)
 C
 C     * INTERNAL WORK ARRAYS USED THROUGHOUT CLASSW.
 C
@@ -491,7 +501,9 @@ C
      2                    RUNFGS,TRNFGS,OVRFLW,TOVRFL,ZPLMGS,GGEO,
      3                    FGS,EVAPGS,RPCGS,TRPCGS,GZROGS,G12GS,G23GS,
      4                    HCPGS,QMELTG,WSNOGS,ZMAT,TMOVE,WMOVE,ZRMDR,
-     5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
+     5                    TADD,ZMOVE,TBOT,DELZ,
+     +                    FREZTH, SNDEPLIM, SNDENLIM,
+     +                    ISAND,ICONT,
      6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
           ENDIF
           CALL GRINFL(2,THLQGS,THICGS,TBRWGS,BASFLW,TBASFL,RUNFGS,
@@ -653,7 +665,9 @@ C
      2                    RUNFG,TRUNFG,OVRFLW,TOVRFL,ZPLIMG,GGEO,
      3                    FG,EVAPG,RPCG,TRPCG,GZEROG,G12G,G23G,
      4                    HCPGO,QFREZG,ZERO,ZMAT,TMOVE,WMOVE,ZRMDR,
-     5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
+     5                    TADD,ZMOVE,TBOT,DELZ,
+     +                    FREZTH, SNDEPLIM, SNDENLIM,
+     +                    ISAND,ICONT,
      6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
           ENDIF
           CALL GRINFL(4,THLQGO,THICGO,TBARWG,BASFLW,TBASFL,RUNFG,

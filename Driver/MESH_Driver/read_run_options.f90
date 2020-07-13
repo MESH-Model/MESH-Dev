@@ -251,6 +251,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
             z = 0
             select case (trim(adjustl(args(1))))
 
+                !> CLASS flags.
                 case ('IDISP')
                     call value(args(2), IDISP, z)
                 case ('IZREF')
@@ -277,6 +278,32 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     call value(args(2), IALS, z)
                 case ('IALG')
                     call value(args(2), IALG, z)
+                case ('FREZTH', 'ICEBAL_FREEZE_THRESHOLD')
+                    call value(args(2), IROVALR, z)
+                    if (z == 0) then
+                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%FREZTH)) then
+                            allocate(RUNCLASS36_flgs%pm%constant%FREZTH(1))
+                        end if
+                        RUNCLASS36_flgs%pm%constant%FREZTH(:) = IROVALR
+                    end if
+                case ('SNDEPLIM', 'ICEBAL_SNOW_DEPTH_LIMIT')
+                    call value(args(2), IROVALR, z)
+                    if (z == 0) then
+                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
+                            allocate(RUNCLASS36_flgs%pm%constant%SNDEPLIM(1))
+                        end if
+                        RUNCLASS36_flgs%pm%constant%SNDEPLIM(:) = IROVALR
+                    end if
+                case ('SNDENLIM', 'ICEBAL_SNOW_DENSITY_LIMIT')
+                    call value(args(2), IROVALR, z)
+                    if (z == 0) then
+                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%SNDENLIM)) then
+                            allocate(RUNCLASS36_flgs%pm%constant%SNDENLIM(1))
+                        end if
+                        RUNCLASS36_flgs%pm%constant%SNDENLIM(:) = IROVALR
+                    end if
+
+                !> SAVE/RESUME flags.
                 case ('RESUMEFLAG')
                     call value(args(2), RESUMEFLAG, z)
                 case ('SAVERESUMEFLAG')
