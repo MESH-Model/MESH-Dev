@@ -861,6 +861,7 @@ C
               ENDIF
              ENDIF !.not. PBSMFLAG
           ELSE                                                                
+              ZSNOW(I)=0.0
               TSNOW(I)=0.0                                                    
               RHOSNO(I)=0.0                                                   
               SNO(I)=0.0                                                      
