@@ -17,6 +17,9 @@ module RUNCLASS36_save_output
 
         !* DIR_OUT: OUTPUT DIRECTORY (10 CHARACTER STRING)
         character*10, dimension(:), allocatable :: DIR_OUT
+
+        integer JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
+
     end type
 
     type CLASSOUT_VARS
@@ -326,50 +329,56 @@ module RUNCLASS36_save_output
                 FSTR = FSTRCS(k)*cdv%FCS(k) + FSTRC(k)*cdv%FC(k) + FSTRG(k)*cdv%FG(k) + FSTRGS(k)*cdv%FGS(k)
 
                 !> Write to the CLASSOF* output files for sub-hourly output.
-                write(150 + i*10 + 4, &
-                      "(i2,',', i3,',', i5,',', i6,',', 9(f8.2,','), 2(f7.3,','), e11.3,',', f8.2,',', 3(f12.4,','))") &
-                    ic%now%hour, ic%now%mins, ic%now%jday, ic%now%year, FSSTAR, FLSTAR, QH, &
-                    QE, SNOMLT, BEG, GTOUT, cpv%SNO(k), &
-                    cpv%RHOS(k), cpv%WSNO(k), ALTOT, cdv%ROF(k)*DELT, &
-                    TPN, cpv%ZPND(k), ZPND, FSTR
-                write(150 + i*10 + 5, "(i2,',', i3,',', i5,',', i6,',', " // trim(adjustl(str)) // &
-                      "(f7.2,',', 2(f6.3,',')), f8.2,',', 2(f8.4,','), f8.2,',', f8.3,',')") &
-                    ic%now%hour, ic%now%mins, ic%now%jday, ic%now%year, &
-                    (cpv%TBAR(k, j) - TFREZ, cpv%THLQ(k, j), &
-                    cpv%THIC(k, j), j = 1, NSL), TCN, &
-                    cpv%RCAN(k), cpv%SNCAN(k), TSN, ZSN
-                write(150 + i*10 + 6, &
-                      "(i2,',', i3,',', i5,',', 2(f10.2,','), f12.6,',', f10.2,',', f8.2,',', f10.2,',', f15.9,',')") &
-                    ic%now%hour, ic%now%mins, ic%now%jday, cfi%FSVH(k) + cfi%FSIH(k), cfi%FDL(k), &
-                    cfi%PRE(k), cfi%TA(k) - TFREZ, cfi%VMOD(k), cfi%PRES(k), &
-                    cfi%QA(k)
-                write(150 + i*10 + 7, "(999(e11.4,','))") &
-                    cdv%TROF(k), cdv%TROO(k), cdv%TROS(k), &
-                    cdv%TROB(k), cdv%ROF(k), cdv%ROFO(k), &
-                    cdv%ROFS(k), cdv%ROFB(k), &
-                    cdv%FCS(k), cdv%FGS(k), cdv%FC(k), cdv%FG(k)
-                write(150 + i*10 + 8, "(999(f12.4,','))") &
-                    cdv%FSGV(k), cdv%FSGS(k), cdv%FSGG(k), &
-                    cdv%FLGV(k), cdv%FLGS(k), cdv%FLGG(k), &
-                    cdv%HFSC(k), cdv%HFSS(k), cdv%HFSG(k), &
-                    cdv%HEVC(k), cdv%HEVS(k), cdv%HEVG(k), &
-                    cdv%HMFC(k), cdv%HMFN(k), &
-                    (cdv%HMFG(k, j), j = 1, NSL), &
-                    cdv%HTCC(k), cdv%HTCS(k), &
-                    (cdv%HTC(k, j), j = 1, NSL)
-                write(150 + i*10 + 9, "(999(e12.4,','))") &
-                    cdv%PCFC(k), cdv%PCLC(k), cdv%PCPN(k), &
-                    cdv%PCPG(k), cdv%QFCF(k), cdv%QFCL(k), &
-                    cdv%QFN(k), cdv%QFG(k), (cdv%QFC(k, j), j = 1, NSL), &
-                    cdv%ROFC(k), cdv%ROFN(k), &
-                    cdv%ROFO(k), cdv%ROF(k), cdv%WTRC(k), &
-                    cdv%WTRS(k), cdv%WTRG(k)
-                write(150 + i*10 + 10, "(i2,',', i3,',', i5,',', i6,',', 999(f14.6,','))") &
-                    ic%now%hour, ic%now%mins, ic%now%jday, ic%now%year, cfi%PRE(k)*DELT, cdv%QFS(k)*DELT, &
-                    cdv%ROF(k)*DELT, cdv%ROFO(k)*DELT, cdv%ROFS(k)*DELT, cdv%ROFB(k)*DELT, &
-                    cpv%SNCAN(k), cpv%RCAN(k), cpv%SNO(k), cpv%WSNO(k), &
-                    cpv%ZPND(k)*RHOW, (cpv%THLQ(k, j)*RHOW*csfv%DELZW(k, j), j = 1, NSL), &
-                    (cpv%THIC(k, j)*RHOICE*csfv%DELZW(k, j), j = 1, NSL)
+                if (((op%KOUT1 == 0 .and. op%JOUT1 == 0) .or. &
+                    ((ic%now%year == op%KOUT1 .and. ic%now%jday >= op%JOUT1) .or. (ic%now%year > op%KOUT1))) .and. &
+                    ((op%KOUT2 == 0 .and. op%JOUT2 == 0) .or. &
+                    ((ic%now%year == op%KOUT2 .and. ic%now%jday < op%JOUT2) .or. (ic%now%year < op%KOUT2))) .and. &
+                    .not. (op%KOUT1 == -1 .or. op%JOUT1 == -1 .or. op%KOUT2 == -1 .or. op%JOUT2 == -1)) then
+                    write(150 + i*10 + 4, &
+                          "(i2,',', i3,',', i5,',', i6,',', 9(f8.2,','), 2(f7.3,','), e11.3,',', f8.2,',', 3(f12.4,','))") &
+                        ic%now%hour, ic%now%mins, ic%now%jday, ic%now%year, FSSTAR, FLSTAR, QH, &
+                        QE, SNOMLT, BEG, GTOUT, cpv%SNO(k), &
+                        cpv%RHOS(k), cpv%WSNO(k), ALTOT, cdv%ROF(k)*DELT, &
+                        TPN, cpv%ZPND(k), ZPND, FSTR
+                    write(150 + i*10 + 5, "(i2,',', i3,',', i5,',', i6,',', " // trim(adjustl(str)) // &
+                          "(f7.2,',', 2(f6.3,',')), f8.2,',', 2(f8.4,','), f8.2,',', f8.3,',')") &
+                        ic%now%hour, ic%now%mins, ic%now%jday, ic%now%year, &
+                        (cpv%TBAR(k, j) - TFREZ, cpv%THLQ(k, j), &
+                        cpv%THIC(k, j), j = 1, NSL), TCN, &
+                        cpv%RCAN(k), cpv%SNCAN(k), TSN, ZSN
+                    write(150 + i*10 + 6, &
+                          "(i2,',', i3,',', i5,',', 2(f10.2,','), f12.6,',', f10.2,',', f8.2,',', f10.2,',', f15.9,',')") &
+                        ic%now%hour, ic%now%mins, ic%now%jday, cfi%FSVH(k) + cfi%FSIH(k), cfi%FDL(k), &
+                        cfi%PRE(k), cfi%TA(k) - TFREZ, cfi%VMOD(k), cfi%PRES(k), &
+                        cfi%QA(k)
+                    write(150 + i*10 + 7, "(999(e11.4,','))") &
+                        cdv%TROF(k), cdv%TROO(k), cdv%TROS(k), &
+                        cdv%TROB(k), cdv%ROF(k), cdv%ROFO(k), &
+                        cdv%ROFS(k), cdv%ROFB(k), &
+                        cdv%FCS(k), cdv%FGS(k), cdv%FC(k), cdv%FG(k)
+                    write(150 + i*10 + 8, "(999(f12.4,','))") &
+                        cdv%FSGV(k), cdv%FSGS(k), cdv%FSGG(k), &
+                        cdv%FLGV(k), cdv%FLGS(k), cdv%FLGG(k), &
+                        cdv%HFSC(k), cdv%HFSS(k), cdv%HFSG(k), &
+                        cdv%HEVC(k), cdv%HEVS(k), cdv%HEVG(k), &
+                        cdv%HMFC(k), cdv%HMFN(k), &
+                        (cdv%HMFG(k, j), j = 1, NSL), &
+                        cdv%HTCC(k), cdv%HTCS(k), &
+                        (cdv%HTC(k, j), j = 1, NSL)
+                    write(150 + i*10 + 9, "(999(e12.4,','))") &
+                        cdv%PCFC(k), cdv%PCLC(k), cdv%PCPN(k), &
+                        cdv%PCPG(k), cdv%QFCF(k), cdv%QFCL(k), &
+                        cdv%QFN(k), cdv%QFG(k), (cdv%QFC(k, j), j = 1, NSL), &
+                        cdv%ROFC(k), cdv%ROFN(k), &
+                        cdv%ROFO(k), cdv%ROF(k), cdv%WTRC(k), &
+                        cdv%WTRS(k), cdv%WTRG(k)
+                    write(150 + i*10 + 10, "(i2,',', i3,',', i5,',', i6,',', 999(f14.6,','))") &
+                        ic%now%hour, ic%now%mins, ic%now%jday, ic%now%year, cfi%PRE(k)*DELT, cdv%QFS(k)*DELT, &
+                        cdv%ROF(k)*DELT, cdv%ROFO(k)*DELT, cdv%ROFS(k)*DELT, cdv%ROFB(k)*DELT, &
+                        cpv%SNCAN(k), cpv%RCAN(k), cpv%SNO(k), cpv%WSNO(k), &
+                        cpv%ZPND(k)*RHOW, (cpv%THLQ(k, j)*RHOW*csfv%DELZW(k, j), j = 1, NSL), &
+                        (cpv%THIC(k, j)*RHOICE*csfv%DELZW(k, j), j = 1, NSL)
+                end if
 
                 !> Accumulate variables for daily output.
                 co%PREACC(i) = co%PREACC(i) + cfi%PRE(k)*DELT
@@ -491,21 +500,27 @@ module RUNCLASS36_save_output
 !                    co%ROFBACC(i) = co%ROFBACC(i)
 
                     !> Write to the CLASSOF* output files for daily accumulated output.
-                    write(150 + i*10 + 1, "(i4,',', i5,',', 9(f8.2,','), 2(f8.3,','), 999(f12.4,','))") &
-                        ic%now%jday, ic%now%year, FSSTAR, FLSTAR, QH, QE, SNOMLT, &
-                        BEG, GTOUT, co%SNOACC(i), co%RHOSACC(i), &
-                        co%WSNOACC(i), ALTOT, co%ROFACC(i), co%ROFOACC(i), &
-                        co%ROFSACC(i), co%ROFBACC(i)
-                    write(150 + i*10 + 2, "(i4,',', i5,',', " // adjustl(str) // "((f8.2,','), " // &
-                          "2(f6.3,',')), f8.2,',', 2(f7.4,','), 2(f8.2,','))") &
-                        ic%now%jday, ic%now%year, (co%TBARACC(i, j) - TFREZ, &
-                        co%THLQACC(i, j), co%THICACC(i, j), j = 1, NSL), &
-                        TCN, co%RCANACC(i), co%SCANACC(i), TSN, ZSN
-                    write(150 + i*10 + 3, "(i4,',', i5,',', 3(f9.2,','), f8.2,',', " // &
-                          "f10.2,',', e12.3,',', 2(f12.3,','))") &
-                        ic%now%jday, ic%now%year, co%FSINACC(i), co%FLINACC(i), &
-                        co%TAACC(i) - TFREZ, co%UVACC(i), co%PRESACC(i), &
-                        co%QAACC(i), co%PREACC(i), co%EVAPACC(i)
+                    if (((op%KAV1 == 0 .and. op%JAV1 == 0) .or. &
+                        ((ic%now%year == op%KAV1 .and. ic%now%jday >= op%JAV1) .or. (ic%now%year > op%KAV1))) .and. &
+                        ((op%KAV2 == 0 .and. op%JAV2 == 0) .or. &
+                        ((ic%now%year == op%KAV2 .and. ic%now%jday < op%JAV2) .or. (ic%now%year < op%KAV2))) .and. &
+                        .not. (op%KAV1 == -1 .or. op%JAV1 == -1 .or. op%KAV2 == -1 .or. op%JAV2 == -1)) then
+                        write(150 + i*10 + 1, "(i4,',', i5,',', 9(f8.2,','), 2(f8.3,','), 999(f12.4,','))") &
+                            ic%now%jday, ic%now%year, FSSTAR, FLSTAR, QH, QE, SNOMLT, &
+                            BEG, GTOUT, co%SNOACC(i), co%RHOSACC(i), &
+                            co%WSNOACC(i), ALTOT, co%ROFACC(i), co%ROFOACC(i), &
+                            co%ROFSACC(i), co%ROFBACC(i)
+                        write(150 + i*10 + 2, "(i4,',', i5,',', " // adjustl(str) // "((f8.2,','), " // &
+                              "2(f6.3,',')), f8.2,',', 2(f7.4,','), 2(f8.2,','))") &
+                            ic%now%jday, ic%now%year, (co%TBARACC(i, j) - TFREZ, &
+                            co%THLQACC(i, j), co%THICACC(i, j), j = 1, NSL), &
+                            TCN, co%RCANACC(i), co%SCANACC(i), TSN, ZSN
+                        write(150 + i*10 + 3, "(i4,',', i5,',', 3(f9.2,','), f8.2,',', " // &
+                              "f10.2,',', e12.3,',', 2(f12.3,','))") &
+                            ic%now%jday, ic%now%year, co%FSINACC(i), co%FLINACC(i), &
+                            co%TAACC(i) - TFREZ, co%UVACC(i), co%PRESACC(i), &
+                            co%QAACC(i), co%PREACC(i), co%EVAPACC(i)
+                    end if
 
                     !> Reset the CLASS output variables.
                     co%PREACC(i) = 0.0; co%GTACC(i) = 0.0; co%QEVPACC(i) = 0.0; co%EVAPACC(i) = 0.0

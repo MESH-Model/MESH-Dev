@@ -108,6 +108,14 @@ module climate_forcing
         cm%dat(ck%UV)%GRD => vs%grid%uv(1:shd%NA)
         cm%dat(ck%UV)%GAT => vs%tile%uv(1:shd%lc%NML)
         cm%dat(ck%UV)%GRU => vs%gru%uv(1:shd%lc%NTYPE)
+        if (cm%dat(ck%WD)%factive) then
+            if (len_trim(cm%dat(ck%WD)%fname) == 0) then
+                cm%dat(ck%WD)%fname = 'basin_winddir'
+            end if
+            cm%dat(ck%WD)%GRD => vs%grid%wdir(1:shd%NA)
+            cm%dat(ck%WD)%GAT => vs%tile%wdir(1:shd%lc%NML)
+            cm%dat(ck%WD)%GRU => vs%gru%wdir(1:shd%lc%NTYPE)
+        end if
         if (len_trim(cm%dat(ck%P0)%fname) == 0) then
             cm%dat(ck%P0)%fname = 'basin_pres'
         end if
@@ -325,6 +333,188 @@ module climate_forcing
 999     ENDDATA = .true.
 
     end function
+
+    subroutine climate_module_parse_flag(climate_variable, input_flag, ierr)
+
+        use strings
+
+        !> Input variables.
+        character(len = *), intent(in) :: input_flag
+
+        !> Input/output variables.
+        type(clim_series) climate_variable
+
+        !> Output variables.
+        integer ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code, args(50)
+        integer n, j, z
+
+        !> Set the return variable.
+        ierr = 0
+
+        !> Split the string.
+        call parse(input_flag, ' ', args, n)
+
+        !> Return if no arguments exist.
+        if (.not. n >= 2) return
+
+        !> Legacy numeric options.
+        select case (args(2))
+
+            !> ASCII R2C format.
+            case ('1')
+                climate_variable%ffmt = 1
+
+            !> CSV format.
+            case ('2')
+                climate_variable%ffmt = 2
+
+            !> Binary sequential format.
+            case ('3')
+                climate_variable%ffmt = 3
+
+            !> Old-format frames to read in to memory.
+            case ('5')
+                if (n >= 4) then
+                    call value(args(3), climate_variable%ffmt, z)
+                    if (z /= 0) ierr = z
+                    call value(args(4), climate_variable%nblocks, z)
+                    if (z /= 0) ierr = z
+                end if
+
+            !> netCDF format.
+            case ('7')
+                climate_variable%ffmt = 7
+        end select
+
+        !> Assign the options of the flag.
+        do j = 2, n
+
+            !> Reset the local error.
+            z = 0
+
+            !> Single-word options.
+            select case (lowercase(args(j)))
+
+                !> ASCII R2C format.
+                case ('r2c')
+                    climate_variable%ffmt = 1
+
+                !> CSV format.
+                case ('csv')
+                    climate_variable%ffmt = 2
+
+                !> Binary sequential format.
+                case ('seq')
+                    climate_variable%ffmt = 3
+
+                !> netCDF format.
+                case ('nc')
+                    climate_variable%ffmt = 7
+            end select
+
+            !> Multi-word options.
+            if (args(j)(1:3) == 'hf=') then
+
+                !> Frame length/file time-stepping.
+                call value(args(j)(4:), climate_variable%hf, z)
+                if (z /= 0) ierr = z
+            else if (args(j)(1:11) == 'start_date=') then
+
+                !> First date of record.
+                if (len_trim(args(j)) >= 15) then
+                    call value(args(j)(12:15), climate_variable%start_date%year, z)
+                    if (z == 0) then
+                        if (len_trim(args(j)) >= 17) then
+                            call value(args(j)(16:17), climate_variable%start_date%month, z)
+                            if (z == 0) then
+                                if (len_trim(args(j)) >= 19) then
+                                    call value(args(j)(18:19), climate_variable%start_date%day, z)
+                                    if (z == 0) then
+                                        if (len_trim(args(j)) >= 21) then
+                                            call value(args(j)(20:21), climate_variable%start_date%hour, z)
+                                            if (z == 0) then
+                                                if (len_trim(args(j)) >= 23) then
+                                                    call value(args(j)(22:23), climate_variable%start_date%mins, z)
+                                                else
+                                                    climate_variable%start_date%mins = 0
+                                                end if
+                                            end if
+                                        else
+                                            climate_variable%start_date%hour = 0
+                                        end if
+                                    end if
+                                else
+                                    climate_variable%start_date%day = 1
+                                end if
+                                climate_variable%start_date%jday = &
+                                    get_jday( &
+                                        climate_variable%start_date%month, climate_variable%start_date%day, &
+                                        climate_variable%start_date%year)
+                            end if
+                        else
+                            climate_variable%start_date%month = 1
+                        end if
+                    else
+                        ierr = z
+                    end if
+                end if
+            else if (args(j)(1:4) == 'nts=') then
+
+                !> Number of frames to read in to memory.
+                call value(args(j)(5:), climate_variable%nblocks, z)
+                if (z /= 0) ierr = z
+            else if (args(j)(1:6) == 'fname=') then
+
+                !> Base file name (without extension).
+                climate_variable%fname = adjustl(args(j)(7:))
+            else if (args(j)(1:6) == 'fpath=') then
+
+                !> Full path including file name and extension.
+                climate_variable%fpath = adjustl(args(j)(7:))
+            else if (args(j)(1:9) == 'name_var=') then
+
+                !> Variable name.
+                climate_variable%id_var = adjustl(args(j)(10:))
+            else if (args(j)(1:9) == 'name_lat=') then
+
+                !> Name of latitude dimension (for specific formats).
+                climate_variable%name_lat = adjustl(args(j)(10:))
+            else if (args(j)(1:9) == 'name_lon=') then
+
+                !> Name of longitude dimension (for specific formats).
+                climate_variable%name_lon = adjustl(args(j)(10:))
+            else if (args(j)(1:10) == 'name_time=') then
+
+                !> Name of time dimension (for specific formats).
+                climate_variable%name_time = adjustl(args(j)(11:))
+            else if (args(j)(1:3) == 'cm=') then
+
+                !> Data multiplier.
+                call value(args(j)(4:), climate_variable%cm, z)
+                if (z /= 0) ierr = z
+            else if (args(j)(1:3) == 'ca=') then
+
+                !> Data additive factor.
+                call value(args(j)(4:), climate_variable%ca, z)
+                if (z /= 0) ierr = z
+            else if (args(j)(1:11) == 'time_shift=') then
+
+                !> Time shift to apply to time-stamps (for specific formats).
+                call value(args(j)(12:), climate_variable%time_shift, z)
+                if (z /= 0) ierr = z
+            end if
+
+            !> Check for errors.
+            if (z /= 0) then
+                write(code, FMT_GEN) j
+                call print_warning('An error occurred parsing argument ' // trim(adjustl(code)) // ' of ' // trim(args(1)) // '.')
+            end if
+        end do
+
+    end subroutine
 
     !> Description:
     !>  Updates climate forcing data, either from memory or from file.

@@ -691,19 +691,28 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     if (ierr /= 0) return
 
     !> Distribute the starting date of the forcing files.
-    do n = 1, cm%nclim
-        cm%dat(n)%start_date%year = cm%start_date%year
-        cm%dat(n)%start_date%jday = cm%start_date%jday
-        cm%dat(n)%start_date%hour = cm%start_date%hour
-        cm%dat(n)%start_date%mins = cm%start_date%mins
-    end do
+!-    do n = 1, cm%nclim
+!-        if (cm%dat(n)%start_date%year == 0 .and. cm%dat(n)%start_date%jday == 0 .and. &
+!-            cm%dat(n)%start_date%hour == 0 .and. cm%dat(n)%start_date%mins == 0) then
+!-            cm%dat(n)%start_date%year = cm%start_date%year
+!-            cm%dat(n)%start_date%jday = cm%start_date%jday
+!-            cm%dat(n)%start_date%hour = cm%start_date%hour
+!-            cm%dat(n)%start_date%mins = cm%start_date%mins
+!-        end if
+!-    end do
 
     !> Set the starting date from the forcing files if none is provided.
     if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%hour == 0 .and. ic%start%mins == 0) then
-        ic%start%year = cm%start_date%year
-        ic%start%jday = cm%start_date%jday
-        ic%start%hour = cm%start_date%hour
-        ic%start%mins = cm%start_date%mins
+        ic%start%year = cm%dat(1)%start_date%year
+        ic%start%jday = cm%dat(1)%start_date%jday
+        ic%start%hour = cm%dat(1)%start_date%hour
+        ic%start%mins = cm%dat(1)%start_date%mins
+        do n = 2, cm%nclim
+            ic%start%year = min(ic%start%year, cm%dat(n)%start_date%year)
+            ic%start%jday = min(ic%start%jday, cm%dat(n)%start_date%jday)
+            ic%start%hour = min(ic%start%hour, cm%dat(n)%start_date%hour)
+            ic%start%mins = min(ic%start%mins, cm%dat(n)%start_date%mins)
+        end do
     end if
 
     !> Initialize the current time-step.

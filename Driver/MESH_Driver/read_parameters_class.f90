@@ -11,6 +11,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
 
     use RUNCLASS36_constants
     use RUNCLASS36_variables
+    use RUNCLASS36_save_output
 
     !> Used for starting date of climate forcing data.
     use climate_forcing
@@ -26,12 +27,12 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
     integer, intent(out) :: ierr
 
     !> Local variables.
-    integer NA, NTYPE, NSL, iun, k, ignd, i, m, j
+    integer NA, NTYPE, NSL, iun, n, k, ignd, i, m, j
     character(len = DEFAULT_LINE_LENGTH) line
 
     !> Local variables (read from file).
     real DEGLAT, DEGLON
-    integer JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
+    integer IHOUR, IMINS, IJDAY, IYEAR
 
     !> Initialize the return status.
     ierr = 0
@@ -116,12 +117,12 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
             vs%gru%rhos(m), vs%gru%gro(m)
     end do
 
-!todo: Make sure these variables are documented properly (for CLASS output, not currently used)
-    read(iun, *, err = 98) JOUT1, JOUT2, JAV1, JAV2
-    read(iun, *, err = 98) KOUT1, KOUT2, KAV1, KAV2
+    !> Read CLASS output start/stop dates.
+    read(iun, *, err = 98) op%JOUT1, op%JOUT2, op%JAV1, op%JAV2
+    read(iun, *, err = 98) op%KOUT1, op%KOUT2, op%KAV1, op%KAV2
 
     !> Read in the starting date of the forcing files.
-    read(iun, *, err = 98) cm%start_date%hour, cm%start_date%mins, cm%start_date%jday, cm%start_date%year
+    read(iun, *, err = 98) IHOUR, IMINS, IJDAY, IYEAR
 
     !> Close the file.
     close(iun)
@@ -131,6 +132,17 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
         shd%ylat = DEGLAT
         shd%xlng = DEGLON
     end if
+
+    !> Distribute the starting date of the forcing files.
+    do n = 1, cm%nclim
+        if (cm%dat(n)%start_date%year == 0 .and. cm%dat(n)%start_date%jday == 0 .and. &
+            cm%dat(n)%start_date%hour == 0 .and. cm%dat(n)%start_date%mins == 0) then
+            cm%dat(n)%start_date%year = IYEAR
+            cm%dat(n)%start_date%jday = IJDAY
+            cm%dat(n)%start_date%hour = IHOUR
+            cm%dat(n)%start_date%mins = IMINS
+        end if
+    end do
 
     return
 
