@@ -316,6 +316,17 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                 else
                     z = 1
                 end if
+            case ('curvature')
+                if (.not. allocated(rsrd_adj%pm%curvature)) allocate(rsrd_adj%pm%curvature(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        rsrd_adj%pm%curvature(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    rsrd_adj%pm%curvature(:, ilvl) = ffield
+                else
+                    z = 1
+                end if
 
             !> Unrecognized.
             case default
