@@ -14,6 +14,7 @@
 !>  - 2018/02/02: Fortran code optimized/consolidated
 !>      ('program' component replaced by 'solar_adjust_module')
 !>  - 2019/10/10: Upgraded into Mountain MESH (renamed 'forcing_adjust')
+!>  - 2020/04/16: Added phased precipitation adjustment.
 !>
 !> Input variables:
 !*  elev: Weighted average elevation of GRUs. [m].
@@ -59,16 +60,19 @@
 !*  pres_adjusted: Adjusted barometric pressure. [Pa].
 !*  humd_adjusted: Adjusted specific humidity. [kg kg-1].
 !*  rain_adjusted: Adjusted precipitation. [mm s-1].
+!*  rain_phased_adjusted: Adjusted liquid component of precipitation. [mm s-1].
+!*  snow_phased_adjusted: Adjusted solid component of precipitation. [mm s-1].
 !*  wind_adjusted: Adjusted wind speed. [m s-1].
 subroutine forcing_adjust( &
     elev, xlng, ylat, slope, aspect, delta, curvature, nvals, &
     nml_grid_map, i1, i2, &
     Time_Zone, CalcFreq, rsrd_dtmin, rlds_dtmin, temp_dtmin, &
     pres_dtmin, humd_dtmin, rain_dtmin, wind_dtmin, winddir_dtmin, &
-    rsrd, rlds, temp, pres, humd, rain, wind, winddir, rsrd_adjusted, &
-    rlds_adjusted, temp_adjusted, pres_adjusted, humd_adjusted, &
-    rain_adjusted, wind_adjusted, now_year, now_month, now_jday, &
-    now_hour, now_mins, dtmins)
+    rsrd, rlds, temp, pres, humd, rain, wind, winddir, &
+    rsrd_adjusted, rlds_adjusted, temp_adjusted, pres_adjusted, &
+    humd_adjusted, rain_adjusted, rain_phased_adjusted, &
+    snow_phased_adjusted, wind_adjusted, &
+    now_year, now_month, now_jday, now_hour, now_mins, dtmins)
 
     implicit none
 
@@ -107,27 +111,27 @@ subroutine forcing_adjust( &
     !>  Tables of mean annual lapse rate derived from the high
     !>  resolution (2.5km by 2.5km) GEM run for the period Oct, 2016 to
     !>  Sept, 2019.
-    data plapse / 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30 /
-    data tlapse / 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60 /
-    data dtlapse / 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92 /
-    data lwlapse / 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35 /
-    data wlapse / 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21 /
+!    data plapse / 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30 /
+!    data tlapse / 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60 /
+!    data dtlapse / 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92 /
+!    data lwlapse / 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35 /
+!    data wlapse / 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21 /
 
     !> Option 2:
     !>  Tables of monthly lapse rate derived from the high resolution
     !>  (2.5km by 2.5km) GEM run for the period Oct, 2016 to Sept, 2019.
-!    data plapse / 0.516, 0.306, 0.420, 0.263, 0.084, 0.164, 0.158, 0.219, 0.206, 0.461, 0.528, 0.342 /
-!    data tlapse / 5.479, 5.830, 5.683, 6.991, 8.107, 7.940, 6.700, 6.648, 6.177, 6.729, 7.080, 5.791 /
-!    data dtlapse / 1.986, 2.567, 1.941, 2.892, 2.747, 3.267, 4.834, 3.802, 3.257, 3.145, 2.505, 2.126 /
-!    data lwlapse / 6.832, 8.647, 4.803, 17.993, 31.842, 28.492, 36.013, 33.234, 25.388, 12.674, 0.288, 13.972 /
-!    data wlapse / 0.26, 0.32, 0.16, 0.22, 0.23, 0.26, 0.22, 0.12, 0.16, 0.13, 0.14, 0.20 /
+    data plapse / 0.516, 0.306, 0.420, 0.263, 0.084, 0.164, 0.158, 0.219, 0.206, 0.461, 0.528, 0.342 /
+    data tlapse / 5.479, 5.830, 5.683, 6.991, 8.107, 7.940, 6.700, 6.648, 6.177, 6.729, 7.080, 5.791 /
+    data dtlapse / 1.986, 2.567, 1.941, 2.892, 2.747, 3.267, 4.834, 3.802, 3.257, 3.145, 2.505, 2.126 /
+    data lwlapse / 6.832, 8.647, 4.803, 17.993, 31.842, 28.492, 36.013, 33.234, 25.388, 12.674, 0.288, 13.972 /
+    data wlapse / 0.26, 0.32, 0.16, 0.22, 0.23, 0.26, 0.22, 0.12, 0.16, 0.13, 0.14, 0.20 /
 
     !> Option 3:
     !>  Tables of temperature lapse rate, vapor pressure coefficient
     !>  (Kunkel et al., 1989), and precipitation-elevation adjustment
     !>  factors (Thornton et al., 1997) for each month for the
-    !>  Northern Hemisphere. Incoming long wave radiation lapse rate
-    !>  of 29 W/m^2/1000 m (Marty et al., 2002).
+    !>  Northern Hemisphere. Incoming long wave radiation lapse rate of
+    !>  29 W/m^2/1000 m (Marty et al., 2002).
 !    data plapse / 0.35, 0.35, 0.35, 0.30, 0.25, 0.20, 0.20, 0.20, 0.20, 0.25, 0.30, 0.35 /
 !    data tlapse / 4.40, 5.90, 7.10, 7.80, 8.10, 8.20, 8.10, 8.10, 7.70, 6.80, 5.50, 4.70 /
 !    data dtlapse / 5.64, 5.78, 5.51, 5.37, 5.23, 4.96, 4.54, 4.54, 4.96, 5.09, 5.51, 5.51 /
@@ -140,6 +144,8 @@ subroutine forcing_adjust( &
     real, dimension(nvals), intent(out) :: pres_adjusted
     real, dimension(nvals), intent(out) :: humd_adjusted
     real, dimension(nvals), intent(out) :: rain_adjusted
+    real, dimension(nvals), intent(out) :: rain_phased_adjusted
+    real, dimension(nvals), intent(out) :: snow_phased_adjusted
     real, dimension(nvals), intent(out) :: wind_adjusted
 
     !> Working variables.
@@ -151,7 +157,9 @@ subroutine forcing_adjust( &
         Idiff, Sum_Idir, Sum_Diff, Sum_Flatd, Sum_Flatf, Qdirect, &
         Idir, Qdiffuse, Qflat, es, es_adjusted, ea, ea_adjusted, &
         rh, Tdew, Tdew_adjusted, epsilon_corr, rain_frac, windcorr, &
-        oam1, oam2, OmegaC, OmegaS
+        oam1, oam2, OmegaC, OmegaS, &
+        D, lamda, pta, L, Ti1, Ti2, crit, crit1, &
+        TT1, TT2, aa, bb, cc, ratio, gru_icebulb
     real, dimension(i1:i2) :: OmegaS_grid, curvature_grid
 
     !> Precipitation adjustment.
@@ -169,13 +177,13 @@ subroutine forcing_adjust( &
     !> Option 2:
     !>  Precipitation lapse rate derived from the high resolution (2.5km
     !>  by 2.5km) GEM run for the period Oct, 2016 to Sept, 2019.
-!    where ((1.0 + 0.001*delta*plapse(now_month)) < 0.5)     ! Limit the precipitation-elevation adjustment factor in the range 0.5 - 1.5.
-!        rain_adjusted = rain*0.5
-!    elsewhere ((1.0 + 0.001*delta*plapse(now_month)) > 1.5) ! Limit the precipitation-elevation adjustment factor in the range 0.5 - 1.5.
-!        rain_adjusted = rain*1.50
-!    elsewhere
-!        rain_adjusted = rain*(1.0 + 0.001*delta*plapse(now_month))
-!    end where
+    where ((1.0 + 0.001*delta*plapse(now_month)) < 0.5)     ! Limit the precipitation-elevation adjustment factor in the range 0.5 - 1.5.
+        rain_adjusted = rain*0.5
+    elsewhere ((1.0 + 0.001*delta*plapse(now_month)) > 1.5) ! Limit the precipitation-elevation adjustment factor in the range 0.5 - 1.5.
+        rain_adjusted = rain*1.50
+    elsewhere
+        rain_adjusted = rain*(1.0 + 0.001*delta*plapse(now_month))
+    end where
 
     !> Temperature adjustment.
     !>  Linear lapse rates (measured, seasonal, constant, neutral
@@ -189,7 +197,7 @@ subroutine forcing_adjust( &
     !> Specific humidity adjustment.
     !> Option 1:
     !>  Specific humidity correction for elevation difference using dew
-    !>  point temperature (Murray (1967).
+    !>  point temperature (Murray, 1967).
     ea = humd*pres/(0.378*humd + 0.622)
     where (temp >= 273.16)
         Tdew = 237.29*log(ea/610.78)/(17.269 - log(ea/610.78))  ! Murray (1967) as used in CLASS_v3.6 for temperature greater than or equal to zero.
@@ -207,19 +215,19 @@ subroutine forcing_adjust( &
     !> Option 2:
     !>  Specific humidity correction for elevation difference using dew
     !>  point temperature (Kunkel, 1989).
-!    ea = humd*pres/(0.378*humd + 0.622)
-!    where ((temp >= 273.16)
-!        Tdew = 240.97*log(ea/611.21)/(17.502 - log(ea/611.21))  ! Buck, 1981 for temperatures 0°C and above.
-!    elsewhere
-!        Tdew = 272.55*log(ea/611.15)/(22.452 - log(ea/611.15))  ! Buck, 1981 for temperature less than zero.	
-!    end where
-!    Tdew_adjusted = Tdew - (dtlapse(now_month)*delta/1000.0)
-!    where ((temp_adjusted >= 273.16)
-!        ea_adjusted = 611.21*exp(17.502*Tdew_adjusted/(Tdew_adjusted + 240.97))
-!    elsewhere
-!        ea_adjusted = 611.15*exp(22.452*Tdew_adjusted/(Tdew_adjusted + 272.55))
-!    end where
-!    humd_adjusted = 0.622*ea_adjusted/(pres_adjusted - 0.378*ea_adjusted)
+    ea = humd*pres/(0.378*humd + 0.622)
+    where (temp >= 273.16)
+        Tdew = 240.97*log(ea/611.21)/(17.502 - log(ea/611.21))  ! Buck, 1981 for temperatures 0°C and above.
+    elsewhere
+        Tdew = 272.55*log(ea/611.15)/(22.452 - log(ea/611.15))  ! Buck, 1981 for temperature less than zero.
+    end where
+    Tdew_adjusted = Tdew - (dtlapse(now_month)*delta/1000.0)
+    where (temp_adjusted >= 273.16)
+        ea_adjusted = 611.21*exp(17.502*Tdew_adjusted/(Tdew_adjusted + 240.97))
+    elsewhere
+        ea_adjusted = 611.15*exp(22.452*Tdew_adjusted/(Tdew_adjusted + 272.55))
+    end where
+    humd_adjusted = 0.622*ea_adjusted/(pres_adjusted - 0.378*ea_adjusted)
 
     !> Longwave radiation adjustment.
     !> Option 1:
@@ -257,15 +265,55 @@ subroutine forcing_adjust( &
 
     !> Option 2:
     !>  Using wind speed lapse rate for elevations.
-    windcorr = wlapse(now_month)*(delta + 30.0)/1000.0
+    windcorr = wlapse(now_month)*(delta)/1000.0
     where (abs(windcorr) > 0.95)
         wind_adjusted = wind*(1.0 + 0.95)/(1.0 - 0.95)
     elsewhere
         wind_adjusted = wind*(1.0 + windcorr)/(1.0 - windcorr)
     end where
 
+    !> Precipitation phase adjustment.
+    !>  Calculates precipitation phase via falling hydrometeor energy
+    !>  balance (Harder and Pomeroy, 2013).
+    D = 2.06*(10.0**-5.0)*(temp_adjusted/273.15)**1.75
+    lamda = 0.000063*temp_adjusted + 0.00673
+    where ((temp_adjusted - 273.16) < 0.0)
+        L = 1000.0*(2834.1 - 0.29*(temp_adjusted - 273.16) - 0.004*(temp_adjusted - 273.16)**2)
+    elsewhere
+        L = 1000.0*(2501.0 - (2.361*(temp_adjusted - 273.16)))
+    end where
+    pta = 18.01528*(1000.0*ea_adjusted)/(0.00831441*temp_adjusted)/1000.0
+    Ti1 = 250.0
+    crit = 9999.0
+    do while (any(crit > 0.0001))   ! Iteration solution optimised by using the Newton-Raphston method.
+        TT1 = Ti1 + 0.001*Ti1
+        TT2 = Ti1 - 0.001*Ti1
+        aa = (-Ti1 + temp_adjusted + &
+            (L*D/lamda)*(pta - (18.01528*(0.611*exp((17.3*(Ti1 - 273.16))/(237.3 + (Ti1 - 273.16))))/(0.00831441*Ti1)/1000.0)))
+        bb = (-TT1 + temp_adjusted + &
+            (L*D/lamda)*(pta - (18.01528*(0.611*exp((17.3*(TT1 - 273.16))/(237.3 + (TT1 - 273.16))))/(0.00831441*TT1)/1000.0)))
+        cc = (-TT2 + temp_adjusted + &
+            (L*D/lamda)*(pta - (18.01528*(0.611*exp((17.3*(TT2 - 273.16))/(237.3 + (TT2 - 273.16))))/(0.00831441*TT2)/1000.0)))
+        Ti2 = Ti1 - (aa/((bb - cc)/(0.002*Ti1)))
+        crit1 = Ti1 - Ti2
+        where (crit1 < 0.0)
+            crit = -crit1
+        elsewhere
+            crit = crit1
+        end where 
+        Ti1 = Ti2
+    end do
+    gru_icebulb = Ti1 - 273.16
+    where (gru_icebulb < -10.0) ! Eoverflow if ratio calculated with icebulb < -39C.
+        ratio = 0.0
+    elsewhere
+        ratio = 1.0/(1.0 + 2.50286*(0.125006**gru_icebulb))
+    end where
+    rain_phased_adjusted = rain_adjusted*ratio          ! if(rain_adjusted > 0.0) then the rain or snow determined by ice bulb ratio.
+    snow_phased_adjusted = rain_adjusted*(1.0 - ratio)
+
     !> Shortwave radiation adjustment.
-    !> Considers elevation, slope, aspect and delta.
+    !> Considers elevation, slope, and aspect.
 
     !> Constant over time.
     Clat = cos(ylat*DEGtoRAD)
@@ -320,8 +368,8 @@ subroutine forcing_adjust( &
         !> Hour angle calculation in 'now_jday' day. The hour angle
         !>  varies between -pi and pi and it is 0.0 at solar noon.
         SHVar = 60.0*real(now_hour) + real(now_mins) + real(kk*MINS_int)
-        SHVar = SHVar + EOT + (4.0*xlng) - (60.0*(ceiling(xlng/15.0)))  ! To use time zone use "(60.0*Time_Zone)" instead of "(60.0*(nint(xlng/15.0)))"
-        SH = modulo(SHVar, 1440.0) 
+        SHVar = SHVar + EOT + (4.0*xlng) - (60.0*(ceiling(xlng/15.0)))  ! To use time zone use "(60.0*Time_Zone)" instead of "(60.0*(nint(xlng/15.0)))".
+        SH = modulo(SHVar, 1440.0)
         SH = SH/4.0
         where (SH < 0.0)
             Hr_Ang = DEGtoRAD*(SH + 180.0)
@@ -341,7 +389,7 @@ subroutine forcing_adjust( &
         elsewhere
             oam = 39.7
         end where
-        oam = oam *(pres_adjusted/101325.0) ! modified optical air mass for other pressures (Pa) from the standard pressure (sea surface (Pa)) (in Iqbal (1983), p.100)
+        oam = oam *(pres_adjusted/101325.0)                     ! modified optical air mass for other pressures (Pa) from the standard pressure (sea surface (Pa)) (in Iqbal (1983), p.100)
         where (Czen > 0.0)
             Iterr = real(MINS_int)*Sol*Czen                     ! extrater. rad for MINS_int minute interval
             cosxs0 = Clat*Cdecl*cos(Hr_Ang) + Slat*Sdecl

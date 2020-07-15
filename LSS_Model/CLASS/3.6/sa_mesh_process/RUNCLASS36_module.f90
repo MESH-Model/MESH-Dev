@@ -58,6 +58,8 @@ module RUNCLASS36_module
             cfi%FSIH(il1:il2) = vs%tile%fsin(il1:il2)/2.0
             cfi%FDL(il1:il2) = vs%tile%flin(il1:il2)
             cfi%PRE(il1:il2) = vs%tile%pre(il1:il2)
+            catv%RPRE(il1:il2) = vs%tile%prern(il1:il2)
+            catv%SPRE(il1:il2) = vs%tile%presno(il1:il2)
             cfi%TA(il1:il2) = vs%tile%ta(il1:il2)
             cfi%UL(il1:il2) = vs%tile%uv(il1:il2)
             cfi%PRES(il1:il2) = vs%tile%pres(il1:il2)

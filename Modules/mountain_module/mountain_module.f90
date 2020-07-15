@@ -294,6 +294,8 @@ module mountain_module
         real, dimension(il1:il2) :: pres_adjusted
         real, dimension(il1:il2) :: humd_adjusted
         real, dimension(il1:il2) :: rain_adjusted
+        real, dimension(il1:il2) :: rain_phased_adjusted
+        real, dimension(il1:il2) :: snow_phased_adjusted
         real, dimension(il1:il2) :: wind_adjusted
 
         !> Return if module is not enabled.
@@ -329,6 +331,8 @@ module mountain_module
             pres_adjusted(il1:il2), &
             humd_adjusted(il1:il2), &
             rain_adjusted(il1:il2), &
+            rain_phased_adjusted(il1:il2), &
+            snow_phased_adjusted(il1:il2), &
             wind_adjusted(il1:il2), &
             ic%now%year, ic%now%month, ic%now%jday, &
             ic%now%hour, ic%now%mins, ic%dtmins)
@@ -341,6 +345,8 @@ module mountain_module
         cm%dat(ck%P0)%GAT(il1:il2) = pres_adjusted(il1:il2)
         cm%dat(ck%HU)%GAT(il1:il2) = humd_adjusted(il1:il2)
         cm%dat(ck%RT)%GAT(il1:il2) = rain_adjusted(il1:il2)
+        vs%tile%prern(il1:il2) = rain_phased_adjusted(il1:il2)
+        vs%tile%presno(il1:il2) = snow_phased_adjusted(il1:il2)
         cm%dat(ck%UV)%GAT(il1:il2) = wind_adjusted(il1:il2)
         cm%dat(ck%FB)%GRD = 0.0
         cm%dat(ck%FI)%GRD = 0.0
@@ -348,6 +354,8 @@ module mountain_module
         cm%dat(ck%P0)%GRD = 0.0
         cm%dat(ck%HU)%GRD = 0.0
         cm%dat(ck%RT)%GRD = 0.0
+        vs%grid%prern = 0.0
+        vs%grid%presno = 0.0
         cm%dat(ck%UV)%GRD = 0.0
         do k = il1, il2
             cm%dat(ck%FB)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%FB)%GRD(shd%lc%ILMOS(k)) + &
@@ -362,6 +370,10 @@ module mountain_module
                 humd_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             cm%dat(ck%RT)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%RT)%GRD(shd%lc%ILMOS(k)) + &
                 rain_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            vs%grid%prern(shd%lc%ILMOS(k)) = vs%grid%prern(shd%lc%ILMOS(k)) + &
+                rain_phased_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            vs%grid%presno(shd%lc%ILMOS(k)) = vs%grid%presno(shd%lc%ILMOS(k)) + &
+                snow_phased_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             cm%dat(ck%UV)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%UV)%GRD(shd%lc%ILMOS(k)) + &
                 wind_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
         end do
