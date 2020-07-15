@@ -20,10 +20,11 @@ module mountain_module
     !> Variables:
     !*  Time_Zone: The time zone of the study area.
     !*  CalcFreq: Iterations per day (must divide the day into equal increments of minutes). [--].
-    !*  gru_elev: Weighted average elevation of GRUs. [m].
-    !*  gru_delta: Weighted average elevation difference between high (MESH) and low (GEM) resolution elevation. [m].
-    !*  gru_slope: Weighted average slope of surface (1: grid; 2: GRU). [degrees].
-    !*  gru_aspect: Weighted average aspect of surface (1: grid; 2: GRU). [degrees].
+    !*  elev: Weighted average elevation of GRUs. [m].
+    !*  delta: Weighted average elevation difference between high (MESH) and low (GEM) resolution elevation. [m].
+    !*  slope: Weighted average slope of surface (1: grid; 2: GRU). [degrees].
+    !*  aspect: Weighted average aspect of surface (1: grid; 2: GRU). [degrees].
+    !*  curvature: Weighted average curvature of the surface. [--].
     type mountain_parameters
         real :: Time_Zone = -6.0
         integer :: CalcFreq = 288
@@ -36,9 +37,11 @@ module mountain_module
     !> Variables:
     !*  xlng: Longitude. [degrees].
     !*  ylat: Latitude. [degrees].
-    !*  gru_elev: Weighted average elevation. [m].
-    !*  gru_slope: Weighted average slope of the surface. [degrees].
-    !*  gru_aspect: Weighted average aspect of the surface. [degrees].
+    !*  elev: Weighted average elevation. [m].
+    !*  slope: Weighted average slope of the surface. [degrees].
+    !*  aspect: Weighted average aspect of the surface. [degrees].
+    !*  delta: Weighted average elevation difference between high (MESH) and low (GEM) resolution elevation. [m].
+    !*  curvature: Weighted average curvature of the surface. [--].
     type mountain_variables
         real, dimension(:), allocatable :: elev, xlng, ylat, slope, aspect, delta, curvature
     end type
@@ -49,7 +52,7 @@ module mountain_module
     !> Variables:
     !*  pm: Parameters and options.
     !*  vs: Variables.
-    !*  PROCESS_ACTIVE: .true. to enable 'mountain; .false. otherwise (default: .false.).
+    !*  PROCESS_ACTIVE: .true. to enable 'MOUNTAINMESH'; .false. otherwise (default: .false.).
     type mountain_container
         type(mountain_parameters) pm
         type(mountain_variables) vs
@@ -90,10 +93,10 @@ module mountain_module
 
         !> Assign the value.
         select case (lowercase(args(1)))
-        case ('time_zone')
-        call value(args(2), mountain_mesh%pm%Time_Zone, ierr)
-        case ('calcfreq')
-        call value(args(2), mountain_mesh%pm%CalcFreq, ierr)
+            case ('time_zone')
+                call value(args(2), mountain_mesh%pm%Time_Zone, ierr)
+            case ('calcfreq')
+                call value(args(2), mountain_mesh%pm%CalcFreq, ierr)
         end select
 
     end subroutine
@@ -135,9 +138,9 @@ module mountain_module
 
             !> Specific options.
             select case (lowercase(args(i)))
-                case ('off')
+                case ('off', '0')
 
-                    !> 'off' disables the routine.
+                    !> 'off' or '0' disables the routine.
                     mountain_mesh%PROCESS_ACTIVE = .false.
                     exit
                 case default
@@ -201,14 +204,14 @@ module mountain_module
             mountain_mesh%vs%xlng(k) = shd%XLNG(shd%lc%ILMOS(k))
             mountain_mesh%vs%ylat(k) = shd%YLAT(shd%lc%ILMOS(k))
 
-            !> Overwrite with values provided by GRUs (e.g., parameters.r2c).
+            !> Overwrite with values provided by GRU (e.g., parameters.r2c).
             if (allocated(mountain_mesh%pm%elev)) then
                 mountain_mesh%vs%elev(k) = mountain_mesh%pm%elev(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             end if
             if (allocated(mountain_mesh%pm%slope)) then
                 mountain_mesh%vs%slope(k) = mountain_mesh%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
 
-                !> Overwrite estimated average slope of the GRUs.
+                !> Overwrite estimated average slope of the GRU.
                 pm%tile%xslp(k) = tan(mountain_mesh%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k)))*180.0/3.14159265
             end if
             if (allocated(mountain_mesh%pm%aspect)) then
@@ -229,7 +232,7 @@ module mountain_module
         if (allocated(mountain_mesh%pm%curvature)) deallocate(mountain_mesh%pm%curvature)
 
         !> Print summary and remark that the process is active.
-        call print_message('SOLARADJUSTFLAG is ACTIVE.')
+        call print_message('MOUNTAINMESH is ACTIVE.')
 
         !> Print configuration information to file if 'DIAGNOSEMODE' is active.
         if (DIAGNOSEMODE) then
