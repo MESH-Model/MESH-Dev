@@ -158,8 +158,9 @@ subroutine forcing_adjust( &
         Idir, Qdiffuse, Qflat, es, es_adjusted, ea, ea_adjusted, &
         rh, Tdew, Tdew_adjusted, epsilon_corr, rain_frac, windcorr, &
         oam1, oam2, OmegaC, OmegaS, &
-        D, lamda, pta, L, Ti1, Ti2, crit, crit1, &
-        TT1, TT2, aa, bb, cc, ratio, gru_icebulb
+        Ti1, Ti2, crit, crit1, &
+        TT1, TT2, ratio, gru_icebulb
+    real(kind = 8), dimension(nvals) :: D, lamda, pta, L, aa, bb, cc
     real, dimension(i1:i2) :: OmegaS_grid, curvature_grid
 
     !> Precipitation adjustment.
@@ -275,32 +276,32 @@ subroutine forcing_adjust( &
     !> Precipitation phase adjustment.
     !>  Calculates precipitation phase via falling hydrometeor energy
     !>  balance (Harder and Pomeroy, 2013).
-    D = 2.06*(10.0**-5.0)*(temp_adjusted/273.15)**1.75
+    D = 2.06*(10.0e-05)*(temp_adjusted/273.15)**1.75
     lamda = 0.000063*temp_adjusted + 0.00673
-    where ((temp_adjusted - 273.16) < 0.0)
+    where (temp_adjusted < 273.16)
         L = 1000.0*(2834.1 - 0.29*(temp_adjusted - 273.16) - 0.004*(temp_adjusted - 273.16)**2)
     elsewhere
         L = 1000.0*(2501.0 - (2.361*(temp_adjusted - 273.16)))
     end where
-    pta = 18.01528*(1000.0*ea_adjusted)/(0.00831441*temp_adjusted)/1000.0
+    pta = 0.01801528*ea_adjusted/(8.31441*temp_adjusted)
     Ti1 = 250.0
     crit = 9999.0
     do while (any(crit > 0.0001))   ! Iteration solution optimised by using the Newton-Raphston method.
         TT1 = Ti1 + 0.001*Ti1
         TT2 = Ti1 - 0.001*Ti1
-        aa = (-Ti1 + temp_adjusted + &
-            (L*D/lamda)*(pta - (18.01528*(0.611*exp((17.3*(Ti1 - 273.16))/(237.3 + (Ti1 - 273.16))))/(0.00831441*Ti1)/1000.0)))
-        bb = (-TT1 + temp_adjusted + &
-            (L*D/lamda)*(pta - (18.01528*(0.611*exp((17.3*(TT1 - 273.16))/(237.3 + (TT1 - 273.16))))/(0.00831441*TT1)/1000.0)))
-        cc = (-TT2 + temp_adjusted + &
-            (L*D/lamda)*(pta - (18.01528*(0.611*exp((17.3*(TT2 - 273.16))/(237.3 + (TT2 - 273.16))))/(0.00831441*TT2)/1000.0)))
-        Ti2 = Ti1 - (aa/((bb - cc)/(0.002*Ti1)))
+        aa = -Ti1 + temp_adjusted + &
+            (L*D/lamda)*(pta - 0.01801528*611.0*exp(17.3*(Ti1 - 273.16)/(237.3 + (Ti1 - 273.16)))/(8.31441*Ti1))
+        bb = -TT1 + temp_adjusted + &
+            (L*D/lamda)*(pta - 0.01801528*611.0*exp(17.3*(TT1 - 273.16)/(237.3 + (TT1 - 273.16)))/(8.31441*TT1))
+        cc = -TT2 + temp_adjusted + &
+            (L*D/lamda)*(pta - 0.01801528*611.0*exp(17.3*(TT2 - 273.16)/(237.3 + (TT2 - 273.16)))/(8.31441*TT2))
+        Ti2 = Ti1 - real(aa/((bb - cc)/(0.002*Ti1)))
         crit1 = Ti1 - Ti2
         where (crit1 < 0.0)
             crit = -crit1
         elsewhere
             crit = crit1
-        end where 
+        end where
         Ti1 = Ti2
     end do
     gru_icebulb = Ti1 - 273.16
