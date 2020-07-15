@@ -22,7 +22,7 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
     use baseflow_module
     use rte_module
     use PBSM_module
-    use solar_adjust_module
+    use mountain_module
 
     implicit none
 
@@ -273,57 +273,57 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
 
             !> SOLARADJUSTFLAG.
             case ('elevation')
-                if (.not. allocated(rsrd_adj%pm%elev)) allocate(rsrd_adj%pm%elev(shd%NA, shd%lc%NTYPE))
+                if (.not. allocated(mountain_mesh%pm%elev)) allocate(mountain_mesh%pm%elev(shd%NA, shd%lc%NTYPE))
                 if (ilvl == 0) then
                     do ilvl = 1, shd%lc%NTYPE
-                        rsrd_adj%pm%elev(:, ilvl) = ffield
+                        mountain_mesh%pm%elev(:, ilvl) = ffield
                     end do
                 else if (ilvl <= shd%lc%NTYPE) then
-                    rsrd_adj%pm%elev(:, ilvl) = ffield
+                    mountain_mesh%pm%elev(:, ilvl) = ffield
                 else
                     z = 1
                 end if
             case ('slope')
-                if (.not. allocated(rsrd_adj%pm%slope)) allocate(rsrd_adj%pm%slope(shd%NA, shd%lc%NTYPE))
+                if (.not. allocated(mountain_mesh%pm%slope)) allocate(mountain_mesh%pm%slope(shd%NA, shd%lc%NTYPE))
                 if (ilvl == 0) then
                     do ilvl = 1, shd%lc%NTYPE
-                        rsrd_adj%pm%slope(:, ilvl) = ffield
+                        mountain_mesh%pm%slope(:, ilvl) = ffield
                     end do
                 else if (ilvl <= shd%lc%NTYPE) then
-                    rsrd_adj%pm%slope(:, ilvl) = ffield
+                    mountain_mesh%pm%slope(:, ilvl) = ffield
                 else
                     z = 1
                 end if
             case ('aspect')
-                if (.not. allocated(rsrd_adj%pm%aspect)) allocate(rsrd_adj%pm%aspect(shd%NA, shd%lc%NTYPE))
+                if (.not. allocated(mountain_mesh%pm%aspect)) allocate(mountain_mesh%pm%aspect(shd%NA, shd%lc%NTYPE))
                 if (ilvl == 0) then
                     do ilvl = 1, shd%lc%NTYPE
-                        rsrd_adj%pm%aspect(:, ilvl) = ffield
+                        mountain_mesh%pm%aspect(:, ilvl) = ffield
                     end do
                 else if (ilvl <= shd%lc%NTYPE) then
-                    rsrd_adj%pm%aspect(:, ilvl) = ffield
+                    mountain_mesh%pm%aspect(:, ilvl) = ffield
                 else
                     z = 1
                 end if
             case ('delta')
-                if (.not. allocated(rsrd_adj%pm%delta)) allocate(rsrd_adj%pm%delta(shd%NA, shd%lc%NTYPE))
+                if (.not. allocated(mountain_mesh%pm%delta)) allocate(mountain_mesh%pm%delta(shd%NA, shd%lc%NTYPE))
                 if (ilvl == 0) then
                     do ilvl = 1, shd%lc%NTYPE
-                        rsrd_adj%pm%delta(:, ilvl) = ffield
+                        mountain_mesh%pm%delta(:, ilvl) = ffield
                     end do
                 else if (ilvl <= shd%lc%NTYPE) then
-                    rsrd_adj%pm%delta(:, ilvl) = ffield
+                    mountain_mesh%pm%delta(:, ilvl) = ffield
                 else
                     z = 1
                 end if
             case ('curvature')
-                if (.not. allocated(rsrd_adj%pm%curvature)) allocate(rsrd_adj%pm%curvature(shd%NA, shd%lc%NTYPE))
+                if (.not. allocated(mountain_mesh%pm%curvature)) allocate(mountain_mesh%pm%curvature(shd%NA, shd%lc%NTYPE))
                 if (ilvl == 0) then
                     do ilvl = 1, shd%lc%NTYPE
-                        rsrd_adj%pm%curvature(:, ilvl) = ffield
+                        mountain_mesh%pm%curvature(:, ilvl) = ffield
                     end do
                 else if (ilvl <= shd%lc%NTYPE) then
-                    rsrd_adj%pm%curvature(:, ilvl) = ffield
+                    mountain_mesh%pm%curvature(:, ilvl) = ffield
                 else
                     z = 1
                 end if

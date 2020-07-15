@@ -4,11 +4,13 @@
 !>  Calls "calc_rsrd_adjusted".
 !>
 !> Author: Zelalem Tesemma (of Solar_Adjust.m; last updated Jan 30, 2018)
-!> Converted to Fortran: Feb 1, 2018 (exact)
-!> Fortran code optimized/consolidated; subroutine isolated
-!>  ('program' component replaced by 'solar_adjust_module';
-!>   'solar_adjust_module' coupled with MESH): Feb 2, 2018.
-module solar_adjust_module
+!>
+!> Notes:
+!>  - 2018/02/01: Converted to Fortran (exact copy)
+!>  - 2018/02/02: Fortran code optimized/consolidated
+!>      ('program' component replaced by 'solar_adjust_module')
+!>  - 2019/10/10: Upgraded into Mountain MESH (renamed 'mountain_module')
+module mountain_module
 
     implicit none
 
@@ -22,7 +24,7 @@ module solar_adjust_module
     !*  gru_delta: Weighted average elevation difference between high (MESH) and low (GEM) resolution elevation. [m].
     !*  gru_slope: Weighted average slope of surface (1: grid; 2: GRU). [degrees].
     !*  gru_aspect: Weighted average aspect of surface (1: grid; 2: GRU). [degrees].
-    type solar_adjust_parameters
+    type mountain_parameters
         real :: Time_Zone = -6.0
         integer :: CalcFreq = 288
         real, dimension(:, :), allocatable :: elev, slope, aspect, delta, curvature
@@ -37,30 +39,30 @@ module solar_adjust_module
     !*  gru_elev: Weighted average elevation. [m].
     !*  gru_slope: Weighted average slope of the surface. [degrees].
     !*  gru_aspect: Weighted average aspect of the surface. [degrees].
-    type solar_adjust_variables
+    type mountain_variables
         real, dimension(:), allocatable :: elev, xlng, ylat, slope, aspect, delta, curvature
     end type
 
     !> Description:
-    !> Type for 'solar_adjust' parameters and variables.
+    !> Type for 'mountain' parameters and variables.
     !>
     !> Variables:
     !*  pm: Parameters and options.
     !*  vs: Variables.
-    !*  PROCESS_ACTIVE: .true. to enable 'Solar_Adjust; .false. otherwise (default: .false.).
-    type solar_adjust_container
-        type(solar_adjust_parameters) pm
-        type(solar_adjust_variables) vs
+    !*  PROCESS_ACTIVE: .true. to enable 'mountain; .false. otherwise (default: .false.).
+    type mountain_container
+        type(mountain_parameters) pm
+        type(mountain_variables) vs
         logical :: PROCESS_ACTIVE = .false.
         character(len = 1000) :: RUNOPTIONSFLAG = ''
     end type
 
-    !* fsadj: Instance of 'solar_adjust' parameters and variables.
-    type(solar_adjust_container), save :: rsrd_adj
+    !* fsadj: Instance of 'mountain' parameters and variables.
+    type(mountain_container), save :: mountain_mesh
 
     contains
 
-    subroutine solar_adjust_extract_value(arg, ierr)
+    subroutine mountain_extract_value(arg, ierr)
 
         !> Required for the 'parse', 'lowercase', and 'value' functions.
         use strings
@@ -89,14 +91,14 @@ module solar_adjust_module
         !> Assign the value.
         select case (lowercase(args(1)))
         case ('time_zone')
-        call value(args(2), rsrd_adj%pm%Time_Zone, ierr)
+        call value(args(2), mountain_mesh%pm%Time_Zone, ierr)
         case ('calcfreq')
-        call value(args(2), rsrd_adj%pm%CalcFreq, ierr)
+        call value(args(2), mountain_mesh%pm%CalcFreq, ierr)
         end select
 
     end subroutine
 
-    subroutine solar_adjust_parse_options(flg, ierr)
+    subroutine mountain_parse_options(flg, ierr)
 
         !> Required for the 'parse' and 'lowercase' functions.
         use strings
@@ -117,7 +119,7 @@ module solar_adjust_module
         !> Assume if the flag is populated that the routine is enabled.
         !> Disabled if the 'off' keyword provided.
         if (len_trim(flg) > 0) then
-            rsrd_adj%PROCESS_ACTIVE = .true.
+            mountain_mesh%PROCESS_ACTIVE = .true.
         else
             return
         end if
@@ -129,25 +131,25 @@ module solar_adjust_module
         do i = 1, nargs
 
             !> Exit if any of the keywords have disabled the routine.
-            if (.not. rsrd_adj%PROCESS_ACTIVE) return
+            if (.not. mountain_mesh%PROCESS_ACTIVE) return
 
             !> Specific options.
             select case (lowercase(args(i)))
                 case ('off')
 
                     !> 'off' disables the routine.
-                    rsrd_adj%PROCESS_ACTIVE = .false.
+                    mountain_mesh%PROCESS_ACTIVE = .false.
                     exit
                 case default
 
                     !> Other options.
-                    call solar_adjust_extract_value(args(i), ierr)
+                    call mountain_extract_value(args(i), ierr)
             end select
         end do
 
     end subroutine
 
-    subroutine solar_adjust_init(fls, shd, cm)
+    subroutine mountain_init(fls, shd, cm)
 
         !> Required for MESH variables and options.
         use model_files_variables
@@ -169,90 +171,92 @@ module solar_adjust_module
         character(len = DEFAULT_LINE_LENGTH) line
 
         !> Parse options.
-        call solar_adjust_parse_options(rsrd_adj%RUNOPTIONSFLAG, ierr)
+        call mountain_parse_options(mountain_mesh%RUNOPTIONSFLAG, ierr)
 
         !> Return if module is not enabled.
-        if (.not. rsrd_adj%PROCESS_ACTIVE) then
-            if (allocated(rsrd_adj%pm%slope)) deallocate(rsrd_adj%pm%slope)
-            if (allocated(rsrd_adj%pm%aspect)) deallocate(rsrd_adj%pm%aspect)
-            if (allocated(rsrd_adj%pm%delta)) deallocate(rsrd_adj%pm%delta)
-            if (allocated(rsrd_adj%pm%curvature)) deallocate(rsrd_adj%pm%curvature)
+        if (.not. mountain_mesh%PROCESS_ACTIVE) then
+            if (allocated(mountain_mesh%pm%slope)) deallocate(mountain_mesh%pm%slope)
+            if (allocated(mountain_mesh%pm%aspect)) deallocate(mountain_mesh%pm%aspect)
+            if (allocated(mountain_mesh%pm%delta)) deallocate(mountain_mesh%pm%delta)
+            if (allocated(mountain_mesh%pm%curvature)) deallocate(mountain_mesh%pm%curvature)
             return
         end if
 
         !> Allocate variables.
         allocate( &
-            rsrd_adj%vs%elev(il1:il2), rsrd_adj%vs%xlng(il1:il2), &
-            rsrd_adj%vs%ylat(il1:il2), rsrd_adj%vs%slope(il1:il2), &
-            rsrd_adj%vs%aspect(il1:il2), rsrd_adj%vs%delta(il1:il2), &
-            rsrd_adj%vs%curvature(il1:il2))
-            rsrd_adj%vs%slope = 0.0
-            rsrd_adj%vs%aspect = 0.0
-            rsrd_adj%vs%delta = 0.0
-            rsrd_adj%vs%curvature = 0.0
+            mountain_mesh%vs%elev(il1:il2), mountain_mesh%vs%xlng(il1:il2), &
+            mountain_mesh%vs%ylat(il1:il2), mountain_mesh%vs%slope(il1:il2), &
+            mountain_mesh%vs%aspect(il1:il2), mountain_mesh%vs%delta(il1:il2), &
+            mountain_mesh%vs%curvature(il1:il2))
+            mountain_mesh%vs%slope = 0.0
+            mountain_mesh%vs%aspect = 0.0
+            mountain_mesh%vs%delta = 0.0
+            mountain_mesh%vs%curvature = 0.0
 
         !> Assign values.
         do k = il1, il2
 
             !> Pull generic values from drainage_database.r2c
-            rsrd_adj%vs%elev(k) = shd%ELEV(shd%lc%ILMOS(k))
-            rsrd_adj%vs%xlng(k) = shd%XLNG(shd%lc%ILMOS(k))
-            rsrd_adj%vs%ylat(k) = shd%YLAT(shd%lc%ILMOS(k))
+            mountain_mesh%vs%elev(k) = shd%ELEV(shd%lc%ILMOS(k))
+            mountain_mesh%vs%xlng(k) = shd%XLNG(shd%lc%ILMOS(k))
+            mountain_mesh%vs%ylat(k) = shd%YLAT(shd%lc%ILMOS(k))
 
             !> Overwrite with values provided by GRUs (e.g., parameters.r2c).
-            if (allocated(rsrd_adj%pm%elev)) then
-                rsrd_adj%vs%elev(k) = rsrd_adj%pm%elev(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            if (allocated(mountain_mesh%pm%elev)) then
+                mountain_mesh%vs%elev(k) = mountain_mesh%pm%elev(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             end if
-            if (allocated(rsrd_adj%pm%slope)) then
-                rsrd_adj%vs%slope(k) = rsrd_adj%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-                pm%tile%xslp(k) = tan(rsrd_adj%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k)))*180.0/3.14159265 ! Overwrite estimated average slope of the GRUs.
+            if (allocated(mountain_mesh%pm%slope)) then
+                mountain_mesh%vs%slope(k) = mountain_mesh%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+
+                !> Overwrite estimated average slope of the GRUs.
+                pm%tile%xslp(k) = tan(mountain_mesh%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k)))*180.0/3.14159265
             end if
-            if (allocated(rsrd_adj%pm%aspect)) then
-                rsrd_adj%vs%aspect(k) = rsrd_adj%pm%aspect(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            if (allocated(mountain_mesh%pm%aspect)) then
+                mountain_mesh%vs%aspect(k) = mountain_mesh%pm%aspect(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             end if
-            if (allocated(rsrd_adj%pm%delta)) then
-                rsrd_adj%vs%delta(k) = rsrd_adj%pm%delta(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            if (allocated(mountain_mesh%pm%delta)) then
+                mountain_mesh%vs%delta(k) = mountain_mesh%pm%delta(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             end if
-            if (allocated(rsrd_adj%pm%curvature)) then
-                rsrd_adj%vs%curvature(k) = rsrd_adj%pm%curvature(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            if (allocated(mountain_mesh%pm%curvature)) then
+                mountain_mesh%vs%curvature(k) = mountain_mesh%pm%curvature(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             end if
         end do
 
         !> De-allocate 'ROW' based fields (from parameters file).
-        if (allocated(rsrd_adj%pm%slope)) deallocate(rsrd_adj%pm%slope)
-        if (allocated(rsrd_adj%pm%aspect)) deallocate(rsrd_adj%pm%aspect)
-        if (allocated(rsrd_adj%pm%delta)) deallocate(rsrd_adj%pm%delta)
-        if (allocated(rsrd_adj%pm%curvature)) deallocate(rsrd_adj%pm%curvature)
+        if (allocated(mountain_mesh%pm%slope)) deallocate(mountain_mesh%pm%slope)
+        if (allocated(mountain_mesh%pm%aspect)) deallocate(mountain_mesh%pm%aspect)
+        if (allocated(mountain_mesh%pm%delta)) deallocate(mountain_mesh%pm%delta)
+        if (allocated(mountain_mesh%pm%curvature)) deallocate(mountain_mesh%pm%curvature)
 
         !> Print summary and remark that the process is active.
         call print_message('SOLARADJUSTFLAG is ACTIVE.')
 
         !> Print configuration information to file if 'DIAGNOSEMODE' is active.
         if (DIAGNOSEMODE) then
-            write(line, FMT_GEN) 'Time_Zone', rsrd_adj%pm%Time_Zone
+            write(line, FMT_GEN) 'Time_Zone', mountain_mesh%pm%Time_Zone
             call print_message_detail(line)
-            write(line, FMT_GEN) 'CalcFreq', rsrd_adj%pm%CalcFreq
+            write(line, FMT_GEN) 'CalcFreq', mountain_mesh%pm%CalcFreq
             call print_message_detail(line)
         end if
 
         !> Check values, print error messages for invalid values.
         !> The check is of 'GAT'-based variables, for which all tiles should have valid values.
         ierr = 0
-        if (mod(24*60, rsrd_adj%pm%CalcFreq) /= 0) then
-            write(line, FMT_GEN) rsrd_adj%pm%CalcFreq
+        if (mod(24*60, mountain_mesh%pm%CalcFreq) /= 0) then
+            write(line, FMT_GEN) mountain_mesh%pm%CalcFreq
             call print_message_detail( &
                 'ERROR: CalcFreq must evenly divide into minutes in the day. 1440 mod ' // trim(adjustl(line)) // ' /= 0.')
             ierr = 1
         end if
-        if (any(rsrd_adj%vs%elev < 0.0)) then
+        if (any(mountain_mesh%vs%elev < 0.0)) then
             call print_message_detail('ERROR: Values of ELEVATION are less than zero.')
             ierr = 1
         end if
-        if (any(rsrd_adj%vs%slope < 0.0)) then
+        if (any(mountain_mesh%vs%slope < 0.0)) then
             call print_message_detail('ERROR: Values of SLOPE are less than zero.')
             ierr = 1
         end if
-        if (any(rsrd_adj%vs%aspect < 0.0)) then
+        if (any(mountain_mesh%vs%aspect < 0.0)) then
             call print_message_detail('ERROR: Values of ASPECT are less than zero.')
             ierr = 1
         end if
@@ -260,7 +264,7 @@ module solar_adjust_module
 
     end subroutine
 
-    subroutine solar_adjust_within_tile(fls, shd, cm)
+    subroutine mountain_within_tile(fls, shd, cm)
 
         !> Required for MESH variables.
         use model_files_variables
@@ -290,17 +294,17 @@ module solar_adjust_module
         real, dimension(il1:il2) :: wind_adjusted
 
         !> Return if module is not enabled.
-        if (.not. rsrd_adj%PROCESS_ACTIVE) return
+        if (.not. mountain_mesh%PROCESS_ACTIVE) return
 
         !> Call routine to calculate adjusted radiation value.
-        call calc_rsrd_adjusted( &
-            rsrd_adj%vs%elev(il1:il2), rsrd_adj%vs%xlng(il1:il2), &
-            rsrd_adj%vs%ylat(il1:il2), rsrd_adj%vs%slope(il1:il2), &
-            rsrd_adj%vs%aspect(il1:il2), rsrd_adj%vs%delta(il1:il2), &
-            rsrd_adj%vs%curvature(il1:il2), iln, &
+        call forcing_adjust( &
+            mountain_mesh%vs%elev(il1:il2), mountain_mesh%vs%xlng(il1:il2), &
+            mountain_mesh%vs%ylat(il1:il2), mountain_mesh%vs%slope(il1:il2), &
+            mountain_mesh%vs%aspect(il1:il2), mountain_mesh%vs%delta(il1:il2), &
+            mountain_mesh%vs%curvature(il1:il2), iln, &
             shd%lc%ILMOS(il1:il2), i1, i2, &
-            rsrd_adj%pm%Time_Zone, &
-            rsrd_adj%pm%CalcFreq, cm%dat(ck%FB)%hf, &
+            mountain_mesh%pm%Time_Zone, &
+            mountain_mesh%pm%CalcFreq, cm%dat(ck%FB)%hf, &
             cm%dat(ck%FI)%hf, &
             cm%dat(ck%TT)%hf, &
             cm%dat(ck%P0)%hf, &

@@ -13,7 +13,7 @@
 !>  - 2018/02/01: Converted to Fortran (exact copy)
 !>  - 2018/02/02: Fortran code optimized/consolidated
 !>      ('program' component replaced by 'solar_adjust_module')
-!>  - 2019/10/10: Upgraded into Mountain MESH (renamed 'mountain_mesh_module')
+!>  - 2019/10/10: Upgraded into Mountain MESH (renamed 'forcing_adjust')
 !>
 !> Input variables:
 !*  elev: Weighted average elevation of GRUs. [m].
@@ -60,8 +60,7 @@
 !*  humd_adjusted: Adjusted specific humidity. [kg kg-1].
 !*  rain_adjusted: Adjusted precipitation. [mm s-1].
 !*  wind_adjusted: Adjusted wind speed. [m s-1].
-!>
-subroutine calc_rsrd_adjusted( &
+subroutine forcing_adjust( &
     elev, xlng, ylat, slope, aspect, delta, curvature, nvals, &
     nml_grid_map, i1, i2, &
     Time_Zone, CalcFreq, rsrd_dtmin, rlds_dtmin, temp_dtmin, &
