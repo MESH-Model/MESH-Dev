@@ -386,7 +386,7 @@ subroutine coherence3(ni, trnch)
 
          do i=1,ni
 
-            if (zsnoma(i).lt.critsnowmass_e.or.zsnodpl(i).eq.0.0) then
+            if (zsnoma(i).lt.critsnowmass.or.zsnodpl(i).eq.0.0) then
                zsnodpl(i) = 0.0
                zsnoma(i)  = 0.0
                zwsnow(i)  = 0.0
@@ -394,11 +394,11 @@ subroutine coherence3(ni, trnch)
                zsnoden(i) = rhosdef * rauw
                zsnoal(i)  = ansmax
             else
-               zsnoden(i) = zsnoma(i) / zsnodpl(i)
+               !zsnoden(i) = zsnoma(i) / zsnodpl(i)
                zsnoro(i)  = min(  max(100.,zsnoden(i)) / rauw  , 0.9 )
             endif
                
-            if (zsnvma(i).lt.critsnowmass_e.or.zsnvdp(i).eq.0.0) then
+            if (zsnvma(i).lt.critsnowmass.or.zsnvdp(i).eq.0.0) then
                zsnvdp(i)  = 0.0
                zsnvma(i)  = 0.0
                zwsnv(i)   = 0.0
@@ -406,7 +406,7 @@ subroutine coherence3(ni, trnch)
                zsnvden(i) = rhosdef*rauw
                zsnval(i)  = ansmax
             else
-               zsnvden(i) = zsnvma(i) / zsnvdp(i)
+               !zsnvden(i) = zsnvma(i) / zsnvdp(i)
                zsnvro(i)  =  min(  max(100.,zsnvden(i)) / rauw  , 0.9 )
             endif
 

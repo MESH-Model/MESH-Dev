@@ -8,10 +8,12 @@
      7                  QFC,    ROF,    WTRG,   CMAI,   RCAN,   SCAN,   
      8                  TCAN,   SNO,    WSNOW,  TSNOW,  THLIQ,  THICE,  
      9                  HCPS,   THPOR,  DELZW,  TBAR,   ZPOND,  TPOND,  
+     +                  ICE,    TICE,
      A                  DELZ,   FCS,    FGS,    FC,     FG,
      B                  IL1,    IL2,    ILG,    IG,     N, 
-     C                  Drift,  Subl    )
+     C                  Drift,  Subl)
 C
+C     * JUN 10/20 - D.PRINCZ.   ADDED ICE AND TICE (ICEBAL).
 C     * JUN 11/18 - D.PRINCZ.   REPLACED 'STOP' WITH CALL TO XIT
 C     *                         TO FORCE PROG ABORT.
 C     * OCT 01/10 - M.MACDONALD.ADDED BLOWING SNOW ARRAYS (PBSM).
@@ -52,7 +54,9 @@ C
      B     WSNOW (ILG),   TSNOW (ILG),   
      C     THLIQ (ILG,IG),THICE (ILG,IG),HCPS  (ILG,IG),
      D     THPOR (ILG,IG),DELZW (ILG,IG),TBAR  (ILG,IG),
-     E     ZPOND (ILG),   TPOND (ILG),   DELZ  (IG),
+     E     ZPOND (ILG),   TPOND (ILG),
+     +     ICE   (ILG),   TICE  (ILG),
+     +     DELZ  (IG),
      F     FCS   (ILG),   FGS   (ILG),   FC    (ILG),   FG    (ILG),
      G     Drift (ILG),   Subl  (ILG)
 C
@@ -96,7 +100,7 @@ C
      1             (THLIQ(I,J)*RHOW+THICE(I,J)*RHOICE)*
      2             DELZW(I,J)
  50       CONTINUE
-          WTGSTP(I)=WTGSTP(I)-ZPOND(I)*RHOW
+          WTGSTP(I)=WTGSTP(I)-ZPOND(I)*RHOW-ICE(I)
 100   CONTINUE
 C
       ENDIF
@@ -132,7 +136,7 @@ C
      1             (THLIQ(I,J)*RHOW+THICE(I,J)*RHOICE)*
      1             DELZW(I,J)
 150       CONTINUE
-          WTGSTP(I)=WTGSTP(I)+ZPOND(I)*RHOW
+          WTGSTP(I)=WTGSTP(I)+ZPOND(I)*RHOW+ICE(I)
 200   CONTINUE
 C
       DO 400 I=IL1,IL2
@@ -241,7 +245,7 @@ C
      *                THICE(I,J)*RHOICE*DELZW(I,J),
      *                DELZW(I,J)
 390           CONTINUE
-              WRITE(6,6450) ZPOND(I)*RHOW
+              WRITE(6,6450) ZPOND(I)*RHOW,ICE(I)
 6450          FORMAT(2X,7F15.6)
               WRITE(6,6451) FCS(I),FGS(I),FC(I),FG(I)
               CALL XIT('CLASSZ',-8)

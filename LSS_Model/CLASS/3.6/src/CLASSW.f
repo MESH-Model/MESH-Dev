@@ -5,7 +5,7 @@
      4                  QFN,    QFG,    QFC,    HMFC,   HMFG,   HMFN,
      5                  HTCC,   HTCS,   HTC,    ROFC,   ROFN,   ROVG, 
      6                  WTRS,   WTRG,   OVRFLW, SUBFLW, BASFLW, 
-     7                  TOVRFL, TSUBFL, TBASFL, EVAP,   
+     7                  TOVRFL, TSUBFL, TBASFL, EVAP,   ICE,    TICE,
      8                  TBARC,  TBARG,  TBARCS, TBARGS, THLIQC, THLIQG, 
      9                  THICEC, THICEG, HCPC,   HCPG,   RPCP,   TRPCP,  
      A                  SPCP,   TSPCP,  PCPR,   TA,     RHOSNI, GGEO,
@@ -23,6 +23,7 @@
      M                  THPOR,  THLRET, THLMIN, BI,     PSISAT, GRKSAT,
      N                  THLRAT, THFC,   XDRAIN, HCPS,   DELZ,   
      O                  DELZW,  ZBOTW,  XSLOPE, XDRAINH, WFSURF, KSAT,
+     +                  FREZTH, SNDEPLIM, SNDENLIM,
      P                  ISAND,  IGDR,
      Q                  IWF,    ILG,    IL1,    IL2,    N,
      R                  JL,     IC,     IG,     IGP1,   IGP2,
@@ -44,6 +45,9 @@
      3                  TSNOWC,TSNOWG,RHOSC,RHOSG,
      4                  XSNOWC,XSNOWG,XSNOCS,XSNOGS)
 C                                                                        
+C     * JUN 10/20 - D.PRINCZ.   ADDED ICE AND TICE (ICEBAL).
+C     * JUN 10/20 - D.PRINCZ.   CHANGED THRESHOLD AND LIMITS IN CHECKS
+C                               TO CONFIGURABLE VALUES (ICEBAL).
 C     * DEC 09/11 - M.MEKONNEN. FOR PDMROF.
 C     * OCT 18/11 - M.LAZARE.   PASS IN IGDR THROUGH CALLS TO
 C     *                         GRDRAN/GRINFL (ORIGINATES NOW
@@ -153,7 +157,8 @@ C
      2     HMFC  (ILG),    HMFN  (ILG),    HTCC  (ILG),    HTCS  (ILG),    
      3     ROFC  (ILG),    ROFN  (ILG),    ROVG  (ILG),    WTRS  (ILG),    
      4     WTRG  (ILG),    OVRFLW(ILG),    SUBFLW(ILG),    BASFLW(ILG),
-     5     TOVRFL(ILG),    TSUBFL(ILG),    TBASFL(ILG),    EVAP  (ILG)
+     5     TOVRFL(ILG),    TSUBFL(ILG),    TBASFL(ILG),    EVAP  (ILG),
+     +     ICE   (ILG),    TICE  (ILG)
 C
       REAL QFC   (ILG,IG), HMFG  (ILG,IG), HTC   (ILG,IG)
 C
@@ -193,6 +198,13 @@ C
 C
       INTEGER             ISAND(ILG,IG), IGDR  (ILG)
 C
+C     * THRESHOLDS AND LIMITS FOR ICEBAL.
+C           FREZTH=-2.0
+C           SNDEPLIM=100.
+C           SNDENLIM=900.
+C
+      REAL, INTENT(IN) :: FREZTH(ILG), SNDEPLIM(ILG), SNDENLIM(ILG)
+C
 C     * INTERNAL WORK ARRAYS USED THROUGHOUT CLASSW.
 C
       REAL TBARWC(ILG,IG),TBARWG(ILG,IG),TBRWCS(ILG,IG),TBRWGS(ILG,IG),
@@ -215,7 +227,8 @@ C
      A     HCPSC (ILG),   HCPSG (ILG),   HCPSCS(ILG),   HCPSGS(ILG),
      B     RUNFC (ILG),   RUNFG (ILG),   RUNFCS(ILG),   RUNFGS(ILG),
      C     TRUNFC(ILG),   TRUNFG(ILG),   TRNFCS(ILG),   TRNFGS(ILG),
-     D     TBASC (ILG),   TBASG (ILG),   TBASCS(ILG),   TBASGS(ILG)
+     D     TBASC (ILG),   TBASG (ILG),   TBASCS(ILG),   TBASGS(ILG),
+     +     ICEG  (ILG),   TICEG (ILG),   ICEGS (ILG),   TICEGS(ILG)
 C
       REAL SUBLC (ILG),   SUBLCS(ILG),   WLOSTC(ILG),   WLOSTG(ILG),
      1     WLSTCS(ILG),   WLSTGS(ILG),   RAC   (ILG),   RACS  (ILG),
@@ -336,6 +349,7 @@ C
      G           PCFC,   PCLC,   PCPN,   PCPG,   QFCF,   QFCL,
      H           QFN,    QFG,    QFC,    HMFG,   
      I           ROVG,   ROFC,   ROFN,   TRUNOF, 
+     +           ICE,    TICE,   ICEG,   TICEG,  ICEGS,  TICEGS,
      J           THLIQX, THICEX, THLDUM, THIDUM,
      K           DT,     RDUMMY, ZERO,   IZERO,  DELZZ,
      L           FC,     FG,     FCS,    FGS,    
@@ -490,8 +504,12 @@ C
      1                    HCPSGS,ALBSGS,HMFG,HTCS,HTC,WTRS,WTRG,GFLXGS,
      2                    RUNFGS,TRNFGS,OVRFLW,TOVRFL,ZPLMGS,GGEO,
      3                    FGS,EVAPGS,RPCGS,TRPCGS,GZROGS,G12GS,G23GS,
-     4                    HCPGS,QMELTG,WSNOGS,ZMAT,TMOVE,WMOVE,ZRMDR,
-     5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
+     4                    HCPGS,QMELTG,WSNOGS,
+     +                    ICEGS,TICEGS,
+     +                    ZMAT,TMOVE,WMOVE,ZRMDR,
+     5                    TADD,ZMOVE,TBOT,DELZ,
+     +                    FREZTH, SNDEPLIM, SNDENLIM,
+     +                    ISAND,ICONT,
      6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
           ENDIF
           CALL GRINFL(2,THLQGS,THICGS,TBRWGS,BASFLW,TBASFL,RUNFGS,
@@ -652,8 +670,12 @@ C
      1                    HCPSG,ALBSG,HMFG,HTCS,HTC,WTRS,WTRG,GFLXG,
      2                    RUNFG,TRUNFG,OVRFLW,TOVRFL,ZPLIMG,GGEO,
      3                    FG,EVAPG,RPCG,TRPCG,GZEROG,G12G,G23G,
-     4                    HCPGO,QFREZG,ZERO,ZMAT,TMOVE,WMOVE,ZRMDR,
-     5                    TADD,ZMOVE,TBOT,DELZ,ISAND,ICONT,
+     4                    HCPGO,QFREZG,ZERO,
+     +                    ICEG,TICEG,
+     +                    ZMAT,TMOVE,WMOVE,ZRMDR,
+     5                    TADD,ZMOVE,TBOT,DELZ,
+     +                    FREZTH, SNDEPLIM, SNDENLIM,
+     +                    ISAND,ICONT,
      6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
           ENDIF
           CALL GRINFL(4,THLQGO,THICGO,TBARWG,BASFLW,TBASFL,RUNFG,
@@ -737,6 +759,10 @@ C
           BASFLW(I)=BASFLW(I)*RHOW/DELT
           EVAP  (I)=EVAP(I)-(FCS(I)*WLSTCS(I)+FGS(I)*WLSTGS(I)+
      1              FC(I)*WLOSTC(I)+FG(I)*WLOSTG(I))/DELT
+          ICE(I)=FGS(I)*ICEGS(I) + FG (I)*ICEG(I)
+          IF(ICE(I).GT.0.0)
+     +        TICE(I)=(FGS(I)*ICEGS(I)*TICEGS(I) +
+     +                 FG (I)*ICEG (I)*TICEG (I))/ICE(I)
           IF((FC(I)+FCS(I)).GT.0.)                                  THEN
               TCAN(I)=(FCS(I)*TCANS(I)*CHCAPS(I)+FC(I)*TCANO(I)*              
      1                CHCAP(I))/(FCS(I)*CHCAPS(I)+FC(I)*CHCAP(I))                 
@@ -861,6 +887,7 @@ C
               ENDIF
              ENDIF !.not. PBSMFLAG
           ELSE                                                                
+              ZSNOW(I)=0.0
               TSNOW(I)=0.0                                                    
               RHOSNO(I)=0.0                                                   
               SNO(I)=0.0                                                      

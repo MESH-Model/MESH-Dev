@@ -3,17 +3,24 @@ module rte_module
     implicit none
 
     !> Input variables for dynamic time-stepping.
-    !*  dtminusr: Maximum time step [s].
-    !*  mindtmin: Minimum time step [s].
-    !*  maxindex: Maximum number of interations in reducing the time step [--].
+    !*  dtminusr: Maximum time-step for dynamic time-stepping [s].
+    !*  mindtmin: Minimum time-step for dynamic time-stepping [s].
+    !*  maxindex: Maximum number of interations allowed in for dynamic time-stepping [--].
     !*  dtminfrac: Time-step reducing factor [--].
     real(kind = 4) :: dtminusr = 1800.0, mindtmin = 10.0, maxindex = 50, dtminfrac = 0.75
 
     !> Convergence threshold.
-    !*  convthreshusr: convergence level for channel routing.
+    !*  convthreshusr: Convergence threshold for channel routing.
     real(kind = 4) :: convthreshusr = 0.01
 
     !> Input parameters.
+    !*  r1n: Manning coefficient for floodplain routing.
+    !*  r2n: Manning coefficient for channel routing.
+    !*  mndr: Meander factor.
+    !*  aa2: Coefficient used in deriving channel geometry using drainage area.
+    !*  aa3: Coefficient used in deriving channel geometry using drainage area.
+    !*  aa4: Coefficient used in deriving channel geometry using drainage area.
+    !*  widep: Channel width.
     type rte_params
         real, dimension(:), allocatable :: r1n, r2n, mndr, aa2, aa3, aa4, widep
     end type
@@ -24,9 +31,18 @@ module rte_module
     type(rte_params), save :: rtepm, rtepm_iak
 
     !> Configuration flags.
+    !*  RTE_TS: Routing time-step for exchange with MESH (independent of internal time-stepping) [s] (default: 3600).
+    !*  cap_shd: Set to '1' to use the bankfull capacity read from file (default: '0').
+    !*  dtminusr: Maximum time-step for dynamic time-stepping [s] (default: 1800.0).
+    !*  mindtmin: Minimum time-step for dynamic time-stepping [s] (default: 10.0).
+    !*  maxindex: Maximum number of interations allowed in for dynamic time-stepping [--] (default: 50).
+    !*  dtminfrac: Time-step reducing factor [--] (default: 0.75).
+    !*  convthreshusr: Convergence threshold for channel routing (default: 0.01).
     type rte_flags
         logical :: PROCESS_ACTIVE = .false.
         integer :: RTE_TS = 3600, cap_shd = 0
+        real :: dtminusr = 1800.0, mindtmin = 10.0, maxindex = 50, dtminfrac = 0.75
+        real :: convthreshusr = 0.01
     end type
 
     !> Instance of control flags.
@@ -123,6 +139,7 @@ module rte_module
 !                 sl1(na), sl2(na)
                  ichnl(na), ireach(na), &
                  grid_area(na), frac(na), aclass(na, ntype + 1), &
+                 nhyd(ycount, xcount), &
                  glacier_flag(na))
         xxx = shd%xxx
         yyy = shd%yyy
@@ -141,6 +158,7 @@ module rte_module
         grid_area = shd%AREA
         frac = shd%FRAC
         aclass = 0.0; aclass(:, 1:ntype) = shd%lc%ACLASS
+        nhyd = 0
         glacier_flag = 'n'
 
         !> Allocate and assign parameter values.
@@ -155,6 +173,13 @@ module rte_module
 
         !> Adjust the calculated channel length by the degree of meandering.
         rl = rl*mndr
+
+        !> Transfer time-stepping and convergence variables.
+        dtminusr = real(rteflg%dtminusr, kind = kind(dtminusr))
+        mindtmin = real(rteflg%mindtmin, kind = kind(mindtmin))
+        maxindex = real(rteflg%maxindex, kind = kind(maxindex))
+        dtminfrac = real(rteflg%dtminfrac, kind = kind(dtminfrac))
+        convthreshusr = real(rteflg%convthreshusr, kind = kind(convthreshusr))
 
         !> Allocate many of the arrays used by the routing code. This block
         !> is deliberately skipping arrays that reference land use types,
@@ -370,11 +395,11 @@ module rte_module
         end if
 
         !> Channel and reservoir initialization.
-        if (fms%rsvr%n > 0 .or. fms%stmg%n > 0) then
+        if ((fms%rsvr%n > 0 .or. fms%stmg%n > 0) .and. RESUMEFLAG == 0) then
             allocate(nbasin(ycount, xcount), r(na, ntype + 1), p(ycount,xcount), inbsnflg(no + noresv))
             nbasin = 0; p = 0.0; inbsnflg = 1
             if (fms%stmg%n > 0) then
-                allocate(iy(no), jx(no), nhyd(ycount, xcount), nlow(no), nxtbasin(no), area(no))
+                allocate(iy(no), jx(no), nlow(no), nxtbasin(no), area(no))
                 iy = fms%stmg%meta%iy
                 jx = fms%stmg%meta%jx
                 nxtbasin = 0
@@ -580,6 +605,9 @@ module rte_module
         real tqi1, tqo1, tax, tqo2, tstore2, tstore1
         integer indexi, no_dtold
 
+        !> Local variables for output averaging.
+        real, dimension(:), allocatable :: inline_qi, inline_stgch, inline_qo
+
         !> Local diagnostic variables.
 !        integer year_last, month_last, day_last, hour_last
         integer :: exitstatus = 0
@@ -746,6 +774,9 @@ module rte_module
         !> However, if the iteration loop in route is unstable, dtmin still decreases.
         dtmin = dtminusr
 
+        !> Allocate the local variables for output averaging.
+        allocate(inline_qi(na), inline_stgch(na), inline_qo(na))
+
         !> Let the time step be as small as mindtmin.
 17      dtmin = max(mindtmin, dtmin)
         no_dt = max(int(3599.0/dtmin) + 1, 1)
@@ -754,6 +785,9 @@ module rte_module
         sec_div = route_dt/2.0
         hr_div = sec_div/3600.0
         exitstatus = 0
+
+        !> Initialize the local variables for output averaging.
+        inline_qi = 0.0; inline_stgch = 0.0; inline_qo = 0.0
 
         !> Override the value declared above (fixed for all hours).
         a6 = dtmin
@@ -774,7 +808,7 @@ module rte_module
         !> rev. 9.3.12  Feb.  20/07  - NK: changed dtmin & call to route
         do n = 1, no_dt
 
-            call route(sec_div, hr_div, dtmin, mindtmin, convthreshusr, (ic%iter%hour + 1), n, real(ic%ts_count - 1), &
+            call route(sec_div, hr_div, dtmin, mindtmin, convthreshusr, (ic%iter%hour + 1), n, real(ic%ts_count - 1, kind = 4), &
                        date, exitstatus)
 
             if (exitstatus /= 0) then
@@ -810,10 +844,10 @@ module rte_module
                 end if
             end if
 
-            !> Update MESH output variables (for averaging).
-            if (associated(out%ts%grid%qi)) out%ts%grid%qi = out%ts%grid%qi + qi2
-            if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = out%ts%grid%stgch + store2
-            if (associated(out%ts%grid%qo)) out%ts%grid%qo = out%ts%grid%qo + qo2
+            !> Update the local variables for output averaging.
+            if (associated(out%ts%grid%qi)) inline_qi = inline_qi + qi2
+            if (associated(out%ts%grid%stgch)) inline_stgch = inline_stgch + store2
+            if (associated(out%ts%grid%qo)) inline_qo = inline_qo + qo2
 
         end do !n = 1, no_dt
 
@@ -826,9 +860,12 @@ module rte_module
         !> Update SA_MESH output variables.
         !> Output variables are updated at every model time-step; multiply averages
         !> by the number of model time-steps in the routing time-step
-        if (associated(out%ts%grid%qi)) out%ts%grid%qi = out%ts%grid%qi/no_dt*(3600/ic%dts)
-        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = out%ts%grid%stgch/no_dt*(3600/ic%dts)
-        if (associated(out%ts%grid%qo)) out%ts%grid%qo = out%ts%grid%qo/no_dt*(3600/ic%dts) !same as avr_qo
+        if (associated(out%ts%grid%qi)) out%ts%grid%qi = inline_qi/no_dt*(3600/ic%dts)
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = inline_stgch/no_dt*(3600/ic%dts)
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = inline_qo/no_dt*(3600/ic%dts) !same as avr_qo
+
+        !> Deallocate the local variables for output averaging.
+        deallocate(inline_qi, inline_stgch, inline_qo)
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.

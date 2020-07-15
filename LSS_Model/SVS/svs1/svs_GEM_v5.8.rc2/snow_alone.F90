@@ -120,12 +120,11 @@ include "isbapar.cdk"
       REAL EMISSN, RAIN1, RAIN2, MLTRAIN 
       REAL CRMIN, CRMAX, TAUHOUR, RHOE,  MYOMEGA
       REAL RSNOW_DAY, RHOICE, ANSMIN, MAX_EFLUX
-!
 
       real, dimension(n) :: lams, zcs, zqs, ctu, zqsat, zdqsat, zqsatt, &
            rora, a, b, c, tsnst, tsndt, rhomax, fmltrain, &
            smt, wlt, alphast, rhosfall, rhoslt, smx, rvrun, kdiffu, &
-           dampd, z0h, bcoef, dmelt, dsnowdt, ftemp, wlmax, &
+           dampd, z0h, bcoef, dmelt, dsnowdt, ftemp, wlmax,  &
            freez_l1, work_l1, work_l2, melt_l1, melt_l2, melt_rain, rsnow_critmass
       
 !
@@ -163,23 +162,24 @@ include "fintern.inc"
 !         CHECK THAT THIS INITIALIZATION MAKES SENSE
 !
       DO I=1,N
-        IF (SM(I).LT.CRITSNOWMASS) THEN
-          ALPHAS(I)   = ANSMAX
-          RHOSL(I)    = RHOSDEF
-!                             For snow temperature, set it to AIR temperature
+         IF (SM(I).LT.CRITSNOWMASS) THEN
+            ALPHAS(I)   = ANSMAX
+            RHOSL(I)    = RHOSDEF
+            !                             For snow temperature, set it to AIR temperature
 !                             capped at the triple point of water
-          TSNS(I)     = MIN(T(I),TRPL)
-          TSND(I)     = MIN(T(I),TRPL)
-!                             To conserve water, send trace snow mass and liquid water in snow pack to runoff before setting mass to zero
-          RSNOW_CRITMASS(I) = ( SM(I) + WL(I) ) / DT
-          !                             Reset snow mass, liquid water and snow depth to zero
-          SM(I)       = 0.  
-          WL(I)       = 0.
+            TSNS(I)     = MIN(T(I),TRPL)
+            TSND(I)     = MIN(T(I),TRPL)
 
-          SNODP(I)    = 0.
-	ELSE
-          RSNOW_CRITMASS(I) = 0.0       
-        END IF
+            !                             To conserve water, send trace snow mass and liquid water in snow pack to runoff before setting mass to zero
+
+            RSNOW_CRITMASS(I) = ( SM(I) + WL(I) ) / DT
+            !                             Reset snow mass, liquid water and snow depth to zero
+            SM(I)       = 0.  
+            WL(I)       = 0.
+            SNODP(I)    = 0.          
+         ELSE
+            RSNOW_CRITMASS(I) = 0.0
+         END IF
       END DO
 !
 !
@@ -586,13 +586,13 @@ include "fintern.inc"
 !                               for the liquid water reaching the ground
 !
       DO I=1,N
-        IF(SM(I).ge.CRITSNOWMASS.or.SR(I).gt.0.0) THEN
+         IF(SM(I).ge.CRITSNOWMASS.or.SR(I).gt.0.0) THEN
             !if existing snow, or fresh snow fall
             WLT(I) = WL(I) +  RR(I) * DT - RSNOW(I)* DT - DSNOWDT(I)
             WLT(I) = MAX( 0., WLT(I) )
-	ELSE
-	    WLT(I) = 0.0
-	ENDIF
+         ELSE
+            WLT(I) = 0.0
+         ENDIF
       END DO
 !
 !
@@ -754,9 +754,9 @@ include "fintern.inc"
           !                             Reset snow mass, liquid water and snow depth to zero
           SM(I)       = 0.  
           WL(I)       = 0.
-          SNODP(I)    = 0.   
+          SNODP(I)    = 0.            
         END IF
-	! Add trace runoff to runoff variable
+        ! Add trace runoff to runoff variable
         RSNOW(I) = RSNOW(I) + RSNOW_CRITMASS(I)
       END DO
 !

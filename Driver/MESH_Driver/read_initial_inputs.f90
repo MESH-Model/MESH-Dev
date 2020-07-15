@@ -6,6 +6,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     use model_files_variables
     use FLAGS
     use climate_forcing
+    use parse_utilities
 
     implicit none
 
@@ -297,8 +298,11 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         !> Point mode (location read from CLASS.ini).
         case (2)
 
+            !> Assign presumed projection.
+            shd%CoordSys%Proj = 'LATLONG'
+            shd%CoordSys%Ellips = 'GRS80'
+
             !> Assign no projection or grid properties.
-            shd%CoordSys%Proj = 'none'; shd%CoordSys%Ellips = 'none'; shd%CoordSys%Zone = 'none'
             shd%xOrigin = 0.0; shd%xDelta = 1.0; shd%xCount = 1; shd%jxMin = 0; shd%jxMax = 1; shd%GRDE = 1.0
             shd%yOrigin = 0.0; shd%yDelta = 1.0; shd%yCount = 1; shd%iyMin = 0; shd%iyMax = 1; shd%GRDN = 1.0
             shd%AL = 1.0
@@ -467,13 +471,84 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     !> after that Diana uses RADJGRD (the value of latitude in radians) so
     !> after DEGLAT is used to calculate RADJGRD is it no longer used.  This
     !> is how it was in the original CLASS code.
-    allocate(shd%ylat(shd%NA), shd%xlng(shd%NA))
-    do i = 1, shd%NA
+!-    allocate(shd%ylat(shd%NA), shd%xlng(shd%NA))
+!-    do i = 1, shd%NA
         !LATLENGTH = shd%AL/1000.0/(111.136 - 0.5623*cos(2*(DEGLAT*PI/180.0)) + 0.0011*cos(4*(DEGLAT*PI/180.0)))
         !LONGLENGTH = shd%AL/1000.0/(111.4172*cos((DEGLAT*PI/180.0)) - 0.094*cos(3*(DEGLAT*PI/180.0)) + 0.0002*cos(5*(DEGLAT*PI/180.0)))
-        shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
-        shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
-    end do
+!-        shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
+!-        shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
+!-    end do
+    if (.not. allocated(shd%ylat)) then
+        z = 0
+        call allocate_variable(shd%ylat, shd%NA, z)
+        if (btest(z, pstat%ALLOCATION_ERROR)) then
+            call print_message("ERROR: An error occurred allocating the 'ylat' variable.")
+            ierr = z
+        end if
+    end if
+    if (.not. allocated(shd%xlng)) then
+        z = 0
+        call allocate_variable(shd%xlng, shd%NA, z)
+        if (btest(z, pstat%ALLOCATION_ERROR)) then
+            call print_message("ERROR: An error occurred allocating the 'xlng' variable.")
+            ierr = z
+        end if
+    end if
+    if (ierr /= 0) return
+    select case (lowercase(shd%CoordSys%Proj))
+        case ('latlong')
+            z = 0
+            call check_allocated(shd%ylat, shd%NA, z)
+            if (.not. btest(z, pstat%ASSIGNED)) then
+                shd%ylat = (shd%yOrigin + shd%yDelta*shd%yyy) - shd%yDelta/2.0
+            end if
+            z = 0
+            call check_allocated(shd%xlng, shd%NA, z)
+            if (.not. btest(z, pstat%ASSIGNED)) then
+                shd%xlng = (shd%xOrigin + shd%xDelta*shd%xxx) - shd%xDelta/2.0
+            end if
+            shd%iyMin = int(shd%yOrigin*60.0)
+            shd%iyMax = int((shd%yOrigin + shd%yCount*shd%yDelta)*60.0)
+            shd%jxMin = int(shd%xOrigin*60.0)
+            shd%jxMax = int((shd%xOrigin + shd%xCount*shd%xDelta)*60.0)
+            shd%GRDE = shd%xDelta*60.0
+            shd%GRDN = shd%yDelta*60.0
+!?        case ('utm')
+!?            shd%GRDE = shd%xDelta/1000.0
+!?            shd%GRDN = shd%yDelta/1000.0
+!?            shd%jxMin = int(shd%xOrigin/1000.0)
+!?            shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
+!?            shd%iyMin = int(shd%yOrigin/1000.0)
+!?            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
+        case ('rotlatlong')
+            z = 0
+            call check_allocated(shd%ylat, shd%NA, z)
+            if (.not. btest(z, pstat%ASSIGNED)) then
+                call print_message( &
+                    "ERROR: Latitudes in regular degrees have not been defined for the domain in '" // trim(shd%CoordSys%Proj) // &
+                    "' projection. Coordinates are not automatically calculated for domains in '" // trim(shd%CoordSys%Proj) // &
+                    "' projection, and must be provided as an attribute in the drainage database file.")
+                ierr = 1
+            end if
+            z = 0
+            call check_allocated(shd%xlng, shd%NA, z)
+            if (.not. btest(z, pstat%ASSIGNED)) then
+                call print_message( &
+                    "ERROR: Longitudes in regular degrees have not been defined for the domain in '" // trim(shd%CoordSys%Proj) // &
+                    "' projection. Coordinates are not automatically calculated for domains in '" // trim(shd%CoordSys%Proj) // &
+                    "' projection, and must be provided as an attribute in the drainage database file.")
+                ierr = 1
+            end if
+        case default
+            call print_message('ERROR: Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
+            ierr = 1
+    end select
+    if (ierr /= 0) return
+
+    !> Convert longitudes from (0:360) to (-180:180).
+    where (shd%xlng > 180.0)
+        shd%xlng = shd%xlng - 360.0
+    end where
 
     !> If no sub-grid variability is active.
     if (.not. ro%RUNTILE) then
@@ -578,7 +653,14 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     call print_message('Number of river classes: ' // trim(adjustl(line)))
 
     !> Open and read in soil depths from file.
-    call READ_SOIL_LEVELS(fls, shd, ierr)
+    if (ro%RUNLSS) then
+        call READ_SOIL_LEVELS(fls, shd, ierr)
+    else
+        shd%lc%IGND = 1
+        allocate(shd%lc%sl%DELZ(shd%lc%IGND), shd%lc%sl%ZBOT(shd%lc%IGND))
+        shd%lc%sl%DELZ = 0.0
+        shd%lc%sl%ZBOT = 0.0
+    end if
     if (ierr /= 0) return
 
     !> Print a summary of levels to file.
@@ -609,25 +691,36 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     if (ierr /= 0) return
 
     !> Distribute the starting date of the forcing files.
-    do n = 1, cm%nclim
-        cm%dat(n)%start_date%year = cm%start_date%year
-        cm%dat(n)%start_date%jday = cm%start_date%jday
-        cm%dat(n)%start_date%hour = cm%start_date%hour
-        cm%dat(n)%start_date%mins = cm%start_date%mins
-    end do
+!-    do n = 1, cm%nclim
+!-        if (cm%dat(n)%start_date%year == 0 .and. cm%dat(n)%start_date%jday == 0 .and. &
+!-            cm%dat(n)%start_date%hour == 0 .and. cm%dat(n)%start_date%mins == 0) then
+!-            cm%dat(n)%start_date%year = cm%start_date%year
+!-            cm%dat(n)%start_date%jday = cm%start_date%jday
+!-            cm%dat(n)%start_date%hour = cm%start_date%hour
+!-            cm%dat(n)%start_date%mins = cm%start_date%mins
+!-        end if
+!-    end do
 
     !> Set the starting date from the forcing files if none is provided.
     if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%hour == 0 .and. ic%start%mins == 0) then
-        ic%start%year = cm%start_date%year
-        ic%start%jday = cm%start_date%jday
-        ic%start%hour = cm%start_date%hour
-        ic%start%mins = cm%start_date%mins
+        ic%start%year = cm%dat(1)%start_date%year
+        ic%start%jday = cm%dat(1)%start_date%jday
+        ic%start%hour = cm%dat(1)%start_date%hour
+        ic%start%mins = cm%dat(1)%start_date%mins
+        do n = 2, cm%nclim
+            ic%start%year = min(ic%start%year, cm%dat(n)%start_date%year)
+            ic%start%jday = min(ic%start%jday, cm%dat(n)%start_date%jday)
+            ic%start%hour = min(ic%start%hour, cm%dat(n)%start_date%hour)
+            ic%start%mins = min(ic%start%mins, cm%dat(n)%start_date%mins)
+        end do
     end if
 
     !> Initialize the current time-step.
     ic%now%year = ic%start%year
     ic%now%jday = ic%start%jday
-    call julian2monthday(ic%now%jday, ic%now%year, ic%now%month, ic%now%day)
+    call julian2monthday(ic%start%jday, ic%start%year, ic%start%month, ic%start%day)
+    ic%now%month = ic%start%month
+    ic%now%day = ic%start%day
     ic%now%hour = ic%start%hour
     ic%now%mins = ic%start%mins
 

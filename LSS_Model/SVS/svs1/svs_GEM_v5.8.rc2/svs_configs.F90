@@ -5,6 +5,9 @@ module svs_configs
   implicit none
 
   ! INDEXES FOR SVS SURFACES 
+  !
+  integer, parameter :: svs_tilesp1  = 5 ! SVS tile + 1 for aggregated value
+  !
   integer, parameter :: indx_svs_ag  = 1 ! AGGREGATED VALUE 
   integer, parameter :: indx_svs_bg  = 2 ! BARE GROUND
   integer, parameter :: indx_svs_vg  = 3 ! VEGETATION (NOT COVERED BY SNOW)  
@@ -24,7 +27,9 @@ module svs_configs
 !  real, parameter, dimension(nl_svs) :: dl_svs =  (/ 0.05, 0.1, 0.2, 0.4, 1.0, 2.0, 3.0 /) 
 
   ! Number of last active (permeable) layer
-  integer, parameter :: khyd = 6
+!VV DEBUT MODIFICATION POUR MESH
+!  integer, parameter :: khyd = 6
+  integer :: khyd = 6
 !VV FIN MODIFICATION POUR MESH
 
   ! Thicknesses of layers in METERS
@@ -149,6 +154,14 @@ contains
        nl_stp = nl_soilgrids
        call weights_soil_texture()	
 
+    else if ( soiltext == "NIL" ) then
+
+       ! ENTRY  bus number of levels for clay & sand variables
+       nl_ste = nl_svs
+       ! PERMANENT PHYSICS bus number of levels for clay & sand variables
+       nl_stp = nl_svs
+       call weights_soil_texture()	
+
     endif
 
     return
@@ -206,7 +219,16 @@ contains
        enddo
        ! last depth of soil texture database set to max depth of SVS 
        ! i.e, deepest soil texture measured extends to the bottom of last SVS layer
-       d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_slc(nl_stp) )    
+       d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_soilgrids(nl_stp) )    
+
+    else if ( soiltext == "NIL" ) then
+     
+       do k=2,nl_stp
+          d_soil_texture(k)=dl_svs(k-1)
+       enddo
+       ! last depth of soil texture database set to max depth of SVS 
+       ! i.e, deepest soil texture measured extends to the bottom of last SVS layer
+       d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_svs(nl_stp) )    
 
     endif
     
@@ -255,6 +277,10 @@ contains
              do kk = 1, nl_stp ! database layers
                 write(unout, *) 'for SOILGRIDS layer kk=', kk,' depth=', dl_soilgrids(kk),' weight=', weights(k,kk)
 	     enddo
+          else if (soiltext == "NIL" ) then
+             do kk = 1, nl_stp ! database layers
+                write(unout, *) 'for NIL(dl_svs) layer kk=', kk,' depth=', dl_soilgrids(kk),' weight=', weights(k,kk)
+             enddo
           endif
        enddo
     endif
@@ -267,7 +293,7 @@ contains
 
     integer k
 
-    if ( .not. allocated(delz) ) allocate( delz(nl_svs) )\
+    if ( .not. allocated(delz) ) allocate( delz(nl_svs) )
 
     DELZ(1)=DL_SVS(1)            
     DO K=2,NL_SVS        
@@ -325,7 +351,7 @@ contains
     !  
     INTEGER I, NI
     REAL, dimension(ni) :: FVH,FVL,FSNVH,FSN
-    REAL, dimension(ni,indx_svs_ag) :: WT
+    REAL, dimension(ni,svs_tilesp1) :: WT
     REAL, parameter ::  min_wt=0.001 ! [1.=100%] minimum value of weight, otherwise set to zero.     
 
     DO I=1,NI

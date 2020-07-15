@@ -198,7 +198,7 @@ module solar_adjust_module
             end if
             if (allocated(rsrd_adj%pm%slope)) then
                 rsrd_adj%vs%slope(k) = rsrd_adj%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-                pm%tp%xslp(k) = tand(rsrd_adj%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k)))   ! Overwrite Estimated average slope of the GRU
+                pm%tile%xslp(k) = tan(rsrd_adj%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k)))*180.0/3.14159265 ! Overwrite estimated average slope of the GRUs.
             end if
             if (allocated(rsrd_adj%pm%aspect)) then
                 rsrd_adj%vs%aspect(k) = rsrd_adj%pm%aspect(shd%lc%ILMOS(k), shd%lc%JLMOS(k))

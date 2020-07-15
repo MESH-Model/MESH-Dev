@@ -28,7 +28,7 @@
       REAL SUNCOS(N), LAIH(N), PSNGRVL(N), VEGH(N), VEGL(N)
       REAL RGL(N), LAI(N), RSMIN(N), GAMMA(N), WWILT(N,NL_SVS)
       REAL WFC(N,NL_SVS), RS(N), SKYVIEW(N), VTR(N), DRZ(N)
-      REAL D50(N), D95(N), ACROOT(N,NL_SVS) , WRMAX(N)  
+      REAL D50(N), D95(N), ACROOT(N,NL_SVS) , WRMAX(N) 
 !
 !Author
 !          S. Belair, M.Abrahamowicz,S.Z.Husain (June 2015)
@@ -78,6 +78,7 @@ include "thermoconsts.inc"
 !
       INTEGER I, K
       REAL CSHAPE, f2_k(nl_svs)
+
       real, dimension(n) :: extinct, f, f1, f2, f3, f4, qsat
 
 !
@@ -89,18 +90,20 @@ include "fintern.inc"
 !
 !
 !
-	DO I=1,N      
+       DO I=1,N      
           IF ( (VEGH(I)+VEGL(I)*(1-PSNGRVL(I))).GE.EPSILON_SVS ) THEN
              ! VEGETATION PRESENT
+
+
 !
 !*       1.     THE 'ZF1' FACTOR
 !               ---------------
 !                      This factor measures the influence
 !                      of the photosynthetically active radiation
 !
-!
+             
              F(I)  = 0.55*2.*RG(I) / (RGL(I)+1.E-6) /  &
-                 ( LAI(I)+1.E-6 )
+                  ( LAI(I)+1.E-6 )
              F1(I) = ( F(I) + RSMIN(I)/5000. ) / ( 1. + F(I) )
 !
 !
@@ -121,10 +124,7 @@ include "fintern.inc"
 !           Calculation of root-zone soil moisture
 !            
 !
-!                 
-!        
-      
-             ! Shape parameter CSHAPE
+            ! Shape parameter CSHAPE
              CSHAPE=LOG10(0.05/0.95)/LOG10(D95(I)/D50(I))       
 !        
 !                 Root fractions at different depths
@@ -137,17 +137,17 @@ include "fintern.inc"
                 endif
              ENDDO
              FCD(I,NL_SVS)=1.
-!
-!                 Calculate f2 -- weighted mean using root fraction above
-!                 1.E-5 (dry soil--> large resistance) < f2 < 1.0 (humid soil --> no impact on resistance)
-
-             ! f2 for each layer
-               
+      
+             !                 Calculate f2 -- weighted mean using root fraction above
+             !                 1.E-5 (dry soil--> large resistance) < f2 < 1.0 (humid soil --> no impact on resistance)
+             
+             ! f2 for each layer           
              DO K=1,NL_SVS
-             ! calculate moisture stress on roots
-             f2_k(k) =  min( 1.0,  max( 1.E-5  ,  &
-                 max( wd(i,k) - wwilt(i,k) , 0.0) / (wfc(i,k) - wwilt(i,k)) ) )
+                ! calculate moisture stress on roots
+                f2_k(k) =  min( 1.0,  max( 1.E-5  ,  &
+                     max( wd(i,k) - wwilt(i,k) , 0.0) / (wfc(i,k) - wwilt(i,k)) ) )
              ENDDO
+
              ! root fraction weighted mean
              ! k=1
              f2(i) = f2_k(1) * FCD(I,1)
@@ -156,11 +156,12 @@ include "fintern.inc"
              ENDDO
 
              ! active fraction of roots
-	     ! k=2
+             ! k=2
              acroot(i,1)=f2_k(1)*FCD(I,1)/f2(i)
              DO K=2,NL_SVS
                 acroot(i,k)= f2_k(k) *  ( FCD(I,K) - FCD(I,K-1) ) /f2(i)
              ENDDO
+    
 !
 !
 !
@@ -171,6 +172,7 @@ include "fintern.inc"
 !                           For very humid air, the stomatal resistance
 !                           is small, whereas it increases as the
 !                           air becomes drier.
+!
 !
 !
              QSAT(I) = FOQST( TVEG(I), PS(I) )
@@ -184,21 +186,22 @@ include "fintern.inc"
 !                  This factor introduces an air temperature
 !                  dependance on the surface stomatal resistance
 !
-             F4(I) = MAX( 1.0 - 0.0016*(298.15-T(I))**2, 1.E-3 )
+             F4(I) = MAX( 1.0 - 0.0016*(298.15-T(I))**2, 1.E-3 )             
 !
 !
 !*       5.     THE SURFACE STOMATAL RESISTANCE
 !               -------------------------------
 !
              RS(I) = RSMIN(I) / ( LAI(I)+1.E-6 ) & 
-                 / F1(I) / F2(I) / F3(I) / F4(I)
+                  / F1(I) / F2(I) / F3(I) / F4(I)
 !
              RS(I) = MIN( RS(I),5000.  )
              RS(I) = MAX( RS(I), 1.E-4 )
-!
+       !
 !
 !*       6.     TRANSMISSIVITY OF CANOPY (HIGH VEG ONLY)
 !               ----------------------------------------
+!
 !
 !                 Calculate the extinction coefficient... 
 !                 the constant 0.5 is a first approximation
@@ -211,6 +214,8 @@ include "fintern.inc"
 !                 Calculate the transmissivity
 !
              VTR(I) = EXP( -1.0 * EXTINCT(I) * LAIH(I) )
+!
+!
 !
 !
 !*       7.     SKYVIEW FACTOR (HIGH VEG ONLY)
@@ -229,7 +234,9 @@ include "fintern.inc"
 !
 !*       8.     MAXIMUM VOLUMETRIC WATER CONTENT RETAINED ON VEGETATION (m3/m3)
 !               ------------------------------
-!         
+!
+     
+          
              WRMAX(I) = 0.2 * LAI(I)
 
           ELSE

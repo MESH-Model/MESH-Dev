@@ -50,8 +50,8 @@ module cropland_irrigation_init
         ierr = 0
         do m = 1, shd%lc%NTYPE
             write(fmt1, FMT_GEN) m
-            if (pm_gru%cp%fcan(m, 3) > 0.0) then
-                write(fmt2, FMT_GEN) pm_gru%cp%fcan(m, 3)
+            if (pm%gru%fcan(m, 3) > 0.0) then
+                write(fmt2, FMT_GEN) pm%gru%fcan(m, 3)
                 call print_message( &
                     'GRU ' // trim(adjustl(fmt1)) // ' has ' // trim(adjustl(fmt2)) // ' contributing fraction of crops.')
                 if (ciprot%jdsow(m) <= 0) then
@@ -113,7 +113,7 @@ module cropland_irrigation_init
         do k = il1, il2
 
             !> FCAN(3) identifies as 'crop' in CLASS.ini.
-            if (pm%cp%fcan(k, 3) > 0.0) then
+            if (pm%tile%fcan(k, 3) > 0.0) then
 
                 !> Identify the crop.
                 civ%icrop(k) = 1

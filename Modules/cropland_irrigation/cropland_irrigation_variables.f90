@@ -14,8 +14,8 @@ module cropland_irrigation_variables
     !*  Kcmid: Crop factor during the middle stage. [--].
     !*  Kclate: Crop factor during the late stage. [--].
     type cropland_irrigation_parameters
-        integer(kind = 4), dimension(:), allocatable :: jdsow, ldini, lddev, ldmid, ldlate
-        real(kind = 4), dimension(:), allocatable :: Kcini, Kcdev, Kcmid, Kclate
+        integer, dimension(:), allocatable :: jdsow, ldini, lddev, ldmid, ldlate
+        real, dimension(:), allocatable :: Kcini, Kcdev, Kcmid, Kclate
     end type
 
     !* cip: Instance of parameters used by the cropland irrigation module.
@@ -34,7 +34,7 @@ module cropland_irrigation_variables
     !*  pevp_mm: Accumulation of potential evapotranspiration over the period. [mm].
     !*  icu_mm: Irrigation demand at the end of the period. [mm].
     type cropland_irrigation_variables_vars
-        real(kind = 4), dimension(:), allocatable :: lqws2_mm, lqws1_mm, pre_mm, pevp_mm, icu_mm
+        real, dimension(:), allocatable :: lqws2_mm, lqws1_mm, pre_mm, pevp_mm, icu_mm
     end type
 
     !> Variable type: cropland_irrigation_variables_fkey
@@ -45,7 +45,7 @@ module cropland_irrigation_variables
     !*  KHLY: Hourly output
     !*  KTS: Per time-step output
     type cropland_irrigation_variables_fkey
-        integer(kind = 4) :: KDLY = 0, KHLY = 2, KTS = 3
+        integer :: KDLY = 0, KHLY = 2, KTS = 3
         integer :: kmin = 0, kmax = 3
     end type
 
@@ -61,7 +61,7 @@ module cropland_irrigation_variables
     !*  jdend: Day in the year the growth stage ends. [day in year, 1-365/366].
     type cropland_irrigation_variables_int
         type(cropland_irrigation_variables_fkey) :: fk
-        integer(kind = 4), dimension(:), allocatable :: icrop, jdini, jddev, jdmid, jdlate, jdend
+        integer, dimension(:), allocatable :: icrop, jdini, jddev, jdmid, jdlate, jdend
         type(cropland_irrigation_variables_vars), dimension(:), allocatable :: vars
     end type
 
@@ -74,7 +74,7 @@ module cropland_irrigation_variables
     !> Variables:
     !*  icu_mm: Irrigation demand at the end of the period. [mm].
     type cropland_irrigation_aggregated_output
-        real(kind = 4), dimension(:), allocatable :: icu_na_mm, icu_aclass_mm, icu_frac_mm
+        real, dimension(:), allocatable :: icu_na_mm, icu_aclass_mm, icu_frac_mm
     end type
 
     !* ciago: Instance of aggregated output from the cropland irrigation module.

@@ -3,7 +3,7 @@
 
 # ======================================================================
 # Make targets (defined below).
-.PHONY: default gfortran ifort mingw_static mpi_gcc mpi_intel debug all clean veryclean
+.PHONY: default gfortran ifort mingw_static mpi_gcc mpi_intel debug netcdf all clean veryclean
 default: all
 
 # ======================================================================
@@ -35,7 +35,7 @@ default: all
 include makefile.def
 
 # ======================================================================
-# Pre-configured compiler options.
+# Pre-configured targets: Compiler options.
 ifeq ($(filter gfortran,$(MAKECMDGOALS)),gfortran)
 DIST=
 MPI=
@@ -52,16 +52,32 @@ else ifeq ($(filter mpi_intel,$(MAKECMDGOALS)),mpi_intel)
 DIST=intel
 MPI=ompi
 endif
+
+# ======================================================================
+# Pre-configured targets: Debug symbols.
 ifeq ($(filter debug,$(MAKECMDGOALS)),debug)
 DEBUG=yes
 endif
 
+# ======================================================================
+# Pre-configured targets: netCDF library.
+# This target will call 'nf-config' via the active shell.
+# However, if the netCDF library is installed,
+# 'nf-config' should be installed as well.
+ifeq ($(filter netcdf,$(MAKECMDGOALS)),netcdf)
+LIBNCO=$(shell nf-config --fflags) -DNETCDF
+LIBNCL=$(shell nf-config --flibs)
+endif
+
+# ======================================================================
+# Targets.
 gfortran: all
 ifort: all
 mingw_static: all
 mpi_gcc: all
 mpi_intel: all
 debug: all
+netcdf: all
 
 # ======================================================================
 # Compiler and options.
@@ -90,7 +106,11 @@ OUT=sa_mesh
 # If MPI is enabled, switch to OMPI compiler and rename output.
 # Otherwise add MPI stub to 'OBJECTS'.
 ifeq ($(MPI),ompi)
+ifeq (,$(shell which mpifort))
+FC=mpif90
+else
 FC=mpifort
+endif
 OUT=mpi_sa_mesh
 else
 OBJECTS:=	mpi_stub.o $(OBJECTS)
@@ -109,13 +129,13 @@ endif
 # ======================================================================
 # General rules.
 %.o: %.f
-	$(FC) $(LFLAG) $<
+	$(FC) $(LFLAG) $(LIBNCO) $<
 %.o: %.F90
-	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $(DFLAG) $(FTN90PPOPT) $<
+	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $(DFLAG) $(LIBNCO) $(FTN90PPOPT) $<
 %.o: %.f90
-	$(FC) $(LFLAG) $<
+	$(FC) $(FTN90PP) $(LFLAG) $(LIBNCO) $<
 %.o: %.for
-	$(FC) $(LFLAG) $<
+	$(FC) $(LFLAG) $(LIBNCO) $<
 
 # ======================================================================
 # Special rules.
@@ -132,7 +152,7 @@ runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
 # Make target: all
 # Deletes object and modules files unless 'DEBUG' has a value.
 all: ${OBJECTS}
-	$(FC) $(OBJECTS) -o $(OUT) $(LLINK)
+	$(FC) $(OBJECTS) -o $(OUT) $(LLINK) $(LIBNCL)
 	$(CLEANUP)
 
 # ======================================================================

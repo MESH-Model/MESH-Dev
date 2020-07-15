@@ -17,6 +17,7 @@
      G                 PCFC,   PCLC,   PCPN,   PCPG,   QFCF,   QFCL,
      H                 QFN,    QFG,    QFC,    HMFG,   
      I                 ROVG,   ROFC,   ROFN,   TRUNOF,
+     +                 ICE,    TICE,   ICEG,   TICEG,  ICEGS,  TICEGS,
      J                 THLIQX, THICEX, THLDUM, THIDUM,
      J                 DT,     RDUMMY, ZERO,   IZERO,  DELZZ,
      K                 FC,     FG,     FCS,    FGS,    
@@ -31,6 +32,7 @@
      T                 NLANDCS,NLANDGS,NLANDC, NLANDG, RADD,   SADD,
      U                 BI, PSISAT, DD, XSLOPE, BULK_FC  )
 C
+C     * JUN 10/20 - D.PRINCZ.   ADDED ICE AND TICE (ICEBAL).
 C     * AUG 25/11 - D.VERSEGHY. REFINE CALCULATION OF TEMPERATURE OF
 C     *                         LUMPED PRECIPITATION.
 C     * NOV 24/09 - D.VERSEGHY. RESTORE EVAPOTRANSPIRATION WHEN
@@ -135,7 +137,9 @@ C
      5     PCFC  (ILG),   PCLC  (ILG),   PCPN  (ILG),   PCPG  (ILG),
      6     QFCF  (ILG),   QFCL  (ILG),   QFN   (ILG),   QFG   (ILG),
      7     ROVG  (ILG),   ROFC  (ILG),   ROFN  (ILG),   
-     8     TRUNOF(ILG),   DT    (ILG),   RDUMMY(ILG),   ZERO  (ILG)
+     8     TRUNOF(ILG),   DT    (ILG),   RDUMMY(ILG),   ZERO  (ILG),
+     +     ICE   (ILG),   TICE  (ILG),
+     +     ICEG  (ILG),   TICEG (ILG),   ICEGS (ILG),   TICEGS(ILG)
 C 
       INTEGER             IZERO (ILG)
 C
@@ -297,6 +301,12 @@ C
           TRNFCS(I)=0.0
           TRNFGS(I)=0.0
           TRUNOF(I)=0.0
+          ICE   (I)=0.0
+          TICE  (I)=0.0
+          ICEG  (I)=0.0
+          TICEG (I)=0.0
+          ICEGS (I)=0.0
+          TICEGS(I)=0.0
           TBASC (I)=TBASE(I)-TFREZ
           TBASG (I)=TBASE(I)-TFREZ
           TBASCS(I)=TBASE(I)-TFREZ

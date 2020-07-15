@@ -28,6 +28,7 @@ C     2. MOORE (2007). THE PDM RAINFALL-RUNOFF MODEL,
 C          HYDROLOGY AND EARTH SYSTEM SCIENCES, VOL. 11, PP. 483-499
 
 C-----Log-----------------------------------------------------------------------
+C     * JUN 24/20 - D.Princz: Bug-fixes (to consider when Q /= U).
 C     * AUG 01/15 - Kam.: PDM concept in WATROF algorithm to include
 C     *             interflow and baseflow component in PDMROF algorithm
 C     * MAR 03/10 - M.A.MEKONNEN/B.DAVISON/M.MACDONALD
@@ -161,6 +162,7 @@ C-----kam---Initialization UMQ------------------------------------------
 
 C ----INITIALIZE WORKING VARIABLES - RUNOFF GENERATION-----
       U         = 0.0
+      Q         = 0.0
       RNET      = 0.0
       SMAX      = 0.0
       BP1       = 0.0
@@ -196,7 +198,7 @@ C-----MAXIMUM STORAGE---------------------------------
 C-----CRITICAL POND DEPTH CORRESPONDING TO ZPNDPRE--------
                  SMXMCMN = SMAX - CMIN(i)
                  CSTR(i) = CMIN(i) + CMXMCMN * (1.0 -
-     1         ((SMAX - ZPNDPRE(i)) / SMXMCMN) ** IBP1)
+     1         max((SMAX - ZPNDPRE(i)) / SMXMCMN, 0.0) ** IBP1)
 
 C-----CONTRIBUTING AREA FRACTION - DIAGNOSTIC ARRAY--------
               FSTR(i) = 1.0 - (1.0 - CSTR(i)/CMAX(i))**B(i)
@@ -235,12 +237,11 @@ C-----eqn (30) in notes on overland flow
 C-----add overland flow to runoff and to the overall overland flow-----
             if(runoff(i) .gt. 1.0e-08) then
                trunof(i) = (trunof(i)*runoff(i)+(tpond(i)+tfrez)*
-     1                      Q(i))/(runoff(i)+U(i))
+     1                      Q(i))/(runoff(i)+Q(i))
             endif
-C            runoff(i)    = runoff(i) + U(i)
             runoff(i)    = runoff(i) + Q(i)
 
-            if(U(i) .gt. 1.0e-08)then
+            if(Q(i) .gt. 1.0e-08)then
                tovrfl(i) = (tovrfl(i)*ovrflw(i)+(tpond(i)+tfrez)*
      1                      fi(i)*Q(i))/(ovrflw(i)+fi(i)*Q(i))
                ovrflw(i) = ovrflw(i) + fi(i)*Q(i)
@@ -248,9 +249,24 @@ C            runoff(i)    = runoff(i) + U(i)
       endif
 
 C-------Book keeping regarding storage----------------------
+C           It is necessary to check how much of the available excess of
+C           (ZPOND-ZPONDPRE) after left as runoff. The calculation of
+C           'Q' may not necessarily equal 'U' (by parameterization),
+C           thus the 'ZPOND' must be updated to consider any excess NOT
+C           lost by 'Q'.
+                 ZPOND(i) = ZPOND(i) + U(i) - Q(i)
+                 U(i) = Q(i)
                  ZPNDPRE(i) = ZPOND(i)
 
 C--------BOOKKEEPING FOR ACTUAL RUNOFF CALCULATION----------
+C           UMQ appears in PDMROF to negate its internal calculation of
+C           'Q' (marked "inactive"), which isn't added to runoff/
+C           overland flow and thus would be unaccounted for in the
+C           balance. In this case, 'Q' is actually added to runoff (as
+C           'U' is in PDMROF), so there should be no negation of this
+C           value, and thus this calculation should equal zero. This
+C           make-shift balance happens outside of the core CLASS
+C           routines (in the CLASS driver/module).
                  UMQ(i)=U(i) - Q(i)
       enddo
 

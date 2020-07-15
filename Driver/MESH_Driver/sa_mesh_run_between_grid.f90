@@ -27,9 +27,9 @@ module sa_mesh_run_between_grid
     !*  fout_header: .true. to print header (default).
     !*  fls: Output file definitions.
     type WF_RTE_fout_stfl
-        integer(kind = 4) :: KDLY = 0, KTS = 1
+        integer :: KDLY = 0, KTS = 1
         integer :: kmin = 0, kmax = 1
-        integer(kind = 4) :: freq = 1
+        integer :: freq = 1
         logical :: fout_hyd = .true., fout_bal = .false., fout_acc = .false.
         logical :: fout_header = .true.
         type(fl_ids) :: fls
@@ -44,9 +44,9 @@ module sa_mesh_run_between_grid
     !*  fout_header: .true. to print header (default).
     !*  fls: Output file definitions.
     type WF_RTE_fout_rsvr
-        integer(kind = 4) :: KDLY = 0, KTS = 1, KHLY = 2
+        integer :: KDLY = 0, KTS = 1, KHLY = 2
         integer :: kmin = 0, kmax = 2
-        integer(kind = 4) :: freq = 0
+        integer :: freq = 0
         logical :: fout_header = .true.
         type(fl_ids) :: fls
     end type

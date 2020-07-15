@@ -1,5 +1,7 @@
 module RUNCLASS36_variables
 
+    use RUNCLASS36_constants
+
     implicit none
 
     !> Constants for output (read from file).
@@ -111,6 +113,11 @@ module RUNCLASS36_variables
             ALIC, ALVC, FCAN, LNZ0
     end type
 
+    type CLASS_glacier_variables
+        real, dimension(:), allocatable :: &
+            FREZTH, SNDEPLIM, SNDENLIM
+    end type
+
     type CLASS_atmospheric_variables
         real, dimension(:), allocatable :: &
             CSZ, DLON, FCLO, GC, GGEO, PADR, RADJ, RHOA, RHSI, RPCP, &
@@ -129,7 +136,7 @@ module RUNCLASS36_variables
             ILMO, PCFC, PCLC, PCPG, PCPN, PET, QEVP, QFCF, QFCL, QFG, &
             QFN, QFS, QFX, QG, ROF, ROFB, ROFC, ROFN, ROFO, ROFS, &
             ROVG, SFCQ, SFCT, SFCU, SFCV, TFX, TROB, TROF, TROO, TROS, &
-            TSF, UE, WTAB, WTRC, WTRG, WTRS
+            TSF, UE, WTAB, WTRC, WTRG, WTRS, ICE, TICE
         real, dimension(:, :), allocatable :: &
             GFLX, HMFG, HTC, QFC
     end type
@@ -143,9 +150,13 @@ module RUNCLASS36_variables
 
 !todo: Move this?
     type HydrologyParameters
-        real, dimension(:,:), allocatable :: &
+        real, dimension(:, :), allocatable :: &
             FRZCROW, &
             CMAXROW, CMINROW, BROW, K1ROW, K2ROW
+    end type
+
+    type RUNCLASS36_parameters
+        type(CLASS_parameters) constant, grid, tile, gru
     end type
 
     !> Type: RUNCLASS36_Flags
@@ -154,6 +165,7 @@ module RUNCLASS36_variables
     type RUNCLASS36_flags
         logical :: PROCESS_ACTIVE = .true.
         integer :: INTERFLOWFLAG = 1
+        type(RUNCLASS36_parameters) pm
     end type
 
 !todo: may need to move these.
@@ -164,6 +176,7 @@ module RUNCLASS36_variables
     type(CLASS_forcing_input), save :: cfi
     type(CLASS_prognostic_variables), save :: cpv
     type(CLASS_surface_variables), save :: csfv
+    type(CLASS_glacier_variables), save :: cglv
     type(CLASS_atmospheric_variables), save :: catv
     type(CLASS_diagnostic_variables), save :: cdv
 

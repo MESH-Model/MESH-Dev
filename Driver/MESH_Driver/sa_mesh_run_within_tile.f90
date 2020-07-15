@@ -108,7 +108,6 @@ module sa_mesh_run_within_tile
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
-        t = ic%ts_count*1000
 
         !> Other variables
         s = shd%lc%IGND
@@ -120,8 +119,9 @@ module sa_mesh_run_within_tile
             ii1 = il1; ii2 = il2; iin = iln
 
             !> Reset the exchange variables.
-            i = 1
             irqst = MPI_REQUEST_NULL
+            t = itag
+            i = 1
 
             !> Canopy.
             allocate(cnpy(7*iin))
@@ -228,9 +228,10 @@ module sa_mesh_run_within_tile
                 allocate(dz(2*iin))
 
                 !> Reset the exchange variables.
-                i = 1
                 irqst = MPI_REQUEST_NULL
                 imstat = 0
+                t = itag
+                i = 1
 
                 !> Receive variables.
                 call MPI_Irecv(cnpy, size(cnpy), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
@@ -315,7 +316,12 @@ module sa_mesh_run_within_tile
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, z)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 
@@ -342,7 +348,6 @@ module sa_mesh_run_within_tile
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
-        t = ic%ts_count*1000 + 400
 
         !> Assign the indices.
         ii1 = 1
@@ -355,9 +360,10 @@ module sa_mesh_run_within_tile
             do u = 1, (inp - 1)
 
                 !> Reset the exchange variables.
-                i = 1
                 irqst = MPI_REQUEST_NULL
                 imstat = 0
+                t = itag
+                i = 1
 
                 !> Wait until the exchange completes.
                 lstat = .false.
@@ -371,8 +377,9 @@ module sa_mesh_run_within_tile
 
             !> Receive data from head-node.
             !> Reset the exchange variables.
-            i = 1
             irqst = MPI_REQUEST_NULL
+            t = itag
+            i = 1
 
             !> Wait until the exchange completes.
             lstat = .false.
@@ -382,7 +389,12 @@ module sa_mesh_run_within_tile
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, z)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 
@@ -468,6 +480,7 @@ module sa_mesh_run_within_tile
 
         !> Process modules.
         use RUNCLASS36_config
+        use runsvs_mesh
         use baseflow_module
 
         !> Input/output variables.
@@ -481,6 +494,7 @@ module sa_mesh_run_within_tile
         !> Call processes.
         call RUNCLASS36_finalize(fls, shd, cm)
         call bflm_finalize(fls, shd, cm)
+        call runsvs_mesh_finalize(shd, fls)
 
     end subroutine
 

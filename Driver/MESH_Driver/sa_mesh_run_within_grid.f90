@@ -72,7 +72,6 @@ module sa_mesh_run_within_grid
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
-        t = ic%ts_count*1000 + 200
 
         if (inp > 1 .and. ipid /= 0) then
 
@@ -83,8 +82,9 @@ module sa_mesh_run_within_grid
             iin = (ii2 - ii1) + 1
 
             !> Reset the exchange variables.
-            i = 1
             irqst = MPI_REQUEST_NULL
+            t = itag
+            i = 1
 
             !> Wait until the exchange completes.
             lstat = .false.
@@ -104,9 +104,10 @@ module sa_mesh_run_within_grid
                 iin = (ii2 - ii1) + 1
 
                 !> Reset the exchange variables.
-                i = 1
                 irqst = MPI_REQUEST_NULL
                 imstat = 0
+                t = itag
+                i = 1
 
                 !> Wait until the exchange completes.
                 lstat = .false.
@@ -118,7 +119,12 @@ module sa_mesh_run_within_grid
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, z)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 
@@ -146,7 +152,6 @@ module sa_mesh_run_within_grid
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
-        t = ic%ts_count*1000 + 400
 
         !> Assign the indices.
         ii1 = 1
@@ -162,12 +167,13 @@ module sa_mesh_run_within_grid
             do u = 1, (inp - 1)
 
                 !> Reset exchange variables.
-                i = 1
                 irqst = MPI_REQUEST_NULL
                 imstat = 0
+                t = itag
+                i = 1
 
                 !> Channel routing.
-!                chnl((1 + iin*0):(iin*1)) = vs%grid%stg(ii1:ii2)
+!                chnl((1 + iin*0):(iin*1)) = vs%grid%stgch(ii1:ii2)
 !                chnl((1 + iin*1):(iin*2)) = vs%grid%div(ii1:ii2)
 !                chnl((1 + iin*2):(iin*3)) = vs%grid%ab(ii1:ii2)
 !                call MPI_Isend(chnl, size(chnl), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z)
@@ -185,8 +191,9 @@ module sa_mesh_run_within_grid
 
             !> Receive data from head-node.
             !> Reset exchange variables.
-            i = 1
             irqst = MPI_REQUEST_NULL
+            t = itag
+            i = 1
 
             !> Receive variables.
 !            call MPI_Irecv(chnl, size(chnl), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
@@ -200,7 +207,7 @@ module sa_mesh_run_within_grid
             !> Assign variables.
 
             !> Channel routing.
-!            vs%grid%stg(ii1:ii2) = chnl((1 + iin*0):(iin*1))
+!            vs%grid%stgch(ii1:ii2) = chnl((1 + iin*0):(iin*1))
 !            vs%grid%div(ii1:ii2) = chnl((1 + iin*1):(iin*2))
 !            vs%grid%ab(ii1:ii2) = chnl((1 + iin*2):(iin*3))
 
@@ -209,7 +216,12 @@ module sa_mesh_run_within_grid
         !> Deallocate temporary arrays.
         deallocate(chnl)
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, z)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 
