@@ -20,6 +20,7 @@ module sa_mesh_run_within_tile
         use runsvs_mesh
         use baseflow_module
         use cropland_irrigation_init
+        use mountain_module
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -30,6 +31,7 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
         !> Call processes.
+        call mountain_init(fls, shd, cm)
         call RUNCLASS36_init(shd, fls, cm)
         call runsvs_mesh_init(shd, fls, cm)
         call bflm_init(fls, shd, cm)
@@ -47,6 +49,7 @@ module sa_mesh_run_within_tile
         use runsvs_mesh
         use baseflow_module
         use cropland_irrigation_within_tile
+        use mountain_module
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -63,6 +66,7 @@ module sa_mesh_run_within_tile
         call run_within_tile_stas_reset(fls, shd, cm)
 
         !> Call processes.
+        call mountain_within_tile(fls, shd, cm)
         call RUNCLASS36_within_tile(shd, fls, cm)
         call runsvs_mesh_within_tile(shd, fls, cm)
         call bflm_within_tile(fls, shd, cm)

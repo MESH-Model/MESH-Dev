@@ -22,6 +22,7 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
     use baseflow_module
     use rte_module
     use PBSM_module
+    use mountain_module
 
     implicit none
 
@@ -269,6 +270,63 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                 if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%A_S(1:shd%NA) = ffield
             case ('distrib')
                 if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Distrib(1:shd%NA) = ffield
+
+            !> SOLARADJUSTFLAG.
+            case ('elevation')
+                if (.not. allocated(mountain_mesh%pm%elev)) allocate(mountain_mesh%pm%elev(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        mountain_mesh%pm%elev(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    mountain_mesh%pm%elev(:, ilvl) = ffield
+                else
+                    z = 1
+                end if
+            case ('slope')
+                if (.not. allocated(mountain_mesh%pm%slope)) allocate(mountain_mesh%pm%slope(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        mountain_mesh%pm%slope(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    mountain_mesh%pm%slope(:, ilvl) = ffield
+                else
+                    z = 1
+                end if
+            case ('aspect')
+                if (.not. allocated(mountain_mesh%pm%aspect)) allocate(mountain_mesh%pm%aspect(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        mountain_mesh%pm%aspect(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    mountain_mesh%pm%aspect(:, ilvl) = ffield
+                else
+                    z = 1
+                end if
+            case ('delta')
+                if (.not. allocated(mountain_mesh%pm%delta)) allocate(mountain_mesh%pm%delta(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        mountain_mesh%pm%delta(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    mountain_mesh%pm%delta(:, ilvl) = ffield
+                else
+                    z = 1
+                end if
+            case ('curvature')
+                if (.not. allocated(mountain_mesh%pm%curvature)) allocate(mountain_mesh%pm%curvature(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        mountain_mesh%pm%curvature(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    mountain_mesh%pm%curvature(:, ilvl) = ffield
+                else
+                    z = 1
+                end if
 
             !> Unrecognized.
             case default

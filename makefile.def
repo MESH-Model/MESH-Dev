@@ -69,6 +69,10 @@ OBJECTS+=	RUNCLASS36_constants.o
 OBJECTS+=	PBSMrates.o PBSMrun.o ProbabilityThreshold.o REDISTRIB_SNOW.o SUM.o \
 			PBSM_module.o
 
+#mountain_mesh
+VPATH+=	$(DIR_REPO)/Modules/mountain_module:
+OBJECTS+=	forcing_adjust.o mountain_module.o
+
 # ======================================================================
 # CLASS (3.6).
 # Paths.

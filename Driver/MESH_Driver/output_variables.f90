@@ -242,6 +242,11 @@ module output_variables
                     call output_variables_allocate(fields%uv, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%uv, n1)
                 end if
+            case (VN_WDIR)
+                if (associated(fields%vs%wdir)) then
+                    call output_variables_allocate(fields%wdir, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%wdir, n1)
+                end if
             case (VN_PRE)
                 if (associated(fields%vs%pre)) then
                     call output_variables_allocate(fields%pre, n1, pntr)
@@ -673,6 +678,7 @@ module output_variables
             if (associated(group%qa)) group%qa = out%NO_DATA
             if (associated(group%pres)) group%pres = out%NO_DATA
             if (associated(group%uv)) group%uv = out%NO_DATA
+            if (associated(group%wdir)) group%wdir = out%NO_DATA
         end if
 
         !> Water balance.
@@ -881,6 +887,9 @@ module output_variables
             end if
             if (associated(group%uv)) then
                 if (all(group%uv == out%NO_DATA)) group%uv = group_vs%uv
+            end if
+            if (associated(group%wdir)) then
+                if (all(group%wdir == out%NO_DATA)) group%wdir = group_vs%wdir
             end if
             if (associated(group%pre)) then
                 if (all(group%pre == out%NO_DATA)) group%pre = group_vs%pre
@@ -1296,6 +1305,9 @@ module output_variables
             end if
             if (associated(group%uv)) then
                 call output_variables_field_update(group%uv, group_ts%uv, its, 'avg')
+            end if
+            if (associated(group%wdir)) then
+                call output_variables_field_update(group%wdir, group_ts%wdir, its, 'avg')
             end if
             if (associated(group%pre)) then
                 call output_variables_field_update(group%pre, group_ts%pre, its, 'avg')

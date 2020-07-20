@@ -21,6 +21,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use SA_RTE_module, only: SA_RTE_flgs
     use SIMSTATS_config, only: mtsflg
     use PBSM_module
+    use mountain_module
 
     implicit none
 
@@ -674,6 +675,10 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                 !> INPUTPARAMSFORMFLAG
                 case ('INPUTPARAMSFORMFLAG')
                     INPUTPARAMSFORM = adjustl(lowercase(line))
+
+                !> MOUNTAINMESH (formerly: SOLARADJUSTFLAG).
+                case('MOUNTAINMESH', 'SOLARADJUSTFLAG')
+                    mountain_mesh%RUNOPTIONSFLAG = adjustl(lowercase(line))
 
                 !> Unrecognized flag.
                 case default
