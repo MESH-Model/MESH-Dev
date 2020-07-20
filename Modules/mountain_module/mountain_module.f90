@@ -20,15 +20,71 @@ module mountain_module
     !> Variables:
     !*  Time_Zone: The time zone of the study area.
     !*  CalcFreq: Iterations per day (must divide the day into equal increments of minutes). [--].
+    !*  ilapse: Flag to specify lapse rate table. [--].
+    !>      0: None.
+    !>      1: Use mean annual lapse rate derived from 2.5km GEM (Oct, 2016 to Sept, 2019). (default).
+    !>      2: Use monthly lapse rate derived from 2.5km GEM (Oct, 2016 to Sept, 2019).
+    !>      3: Use table based on literature values.
+    !*  ipre: Flag to specify precipitation adjustment method. [--].
+    !>      0: None.
+    !>      1: Adjustment based on Thornton, 1997. (default).
+    !>      2: Lapse-rate adjustment.
+    !*  itemp: Flag to specify temperature adjustment method. [--].
+    !>      0: None.
+    !>      1: Lapse-rate adjustment. (default).
+    !*  ipres: Flag to specify pressure adjustment method. [--].
+    !>      0: None.
+    !>      1: Elevation adjustment. (default).
+    !*  ihumd: Flag to specify specific humidity adjustment method. [--].
+    !>      0: None.
+    !>      1: Adjustment based on Murray, 1967. (default).
+    !>      2: Adjustment based on Kunkel, 1989.
+    !*  irlds: Flag to specify longwave radiation adjustment method. [--].
+    !>      0: None.
+    !>      1: Lapse-rate adjustment. (default).
+    !>      2: Adjustment based on Abramowitz et al., 2012.
+    !*  iwind: Flag to specify wind speed adjustment method. [--].
+    !>      0: None.
+    !>      1: Adjustment based on Liston and Sturm, 1998 (requires wind direction, winddir). (default).
+    !>      2: Lapse-rate adjustment.
+    !*  iphase: Flag to specify precipitation phase partitioning method. [--].
+    !>      0: Partioning to 0.0 degrees C.
+    !>      1: Partitioning based on Harder and Pomeroy, 2013. (default).
+    !*  irsrd: Flag to specify shortwave radiation adjustment method. [--].
+    !>      0: None.
+    !>      1: Adjustment based on Garnier and Ohmura, 1970. (default).
+    !*  idecl: Flag to specify calculation to use for declination. [--].
+    !>      0: Based on Dingman, 2015 and Iqbal, 1983.
+    !>      1: Alternate approach. (default).
     !*  elev: Weighted average elevation of GRUs. [m].
     !*  delta: Weighted average elevation difference between high (MESH) and low (GEM) resolution elevation. [m].
     !*  slope: Weighted average slope of surface (1: grid; 2: GRU). [degrees].
     !*  aspect: Weighted average aspect of surface (1: grid; 2: GRU). [degrees].
     !*  curvature: Weighted average curvature of the surface. [--].
+    !*  tlapse: Table of lapse rate values for temperature. [--].
+    !*  plapse: Table of lapse rate values for precipitation. [--].
+    !*  dtlapse: Table of lapse rate values for dew point temperature. [--].
+    !*  lwlapse: Table of lapse rate values for longwave radiation. [--].
+    !*  wlapse: Table of lapse rate values for wind speed. [--].
     type mountain_parameters
         real :: Time_Zone = -6.0
         integer :: CalcFreq = 288
+        integer :: ilapse = 1
+        integer :: ipre = 1
+        integer :: itemp = 1
+        integer :: ipres = 1
+        integer :: ihumd = 1
+        integer :: irlds = 1
+        integer :: iwind = 1
+        integer :: iphase = 1
+        integer :: irsrd = 1
+        integer :: idecl = 1
         real, dimension(:, :), allocatable :: elev, slope, aspect, delta, curvature
+        real, dimension(12) :: tlapse = (/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 /)
+        real, dimension(12) :: plapse = (/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 /)
+        real, dimension(12) :: dtlapse = (/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 /)
+        real, dimension(12) :: lwlapse = (/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 /)
+        real, dimension(12) :: wlapse = (/ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 /)
     end type
 
     !> Description:
@@ -77,7 +133,7 @@ module mountain_module
         integer, intent(out) :: ierr
 
         !> Local variables.
-        integer nargs
+        integer nargs, z
         character(len = len(arg)) args(50)
 
         !> Status.
@@ -92,18 +148,47 @@ module mountain_module
         if (nargs <= 1) return
 
         !> Assign the value.
+        z = 0
         select case (lowercase(args(1)))
             case ('time_zone')
-                call value(args(2), mountain_mesh%pm%Time_Zone, ierr)
+                call value(args(2), mountain_mesh%pm%Time_Zone, z)
             case ('calcfreq')
-                call value(args(2), mountain_mesh%pm%CalcFreq, ierr)
+                call value(args(2), mountain_mesh%pm%CalcFreq, z)
+            case ('ilapse')
+                call value(args(2), mountain_mesh%pm%ilapse, z)
+            case ('ipre')
+                call value(args(2), mountain_mesh%pm%ipre, z)
+            case ('itemp')
+                call value(args(2), mountain_mesh%pm%itemp, z)
+            case ('ipres')
+                call value(args(2), mountain_mesh%pm%ipres, z)
+            case ('ihumd')
+                call value(args(2), mountain_mesh%pm%ihumd, z)
+            case ('irlds')
+                call value(args(2), mountain_mesh%pm%irlds, z)
+            case ('iwind')
+                call value(args(2), mountain_mesh%pm%iwind, z)
+            case ('iphase')
+                call value(args(2), mountain_mesh%pm%iphase, z)
+            case ('irsrd')
+                call value(args(2), mountain_mesh%pm%irsrd, z)
+            case ('idecl')
+                call value(args(2), mountain_mesh%pm%idecl, z)
+            case default
+                ierr = 2
         end select
+
+        !> Check for conversion error.
+        if (z /= 0) ierr = 1
 
     end subroutine
 
     subroutine mountain_parse_options(flg, ierr)
 
-        !> Required for the 'parse' and 'lowercase' functions.
+        !> Required for MESH 'print_warning' routine.
+        use sa_mesh_common
+
+        !> Required for the 'parse', 'lowercase', and 'uppercase' functions.
         use strings
 
         !> Input variables.
@@ -113,10 +198,10 @@ module mountain_module
         integer, intent(out) :: ierr
 
         !> Local variables.
-        integer i, nargs
+        integer nargs, i, z
         character(len = 20) args(20)
 
-        !> Status.
+        !> Initialize the error variable.
         ierr = 0
 
         !> Assume if the flag is populated that the routine is enabled.
@@ -131,10 +216,13 @@ module mountain_module
         call parse(flg, ' ', args, nargs)
 
         !> Check the keywords.
-        do i = 1, nargs
+        do i = 2, nargs
 
             !> Exit if any of the keywords have disabled the routine.
             if (.not. mountain_mesh%PROCESS_ACTIVE) return
+
+            !> Reset the error variable.
+            z = 0
 
             !> Specific options.
             select case (lowercase(args(i)))
@@ -143,10 +231,31 @@ module mountain_module
                     !> 'off' or '0' disables the routine.
                     mountain_mesh%PROCESS_ACTIVE = .false.
                     exit
+                case ('none')
+
+                    !> Disable all options (to simplify enabling a subset).
+                    mountain_mesh%pm%ilapse = 0
+                    mountain_mesh%pm%ipre = 0
+                    mountain_mesh%pm%itemp = 0
+                    mountain_mesh%pm%ipres = 0
+                    mountain_mesh%pm%ihumd = 0
+                    mountain_mesh%pm%irlds = 0
+                    mountain_mesh%pm%iwind = 0
+                    mountain_mesh%pm%iphase = 0
+                    mountain_mesh%pm%irsrd = 0
+                    mountain_mesh%pm%idecl = 0
                 case default
 
                     !> Other options.
-                    call mountain_extract_value(args(i), ierr)
+                    call mountain_extract_value(args(i), z)
+                    if (z == 2) then
+                        call print_warning("Unrecognized option on '" // uppercase(trim(args(1))) // "': " // trim(args(i)))
+                    else if (z == 1) then
+                        call print_warning( &
+                            "An error occurred parsing the '" // trim(args(i)) // "' option on '" // &
+                            uppercase(trim(args(1))) // "'.")
+                        ierr = z
+                    end if
             end select
         end do
 
@@ -172,6 +281,10 @@ module mountain_module
         !> Local variables.
         integer k, ierr
         character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) val
+
+        !> Initialize the error variable.
+        ierr = 0
 
         !> Parse options.
         call mountain_parse_options(mountain_mesh%RUNOPTIONSFLAG, ierr)
@@ -212,7 +325,7 @@ module mountain_module
                 mountain_mesh%vs%slope(k) = mountain_mesh%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
 
                 !> Overwrite estimated average slope of the GRU.
-                pm%tile%xslp(k) = tan(mountain_mesh%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k)))*180.0/3.14159265
+                pm%tile%xslp(k) = tan(mountain_mesh%pm%slope(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*3.14159265/180.0)
             end if
             if (allocated(mountain_mesh%pm%aspect)) then
                 mountain_mesh%vs%aspect(k) = mountain_mesh%pm%aspect(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
@@ -236,34 +349,136 @@ module mountain_module
 
         !> Print configuration information to file if 'DIAGNOSEMODE' is active.
         if (DIAGNOSEMODE) then
-            write(line, FMT_GEN) 'Time_Zone', mountain_mesh%pm%Time_Zone
-            call print_message_detail(line)
-            write(line, FMT_GEN) 'CalcFreq', mountain_mesh%pm%CalcFreq
+            line = 'MOUNTAINMESH on'
+            write(val, FMT_GEN) mountain_mesh%pm%Time_Zone
+            line = trim(line) // ' Time_Zone=' // trim(adjustl(val))
+            write(val, FMT_GEN) mountain_mesh%pm%CalcFreq
+            line = trim(line) // ' CalcFreq=' // trim(adjustl(val))
+            write(val, FMT_GEN) mountain_mesh%pm%ilapse
+            line = trim(line) // ' ilapse=' // trim(adjustl(val))
+            write(val, FMT_GEN) mountain_mesh%pm%ipre
+            line = trim(line) // ' ipre=' // trim(adjustl(val))
+            write(val, FMT_GEN) mountain_mesh%pm%itemp
+            line = trim(line) // ' itemp=' // trim(adjustl(val))
+            write(val, FMT_GEN) mountain_mesh%pm%ipres
+            line = trim(line) // ' ipres=' // trim(adjustl(val))
+            write(val, FMT_GEN) mountain_mesh%pm%ihumd
+            line = trim(line) // ' ihumd=' // trim(adjustl(val))
+            write(val, FMT_GEN) mountain_mesh%pm%irlds
+            line = trim(line) // ' irlds=' // trim(adjustl(val))
+            write(val, FMT_GEN) mountain_mesh%pm%iwind
+            line = trim(line) // ' iwind=' // trim(adjustl(val))
+            write(val, FMT_GEN) mountain_mesh%pm%iphase
+            line = trim(line) // ' iphase=' // trim(adjustl(val))
+            write(val, FMT_GEN) mountain_mesh%pm%irsrd
+            line = trim(line) // ' irsrd=' // trim(adjustl(val))
+            write(val, FMT_GEN) mountain_mesh%pm%idecl
+            line = trim(line) // ' idecl=' // trim(adjustl(val))
             call print_message_detail(line)
         end if
 
         !> Check values, print error messages for invalid values.
         !> The check is of 'GAT'-based variables, for which all tiles should have valid values.
-        ierr = 0
         if (mod(24*60, mountain_mesh%pm%CalcFreq) /= 0) then
             write(line, FMT_GEN) mountain_mesh%pm%CalcFreq
             call print_message_detail( &
-                'ERROR: CalcFreq must evenly divide into minutes in the day. 1440 mod ' // trim(adjustl(line)) // ' /= 0.')
+                "ERROR: CalcFreq must evenly divide into minutes in the day. 1440 mod " // trim(adjustl(line)) // " /= 0.")
             ierr = 1
         end if
         if (any(mountain_mesh%vs%elev < 0.0)) then
-            call print_message_detail('ERROR: Values of ELEVATION are less than zero.')
+            call print_message_detail("ERROR: Values of ELEVATION are less than zero.")
             ierr = 1
         end if
         if (any(mountain_mesh%vs%slope < 0.0)) then
-            call print_message_detail('ERROR: Values of SLOPE are less than zero.')
+            call print_message_detail("ERROR: Values of SLOPE are less than zero.")
             ierr = 1
         end if
         if (any(mountain_mesh%vs%aspect < 0.0)) then
-            call print_message_detail('ERROR: Values of ASPECT are less than zero.')
+            call print_message_detail("ERROR: Values of ASPECT are less than zero.")
             ierr = 1
         end if
-        if (ierr /= 0) call program_abort()
+        if (mountain_mesh%pm%iwind == 1 .and. .not. cm%dat(ck%WD)%factive) then
+            call print_message_detail("ERROR: iwind option 1 requires wind direction, but the driving variable is not active.")
+            ierr = 1
+        end if
+
+        !> Data tables.
+        select case (mountain_mesh%pm%ilapse)
+            case (1)
+
+                !> Option 1:
+                !>  Tables of mean annual lapse rate derived from the high
+                !>  resolution (2.5km by 2.5km) GEM run for the period Oct, 2016
+                !>  to Sept, 2019.
+                mountain_mesh%pm%plapse = (/ 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30, 0.30 /)
+                mountain_mesh%pm%tlapse = (/ 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60, 6.60 /)
+                mountain_mesh%pm%dtlapse = (/ 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92, 2.92 /)
+                mountain_mesh%pm%lwlapse = (/ 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35, 18.35 /)
+                mountain_mesh%pm%wlapse = (/ 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21 /)
+            case (2)
+
+                !> Option 2:
+                !>  Tables of monthly lapse rate derived from the high
+                !>  resolution (2.5km by 2.5km) GEM run for the period Oct, 2016
+                !>  to Sept, 2019.
+                mountain_mesh%pm%plapse = (/ 0.516, 0.306, 0.420, 0.263, 0.084, 0.164, 0.158, 0.219, 0.206, 0.461, 0.528, 0.342 /)
+                mountain_mesh%pm%tlapse = (/ 5.479, 5.830, 5.683, 6.991, 8.107, 7.940, 6.700, 6.648, 6.177, 6.729, 7.080, 5.791 /)
+                mountain_mesh%pm%dtlapse = (/ 1.986, 2.567, 1.941, 2.892, 2.747, 3.267, 4.834, 3.802, 3.257, 3.145, 2.505, 2.126 /)
+                mountain_mesh%pm%lwlapse = &
+                    (/ 6.832, 8.647, 4.803, 17.993, 31.842, 28.492, 36.013, 33.234, 25.388, 12.674, 0.288, 13.972 /)
+                mountain_mesh%pm%wlapse = (/ 0.26, 0.32, 0.16, 0.22, 0.23, 0.26, 0.22, 0.12, 0.16, 0.13, 0.14, 0.20 /)
+            case (3)
+
+                !> Option 3:
+                !>  Tables of temperature lapse rate, vapor pressure coefficient
+                !>  (Kunkel et al., 1989), and precipitation-elevation
+                !>  adjustment factors (Thornton et al., 1997) for each month
+                !>  for the Northern Hemisphere. Incoming long wave radiation
+                !>  lapse rate of 29 W/m^2/1000 m (Marty et al., 2002).
+                mountain_mesh%pm%plapse = (/ 0.35, 0.35, 0.35, 0.30, 0.25, 0.20, 0.20, 0.20, 0.20, 0.25, 0.30, 0.35 /)
+                mountain_mesh%pm%tlapse = (/ 4.40, 5.90, 7.10, 7.80, 8.10, 8.20, 8.10, 8.10, 7.70, 6.80, 5.50, 4.70 /)
+                mountain_mesh%pm%dtlapse = (/ 5.64, 5.78, 5.51, 5.37, 5.23, 4.96, 4.54, 4.54, 4.96, 5.09, 5.51, 5.51 /)
+                mountain_mesh%pm%lwlapse = (/ 29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0, 29.0 /)
+
+                !> Check against 'iwind' (no 'wlapse').
+                if (mountain_mesh%pm%iwind == 2) then
+                    call print_message_detail( &
+                        "ERROR: iwind option 2 cannot be used with ilapse option 3, as the option does not provide 'wlapse'.")
+                    ierr = 1
+                end if
+            case default
+                if (mountain_mesh%pm%ipre /= 0) then
+                    call print_message_detail( &
+                        "ERROR: ipre is active but cannot be used without any ilapse option to define 'plapse'.")
+                    ierr = 1
+                end if
+                if (mountain_mesh%pm%itemp /= 0) then
+                    call print_message_detail( &
+                        "ERROR: itemp is active but cannot be used without any ilapse option to define 'tlapse'.")
+                    ierr = 1
+                end if
+                if (mountain_mesh%pm%ihumd /= 0) then
+                    call print_message_detail( &
+                        "ERROR: ihumd is active but cannot be used without any ilapse option to define 'dtlapse'.")
+                    ierr = 1
+                end if
+                if (mountain_mesh%pm%irlds /= 0) then
+                    call print_message_detail( &
+                        "ERROR: irlds is active but cannot be used without any ilapse option to define 'lwlapse'.")
+                    ierr = 1
+                end if
+                if (mountain_mesh%pm%iwind == 2) then
+                    call print_message_detail( &
+                        "ERROR: iwind option 2 cannot be used without any ilapse option to define 'wlapse'.")
+                    ierr = 1
+                end if
+        end select
+
+        !> Check for errors.
+        if (ierr /= 0) then
+            call print_error("Errors occurred during the initialization of 'MOUNTAINMESH'.")
+            call program_abort()
+        end if
 
     end subroutine
 
@@ -309,7 +524,13 @@ module mountain_module
             mountain_mesh%vs%curvature(il1:il2), iln, &
             shd%lc%ILMOS(il1:il2), i1, i2, &
             mountain_mesh%pm%Time_Zone, &
-            mountain_mesh%pm%CalcFreq, cm%dat(ck%FB)%hf, &
+            mountain_mesh%pm%CalcFreq, &
+            mountain_mesh%pm%ipre, mountain_mesh%pm%itemp, mountain_mesh%pm%ipres, &
+            mountain_mesh%pm%ihumd, mountain_mesh%pm%irlds, mountain_mesh%pm%iwind, &
+            mountain_mesh%pm%iphase, mountain_mesh%pm%irsrd, mountain_mesh%pm%idecl, &
+            mountain_mesh%pm%tlapse, mountain_mesh%pm%plapse, mountain_mesh%pm%dtlapse, &
+            mountain_mesh%pm%lwlapse, mountain_mesh%pm%wlapse, &
+            cm%dat(ck%FB)%hf, &
             cm%dat(ck%FI)%hf, &
             cm%dat(ck%TT)%hf, &
             cm%dat(ck%P0)%hf, &
