@@ -7,6 +7,9 @@
      +                  FREZTH, SNDEPLIM, SNDENLIM,
      5                  ISAND,ICONT,IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 C
+C     * JUL 20/20 - D.PRINCZ.   MODIFIED THE CALCULATION OF HTC TO
+C                               CONSIDER CHANGE IN ZPOND WHEN USING IWF
+C                               (ICEBAL).
 C     * JUN 10/20 - D.PRINCZ.   ADDED ICE AND TICE (ICEBAL).
 C     * JUN 10/20 - D.PRINCZ.   CHANGED THRESHOLD AND LIMITS IN CHECKS
 C                               TO CONFIGURABLE VALUES.
@@ -112,14 +115,14 @@ C     * TO RUNOFF.  CHECK FOR POND FREEZING.
 C
       DO 100 I=IL1,IL2
           IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                THEN
-              IF(R(I).GT.0.)                                THEN 
-                 RADD=R(I)*DELT                                                             
-                 TPOND(I)=((TPOND(I)+TFREZ)*ZPOND(I)+(TR(I)+TFREZ)*
-     1               RADD)/(ZPOND(I)+RADD)-TFREZ
-                 ZPOND(I)=ZPOND(I)+RADD                                                        
-                 HTC (I,1)=HTC(I,1)+FI(I)*(TR(I)+TFREZ)*HCPW*
-     1                     RADD/DELT
-              ENDIF                                                                       
+!              IF(R(I).GT.0.)                                THEN 
+!                 RADD=R(I)*DELT                                                             
+!                 TPOND(I)=((TPOND(I)+TFREZ)*ZPOND(I)+(TR(I)+TFREZ)*
+!     1               RADD)/(ZPOND(I)+RADD)-TFREZ
+!                 ZPOND(I)=ZPOND(I)+RADD                                                        
+!                 HTC (I,1)=HTC(I,1)+FI(I)*(TR(I)+TFREZ)*HCPW*
+!     1                     RADD/DELT
+!              ENDIF                                                                       
               IF(IWF(I).EQ.0 .AND. (ZPOND(I)-ZPLIM(I)).GT.1.0E-8) THEN
                   TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TPOND(I)+TFREZ)*
      1                   (ZPOND(I)-ZPLIM(I)))/(RUNOFF(I)+ZPOND(I)-
@@ -129,9 +132,13 @@ C
      1                   FI(I)*(ZPOND(I)-ZPLIM(I)))/(OVRFLW(I)+
      2                   FI(I)*(ZPOND(I)-ZPLIM(I)))
                   OVRFLW(I)=OVRFLW(I)+FI(I)*(ZPOND(I)-ZPLIM(I)) 
-                  HTC(I,1)=HTC(I,1)-FI(I)*(TPOND(I)+TFREZ)*HCPW*
-     1                   (ZPOND(I)-ZPLIM(I))/DELT
+!                  HTC(I,1)=HTC(I,1)-FI(I)*(TPOND(I)+TFREZ)*HCPW*
+!     1                   (ZPOND(I)-ZPLIM(I))/DELT
                   ZPOND(I)=MIN(ZPOND(I),ZPLIM(I))
+              ENDIF
+              IF(ZPOND(I).GT.0.0) THEN
+                  HTC(I,1)=HTC(I,1)+FI(I)*HCPW*(TPOND(I)+TFREZ)*
+     1                   ZPOND(I)/DELT
               ENDIF
               IF(TPOND(I).GT.0.001)                           THEN
                   HCOOL=TPOND(I)*HCPW*ZPOND(I)
