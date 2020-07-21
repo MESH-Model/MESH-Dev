@@ -107,7 +107,7 @@ module model_variables
         !* tpnd: Temperature of ponded water. [K].
         !* fstr: Contributing fraction of ponded water (PDMROF). [--].
         !* pevp: Diagnosed potential evapotranspiration. [kg m-2 s-1].
-        !* evap: Evapotranspiration. [kg m-2].
+        !* evap: Evapotranspiration. [kg m-2 s-1].
         !* evpb: Evaporation efficiency (EVP to PEVP) of the canopy. [--].
         !* arrd: Arridity index (PRE to PEVP). [--].
         !* rofo: Overland component of total runoff. [kg m-2 s-1].

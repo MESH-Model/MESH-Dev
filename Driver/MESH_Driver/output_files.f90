@@ -1073,7 +1073,7 @@ module output_files
 
     end subroutine
 
-    subroutine output_files_write_txt(fls, shd, field, iun, dat, dates, ierr)
+    subroutine output_files_write_txt(fls, shd, field, iun, dat, dates, ierr, sep)
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
@@ -1082,6 +1082,7 @@ module output_files
         integer, intent(in) :: iun
         real, dimension(:, :), intent(in) :: dat
         integer, dimension(:, :), intent(in) :: dates
+        character(len = *), intent(in), optional :: sep
 
         !> Output variables.
         integer, intent(out) :: ierr
@@ -1089,15 +1090,18 @@ module output_files
         !> Local variables.
         integer t, j, i
         real dat_grid(shd%yCount*shd%xCount), dat_tsi(size(field%tsi)), dat_tsk(size(field%tsk))
-        character(len = DEFAULT_FIELD_LENGTH) fmt
+        character(len = DEFAULT_FIELD_LENGTH) delim, fmt
 
         !> Assign the delimiter.
-        select case (field%delim)
-            case (',')
-                fmt = FMT_CSV
-            case default
-                fmt = FMT_GEN
-        end select
+        fmt = FMT_GEN
+        delim = ''
+        if (present(sep)) then
+            select case (sep)
+                case (',')
+                    fmt = FMT_CSV
+                    delim = trim(sep)
+            end select
+        end if
 
         !> Write series.
         do t = 1, size(dat, 2)
@@ -1106,7 +1110,7 @@ module output_files
             if (field%print_date) then
                 ierr = 0
                 write(iun, "((a), i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':00.000', (a))", advance = 'no', iostat = ierr) &
-                    """", dates(2:6, t), """" // trim(field%delim)
+                    """", dates(2:6, t), """" // trim(delim)
                 if (ierr /= 0) return
             end if
 
@@ -2072,7 +2076,7 @@ module output_files
                 case (VN_EVAP, 'Evapotranspiration')
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_EVAP, args, nargs, z, -1, real(ic%dts))
                 case (VN_PEVP)
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PEVP, args, nargs, z)
+                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_PEVP, args, nargs, z, -1, real(ic%dts))
                 case (VN_EVPB)
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_EVPB, args, nargs, z)
                 case (VN_ARRD)
@@ -2365,7 +2369,7 @@ module output_files
             end if
             if (btest(field%ffmt, fls_out%ffmt%csv)) then
                 z = 0
-                call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
+                call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z, sep = ',')
                 if (z /= 0) then
                     call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.csv')
                     call program_abort()

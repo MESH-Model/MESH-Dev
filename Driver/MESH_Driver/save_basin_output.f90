@@ -1048,6 +1048,7 @@ module save_basin_output
 
         !> Average of the storage components.
         bno%evpdts(ikdts)%EVPB = bno%evpdts(ikdts)%EVPB/dnts
+        bno%evpdts(ikdts)%ARRD = bno%evpdts(ikdts)%ARRD/dnts
 
         !> Write the time-stamp for the period.
         write(fik, 1010, advance = 'no') ic%now%year
