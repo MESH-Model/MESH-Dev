@@ -161,7 +161,7 @@ module input_parameters
         if (allocated(group%fare)) group%fare = 0.0
         if (allocated(group%xslp)) group%xslp = 0.0
         if (allocated(group%mid)) group%mid = 0
-        if (allocated(group%iwf)) group%iwf = 0
+        if (allocated(group%iwf)) group%iwf = -1
         if (allocated(group%fcan)) group%fcan = 0.0
         if (allocated(group%z0or)) group%z0or = 0.0
         if (allocated(group%lnz0)) group%lnz0 = 0.0
