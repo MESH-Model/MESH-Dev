@@ -51,23 +51,23 @@ module climate_forcing_constants
 !        integer :: UU
 !        integer :: VV
         integer :: UV = 5
-        integer :: WD = 6
+        integer :: WD = 12
 
         !* P0: Surface air pressure [Pa].
-        integer :: P0 = 7
+        integer :: P0 = 6
 
         !* HU: Specific humidity at reference height [kg kg-1]
-        integer :: HU = 8
+        integer :: HU = 7
 
         !* RR: Rain precipitation rate [kg m-2 s-1]
         !* SR: Snow precipitation rate [kg m-2 s-1]
-        integer :: RR = 9
-        integer :: SR = 10
+        integer :: RR = 8
+        integer :: SR = 9
 
         !* N0: Runoff. [mm].
         !* O1: Recharge. [mm].
-        integer :: N0 = 11
-        integer :: O1 = 12
+        integer :: N0 = 10
+        integer :: O1 = 11
 
         !* MET: CLASS format MET file.
         integer :: MET = 13
