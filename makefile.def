@@ -36,11 +36,9 @@ OBJECTS+=	mpi_flags.o mpi_shared_variables.o mpi_utilities.o \
 			mpi_module.o
 # String parsing primitives.
 OBJECTS+=	precmod.o stringmod.o
-# I/O primitives.
+# Common.
 OBJECTS+=	print_routines.o program_end.o program_abort.o \
-			txt_io.o ensim_io.o
-# Variables (common).
-OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
+			module_files_variabletypes.o module_files_variables.o \
 			module_dates.o \
 			EF_Module.o EF_ParseUtilities.o FLAGS.o \
 			parse_utilities.o \
@@ -48,10 +46,11 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			control_variables.o \
 			variable_names.o parameter_names.o \
 			shd_variables.o fm_variables.o input_parameters.o model_variables.o \
-			climate_forcing_module_config.o \
-			climate_forcing_module_io.o climate_forcing_module.o \
 			output_variables.o \
 			sa_mesh_common.o \
+			txt_io.o ensim_io.o nc_io.o \
+			climate_forcing_module_config.o \
+			climate_forcing_module_io.o climate_forcing_module.o \
 			read_init_prog_variables_class.o save_init_prog_variables_class.o \
 			tile_connector.o
 # Process modules.
