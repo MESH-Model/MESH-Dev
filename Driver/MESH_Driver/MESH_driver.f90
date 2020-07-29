@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1694'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1697'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -1007,21 +1007,24 @@ program RUNMESH
         call counter_update()
 
         !> Check if we should terminate the run yet.
-        if (ic%now%year >= ic%stop%year .and. ic%stop%year > 0) then
-            if (ic%now%year > ic%stop%year) then
-                ENDDATE = .true.
-            else if (ic%now%year == ic%stop%year .and. ic%now%jday >= ic%stop%jday) then
-                if (ic%now%jday > ic%stop%jday) then
-                    ENDDATE = .true.
-                else if (ic%now%jday == ic%stop%jday .and. ic%now%hour >= ic%stop%hour) then
-                    if (ic%now%hour > ic%stop%hour) then
-                        ENDDATE = .true.
-                    else if (ic%now%hour == ic%stop%hour .and. ic%now%mins >= ic%stop%mins) then
-                        ENDDATE = .true.
-                    end if
-                end if
-            end if
-        end if
+        ENDDATE = ( &
+            ic%now%year == ic%stop%year .and. ic%now%jday == ic%stop%jday .and. &
+            ic%now%hour == ic%stop%hour .and. ic%now%mins == ic%stop%mins)
+!-        if (ic%now%year >= ic%stop%year .and. ic%stop%year > 0) then
+!-            if (ic%now%year > ic%stop%year) then
+!-                ENDDATE = .true.
+!-            else if (ic%now%year == ic%stop%year .and. ic%now%jday >= ic%stop%jday) then
+!-                if (ic%now%jday > ic%stop%jday) then
+!-                    ENDDATE = .true.
+!-                else if (ic%now%jday == ic%stop%jday .and. ic%now%hour >= ic%stop%hour) then
+!-                    if (ic%now%hour > ic%stop%hour) then
+!-                        ENDDATE = .true.
+!-                    else if (ic%now%hour == ic%stop%hour .and. ic%now%mins >= ic%stop%mins) then
+!-                        ENDDATE = .true.
+!-                    end if
+!-                end if
+!-            end if
+!-        end if
 
         !> Check the run state.
         if (ENDDATA .or. ENDDATE) exit

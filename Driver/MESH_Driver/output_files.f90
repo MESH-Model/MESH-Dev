@@ -2097,7 +2097,8 @@ module output_files
                 call output_files_update_dates(fls_out%dates%y, t, ic%iter%year, ic%now%year, 1, 1)
                 call output_files_update_group(fls, shd, field, field%y, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%year /= ic%next%year .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
+            if ((ic%now%year /= ic%next%year .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
+                (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, IO_FREQ_YLY, field, field%y, fls_out%dates%y)
             end if
         end if
@@ -2107,7 +2108,8 @@ module output_files
                 call output_files_update_dates(fls_out%dates%m, t, ic%iter%month, ic%now%year, ic%now%month, 1)
                 call output_files_update_group(fls, shd, field, field%m, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%month /= ic%next%month .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
+            if ((ic%now%month /= ic%next%month .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
+                (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, IO_FREQ_MLY, field, field%m, fls_out%dates%m)
             end if
         end if
@@ -2117,7 +2119,8 @@ module output_files
                 call output_files_update_dates(fls_out%dates%d, t, ic%iter%day, ic%now%year, ic%now%month, ic%now%day)
                 call output_files_update_group(fls, shd, field, field%d, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%day /= ic%next%day .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
+            if ((ic%now%day /= ic%next%day .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
+                (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, IO_FREQ_DLY, field, field%d, fls_out%dates%d)
             end if
         end if
@@ -2127,7 +2130,8 @@ module output_files
                 call output_files_update_dates(fls_out%dates%h, t, ic%iter%hour, ic%now%year, ic%now%month, ic%now%day, ic%now%hour)
                 call output_files_update_group(fls, shd, field, field%h, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%hour /= ic%next%hour .and. .not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
+            if ((ic%now%hour /= ic%next%hour .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
+                (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, IO_FREQ_HLY, field, field%h, fls_out%dates%h)
             end if
         end if

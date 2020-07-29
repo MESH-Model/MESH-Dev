@@ -208,9 +208,15 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> Read from the 'ini' files.
     if (btest(INPUTPARAMSFORMFLAG, 0)) then
         z = 0
-        call READ_PARAMETERS_CLASS(shd, fls, cm, z); if (z /= 0) ierr = z
-        call READ_PARAMETERS_HYDROLOGY(shd, fls, z); if (z /= 0) ierr = z
-        call READ_SOIL_INI(fls, shd, z); if (z /= 0) ierr = z
+        if (ro%RUNLSS) then
+            call READ_PARAMETERS_CLASS(shd, fls, cm, z); if (z /= 0) ierr = z
+        end if
+        if (ro%RUNLSS .or. ro%RUNCHNL) then
+            call READ_PARAMETERS_HYDROLOGY(shd, fls, z); if (z /= 0) ierr = z
+        end if
+        if (ro%RUNLSS) then
+            call READ_SOIL_INI(fls, shd, z); if (z /= 0) ierr = z
+        end if
         if (ierr /= 0) return
     end if
 
