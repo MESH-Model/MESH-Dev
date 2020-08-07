@@ -554,7 +554,6 @@ module runsvs_mesh
                 write(line, "(' LAYER ', i3, ': ', 999(f8.3, 2x))") j, bus(sand + (j - 1)*NG), bus(clay + (j - 1)*NG)
                 call print_message(line)
             end do
-            call print_message(line)
             call print_message('SOIL MOISTURE:')
             call print_message('             LIQUID    FROZEN')
             do j = 1, nl_svs ! permeable layers
