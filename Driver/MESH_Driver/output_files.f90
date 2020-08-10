@@ -1686,20 +1686,20 @@ module output_files
                     if (ro%RUNCHNL) call output_files_append_field(fls, shd, ts, VN_ZLVL, args, nargs, z)
 
                 !> Permafrost outputs (PERMAFROSTOUTFLAG).
-                case (PMFRSTVN_ALD)
+                case (PMFRSTVN_ALT)
                     if (ro%RUNBALEB) then
-                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALD)
-                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALD, prmfst%out%ald, args, nargs, z)
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALT)
+                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALT, prmfst%out%alt, args, nargs, z)
                     end if
-                case (PMFRSTVN_ALDDOY, 'ALD_JDAY')
+                case (PMFRSTVN_ALTDOY, 'ALT_JDAY')
                     if (ro%RUNBALEB) then
-                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALDDOY)
-                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALDDOY, prmfst%out%alddoy, args, nargs, z)
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALTDOY)
+                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALTDOY, prmfst%out%altdoy, args, nargs, z)
                     end if
-                case (PMFRSTVN_ALDENV)
+                case (PMFRSTVN_ALTENV)
                     if (ro%RUNBALEB) then
-                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALDENV)
-                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALDENV, prmfst%out%aldenv, args, nargs, z)
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_ALTENV)
+                        call output_files_append_field(fls, shd, ts, PMFRSTVN_ALTENV, prmfst%out%altenv, args, nargs, z)
                     end if
                 case (PMFRSTVN_TAVG)
                     if (ro%RUNBALEB) then
@@ -1733,38 +1733,38 @@ module output_files
                             call output_files_append_field(fls, shd, ts, line, prmfst%out%trng(j), args, nargs, z, j)
                         end do
                     end if
-                case (PMFRSTVN_ZOD)
+                case (PMFRSTVN_DZAA)
                     if (ro%RUNBALEB) then
 
-                        !> User-defined temperature threshold(s)/tolerance(s) for ZOD.
+                        !> User-defined temperature threshold(s)/tolerance(s) for DZAA.
                         if (nargs > 1) then
                             do j = 2, nargs
                                 if (lowercase(args(j)) == 'ttol') then
-                                    if (allocated(prmfst%pm%zod_ttol)) then
+                                    if (allocated(prmfst%pm%dzaa_ttol)) then
                                         call print_message_detail("ERROR:" // &
                                             " Multiple instances of the 'ttol' option exist in outputs_balance.txt" // &
-                                            " or a previous entry of 'ZOD' without the 'ttol' option" // &
+                                            " or a previous entry of 'DZAA' without the 'ttol' option" // &
                                             " has activated the default value ('ttol 0.1')." // &
                                             " Only one instance of the 'ttol' option can exist." // &
                                             " Combine multiple instances 'ttol' into a single option and add it to the first" // &
-                                            " entry of 'ZOD' in the list.")
+                                            " entry of 'DZAA' in the list.")
                                         z = 1
                                         exit
                                     else
-                                        call output_files_parse_indices(args, nargs, prmfst%pm%zod_ttol, j, z)
+                                        call output_files_parse_indices(args, nargs, prmfst%pm%dzaa_ttol, j, z)
                                         exit
                                     end if
                                 end if
                             end do
                         end if
                         if (z == 0) then
-                            call permafrost_outputs_init(fls, shd, PMFRSTVN_ZOD)
-                            do j = 1, size(prmfst%pm%zod_ttol)
-                                write(line, FMT_GEN) prmfst%pm%zod_ttol(j)
+                            call permafrost_outputs_init(fls, shd, PMFRSTVN_DZAA)
+                            do j = 1, size(prmfst%pm%dzaa_ttol)
+                                write(line, FMT_GEN) prmfst%pm%dzaa_ttol(j)
                                 call trimzero(line)
                                 line(index(line, '.'):index(line, '.')) = 'p'
-                                line = trim(PMFRSTVN_ZOD) // '_TTOL_' // trim(adjustl(line))
-                                call output_files_append_field(fls, shd, ts, line, prmfst%out%zod(j), args, nargs, z)
+                                line = trim(PMFRSTVN_DZAA) // '_TTOL_' // trim(adjustl(line))
+                                call output_files_append_field(fls, shd, ts, line, prmfst%out%dzaa(j), args, nargs, z)
                             end do
                         end if
                     end if

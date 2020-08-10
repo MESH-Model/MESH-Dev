@@ -11,8 +11,8 @@
 !*  i2: Last grid of tile index to process. [--].
 !>
 !> Output variables:
-!*  ald: Active layer depth. [m below surface].
-subroutine permafrost_ald(tbar, zbot, ald, ilen, nsl, i1, i2)
+!*  alt: Active layer thickness. [m below surface].
+subroutine permafrost_alt(tbar, zbot, alt, ilen, nsl, i1, i2)
 
     implicit none
 
@@ -21,7 +21,7 @@ subroutine permafrost_ald(tbar, zbot, ald, ilen, nsl, i1, i2)
     real tbar(ilen, nsl), zbot(nsl)
 
     !> Output variables.
-    real ald(ilen)
+    real alt(ilen)
 
     !> Local variables.
     real, parameter :: TFREZ = 273.16
@@ -37,21 +37,21 @@ subroutine permafrost_ald(tbar, zbot, ald, ilen, nsl, i1, i2)
     !> Convert temperature to degrees C.
     tbarc = tbar - TFREZ
 
-    !> Calculate ALD, where temperature in the soil transitions from above to below freezing.
+    !> Calculate ALT, where temperature in the soil transitions from above to below freezing.
     do i = i1, i2
 
-        !> Set ALD = 0.0 in case no ALD is found.
-        ald(i) = 0.0
+        !> Set ALT = 0.0 in case no ALT is found.
+        alt(i) = 0.0
         do j = 2, nsl
             if (tbarc(i, j - 1) < 0.0) then
 
                 !> Ignore and cycle if the layer above is frozen.
-                ald(i) = 0.0
+                alt(i) = 0.0
                 exit
             else if (sign(1.0, tbarc(i, j)) < sign(1.0, tbarc(i, j - 1))) then
 
-                !> Transition occurs inside the layer; ALD is interpolated.
-                ald(i) = (zcen(j) - zcen(j - 1))/(tbarc(i, j - 1) - tbarc(i, j))*(tbarc(i, j - 1)) + zcen(j - 1)
+                !> Transition occurs inside the layer; ALT is interpolated.
+                alt(i) = (zcen(j) - zcen(j - 1))/(tbarc(i, j - 1) - tbarc(i, j))*(tbarc(i, j - 1)) + zcen(j - 1)
                 exit
             end if
         end do
