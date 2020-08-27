@@ -146,6 +146,13 @@ OBJECTS+=	area_watflood.o rerout.o route.o flowinit.o \
 			rte_module.o
 
 # ======================================================================
+# PRIMA.
+# Paths.
+VPATH+=	$(DIR_REPO)/Routing_Model/PRIMA:
+# Files.
+OBJECTS+=	main_PRIMA.o PRIMA_inputs.o PRIMA_module.o
+
+# ======================================================================
 # SA_MESH routines.
 # Input routines.
 OBJECTS+=	read_initial_inputs.o \
