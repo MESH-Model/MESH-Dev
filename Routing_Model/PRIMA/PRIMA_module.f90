@@ -13,7 +13,7 @@ module PRIMA_module
 
 
     character(len=100)::trash,foutflow
-    real ::exc_water_evap !in mm
+!    real ::exc_water_evap !in mm
     integer:: t
     real::time_start,time_end
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -125,9 +125,12 @@ module PRIMA_module
     subroutine prima_within_grid(fls, shd)
 
         type(fl_ids), intent(in) :: fls
-        type(ShedGridParams), intent(in) :: shd
+!2tiles: Change intent of 'shd' to in/out to update the 'ACLASS' attribute.
+        type(ShedGridParams) :: shd
 
         integer n, k
+!2tiles: local variables (just easier to identify here than with global variables above).
+        real exc_water_evap_bare, exc_water_evap_pond, exc_water_evap_total !in mm
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!                     this section will be placed a                            !!
@@ -150,14 +153,17 @@ module PRIMA_module
         !ROFOCLS = 0.0 !ROFOCLS + vs%grid%rofo*ic%dts !mm/s to mm
 		!add ROFO calculated by CLASS to the ponded depth to get the excess water depth
         !write(*,*)vs%grid%zpnd(i1)*1000.0, vs%grid%rofo(i1)*ic%dts
-        !this for tile (if we are going to 
-        !vs%tile%zpnd(i1:i2) = vs%tile%zpnd(il1:il2) + vs%tile%rofo(il1:il2)*ic%dts/1000.0 !mm/s to m
+        !this for tile (if we are going to apply the concept of two tiles/GRUs within the grid cell)
+        vs%tile%zpnd(il1:il2) = vs%tile%zpnd(il1:il2) + vs%tile%rofo(il1:il2)*ic%dts/1000.0 !mm/s to m
+        vs%tile%pndw(il1:il2) = vs%tile%pndw(il1:il2) + vs%tile%rofo(il1:il2)*ic%dts !mm/s to mm
+        vs%tile%rofo(il1:il2) = 0.0   
         
-        vs%grid%zpnd(i1:i2) = vs%grid%zpnd(i1:i2) + vs%grid%rofo(i1:i2)*ic%dts/1000.0 !mm/s to m
-        vs%grid%pndw(i1:i2) = vs%grid%pndw(i1:i2) + vs%grid%rofo(i1:i2)*ic%dts !mm/s to mm
-        vs%grid%rofo(i1:i2) = 0.0
+        !for grid cell
+        !vs%grid%zpnd(i1:i2) = vs%grid%zpnd(i1:i2) + vs%grid%rofo(i1:i2)*ic%dts/1000.0 !mm/s to m
+        !vs%grid%pndw(i1:i2) = vs%grid%pndw(i1:i2) + vs%grid%rofo(i1:i2)*ic%dts !mm/s to mm
+        !vs%grid%rofo(i1:i2) = 0.0
         !write(*,*)vs%grid%pndw(1),vs%grid%zpnd(1)
-        !this is for tiles
+        !this is for tiles (!2tiles do not know how to update that)
 		do k = il1, il2
             if (vs%grid%zpnd(shd%lc%ILMOS(k)) > 0.0 .and. vs%tile%zpnd(k) == 0.0) then
                 vs%tile%tpnd(k) = 273.16
@@ -187,6 +193,7 @@ module PRIMA_module
         end if
 
 !mesh    do t=1,ndays; !this refers to the time step (t day or hour) number. The actual number will be passed by MESH.
+!2tiles: Still make the big loop by grid (i1:i2)
         do n = i1, i2
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!!!!!!!! RUNING PRIMA model in a daily time step     !!!!!!!!!
@@ -202,21 +209,63 @@ module PRIMA_module
 
         !this will be replaced by actual ZPND and ROFO from CLASS
 !mesh        exc_water_evap=(ZPNDCLS(t)-ZPNDCLSPRE)+ROFOCLS(t) !calculate the gains and losses of ponded depth + RORO(added water)
-		ZPNDCLS(n) = vs%grid%zpnd(n)*1000.0 !m to mm
-        exc_water_evap=(ZPNDCLS(n)-ZPNDCLSPRE(n))!+ROFOCLS(n) !calculate the gains and losses of ponded depth + RORO(added water)
-        
+		!ZPNDCLS(n) = vs%grid%zpnd(n)*1000.0 !m to mm 
+!        ZPNDCLS(n) = vs%tile%zpnd(il1)*1000.0 !m to mm !2tile this is for bare soil
+!        ZPNDCLS2(n) = vs%tile%zpnd(il2)*1000.0 !m to mm !2tile this is for wet/ponded soil
+!        exc_water_evap=(ZPNDCLS(n)-ZPNDCLSPRE(n))!+ROFOCLS(n) !calculate the gains and losses of ponded depth + RORO(added water) !2tiles this is for bare soil
+!        exc_water_evap2=(ZPNDCLS2(n)-ZPNDCLSPRE2(n)) !2tiles for wet/ponded soil
+
+!2tiles: Must zero variables for the way they are aggregate below.
+        exc_water_evap_bare = 0.0
+        exc_water_evap_pond = 0.0
+        ZPNDCLS(n) = 0.0
+
+!2tiles: loop by tile to aggregate to grid value.
+        do k = il1, il2
+            if (shd%lc%ILMOS(k) == n) then
+
+                ! if matches current grid 'n'.
+                ! check GRUs.
+                if (shd%lc%JLMOS(k) == 1) then
+
+                    ! Assume GRU 1: dry/bare
+                    exc_water_evap_bare = exc_water_evap_bare + vs%tile%zpnd(k)*1000.0 !m to mm
+                else if (shd%lc%JLMOS(k) == 2) then
+
+                    ! Assume GRU 2: wet
+                    exc_water_evap_pond = exc_water_evap_pond + vs%tile%zpnd(k)*1000.0 !m to mm
+                end if
+
+                ! total ponding depth.
+                ZPNDCLS(n) = ZPNDCLS(n) + vs%tile%zpnd(k)*1000.0 !m to mm
+            end if
+        end do
+
+!2tiles: total 'exc_water_evap'.
+        exc_water_evap_total = exc_water_evap_pond + exc_water_evap_bare
+
         !debugging
 		!write(*,*)t,ZPNDCLS(n)!,ZPNDCLSPRE(n)
 		!read(*,*)dum_niter
         
         if (method .ne. 2)then
             !add water depth directly on top of the dem
+            !2tiles apply the exc_water_evap_bare to bare/dry grid cells and exc_water_evap_pond to wet/ponded grid cells
+            !a threshold of 10cm is used to distinguish wet and dry areas
+            where(wl_lin<0.1)
+                !add the excess water to bare ground
+                wl_lin=wl_lin+(exc_water_evap_bare/1000.0); !apply the excess water depth (whether it is applied or removed) and convert to meters (/1000)
+            elsewhere
+                !add the excess water to wet areas (depressions)
+                wl_lin=wl_lin+(exc_water_evap_pond/1000.0); !apply the excess water depth (whether it is applied or removed) and convert to meters (/1000)
+            end where
+                                   
             !apply the CA algorithm
-            wl_lin=wl_lin+(exc_water_evap/1000.0); !apply the excess water depth (whether it is applied or removed) and convert to meters (/1000)
+            !wl_lin=wl_lin+(exc_water_evap/1000.0); !apply the excess water depth (whether it is applied or removed) and convert to meters (/1000)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !search for wl_lin<dem_lin and keep it to dem level (depth=0) (when evaporating water from potholes)
             !for active cells only
-            if(exc_water_evap .lt. 0.0)then
+            if(exc_water_evap_bare .lt. 0.0 .or. exc_water_evap_pond .lt. 0.0)then
                 do j=1,active_cells !loop through active cells only to make sure that there is no cell with water level less than DEM
                     lin_indj=rnk_ind(j)
                     if(wl_lin(lin_indj)<dem_lin(lin_indj))  wl_lin(lin_indj)=dem_lin(lin_indj)
@@ -273,7 +322,7 @@ module PRIMA_module
 
         if (ISHEADNODE) then
 
-        write(99099,*)t,',',exc_water_evap,',',frac_wet_area,',', avg_zpnd_pr,',',adj_avg_zpnd,',',&
+        write(99099,*)t,',',exc_water_evap_total,',',frac_wet_area,',', avg_zpnd_pr,',',adj_avg_zpnd,',',&
                     & max_dep,',',ovrlnd_rof_pr,',',outflow_pr,',',outflow_pr/time_step
 
         end if
@@ -286,95 +335,70 @@ module PRIMA_module
         !ZPNDCLSPRE = ZPNDCLS(n) !placed by Dan but might be wrong as this value should be taken after updating the ZPND by PRIMA
 		
         !!!!!!!avg_zpnd_pr=avg_zpnd_pr*frac_wet_area !test
+!2tiles for dry/bare soil
+!        vs%tile%zpnd(il1) = 0.0 !avg_zpnd_pr/1000.0 !mm to m !2tile this is for bare soil
+!        vs%tile%pndw(il1) = 0.0 !mm to mm !2tile this is for bare soil
+!        vs%tile%rofo(il1) = ovrlnd_rof_pr/ic%dts !mm to mm/s
+        ZPNDCLSPRE(il1)= 0.0 !vs%grid%zpnd(n)*1000.0 !m to mm MIA This is the right place as it will take value after updating PRIMA !2tile this is for bare soil
         
-        vs%grid%zpnd(n) = avg_zpnd_pr/1000.0 !avg_zpnd_pr/1000.0 !mm to m
+        
+!2tiles for wet soil (depression)
+!        vs%tile%zpnd(il2) = avg_zpnd_pr/1000.0 !avg_zpnd_pr/1000.0 !mm to m !2tile this is for wet soil
+!        vs%tile%pndw(il2) = avg_zpnd_pr !mm to mm !2tile this is for wet soil
+!        vs%tile%rofo(il2) = ovrlnd_rof_pr/ic%dts !mm to mm/s
+        ZPNDCLSPRE(il2)= avg_zpnd_pr !vs%grid%zpnd(n)*1000.0 !m to mm MIA This is the right place as it will take value after updating PRIMA !2tile this is for wet soil
+
+!2tiles: loop by tile to assign tile values.
+        do k = il1, il2
+            if (shd%lc%ILMOS(k) == n) then
+
+                ! if matches current grid 'n'.
+                ! assign ponding to GRUs.
+                if (shd%lc%JLMOS(k) == 1) then
+
+                    ! Assume GRU 1: dry/bare
+                    vs%tile%zpnd(k) = 0.0
+                    vs%tile%pndw(k) = 0.0
+                    vs%tile%rofo(k) = ovrlnd_rof_pr/ic%dts !mm to mm/s
+                else if (shd%lc%JLMOS(k) == 2) then
+
+                    ! Assume GRU 2: wet
+                    vs%tile%zpnd(k) = avg_zpnd_pr/1000.0 !mm to m
+                    vs%tile%pndw(k) = avg_zpnd_pr !mm to mm
+                    vs%tile%rofo(k) = ovrlnd_rof_pr/ic%dts !mm to mm/s
+                end if
+            end if
+        end do
+
+!2tiles: Assign grid values (assuming only 2 GRUs assuming the distribution between 'dry/bare' and 'wet' above).
+        vs%grid%zpnd(n) = avg_zpnd_pr/1000.0 !mm to m
         vs%grid%pndw(n) = avg_zpnd_pr !mm to mm
         vs%grid%rofo(n) = ovrlnd_rof_pr/ic%dts !mm to mm/s
+
+!2tiles: Adjust GRU fractions.
+        shd%lc%ACLASS(n, 1) = max(1.0 - frac_wet_area, 0.0) ! assume GRU 1: dry/bare
+        shd%lc%ACLASS(n, 2) = max(frac_wet_area, 0.0) ! assume GRU 2: wet
+
+        !vs%grid%zpnd(n) = avg_zpnd_pr/1000.0 !avg_zpnd_pr/1000.0 !mm to m
+        !vs%grid%pndw(n) = avg_zpnd_pr !mm to mm
+        !vs%grid%rofo(n) = ovrlnd_rof_pr/ic%dts !mm to mm/s
 !        avg_zpnd_pr_pre=avg_zpnd_pr !or adj_avg_zpnd_pr
         !! the updated value of the ZPND is (adj_avg_zpnd) and ROFO is ovrlnd_rof_pr
-		ZPNDCLSPRE(n)= avg_zpnd_pr !vs%grid%zpnd(n)*1000.0 !m to mm MIA This is the right place as it will take value after updating PRIMA
+		!ZPNDCLSPRE(n)= avg_zpnd_pr !vs%grid%zpnd(n)*1000.0 !m to mm MIA This is the right place as it will take value after updating PRIMA
 		!write(*,*)'*****',ZPNDCLS(n),avg_zpnd_pr
 
 
     end do
 
 !mesh
-    do k = il1, il2
-        if (vs%grid%zpnd(shd%lc%ILMOS(k)) > 0.0 .and. vs%tile%zpnd(k) == 0.0) then
-            vs%tile%tpnd(k) = 273.16
-        end if
-        vs%tile%zpnd(k) = vs%grid%zpnd(shd%lc%ILMOS(k))
-    end do
+!    do k = il1, il2
+!        if (vs%grid%zpnd(shd%lc%ILMOS(k)) > 0.0 .and. vs%tile%zpnd(k) == 0.0) then
+!            vs%tile%tpnd(k) = 273.16
+!        end if
+!        vs%tile%zpnd(k) = vs%grid%zpnd(shd%lc%ILMOS(k))
+!    end do
 
     end subroutine
 
-!mesh    close(99)
-    !!!writing output raster and outflow to files
-!    allocate(wdepth(ntot))
-!    wdepth=wl_lin-dem_lin
-!    fin_wd='fin_wdepth.asc'
-!    call write_ascii(wdepth,no_data,xllcorner,yllcorner,cell_size,ind_no_data,active_cells,rnk_ind,&
-!                        & ascii_data,fin_wd,dir, inactive_cells)
-!    deallocate(wdepth)
-!    !write output
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !%write outflows
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!    if(method .ne. 1 .and. rain_flag .ne. 0)then
-!        foutflow=trim(dir)// '/' // 'PRIMA_outflow_cms.txt'
-!        open(4,file=TRIM(ADJUSTL(foutflow)),status='unknown')
-!        outflow_pr=outflow_pr/time_step
-!        write(4,*) outflow_pr
-!        close(4)
-!    elseif(method .ne. 1 .and. rain_flag .eq. 0) then
-!        foutflow=trim(dir)// '/' // 'PRIMA_outflow_m3.txt'
-!        open(4,file=TRIM(ADJUSTL(foutflow)),status='unknown')
-!        write(4,*) outflow_pr
-!        close(4)
-!    end if
-
-!mesh    call cpu_time(time_end)
-
-!mesh    write(*,*)'Elapsed time', (time_end-time_start)/60.0,'min'
-!mesh    stop
-
 
 end module
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!
-!!                              Subroutines                                     !!
-!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!meshfunction get_nlines(fnam)
-!mesh    implicit none
-!mesh    character(len=100)::fnam,str
-!mesh    integer::n,get_nlines,io
-
-    !write(*,*)fnam
-!mesh    open(1, file=fnam,status='old')
-
-!mesh    n=0
-!mesh    do
-!mesh        READ(1,*,IOSTAT=io)  str
-!mesh        IF (io > 0) THEN
-!mesh          WRITE(*,*) 'Check input.  Something was wrong'
-!mesh          EXIT
-!mesh       ELSE IF (io < 0) THEN
-!mesh          !WRITE(*,*)  'end of file ', n
-!mesh          EXIT
-!mesh       ELSE
-!mesh          n = n + 1
-!mesh       END IF
-!mesh    end do
-!mesh    close(1)
-
-
-!mesh    get_nlines=n
-
-!meshreturn
-!meshend function get_nlines
