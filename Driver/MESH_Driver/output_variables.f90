@@ -353,6 +353,7 @@ module output_variables
                 if (associated(fields%vs%sno)) then
                     call output_variables_allocate(fields%sno, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%sno, n1)
+                    call output_variables_activate_pntr(fields, VN_STGW)
                 end if
             case (VN_FSNO)
                 if (associated(fields%vs%fsno)) then
