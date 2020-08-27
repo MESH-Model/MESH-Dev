@@ -51,7 +51,7 @@ module climate_forcing_constants
 !        integer :: UU
 !        integer :: VV
         integer :: UV = 5
-!        integer :: WD
+        integer :: WD = 12
 
         !* P0: Surface air pressure [Pa].
         integer :: P0 = 6
@@ -66,10 +66,11 @@ module climate_forcing_constants
 
         !* N0: Runoff. [mm].
         !* O1: Recharge. [mm].
-        integer :: N0 =10, O1 =11
+        integer :: N0 = 10
+        integer :: O1 = 11
 
         !* MET: CLASS format MET file.
-        integer :: MET = 12
+        integer :: MET = 13
 
     end type
 

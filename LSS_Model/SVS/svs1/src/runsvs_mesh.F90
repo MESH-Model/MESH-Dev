@@ -1,10 +1,31 @@
 module runsvs_mesh
 
+    !> MESH modules.
+    !*  mpi_module: Required for 'il1' and 'il2' indexing.
+    !*  model_files_variables: Required for 'fls' object.
+    !*  sa_mesh_common: Required for MESH variables and common routines.
+    !*  model_dates: Required for 'ic' counter.
     use mpi_module
     use model_files_variables
     use sa_mesh_common
+!todo: Replace 'cm' instance with 'vs' counterparts.
     use climate_forcing
     use model_dates
+
+    !> SVS modules (created for MESH).
+    !*  runsvs_mod: Required for 'bus' variable.
+    !*  runsvs_utils: Required for 'RUNSVS_OPT' variables and 'surflayerheight' and 'compvirttemp' functions.
+    use runsvs_mod
+    use runsvs_utils
+
+    !> SVS modules.
+!    use phy_options
+    use svs_configs
+    use sfc_options
+
+    !> To re-use 'op' variable.
+!todo: Replace with a generic structure to remove dependency between sub-models.
+    use RUNCLASS36_save_output, only: WF_NUM_POINTS, op
 
     implicit none
 
@@ -44,14 +65,101 @@ module runsvs_mesh
 !    real bal_in_out, stock, bal_tot, bal_pre, wsoil_ini
 !<<<svs_output
 
+    !> SVS constants.
+    type runsvs_mesh_constants
+        integer :: NLANDCLASS = NCLASS
+        real, dimension(NCLASS) :: Z0DAT = (/ &
+            0.001, 0.001, 0.001, 1.75, 2.0, 1.0, 2.0, 3.0, 0.8, 0.1, &
+            0.2, 0.2, 0.1, 0.1, 0.15, 0.15, 0.35, 0.25, 0.1, 0.25, &
+            5.0, 0.1, 0.1, 0.1, 1.75, 0.5 /)
+    end type
+
+    !> SVS variables names for I/O (direct variables).
+    character(len = *), parameter, public :: VN_SVS_DEGLAT = 'DEGLAT'
+    character(len = *), parameter, public :: VN_SVS_DEGLNG = 'DEGLNG'
+    character(len = *), parameter, public :: VN_SVS_OBSERVED_FORCING = 'OBSERVED_FORCING'
+    character(len = *), parameter, public :: VN_SVS_ZUSL = 'ZUSL'
+    character(len = *), parameter, public :: VN_SVS_ZTSL = 'ZTSL'
+    character(len = *), parameter, public :: VN_SVS_SIGMA_U = 'SIGMA_U'
+    character(len = *), parameter, public :: VN_SVS_SIGMA_T = 'SIGMA_T'
+    character(len = *), parameter, public :: VN_SVS_SLOP = 'SLOP'
+    character(len = *), parameter, public :: VN_SVS_DRAINDENS = 'DRAINDENS'
+    character(len = *), parameter, public :: VN_SVS_SOILTEXT = 'SOILTEXT'
+    character(len = *), parameter, public :: VN_SVS_KHYD = 'KHYD'
+    character(len = *), parameter, public :: VN_SVS_SAND = 'SAND'
+    character(len = *), parameter, public :: VN_SVS_CLAY = 'CLAY'
+    character(len = *), parameter, public :: VN_SVS_WSOIL = 'WSOIL'
+    character(len = *), parameter, public :: VN_SVS_ISOIL = 'ISOIL'
+    character(len = *), parameter, public :: VN_SVS_KTHERMAL = 'KTHERMAL'
+    character(len = *), parameter, public :: VN_SVS_TGROUND = 'TGROUND'
+    character(len = *), parameter, public :: VN_SVS_VF = 'VF'
+    character(len = *), parameter, public :: VN_SVS_Z0V = 'Z0V'
+    character(len = *), parameter, public :: VN_SVS_LNZ0 = 'LNZ0'
+    character(len = *), parameter, public :: VN_SVS_TVEGE = 'TVEGE'
+    character(len = *), parameter, public :: VN_SVS_WVEG = 'WVEG'
+    character(len = *), parameter, public :: VN_SVS_TSNOW = 'TSNOW'
+    character(len = *), parameter, public :: VN_SVS_SNODPL = 'SNODPL'
+    character(len = *), parameter, public :: VN_SVS_SNODEN = 'SNODEN'
+    character(len = *), parameter, public :: VN_SVS_SNOAL = 'SNOAL'
+    character(len = *), parameter, public :: VN_SVS_WSNOW = 'WSNOW'
+    character(len = *), parameter, public :: VN_SVS_TSNOWVEG = 'TSNOWVEG'
+    character(len = *), parameter, public :: VN_SVS_SNVDP = 'SNVDP'
+    character(len = *), parameter, public :: VN_SVS_SNVDEN = 'SNVDEN'
+    character(len = *), parameter, public :: VN_SVS_SNVAL = 'SNVAL'
+    character(len = *), parameter, public :: VN_SVS_WSNV = 'WSNV'
+
+    !> SVS variables names for I/O (modifiers/special conditions).
+    character(len = *), parameter, public :: VN_SVS_SAND_N = 'SAND_N'
+    character(len = *), parameter, public :: VN_SVS_CLAY_N = 'CLAY_N'
+    character(len = *), parameter, public :: VN_SVS_WSOIL_N = 'WSOIL_N'
+    character(len = *), parameter, public :: VN_SVS_ISOIL_N = 'ISOIL_N'
+    character(len = *), parameter, public :: VN_SVS_TGROUND_N = 'TGROUND_N'
+    character(len = *), parameter, public :: VN_SVS_VF_N = 'VF_N'
+    character(len = *), parameter, public :: VN_SVS_Z0V_N = 'Z0V_N'
+    character(len = *), parameter, public :: VN_SVS_TVEGE_N = 'TVEGE_N'
+    character(len = *), parameter, public :: VN_SVS_TSNOW_N = 'TSNOW_N'
+    character(len = *), parameter, public :: VN_SVS_TSNOWVEG_N = 'TSNOWVEG_N'
+
+    !> SVS variables (for I/O).
     type runsvs_mesh_variables
+        real, dimension(:), allocatable :: deglat
+        real, dimension(:), allocatable :: deglng
+        logical :: observed_forcing = .false.
+        real, dimension(:), allocatable :: zusl
+        real, dimension(:), allocatable :: ztsl
+        real :: sigma_u = 0.995
+        real :: sigma_t = 0.995
+        real, dimension(:), allocatable :: slop
+        real, dimension(:), allocatable :: draindens
+        character(len = DEFAULT_FIELD_LENGTH) :: soiltext = 'NIL'
+        integer :: khyd = 6
+        real, dimension(:, :), allocatable :: sand
+        real, dimension(:, :), allocatable :: clay
+        real, dimension(:, :), allocatable :: wsoil
+        real, dimension(:, :), allocatable :: isoil
+        integer :: kthermal = 2
+        real, dimension(:, :), allocatable :: tground
         real, dimension(:, :), allocatable :: vf
+        real, dimension(:, :), allocatable :: z0v
         real, dimension(:), allocatable :: lnz0
+        real, dimension(:, :), allocatable :: tvege
+        real, dimension(:), allocatable :: wveg
+        real, dimension(:, :), allocatable :: tsnow
+        real, dimension(:), allocatable :: snodpl
+        real, dimension(:), allocatable :: snoden
+        real, dimension(:), allocatable :: snoal
+        real, dimension(:), allocatable :: wsnow
+        real, dimension(:, :), allocatable :: tsnowveg
+        real, dimension(:), allocatable :: snvdp
+        real, dimension(:), allocatable :: snvden
+        real, dimension(:), allocatable :: snval
+        real, dimension(:), allocatable :: wsnv
     end type
 
     !* PROCESS_ACTIVE: Variable to enable SVS.
     type runsvs_mesh_container
         logical :: PROCESS_ACTIVE = .false.
+        type(runsvs_mesh_constants) c
         type(runsvs_mesh_variables) vs
     end type
 
@@ -59,17 +167,22 @@ module runsvs_mesh
 
     private
 
-    public runsvs_mesh_init, runsvs_mesh_within_tile
+    public runsvs_mesh_init, runsvs_mesh_within_tile, runsvs_mesh_finalize
 
     contains
 
     subroutine runsvs_mesh_init(shd, fls, cm)
 
-        use runsvs_mod
-        use runsvs_utils
-        use phy_options
-        use svs_configs
-        use sfc_options
+        !> MESH modules.
+        !*  FLAGS: Required for 'RESUMEFLAG'.
+        use FLAGS, only: RESUMEFLAG
+
+        !> SVS modules.
+!        use runsvs_mod
+!        use runsvs_utils
+!        use phy_options
+!        use svs_configs
+!        use sfc_options
 !        use runsvs_io
 
         type(ShedGridParams) :: shd
@@ -81,23 +194,24 @@ module runsvs_mesh
 !#include "surfcon.cdk"
 #include "thermoconsts.inc"
 
-        integer k, ki, kj, j, jj, m
-        real sumfcanz0
+        integer iun, isvs, istat, k, ki, kj, j, jj, m, i, z
+        real tempz0(svs_mesh%c%NLANDCLASS), sumfcanz0
         character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) level
 
         integer, external :: newdate
 !        external incdatr
         external svs, inicover_svs
 !        external inisoili_svs, phyopt_initdata, runsvs_init
 
-        !> Return if the process is not marked active or if not the head node.
+        !> Return if the process is not marked active.
         if (.not. svs_mesh%PROCESS_ACTIVE) return
 
         !> Initialize common blocks, read options and configuration file.
-        sigma_u = 0.995
-        sigma_t = 0.995
-        observed_forcing = .false.
-        soiltext = 'NIL'
+        sigma_u = svs_mesh%vs%sigma_u
+        sigma_t = svs_mesh%vs%sigma_t
+        observed_forcing = svs_mesh%vs%observed_forcing
+        soiltext = svs_mesh%vs%soiltext
 
         if (soiltext == 'NIL') then
             nl_svs = shd%lc%IGND
@@ -107,6 +221,7 @@ module runsvs_mesh
             nl_svs = NL_SVS_DEFAULT
             dl_svs = DP_SVS_DEFAULT
         end if
+        KHYD = svs_mesh%vs%khyd
 
         call svs_bus_init(il2 - il1 + 1)
         bussiz = runsvs_busdim
@@ -118,27 +233,46 @@ module runsvs_mesh
         !> Parse CLASS variables to bus.
         do k = 0, NG - 1
 
-            !> Basic configuration.
+            !> MESH grid.
             ki = shd%lc%ILMOS(il1 + k)
+
+            !> MESH GRU.
             kj = shd%lc%JLMOS(il1 + k)
+
+            !> Determine the index to pull from the 'vs' input variable group.
+            if (SHDFILEFMT == 2) then
+                isvs = il1 + k
+            else
+                isvs = kj
+            end if
 
             !> Convert lat, lon to Radian.
             !> We need to give SVS the true longitude (from 0 to 360), not negative values.
 !            bus(dlat + k) = ((shd%yOrigin + shd%yDelta*shd%yyy(ki)) - shd%yDelta/2.0)*PI/180.0
 !            bus(dlon + k) = ((shd%xOrigin + shd%xDelta*shd%xxx(ki)) - shd%xDelta/2.0)*PI/180.0
             bus(dlat + k) = shd%ylat(ki)*PI/180.0
+            if (allocated(svs_mesh%vs%deglat)) bus(dlat + k) = svs_mesh%vs%deglat(isvs)*PI/180.0
             if (shd%xlng(ki) < 0.0) then
                 bus(dlon + k) = (shd%xlng(ki) + 360.0)*PI/180.0
             else
                 bus(dlon + k) = shd%xlng(ki)*PI/180.0
+            end if
+            if (allocated(svs_mesh%vs%deglng)) then
+                if (svs_mesh%vs%deglng(isvs) < 0.0) then
+                    bus(dlon + k) = (svs_mesh%vs%deglng(isvs) + 360.0)*PI/180.0
+                else
+                    bus(dlon + k) = svs_mesh%vs%deglng(isvs)*PI/180.0
+                end if
             end if
 
             !> Map CLASS parameters to SVS parameters.
             !* zusl: Height of wind forcing.
             !* ztsl: Height of temperature forcing.
             if (observed_forcing) then
-                bus(zusl + k) = pm%sfp%zrfm(il1 + k)
-                bus(ztsl + k) = pm%sfp%zrfh(il1 + k)
+                bus(zusl + k) = pm%tile%zrfm(il1 + k)
+                if (allocated(svs_mesh%vs%zusl)) bus(zusl + k) = svs_mesh%vs%zusl(isvs)
+                bus(ztsl + k) = pm%tile%zrfh(il1 + k)
+                if (allocated(svs_mesh%vs%ztsl)) bus(ztsl + k) = svs_mesh%vs%ztsl(isvs)
             end if
 
             !> Parameters.
@@ -152,14 +286,14 @@ module runsvs_mesh
             !* rootdp: Max depth of root zone.
             if (allocated(svs_mesh%vs%vf)) then
                 do m = 1199, 1174, -1
-                    bus(vegf + (1199 - m)*NG + k) = svs_mesh%vs%vf(il1 + k, 1200 - m)
+                    bus(vegf + (1199 - m)*NG + k) = svs_mesh%vs%vf(isvs, 1200 - m)
                 end do
             else
-                bus(vegf + 3*NG + k) = pm%cp%fcan(il1 + k, 1)
-                bus(vegf + 6*NG + k) = pm%cp%fcan(il1 + k, 2)
-                bus(vegf + 14*NG + k) = pm%cp%fcan(il1 + k, 3)
-                bus(vegf + 13*NG + k) = pm%cp%fcan(il1 + k, 4)
-                bus(vegf + 20*NG + k) = pm%cp%fcan(il1 + k, 5)
+                bus(vegf + 3*NG + k) = pm%tile%fcan(il1 + k, 1)
+                bus(vegf + 6*NG + k) = pm%tile%fcan(il1 + k, 2)
+                bus(vegf + 14*NG + k) = pm%tile%fcan(il1 + k, 3)
+                bus(vegf + 13*NG + k) = pm%tile%fcan(il1 + k, 4)
+                bus(vegf + 20*NG + k) = pm%tile%fcan(il1 + k, 5)
             end if
 
 ! EG_MOD for 100% water pixels, assign another class of vegetation instead (here crops=class15)
@@ -169,27 +303,47 @@ module runsvs_mesh
 !	    end if
 ! FIN EG_MOD
 
-            bus(slop + k) = min(max(pm%tp%xslp(il1 + k), 0.005), 1.0)
-            bus(draindens + k) = pm%hp%dd(il1 + k)!*0.001
-!            bus(rootdp + k) = max(pm%slp%sdep(il1 + k), 0.5)
+            bus(slop + k) = min(max(pm%tile%xslp(il1 + k), 0.005), 1.0)
+            if (allocated(svs_mesh%vs%slop)) bus(slop + k) = min(max(svs_mesh%vs%slop(isvs), 0.005), 1.0)
+            bus(draindens + k) = pm%tile%dd(il1 + k)!*0.001
+            if (allocated(svs_mesh%vs%draindens)) bus(draindens + k) = svs_mesh%vs%draindens(isvs)
+!            bus(rootdp + k) = max(pm%tile%sdep(il1 + k), 0.5)
 !            bus(rootdp + k) = max(shd%lc%sl%zbot(nl_svs), 0.5)
 
             !> Compute weighted average of log z0 wrt vegetation
             !> (used for momentum only - local z0 used for temperature/humidity).
             if (allocated(svs_mesh%vs%lnz0)) then
-                bus(z0 + k) = svs_mesh%vs%lnz0(il1 + k)
+                bus(z0 + k) = svs_mesh%vs%lnz0(isvs)
             else
                 bus(z0 + k) = 0.0
                 sumfcanz0 = 0.0
                 do j = 1, 5
-                    bus(z0 + k) = bus(z0 + k) + pm%cp%fcan(il1 + k, j)*pm%cp%lnz0(il1 + k, j)
-                    sumfcanz0 = sumfcanz0 + pm%cp%fcan(il1 + k, j)
+                    bus(z0 + k) = bus(z0 + k) + pm%tile%fcan(il1 + k, j)*pm%tile%lnz0(il1 + k, j)
+                    sumfcanz0 = sumfcanz0 + pm%tile%fcan(il1 + k, j)
                 end do
                 if (sumfcanz0 > 0.0) then
                     bus(z0 + k) = bus(z0 + k)/sumfcanz0
+                else
+                    bus(z0 + k) = 0.0
                 end if
             end if
-            bus(z0 + k) = exp(bus(z0 + k))
+            if (bus(z0 + k) == 0.0) then
+                tempz0 = svs_mesh%c%Z0DAT
+                if (allocated(svs_mesh%vs%z0v)) tempz0 = svs_mesh%vs%z0v(isvs, :)
+                bus(z0 + k) = 0.0
+                sumfcanz0 = 0.0
+                do m = 1199, 1174, -1
+                    bus(z0 + k) = bus(z0 + k) + bus(vegf + (1199 - m)*NG + k)*tempz0(1200 - m)
+                    sumfcanz0 = sumfcanz0 + bus(vegf + (1199 - m)*NG + k)
+                end do
+                if (sumfcanz0 > 0.0) then
+                    bus(z0 + k) = bus(z0 + k)/sumfcanz0
+                else
+                    bus(z0 + k) = 0.0
+                end if
+            else
+                bus(z0 + k) = exp(bus(z0 + k))
+            end if
             bus(z0t + k) = bus(z0 + k)
 
             !> For soil texture we ignore negative numbers
@@ -206,31 +360,33 @@ module runsvs_mesh
             !>       3              5
             !>       4              6
             !>       5              7
-!            bus(sand + k) = max(pm%slp%sand(il1 + k, 1), 0.0)
-!            bus(sand + NG + k) = max(pm%slp%sand(il1 + k, 1), 0.0)
-!            bus(sand + 2*NG + k) = max(pm%slp%sand(il1 + k, 2), 0.0)
-!            bus(clay + k) = max(pm%slp%clay(il1 + k, 1), 0.0)
-!            bus(clay + NG + k) = max(pm%slp%clay(il1 + k, 1), 0.0)
-!            bus(clay + 2*NG + k) = max(pm%slp%clay(il1 + k, 2), 0.0)
+!            bus(sand + k) = max(pm%tile%sand(il1 + k, 1), 0.0)
+!            bus(sand + NG + k) = max(pm%tile%sand(il1 + k, 1), 0.0)
+!            bus(sand + 2*NG + k) = max(pm%tile%sand(il1 + k, 2), 0.0)
+!            bus(clay + k) = max(pm%tile%clay(il1 + k, 1), 0.0)
+!            bus(clay + NG + k) = max(pm%tile%clay(il1 + k, 1), 0.0)
+!            bus(clay + 2*NG + k) = max(pm%tile%clay(il1 + k, 2), 0.0)
 !            if (shd%lc%IGND >= 5) then
-!                bus(sand + 3*NG + k) = max(pm%slp%sand(il1 + k, 2), 0.0)
-!                bus(sand + 4*NG + k) = max(pm%slp%sand(il1 + k, 3), 0.0)
-!                bus(sand + 5*NG + k) = max(pm%slp%sand(il1 + k, 4), 0.0)
-!                bus(sand + 6*NG + k) = max(pm%slp%sand(il1 + k, 5), 0.0)
-!                bus(clay + 3*NG + k) = max(pm%slp%clay(il1 + k, 2), 0.0)
-!                bus(clay + 4*NG + k) = max(pm%slp%clay(il1 + k, 3), 0.0)
-!                bus(clay + 5*NG + k) = max(pm%slp%clay(il1 + k, 4), 0.0)
-!                bus(clay + 6*NG + k) = max(pm%slp%clay(il1 + k, 5), 0.0)
+!                bus(sand + 3*NG + k) = max(pm%tile%sand(il1 + k, 2), 0.0)
+!                bus(sand + 4*NG + k) = max(pm%tile%sand(il1 + k, 3), 0.0)
+!                bus(sand + 5*NG + k) = max(pm%tile%sand(il1 + k, 4), 0.0)
+!                bus(sand + 6*NG + k) = max(pm%tile%sand(il1 + k, 5), 0.0)
+!                bus(clay + 3*NG + k) = max(pm%tile%clay(il1 + k, 2), 0.0)
+!                bus(clay + 4*NG + k) = max(pm%tile%clay(il1 + k, 3), 0.0)
+!                bus(clay + 5*NG + k) = max(pm%tile%clay(il1 + k, 4), 0.0)
+!                bus(clay + 6*NG + k) = max(pm%tile%clay(il1 + k, 5), 0.0)
 !            else
 !                do j = 3, 6
-!                    bus(sand + j*NG + k) = max(pm%slp%sand(il1 + k, 3), 0.0)
-!                    bus(clay + j*NG + k) = max(pm%slp%clay(il1 + k, 3), 0.0)
+!                    bus(sand + j*NG + k) = max(pm%tile%sand(il1 + k, 3), 0.0)
+!                    bus(clay + j*NG + k) = max(pm%tile%clay(il1 + k, 3), 0.0)
 !                end do
 !            end if
 !            do j = 1, nl_svs ! model layers
             do j = 1, nl_stp ! soil texture levels
-                bus(sand + (j - 1)*NG + k) = max(pm%slp%sand(il1 + k, j), 0.0)
-                bus(clay + (j - 1)*NG + k) = max(pm%slp%clay(il1 + k, j), 0.0)
+                bus(sand + (j - 1)*NG + k) = max(pm%tile%sand(il1 + k, j), 0.0)
+                if (allocated(svs_mesh%vs%sand)) bus(sand + (j - 1)*NG + k) = svs_mesh%vs%sand(isvs, j)
+                bus(clay + (j - 1)*NG + k) = max(pm%tile%clay(il1 + k, j), 0.0)
+                if (allocated(svs_mesh%vs%clay)) bus(clay + (j - 1)*NG + k) = svs_mesh%vs%clay(isvs, j)
             end do
 
             !> Map soil moisture.
@@ -251,6 +407,9 @@ module runsvs_mesh
 ! EG_MOD: WFC IS NOT KNOWN AT THIS POINT (COMPUTED LATER BY INISOILI_SVS); USE CRITWATER INSTEAD
 !                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), bus(wfc + k))
                 bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), CRITWATER)
+                if (allocated(svs_mesh%vs%wsoil)) bus(wsoil + (j - 1)*NG + k) = max(svs_mesh%vs%wsoil(isvs, j), CRITWATER)
+                bus(isoil + (j - 1)*NG + k) = vs%tile%thic(il1 + k, j)
+                if (allocated(svs_mesh%vs%isoil)) bus(isoil + (j - 1)*NG + k) = svs_mesh%vs%isoil(isvs, j)
             end do
 
             !> Map soil temperature.
@@ -261,34 +420,66 @@ module runsvs_mesh
 !            bus(tsoil + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
             bus(tground + k) = vs%tile%tbar(il1 + k, 1)! + tcdk
             bus(tground + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
-!todo
-!               bus(tground + (j - 1)*NG + k) = bus(tmoins + k)
-!               bus(tsoil + (j - 1)*NG + k) = bus(tmoins + k)
-!               bus(tvege + (j - 1)*NG + ik = bus(tmoins + k)
-!               bus(tsnowveg + (j - 1)*NG + k) = bus(tmoins + k)
+            if (allocated(svs_mesh%vs%tground)) then
+                do j = 1, svs_mesh%vs%kthermal
+                    bus(tground + (j - 1)*NG + k) = svs_mesh%vs%tground(isvs, j)
+                end do
+            end if
 
             !> Map vegetation temperature.
             do j = 0, 1
                 bus(tvege + j*NG + k) = vs%tile%tcan(il1 + k)! + tcdk
-                bus(tsnowveg + j*NG + k) = vs%tile%tsno(il1 + k)! + tcdk
+                if (allocated(svs_mesh%vs%tvege)) bus(tvege + j*NG + k) = svs_mesh%vs%tvege(isvs, j + 1)
             end do
+            bus(wveg + k) = vs%tile%rcan(il1 + k)
+            if (allocated(svs_mesh%vs%wveg)) bus(wveg + k) = svs_mesh%vs%wveg(isvs)
 
             !> Map snow properties.
             !* snoro: Density (kg/m3) to relative density wrt ice.
-            do j = 0, 1
-                bus(tsnow + j*NG + k) = vs%tile%tsno(il1 + k)! + tcdk
-            end do
-!todo
-!               bus(tsnow + (j - 1)*NG + k) = tcdk
-            if (vs%tile%rhos(il1 + k) > 0.0) then
-                bus(snoro + k) = vs%tile%rhos(il1 + k)/900.0
-                bus(snvro + k) = vs%tile%rhos(il1 + k)/900.0
-            else !from runsvs_init
-                bus(snoro + k) = 0.1
-                bus(snvro + k) = 0.1
+            if (vs%tile%sno(il1 + k) > 0.0) then
+                do j = 0, 1
+                    bus(tsnow + j*NG + k) = vs%tile%tsno(il1 + k)! + tcdk
+                end do
+                bus(snodpl + k) = vs%tile%rhos(il1 + k)*vs%tile%sno(il1 + k)
+                bus(snoden + k) = vs%tile%rhos(il1 + k)
+                bus(snoal + k) = vs%tile%albs(il1 + k)
+                bus(wsnow + k) = vs%tile%wsno(il1 + k)
+                do j = 0, 1
+                    bus(tsnowveg + j*NG + k) = vs%tile%tsno(il1 + k)! + tcdk
+                end do
+                bus(snvdp + k) = vs%tile%rhos(il1 + k)*vs%tile%sno(il1 + k)
+                bus(snvden + k) = vs%tile%rhos(il1 + k)
+                bus(snval + k) = vs%tile%albs(il1 + k)
+                bus(wsnv + k) = vs%tile%wsno(il1 + k)
             end if
-            bus(snoal + k) = vs%tile%albs(il1 + k)
-            bus(snval + k) = vs%tile%albs(il1 + k)
+            if (allocated(svs_mesh%vs%snodpl)) then
+                if (svs_mesh%vs%snodpl(isvs) > 0.0) then
+                    do j = 0, 1
+                        if (allocated(svs_mesh%vs%tsnow)) bus(tsnow + j*NG + k) = svs_mesh%vs%tsnow(isvs, j + 1)
+                    end do
+                    bus(snodpl + k) = svs_mesh%vs%snodpl(isvs)
+                    if (allocated(svs_mesh%vs%snoden)) bus(snoden + k) = svs_mesh%vs%snoden(isvs)
+                    if (allocated(svs_mesh%vs%snoal)) bus(snoal + k) = svs_mesh%vs%snoal(isvs)
+                    if (allocated(svs_mesh%vs%wsnow)) bus(wsnow + k) = svs_mesh%vs%wsnow(isvs)
+                end if
+            end if
+            if (allocated(svs_mesh%vs%snvdp)) then
+                if (svs_mesh%vs%snvdp(isvs) > 0.0) then
+                    do j = 0, 1
+                        if (allocated(svs_mesh%vs%tsnowveg)) bus(tsnowveg + j*NG + k) = svs_mesh%vs%tsnowveg(isvs, j + 1)
+                    end do
+                    bus(snodp + k) = svs_mesh%vs%snvdp(isvs)
+                    if (allocated(svs_mesh%vs%snvden)) bus(snvden + k) = svs_mesh%vs%snvden(isvs)
+                    if (allocated(svs_mesh%vs%snval)) bus(snval + k) = svs_mesh%vs%snval(isvs)
+                    if (allocated(svs_mesh%vs%wsnv)) bus(wsnv + k) = svs_mesh%vs%wsnv(isvs)
+                end if
+            end if
+
+            !> Derived properties.
+            bus(snoma + k) = bus(snodpl + k)*bus(snoden + k)
+            bus(snoro + k) = max(bus(snoden + k)/900.0, 0.1)
+            bus(snvma + k) = bus(snvdp + k)*bus(snvden + k)
+            bus(snvro + k) = max(bus(snvden + k)/900.0, 0.1)
         end do
 
         !> Summary.
@@ -298,57 +489,46 @@ module runsvs_mesh
             call print_message('--------------------------------')
             call print_message('SVS DIAGNOSTICS')
             call print_message('--------------------------------')
-            write(line, "('TILE:             ', i3)") 1
+            write(line, "('TILE:             ', i8)") 1
             call print_message(line)
             call print_message('--------------------------------')
             write(line, "('LATITUDE:         ', f10.1)") bus(dlat)*180.0/PI
             call print_message(line)
             write(line, "('LONGITUDE:        ', f10.1)") bus(dlon)*180.0/PI
             call print_message(line)
+            call print_message('--------------------------------')
+            write(line, "('ROUGHNESS LENGTH: ', f8.3)") bus(z0)
+            call print_message(line)
+            write(line, "('VEGETATION TEMP.: ', 2f8.3)") bus(tvege), bus(tvege + NG)
+            call print_message(line)
             call print_message('VEGETATION COVER:')
             do m = 1199, 1174, -1
                 write(line, "('% ', i5, '        ', f8.3)") m, bus(vegf + (1199 - m)*NG)*100.0
                 call print_message(line)
             end do
-            write(line, "('ROUGHNESS LENGTH: ', f8.3)") bus(z0)
-            call print_message(line)
+            call print_message('--------------------------------')
+            if (observed_forcing) then
+                write(line, "('FORCING LEVEL:    ', (a))") 'height'
+                call print_message(line)
+                write(line, "(' THERMO. HEIGHT:   ', f8.3)") bus(ztsl)
+                call print_message(line)
+                write(line, "(' MOMENTUM HEIGHT:  ', f8.3)") bus(zusl)
+                call print_message(line)
+            else
+                write(line, "('FORCING LEVEL:    ', (a))") 'sigma'
+                call print_message(line)
+                write(line, "(' THERMO. SIGMA:    ', f8.3)") sigma_t
+                call print_message(line)
+                write(line, "(' MOMENTUM SIGMA:   ', f8.3)") sigma_u
+                call print_message(line)
+            end if
+            call print_message('--------------------------------')
             write(line, "('SLOPE:            ', f8.3)") bus(slop)
             call print_message(line)
             write(line, "('DRAIN.DENSITY     ', f8.3)") bus(draindens)
             call print_message(line)
-            write(line, "('ROOT DEPTH:       ', f8.3)") bus(rootdp)
-            call print_message(line)
-            call print_message('% SAND:')
-            do j = 1, nl_svs ! model layers
-                write(line, "(' LAYER ', i3, ': ', f8.3)") j, bus(sand + (j - 1)*NG)
-                call print_message(line)
-            end do
-            call print_message('% CLAY:')
-            do j = 1, nl_svs ! model layers
-                write(line, "(' LAYER ', i3, ': ', f8.3)") j, bus(clay + (j - 1)*NG)
-                call print_message(line)
-            end do
             call print_message('--------------------------------')
-            write(line, "('PERMEABLE LAYERS: ', i3)") KHYD
-            call print_message(line)
-            call print_message('SOIL MOISTURE:')
-            do j = 1, nl_svs ! permeable layers
-                write(line, "(' LAYER ', i3, ': ', f8.3)") j, bus(wsoil + (j - 1)*NG)
-                call print_message(line)
-            end do
-            write(line, "('SOIL TEMPERATURE: ', 2f8.3)") bus(tground), bus(tground + NG)
-            call print_message(line)
-            write(line, "('VEGETATION TEMP.: ', 2f8.3)") bus(tvege), bus(tvege + NG)
-            call print_message(line)
-            write(line, "('SNOW TEMPERATURE: ', 2f8.3)") bus(tsnow), bus(tsnow + NG)
-            call print_message(line)
-            write(line, "('SNOW DENSITY:     ', 2f8.3)") bus(snoro), bus(snvro)
-            call print_message(line)
-            write(line, "('SNOW ALBEDO:      ', 2f8.3)") bus(snoal), bus(snval)
-            call print_message(line)
-            call print_message('--------------------------------')
-            call print_message('SOIL MAPPING')
-            call print_message('--------------------------------')
+            call print_message('SOIL MAPPING:')
             call print_message('DATABASE: ' // trim(soiltext))
             call print_message('WEIGHTS [METERS]:')
             do j = 1, nl_svs ! model layers
@@ -356,17 +536,55 @@ module runsvs_mesh
                 call print_message(line)
                 do jj = 1, nl_stp ! database layers
                     if (soiltext == 'GSDE') then
-                        write(line, "('- ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") trim(soiltext), dl_gsde(jj), weights(j, jj)
+                        write(line, "('  ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") 'DB', dl_gsde(jj), weights(j, jj)
                     else if (soiltext == 'SLC') then
-                        write(line, "('- ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") trim(soiltext), dl_slc(jj), weights(j, jj)
+                        write(line, "('  ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") 'DB', dl_slc(jj), weights(j, jj)
                     else if (soiltext == 'SOILGRIDS') then
-                        write(line, "('- ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") trim(soiltext), dl_soilgrids(jj), weights(j, jj)
+                        write(line, "('  ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") 'DB', dl_soilgrids(jj), weights(j, jj)
                     else if (soiltext == 'NIL') then
-                        write(line, "('- ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") trim(soiltext), dl_soilgrids(jj), weights(j, jj)
+                        write(line, "('  ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") 'DB', dl_soilgrids(jj), weights(j, jj)
                     end if
                     call print_message(line)
                 end do
             end do
+            write(line, "('PERMEABLE LAYERS: ', i3)") KHYD
+            call print_message('SOIL TEXTURE:')
+            call print_message('             % SAND    % CLAY')
+            do j = 1, nl_svs ! model layers
+                write(line, "(' LAYER ', i3, ': ', 999(f8.3, 2x))") j, bus(sand + (j - 1)*NG), bus(clay + (j - 1)*NG)
+                call print_message(line)
+            end do
+            call print_message('SOIL MOISTURE:')
+            call print_message('             LIQUID    FROZEN')
+            do j = 1, nl_svs ! permeable layers
+                write(line, "(' LAYER ', i3, ': ', 999(f8.3, 2x))") j, bus(wsoil + (j - 1)*NG), bus(isoil + (j - 1)*NG)
+                call print_message(line)
+            end do
+            write(line, "('SOIL TEMPERATURE: ', 2f8.3)") bus(tground), bus(tground + NG)
+            call print_message(line)
+            call print_message('--------------------------------')
+            call print_message('GROUND/LOW VEG. SNOW:')
+            write(line, "(' SNOW TEMPERATURE:', 2f8.3)") bus(tsnow), bus(tsnow + NG)
+            call print_message(line)
+            write(line, "(' SNOW DEPTH:      ', 2f8.3)") bus(snodpl), bus(snodpl + NG)
+            call print_message(line)
+            write(line, "(' SNOW DENSITY:    ', 2f8.3)") bus(snoden), bus(snoden + NG)
+            call print_message(line)
+            write(line, "(' SNOW ALBEDO:     ', 2f8.3)") bus(snoal), bus(snoal + NG)
+            call print_message(line)
+            write(line, "(' SNOW W/C:        ', 2f8.3)") bus(wsnow), bus(wsnow + NG)
+            call print_message(line)
+            call print_message('HIGH VEG. SNOW:')
+            write(line, "(' SNOW TEMPERATURE:', 2f8.3)") bus(tsnowveg), bus(tsnowveg + NG)
+            call print_message(line)
+            write(line, "(' SNOW DEPTH:      ', 2f8.3)") bus(snvdp), bus(snvdp + NG)
+            call print_message(line)
+            write(line, "(' SNOW DENSITY:    ', 2f8.3)") bus(snvden), bus(snvden + NG)
+            call print_message(line)
+            write(line, "(' SNOW ALBEDO:     ', 2f8.3)") bus(snval), bus(snval + NG)
+            call print_message(line)
+            write(line, "(' SNOW W/C:        ', 2f8.3)") bus(wsnv), bus(wsnv + NG)
+            call print_message(line)
             call print_message('--------------------------------')
             call print_message('')
         end if
@@ -378,6 +596,11 @@ module runsvs_mesh
 
         !> Initialize variables.
         call runsvs_init(bus, bussiz)
+
+        !> Calculate reference start date 'datecmc_o'.
+        dateo = ic%start%year*10000 + ic%start%month*100 + ic%start%day
+        houro = ic%start%hour*1000000 + ic%start%mins*10000
+        istat = newdate(datecmc_o, dateo, houro, 3)
 
 !>>>svs_output
 !        if (ISHEADNODE) then
@@ -404,16 +627,222 @@ module runsvs_mesh
 !        end if
 
 !1010    format(9999(g15.7e2, ','))
+
+        !> Diagnostic point outputs (if active).
+        if (ISHEADNODE .and. WF_NUM_POINTS > 0) then
+
+            !> Print summary.
+            call reset_tab()
+            call print_message('')
+            call print_message('Found these locations for diagnostic outputs:')
+            write(line, FMT_GEN) 'Folder', 'Grid No.', 'GRU'
+            call print_message_detail(line)
+            do i = 1, WF_NUM_POINTS
+                write(line, FMT_GEN) op%DIR_OUT(i), op%N_OUT(i), op%II_OUT(i)
+                call print_message_detail(line)
+            end do
+
+            !> Sanity checks.
+            do i = 1, WF_NUM_POINTS
+                if (i < WF_NUM_POINTS) then
+
+                    !> Check for repeated points.
+                    do j = i + 1, WF_NUM_POINTS
+                        if (op%N_OUT(i) == op%N_OUT(j) .and. op%II_OUT(i) == op%II_OUT(j)) then
+                            write(line, "('Grid ', i5, ', GRU ', i4)") op%N_OUT(i), op%II_OUT(i)
+                            call print_error('Output is repeated for ' // trim(adjustl(line)))
+                            call program_abort()
+                        end if
+                    end do
+                else
+
+                    !> Check that the output path exists.
+                    write(line, FMT_GEN) ipid
+                    z = 0
+                    open( &
+                        100, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/tmp' // trim(adjustl(line)), status = 'unknown', &
+                        iostat = z)
+                    if (z /= 0) then
+                        write(line, FMT_GEN) i
+                        call print_error('The output folder for point ' // trim(adjustl(line)) // ' does not exist.')
+                        call print_message('Location: ' // trim(adjustl(op%DIR_OUT(i))), PAD_3)
+                        call program_abort()
+                    else
+                        close(100, status = 'delete')
+                    end if
+                end if
+
+                !> Check that point lies inside the basin.
+                if (op%N_OUT(i) > shd%NAA) then
+                    write(line, FMT_GEN) i
+                    call print_error('Output point ' // trim(adjustl(line)) // ' is outside the basin.')
+                    write(line, FMT_GEN) shd%NAA
+                    call print_message('Number of grids inside the basin: ' // trim(adjustl(line)), PAD_3)
+                    call program_abort()
+                end if
+            end do
+
+            !> Find the NML index that corresponds to the location.
+            op%K_OUT = 0
+            do k = il1, il2
+                do i = 1, WF_NUM_POINTS
+                    if (op%N_OUT(i) == shd%lc%ILMOS(k) .and. op%II_OUT(i) == shd%lc%JLMOS(k)) op%K_OUT(i) = k
+                end do
+            end do
+
+            !> Open the files if the GAT-index of the output point resides on this node.
+            do i = 1, WF_NUM_POINTS
+                if ((ipid /= 0 .or. izero == 0) .and. (op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2)) then
+
+                    !> Open output files and write header.
+                    iun = 150 + i*10
+
+                    !> 'ts' output file.
+                    iun = iun + 1
+                    open(iun, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/svs_output_ts.csv')
+                    write(iun, FMT_CSV, advance = 'no') &
+                        'YEAR', 'JDAY', 'HOUR', 'MINS', &
+                        'RAINRATE', 'SNOWRATE', 'FLUSOLIS', 'FDSI', 'TMOINS', 'HUMOINS', &
+                        'UMOINS', 'VMOINS', 'PMOINS', &
+                        'FC', 'FL', 'FTEMP', 'FV', 'FVAP', 'HFLUXSA', &
+                        'HFLUXSV', 'LEG', 'LER', 'LES', 'LESV', 'LETR', &
+                        'LEV', 'MELTS', 'MELTSR', 'RNET_S', 'RNETSA', 'RNETSV', &
+                        'RSNOWSA', 'RSNOWSV', &
+                        VN_SVS_SNOAL, VN_SVS_SNODEN, VN_SVS_SNODPL, 'SNOMA', 'SNORO', &
+                        VN_SVS_SNVAL, VN_SVS_SNVDEN, VN_SVS_SNVDP, 'SNVMA', 'SNVRO', &
+                        'TDIAG'
+                    do j = 1, svs_mesh%vs%kthermal
+                        write(level, FMT_GEN) j
+                        write(iun, FMT_CSV, advance = 'no') &
+                            trim(VN_SVS_TGROUND) // trim(adjustl(level))
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        'THETAA', 'TSA'
+                    do j = 0, 1
+                        write(level, FMT_GEN) j
+                        write(iun, FMT_CSV, advance = 'no') &
+                            trim(VN_SVS_TSNOW) // trim(adjustl(level)), &
+                            trim(VN_SVS_TSNOWVEG) // trim(adjustl(level))
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        VN_SVS_WSNOW, VN_SVS_WSNV
+                    do j = 0, 1
+                        write(level, FMT_GEN) j
+                        write(iun, FMT_CSV, advance = 'no') &
+                            trim(VN_SVS_TVEGE) // trim(adjustl(level))
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        VN_SVS_WVEG, &
+                        'WWILT', 'ALVIS', 'ALVH', 'ALVL', 'ALGR', &
+                        'PSNGRVL', 'PSNVH', 'PSNVHA'
+                    do j = 1, svs_mesh%vs%khyd
+                        write(level, FMT_GEN) j
+                        write(iun, FMT_CSV, advance = 'no') &
+                            trim(VN_SVS_ISOIL) // trim(adjustl(level)), &
+                            trim(VN_SVS_WSOIL) // trim(adjustl(level)), &
+                            'LATFLW' // trim(adjustl(level))
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        'WATFLOW', 'DRAINAF'
+                    write(iun, *)
+                end if
+            end do
+        end if
 !<<<svs_output
+
+        !> Resume states.
+        select case (RESUMEFLAG)
+            case (3, 4, 5)
+                call runsvs_mesh_resume_states_seq(shd, fls)
+        end select
+
+    end subroutine
+
+    subroutine runsvs_mesh_resume_states_seq(shd, fls)
+
+        !> MESH modules.
+        !*  FLAGS: Required for 'RESUMEFLAG'.
+        use FLAGS, only: RESUMEFLAG
+
+        !> Input variables.
+        type(ShedGridParams) shd
+        type(fl_ids) fls
+
+        !> Local variables.
+        integer iun, j, k, z, ierr
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Return if the process is not marked active.
+        if (.not. svs_mesh%PROCESS_ACTIVE) return
+
+        !> Open the resume state file with read access.
+!+        call reset_tab()
+!+        call print_message('READING: ' // trim(fls%fl(mfk%f883)%fn))
+!+        call increase_tab()
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(fls%fl(mfk%f883)%fn) // '.svs', status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+        if (ierr /= 0) then
+            write(code, FMT_GEN) ierr
+            call print_error('Unable to open the file (Code: ' // trim(adjustl(code)) // ').')
+            call program_abort()
+        end if
+
+        !> Resume states from file.
+        z = 0
+
+        !> Resume the reference start date 'datecmc_o'.
+        !> The MESH resume date and counters are read after reading this
+        !>  file, so this date must be resumed separately.
+        !> Only resume the date if model dates are also resumed.
+        if (RESUMEFLAG == 4) then
+            read(iun, iostat = z) datecmc_o
+        else
+            read(iun, iostat = z)
+        end if
+
+        !> Resume temperatures.
+        if (z == 0) read(iun, iostat = z) ((bus(tground + (j - 1)*NG + k), j = 1, svs_mesh%vs%kthermal), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((bus(tvege + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((bus(tsnow + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((bus(tsnowveg + j*NG + k), j = 0, 1), k = 0, NG - 1)
+
+        !> Resume moisture.
+        if (z == 0) read(iun, iostat = z) ((bus(wsoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((bus(isoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
+
+        !> Resume snow variables.
+        if (z == 0) read(iun, iostat = z) (bus(snoma + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snvma + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(wsnow + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(wsnv + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snoal + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snval + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snoden + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snvden + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snodpl + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (bus(snvdp + k), k = 0, NG - 1)
+
+        !> Resume 'other'.
+        if (z == 0) read(iun, iostat = z) (bus(wveg + k), k = 0, NG - 1)
+
+        !> Close the file to free the unit.
+        close(iun)
+
+        !> Check for read errors.
+        if (z /= 0) then
+            call print_warning('Errors occurred resuming states from file.')
+        end if
 
     end subroutine
 
     subroutine runsvs_mesh_within_tile(shd, fls, cm)
 
-        use runsvs_mod
-        use runsvs_utils
-        use svs_configs
-        use sfc_options
+        !> SVS modules.
+!        use runsvs_mod
+!        use runsvs_utils
+!        use svs_configs
+!        use sfc_options
 !        use runsvs_io
 
         type(ShedGridParams) :: shd
@@ -431,7 +860,7 @@ module runsvs_mesh
         integer datecmc_v, date_v, hour_v, istat, kount, bidon
         real(kind = 8) kdt
 
-        integer k, ki, kj, j
+        integer iun, k, ki, kj, j, i
         real FRAC
 
         integer, external :: newdate
@@ -439,7 +868,7 @@ module runsvs_mesh
         external svs, inicover_svs
 !        external inisoili_svs, phyopt_initdata, runsvs_init
 
-        !> Return if the process is not active or if not the head node.
+        !> Return if the process is not active or if the head node.
         if (.not. svs_mesh%PROCESS_ACTIVE .or. .not. (ipid /= 0 .or. izero == 0)) return
 
         !> Time-step.
@@ -448,11 +877,11 @@ module runsvs_mesh
         kount = ic%ts_count - 1
 
         !> First time-step.
-        if (kount == 0) then
-            dateo = ic%now%year*10000 + ic%now%month*100 + ic%now%day
-            houro = ic%now%hour*1000000 + ic%now%mins*10000
-            istat = newdate(datecmc_o, dateo, houro, 3)
-        end if
+!-        if (kount == 0) then
+!-            dateo = ic%now%year*10000 + ic%now%month*100 + ic%now%day
+!-            houro = ic%now%hour*1000000 + ic%now%mins*10000
+!-            istat = newdate(datecmc_o, dateo, houro, 3)
+!-        end if
 
         !> Determine time stamps of current date.
         !> SVS relies on the date at the start of the run and the KOUNT variable,
@@ -530,9 +959,12 @@ module runsvs_mesh
             vs%tile%hfs(il1 + k) = bus(fc + k)
             vs%tile%rofo(il1 + k) = max(0.0, bus(runofftot + k))/ic%dts
 !EG_MOD add lateral flow from layers 1 to KHYD
-            vs%tile%rofs(il1 + k) = 0.0
+!-            vs%tile%rofs(il1 + k) = 0.0
+!-            do j = 1, KHYD
+!-                vs%tile%rofs(il1 + k) = vs%tile%rofs(il1 + k) + max(0.0, bus(latflw + (j - 1)*NG + k))/ic%dts
+!-            end do
             do j = 1, KHYD
-                vs%tile%rofs(il1 + k) = vs%tile%rofs(il1 + k) + max(0.0, bus(latflw + (j - 1)*NG + k))/ic%dts
+                vs%tile%rofs(il1 + k, j) = max(0.0, bus(latflw + (j - 1)*NG + k))/ic%dts
             end do
             vs%tile%thic(il1 + k, 1) = bus(isoil + k)
             vs%tile%thlq(il1 + k, 1) = bus(wsoil + k)
@@ -603,7 +1035,166 @@ module runsvs_mesh
 !        end if
 
 !1010    format(9999(g15.7e2, ','))
+
+        !> Diagnostic point outputs (if active).
+        if (ISHEADNODE .and. WF_NUM_POINTS > 0) then
+
+            !> Write to files if the GAT-index of the output point resides on this node.
+            do i = 1, WF_NUM_POINTS
+                if ((ipid /= 0 .or. izero == 0) .and. (op%K_OUT(i) >= il1 .and. op%K_OUT(i) <= il2)) then
+
+                    !> Grab the identity of the tile (offset relative to node-indexing).
+                    k = op%K_OUT(i) - il1
+
+                    !> Write data.
+                    iun = 150 + i*10
+
+                    !> 'ts' output file.
+                    iun = iun + 1
+                    write(iun, FMT_CSV, advance = 'no') &
+                        ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins, &
+                        bus(rainrate + k), bus(snowrate + k), bus(flusolis + k), bus(fdsi + k), bus(tmoins + k), bus(humoins + k), &
+                        bus(umoins + k), bus(vmoins + k), bus(pmoins + k), &
+                        bus(fc + k), bus(fl + k), bus(ftemp + k), bus(fv + k), bus(fvap + k), bus(hfluxsa + k), &
+                        bus(hfluxsv + k), bus(leg + k), bus(ler + k), bus(les + k), bus(lesv + k), bus(letr + k), &
+                        bus(lev + k), bus(melts + k), bus(meltsr + k), bus(rnet_s + k), bus(rnetsa + k), bus(rnetsv + k), &
+                        bus(rsnowsa + k), bus(rsnowsv + k), &
+                        bus(snoal + k), bus(snoden + k), bus(snodpl + k), bus(snoma + k), bus(snoro + k), &
+                        bus(snval + k), bus(snvden + k), bus(snvdp + k), bus(snvma + k), bus(snvro + k), &
+                        bus(tdiag + k)
+                    do j = 1, svs_mesh%vs%kthermal
+                        write(iun, FMT_CSV, advance = 'no') &
+                            bus(tground + (j - 1)*NG + k)
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        bus(thetaa + k), bus(tsa + k)
+                    do j = 0, 1
+                        write(iun, FMT_CSV, advance = 'no') &
+                            bus(tsnow + j*NG + k), &
+                            bus(tsnowveg + j*NG + k)
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        bus(wsnow + k), bus(wsnv + k)
+                    do j = 0, 1
+                        write(iun, FMT_CSV, advance = 'no') &
+                            bus(tvege + j*NG + k)
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        bus(wveg + k), &
+                        bus(wwilt + k), bus(alvis + k), bus(alvh + k), bus(alvl + k), bus(algr + k), &
+                        bus(psngrvl + k), bus(psnvh + k), bus(psnvha + k)
+                    do j = 1, svs_mesh%vs%khyd
+                        write(iun, FMT_CSV, advance = 'no') &
+                            bus(isoil + (j - 1)*NG + k), &
+                            bus(wsoil + (j - 1)*NG + k), &
+                            bus(latflw + (j - 1)*NG + k)
+                    end do
+                    write(iun, FMT_CSV, advance = 'no') &
+                        bus(watflow + KHYD*NG + k), bus(drainaf + k)
+                    write(iun, *)
+                end if
+            end do
+        end if
 !<<<svs_output
+
+    end subroutine
+
+    subroutine runsvs_mesh_finalize(shd, fls)
+
+        !> MESH modules.
+        !*  FLAGS: Required for 'SAVERESUMEFLAG'.
+        use FLAGS, only: SAVERESUMEFLAG
+
+        !> Input variables.
+        type(ShedGridParams) shd
+        type(fl_ids) fls
+
+        !> Return if the process is not marked active.
+        if (.not. svs_mesh%PROCESS_ACTIVE) return
+
+        !> Save states.
+        select case (SAVERESUMEFLAG)
+            case (3, 4, 5)
+                call runsvs_mesh_save_states_seq(shd, fls)
+        end select
+
+    end subroutine
+
+    subroutine runsvs_mesh_save_states_seq(shd, fls)
+
+        !> MESH modules.
+        !*  FLAGS: Required for 'SAVERESUMEFLAG'.
+        use FLAGS, only: SAVERESUMEFLAG
+
+        !> Input variables.
+        type(ShedGridParams) shd
+        type(fl_ids) fls
+
+        !> Local variables.
+        integer iun, j, k, z, ierr
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Return if the process is not marked active.
+        if (.not. svs_mesh%PROCESS_ACTIVE) return
+
+        !> Return if not the head node (only the head node should write output).
+        if (.not. ISHEADNODE) return
+
+        !> Open the resume state file with write access.
+!+        call reset_tab()
+!+        call print_message('SAVING: ' // trim(fls%fl(mfk%f883)%fn))
+!+        call increase_tab()
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(fls%fl(mfk%f883)%fn) // '.svs', status = 'replace', action = 'write', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+        if (ierr /= 0) then
+            write(code, FMT_GEN) ierr
+            call print_error('Unable to open the file (Code: ' // trim(adjustl(code)) // ').')
+            call program_abort()
+        end if
+
+        !> Save states to file.
+        z = 0
+
+        !> Save the reference start date 'datecmc_o'.
+        !> The MESH resume date and counters are read after reading the
+        !>  SVS resume file, so this date must be saved separately.
+        !> Save the date regardless of option so the file is compatible
+        !>  with all resume options.
+        write(iun, iostat = z) datecmc_o
+
+        !> Save temperatures.
+        if (z == 0) write(iun, iostat = z) ((bus(tground + (j - 1)*NG + k), j = 1, svs_mesh%vs%kthermal), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((bus(tvege + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((bus(tsnow + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((bus(tsnowveg + j*NG + k), j = 0, 1), k = 0, NG - 1)
+
+        !> Save moisture.
+        if (z == 0) write(iun, iostat = z) ((bus(wsoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((bus(isoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
+
+        !> Save snow variables.
+        if (z == 0) write(iun, iostat = z) (bus(snoma + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snvma + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(wsnow + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(wsnv + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snoal + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snval + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snoden + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snvden + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snodpl + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (bus(snvdp + k), k = 0, NG - 1)
+
+        !> Save 'other'.
+        if (z == 0) write(iun, iostat = z) (bus(wveg + k), k = 0, NG - 1)
+
+        !> Close the file to free the unit.
+        close(iun)
+
+        !> Check for write errors.
+        if (z /= 0) then
+            call print_warning('Errors occurred saving states to file.')
+        end if
 
     end subroutine
 

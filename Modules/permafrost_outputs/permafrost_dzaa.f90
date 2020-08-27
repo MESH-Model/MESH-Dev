@@ -13,8 +13,8 @@
 !*  i2: Last grid of tile index to process. [--].
 !>
 !> Output variables:
-!*  zod: Zero oscillation depth where tmax ~= tmin. [m below surface].
-subroutine permafrost_zod(tmax, tmin, zbot, ttol, zod, ilen, nsl, i1, i2)
+!*  dzaa: Depth of zero annual amplitude where tmax ~= tmin. [m below surface].
+subroutine permafrost_dzaa(tmax, tmin, zbot, ttol, dzaa, ilen, nsl, i1, i2)
 
     implicit none
 
@@ -23,7 +23,7 @@ subroutine permafrost_zod(tmax, tmin, zbot, ttol, zod, ilen, nsl, i1, i2)
     real tmax(ilen, nsl), tmin(ilen, nsl), zbot(nsl), ttol
 
     !> Output variables.
-    real zod(ilen)
+    real dzaa(ilen)
 
     !> Local variables.
     integer i, j
@@ -35,19 +35,19 @@ subroutine permafrost_zod(tmax, tmin, zbot, ttol, zod, ilen, nsl, i1, i2)
         zcen(j) = (zbot(j) - zbot(j - 1))/2.0 + zbot(j - 1)
     end do
 
-    !> Calculate ZOD, the depth where the range of maximum to minimum temperature is within 'TTOL'.
+    !> Calculate DZAA, the depth where the range of maximum to minimum temperature is within 'TTOL'.
     do i = i1, i2
 
         !> Calculate the temperature envelope.
         trng(i, :) = tmax(i, :) - tmin(i, :)
 
-        !> Set ZOD = 0.0 in case no ZOD is found.
-        zod(i) = 0.0
+        !> Set DZAA = 0.0 in case no DZAA is found.
+        dzaa(i) = 0.0
         do j = 2, nsl
 
-            !> ZOD is interpolated.
+            !> DZAA is interpolated.
             if (sign(1.0, trng(i, j) - ttol) /= sign(1.0, trng(i, j - 1) - ttol)) then
-                zod(i) = (zcen(j) - zcen(j - 1))/(trng(i, j - 1) - trng(i, j))*(trng(i, j - 1) - ttol) + zcen(j - 1)
+                dzaa(i) = (zcen(j) - zcen(j - 1))/(trng(i, j - 1) - trng(i, j))*(trng(i, j - 1) - ttol) + zcen(j - 1)
                 exit
             end if
         end do

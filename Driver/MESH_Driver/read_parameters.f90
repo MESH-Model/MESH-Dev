@@ -57,16 +57,13 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> ALLOCATE AND INITIALIZE VARIABLES.
     !>
 
-    !> Allocate instances of SA_MESH parameters.
-    z = 0
-    call pm_init(pm, 'tile', NML, NSL, 4, 5, ierr); if (z /= 0) ierr = z
-    call pm_init(pm_grid, 'grid', NA, NSL, 4, 5, ierr); if (z /= 0) ierr = z
-    call pm_init(pm_gru, 'gru', NTYPE, NSL, 4, 5, ierr); if (z /= 0) ierr = z
+    !> Allocate and initialize SA_MESH parameters.
+    call input_parameters_init(shd, ierr)
     if (ierr /= 0) goto 97
 
     !> RUNCLASS36 (interflow flag).
     if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-        pm_gru%tp%iwf = RUNCLASS36_flgs%INTERFLOWFLAG
+        pm%gru%iwf = RUNCLASS36_flgs%INTERFLOWFLAG
         if (.not. allocated(hp%CMAXROW)) then
             allocate( &
                 hp%CMAXROW(NA, NTYPE), hp%CMINROW(NA, NTYPE), hp%BROW(NA, NTYPE), hp%K1ROW(NA, NTYPE), hp%K2ROW(NA, NTYPE), &
@@ -183,32 +180,55 @@ subroutine read_parameters(fls, shd, cm, ierr)
         select case (args(n))
             case ('only')
                 INPUTPARAMSFORMFLAG = 0
+            case ('none')
+                INPUTPARAMSFORMFLAG = 0
+                exit
             case ('r2c')
                 INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**1
             case ('csv')
                 INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**2
+            case ('txt')
+                INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**3
         end select
     end do
 
-    !> Check for a bad value of INPUTPARAMSFORMFLAG.
+    !> Check for a bad value of INPUTPARAMSFORMFLAG (unless all modules are disabled).
     if (INPUTPARAMSFORMFLAG == 0) then
-        ierr = 1
-        call print_error('Unrecognized parameter file format. Revise INPUTPARAMSFORMFLAG in ' // trim(fls%fl(mfk%f53)%fn) // '.')
-        return
+        if (.not. ro%RUNLSS .and. .not. ro%RUNCHNL) then
+            call print_remark('No parameter files specified.')
+            return
+        else
+            ierr = 1
+            call print_error( &
+                'Unrecognized parameter file format. Revise INPUTPARAMSFORMFLAG in ' // trim(fls%fl(mfk%f53)%fn) // '.')
+            return
+        end if
     end if
 
     !> Read from the 'ini' files.
     if (btest(INPUTPARAMSFORMFLAG, 0)) then
         z = 0
-        call READ_PARAMETERS_CLASS(shd, fls, cm, z); if (z /= 0) ierr = z
-        call READ_PARAMETERS_HYDROLOGY(shd, fls, z); if (z /= 0) ierr = z
-        call READ_SOIL_INI(fls, shd, z); if (z /= 0) ierr = z
+        if (ro%RUNLSS) then
+            call READ_PARAMETERS_CLASS(shd, fls, cm, z); if (z /= 0) ierr = z
+        end if
+        if (ro%RUNLSS .or. ro%RUNCHNL) then
+            call READ_PARAMETERS_HYDROLOGY(shd, fls, z); if (z /= 0) ierr = z
+        end if
+        if (ro%RUNLSS) then
+            call READ_SOIL_INI(fls, shd, z); if (z /= 0) ierr = z
+        end if
         if (ierr /= 0) return
     end if
 
     !> Read from the 'csv' file.
     if (btest(INPUTPARAMSFORMFLAG, 2)) then
         call read_parameters_csv(shd, 100, 'MESH_parameters.csv', ierr)
+        if (ierr /= 0) return
+    end if
+
+    !> Read from the 'txt' file.
+    if (btest(INPUTPARAMSFORMFLAG, 3)) then
+        call read_parameters_csv(shd, 100, 'MESH_parameters.txt', ierr)
         if (ierr /= 0) return
     end if
 
@@ -226,14 +246,32 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     !> RUNCLASS36 and RUNSVS113.
     if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-        pm%sfp%zrfm(:) = pm_gru%sfp%zrfm(1)
-        pm%sfp%zrfh(:) = pm_gru%sfp%zrfh(1)
+        pm%tile%zrfm(:) = pm%gru%zrfm(1)
+        pm%tile%zrfh(:) = pm%gru%zrfh(1)
     end if
 
     !> RUNCLASS36.
     if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-        pm%sfp%zbld(:) = pm_gru%sfp%zbld(1)
-        pm%tp%gc(:) = pm_gru%tp%gc(1)
+        pm%tile%zbld(:) = pm%gru%zbld(1)
+        pm%tile%gc(:) = pm%gru%gc(1)
+        if (allocated(RUNCLASS36_flgs%pm%constant%FREZTH)) then
+            if (.not. allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
+                allocate(RUNCLASS36_flgs%pm%tile%FREZTH(shd%lc%NML))
+            end if
+            RUNCLASS36_flgs%pm%tile%FREZTH(:) = RUNCLASS36_flgs%pm%constant%FREZTH(1)
+        end if
+        if (allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
+            if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
+                allocate(RUNCLASS36_flgs%pm%tile%SNDEPLIM(shd%lc%NML))
+            end if
+            RUNCLASS36_flgs%pm%tile%SNDEPLIM(:) = RUNCLASS36_flgs%pm%constant%SNDEPLIM(1)
+        end if
+        if (allocated(RUNCLASS36_flgs%pm%constant%SNDENLIM)) then
+            if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
+                allocate(RUNCLASS36_flgs%pm%tile%SNDENLIM(shd%lc%NML))
+            end if
+            RUNCLASS36_flgs%pm%tile%SNDENLIM(:) = RUNCLASS36_flgs%pm%constant%SNDENLIM(1)
+        end if
     end if
 
     !> Parameters.
@@ -247,40 +285,58 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
             !> RUNCLASS36 and RUNSVS113.
             if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-                pm%cp%fcan(k, :) = pm_gru%cp%fcan(i, :)
-                pm%cp%lnz0(k, :) = pm_gru%cp%lnz0(i, :)
-                pm%slp%sdep(k) = pm_gru%slp%sdep(i)
-                pm%tp%xslp(k) = pm_gru%tp%xslp(i)
-                pm%hp%dd(k) = pm_gru%hp%dd(i)/1000.0
-                pm%slp%sand(k, :) = pm_gru%slp%sand(i, :)
-                pm%slp%clay(k, :) = pm_gru%slp%clay(i, :)
+                pm%tile%fcan(k, :) = pm%gru%fcan(i, :)
+                pm%tile%lnz0(k, :) = pm%gru%lnz0(i, :)
+                pm%tile%sdep(k) = pm%gru%sdep(i)
+                pm%tile%xslp(k) = pm%gru%xslp(i)
+                pm%tile%dd(k) = pm%gru%dd(i)/1000.0
+                pm%tile%sand(k, :) = pm%gru%sand(i, :)
+                pm%tile%clay(k, :) = pm%gru%clay(i, :)
             end if
 
             !> RUNCLASS36.
             if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-                pm%tp%fare(k) = pm_gru%tp%fare(i)
-                pm%tp%mid(k) = max(1, pm_gru%tp%mid(i))
-                pm%tp%iwf(k) = pm_gru%tp%iwf(i)
-                pm%cp%alvc(k, :) = pm_gru%cp%alvc(i, :)
-                pm%cp%alic(k, :) = pm_gru%cp%alic(i, :)
-                pm%cp%lamx(k, :) = pm_gru%cp%lamx(i, :)
-                pm%cp%lamn(k, :) = pm_gru%cp%lamn(i, :)
-                pm%cp%cmas(k, :) = pm_gru%cp%cmas(i, :)
-                pm%cp%root(k, :) = pm_gru%cp%root(i, :)
-                pm%cp%rsmn(k, :) = pm_gru%cp%rsmn(i, :)
-                pm%cp%qa50(k, :) = pm_gru%cp%qa50(i, :)
-                pm%cp%vpda(k, :) = pm_gru%cp%vpda(i, :)
-                pm%cp%vpdb(k, :) = pm_gru%cp%vpdb(i, :)
-                pm%cp%psga(k, :) = pm_gru%cp%psga(i, :)
-                pm%cp%psgb(k, :) = pm_gru%cp%psgb(i, :)
-                pm%hp%drn(k) = pm_gru%hp%drn(i)
-                pm%hp%mann(k) = pm_gru%hp%mann(i)
-                pm%hp%grkf(k) = pm_gru%hp%grkf(i)
-                pm%hp%ks(k) = pm_gru%hp%ks(i)
-                pm%slp%orgm(k, :) = pm_gru%slp%orgm(i, :)
-                pm%snp%zsnl(k) = pm_gru%snp%zsnl(i)
-                pm%sfp%zplg(k) = pm_gru%sfp%zplg(i)
-                pm%snp%zpls(k) = pm_gru%snp%zpls(i)
+                pm%tile%fare(k) = pm%gru%fare(i)
+                pm%tile%mid(k) = max(1, pm%gru%mid(i))
+                pm%tile%iwf(k) = pm%gru%iwf(i)
+                pm%tile%alvc(k, :) = pm%gru%alvc(i, :)
+                pm%tile%alic(k, :) = pm%gru%alic(i, :)
+                pm%tile%lamx(k, :) = pm%gru%lamx(i, :)
+                pm%tile%lamn(k, :) = pm%gru%lamn(i, :)
+                pm%tile%cmas(k, :) = pm%gru%cmas(i, :)
+                pm%tile%root(k, :) = pm%gru%root(i, :)
+                pm%tile%rsmn(k, :) = pm%gru%rsmn(i, :)
+                pm%tile%qa50(k, :) = pm%gru%qa50(i, :)
+                pm%tile%vpda(k, :) = pm%gru%vpda(i, :)
+                pm%tile%vpdb(k, :) = pm%gru%vpdb(i, :)
+                pm%tile%psga(k, :) = pm%gru%psga(i, :)
+                pm%tile%psgb(k, :) = pm%gru%psgb(i, :)
+                pm%tile%drn(k) = pm%gru%drn(i)
+                pm%tile%mann(k) = pm%gru%mann(i)
+                pm%tile%grkf(k) = pm%gru%grkf(i)
+                pm%tile%ks(k) = pm%gru%ks(i)
+                pm%tile%orgm(k, :) = pm%gru%orgm(i, :)
+                pm%tile%zsnl(k) = pm%gru%zsnl(i)
+                pm%tile%zplg(k) = pm%gru%zplg(i)
+                pm%tile%zpls(k) = pm%gru%zpls(i)
+                if (allocated(RUNCLASS36_flgs%pm%gru%FREZTH)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%FREZTH(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%FREZTH(k) = RUNCLASS36_flgs%pm%gru%FREZTH(i)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%gru%SNDEPLIM)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%SNDEPLIM(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%SNDEPLIM(k) = RUNCLASS36_flgs%pm%gru%SNDEPLIM(i)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%gru%SNDENLIM)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%SNDENLIM(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%SNDENLIM(k) = RUNCLASS36_flgs%pm%gru%SNDENLIM(i)
+                end if
             end if
 
             !> BASEFLOWFLAG 1 (Luo, 2012).
@@ -364,28 +420,46 @@ subroutine read_parameters(fls, shd, cm, ierr)
         do k = 1, shd%lc%NML
 
             !> Omit GRU's with mosaic ID >= 100 from being assigned grid-based values (special condition).
-            if (pm%tp%mid(k) >= 100) cycle
+            if (pm%tile%mid(k) >= 100) cycle
 
             !> Grid index.
             i = shd%lc%ILMOS(k)
 
             !> RUNCLASS36 and RUNSVS113.
             if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-                if (shd%SLOPE_INT(i) /= 0.0) pm%tp%xslp(k) = shd%SLOPE_INT(i)
-                if (shd%DRDN(i) /= 0.0) pm%hp%dd(k) = shd%DRDN(i)
-                if (any(pm_grid%cp%fcan(i, :) /= 0.0)) pm%cp%fcan(k, :) = pm_grid%cp%fcan(i, :)
-                if (any(pm_grid%cp%lnz0(i, :) /= 0.0)) pm%cp%lnz0(k, :) = pm_grid%cp%lnz0(i, :)
-                if (pm_grid%slp%sdep(i) /= 0.0) pm%slp%sdep(k) = pm_grid%slp%sdep(i)
-                if (pm_grid%tp%xslp(i) /= 0.0) pm%tp%xslp(k) = pm_grid%tp%xslp(i)
-                if (pm_grid%hp%dd(i) /= 0.0) pm%hp%dd(k) = pm_grid%hp%dd(i)
-                if (any(pm_grid%slp%sand(i, :) /= 0.0)) pm%slp%sand(k, :) = pm_grid%slp%sand(i, :)
-                if (any(pm_grid%slp%clay(i, :) /= 0.0)) pm%slp%clay(k, :) = pm_grid%slp%clay(i, :)
-                if (any(pm_grid%slp%orgm(i, :) /= 0.0)) pm%slp%orgm(k, :) = pm_grid%slp%orgm(i, :)
+                if (shd%SLOPE_INT(i) /= 0.0) pm%tile%xslp(k) = shd%SLOPE_INT(i)
+                if (shd%DRDN(i) /= 0.0) pm%tile%dd(k) = shd%DRDN(i)
+                if (any(pm%grid%fcan(i, :) /= 0.0)) pm%tile%fcan(k, :) = pm%grid%fcan(i, :)
+                if (any(pm%grid%lnz0(i, :) /= 0.0)) pm%tile%lnz0(k, :) = pm%grid%lnz0(i, :)
+                if (pm%grid%sdep(i) /= 0.0) pm%tile%sdep(k) = pm%grid%sdep(i)
+                if (pm%grid%xslp(i) /= 0.0) pm%tile%xslp(k) = pm%grid%xslp(i)
+                if (pm%grid%dd(i) /= 0.0) pm%tile%dd(k) = pm%grid%dd(i)
+                if (any(pm%grid%sand(i, :) /= 0.0)) pm%tile%sand(k, :) = pm%grid%sand(i, :)
+                if (any(pm%grid%clay(i, :) /= 0.0)) pm%tile%clay(k, :) = pm%grid%clay(i, :)
+                if (any(pm%grid%orgm(i, :) /= 0.0)) pm%tile%orgm(k, :) = pm%grid%orgm(i, :)
             end if
 
             !> RUNCLASS36.
             if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-                if (pm_grid%tp%iwf(i) /= -1) pm%tp%iwf(k) = pm_grid%tp%iwf(i)
+                if (pm%grid%iwf(i) /= -1) pm%tile%iwf(k) = pm%grid%iwf(i)
+                if (allocated(RUNCLASS36_flgs%pm%grid%FREZTH)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%FREZTH(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%FREZTH(k) = RUNCLASS36_flgs%pm%grid%FREZTH(i)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%grid%SNDEPLIM)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%SNDEPLIM(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%SNDEPLIM(k) = RUNCLASS36_flgs%pm%grid%SNDEPLIM(i)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%grid%SNDENLIM)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%SNDENLIM(shd%lc%NML))
+                    end if
+                    RUNCLASS36_flgs%pm%tile%SNDENLIM(k) = RUNCLASS36_flgs%pm%grid%SNDENLIM(i)
+                end if
             end if
 
             !> BASEFLOWFLAG == 2 (lower zone storage).
@@ -418,9 +492,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> Distribute soil variables to layers lower than the "last configured layer".
     do j = 2, shd%lc%IGND
         if (j > ignd .and. ignd > 0) then
-            where (pm%slp%sand(:, j) == 0.0) pm%slp%sand(:, j) = pm%slp%sand(:, ignd)
-            where (pm%slp%clay(:, j) == 0.0) pm%slp%clay(:, j) = pm%slp%clay(:, ignd)
-            where (pm%slp%orgm(:, j) == 0.0) pm%slp%orgm(:, j) = pm%slp%orgm(:, ignd)
+            where (pm%tile%sand(:, j) == 0.0) pm%tile%sand(:, j) = pm%tile%sand(:, ignd)
+            where (pm%tile%clay(:, j) == 0.0) pm%tile%clay(:, j) = pm%tile%clay(:, ignd)
+            where (pm%tile%orgm(:, j) == 0.0) pm%tile%orgm(:, j) = pm%tile%orgm(:, ignd)
         end if
     end do
 
@@ -428,18 +502,18 @@ subroutine read_parameters(fls, shd, cm, ierr)
     if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
 
         !> Check the first layer for impermeable soils.
-        where (pm%slp%sdep == 0.0 .and. pm%slp%sand(:, 1) > -2.5)
-            pm%slp%sand(:, 1) = -3.0
-            pm%slp%clay(:, 1) = -3.0
-            pm%slp%orgm(:, 1) = -3.0
+        where (pm%tile%sdep == 0.0 .and. pm%tile%sand(:, 1) > -2.5)
+            pm%tile%sand(:, 1) = -3.0
+            pm%tile%clay(:, 1) = -3.0
+            pm%tile%orgm(:, 1) = -3.0
         end where
 
         !> Check for impermeable soils.
         do j = 2, shd%lc%IGND
-            where (pm%slp%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm%slp%sand(:, j) > -2.5)
-                pm%slp%sand(:, j) = -3.0
-                pm%slp%clay(:, j) = -3.0
-                pm%slp%orgm(:, j) = -3.0
+            where (pm%tile%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm%tile%sand(:, j) > -2.5)
+                pm%tile%sand(:, j) = -3.0
+                pm%tile%clay(:, j) = -3.0
+                pm%tile%orgm(:, j) = -3.0
             end where
         end do
     end if
@@ -451,18 +525,18 @@ subroutine read_parameters(fls, shd, cm, ierr)
 !todo: Double-check this is okay with SVS.
         !> Hydrologically inactive layers should be identified with SAND flag <= -3.
         !> Limit depths deeper than the soil profile to the last boundary for consistency.
-        where (pm%slp%sdep <= shd%lc%sl%zbot(1))
-            pm%slp%sdep = shd%lc%sl%zbot(1)
-        elsewhere (pm%slp%sdep > shd%lc%sl%zbot(shd%lc%IGND))
-            pm%slp%sdep = shd%lc%sl%zbot(shd%lc%IGND)
+        where (pm%tile%sdep <= shd%lc%sl%zbot(1))
+            pm%tile%sdep = shd%lc%sl%zbot(1)
+        elsewhere (pm%tile%sdep > shd%lc%sl%zbot(shd%lc%IGND))
+            pm%tile%sdep = shd%lc%sl%zbot(shd%lc%IGND)
         end where
 
         !> Nudge in-between depths to the closest boundary.
         do j = 2, shd%lc%IGND
-            where (pm%slp%sdep > shd%lc%sl%zbot(j - 1) .and. pm%slp%sdep <= (0.5*shd%lc%sl%delz(j) + shd%lc%sl%zbot(j - 1)))
-                pm%slp%sdep = shd%lc%sl%zbot(j - 1)
-            elsewhere (pm%slp%sdep > (0.5*shd%lc%sl%delz(j) + shd%lc%sl%zbot(j - 1)) .and. pm%slp%sdep <= shd%lc%sl%zbot(j))
-                pm%slp%sdep = shd%lc%sl%zbot(j)
+            where (pm%tile%sdep > shd%lc%sl%zbot(j - 1) .and. pm%tile%sdep <= (0.5*shd%lc%sl%delz(j) + shd%lc%sl%zbot(j - 1)))
+                pm%tile%sdep = shd%lc%sl%zbot(j - 1)
+            elsewhere (pm%tile%sdep > (0.5*shd%lc%sl%delz(j) + shd%lc%sl%zbot(j - 1)) .and. pm%tile%sdep <= shd%lc%sl%zbot(j))
+                pm%tile%sdep = shd%lc%sl%zbot(j)
             end where
         end do
 

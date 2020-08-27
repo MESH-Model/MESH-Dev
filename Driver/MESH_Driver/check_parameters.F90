@@ -138,14 +138,14 @@ subroutine check_parameters(shd)
     !> *****************************************************************
     ib0 = ir
     do j = 1, NTYPE
-        parv(ir + 1, j) = pm_gru%hp%drn(j)
-        parv(ir + 2, j) = pm_gru%slp%sdep(j)
-        parv(ir + 3, j) = pm_gru%tp%fare(j)
-        parv(ir + 4, j) = pm_gru%hp%dd(j)/1000.0
-        parv(ir + 5, j) = pm_gru%tp%xslp(j)
-        parv(ir + 6, j) = pm_gru%hp%grkf(j)
-        parv(ir + 7, j) = pm_gru%hp%mann(j)
-        parv(ir + 8, j) = pm_gru%hp%ks(j)
+        parv(ir + 1, j) = pm%gru%drn(j)
+        parv(ir + 2, j) = pm%gru%sdep(j)
+        parv(ir + 3, j) = pm%gru%fare(j)
+        parv(ir + 4, j) = pm%gru%dd(j)/1000.0
+        parv(ir + 5, j) = pm%gru%xslp(j)
+        parv(ir + 6, j) = pm%gru%grkf(j)
+        parv(ir + 7, j) = pm%gru%mann(j)
+        parv(ir + 8, j) = pm%gru%ks(j)
     end do
     parn(ir + 1) = 'DRN'
     parn(ir + 2) = 'SDEP'
@@ -166,10 +166,10 @@ subroutine check_parameters(shd)
         do j = 1, NTYPE
 
             !> Skip checking sum of soil percentages if soil layer is rock, glacier etc.
-            if (pm_gru%slp%sand(j, i) >= 0.0) then
+            if (pm%gru%sand(j, i) >= 0.0) then
 
                 !> Compute sum of soil percentages.
-                total = pm_gru%slp%sand(j, i) + pm_gru%slp%clay(j, i) + pm_gru%slp%orgm(j, i)
+                total = pm%gru%sand(j, i) + pm%gru%clay(j, i) + pm%gru%orgm(j, i)
                 if (total > 100.0) then
                     print *
                     if (SOILINIFLAG == 1) then
@@ -184,25 +184,25 @@ subroutine check_parameters(shd)
                         print *
                         print *, 'Sum of soil percentages greater than 100% - clay (and orgm) percentages re-adjusted'
                         print('(a8, i3, /, a8, i3)'), 'GRU: ', j, 'LAYER: ', i
-                        pm_gru%slp%clay(j, i) = max(0.0, 100.0 - pm_gru%slp%sand(j, i) - pm_gru%slp%orgm(j, i))
-                        pm_gru%slp%orgm(j, i) = min(pm_gru%slp%orgm(j, i), 100.0 - pm_gru%slp%sand(j, i) - pm_gru%slp%clay(j, i))
+                        pm%gru%clay(j, i) = max(0.0, 100.0 - pm%gru%sand(j, i) - pm%gru%orgm(j, i))
+                        pm%gru%orgm(j, i) = min(pm%gru%orgm(j, i), 100.0 - pm%gru%sand(j, i) - pm%gru%clay(j, i))
                     else if (SOILINIFLAG == 3) then
 
                         !> Keep clay percentage as is and adjust sand (and orgm) percentages.
                         print *
                         print *, 'Sum of soil percentages greater than 100% - sand (and orgm) percentages re-adjusted'
                         print('(a8, i3, /, a8, i3)'), 'GRU: ', j, 'LAYER: ', i
-                        pm_gru%slp%sand(j, i) = max(0.0, 100.0 - pm_gru%slp%clay(j, i) - pm_gru%slp%orgm(j, i))
-                        pm_gru%slp%orgm(j, i) = min(pm_gru%slp%orgm(j, i), 100.0 - pm_gru%slp%sand(j ,i) - pm_gru%slp%clay(j, i))
+                        pm%gru%sand(j, i) = max(0.0, 100.0 - pm%gru%clay(j, i) - pm%gru%orgm(j, i))
+                        pm%gru%orgm(j, i) = min(pm%gru%orgm(j, i), 100.0 - pm%gru%sand(j ,i) - pm%gru%clay(j, i))
                     else if (SOILINIFLAG == 4) then
 
                         !> Re-adjust both sand and clay percentages.
                         print *
                         print *, 'Sum of soil percentages greater than 100% - soil percentages re-adjusted'
                         print('(a8, i3, /, a8, i3)'), 'GRU: ', j, 'LAYER: ', i
-                        pm_gru%slp%sand(j, i) = pm_gru%slp%sand(j, i)*100.0/total
-                        pm_gru%slp%clay(j, i) = pm_gru%slp%clay(j, i)*100.0/total
-                        pm_gru%slp%orgm(j, i) = pm_gru%slp%orgm(j, i)*100.0/total
+                        pm%gru%sand(j, i) = pm%gru%sand(j, i)*100.0/total
+                        pm%gru%clay(j, i) = pm%gru%clay(j, i)*100.0/total
+                        pm%gru%orgm(j, i) = pm%gru%orgm(j, i)*100.0/total
                     else if (SOILINIFLAG == 5) then
 
                         !> Re-adjust both sand and clay percentages.
@@ -221,9 +221,9 @@ subroutine check_parameters(shd)
                     end if
                 end if
             end if
-            parv(ir + 1, j) = pm_gru%slp%sand(j, i)
-            parv(ir + 2, j) = pm_gru%slp%clay(j, i)
-            parv(ir + 3, j) = pm_gru%slp%orgm(j, i)
+            parv(ir + 1, j) = pm%gru%sand(j, i)
+            parv(ir + 2, j) = pm%gru%clay(j, i)
+            parv(ir + 3, j) = pm%gru%orgm(j, i)
         end do
         write(parn(ir + 1), '(a4, i1)') 'SAND', i
         write(parn(ir + 2), '(a4, i1)') 'CLAY', i
@@ -235,9 +235,9 @@ subroutine check_parameters(shd)
     !> *****************************************************************
     ir = ir + NSL
     do j = 1, NTYPE
-        parv(ir + 1, j) = pm_gru%snp%zsnl(j)
-        parv(ir + 2, j) = pm_gru%snp%zpls(j)
-        parv(ir + 3, j) = pm_gru%sfp%zplg(j)
+        parv(ir + 1, j) = pm%gru%zsnl(j)
+        parv(ir + 2, j) = pm%gru%zpls(j)
+        parv(ir + 3, j) = pm%gru%zplg(j)
         if (FROZENSOILINFILFLAG == 0 .or. .not. allocated(hp%frzcrow)) then
             parflag(ir + 4, j) = 0
         else
@@ -256,13 +256,13 @@ subroutine check_parameters(shd)
     do i5 = 1, 5
         ir = ib2 + (i5 - 1)*6
         do j = 1, NTYPE
-            parv(ir + 1, j) = pm_gru%cp%lnz0(j, i5)
-            parv(ir + 2, j) = pm_gru%cp%alvc(j, i5)
-            parv(ir + 3, j) = pm_gru%cp%alic(j, i5)
+            parv(ir + 1, j) = pm%gru%lnz0(j, i5)
+            parv(ir + 2, j) = pm%gru%alvc(j, i5)
+            parv(ir + 3, j) = pm%gru%alic(j, i5)
             if (i5 < 5) then !urban areas
-                parv(ir + 4, j) = pm_gru%cp%rsmn(j, i5)
-                parv(ir + 5, j) = pm_gru%cp%vpda(j, i5)
-                parv(ir + 6, j) = pm_gru%cp%psga(j, i5)
+                parv(ir + 4, j) = pm%gru%rsmn(j, i5)
+                parv(ir + 5, j) = pm%gru%vpda(j, i5)
+                parv(ir + 6, j) = pm%gru%psga(j, i5)
             end if
         end do
         parn(ir + 1) = 'LNZ0'
@@ -282,13 +282,13 @@ subroutine check_parameters(shd)
     do i4 = 1, 4
         ir = ib3 + (i4 - 1)*7
         do j = 1, NTYPE
-            parv(ir + 1, j) = pm_gru%cp%lamx(j, i4)
-            parv(ir + 2, j) = pm_gru%cp%lamn(j, i4)
-            parv(ir + 3, j) = pm_gru%cp%cmas(j, i4)
-            parv(ir + 4, j) = pm_gru%cp%root(j, i4)
-            parv(ir + 5, j) = pm_gru%cp%qa50(j, i4)
-            parv(ir + 6, j) = pm_gru%cp%vpdb(j, i4)
-            parv(ir + 7, j) = pm_gru%cp%psgb(j, i4)
+            parv(ir + 1, j) = pm%gru%lamx(j, i4)
+            parv(ir + 2, j) = pm%gru%lamn(j, i4)
+            parv(ir + 3, j) = pm%gru%cmas(j, i4)
+            parv(ir + 4, j) = pm%gru%root(j, i4)
+            parv(ir + 5, j) = pm%gru%qa50(j, i4)
+            parv(ir + 6, j) = pm%gru%vpdb(j, i4)
+            parv(ir + 7, j) = pm%gru%psgb(j, i4)
         end do
         parn(ir + 1) = 'PAMX'
         parn(ir + 2) = 'PAMN'

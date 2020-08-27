@@ -412,7 +412,7 @@ module SIMSTATS
         end if
 
         !> Return if autocalibration and metrics are not enabled.
-        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
+        if (mtsflg%AUTOCALIBRATIONFLAG == 0 .or. ncal == 0) return
 
         !> Check if the array to keep file information for the metrics is allocated.
         if (.not. allocated(mtsfl%fl)) call init_metricsout_files()
@@ -425,6 +425,9 @@ module SIMSTATS
             write(iun, "(9999(g15.7e2, ' '))") ftest
             close(iun)
         end if
+
+        !> Return if METRICSSPINUP exceeds the length of the run.
+        if (METRICSSPINUP > ncal) return
 
         !> Calculate the metrics of the simulation.
         allocate(fkge(size(qobs, 2)))

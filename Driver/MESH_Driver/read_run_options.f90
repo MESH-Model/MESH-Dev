@@ -7,6 +7,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use model_dates
     use climate_forcing
     use output_files
+    use variable_names
 
     use FLAGS
     use save_basin_output, only: BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
@@ -20,6 +21,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use SA_RTE_module, only: SA_RTE_flgs
     use SIMSTATS_config, only: mtsflg
     use PBSM_module
+    use mountain_module
 
     implicit none
 
@@ -33,6 +35,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 
     !> Local variables.
     integer CONFLAGS, IROVAL, iun, nargs, n, j, i, z
+    real IROVALR
     character(len = DEFAULT_LINE_LENGTH) line
     character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
 
@@ -250,6 +253,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
             z = 0
             select case (trim(adjustl(args(1))))
 
+                !> CLASS flags.
                 case ('IDISP')
                     call value(args(2), IDISP, z)
                 case ('IZREF')
@@ -276,6 +280,32 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     call value(args(2), IALS, z)
                 case ('IALG')
                     call value(args(2), IALG, z)
+                case ('FREZTH', 'ICEBAL_FREEZE_THRESHOLD')
+                    call value(args(2), IROVALR, z)
+                    if (z == 0) then
+                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%FREZTH)) then
+                            allocate(RUNCLASS36_flgs%pm%constant%FREZTH(1))
+                        end if
+                        RUNCLASS36_flgs%pm%constant%FREZTH(:) = IROVALR
+                    end if
+                case ('SNDEPLIM', 'ICEBAL_SNOW_DEPTH_LIMIT')
+                    call value(args(2), IROVALR, z)
+                    if (z == 0) then
+                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
+                            allocate(RUNCLASS36_flgs%pm%constant%SNDEPLIM(1))
+                        end if
+                        RUNCLASS36_flgs%pm%constant%SNDEPLIM(:) = IROVALR
+                    end if
+                case ('SNDENLIM', 'ICEBAL_SNOW_DENSITY_LIMIT')
+                    call value(args(2), IROVALR, z)
+                    if (z == 0) then
+                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%SNDENLIM)) then
+                            allocate(RUNCLASS36_flgs%pm%constant%SNDENLIM(1))
+                        end if
+                        RUNCLASS36_flgs%pm%constant%SNDENLIM(:) = IROVALR
+                    end if
+
+                !> SAVE/RESUME flags.
                 case ('RESUMEFLAG')
                     call value(args(2), RESUMEFLAG, z)
                 case ('SAVERESUMEFLAG')
@@ -313,514 +343,141 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                 !> BASIN FORCING DATA OPTIONS
                 !> Basin forcing data.
                 case ('BASINFORCINGFLAG')
+
+                    !> Assign options to all forcing flags.
+                    do n = 1, cm%nclim
+                        call climate_module_parse_flag(cm%dat(n), line, z)
+                    end do
+
+                    !> Special options.
                     do j = 2, nargs
                         select case (lowercase(args(j)))
+
+                            !> CLASS 'MET' file.
                             case ('met')
 
-                                !> Assign attributes for the 7 variables.
-                                !> To override these, respective 'BASIN' flags should list after 'BASINFORCINGFLAG'.
-                                cm%dat(ck%FB)%factive = .true.
-                                cm%dat(ck%FB)%id_var = 'FB'
-                                cm%dat(ck%FB)%ffmt = 6
-                                cm%dat(ck%FI)%factive = .true.
-                                cm%dat(ck%FI)%id_var = 'FI'
-                                cm%dat(ck%FI)%ffmt = 6
-                                cm%dat(ck%RT)%factive = .true.
-                                cm%dat(ck%RT)%id_var = 'RT'
-                                cm%dat(ck%RT)%ffmt = 6
-                                cm%dat(ck%TT)%factive = .true.
-                                cm%dat(ck%TT)%id_var = 'TT'
-                                cm%dat(ck%TT)%ffmt = 6
-                                cm%dat(ck%UV)%factive = .true.
-                                cm%dat(ck%UV)%id_var = 'UV'
-                                cm%dat(ck%UV)%ffmt = 6
-                                cm%dat(ck%P0)%factive = .true.
-                                cm%dat(ck%P0)%id_var = 'P0'
-                                cm%dat(ck%P0)%ffmt = 6
-                                cm%dat(ck%HU)%factive = .true.
-                                cm%dat(ck%HU)%id_var = 'HU'
-                                cm%dat(ck%HU)%ffmt = 6
-
-                                !> Activate the 'met' file.
-                                cm%dat(ck%MET)%ffmt = 6
+                                !> Activate the 'MET' format file.
                                 cm%dat(ck%MET)%id_var = 'CLASSMET'
                                 cm%dat(ck%MET)%factive = .true.
+
+                                !> Assign the format to all variables.
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%ffmt = 6
+                                end do
+
+                            !> Separate liquid/solid precipitation fields.
                             case ('rr_sr')
                                 cm%dat(ck%RR)%factive = .true.
-                                cm%dat(ck%RR)%id_var = 'RR'
-                                cm%dat(ck%RR)%ffmt = 6
+                                cm%dat(ck%RR)%id_var = VN_PRERN
                                 cm%dat(ck%SR)%factive = .true.
-                                cm%dat(ck%SR)%id_var = 'SR'
-                                cm%dat(ck%SR)%ffmt = 6
-                                cm%dat(ck%MET)%ffmt = 6
-                                cm%dat(ck%MET)%id_var = 'CLASSMET'
-                                cm%dat(ck%MET)%factive = .true.
+                                cm%dat(ck%SR)%id_var = VN_PRESNO
+
+                            !> Deactivate climate variables.
+                            case ('no_clim')
+                                if (.not. cm%dat(ck%MET)%factive) then
+                                    cm%dat(ck%FB)%ffmt = -1
+                                    cm%dat(ck%FI)%ffmt = -1
+                                    cm%dat(ck%RT)%ffmt = -1
+                                    cm%dat(ck%TT)%ffmt = -1
+                                    cm%dat(ck%UV)%ffmt = -1
+                                    cm%dat(ck%P0)%ffmt = -1
+                                    cm%dat(ck%HU)%ffmt = -1
+                                end if
                         end select
                     end do
-                case ('BASINSHORTWAVEFLAG')
+
+                    !> Activate climate variables if a file format has been specified.
+                    !> Deactivate climate variables if a file format was nullified via the 'no_clim' option.
+                    !> To override this behaviour, respective 'BASIN' flags should list after 'BASINFORCINGFLAG'.
                     n = ck%FB
-                    call value(args(2), cm%dat(ck%FB)%ffmt, z)
-                    if (z == 0) cm%dat(ck%FB)%factive = .true.
-                    cm%dat(ck%FB)%id_var = 'FB'
-                    if (cm%dat(ck%FB)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%FB)%ffmt, z)
-                        call value(args(4), cm%dat(ck%FB)%nblocks, z)
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_FSIN
+                    else
+                        cm%dat(n)%factive = .false.
                     end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%FB)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%FB)%nblocks, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%id_var = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = adjustl(args(j)(11:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'cm=') then
-                                call value(args(j)(4:), cm%dat(n)%cm, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'ca=') then
-                                call value(args(j)(4:), cm%dat(n)%ca, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 11) then
-                            if (args(j)(1:11) == 'time_shift=') then
-                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
-                            end if
-                        end if
-                    end do
-                case ('BASINLONGWAVEFLAG')
                     n = ck%FI
-                    call value(args(2), cm%dat(ck%FI)%ffmt, z)
-                    if (z == 0) cm%dat(ck%FI)%factive = .true.
-                    cm%dat(ck%FI)%id_var = 'FI'
-                    if (cm%dat(ck%FI)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%FI)%ffmt, z)
-                        call value(args(4), cm%dat(ck%FI)%nblocks, z)
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_FLIN
+                    else
+                        cm%dat(n)%factive = .false.
                     end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%FI)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%FI)%nblocks, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%id_var = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = adjustl(args(j)(11:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'cm=') then
-                                call value(args(j)(4:), cm%dat(n)%cm, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'ca=') then
-                                call value(args(j)(4:), cm%dat(n)%ca, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 11) then
-                            if (args(j)(1:11) == 'time_shift=') then
-                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
-                            end if
-                        end if
-                    end do
-                case ('BASINRAINFLAG')
                     n = ck%RT
-                    call value(args(2), cm%dat(ck%RT)%ffmt, z)
-                    if (z == 0) cm%dat(ck%RT)%factive = .true.
-                    cm%dat(ck%RT)%id_var = 'RT'
-                    if (cm%dat(ck%RT)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%RT)%ffmt, z)
-                        call value(args(4), cm%dat(ck%RT)%nblocks, z)
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_PRE
+                    else
+                        cm%dat(n)%factive = .false.
                     end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%RT)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%RT)%nblocks, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%id_var = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = adjustl(args(j)(11:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'cm=') then
-                                call value(args(j)(4:), cm%dat(n)%cm, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'ca=') then
-                                call value(args(j)(4:), cm%dat(n)%ca, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 11) then
-                            if (args(j)(1:11) == 'time_shift=') then
-                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
-                            end if
-                        end if
-                    end do
-                case ('BASINTEMPERATUREFLAG')
                     n = ck%TT
-                    call value(args(2), cm%dat(ck%TT)%ffmt, z)
-                    if (z == 0) cm%dat(ck%TT)%factive = .true.
-                    cm%dat(ck%TT)%id_var = 'TT'
-                    if (cm%dat(ck%TT)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%TT)%ffmt, z)
-                        call value(args(4), cm%dat(ck%TT)%nblocks, z)
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_TA
+                    else
+                        cm%dat(n)%factive = .false.
                     end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%TT)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%TT)%nblocks, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%id_var = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = adjustl(args(j)(11:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'cm=') then
-                                call value(args(j)(4:), cm%dat(n)%cm, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'ca=') then
-                                call value(args(j)(4:), cm%dat(n)%ca, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 11) then
-                            if (args(j)(1:11) == 'time_shift=') then
-                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
-                            end if
-                        end if
-                    end do
-                case ('BASINWINDFLAG')
                     n = ck%UV
-                    call value(args(2), cm%dat(ck%UV)%ffmt, z)
-                    if (z == 0) cm%dat(ck%UV)%factive = .true.
-                    cm%dat(ck%UV)%id_var = 'UV'
-                    if (cm%dat(ck%UV)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%UV)%ffmt, z)
-                        call value(args(4), cm%dat(ck%UV)%nblocks, z)
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_UV
+                    else
+                        cm%dat(n)%factive = .false.
                     end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%UV)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%UV)%nblocks, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%id_var = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = adjustl(args(j)(11:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'cm=') then
-                                call value(args(j)(4:), cm%dat(n)%cm, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'ca=') then
-                                call value(args(j)(4:), cm%dat(n)%ca, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 11) then
-                            if (args(j)(1:11) == 'time_shift=') then
-                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
-                            end if
-                        end if
-                    end do
-                case ('BASINPRESFLAG')
                     n = ck%P0
-                    call value(args(2), cm%dat(ck%P0)%ffmt, z)
-                    if (z == 0) cm%dat(ck%P0)%factive = .true.
-                    cm%dat(ck%P0)%id_var = 'P0'
-                    if (cm%dat(ck%P0)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%P0)%ffmt, z)
-                        call value(args(4), cm%dat(ck%P0)%nblocks, z)
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_PRES
+                    else
+                        cm%dat(n)%factive = .false.
                     end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%P0)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%P0)%nblocks, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%id_var = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = adjustl(args(j)(11:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'cm=') then
-                                call value(args(j)(4:), cm%dat(n)%cm, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'ca=') then
-                                call value(args(j)(4:), cm%dat(n)%ca, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 11) then
-                            if (args(j)(1:11) == 'time_shift=') then
-                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
-                            end if
-                        end if
-                    end do
-                case ('BASINHUMIDITYFLAG')
                     n = ck%HU
-                    call value(args(2), cm%dat(ck%HU)%ffmt, z)
-                    if (z == 0) cm%dat(ck%HU)%factive = .true.
-                    cm%dat(ck%HU)%id_var = 'HU'
-                    if (cm%dat(ck%HU)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%HU)%ffmt, z)
-                        call value(args(4), cm%dat(ck%HU)%nblocks, z)
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_QA
+                    else
+                        cm%dat(n)%factive = .false.
                     end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%HU)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%HU)%nblocks, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fname=') then
-                                cm%dat(n)%fname = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 6) then
-                            if (args(j)(1:6) == 'fpath=') then
-                                cm%dat(n)%fpath = adjustl(args(j)(7:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_var=') then
-                                cm%dat(n)%id_var = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lat=') then
-                                cm%dat(n)%name_lat = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 9) then
-                            if (args(j)(1:9) == 'name_lon=') then
-                                cm%dat(n)%name_lon = adjustl(args(j)(10:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 10) then
-                            if (args(j)(1:10) == 'name_time=') then
-                                cm%dat(n)%name_time = adjustl(args(j)(11:))
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'cm=') then
-                                call value(args(j)(4:), cm%dat(n)%cm, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'ca=') then
-                                call value(args(j)(4:), cm%dat(n)%ca, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 11) then
-                            if (args(j)(1:11) == 'time_shift=') then
-                                call value(args(j)(12:), cm%dat(n)%time_shift, z)
-                            end if
-                        end if
-                    end do
+                case ('BASINSHORTWAVEFLAG')
+                    cm%dat(ck%FB)%id_var = VN_FSIN
+                    call climate_module_parse_flag(cm%dat(ck%FB), line, z)
+                    cm%dat(ck%FB)%factive = (z == 0)
+                case ('BASINLONGWAVEFLAG')
+                    cm%dat(ck%FI)%id_var = VN_FLIN
+                    call climate_module_parse_flag(cm%dat(ck%FI), line, z)
+                    cm%dat(ck%FI)%factive = (z == 0)
+                case ('BASINRAINFLAG')
+                    cm%dat(ck%RT)%id_var = VN_PRE
+                    call climate_module_parse_flag(cm%dat(ck%RT), line, z)
+                    cm%dat(ck%RT)%factive = (z == 0)
+                case ('BASINTEMPERATUREFLAG')
+                    cm%dat(ck%TT)%id_var = VN_TA
+                    call climate_module_parse_flag(cm%dat(ck%TT), line, z)
+                    cm%dat(ck%TT)%factive = (z == 0)
+                case ('BASINWINDFLAG')
+                    cm%dat(ck%UV)%id_var = VN_UV
+                    call climate_module_parse_flag(cm%dat(ck%UV), line, z)
+                    cm%dat(ck%UV)%factive = (z == 0)
+                case ('BASINWINDDIRFLAG')
+                    cm%dat(ck%WD)%id_var = VN_WDIR
+                    call climate_module_parse_flag(cm%dat(ck%WD), line, z)
+                    cm%dat(ck%WD)%factive = (z == 0)
+                case ('BASINPRESFLAG')
+                    cm%dat(ck%P0)%id_var = VN_PRES
+                    call climate_module_parse_flag(cm%dat(ck%P0), line, z)
+                    cm%dat(ck%P0)%factive = (z == 0)
+                case ('BASINHUMIDITYFLAG')
+                    cm%dat(ck%HU)%id_var = VN_QA
+                    call climate_module_parse_flag(cm%dat(ck%HU), line, z)
+                    cm%dat(ck%HU)%factive = (z == 0)
                 case ('BASINRUNOFFFLAG')
+                    cm%dat(ck%N0)%id_var = VN_RFF
+                    call climate_module_parse_flag(cm%dat(ck%N0), line, z)
+                    cm%dat(ck%N0)%factive = (z == 0)
                 case ('BASINRECHARGEFLAG')
+                    cm%dat(ck%O1)%id_var = VN_RCHG
+                    call climate_module_parse_flag(cm%dat(ck%O1), line, z)
+                    cm%dat(ck%O1)%factive = (z == 0)
 
                 case ('STREAMFLOWFILEFLAG')
                     fms%stmg%qomeas%fls%ffmt = adjustl(args(2))
@@ -992,6 +649,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                             case ('nolss')
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
                                 svs_mesh%PROCESS_ACTIVE = .false.
+                                ro%RUNLSS = .false.
                             case ('runrte')
                                 WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                 rteflg%PROCESS_ACTIVE = .true.
@@ -1018,6 +676,10 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                 case ('INPUTPARAMSFORMFLAG')
                     INPUTPARAMSFORM = adjustl(lowercase(line))
 
+                !> MOUNTAINMESH (formerly: SOLARADJUSTFLAG).
+                case('MOUNTAINMESH', 'SOLARADJUSTFLAG')
+                    mountain_mesh%RUNOPTIONSFLAG = adjustl(lowercase(line))
+
                 !> Unrecognized flag.
                 case default
                     call print_screen("WARNING: '" // trim(adjustl(args(1))) // "' is not recognized as a control flag.")
@@ -1041,7 +703,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
         call print_screen('REMARK: The number of folders for CLASS output is greater than ten and will impact performance.')
     end if
     read (iun, *, err = 98)
-    if (WF_NUM_POINTS > 0 .and. RUNCLASS36_flgs%PROCESS_ACTIVE) then
+    if (WF_NUM_POINTS > 0) then
         allocate(op%DIR_OUT(WF_NUM_POINTS), op%N_OUT(WF_NUM_POINTS), &
                  op%II_OUT(WF_NUM_POINTS), op%K_OUT(WF_NUM_POINTS), stat = ierr)
 

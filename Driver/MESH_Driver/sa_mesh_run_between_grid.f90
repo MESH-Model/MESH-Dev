@@ -27,9 +27,9 @@ module sa_mesh_run_between_grid
     !*  fout_header: .true. to print header (default).
     !*  fls: Output file definitions.
     type WF_RTE_fout_stfl
-        integer(kind = 4) :: KDLY = 0, KTS = 1
+        integer :: KDLY = 0, KTS = 1
         integer :: kmin = 0, kmax = 1
-        integer(kind = 4) :: freq = 1
+        integer :: freq = 1
         logical :: fout_hyd = .true., fout_bal = .false., fout_acc = .false.
         logical :: fout_header = .true.
         type(fl_ids) :: fls
@@ -44,9 +44,9 @@ module sa_mesh_run_between_grid
     !*  fout_header: .true. to print header (default).
     !*  fls: Output file definitions.
     type WF_RTE_fout_rsvr
-        integer(kind = 4) :: KDLY = 0, KTS = 1, KHLY = 2
+        integer :: KDLY = 0, KTS = 1, KHLY = 2
         integer :: kmin = 0, kmax = 2
-        integer(kind = 4) :: freq = 0
+        integer :: freq = 0
         logical :: fout_header = .true.
         type(fl_ids) :: fls
     end type
@@ -367,8 +367,10 @@ module sa_mesh_run_between_grid
         end if !(ipid == 0) then
 
         !> Update variables.
-        vs%grid%rff = (vs%grid%rofo + vs%grid%rofs)*ic%dts
-        vs%grid%rchg = vs%grid%rofb*ic%dts
+        if (ro%RUNLSS) then
+            vs%grid%rff = (vs%grid%rofo + sum(vs%grid%rofs, 2))*ic%dts
+            vs%grid%rchg = vs%grid%rofb*ic%dts
+        end if
 
         !> Call processes.
         call SA_RTE(shd)
@@ -547,7 +549,7 @@ module sa_mesh_run_between_grid
             vs%basin%tsfs(:, j) = vs%grid%tsfs(:, j)*shd%FRAC
         end do
         vs%basin%ggeo = vs%grid%ggeo*shd%FRAC
-        vs%basin%rofs = vs%grid%rofs*shd%FRAC
+!-        vs%basin%rofs = vs%grid%rofs*shd%FRAC
         vs%basin%tbas = vs%grid%tbas*shd%FRAC
         do j = 1, shd%lc%IGND
             vs%basin%thic(:, j) = vs%grid%thic(:, j)*shd%FRAC
@@ -556,6 +558,7 @@ module sa_mesh_run_between_grid
             vs%basin%lqws(:, j) = vs%grid%lqws(:, j)*shd%FRAC
             vs%basin%tbar(:, j) = vs%grid%tbar(:, j)*shd%FRAC
             vs%basin%gflx(:, j) = vs%grid%gflx(:, j)*shd%FRAC
+            vs%basin%rofs(:, j) = vs%grid%rofs(:, j)*shd%FRAC
         end do
         vs%basin%lzs = vs%grid%lzs*shd%FRAC
         vs%basin%dzs = vs%grid%dzs*shd%FRAC
@@ -634,7 +637,7 @@ module sa_mesh_run_between_grid
                 vs%basin%gzero(ii) = vs%basin%gzero(ii) + vs%basin%gzero(i)
                 vs%basin%tsfs(ii, :) = vs%basin%tsfs(ii, :) + vs%basin%tsfs(ii, :)
                 vs%basin%ggeo(ii) = vs%basin%ggeo(ii) + vs%basin%ggeo(i)
-                vs%basin%rofs(ii) = vs%basin%rofs(ii) + vs%basin%rofs(i)
+                vs%basin%rofs(ii, :) = vs%basin%rofs(ii, :) + vs%basin%rofs(i, :)
                 vs%basin%tbas(ii) = vs%basin%tbas(ii) + vs%basin%tbas(i)
                 vs%basin%thic(ii, :) = vs%basin%thic(ii, :) + vs%basin%thic(i, :)
                 vs%basin%fzws(ii, :) = vs%basin%fzws(ii, :) + vs%basin%fzws(i, :)
@@ -710,7 +713,7 @@ module sa_mesh_run_between_grid
             vs%basin%hfs = vs%basin%hfs/frac
             vs%basin%gzero = vs%basin%gzero/frac
             vs%basin%ggeo = vs%basin%ggeo/frac
-            vs%basin%rofs = vs%basin%rofs/frac
+!-            vs%basin%rofs = vs%basin%rofs/frac
             vs%basin%tbas = vs%basin%tbas/frac
             vs%basin%lzs = vs%basin%lzs/frac
             vs%basin%dzs = vs%basin%dzs/frac
@@ -731,6 +734,7 @@ module sa_mesh_run_between_grid
                 vs%basin%lqws(:, j) = vs%basin%lqws(:, j)/frac
                 vs%basin%tbar(:, j) = vs%basin%tbar(:, j)/frac
                 vs%basin%gflx(:, j) = vs%basin%gflx(:, j)/frac
+                vs%basin%rofs(:, j) = vs%basin%rofs(:, j)/frac
             end where
         end do
 

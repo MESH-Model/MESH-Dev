@@ -94,6 +94,7 @@ module RUNCLASS36_config
 
         integer NA, NTYPE, NML, NSL, l, k, ik, jk, m, j, i, iun, ierr
         real FRAC
+        character(len = DEFAULT_LINE_LENGTH) line
 
         !> For RESUMEFLAG 3
         real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
@@ -300,6 +301,9 @@ module RUNCLASS36_config
                  csfv%ROOT(NML, ICAN), csfv%RSMN(NML, ICAN), csfv%VPDA(NML, ICAN), csfv%VPDB(NML, ICAN))
         allocate(csfv%ALIC(NML, ICP1), csfv%ALVC(NML, ICP1), csfv%FCAN(NML, ICP1), csfv%LNZ0(NML, ICP1))
 
+        !> Glacier variables.
+        allocate(cglv%FREZTH(NML), cglv%SNDEPLIM(NML), cglv%SNDENLIM(NML))
+
         !> Atmospheric variables.
         allocate(catv%CSZ(NML), catv%DLON(NML), catv%FCLO(NML), catv%GC(NML), catv%GGEO(NML), catv%PADR(NML), catv%RADJ(NML), &
                  catv%RHOA(NML), catv%RHSI(NML), catv%RPCP(NML), catv%RPRE(NML), catv%SPCP(NML), catv%SPRE(NML), catv%TADP(NML), &
@@ -315,10 +319,11 @@ module RUNCLASS36_config
                  cdv%HTCC(NML), cdv%HTCS(NML), cdv%ILMO(NML), cdv%PCFC(NML), cdv%PCLC(NML), cdv%PCPG(NML), cdv%PCPN(NML), &
                  cdv%PET(NML), cdv%QEVP(NML), cdv%QFCF(NML), cdv%QFCL(NML), cdv%QFG(NML), cdv%QFN(NML), cdv%QFS(NML), &
                  cdv%QFX(NML), cdv%QG(NML), cdv%ROF(NML), cdv%ROFB(NML), cdv%ROFC(NML), cdv%ROFN(NML), cdv%ROFO(NML), &
-                 cdv%ROFS(NML), cdv%ROVG(NML), cdv%SFCQ(NML), cdv%SFCT(NML), cdv%SFCU(NML), cdv%SFCV(NML), cdv%TFX(NML), &
-                 cdv%TROB(NML), cdv%TROF(NML), cdv%TROO(NML), cdv%TROS(NML), cdv%TSF(NML), cdv%UE(NML), cdv%WTAB(NML), &
-                 cdv%WTRC(NML), cdv%WTRG(NML), cdv%WTRS(NML))
-        allocate(cdv%GFLX(NML, NSL), cdv%HMFG(NML, NSL), cdv%HTC(NML, NSL), cdv%QFC(NML, NSL))
+                 cdv%ROVG(NML), cdv%SFCQ(NML), cdv%SFCT(NML), cdv%SFCU(NML), cdv%SFCV(NML), cdv%TFX(NML), &
+                 cdv%TROB(NML), cdv%TROF(NML), cdv%TROO(NML), cdv%TSF(NML), cdv%UE(NML), cdv%WTAB(NML), &
+                 cdv%WTRC(NML), cdv%WTRG(NML), cdv%WTRS(NML), cdv%ICE(NML), cdv%TICE(NML))
+        allocate(cdv%ROFS(NML, NSL), cdv%TROS(NML, NSL), &
+                 cdv%GFLX(NML, NSL), cdv%HMFG(NML, NSL), cdv%HTC(NML, NSL), cdv%QFC(NML, NSL))
 
         !> Read an initial value for geothermal flux from file.
         if (GGEOFLAG == 1) then
@@ -437,37 +442,37 @@ module RUNCLASS36_config
         end select !case (RESUMEFLAG)
 
         !> Distribute variables.
-        catv%ZRFM(il1:il2) = pm%sfp%zrfm(il1:il2)
-        catv%ZRFH(il1:il2) = pm%sfp%zrfh(il1:il2)
-        catv%ZBLD(il1:il2) = pm%sfp%zbld(il1:il2)
-        catv%GC(il1:il2) = pm%tp%gc(il1:il2)
-        csfv%FARE(il1:il2) = pm%tp%fare(il1:il2)
-        csfv%MID(il1:il2) = pm%tp%mid(il1:il2)
-        csfv%IWF(il1:il2) = pm%tp%iwf(il1:il2)
-        csfv%FCAN(il1:il2, :) = pm%cp%fcan(il1:il2, :)
-        csfv%LNZ0(il1:il2, :) = pm%cp%lnz0(il1:il2, :)
-        csfv%ALVC(il1:il2, :) = pm%cp%alvc(il1:il2, :)
-        csfv%ALIC(il1:il2, :) = pm%cp%alic(il1:il2, :)
-        csfv%PAMX(il1:il2, :) = pm%cp%lamx(il1:il2, :)
-        csfv%PAMN(il1:il2, :) = pm%cp%lamn(il1:il2, :)
-        csfv%CMAS(il1:il2, :) = pm%cp%cmas(il1:il2, :)
-        csfv%ROOT(il1:il2, :) = pm%cp%root(il1:il2, :)
-        csfv%RSMN(il1:il2, :) = pm%cp%rsmn(il1:il2, :)
-        csfv%QA50(il1:il2, :) = pm%cp%qa50(il1:il2, :)
-        csfv%VPDA(il1:il2, :) = pm%cp%vpda(il1:il2, :)
-        csfv%VPDB(il1:il2, :) = pm%cp%vpdb(il1:il2, :)
-        csfv%PSGA(il1:il2, :) = pm%cp%psga(il1:il2, :)
-        csfv%PSGB(il1:il2, :) = pm%cp%psgb(il1:il2, :)
-        csfv%DRN(il1:il2) = pm%hp%drn(il1:il2)
-        csfv%SDEP(il1:il2) = pm%slp%sdep(il1:il2)
-        csfv%XSLP(il1:il2) = pm%tp%xslp(il1:il2)
-        DDGAT(il1:il2) = pm%hp%dd(il1:il2)
-        MANNGAT(il1:il2) = pm%hp%mann(il1:il2)
-        XDGAT(il1:il2) = pm%hp%grkf(il1:il2)
-        KSGAT(il1:il2) = pm%hp%ks(il1:il2)
-        csfv%SAND(il1:il2, :) = pm%slp%sand(il1:il2, :)
-        csfv%CLAY(il1:il2, :) = pm%slp%clay(il1:il2, :)
-        csfv%ORGM(il1:il2, :) = pm%slp%orgm(il1:il2, :)
+        catv%ZRFM(il1:il2) = pm%tile%zrfm(il1:il2)
+        catv%ZRFH(il1:il2) = pm%tile%zrfh(il1:il2)
+        catv%ZBLD(il1:il2) = pm%tile%zbld(il1:il2)
+        catv%GC(il1:il2) = pm%tile%gc(il1:il2)
+        csfv%FARE(il1:il2) = pm%tile%fare(il1:il2)
+        csfv%MID(il1:il2) = pm%tile%mid(il1:il2)
+        csfv%IWF(il1:il2) = pm%tile%iwf(il1:il2)
+        csfv%FCAN(il1:il2, :) = pm%tile%fcan(il1:il2, :)
+        csfv%LNZ0(il1:il2, :) = pm%tile%lnz0(il1:il2, :)
+        csfv%ALVC(il1:il2, :) = pm%tile%alvc(il1:il2, :)
+        csfv%ALIC(il1:il2, :) = pm%tile%alic(il1:il2, :)
+        csfv%PAMX(il1:il2, :) = pm%tile%lamx(il1:il2, :)
+        csfv%PAMN(il1:il2, :) = pm%tile%lamn(il1:il2, :)
+        csfv%CMAS(il1:il2, :) = pm%tile%cmas(il1:il2, :)
+        csfv%ROOT(il1:il2, :) = pm%tile%root(il1:il2, :)
+        csfv%RSMN(il1:il2, :) = pm%tile%rsmn(il1:il2, :)
+        csfv%QA50(il1:il2, :) = pm%tile%qa50(il1:il2, :)
+        csfv%VPDA(il1:il2, :) = pm%tile%vpda(il1:il2, :)
+        csfv%VPDB(il1:il2, :) = pm%tile%vpdb(il1:il2, :)
+        csfv%PSGA(il1:il2, :) = pm%tile%psga(il1:il2, :)
+        csfv%PSGB(il1:il2, :) = pm%tile%psgb(il1:il2, :)
+        csfv%DRN(il1:il2) = pm%tile%drn(il1:il2)
+        csfv%SDEP(il1:il2) = pm%tile%sdep(il1:il2)
+        csfv%XSLP(il1:il2) = pm%tile%xslp(il1:il2)
+        DDGAT(il1:il2) = pm%tile%dd(il1:il2)
+        MANNGAT(il1:il2) = pm%tile%mann(il1:il2)
+        XDGAT(il1:il2) = pm%tile%grkf(il1:il2)
+        KSGAT(il1:il2) = pm%tile%ks(il1:il2)
+        csfv%SAND(il1:il2, :) = pm%tile%sand(il1:il2, :)
+        csfv%CLAY(il1:il2, :) = pm%tile%clay(il1:il2, :)
+        csfv%ORGM(il1:il2, :) = pm%tile%orgm(il1:il2, :)
         cpv%CMAI(il1:il2) = vs%tile%cmas(il1:il2)
         cpv%WSNO(il1:il2) = vs%tile%wsno(il1:il2)
         cpv%QAC(il1:il2) = vs%tile%qac(il1:il2)
@@ -487,9 +492,57 @@ module RUNCLASS36_config
         cpv%THLQ(il1:il2, :) = vs%tile%thlq(il1:il2, :)
         cpv%THIC(il1:il2, :) = vs%tile%thic(il1:il2, :)
         cpv%TBAS(il1:il2) = vs%tile%tbas(il1:il2)
-        csfv%ZSNL(il1:il2) = pm%snp%zsnl(il1:il2)
-        csfv%ZPLG(il1:il2) = pm%sfp%zplg(il1:il2)
-        csfv%ZPLS(il1:il2) = pm%snp%zpls(il1:il2)
+        csfv%ZSNL(il1:il2) = pm%tile%zsnl(il1:il2)
+        csfv%ZPLG(il1:il2) = pm%tile%zplg(il1:il2)
+        csfv%ZPLS(il1:il2) = pm%tile%zpls(il1:il2)
+        if (allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
+            if (DIAGNOSEMODE) then
+                call print_message('ICEBAL_FREEZE_THRESHOLD (FREZTH) override is ACTIVE.')
+                if (allocated(RUNCLASS36_flgs%pm%constant%FREZTH)) then
+                    write(line, FMT_GEN) 'Uniform value: ', RUNCLASS36_flgs%pm%constant%FREZTH
+                    call print_message(line, PAD_3)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%gru%FREZTH)) then
+                    write(line, FMT_GEN) 'GRU value: ', (RUNCLASS36_flgs%pm%gru%FREZTH(j), j = 1, NTYPE)
+                    call print_message(line, PAD_3)
+                end if
+            end if
+            cglv%FREZTH(il1:il2) = RUNCLASS36_flgs%pm%tile%FREZTH(il1:il2)
+        else
+            cglv%FREZTH(il1:il2) = -2.0
+        end if
+        if (allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
+            if (DIAGNOSEMODE) then
+                call print_message('ICEBAL_SNOW_DEPTH_LIMIT (SNDEPLIM) override is ACTIVE.')
+                if (allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
+                    write(line, FMT_GEN) 'Uniform value: ', RUNCLASS36_flgs%pm%constant%SNDEPLIM
+                    call print_message(line, PAD_3)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%gru%SNDEPLIM)) then
+                    write(line, FMT_GEN) 'GRU value: ', (RUNCLASS36_flgs%pm%gru%SNDEPLIM(j), j = 1, NTYPE)
+                    call print_message(line, PAD_3)
+                end if
+            end if
+            cglv%SNDEPLIM(il1:il2) = RUNCLASS36_flgs%pm%tile%SNDEPLIM(il1:il2)
+        else
+            cglv%SNDEPLIM(il1:il2) = 100.0
+        end if
+        if (allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
+            if (DIAGNOSEMODE) then
+                call print_message('ICEBAL_SNOW_DENSITY_LIMIT (SNDENLIM) override is ACTIVE.')
+                if (allocated(RUNCLASS36_flgs%pm%constant%SNDENLIM)) then
+                    write(line, FMT_GEN) 'Uniform value: ', RUNCLASS36_flgs%pm%constant%SNDENLIM
+                    call print_message(line, PAD_3)
+                end if
+                if (allocated(RUNCLASS36_flgs%pm%gru%SNDENLIM)) then
+                    write(line, FMT_GEN) 'GRU value: ', (RUNCLASS36_flgs%pm%gru%SNDENLIM(j), j = 1, NTYPE)
+                    call print_message(line, PAD_3)
+                end if
+            end if
+            cglv%SNDENLIM(il1:il2) = RUNCLASS36_flgs%pm%tile%SNDENLIM(il1:il2)
+        else
+            cglv%SNDENLIM(il1:il2) = 900.0
+        end if
 
         cdv%ITCT = 0
 
@@ -509,7 +562,7 @@ module RUNCLASS36_config
             MELTRUNOFF = 0.0
             SI = 0.20
             TSI = -0.10
-            do k = il2, il2
+            do k = il1, il2
                 FRZCGAT(k) = hp%FRZCROW(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
             end do
         end if
@@ -550,23 +603,23 @@ module RUNCLASS36_config
                      csfv%DELZW, csfv%ZBTW, csfv%ALGW, csfv%ALGD, &
                      csfv%SAND, csfv%CLAY, csfv%ORGM, shd%lc%sl%DELZ, shd%lc%sl%ZBOT, csfv%SDEP, &
                      csfv%ISND, csfv%IGDR, NML, il1, il2, NSL, ICTEMMOD, &
-                     pm_gru%slp%thpor, pm_gru%slp%thlret, pm_gru%slp%thlmin, pm_gru%slp%bi, &
-                     pm_gru%slp%psisat, pm_gru%slp%grksat, pm_gru%slp%hcps, pm_gru%slp%tcs, &
+                     pm%gru%thpor, pm%gru%thlret, pm%gru%thlmin, pm%gru%bi, &
+                     pm%gru%psisat, pm%gru%grksat, pm%gru%hcps, pm%gru%tcs, &
                      NA, NTYPE, shd%lc%ILG, shd%lc%ILMOS, shd%lc%JLMOS)
 
-        pm%slp%alwet(il1:il2) = csfv%ALGW(il1:il2)
-        pm%slp%aldry(il1:il2) = csfv%ALGD(il1:il2)
-        pm%slp%thpor(il1:il2, :) = csfv%THP(il1:il2, :)
-        pm%slp%thlret(il1:il2, :) = csfv%THR(il1:il2, :)
-        pm%slp%thlmin(il1:il2, :) = csfv%THM(il1:il2, :)
-        pm%slp%bi(il1:il2, :) = csfv%BI(il1:il2, :)
-        pm%slp%psisat(il1:il2, :) = csfv%PSIS(il1:il2, :)
-        pm%slp%grksat(il1:il2, :) = csfv%GRKS(il1:il2, :)
-        pm%slp%thlrat(il1:il2, :) = csfv%THRA(il1:il2, :)
-        pm%slp%hcps(il1:il2, :) = csfv%HCPS(il1:il2, :)
-        pm%slp%tcs(il1:il2, :) = csfv%TCS(il1:il2, :)
-        pm%slp%thfc(il1:il2, :) = csfv%THFC(il1:il2, :)
-        pm%slp%psiwlt(il1:il2, :) = csfv%PSIW(il1:il2, :)
+        pm%tile%alwet(il1:il2) = csfv%ALGW(il1:il2)
+        pm%tile%aldry(il1:il2) = csfv%ALGD(il1:il2)
+        pm%tile%thpor(il1:il2, :) = csfv%THP(il1:il2, :)
+        pm%tile%thlret(il1:il2, :) = csfv%THR(il1:il2, :)
+        pm%tile%thlmin(il1:il2, :) = csfv%THM(il1:il2, :)
+        pm%tile%bi(il1:il2, :) = csfv%BI(il1:il2, :)
+        pm%tile%psisat(il1:il2, :) = csfv%PSIS(il1:il2, :)
+        pm%tile%grksat(il1:il2, :) = csfv%GRKS(il1:il2, :)
+        pm%tile%thlrat(il1:il2, :) = csfv%THRA(il1:il2, :)
+        pm%tile%hcps(il1:il2, :) = csfv%HCPS(il1:il2, :)
+        pm%tile%tcs(il1:il2, :) = csfv%TCS(il1:il2, :)
+        pm%tile%thfc(il1:il2, :) = csfv%THFC(il1:il2, :)
+        pm%tile%psiwlt(il1:il2, :) = csfv%PSIW(il1:il2, :)
         vs%tile%delzw(il1:il2, :) = csfv%DELZW(il1:il2, :)
         vs%tile%zbotw(il1:il2, :) = csfv%ZBTW(il1:il2, :)
 
@@ -598,13 +651,19 @@ module RUNCLASS36_config
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
 
+        !> For GRU-based end of run prognostic variables.
+        real, dimension(:, :), allocatable :: tcan, rcan, sncan, gro, zpnd, tpnd, sno, tsno, albs, rhos
+        real, dimension(:, :, :), allocatable :: tbar, thlq, thic
+        integer, dimension(:), allocatable :: kc
+        character cfmt*3, cfmtt*1000
+
         !> For SAVERESUMEFLAG 3
         real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
             RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
             TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW
         real(kind = 4), dimension(:, :, :), allocatable :: TBARROW, THICROW, THLQROW, TSFSROW
 
-        integer NA, NTYPE, NSL, k, ik, jk, iun, ierr
+        integer NA, NTYPE, NML, NSL, m, k, ik, jk, j, i, ignd, iun, ierr
 
         !> Return if the process is not marked active.
         if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
@@ -615,7 +674,128 @@ module RUNCLASS36_config
         !> Local indices.
         NA = shd%NA
         NTYPE = shd%lc%NTYPE
+        NML = shd%lc%NML
         NSL = shd%lc%IGND
+
+        !> Write data to the output summary file.
+        if (ECHOTXTMODE) then
+
+            !> CLASS states for prognostic variables.
+            allocate(tcan(3, NTYPE), rcan(3, NTYPE), sncan(3, NTYPE), gro(3, NTYPE), zpnd(3, NTYPE), tpnd(3, NTYPE), &
+                     sno(3, NTYPE), tsno(3, NTYPE), albs(3, NTYPE), rhos(3, NTYPE), &
+                     tbar(3, NTYPE, NSL), thlq(3, NTYPE, NSL), thic(3, NTYPE, NSL), kc(NTYPE))
+            tcan = 0.0; rcan = 0.0; sncan = 0.0; gro = 0.0; zpnd = 0.0; tpnd = 0.0
+            sno = 0.0; tsno = 0.0; albs = 0.0; rhos = 0.0
+            tbar = 0.0; thlq = 0.0; thic = 0.0; kc = 0
+
+            !> Loop through the GRUs.
+            do m = 1, NTYPE
+
+                !> Cycle if the GRU does not exist.
+                if (count(shd%lc%JLMOS(1:NML) == m) == 0) cycle
+
+                !> Canopy.
+                tcan(3, m) = maxval(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m)
+                if (tcan(3, m) > 0.0) then
+                    tcan(1, m) = sum(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%tcan /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tcan /= 0.0)
+                    tcan(2, m) = minval(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tcan /= 0.0)
+                end if
+                where (tcan < 173.16 .or. tcan > 373.16 .or. tcan == 0.0) tcan = 273.16
+                rcan(2, m) = minval(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)
+                rcan(3, m) = maxval(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)
+                rcan(1, m) = sum(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                sncan(2, m) = minval(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)
+                sncan(3, m) = maxval(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)
+                sncan(1, m) = sum(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                gro(2, m) = minval(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)
+                gro(3, m) = maxval(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)
+                gro(1, m) = sum(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+
+                !> Ponded water at surface.
+                zpnd(2, m) = minval(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)
+                zpnd(3, m) = maxval(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)
+                zpnd(1, m) = sum(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                tpnd(3, m) = maxval(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m)
+                if (tpnd(3, m) > 0.0) then
+                    tpnd(1, m) = sum(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%tpnd /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tpnd /= 0.0)
+                    tpnd(2, m) = minval(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tpnd /= 0.0)
+                end if
+                where (tpnd < 173.16 .or. tpnd > 373.16 .or. tpnd == 0.0) tpnd = 273.16
+
+                !> Snow.
+                sno(2, m) = minval(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)
+                sno(3, m) = maxval(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)
+                sno(1, m) = sum(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                tsno(3, m) = maxval(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m)
+                if (tsno(3, m) > 0.0) then
+                    tsno(1, m) = sum(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%tsno /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tsno /= 0.0)
+                    tsno(2, m) = minval(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tsno /= 0.0)
+                end if
+                where (tsno < 173.16 .or. tsno > 373.16 .or. tsno == 0.0) tsno = 273.16
+                if (sno(3, m) > 0.0) then
+                    albs(1, m) = sum(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%sno > 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+                    albs(2, m) = minval(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+                    albs(3, m) = maxval(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+                end if
+                rhos(3, m) = maxval(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m)
+                if (rhos(3, m) > 0.0) then
+                    rhos(1, m) = sum(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m .and. &
+                                     vs%tile%rhos /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhos /= 0.0)
+                    rhos(2, m) = minval(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhos /= 0.0)
+                end if
+
+                !> Soil.
+                do j = 1, NSL
+                    tbar(1, m, j) = sum(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                    tbar(2, m, j) = minval(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
+                    tbar(3, m, j) = maxval(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thlq(1, m, j) = sum(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                    thlq(2, m, j) = minval(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thlq(3, m, j) = maxval(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thic(1, m, j) = sum(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+                    thic(2, m, j) = minval(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)
+                    thic(3, m, j) = maxval(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)
+                end do
+            end do
+
+            !> Write to file.
+            if (NRSOILAYEREADFLAG > 3) then
+                ignd = min(NRSOILAYEREADFLAG, NSL)
+            else if (NRSOILAYEREADFLAG == 1) then
+                ignd = NSL
+            else
+                ignd = 3
+            end if
+            write(cfmt, '(i3)') ignd
+            write(ECHO_TXT_IUN, *)
+            write(ECHO_TXT_IUN, '(a)') 'End of run prognostic states'
+            write(ECHO_TXT_IUN, '(3x, (a), i4)') 'Number of GRUs: ', NTYPE
+            do i = 1, 3
+                write(ECHO_TXT_IUN, *)
+                select case (i)
+                    case (1); write(ECHO_TXT_IUN, '(a)') 'Average values'
+                    case (2); write(ECHO_TXT_IUN, '(a)') 'Minimum values'
+                    case (3); write(ECHO_TXT_IUN, '(a)') 'Maximum values'
+                end select
+                do m = 1, NTYPE
+                    write(ECHO_TXT_IUN, "(3x, 'GRU ', i3, ':')") m
+                    cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), 3(f10.3), " // &
+                            "2x, '!> TBAR(1:" // trim(adjustl(cfmt)) // ")/TCAN/TSNO/TPND')"
+                    write(ECHO_TXT_IUN, cfmtt) ((tbar(i, m, j) - 273.16), j = 1, ignd), &
+                        (tcan(i, m) - 273.16), (tsno(i, m) - 273.16), (tpnd(i, m) - 273.16)
+                    cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), " // trim(adjustl(cfmt)) // "(f10.3), f10.3, " // &
+                            "2x, '!> THLQ(1:" // trim(adjustl(cfmt)) // ")/THIC(1:" // trim(adjustl(cfmt)) // ")/ZPND')"
+                    write(ECHO_TXT_IUN, cfmtt) (thlq(i, m, j), j = 1, ignd), (thic(i, m, j), j = 1, ignd), zpnd(i, m)
+                    write(ECHO_TXT_IUN, "(6(f10.3), 2x, '!> RCAN/SNCAN/SNO/ALBS/RHOS/GRO')") &
+                        rcan(i, m), sncan(i, m), sno(i, m), albs(i, m), rhos(i, m), gro(i, m)
+                end do
+            end do
+
+        end if
 
         !> Save the state of prognostic variables to file.
         select case (SAVERESUMEFLAG)

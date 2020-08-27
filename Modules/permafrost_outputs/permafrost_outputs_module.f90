@@ -12,40 +12,40 @@ module permafrost_outputs_module
     implicit none
 
     !> Variable names.
-    character(len = 10), parameter :: PMFRSTVN_ALD = 'ALD'
-    character(len = 10), parameter :: PMFRSTVN_ALDDOY = 'ALD_DOY'
-    character(len = 10), parameter :: PMFRSTVN_ALDENV = 'ALD_ENV'
+    character(len = 10), parameter :: PMFRSTVN_ALT = 'ALT'
+    character(len = 10), parameter :: PMFRSTVN_ALTDOY = 'ALT_DOY'
+    character(len = 10), parameter :: PMFRSTVN_ALTENV = 'ALT_ENV'
     character(len = 10), parameter :: PMFRSTVN_TAVG = 'TAVG'
     character(len = 10), parameter :: PMFRSTVN_TMAX = 'TMAX'
     character(len = 10), parameter :: PMFRSTVN_TMIN = 'TMIN'
     character(len = 10), parameter :: PMFRSTVN_TRNG = 'TRNG'
-    character(len = 10), parameter :: PMFRSTVN_ZOD = 'ZOD'
+    character(len = 10), parameter :: PMFRSTVN_DZAA = 'DZAA'
 
     !> Description:
     !>  Data type for parameters.
     !>
     !> Variables:
-    !*  zod_ttol: Temperature threshold for zero oscillation depth. [K].
+    !*  dzaa_ttol: Temperature threshold for zero oscillation depth. [K].
     type permafrost_outputs_parameters
-        real, dimension(:), allocatable :: zod_ttol
+        real, dimension(:), allocatable :: dzaa_ttol
     end type
 
     !> Description:
     !>  Data type for variables.
     !>
     !> Variables:
-    !*  ald: Active layer depth calculated using daily average temperature (1: Tile index). [m].
-    !*  alddoy: Day of year when ALD is observed (1: Tile index). [--].
-    !*  aldenv: Active layer depth calculated using the annual temperature envelope (1: Tile index). [m].
+    !*  alt: Active layer thickness calculated using daily average temperature (1: Tile index). [m].
+    !*  altdoy: Day of year when ALT is observed (1: Tile index). [--].
+    !*  altenv: Active layer thickness calculated using the annual temperature envelope (1: Tile index). [m].
     !*  tavg: Average daily soil temperature (1: Tile index; 2: Soil layer). [K].
     !*  tmax: Annual maximum of daily soil temperature (1: Tile index; 2: Soil layer). [K].
     !*  tmin: Annual minimum of daily soil temperature (1: Tile index; 2: Soil layer). [K].
     !*  trng: Range/envelope of the annual maximum and minimum soil temperatures (1: Tile index; 2: Soil layer). [K].
-    !*  zod: Zero oscillation depth, where the range/envelope of the annual maximum and minimum soil temperatures in within the threshold (1: Tile index; 2: TTOL). [m].
+    !*  dzaa: Depth of zero annual amplitude, where the range/envelope of the annual maximum and minimum soil temperatures in within the threshold (1: Tile index; 2: TTOL). [m].
     type permafrost_outputs_fields
-        type(output_fields_surrogate) ald, alddoy, aldenv
+        type(output_fields_surrogate) alt, altdoy, altenv
         type(output_fields_surrogate), dimension(:), allocatable :: tavg, tmax, tmin, trng
-        type(output_fields_surrogate), dimension(:), allocatable :: zod
+        type(output_fields_surrogate), dimension(:), allocatable :: dzaa
     end type
 
     !> Description:
@@ -101,41 +101,41 @@ module permafrost_outputs_module
             end do
         end if
 
-        !> ALD and ALD_DOY.
-        if (vname == PMFRSTVN_ALD .or. vname == PMFRSTVN_ALDDOY) then
-            if (.not. associated(prmfst%out%ald%d_tile)) then
+        !> ALT and ALT_DOY.
+        if (vname == PMFRSTVN_ALT .or. vname == PMFRSTVN_ALTDOY) then
+            if (.not. associated(prmfst%out%alt%d_tile)) then
                 allocate( &
-                    prmfst%out%ald%y_tile(nml), prmfst%out%ald%d_tile(nml), &
-                    prmfst%out%ald%y_grid(na), prmfst%out%ald%d_grid(na))
-                prmfst%out%ald%y_tile = 0.0; prmfst%out%ald%d_tile = 0.0
-                prmfst%out%ald%y_grid = 0.0; prmfst%out%ald%d_grid = 0.0
-                allocate(prmfst%out%alddoy%y_tile(nml), prmfst%out%alddoy%y_grid(na))
-                prmfst%out%alddoy%y_tile = 0.0; prmfst%out%alddoy%y_grid = 0.0
+                    prmfst%out%alt%y_tile(nml), prmfst%out%alt%d_tile(nml), &
+                    prmfst%out%alt%y_grid(na), prmfst%out%alt%d_grid(na))
+                prmfst%out%alt%y_tile = 0.0; prmfst%out%alt%d_tile = 0.0
+                prmfst%out%alt%y_grid = 0.0; prmfst%out%alt%d_grid = 0.0
+                allocate(prmfst%out%altdoy%y_tile(nml), prmfst%out%altdoy%y_grid(na))
+                prmfst%out%altdoy%y_tile = 0.0; prmfst%out%altdoy%y_grid = 0.0
             end if
         end if
 
-        !> ALD_ENV.
-        if (vname == PMFRSTVN_ALDENV) then
-            if (.not. associated(prmfst%out%aldenv%y_tile)) then
-                allocate(prmfst%out%aldenv%y_tile(nml), prmfst%out%aldenv%y_grid(na))
-                prmfst%out%aldenv%y_tile = 0.0; prmfst%out%aldenv%y_grid = 0.0
+        !> ALT_ENV.
+        if (vname == PMFRSTVN_ALTENV) then
+            if (.not. associated(prmfst%out%altenv%y_tile)) then
+                allocate(prmfst%out%altenv%y_tile(nml), prmfst%out%altenv%y_grid(na))
+                prmfst%out%altenv%y_tile = 0.0; prmfst%out%altenv%y_grid = 0.0
             end if
         end if
 
-        !> ZOD.
-        if (vname == PMFRSTVN_ZOD) then
+        !> DZAA.
+        if (vname == PMFRSTVN_DZAA) then
 
             !> Set zero tolerance if none were specified.
-            if (.not. allocated(prmfst%pm%zod_ttol)) then
-                allocate(prmfst%pm%zod_ttol(1))
-                prmfst%pm%zod_ttol(1) = 0.1
+            if (.not. allocated(prmfst%pm%dzaa_ttol)) then
+                allocate(prmfst%pm%dzaa_ttol(1))
+                prmfst%pm%dzaa_ttol(1) = 0.1
             end if
-            if (.not. allocated(prmfst%out%zod)) then
-                allocate(prmfst%out%zod(size(prmfst%pm%zod_ttol)))
-                do j = 1, size(prmfst%pm%zod_ttol)
-                    if (.not. associated(prmfst%out%zod(j)%y_tile)) then
-                        allocate(prmfst%out%zod(j)%y_tile(nml), prmfst%out%zod(j)%y_grid(na))
-                        prmfst%out%zod(j)%y_tile = 0.0; prmfst%out%zod(j)%y_grid = 0.0
+            if (.not. allocated(prmfst%out%dzaa)) then
+                allocate(prmfst%out%dzaa(size(prmfst%pm%dzaa_ttol)))
+                do j = 1, size(prmfst%pm%dzaa_ttol)
+                    if (.not. associated(prmfst%out%dzaa(j)%y_tile)) then
+                        allocate(prmfst%out%dzaa(j)%y_tile(nml), prmfst%out%dzaa(j)%y_grid(na))
+                        prmfst%out%dzaa(j)%y_tile = 0.0; prmfst%out%dzaa(j)%y_grid = 0.0
                     end if
                 end do
             end if
@@ -175,15 +175,15 @@ module permafrost_outputs_module
             if (ic%ts_yearly == 1) then
                 prmfst%out%tavg(j)%y_tile = 0.0; prmfst%out%tmax(j)%y_tile = 100.0; prmfst%out%tmin(j)%y_tile = 900.0
                 prmfst%out%tavg(j)%y_grid = 0.0; prmfst%out%tmax(j)%y_grid = 100.0; prmfst%out%tmin(j)%y_grid = 900.0
-                if (associated(prmfst%out%ald%d_tile)) then
-                    prmfst%out%ald%y_tile = 0.0
-                    prmfst%out%ald%y_grid = 0.0
-                    prmfst%out%alddoy%y_tile = 0.0
-                    prmfst%out%alddoy%y_grid = 0.0
+                if (associated(prmfst%out%alt%d_tile)) then
+                    prmfst%out%alt%y_tile = 0.0
+                    prmfst%out%alt%y_grid = 0.0
+                    prmfst%out%altdoy%y_tile = 0.0
+                    prmfst%out%altdoy%y_grid = 0.0
                 end if
-                if (associated(prmfst%out%aldenv%y_tile)) then
-                    prmfst%out%aldenv%y_tile = 0.0
-                    prmfst%out%aldenv%y_grid = 0.0
+                if (associated(prmfst%out%altenv%y_tile)) then
+                    prmfst%out%altenv%y_tile = 0.0
+                    prmfst%out%altenv%y_grid = 0.0
                 end if
             end if
 
@@ -227,21 +227,21 @@ module permafrost_outputs_module
                 end where
             end do
 
-            !> Calculate ALD using daily average temperature (assign NO_DATA value if ALD == 0.0).
-            if (associated(prmfst%out%ald%d_tile)) then
-                call permafrost_ald(tavg_tile, zbot, prmfst%out%ald%d_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
-                where (.not. prmfst%out%ald%d_tile > 0.0) prmfst%out%ald%d_tile = out%NO_DATA
-                call permafrost_ald(tavg_grid, zbot, prmfst%out%ald%d_grid, shd%NA, shd%lc%IGND, 1, shd%NA)
-                where (.not. prmfst%out%ald%d_grid > 0.0) prmfst%out%ald%d_grid = out%NO_DATA
+            !> Calculate ALT using daily average temperature (assign NO_DATA value if ALT == 0.0).
+            if (associated(prmfst%out%alt%d_tile)) then
+                call permafrost_alt(tavg_tile, zbot, prmfst%out%alt%d_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
+                where (.not. prmfst%out%alt%d_tile > 0.0) prmfst%out%alt%d_tile = out%NO_DATA
+                call permafrost_alt(tavg_grid, zbot, prmfst%out%alt%d_grid, shd%NA, shd%lc%IGND, 1, shd%NA)
+                where (.not. prmfst%out%alt%d_grid > 0.0) prmfst%out%alt%d_grid = out%NO_DATA
 
-                !> Store the day when ALD occurs for yearly output.
-                where (prmfst%out%ald%d_tile > prmfst%out%ald%y_tile)
-                    prmfst%out%ald%y_tile = prmfst%out%ald%d_tile
-                    prmfst%out%alddoy%y_tile = ic%now%jday
+                !> Store the day when ALT occurs for yearly output.
+                where (prmfst%out%alt%d_tile > prmfst%out%alt%y_tile)
+                    prmfst%out%alt%y_tile = prmfst%out%alt%d_tile
+                    prmfst%out%altdoy%y_tile = ic%now%jday
                 end where
-                where (prmfst%out%ald%d_grid > prmfst%out%ald%y_grid)
-                    prmfst%out%ald%y_grid = prmfst%out%ald%d_grid
-                    prmfst%out%alddoy%y_grid = ic%now%jday
+                where (prmfst%out%alt%d_grid > prmfst%out%alt%y_grid)
+                    prmfst%out%alt%y_grid = prmfst%out%alt%d_grid
+                    prmfst%out%altdoy%y_grid = ic%now%jday
                 end where
             end if
 
@@ -308,37 +308,37 @@ module permafrost_outputs_module
                     end where
                 end do
 
-                !> Calculate ALD using annual temperature envelope (assign NO_DATA value if ALD == 0.0).
-                if (associated(prmfst%out%aldenv%y_tile)) then
-                    call permafrost_ald(tmax_tile, zbot, prmfst%out%aldenv%y_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
-                    where (.not. prmfst%out%aldenv%y_tile > 0.0) prmfst%out%aldenv%y_tile = out%NO_DATA
-                    call permafrost_ald(tmax_grid, zbot, prmfst%out%aldenv%y_grid, shd%NA, shd%lc%IGND, 1, shd%NA)
-                    where (.not. prmfst%out%aldenv%y_grid > 0.0) prmfst%out%aldenv%y_grid = out%NO_DATA
+                !> Calculate ALT using annual temperature envelope (assign NO_DATA value if ALT == 0.0).
+                if (associated(prmfst%out%altenv%y_tile)) then
+                    call permafrost_alt(tmax_tile, zbot, prmfst%out%altenv%y_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
+                    where (.not. prmfst%out%altenv%y_tile > 0.0) prmfst%out%altenv%y_tile = out%NO_DATA
+                    call permafrost_alt(tmax_grid, zbot, prmfst%out%altenv%y_grid, shd%NA, shd%lc%IGND, 1, shd%NA)
+                    where (.not. prmfst%out%altenv%y_grid > 0.0) prmfst%out%altenv%y_grid = out%NO_DATA
                 end if
 
-                !> Assign NO_DATA value where ALD fields based on daily temperature equal zero.
-                if (associated(prmfst%out%ald%d_tile)) then
-                    where (.not. prmfst%out%ald%y_tile > 0.0) prmfst%out%ald%y_tile = out%NO_DATA
-                    where (.not. prmfst%out%ald%y_grid > 0.0) prmfst%out%ald%y_grid = out%NO_DATA
-                    where (.not. prmfst%out%alddoy%y_tile > 0.0) prmfst%out%alddoy%y_tile = out%NO_DATA
-                    where (.not. prmfst%out%alddoy%y_grid > 0.0) prmfst%out%alddoy%y_grid = out%NO_DATA
+                !> Assign NO_DATA value where ALT fields based on daily temperature equal zero.
+                if (associated(prmfst%out%alt%d_tile)) then
+                    where (.not. prmfst%out%alt%y_tile > 0.0) prmfst%out%alt%y_tile = out%NO_DATA
+                    where (.not. prmfst%out%alt%y_grid > 0.0) prmfst%out%alt%y_grid = out%NO_DATA
+                    where (.not. prmfst%out%altdoy%y_tile > 0.0) prmfst%out%altdoy%y_tile = out%NO_DATA
+                    where (.not. prmfst%out%altdoy%y_grid > 0.0) prmfst%out%altdoy%y_grid = out%NO_DATA
                 end if
 
-                !> Calculate ZOD using annual temperature envelope (assign NO_DATA value if ZOD == 0.0).
-                if (allocated(prmfst%out%zod)) then
-                    do j = 1, size(prmfst%pm%zod_ttol)
+                !> Calculate DZAA using annual temperature envelope (assign NO_DATA value if DZAA == 0.0).
+                if (allocated(prmfst%out%dzaa)) then
+                    do j = 1, size(prmfst%pm%dzaa_ttol)
 
                         !> Tile-based.
-                        call permafrost_zod( &
-                            tmax_tile, tmin_tile, zbot, prmfst%pm%zod_ttol(j), prmfst%out%zod(j)%y_tile, &
+                        call permafrost_dzaa( &
+                            tmax_tile, tmin_tile, zbot, prmfst%pm%dzaa_ttol(j), prmfst%out%dzaa(j)%y_tile, &
                             shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
-                        where (.not. prmfst%out%zod(j)%y_tile > 0.0) prmfst%out%zod(j)%y_tile = out%NO_DATA
+                        where (.not. prmfst%out%dzaa(j)%y_tile > 0.0) prmfst%out%dzaa(j)%y_tile = out%NO_DATA
 
                         !> Grid-based.
-                        call permafrost_zod( &
-                            tmax_grid, tmin_grid, zbot, prmfst%pm%zod_ttol(j), prmfst%out%zod(j)%y_grid, &
+                        call permafrost_dzaa( &
+                            tmax_grid, tmin_grid, zbot, prmfst%pm%dzaa_ttol(j), prmfst%out%dzaa(j)%y_grid, &
                             shd%NA, shd%lc%IGND, 1, shd%NA)
-                        where (.not. prmfst%out%zod(j)%y_grid > 0.0) prmfst%out%zod(j)%y_grid = out%NO_DATA
+                        where (.not. prmfst%out%dzaa(j)%y_grid > 0.0) prmfst%out%dzaa(j)%y_grid = out%NO_DATA
                     end do
                 end if
             end if

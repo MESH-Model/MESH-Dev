@@ -41,8 +41,8 @@ module fm_variables
     !*  n: Rank or index of the grid-cell containing the location.
     type outlet_location
         character(len = 8), dimension(:), allocatable :: name
-        real(kind = 4), dimension(:), allocatable :: y, x
-        integer(kind = 4), dimension(:), allocatable :: iy, jx, rnk
+        real, dimension(:), allocatable :: y, x
+        integer, dimension(:), allocatable :: iy, jx, rnk
     end type
 
     !> Type: time_series
@@ -63,7 +63,7 @@ module fm_variables
     type time_series
         type(fm_config_file) fls
         character(len = 8) type, units, readmode
-        real(kind = 4), dimension(:), allocatable :: val
+        real, dimension(:), allocatable :: val
         integer dts, iyear, ijday, imonth, iday, ihour, imins
     end type
 
@@ -77,8 +77,8 @@ module fm_variables
     !*  b7: Minimum level for zero flow required by RPN reservoir routing in RTE. [m].
     !*  area: Reach area to derive level; separate from b6 so as to not active RPN reservoir routing in RTE. [m2].
     type release_outlet
-        integer(kind = 4), dimension(:), allocatable :: cfn
-        real(kind = 4), dimension(:), allocatable :: &
+        integer, dimension(:), allocatable :: cfn
+        real, dimension(:), allocatable :: &
             b1, b2, b3, b4, b5, &
             b6, b7, &
             area, zlvl0
@@ -95,7 +95,7 @@ module fm_variables
     type streamflow_gauge_location
         integer :: n = 0
         type(outlet_location) meta
-        real(kind = 4), dimension(:), allocatable :: da
+        real, dimension(:), allocatable :: da
         type(time_series) qomeas
     end type
 
@@ -125,7 +125,7 @@ module fm_variables
     type abstraction_point_location
         integer :: n = 0
         type(outlet_location) meta
-        real(kind = 4), dimension(:), allocatable :: s, smin, fsmin
+        real, dimension(:), allocatable :: s, smin, fsmin
         type(time_series) sabst
     end type
 

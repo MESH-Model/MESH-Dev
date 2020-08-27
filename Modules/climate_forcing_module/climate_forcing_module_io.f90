@@ -206,7 +206,6 @@ module climate_forcing_io
                         !> Time.
                         !> Store the column order (used to update start position when reading).
                         cm%dat(vid)%ncol_time = d
-                        cm%dat(vid)%tid = dimids(d)
                         z = z + radix(1)**3
 
                         !> Override the length to 'nblocks' (to control the number of time-steps read).
@@ -255,6 +254,13 @@ module climate_forcing_io
 
                 !> Check the units of the time dimension.
                 !> Only dates of the Gregorian calendar type are supported.
+                ierr = nf90_inq_varid(cm%dat(vid)%fiun, cm%dat(vid)%name_time, cm%dat(vid)%tid)
+                if (ierr /= NF90_NOERR) then
+                    call print_error( &
+                        "The variable '" // trim(cm%dat(vid)%name_time) // "' cound not be found in file: " // &
+                        trim(cm%dat(vid)%fpath))
+                    call program_abort()
+                end if
                 ierr = nf90_get_att(cm%dat(vid)%fiun, cm%dat(vid)%tid, 'units', time_attribute)
                 if (ierr /= NF90_NOERR) then
                     call print_error( &
@@ -323,21 +329,21 @@ module climate_forcing_io
                 !> Calculate the reference date from the units of the time dimension.
                 !> Only units of seconds, minutes, hours, and days are supported.
                 jday = get_jday(t0_month, t0_day, t0_year)
-                t0_r8 = real(jday_to_tsteps(t0_year, jday, t0_hour, t0_mins, (60*24)) + t0_seconds/60.0/60.0/24.0, kind = 8)
-                dt_r8 = t0_r8 + cm%dat(vid)%time_shift/24.0
+                t0_r8 = get_jdate(t0_year, jday)*24.0 + t0_hour + t0_mins/60.0 + t0_seconds/60.0/60.0
+                dt_r8 = t0_r8 + cm%dat(vid)%time_shift
                 read(time_attribute, *) time_units
                 select case (time_units)
                     case ('seconds')
-                        dt_r8 = dt_r8 + t1_r8/60.0/60.0/24.0
+                        dt_r8 = dt_r8 + t1_r8/60.0/60.0
                         cm%dat(vid)%hf = int((t2_r8 - t1_r8)/60.0 + 0.5)        ! 0.5 takes care of correct rounding
                     case ('minutes')
-                        dt_r8 = dt_r8 + t1_r8/60.0/24.0
+                        dt_r8 = dt_r8 + t1_r8/60.0
                         cm%dat(vid)%hf = int(t2_r8 - t1_r8 + 0.5)               ! 0.5 takes care of correct rounding
                     case ('hours')
-                        dt_r8 = dt_r8 + t1_r8/24.0
+                        dt_r8 = dt_r8 + t1_r8
                         cm%dat(vid)%hf = int((t2_r8 - t1_r8)*60.0 + 0.5)        ! 0.5 takes care of correct rounding
                     case ('days')
-                        dt_r8 = dt_r8 + t1_r8
+                        dt_r8 = dt_r8 + t1_r8*24.0
                         cm%dat(vid)%hf = int((t2_r8 - t1_r8)*24.0*60.0 + 0.5)   ! 0.5 takes care of correct rounding
                     case default
                         ierr = NF90_EINVAL
@@ -351,10 +357,11 @@ module climate_forcing_io
 
                 !> Calculate the date of the first record in the file.
                 !> Assumes dates increase along the time dimension.
-                cm%dat(vid)%start_date%year = floor(dt_r8/365.25) + 1601
-                cm%dat(vid)%start_date%jday = floor(dt_r8) - floor((cm%dat(vid)%start_date%year - 1601)*365.25)
-                cm%dat(vid)%start_date%hour = floor(dt_r8 - floor(dt_r8))*24
-                cm%dat(vid)%start_date%mins = int(floor(dt_r8 - floor(dt_r8))*60.0*24.0 - cm%dat(vid)%start_date%hour*60.0 + 0.5)
+                cm%dat(vid)%start_date%year = floor(dt_r8/24.0/365.25) + 1601
+                cm%dat(vid)%start_date%jday = floor(dt_r8/24.0) - floor((cm%dat(vid)%start_date%year - 1601)*365.25)
+                cm%dat(vid)%start_date%hour = &
+                    floor(dt_r8) - get_jdate(cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday)*24
+                cm%dat(vid)%start_date%mins = floor((dt_r8 - floor(dt_r8))*60.0)
 
                 !> Assign an ID based on the order (for mapping when reading from the file).
                 if (ncol_lon == 1 .and. ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 3) then

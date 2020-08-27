@@ -85,13 +85,14 @@ USE runsvs_mod
       zgrkef      (1:ni) => f(grkef:(grkef+ni-1))
       zslop       (1:ni) => f(slop:(slop+ni-1))
 
+      n2d =  ni*nl_stp
+      zclay      (1:ni,1:nl_stp) => f(clay:(clay+n2d-1))
+      zsand      (1:ni,1:nl_stp) => f(sand:(sand+n2d-1))
       n2d =  ni*nl_svs
       zbcoef      (1:ni,1:nl_svs) => f(bcoef:(bcoef+n2d-1))
       zfbcof      (1:ni,1:nl_svs) => f(fbcof:(fbcof+n2d-1))
-      zclay      (1:ni,1:nl_svs) => f(clay:(clay+n2d-1))
       zksat      (1:ni,1:nl_svs) => f(ksat:(ksat+n2d-1))
       zpsisat      (1:ni,1:nl_svs) => f(psisat:(psisat+n2d-1))
-      zsand      (1:ni,1:nl_svs) => f(sand:(sand+n2d-1))
       zwfc      (1:ni,1:nl_svs) => f(wfc:(wfc+n2d-1))
       zwfcint      (1:ni,1:nl_svs) => f(wfcint:(wfcint+n2d-1))
       zwsat      (1:ni,1:nl_svs) => f(wsat:(wsat+n2d-1))

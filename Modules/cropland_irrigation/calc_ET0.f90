@@ -10,7 +10,7 @@ real function calc_ET0(TT, UV, HU, P0, FB, &
     !* TT: Air temperature (K)
     !* UV: Wind speed (m s-1)
     !* HU: Specific humidity (kg kg-1)
-    !* P0: Atmospheric pressure (kPa)
+    !* P0: Atmospheric pressure (Pa)
     !* FB: Incoming solar/shortwave radiation (W m-2)
     !* ylat: Latitude (degrees)
     !* xlng: Longitude (degrees)
@@ -27,12 +27,15 @@ real function calc_ET0(TT, UV, HU, P0, FB, &
 
     !> Internal variables.
     real &
-        T, u2, Wa, Rs, pic, Gsc, sigmac, phi, dr, delta, Lz, b, Sc, omega, omega1, omega2, sin_theta, Ra, &
+        T, Pr0, u2, Wa, Rs, pic, Gsc, sigmac, phi, dr, delta, Lz, b, Sc, omega, omega1, omega2, sin_theta, Ra, &
         Rso, es, ea, eps, f, aac, Rns, Rnl, Rn, &
         lambda, ec, Cpc, gammac, s, uu2, rra, rrs, gammac1, cRn, G, ET_R, TKv, Rc, rho, ET_A
 
     !> 0.1. Convert temperature from (Kelvin) to (degrees C)
     T = TT - 273.16
+
+    !> 0.1. Convert pressure from (Pa) to (kPa)
+    Pr0 = P0/1000.0
 
     !> 0.2. Convert wind speed for 2 m reference height
     !*  Uz: wind speed (m s-1) at height zw (m) above ground
@@ -41,7 +44,7 @@ real function calc_ET0(TT, UV, HU, P0, FB, &
     u2 = UV*(4.87/log(67.8*zrfm - 5.42))
 
     !> 0.3. Convert to specific humidity (kg kg-1) relative humidity (%)
-    Wa = ((HU*(P0/1000.0)/0.622)/(0.6108*exp((17.27*T)/(T + 237.3))))*100.0 !237.3 is an approximation of the Goff-Gratch equation and not a typo of TFREZ.
+    Wa = ((HU*Pr0/0.622)/(0.6108*exp((17.27*T)/(T + 237.3))))*100.0 !237.3 is an approximation of the Goff-Gratch equation and not a typo of TFREZ.
 
     !> 0.4. Convert measured radiation from (W m-2) to (MJ m-2 h-1)
     !*  Rs: Measured solar radiation (MJ m-2 h-1)
@@ -120,7 +123,7 @@ real function calc_ET0(TT, UV, HU, P0, FB, &
     ec = 0.622
     Cpc = 0.001013
     !*  gammac: Psychrometric constant (kPa (degrees C)-1)
-    gammac = ((Cpc*P0)/(ec*lambda))
+    gammac = ((Cpc*Pr0)/(ec*lambda))
     !*  s: Slope of the saturation vapor pressure curve (kPa (degrees C)-1) at mean air temperature
     s = (4098.0*es)/((T + 237.3)**2.0)
     !*  uu2: Wind speed (m s-1) no less than 0.5 m s-1
@@ -185,7 +188,7 @@ real function calc_ET0(TT, UV, HU, P0, FB, &
     !*  rho: Mean atmospheric density (kg m-3)
     !*  Rc: Specific gas constant (J kg-1 K-1)
     Rc = 287.0
-    rho = (1000.0*P0)/(Rc*TKv)
+    rho = (1000.0*Pr0)/(Rc*TKv)
     !*  A (FAO-56 Penman-Monteith): Aerodynamic term (mm h-1)
     ET_A = ((1.0/lambda)*(3600.0*((es - ea)*rho*Cpc)/rra))/(s + gammac1)
     !*  A (Standard): Aerodynamic term (h day-1)
@@ -195,6 +198,6 @@ real function calc_ET0(TT, UV, HU, P0, FB, &
 !                ET_A = (((Acn*gammac)/(T + 273.16))*u2*(es - ea))/(s + gammac1)
 
     !*  ET0: Reference evapotranspiration (mm s-1)
-    calc_ET0 = (ET_R + ET_A)/3600.0
+    calc_ET0 = max((ET_R + ET_A)/3600.0, 0.0)
 
 end function

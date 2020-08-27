@@ -2,9 +2,17 @@
      1                  ALBSNO,HMFG,HTCS,HTC,WTRS,WTRG,GFLUX,
      2                  RUNOFF,TRUNOF,OVRFLW,TOVRFL,ZPLIM,GGEO,
      3                  FI,EVAP,R,TR,GZERO,G12,G23,HCP,QMELT,WSNOW,
+     +                  ICE,TICE,
      4                  ZMAT,TMOVE,WMOVE,ZRMDR,TADD,ZMOVE,TBOT,DELZ,
+     +                  FREZTH, SNDEPLIM, SNDENLIM,
      5                  ISAND,ICONT,IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 C
+C     * JUL 20/20 - D.PRINCZ.   MODIFIED THE CALCULATION OF HTC TO
+C                               CONSIDER CHANGE IN ZPOND WHEN USING IWF
+C                               (ICEBAL).
+C     * JUN 10/20 - D.PRINCZ.   ADDED ICE AND TICE (ICEBAL).
+C     * JUN 10/20 - D.PRINCZ.   CHANGED THRESHOLD AND LIMITS IN CHECKS
+C                               TO CONFIGURABLE VALUES.
 C     * DEC 27/07 - D.VERSEGHY. ADD GEOTHERMAL HEAT FLUX; ADD ICE MASS
 C     *                         LOSS TO RUNOFF.
 C     * NOV 01/06 - D.VERSEGHY. ALLOW PONDING OF WATER ON ICE SHEETS.
@@ -57,7 +65,7 @@ C
       REAL TPOND (ILG),    ZPOND (ILG),    TSNOW (ILG),    RHOSNO(ILG),    
      1     ZSNOW (ILG),    HCPSNO(ILG),    ALBSNO(ILG),    HTCS  (ILG),    
      2     WTRS  (ILG),    WTRG  (ILG),    RUNOFF(ILG),    TRUNOF(ILG),
-     3     OVRFLW(ILG),    TOVRFL(ILG)
+     3     OVRFLW(ILG),    TOVRFL(ILG),    ICE   (ILG),    TICE  (ILG)
 C
 C     * INPUT FIELDS.
 C
@@ -70,6 +78,13 @@ C
       INTEGER              ISAND (ILG,IG)
 C
       REAL DELZ  (IG)
+C
+C     * THRESHOLDS AND LIMITS FOR ICEBAL.
+C           FREZTH=-2.0
+C           SNDEPLIM=100.
+C           SNDENLIM=900.
+C
+      REAL, INTENT(IN) :: FREZTH(ILG), SNDEPLIM(ILG), SNDENLIM(ILG)
 C
 C     * WORK FIELDS.
 C
@@ -100,14 +115,14 @@ C     * TO RUNOFF.  CHECK FOR POND FREEZING.
 C
       DO 100 I=IL1,IL2
           IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                THEN
-              IF(R(I).GT.0.)                                THEN 
-                 RADD=R(I)*DELT                                                             
-                 TPOND(I)=((TPOND(I)+TFREZ)*ZPOND(I)+(TR(I)+TFREZ)*
-     1               RADD)/(ZPOND(I)+RADD)-TFREZ
-                 ZPOND(I)=ZPOND(I)+RADD                                                        
-                 HTC (I,1)=HTC(I,1)+FI(I)*(TR(I)+TFREZ)*HCPW*
-     1                     RADD/DELT
-              ENDIF                                                                       
+!              IF(R(I).GT.0.)                                THEN 
+!                 RADD=R(I)*DELT                                                             
+!                 TPOND(I)=((TPOND(I)+TFREZ)*ZPOND(I)+(TR(I)+TFREZ)*
+!     1               RADD)/(ZPOND(I)+RADD)-TFREZ
+!                 ZPOND(I)=ZPOND(I)+RADD                                                        
+!                 HTC (I,1)=HTC(I,1)+FI(I)*(TR(I)+TFREZ)*HCPW*
+!     1                     RADD/DELT
+!              ENDIF                                                                       
               IF(IWF(I).EQ.0 .AND. (ZPOND(I)-ZPLIM(I)).GT.1.0E-8) THEN
                   TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+(TPOND(I)+TFREZ)*
      1                   (ZPOND(I)-ZPLIM(I)))/(RUNOFF(I)+ZPOND(I)-
@@ -117,9 +132,13 @@ C
      1                   FI(I)*(ZPOND(I)-ZPLIM(I)))/(OVRFLW(I)+
      2                   FI(I)*(ZPOND(I)-ZPLIM(I)))
                   OVRFLW(I)=OVRFLW(I)+FI(I)*(ZPOND(I)-ZPLIM(I)) 
-                  HTC(I,1)=HTC(I,1)-FI(I)*(TPOND(I)+TFREZ)*HCPW*
-     1                   (ZPOND(I)-ZPLIM(I))/DELT
+!                  HTC(I,1)=HTC(I,1)-FI(I)*(TPOND(I)+TFREZ)*HCPW*
+!     1                   (ZPOND(I)-ZPLIM(I))/DELT
                   ZPOND(I)=MIN(ZPOND(I),ZPLIM(I))
+              ENDIF
+              IF(ZPOND(I).GT.0.0) THEN
+                  HTC(I,1)=HTC(I,1)+FI(I)*HCPW*(TPOND(I)+TFREZ)*
+     1                   ZPOND(I)/DELT
               ENDIF
               IF(TPOND(I).GT.0.001)                           THEN
                   HCOOL=TPOND(I)*HCPW*ZPOND(I)
@@ -138,7 +157,7 @@ C
 C
       DO 125 I=IL1,IL2
           IF(FI(I).GT.0. .AND. ISAND(I,1).EQ.-4)                THEN
-              IF(TBAR(I,1).LT.-2.0 .AND. ZPOND(I).GT.1.0E-8) THEN
+              IF(TBAR(I,1).LT.FREZTH(I) .AND. ZPOND(I).GT.1.0E-8) THEN
                   HFREZ=ZPOND(I)*RHOW*CLHMLT
                   HWARM=-TBAR(I,1)*HCPICE*DELZ(1)
                   IF(HWARM.GE.HFREZ) THEN
@@ -296,7 +315,7 @@ C
               SNOCONV=0.
               HTCS(I)=HTCS(I)-FI(I)*(TSNOW(I)+TFREZ)*HCPSNO(I)*
      1                ZSNOW(I)/DELT
-              IF((RHOSNO(I)*ZSNOW(I)).GT.100.)                THEN                                        
+              IF((RHOSNO(I)*ZSNOW(I)).GT.SNDEPLIM(I)) THEN
                   SNOCONV=RHOSNO(I)*ZSNOW(I)-100.
                   WMOVE(I,1)=SNOCONV/RHOICE                                
                   TMOVE(I,1)=TSNOW(I)                                                      
@@ -307,7 +326,7 @@ C
                   HCPSNO(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
      1                (RHOW*ZSNOW(I))
                   ICONT(I)=1
-              ELSE IF(RHOSNO(I).GE.900.)                      THEN
+              ELSE IF(RHOSNO(I).GE.SNDENLIM(I)) THEN
                   SNOCONV=ZSNOW(I)*RHOSNO(I)
                   WMOVE(I,1)=SNOCONV/RHOICE                                        
                   TMOVE(I,1)=TSNOW(I)                                                      
@@ -331,9 +350,9 @@ C
               ENDIF                     
               HTCS(I)=HTCS(I)+FI(I)*(TSNOW(I)+TFREZ)*HCPSNO(I)*
      1                ZSNOW(I)/DELT
-              IF(SNOCONV.GT.0.) TRUNOF(I)=(TRUNOF(I)*RUNOFF(I)+
-     1                TBAR(I,IG)*SNOCONV/RHOW)/(RUNOFF(I)+SNOCONV/RHOW)
-              RUNOFF(I)=RUNOFF(I)+SNOCONV/RHOW
+              IF(SNOCONV.GT.0.) TICE(I)=(TICE(I)*ICE(I)+
+     1                TBAR(I,IG)*SNOCONV/RHOW)/(ICE(I)+SNOCONV/RHOW)
+              ICE(I)=ICE(I)+SNOCONV
           ENDIF
   500 CONTINUE
 C               

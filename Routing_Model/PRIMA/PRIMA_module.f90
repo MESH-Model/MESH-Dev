@@ -141,10 +141,10 @@ module PRIMA_module
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !v05.0
-        vs%grid%zpnd(i1:i2) = vs%grid%zpnd(i1:i2) + (vs%grid%rofo(i1:i2)+vs%grid%rofs(i1:i2))*ic%dts/1000.0 !mm/s to m
-        vs%grid%pndw(i1:i2) = vs%grid%pndw(i1:i2) + (vs%grid%rofo(i1:i2)+vs%grid%rofs(i1:i2))*ic%dts !mm/s to mm
+        vs%grid%zpnd(i1:i2) = vs%grid%zpnd(i1:i2) + (vs%grid%rofo(i1:i2)+sum(vs%grid%rofs(i1:i2, :), 2))*ic%dts/1000.0 !mm/s to m
+        vs%grid%pndw(i1:i2) = vs%grid%pndw(i1:i2) + (vs%grid%rofo(i1:i2)+sum(vs%grid%rofs(i1:i2, :), 2))*ic%dts !mm/s to mm
         vs%grid%rofo(i1:i2) = 0.0
-        vs%grid%rofs(i1:i2) = 0.0
+        vs%grid%rofs(i1:i2, :) = 0.0
         
 
 		do k = il1, il2
@@ -183,8 +183,8 @@ module PRIMA_module
         POT_pnmn= -1*calc_ET0( &
                     vs%grid%ta(n), vs%grid%uv(n), vs%grid%qa(n), vs%grid%pres(n), vs%grid%fsin(n), & 
                     shd%ylat(n), shd%xlng(n), shd%ELEV(n), &
-                    pm%sfp%zrfm(n), &
-                    pm%cp%fcan(n, 1), pm%cp%fcan(n, 2), pm%cp%fcan(n, 3), pm%cp%fcan(n, 4), &
+                    pm%grid%zrfm(n), &
+                    pm%grid%fcan(n, 1), pm%grid%fcan(n, 2), pm%grid%fcan(n, 3), pm%grid%fcan(n, 4), &
                     ic%now%jday, ic%now%hour)*ic%dts !potential evap (penman)mm/s to mm from Penman-Monteith applied every hour
         
         

@@ -36,11 +36,9 @@ OBJECTS+=	mpi_flags.o mpi_shared_variables.o mpi_utilities.o \
 			mpi_module.o
 # String parsing primitives.
 OBJECTS+=	precmod.o stringmod.o
-# I/O primitives.
+# Common.
 OBJECTS+=	print_routines.o program_end.o program_abort.o \
-			txt_io.o ensim_io.o
-# Variables (common).
-OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
+			module_files_variabletypes.o module_files_variables.o \
 			module_dates.o \
 			EF_Module.o EF_ParseUtilities.o FLAGS.o \
 			parse_utilities.o \
@@ -48,15 +46,16 @@ OBJECTS+=	module_files_variabletypes.o module_files_variables.o \
 			control_variables.o \
 			variable_names.o parameter_names.o \
 			shd_variables.o fm_variables.o input_parameters.o model_variables.o \
-			climate_forcing_module_config.o \
-			climate_forcing_module_io.o climate_forcing_module.o \
 			output_variables.o \
 			sa_mesh_common.o \
+			txt_io.o ensim_io.o nc_io.o \
+			climate_forcing_module_config.o \
+			climate_forcing_module_io.o climate_forcing_module.o \
 			read_init_prog_variables_class.o save_init_prog_variables_class.o \
 			tile_connector.o
 # Process modules.
 OBJECTS+=	baseFlow_luo2012.o baseflow_wfqlz.o baseflow_module.o
-OBJECTS+=	permafrost_ald.o permafrost_zod.o permafrost_outputs_module.o
+OBJECTS+=	permafrost_alt.o permafrost_dzaa.o permafrost_outputs_module.o
 OBJECTS+=	cropland_irrigation_variables.o \
 			cropland_irrigation_init.o \
 			cropland_irrigation_within_tile.o cropland_irrigation_between_grid.o \
@@ -68,6 +67,10 @@ OBJECTS+=	SIMSTATS_config.o \
 OBJECTS+=	RUNCLASS36_constants.o
 OBJECTS+=	PBSMrates.o PBSMrun.o ProbabilityThreshold.o REDISTRIB_SNOW.o SUM.o \
 			PBSM_module.o
+
+#mountain_mesh
+VPATH+=	$(DIR_REPO)/Modules/mountain_module:
+OBJECTS+=	forcing_adjust.o mountain_module.o
 
 # ======================================================================
 # CLASS (3.6).
@@ -85,7 +88,7 @@ OBJECTS+=	CLASSBD.o CLASSD.o CLASSBG.o CLASSI.o \
 			WPREP.o CANVAP.o CANADD.o SUBCAN.o TWCALC.o \
 			SNOVAP.o TFREEZ.o TMELT.o SNOADD.o SNINFL.o \
 			FROZEN.o SNINFLM.o \
-			ICEBAL.o \
+			ICEADD.o ICEBAL.o \
 			GRINFL.o WFILL.o WFLOW.o WEND.o GRDRAN.o \
 			WATDRN.o WATROF.o LATFLOW.o PDMROF.o \
 			TMCALC.o CHKWAT.o SNOALBW.o CGROW.o CLASSW.o \

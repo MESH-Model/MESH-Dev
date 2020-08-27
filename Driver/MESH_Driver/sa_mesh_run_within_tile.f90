@@ -20,6 +20,7 @@ module sa_mesh_run_within_tile
         use runsvs_mesh
         use baseflow_module
         use cropland_irrigation_init
+        use mountain_module
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -30,6 +31,7 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
         !> Call processes.
+        call mountain_init(fls, shd, cm)
         call RUNCLASS36_init(shd, fls, cm)
         call runsvs_mesh_init(shd, fls, cm)
         call bflm_init(fls, shd, cm)
@@ -47,6 +49,7 @@ module sa_mesh_run_within_tile
         use runsvs_mesh
         use baseflow_module
         use cropland_irrigation_within_tile
+        use mountain_module
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -63,6 +66,7 @@ module sa_mesh_run_within_tile
         call run_within_tile_stas_reset(fls, shd, cm)
 
         !> Call processes.
+        call mountain_within_tile(fls, shd, cm)
         call RUNCLASS36_within_tile(shd, fls, cm)
         call runsvs_mesh_within_tile(shd, fls, cm)
         call bflm_within_tile(fls, shd, cm)
@@ -104,7 +108,6 @@ module sa_mesh_run_within_tile
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
-        t = ic%ts_count*1000
 
         !> Other variables
         s = shd%lc%IGND
@@ -116,8 +119,9 @@ module sa_mesh_run_within_tile
             ii1 = il1; ii2 = il2; iin = iln
 
             !> Reset the exchange variables.
-            i = 1
             irqst = MPI_REQUEST_NULL
+            t = itag
+            i = 1
 
             !> Canopy.
             allocate(cnpy(7*iin))
@@ -167,14 +171,14 @@ module sa_mesh_run_within_tile
             i = i + 1
 
             !> Soil layers.
-            allocate(sl((2 + 4*s)*iin))
+            allocate(sl((1 + 5*s)*iin))
             sl((1 + iin*0):(iin*1)) = vs%tile%tbas(ii1:ii2)
-            sl((1 + iin*1):(iin*2)) = vs%tile%rofs(ii1:ii2)
             do j = 0, s - 1
-                sl((1 + iin*(2 + j*4)):(iin*(3 + j*4))) = vs%tile%thic(ii1:ii2, j + 1)
-                sl((1 + iin*(3 + j*4)):(iin*(4 + j*4))) = vs%tile%thlq(ii1:ii2, j + 1)
-                sl((1 + iin*(4 + j*4)):(iin*(5 + j*4))) = vs%tile%tbar(ii1:ii2, j + 1)
-                sl((1 + iin*(5 + j*4)):(iin*(6 + j*4))) = vs%tile%gflx(ii1:ii2, j + 1)
+                sl((1 + iin*(1 + j*5)):(iin*(2 + j*5))) = vs%tile%rofs(ii1:ii2, j + 1)
+                sl((1 + iin*(2 + j*5)):(iin*(3 + j*5))) = vs%tile%thic(ii1:ii2, j + 1)
+                sl((1 + iin*(3 + j*5)):(iin*(4 + j*5))) = vs%tile%thlq(ii1:ii2, j + 1)
+                sl((1 + iin*(4 + j*5)):(iin*(5 + j*5))) = vs%tile%tbar(ii1:ii2, j + 1)
+                sl((1 + iin*(5 + j*5)):(iin*(6 + j*5))) = vs%tile%gflx(ii1:ii2, j + 1)
             end do
             call MPI_Isend(sl, size(sl), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
@@ -219,14 +223,15 @@ module sa_mesh_run_within_tile
                 allocate(cnpy(7*iin))
                 allocate(sno(7*iin))
                 allocate(sfc((13 + 4 + 2)*iin))
-                allocate(sl((2 + 4*s)*iin))
+                allocate(sl((1 + 5*s)*iin))
                 allocate(lz(iin))
                 allocate(dz(2*iin))
 
                 !> Reset the exchange variables.
-                i = 1
                 irqst = MPI_REQUEST_NULL
                 imstat = 0
+                t = itag
+                i = 1
 
                 !> Receive variables.
                 call MPI_Irecv(cnpy, size(cnpy), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
@@ -289,12 +294,12 @@ module sa_mesh_run_within_tile
 
                 !> Soil layers.
                 vs%tile%tbas(ii1:ii2) = sl((1 + iin*0):(iin*1))
-                vs%tile%rofs(ii1:ii2) = sl((1 + iin*1):(iin*2))
                 do j = 0, s - 1
-                    vs%tile%thic(ii1:ii2, j + 1) = sl((1 + iin*(2 + j*4)):(iin*(3 + j*4)))
-                    vs%tile%thlq(ii1:ii2, j + 1) = sl((1 + iin*(3 + j*4)):(iin*(4 + j*4)))
-                    vs%tile%tbar(ii1:ii2, j + 1) = sl((1 + iin*(4 + j*4)):(iin*(5 + j*4)))
-                    vs%tile%gflx(ii1:ii2, j + 1) = sl((1 + iin*(5 + j*4)):(iin*(6 + j*4)))
+                    vs%tile%rofs(ii1:ii2, j + 1) = sl((1 + iin*(1 + j*5)):(iin*(2 + j*5)))
+                    vs%tile%thic(ii1:ii2, j + 1) = sl((1 + iin*(2 + j*5)):(iin*(3 + j*5)))
+                    vs%tile%thlq(ii1:ii2, j + 1) = sl((1 + iin*(3 + j*5)):(iin*(4 + j*5)))
+                    vs%tile%tbar(ii1:ii2, j + 1) = sl((1 + iin*(4 + j*5)):(iin*(5 + j*5)))
+                    vs%tile%gflx(ii1:ii2, j + 1) = sl((1 + iin*(5 + j*5)):(iin*(6 + j*5)))
                 end do
 
                 !> Lower zone storage.
@@ -311,7 +316,12 @@ module sa_mesh_run_within_tile
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, z)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 
@@ -338,7 +348,6 @@ module sa_mesh_run_within_tile
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
-        t = ic%ts_count*1000 + 400
 
         !> Assign the indices.
         ii1 = 1
@@ -351,9 +360,10 @@ module sa_mesh_run_within_tile
             do u = 1, (inp - 1)
 
                 !> Reset the exchange variables.
-                i = 1
                 irqst = MPI_REQUEST_NULL
                 imstat = 0
+                t = itag
+                i = 1
 
                 !> Wait until the exchange completes.
                 lstat = .false.
@@ -367,8 +377,9 @@ module sa_mesh_run_within_tile
 
             !> Receive data from head-node.
             !> Reset the exchange variables.
-            i = 1
             irqst = MPI_REQUEST_NULL
+            t = itag
+            i = 1
 
             !> Wait until the exchange completes.
             lstat = .false.
@@ -378,7 +389,12 @@ module sa_mesh_run_within_tile
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, z)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 
@@ -407,7 +423,7 @@ module sa_mesh_run_within_tile
         vs%tile%fstr(il1:il2) = 0.0
         vs%tile%hfs(il1:il2) = 0.0
         vs%tile%gzero(il1:il2) = 0.0
-        vs%tile%rofs(il1:il2) = 0.0
+        vs%tile%rofs(il1:il2, :) = 0.0
         vs%tile%gflx(il1:il2, :) = 0.0
         vs%tile%rofb(il1:il2) = 0.0
 
@@ -464,6 +480,7 @@ module sa_mesh_run_within_tile
 
         !> Process modules.
         use RUNCLASS36_config
+        use runsvs_mesh
         use baseflow_module
 
         !> Input/output variables.
@@ -477,6 +494,7 @@ module sa_mesh_run_within_tile
         !> Call processes.
         call RUNCLASS36_finalize(fls, shd, cm)
         call bflm_finalize(fls, shd, cm)
+        call runsvs_mesh_finalize(shd, fls)
 
     end subroutine
 

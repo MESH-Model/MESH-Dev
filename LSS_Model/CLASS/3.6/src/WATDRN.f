@@ -162,7 +162,7 @@ c**********************************************************************
 *
       DO i=il1,il2
 c        cycle if not using watrof or latflow
-         IF (iwf(i) /= wfk) CYCLE
+         IF (iwf(i) /= wfk .or. asat0(i) == 0.0) CYCLE
 c        c and c factors
          c(i)    = 2.*bcoef(i)+3.
          cm1(i)  = c(i)-1.
@@ -185,14 +185,14 @@ c**********************************************************************
 *
       DO i=il1,il2
 c        cycle if not using watrof or latflow
-         IF (iwf(i) /= wfk) CYCLE
+         IF (iwf(i) /= wfk  .or. asat0(i) == 0.0) CYCLE
 c        determine time at which seepage face becomes unsaturated
          tc(i) = thpora(i)/(c(i)*grkeff(i))
       ENDDO
 *
       DO i=il1,il2
 c        cycle if not using watrof or latflow
-         IF (iwf(i) /= wfk) CYCLE
+         IF (iwf(i) /= wfk  .or. asat0(i) == 0.0) CYCLE
 c        find theoretical start of recession (t0) from bulk saturation
 c        and at the same time estimate baseflow based on rate at t0
          IF (satspf(i)) THEN
@@ -217,7 +217,7 @@ c           the fraction of the surface that is saturated at t0 is zero
 *
       DO i=il1,il2
 c        cycle if not using watrof or latflow
-         IF (iwf(i) /= wfk) CYCLE
+         IF (iwf(i) /= wfk  .or. asat0(i) == 0.0) CYCLE
 c        Compute baseflow in m from normalized baseflow rate
          basflw(i) = grksat(i)*basflw(i)*delt
       ENDDO
@@ -228,7 +228,7 @@ c**********************************************************************
 *
       DO i=il1,il2
 c        cycle if not using watrof or latflow
-         IF (iwf(i) /= wfk) CYCLE
+         IF (iwf(i) /= wfk  .or. asat0(i) == 0.0) CYCLE
          IF (satspf(i)) THEN
 c           Assess if seepage face will still be saturated at the
 c           end of the time step
@@ -254,7 +254,7 @@ c**********************************************************************
 *
       DO i=il1,il2
 c        cycle if not using watrof or latflow
-         IF (iwf(i) /= wfk) CYCLE
+         IF (iwf(i) /= wfk  .or. asat0(i) == 0.0) CYCLE
          IF (satspf(i)) THEN
 c           saturated seepage face at the end of the time step
             asat1(i) = 1.-ratiot(i)/c(i)
@@ -266,7 +266,7 @@ c           unsaturated seepage face at the end of the time step
 *
       DO i=il1,il2
 c        cycle if not using watrof or latflow
-         IF (iwf(i) /= wfk) CYCLE
+         IF (iwf(i) /= wfk  .or. asat0(i) == 0.0) CYCLE
 c        Sanity check: bulk saturation should not increase with time
          asat1(i) = MIN(asat00(i),asat1(i))
 c        Obtain interflow from the difference in bulk saturation

@@ -37,7 +37,7 @@ module output_variables
         real, dimension(:), pointer :: gro => null()
         real, dimension(:), pointer :: rof => null()
         real, dimension(:), pointer :: rofo => null()
-        real, dimension(:), pointer :: rofs => null()
+        real, dimension(:, :), pointer :: rofs => null()
         real, dimension(:), pointer :: rofb => null()
         real, dimension(:), pointer :: rcan => null()
         real, dimension(:), pointer :: sncan => null()
@@ -129,8 +129,8 @@ module output_variables
     !>  Type for process modules to integrate with output fields.
     type output_fields_surrogate
         real, dimension(:), pointer :: &
-            y_tile => null(), m_tile => null(), d_tile => null(), h_tile => null(), &
-            y_grid => null(), m_grid => null(), d_grid => null(), h_grid => null()
+            y_tile => null(), m_tile => null(), d_tile => null(), h_tile => null(), ts_tile => null(), &
+            y_grid => null(), m_grid => null(), d_grid => null(), h_grid => null(), ts_grid => null()
     end type
 
     !> Description:
@@ -242,6 +242,11 @@ module output_variables
                     call output_variables_allocate(fields%uv, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%uv, n1)
                 end if
+            case (VN_WDIR)
+                if (associated(fields%vs%wdir)) then
+                    call output_variables_allocate(fields%wdir, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%wdir, n1)
+                end if
             case (VN_PRE)
                 if (associated(fields%vs%pre)) then
                     call output_variables_allocate(fields%pre, n1, pntr)
@@ -312,8 +317,8 @@ module output_variables
                 end if
             case (VN_ROFS)
                 if (associated(fields%vs%rofs)) then
-                    call output_variables_allocate(fields%rofs, n1, pntr)
-                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%rofs, n1)
+                    call output_variables_allocate(fields%rofs, n1, n2, pntr, ig)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%rofs, n1, n2)
                     call output_variables_activate_pntr(fields, VN_ROF)
                 end if
             case (VN_ROFB)
@@ -348,6 +353,7 @@ module output_variables
                 if (associated(fields%vs%sno)) then
                     call output_variables_allocate(fields%sno, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%sno, n1)
+                    call output_variables_activate_pntr(fields, VN_STGW)
                 end if
             case (VN_FSNO)
                 if (associated(fields%vs%fsno)) then
@@ -673,6 +679,7 @@ module output_variables
             if (associated(group%qa)) group%qa = out%NO_DATA
             if (associated(group%pres)) group%pres = out%NO_DATA
             if (associated(group%uv)) group%uv = out%NO_DATA
+            if (associated(group%wdir)) group%wdir = out%NO_DATA
         end if
 
         !> Water balance.
@@ -882,6 +889,9 @@ module output_variables
             if (associated(group%uv)) then
                 if (all(group%uv == out%NO_DATA)) group%uv = group_vs%uv
             end if
+            if (associated(group%wdir)) then
+                if (all(group%wdir == out%NO_DATA)) group%wdir = group_vs%wdir
+            end if
             if (associated(group%pre)) then
                 if (all(group%pre == out%NO_DATA)) group%pre = group_vs%pre
             end if
@@ -937,7 +947,7 @@ module output_variables
             if (associated(group%rofs)) then
                 if (all(group%rofs == out%NO_DATA)) group%rofs = group_vs%rofs
                 if (lcheck) then
-                    where (group%rofs /= out%NO_DATA) group%rof = group%rof + group%rofs
+                    where (sum(group%rofs, 2) /= out%NO_DATA) group%rof = group%rof + sum(group%rofs, 2)
                 end if
             end if
             if (associated(group%rofb)) then
@@ -1297,6 +1307,9 @@ module output_variables
             if (associated(group%uv)) then
                 call output_variables_field_update(group%uv, group_ts%uv, its, 'avg')
             end if
+            if (associated(group%wdir)) then
+                call output_variables_field_update(group%wdir, group_ts%wdir, its, 'avg')
+            end if
             if (associated(group%pre)) then
                 call output_variables_field_update(group%pre, group_ts%pre, its, 'avg')
             end if
@@ -1340,9 +1353,9 @@ module output_variables
             if (associated(group%rofo)) then
                 call output_variables_field_update(group%rofo, group_ts%rofo, its, 'sum')
             end if
-            if (associated(group%rofs)) then
-                call output_variables_field_update(group%rofs, group_ts%rofs, its, 'sum')
-            end if
+!-            if (associated(group%rofs)) then
+!-                call output_variables_field_update(group%rofs, group_ts%rofs, its, 'sum')
+!-            end if
             if (associated(group%rofb)) then
                 call output_variables_field_update(group%rofb, group_ts%rofb, its, 'sum')
             end if
@@ -1397,6 +1410,9 @@ module output_variables
                 end if
                 if (associated(group%alws)) then
                     call output_variables_field_update(group%alws(:, j), group_ts%alws(:, j), its, 'avg')
+                end if
+                if (associated(group%rofs)) then
+                    call output_variables_field_update(group%rofs(:, j), group_ts%rofs(:, j), its, 'sum')
                 end if
             end do
             if (associated(group%stgw)) then

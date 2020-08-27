@@ -202,7 +202,7 @@
            endif
            if ((td1900-tdate2)*1_8 <= addit .and.  ! tdate2 + addit >= td1900  and 
      #         (td2235-tdate2)*1_8 >= addit) then  ! tdate2 + addit <= td2235, where
-              tdate1=tdate2+addit                  ! addit can be a very large
+              tdate1=tdate2+int(addit,kind(tdate1))! addit can be a very large
               if (no_leap_years) then              ! integer*8 number 
                  ndays = LeapYear_Adjust(tdate1,tdate2,'B',adding)
                  tdate1 = tdate1 + (ndays*24*720)
@@ -316,9 +316,37 @@
 
       return
       end      
+***FUNCTION JD - RETURNS JD FROM PROVIDED ARGUMENTS.
+*
+*LANGUAGE - fortran
+*
+*USAGE    - CALL JD(idate(4),idate(2),idate(3))
+*
+*ARGUMENTS
+*  IN/OUT - IDATE - 14 WORDS INTEGER ARRAY. ON INPUT, WORD 14 IS SET 
+*           TO THE DATE TIME STAMP. ON OUTPUT ALL 14 WORDS OF IDATE 
+*           ARE SET TO THE DATE TIME GROUP WHICH CORRESPONDS TO THAT
+*           DATE TIME STAMP.
+*
+*NOTES  
+*
+*         - IDATE(4)=YEAR  (0-10000)
+*         - IDATE(2)=MONTH (1-12)
+*         - IDATE(3)=DAY   (1-31)                
+      FUNCTION JD (i,j,k)
+      IMPLICIT NONE
+      integer jd,i,j,k
+! stripped from 'DATMGP2'.
+!      jd(i,j,k) =
+      jd = k-32075+1461*(i+4800+(j-14)/12)/4
+     #     +367*(j-2-(j-14)/12*12)/12 
+     #     -3*((i+4900+(j-14)/12)/100)/4
+      return
+      end
 ***S/R DATMGP2 - CREATES A DATE TIME GROUP.
 *
       SUBROUTINE DATMGP2 (IDATE)
+      IMPLICIT NONE
 *
 *AUTHOR   - D. SHANTZ
 *
@@ -363,19 +391,26 @@
 *
 *--------------------------------------------------------------------
 *
-      integer idate(14),dtpr,tmpr,result
-      real xmonth(12),xday(7)
+      integer idate(14),newdate,jd,idt,dtpr,tmpr,mon,iday,i,result
+      external newdate,jd
+!      real xmonth(12),xday(7)
+      character * 3 xmonth(12),xday(7),amonth,aday
       character * 128 wrk
-      data xmonth / 4HJAN ,4HFEB ,4HMAR ,4HAPR ,4HMAY ,4HJUN ,
-     1              4HJUL ,4HAUG ,4HSEP ,4HOCT ,4HNOV ,4HDEC /
-      data xday   / 4HSUN ,4HMON ,4HTUE ,4HWED ,4HTHU ,
-     1              4HFRI ,4HSAT /
+!      data xmonth / 4HJAN ,4HFEB ,4HMAR ,4HAPR ,4HMAY ,4HJUN ,
+!     1              4HJUL ,4HAUG ,4HSEP ,4HOCT ,4HNOV ,4HDEC /
+!      data xday   / 4HSUN ,4HMON ,4HTUE ,4HWED ,4HTHU ,
+!     1              4HFRI ,4HSAT /
+      data xmonth / "JAN" ,"FEB" ,"MAR" ,"APR" ,"MAY" ,"JUN" ,
+     1              "JUL" ,"AUG" ,"SEP" ,"OCT" ,"NOV" ,"DEC" /
+      data xday   / "SUN" ,"MON" ,"TUE" ,"WED" ,"THU" ,
+     1              "FRI" ,"SAT" /
 *
 *---------------------------------------------------------------------
 *
-      jd(i,j,k) =k-32075+1461*(i+4800+(j-14)/12)/4
-     #     +367*(j-2-(j-14)/12*12)/12 
-     #     -3*((i+4900+(j-14)/12)/100)/4
+! cannot have implicit function
+!      jd(i,j,k) =k-32075+1461*(i+4800+(j-14)/12)/4
+!     #     +367*(j-2-(j-14)/12*12)/12 
+!     #     -3*((i+4900+(j-14)/12)/100)/4
 *
       idt = idate(14)
 *
@@ -889,7 +924,7 @@ CCC           print *,annee,' exclue'
 *        encode it in a new date-time stamp
       stamp=(tdate/8)*10+mod(tdate,8)
       date_unsigned=stamp + troisg
-      dat1=date_unsigned
+      dat1=int(date_unsigned,kind(dat1))
       return
 *     
 *     mode=-5 : from extended stamp to printable
@@ -904,7 +939,7 @@ CCC           print *,annee,' exclue'
         print *,'newdate error: invalid stamp for mode -5, stamp=',stamp
         goto 4
       endif
-      stamp=date_unsigned - troisg
+      stamp=int(date_unsigned - troisg,kind(dat1))
       tdate=stamp/10*8+mod(stamp,10)
       call datec(jd0+tdate/24,year,month,day)
       zulu=mod(tdate,24)
@@ -926,7 +961,7 @@ CCC           print *,annee,' exclue'
      +   (tdate/24+jd0) >= jd2236) then ! extended stamp
          stamp=(tdate/8)*10+mod(tdate,8)
          date_unsigned=stamp + troisg
-         dat2(1)=date_unsigned
+         dat2(1)=int(date_unsigned,kind(dat2))
       else                               ! (new or old) stamp
          runnb=0
          zulu=mod(tdate,24)
@@ -950,7 +985,7 @@ CCC           print *,annee,' exclue'
      +             'stamp=',stamp
            goto 4
         endif
-        stamp=date_unsigned - troisg
+        stamp=int(date_unsigned - troisg,kind(stamp))
         tdate=stamp/10*8+mod(stamp,10)
         dat1=tdate
         dat3=0

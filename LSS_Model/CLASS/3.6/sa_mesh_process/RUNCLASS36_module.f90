@@ -58,6 +58,8 @@ module RUNCLASS36_module
             cfi%FSIH(il1:il2) = vs%tile%fsin(il1:il2)/2.0
             cfi%FDL(il1:il2) = vs%tile%flin(il1:il2)
             cfi%PRE(il1:il2) = vs%tile%pre(il1:il2)
+            catv%RPRE(il1:il2) = vs%tile%prern(il1:il2)
+            catv%SPRE(il1:il2) = vs%tile%presno(il1:il2)
             cfi%TA(il1:il2) = vs%tile%ta(il1:il2)
             cfi%UL(il1:il2) = vs%tile%uv(il1:il2)
             cfi%PRES(il1:il2) = vs%tile%pres(il1:il2)
@@ -178,6 +180,8 @@ module RUNCLASS36_module
             cdv%QFC = 0.0
             cdv%GFLX = 0.0
             cdv%ITCT = 0
+            cdv%ICE = 0.0
+            cdv%TICE = 0.0
 
             call CLASSI(catv%VPD, catv%TADP, catv%PADR, catv%RHOA, catv%RHSI, &
                         catv%RPCP, catv%TRPC, catv%SPCP, catv%TSPC, cfi%TA, cfi%QA, &
@@ -194,6 +198,7 @@ module RUNCLASS36_module
                         cdv%QFC, cdv%ROF, cdv%WTRG, cpv%CMAI, cpv%RCAN, cpv%SNCAN, &
                         cpv%TCAN, cpv%SNO, cpv%WSNO, cpv%TSNO, cpv%THLQ, cpv%THIC, &
                         csfv%HCPS, csfv%THP, csfv%DELZW, cpv%TBAR, cpv%ZPND, cpv%TPND, &
+                        cdv%ICE, cdv%TICE, &
                         shd%lc%sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                         il1, il2, NML, IGND, ic%ts_count, &
                         pbsm%vs%Drift, pbsm%vs%Subl)
@@ -288,7 +293,7 @@ module RUNCLASS36_module
                         cdv%QFN, cdv%QFG, cdv%QFC, cdv%HMFC, cdv%HMFG, cdv%HMFN, &
                         cdv%HTCC, cdv%HTCS, cdv%HTC, cdv%ROFC, cdv%ROFN, cdv%ROVG, &
                         cdv%WTRS, cdv%WTRG, cdv%ROFO, cdv%ROFS, cdv%ROFB, &
-                        cdv%TROO, cdv%TROS, cdv%TROB, cdv%QFS, &
+                        cdv%TROO, cdv%TROS, cdv%TROB, cdv%QFS, cdv%ICE, cdv%TICE, &
                         TBARC, TBARG, TBARCS, TBARGS, THLIQC, THLIQG, &
                         THICEC, THICEG, HCPC, HCPG, catv%RPCP, catv%TRPC, &
                         catv%SPCP, catv%TSPC, cfi%PRE, cfi%TA, catv%RHSI, catv%GGEO, &
@@ -306,6 +311,7 @@ module RUNCLASS36_module
                         csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, csfv%GRKS, &
                         csfv%THRA, csfv%THFC, csfv%DRN, csfv%HCPS, shd%lc%sl%DELZ, &
                         csfv%DELZW, csfv%ZBTW, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
+                        cglv%FREZTH, cglv%SNDEPLIM, cglv%SNDENLIM, &
                         csfv%ISND, csfv%IGDR, csfv%IWF, NML, il1, il2, ic%ts_count, &
                         JLAT, ICAN, IGND, IGND + 1, IGND + 2, &
                         NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &
@@ -348,6 +354,7 @@ module RUNCLASS36_module
                         cdv%QFC, cdv%ROF, cdv%WTRG, cpv%CMAI, cpv%RCAN, cpv%SNCAN, &
                         cpv%TCAN, cpv%SNO, cpv%WSNO, cpv%TSNO, cpv%THLQ, cpv%THIC, &
                         csfv%HCPS, csfv%THP, csfv%DELZW, cpv%TBAR, cpv%ZPND, cpv%TPND, &
+                        cdv%ICE, cdv%TICE, &
                         shd%lc%sl%DELZ, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                         il1, il2, NML, IGND, ic%ts_count, &
                         pbsm%vs%Drift, pbsm%vs%Subl)
@@ -403,7 +410,7 @@ module RUNCLASS36_module
         vs%tile%gzero(il1:il2) = cdv%GFLX(il1:il2, 1)
         vs%tile%tsfs(il1:il2, :) = cpv%TSFS(il1:il2, :)
         vs%tile%tbas(il1:il2) = cpv%TBAS(il1:il2)
-        vs%tile%rofs(il1:il2) = cdv%ROFS(il1:il2)
+        vs%tile%rofs(il1:il2, :) = cdv%ROFS(il1:il2, :)
         vs%tile%thic(il1:il2, :) = cpv%THIC(il1:il2, :)
         vs%tile%thlq(il1:il2, :) = cpv%THLQ(il1:il2, :)
         vs%tile%tbar(il1:il2, :) = cpv%TBAR(il1:il2, :)

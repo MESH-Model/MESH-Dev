@@ -35,6 +35,10 @@ module RUNCLASS36_constants
         GRKSORG
     real, dimension(18, 4, 2) :: GROWYR
 
+    type CLASS_parameters
+        real, dimension(:), allocatable :: FREZTH, SNDEPLIM, SNDENLIM
+    end type
+
     !> Common CLASS blocks defined and set in CLASSBD and CLASSD.
     common /PARAMS/ X1, X2, X3, X4, G, GAS, X5, X6, CPRES, &
         GASV, X7
