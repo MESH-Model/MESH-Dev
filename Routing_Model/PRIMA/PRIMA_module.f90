@@ -33,6 +33,7 @@ module PRIMA_module
     real*8, allocatable:: dem_lin(:),wl_lin(:),wdepth(:)
     real:: time_step,no_data,cell_size,error_thr,vol_thr,errord_thr
     !dummy inputs
+	integer::dum_niter
 !mesh    integer:: ndays,get_nlines
 !mesh    real:: ZPNDCLSPRE
 !mesh    real, allocatable:: CLSWAT(:,:),ZPNDCLS(:),ROFOCLS(:) !ponded and overland runoff produced by class
@@ -117,6 +118,10 @@ module PRIMA_module
 
     end subroutine
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     subroutine prima_within_grid(fls, shd)
 
         type(fl_ids), intent(in) :: fls
@@ -139,23 +144,40 @@ module PRIMA_module
 !            ROFOCLS = 0.0
 !        end if
 
-!        ROFOCLS = 0.0 !ROFOCLS + vs%grid%rofo*ic%dts !mm/s to mm
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!
+		!state variables are updated each time step in here
+        !ROFOCLS = 0.0 !ROFOCLS + vs%grid%rofo*ic%dts !mm/s to mm
+		!add ROFO calculated by CLASS to the ponded depth to get the excess water depth
+        !write(*,*)vs%grid%zpnd(i1)*1000.0, vs%grid%rofo(i1)*ic%dts
+        !this for tile (if we are going to 
+        !vs%tile%zpnd(i1:i2) = vs%tile%zpnd(il1:il2) + vs%tile%rofo(il1:il2)*ic%dts/1000.0 !mm/s to m
+        
         vs%grid%zpnd(i1:i2) = vs%grid%zpnd(i1:i2) + vs%grid%rofo(i1:i2)*ic%dts/1000.0 !mm/s to m
         vs%grid%pndw(i1:i2) = vs%grid%pndw(i1:i2) + vs%grid%rofo(i1:i2)*ic%dts !mm/s to mm
         vs%grid%rofo(i1:i2) = 0.0
-        do k = il1, il2
+        !write(*,*)vs%grid%pndw(1),vs%grid%zpnd(1)
+        !this is for tiles
+		do k = il1, il2
             if (vs%grid%zpnd(shd%lc%ILMOS(k)) > 0.0 .and. vs%tile%zpnd(k) == 0.0) then
                 vs%tile%tpnd(k) = 273.16
             end if
-            vs%tile%zpnd(k) = vs%grid%zpnd(shd%lc%ILMOS(k))
+            vs%tile%zpnd(k) = vs%grid%zpnd(shd%lc%ILMOS(k)) !ILMOS is grid number; !JLMOS is the GRU number; ACLASS is GRU fraction first index is the grid and the second is the GRU
         end do
 
-        if (rain_flag == 2 .and. ic%now%hour == ic%next%hour) then
-            return
-        else if (rain_flag == 1 .and. ic%now%jday == ic%next%jday) then
-            return
-        end if
+		!Here, we can update the excess depth and then we can run the dummy PRIMA module
+		        
+		!***MIA_v03
+		!check to control PRIMA to run the actual code every day or every hour
+        !if (rain_flag == 2 .and. ic%now%hour == ic%next%hour) then
+        !    return
+        !else if (rain_flag == 1 .and. ic%now%jday == ic%next%jday) then
+        !    return
+        !end if
 
+
+
+!!!!!!!!
         if (rain_flag == 2) then
             t = ic%iter%hour
         else if (rain_flag == 1) then
@@ -180,9 +202,13 @@ module PRIMA_module
 
         !this will be replaced by actual ZPND and ROFO from CLASS
 !mesh        exc_water_evap=(ZPNDCLS(t)-ZPNDCLSPRE)+ROFOCLS(t) !calculate the gains and losses of ponded depth + RORO(added water)
-        ZPNDCLS(n) = vs%grid%zpnd(n)*1000.0 !m to mm
+		ZPNDCLS(n) = vs%grid%zpnd(n)*1000.0 !m to mm
         exc_water_evap=(ZPNDCLS(n)-ZPNDCLSPRE(n))!+ROFOCLS(n) !calculate the gains and losses of ponded depth + RORO(added water)
-
+        
+        !debugging
+		!write(*,*)t,ZPNDCLS(n)!,ZPNDCLSPRE(n)
+		!read(*,*)dum_niter
+        
         if (method .ne. 2)then
             !add water depth directly on top of the dem
             !apply the CA algorithm
@@ -198,12 +224,32 @@ module PRIMA_module
             end if
             wl_lin(ind_no_data)=no_data
         end if
-
-        call Run_PRIMA(ascii_data,rain_flag,inactive_cells,active_cells,t,n_rvr_cell,method,niter,&
-                        & error_thr,cell_size,no_data,time_step,errord_thr,vol_thr,outflow_pr,ind_node,rvr_cell_ind,&
-                        & mann,rnk_ind,ind_sur,ind_no_data,dem_lin,wl_lin,rep_fnam,dir,xllcorner,yllcorner,ras_out,freq_err,&
-                        frac_wet_area, avg_zpnd_pr,max_dep,ovrlnd_rof_pr) !maybe the output that MESH needs
-
+        
+        !!if (ic%now%day /= ic%next%day) then Run_PRIMA… else do something... end if !end fo day check
+		
+		!***MIA_v03
+		!dumy variables
+		avg_zpnd_pr=9.9
+		ovrlnd_rof_pr=9.99
+		
+		if ((rain_flag == 1 .and. ic%now%day /= ic%next%day) .or. (rain_flag == 2 .and. ic%now%hour /= ic%next%hour)) then !run in a daily or an hourly timestep (hourly is not working)
+			!run actual PRIMA at the end of the day/hour
+			!write(*,*)'******run real PRIMA*******'
+            !!niter=1 !dummy test
+			call Run_PRIMA(ascii_data,rain_flag,inactive_cells,active_cells,t,n_rvr_cell,method,niter,&
+							& error_thr,cell_size,no_data,time_step,errord_thr,vol_thr,outflow_pr,ind_node,rvr_cell_ind,&
+							& mann,rnk_ind,ind_sur,ind_no_data,dem_lin,wl_lin,rep_fnam,dir,xllcorner,yllcorner,ras_out,freq_err,&
+							frac_wet_area, avg_zpnd_pr,max_dep,ovrlnd_rof_pr) !maybe the output that MESH needs
+		
+        else
+			!run dummy PRIMA for only 1 iteration every 30 minutes
+			!write(*,*)'run dummy PRIMA'
+			dum_niter=1
+			call Run_PRIMA(ascii_data,rain_flag,inactive_cells,active_cells,t,n_rvr_cell,method,dum_niter,&
+							& error_thr,cell_size,no_data,time_step,errord_thr,vol_thr,outflow_pr,ind_node,rvr_cell_ind,&
+							& mann,rnk_ind,ind_sur,ind_no_data,dem_lin,wl_lin,rep_fnam,dir,xllcorner,yllcorner,ras_out,freq_err,&
+							frac_wet_area, avg_zpnd_pr,max_dep,ovrlnd_rof_pr) !maybe the output that MESH needs
+		end if
 
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -237,13 +283,17 @@ module PRIMA_module
 
         !bookkeeping assign current ZPNDCLS as previous to estimate the amount of water add/subtracted from ponded water by CLASS
 !mesh        ZPNDCLSPRE=ZPNDCLS(t)
-        ZPNDCLSPRE = ZPNDCLS(n)
+        !ZPNDCLSPRE = ZPNDCLS(n) !placed by Dan but might be wrong as this value should be taken after updating the ZPND by PRIMA
+		
+        !!!!!!!avg_zpnd_pr=avg_zpnd_pr*frac_wet_area !test
+        
         vs%grid%zpnd(n) = avg_zpnd_pr/1000.0 !avg_zpnd_pr/1000.0 !mm to m
         vs%grid%pndw(n) = avg_zpnd_pr !mm to mm
         vs%grid%rofo(n) = ovrlnd_rof_pr/ic%dts !mm to mm/s
 !        avg_zpnd_pr_pre=avg_zpnd_pr !or adj_avg_zpnd_pr
         !! the updated value of the ZPND is (adj_avg_zpnd) and ROFO is ovrlnd_rof_pr
-
+		ZPNDCLSPRE(n)= avg_zpnd_pr !vs%grid%zpnd(n)*1000.0 !m to mm MIA This is the right place as it will take value after updating PRIMA
+		!write(*,*)'*****',ZPNDCLS(n),avg_zpnd_pr
 
 
     end do

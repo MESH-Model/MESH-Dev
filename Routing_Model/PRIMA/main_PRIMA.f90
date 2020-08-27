@@ -359,7 +359,7 @@ subroutine add_water(time_step,error_thr,dt,vel,wl_lin,active_cells,rnk_ind,dem_
 
 
 
-        if (cum_time>=time_step)then  !sec
+        if (cum_time>=time_step .and. niter > 1)then  !sec
 
             derr=maxval(abs(wl_lin-wl_old))
 
@@ -390,18 +390,20 @@ subroutine add_water(time_step,error_thr,dt,vel,wl_lin,active_cells,rnk_ind,dem_
 
     end do !for iter loop
 
-    write(*,*)'Max number of iterations reached'
+    !write(*,*)'Max number of iterations reached'
     !write(*,*)derr,cum_time
-    write(*,111) t, niter, derr, cum_time
-    open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append')
-    write(2,*)'Max number of iterations reached'
-    write(2,111) t, niter, derr, cum_time
-    close(2)
-
+    !write(*,111) t, niter, derr, cum_time
+    if(niter > 1)then
+        open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append')
+        write(2,*)'Max number of iterations reached'
+        write(2,111) t, niter, derr, cum_time
+        close(2)
+    end if
+    
     66 write(fout,222)'day_',t,'_add_wdepth.asc'		!water depth at each day
     222 FORMAT (a4,i4.4,a15)
     !specifying the full name of the file
-    if (ras_out .eq. 1)then
+    if (ras_out .eq. 1 .and. niter > 1)then
         wdepth=wl_lin-dem_lin
         call write_ascii(wdepth,no_data,xllcorner,yllcorner,cell_size,ind_no_data,active_cells,rnk_ind,&
                          & ascii_data,fout,dir, inactive_cells)
@@ -409,15 +411,16 @@ subroutine add_water(time_step,error_thr,dt,vel,wl_lin,active_cells,rnk_ind,dem_
 
     outflow=0 !no outflow in the add module
     call calc_stat(wdepth,no_data,cell_size,ind_no_data,active_cells,inactive_cells,rnk_ind,rep_fnam,outflow,&
-                    & frac_wet_area, mean_dep,max_dep,drain_depth)
+                    & frac_wet_area, mean_dep,max_dep,drain_depth,niter)
 
 
     call cpu_time(time_end)
-    write(*,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
-    open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append') !create report empty file
-    write(2,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
-    close(2) !report file
-
+    !write(*,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
+    if(niter > 1) then
+        open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append') !create report empty file
+        write(2,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
+        close(2) !report file
+    end if
     return
 
 end subroutine add_water
@@ -505,7 +508,7 @@ subroutine drain_water(time_step,error_thr,dt,vel,wl_lin,active_cells,rnk_ind,de
         !!!!--------------------------------------------------------------
 
 
-        if (cum_time>=time_step)then  !sec
+        if (cum_time>=time_step .and. niter > 1)then  !sec
 
             derr=maxval(abs(wl_lin-wl_old))
             verr=v_out-v_out_old
@@ -537,34 +540,37 @@ subroutine drain_water(time_step,error_thr,dt,vel,wl_lin,active_cells,rnk_ind,de
 
     end do !for iter loop
 
-    write(*,*)'Max number of iterations reached'
-    write(*,111) t,niter,derr,verr,cum_time
+    !write(*,*)'Max number of iterations reached'
+    !write(*,111) t,niter,derr,verr,cum_time
     !write(*,*)'outflow',outflow
-    open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append')
-    write(2,*)'Max number of iterations reached'
-    write(2,111) t,niter,derr,verr,cum_time
-    close(2)
+    if(niter > 1)then 
+        open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append')
+        write(2,*)'Max number of iterations reached'
+        write(2,111) t,niter,derr,verr,cum_time
+        close(2)
+    end if
 
     66 write(fout,222)'day_',t,'_drained_wdepth.asc'		!water depth at each day
     222 FORMAT (a4,i4.4,a19)
     !specifying the full name of the file.
-    if(ras_out .eq. 1)then
+    if(ras_out .eq. 1 .and. niter > 1)then
         call write_ascii(wdepth,no_data,xllcorner,yllcorner,cell_size,ind_no_data,active_cells,rnk_ind,&
                             & ascii_data,fout,dir, inactive_cells)
 
     end if
 
     call calc_stat(wdepth,no_data,cell_size,ind_no_data,active_cells,inactive_cells,rnk_ind,rep_fnam,v_out,&
-                    & frac_wet_area, mean_dep,max_dep,drain_depth)
+                    & frac_wet_area, mean_dep,max_dep,drain_depth,niter)
 
     outflow=v_out !outflow volume m3
 
     call cpu_time(time_end)
-    write(*,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
-    open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append') !create report empty file
-    write(2,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
-    close(2) !report file
-
+    !write(*,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
+    if(niter > 1) then
+        open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append') !create report empty file
+        write(2,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
+        close(2) !report file
+    end if
 
     return
 
@@ -600,8 +606,8 @@ subroutine add_drain_water(time_step,error_thr,dt,vel,wl_lin,active_cells,rnk_in
 
     common /dims/ncol,nrow,ntot
 
-
-    write(*,*)'Adding and Draining water at the same time for day',t
+    !if(niter > 1) this was added to prevent PRIMA from printing on screen when running in dummy mode (i.e., when timestep is not the end of day)
+    !if(niter > 1) write(*,*)'Adding and Draining water at the same time for day',t
     call cpu_time(time_start)
     cum_time=0; !cumulative time
     !step=0;
@@ -662,7 +668,7 @@ subroutine add_drain_water(time_step,error_thr,dt,vel,wl_lin,active_cells,rnk_in
         !!!!--------------------------------------------------------------
 
 
-        if (cum_time>=time_step)then  !sec
+        if (cum_time>=time_step .and. niter > 1)then  !sec
 
             derr=maxval(abs(wl_lin-wl_old))
             verr=v_out-v_out_old
@@ -695,33 +701,36 @@ subroutine add_drain_water(time_step,error_thr,dt,vel,wl_lin,active_cells,rnk_in
 
     end do !for iter loop
 
-    write(*,*)'Max number of iterations reached'
-    write(*,111) t,niter,derr,verr,cum_time
+    !write(*,*)'Max number of iterations reached'
+    !write(*,111) t,niter,derr,verr,cum_time
     !write(*,*)'outflow',outflow
-    open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append')
-    write(2,*)'Max number of iterations reached'
-    write(2,111) t,niter,derr,verr,cum_time
-    close(2)
+    if(niter > 1)then 
+        open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append')
+        write(2,*)'Max number of iterations reached'
+        write(2,111) t,niter,derr,verr,cum_time
+        close(2)
+    end if
 
     66 write(fout,222)'day_',t,'_add_drain_wdepth.asc'		!water depth at each day
     222 FORMAT (a4,i4.4,a21)
     !specifying the full name of the file.
-    if(ras_out .eq. 1)then !write raster file after convergence
+    if(ras_out .eq. 1 .and. niter > 1)then !write raster file after convergence
         call write_ascii(wdepth,no_data,xllcorner,yllcorner,cell_size,ind_no_data,active_cells,rnk_ind,&
                             & ascii_data,fout,dir, inactive_cells)
     end if
 
     call calc_stat(wdepth,no_data,cell_size,ind_no_data,active_cells,inactive_cells,rnk_ind,rep_fnam,v_out,&
-                    & frac_wet_area, mean_dep,max_dep,drain_depth)
+                    & frac_wet_area, mean_dep,max_dep,drain_depth,niter)
 
     outflow=v_out !outflow volume m3
 
     call cpu_time(time_end)
-    write(*,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
-    open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append') !create report empty file
-    write(2,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
-    close(2) !report file
-
+    !write(*,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
+    if(niter > 1) then
+        open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append') !create report empty file
+        write(2,*)'PRIMA run time', (time_end-time_start)/60.0,'min'
+        close(2) !report file
+    endif
 
     return
 
@@ -773,7 +782,7 @@ end subroutine write_ascii
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine calc_stat(wdepth,no_data,cell_size,ind_no_data,active_cells,inactive_cells,rnk_ind,rep_fnam,outflow,&
-                        & frac_wet_area, mean_dep,max_dep,drain_depth)
+                        & frac_wet_area, mean_dep,max_dep,drain_depth,niter)
 
     !calculate statistics (e.g., mean ponded depth, max ponded depth, fractional water area, etc.)
     implicit none
@@ -783,7 +792,7 @@ subroutine calc_stat(wdepth,no_data,cell_size,ind_no_data,active_cells,inactive_
     real*8:: wdepth_out_2d(nrow,ncol),wdepth_dum(ntot)
     logical::mask(ntot)
     character(len=100),intent(in):: rep_fnam
-    integer, intent(in):: ind_no_data(inactive_cells),active_cells,inactive_cells,rnk_ind(ntot)
+    integer, intent(in):: ind_no_data(inactive_cells),active_cells,inactive_cells,rnk_ind(ntot),niter
     real::max_dep,mean_dep,frac_wet_area,drain_depth
     integer::ncol,nrow,ntot,i,ii,lin_ind,n_wet_cells
     common /dims/ncol,nrow,ntot
@@ -801,16 +810,17 @@ subroutine calc_stat(wdepth,no_data,cell_size,ind_no_data,active_cells,inactive_
     if(outflow>0)then
         drain_depth=((outflow/(cell_size**2))/real(active_cells))*1000.0 !to convert from m to mm
     end if
-
-    open(1,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append')
-    write(1,'(a32,f5.3)')'Fractional water covered area ',frac_wet_area
-    write(1,'(a24,f9.3,a4)')'Mean ponded water depth ',mean_dep,' mm'
-    write(1,'(a23,f9.3,a4)')'Max ponded water depth ',max_dep,' mm'
-    if(outflow>0)then
-        write(1,'(a38,f16.3,a3)')'Drained (runoff/outflow) water volume ',outflow,' m3'
-        write(1,'(a38,f9.4,a4)')'Drained (runoff/outflow) water depth ',drain_depth,' mm'
+    if(niter > 1) then
+        open(1,file=TRIM(ADJUSTL(rep_fnam)),status='unknown',access = 'append')
+        write(1,'(a32,f5.3)')'Fractional water covered area ',frac_wet_area
+        write(1,'(a24,f9.3,a4)')'Mean ponded water depth ',mean_dep,' mm'
+        write(1,'(a23,f9.3,a4)')'Max ponded water depth ',max_dep,' mm'
+        if(outflow>0)then
+            write(1,'(a38,f16.3,a3)')'Drained (runoff/outflow) water volume ',outflow,' m3'
+            write(1,'(a38,f9.4,a4)')'Drained (runoff/outflow) water depth ',drain_depth,' mm'
+        end if
+        close(1)
     end if
-	close(1)
 
 end subroutine calc_stat
 
