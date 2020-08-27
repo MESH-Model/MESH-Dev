@@ -42,11 +42,17 @@ module PRIMA_module
 
 !mesh    call cpu_time(time_start)
 
+    type PRIMA_control_variables
+        logical :: PROCESS_ACTIVE = .false.
+    end type
+
+    type(PRIMA_control_variables) PRIMA_MESH
+
     save
 
     private
 
-    public PRIMA_init, PRIMA_within_grid
+    public PRIMA_init, PRIMA_within_grid, PRIMA_MESH
 
     contains
 
@@ -59,6 +65,15 @@ module PRIMA_module
     !!                 READ MESH water Balance data                                 !!
     !! ZPND and ROFO (ponded depth and overland runoff)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        !> Return if the process is not active.
+        if (.not. PRIMA_MESH%PROCESS_ACTIVE) then
+            return
+        else
+
+            !> Print a message to screen noting PRIMA is active.
+            call print_message('PRIMA is ACTIVE.')
+        end if
 
         allocate(ZPNDCLSPRE(shd%NA),ZPNDCLS(shd%NA))!,ROFOCLS(shd%NA))
         nmesh_grid=shd%NA
@@ -118,7 +133,10 @@ module PRIMA_module
         real, external :: calc_ET0
         integer:: year,day,hour,mins
         real mann(ntot)
-        
+
+        !> Return if the process is not active.
+        if (.not. PRIMA_MESH%PROCESS_ACTIVE) return
+
         !PRIMA inputs (constant)
         error_thr=1/1000.0 !depth change tolerance mm to m (when using add module)
         errord_thr=1/1000.0 !depth change tolerance  mm to m (when using add_drain module, common case)

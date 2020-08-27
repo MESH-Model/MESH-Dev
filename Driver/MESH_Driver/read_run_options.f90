@@ -22,6 +22,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use SIMSTATS_config, only: mtsflg
     use PBSM_module
     use mountain_module
+    use PRIMA_module, only: PRIMA_MESH
 
     implicit none
 
@@ -679,6 +680,16 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                 !> MOUNTAINMESH (formerly: SOLARADJUSTFLAG).
                 case('MOUNTAINMESH', 'SOLARADJUSTFLAG')
                     mountain_mesh%RUNOPTIONSFLAG = adjustl(lowercase(line))
+
+                !> PRIMA.
+                case ('PRIMAFLAG')
+                    PRIMA_MESH%PROCESS_ACTIVE = .false.
+                    do j = 2, nargs
+                        select case (lowercase(args(j)))
+                            case ('1', 'on')
+                                PRIMA_MESH%PROCESS_ACTIVE = .true.
+                        end select
+                    end do
 
                 !> Unrecognized flag.
                 case default
