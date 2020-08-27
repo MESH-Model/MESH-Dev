@@ -3,10 +3,10 @@ module PRIMA_inputs
     use main_PRIMA
 
     contains
-    subroutine read_PRIMA_inputs(ascii_data,error_thr,errord_thr,vol_thr,rain_flag,ncol,nrow,ntot,inactive_cells,&
-                              & active_cells,method,n_rvr_cell,niter,xllcorner,yllcorner,CA_outflow,ind_node,&
-                              & rvr_cell_ind,mann,rnk_ind,ind_sur,ind_no_data,dem_lin,wl_lin,time_step,no_data&
-                              & ,cell_size,rep_fnam,dir,ini_dep_flag,ras_out,freq_err)
+    subroutine read_PRIMA_inputs(ascii_data,rain_flag,ncol,nrow,ntot,inactive_cells,&
+                              & active_cells,n_rvr_cell,xllcorner,yllcorner,ind_node,&
+                              & rvr_cell_ind,mann1,rnk_ind,ind_sur,ind_no_data,dem_lin,wl_lin,time_step,no_data&
+                              & ,cell_size,rep_fnam,dir,ini_dep_flag,ras_out,nmesh_grid,ZPNDCLSPRE)
         implicit none
         !integer::ncol,nrow,ntot
         character(len=100):: fnam, dem_file,dir,makedirectory,rep_fnam,trash,ini_water_file
@@ -20,6 +20,8 @@ module PRIMA_inputs
         integer, allocatable::rnk_ind(:),ind_sur(:,:),ind_no_data(:)
         real*8, allocatable:: dem(:,:),dem_lin(:),wl_lin(:),wdepth(:),wdepth_2d(:,:)
         real:: time_step,no_data,cell_size,error_thr,vol_thr,mann1,errord_thr
+        integer nmesh_grid
+        real ZPNDCLSPRE(nmesh_grid)
 
 !        common /dims/ncol,nrow,ntot
 
@@ -31,22 +33,22 @@ module PRIMA_inputs
         read(1,*) ini_water_file
         read(1,*) mann1
         !######################### Add Module parameters #########################
-        read(1,*) trash
-        read(1,*) error_thr; error_thr=error_thr/1000.0
+        !read(1,*) trash
+        !read(1,*) error_thr; error_thr=error_thr/1000.0
         !######################### Drain Module parameters #########################
-        read(1,*) trash
-        read(1,*) errord_thr; errord_thr=errord_thr/1000.0
-        read(1,*) vol_thr;
+        !read(1,*) trash
+        !read(1,*) errord_thr; errord_thr=errord_thr/1000.0
+        !read(1,*) vol_thr;
         !######################### General Configuration Parameters #########################
-        read(1,*) trash
+        !read(1,*) trash
         read(1,*) rain_flag
-        read(1,*) method
-        read(1,*) niter
-        read(1,*) freq_err
+        !read(1,*) method
+        !read(1,*) niter
+        !read(1,*) freq_err
         read(1,*) ras_out
         read(1,*) outlet_flag
         close(1)
-        freq_err=minval([freq_err,niter])
+        !freq_err=minval([freq_err,niter])
 
         if(len_trim(ini_water_file) >= 4) then
             ini_dep_flag=1
@@ -75,6 +77,8 @@ module PRIMA_inputs
             time_step=24*60*60
         else if (rain_flag .eq. 2)then
             time_step=60*60
+        else if (rain_flag .eq. 3)then
+            time_step=30*60
         end if
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !!linear indexing of arrays
@@ -144,8 +148,8 @@ module PRIMA_inputs
         !that has the same dimensions as the DEM, but this will be investigated  later
 
         if(ini_dep_flag .eq. 0)then !if there a raster depth file that has the initial depth over each grid cell
-            !if there is no water depth available
-            wl_lin=dem_lin !water level in each grid cell
+            !if there is no water depth available, add the ponded depth from the CLASS.ini file
+            wl_lin=dem_lin+(ZPNDCLSPRE(1)/1000.0) !water level in each grid cell, ZPNDCLSPRE(1) based on one grid cell in MESH, will be changed later
         else
             allocate(wdepth(ntot),wdepth_2d(nrow,ncol))
             !read initial water depth
@@ -183,61 +187,61 @@ module PRIMA_inputs
 
         !write the CA output file
         dir='PRIMA_output'
-        makedirectory = 'mkdir ' // trim(dir)
-        call system(makedirectory)
+        !makedirectory = 'mkdir ' // trim(dir)
+        !call system(makedirectory) ! the PRIMA_balance.csv will be written in the results of the MESH model
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         !write(*,*)'Running PRIMA algorithm'
         !!write detailed output
         rep_fnam=trim(dir)// '/' // 'PRIMA_report.txt'
-        open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown') !create report empty file
-        write(2,*)'PRIMA report © Mohamed I. Ahmed 2019'
-        if (method .eq. 1)then
-            write(2,*)'Method: Add/subtract water'
-        elseif (method .eq. 2)then
-            write(2,*)'Method: Drain water'
-        elseif (method .eq. 3)then
-            write(2,*)'Method: Add then Drain water'
-        elseif (method .eq. 4)then
-            write(2,*)'Method: Add and Drain water at the same time'
-        end if
+        ! open(2,file=TRIM(ADJUSTL(rep_fnam)),status='unknown') !create report empty file
+        ! write(2,*)'PRIMA report © Mohamed I. Ahmed 2019'
+        ! if (method .eq. 1)then
+            ! write(2,*)'Method: Add/subtract water'
+        ! elseif (method .eq. 2)then
+            ! write(2,*)'Method: Drain water'
+        ! elseif (method .eq. 3)then
+            ! write(2,*)'Method: Add then Drain water'
+        ! elseif (method .eq. 4)then
+            ! write(2,*)'Method: Add and Drain water at the same time'
+        ! end if
 
-        if (method .ne. 2) write(2,*)'Add Elevation tolerance ', error_thr*1000,' mm'
+        ! if (method .ne. 2) write(2,*)'Add Elevation tolerance ', error_thr*1000,' mm'
 
-        if(method .ne. 1) then
-            write(2,*)'Drain Elevation tolerance ', errord_thr*1000,' mm'
-            write(2,*)'Volume tolerance ', vol_thr, ' m3'
-        end if
-        if (rain_flag .eq. 0) then
-            write(2,*)'Time step (not specified)'
-        elseif (rain_flag .eq. 1) then
-            write(2,*)'Time step (day)'
-        else
-            write(2,*)'Time step (hr)'
-        end if
+        ! if(method .ne. 1) then
+            ! write(2,*)'Drain Elevation tolerance ', errord_thr*1000,' mm'
+            ! write(2,*)'Volume tolerance ', vol_thr, ' m3'
+        ! end if
+        ! if (rain_flag .eq. 0) then
+            ! write(2,*)'Time step (not specified)'
+        ! elseif (rain_flag .eq. 1) then
+            ! write(2,*)'Time step (day)'
+        ! else
+            ! write(2,*)'Time step (hr)'
+        ! end if
 
-        write(2,*)'Max # iterations ',niter,' and error is calculated every ',freq_err
+        ! write(2,*)'Max # iterations ',niter,' and error is calculated every ',freq_err
 
-        if(ini_dep_flag .eq. 1) write(2,*) 'Initial water depth (asc) file is used: ',ini_water_file
+        ! if(ini_dep_flag .eq. 1) write(2,*) 'Initial water depth (asc) file is used: ',ini_water_file
 
-        write(2,*) "Running the PRIMA algorithm"
+        ! write(2,*) "Running the PRIMA algorithm"
 
-        if(method .eq. 1)then
-            write(2,*) 'event/day   # Iteration     max dep diff        travel time'
-            write(2,*) '                                (m)                  (s)   '
+        ! if(method .eq. 1)then
+            ! write(2,*) 'event/day   # Iteration     max dep diff        travel time'
+            ! write(2,*) '                                (m)                  (s)   '
 
-            write(*,*) 'event/day   # Iteration     max dep diff        travel time'
-            write(*,*) '                                (m)                  (s)   '
-        else
-            write(2,*) 'event/day   # Iteration     max dep diff       volume diff   travel time'
-            write(2,*) '                                 (m)                (m3)          (s)  '
+            ! write(*,*) 'event/day   # Iteration     max dep diff        travel time'
+            ! write(*,*) '                                (m)                  (s)   '
+        ! else
+            ! write(2,*) 'event/day   # Iteration     max dep diff       volume diff   travel time'
+            ! write(2,*) '                                 (m)                (m3)          (s)  '
 
-            write(*,*) 'event/day   # Iteration     max dep diff       volume diff   travel time'
-            write(*,*) '                                (m)                (m3)           (s)  '
-        end if
+            write(*,*) 'year    day   # Iteration     max dep change       volume change   travel time'
+            write(*,*) '                                    (m)                (m3)           (s)  '
+        ! end if
 
 
-        close(2)
+        ! close(2)
 
 
     return
