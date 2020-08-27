@@ -140,10 +140,11 @@ module PRIMA_module
         adj_avg_zpnd = 0.0
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        
-        vs%grid%zpnd(i1:i2) = vs%grid%zpnd(i1:i2) + vs%grid%rofo(i1:i2)*ic%dts/1000.0 !mm/s to m
-        vs%grid%pndw(i1:i2) = vs%grid%pndw(i1:i2) + vs%grid%rofo(i1:i2)*ic%dts !mm/s to mm
+        !v05.0
+        vs%grid%zpnd(i1:i2) = vs%grid%zpnd(i1:i2) + (vs%grid%rofo(i1:i2)+vs%grid%rofs(i1:i2))*ic%dts/1000.0 !mm/s to m
+        vs%grid%pndw(i1:i2) = vs%grid%pndw(i1:i2) + (vs%grid%rofo(i1:i2)+vs%grid%rofs(i1:i2))*ic%dts !mm/s to mm
         vs%grid%rofo(i1:i2) = 0.0
+        vs%grid%rofs(i1:i2) = 0.0
         
 
 		do k = il1, il2
