@@ -410,7 +410,7 @@ module RUNCLASS36_module
         vs%tile%gzero(il1:il2) = cdv%GFLX(il1:il2, 1)
         vs%tile%tsfs(il1:il2, :) = cpv%TSFS(il1:il2, :)
         vs%tile%tbas(il1:il2) = cpv%TBAS(il1:il2)
-        vs%tile%rofs(il1:il2) = cdv%ROFS(il1:il2)
+        vs%tile%rofs(il1:il2, :) = cdv%ROFS(il1:il2, :)
         vs%tile%thic(il1:il2, :) = cpv%THIC(il1:il2, :)
         vs%tile%thlq(il1:il2, :) = cpv%THLQ(il1:il2, :)
         vs%tile%tbar(il1:il2, :) = cpv%TBAR(il1:il2, :)

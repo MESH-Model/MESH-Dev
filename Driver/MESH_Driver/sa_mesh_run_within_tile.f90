@@ -171,14 +171,14 @@ module sa_mesh_run_within_tile
             i = i + 1
 
             !> Soil layers.
-            allocate(sl((2 + 4*s)*iin))
+            allocate(sl((1 + 5*s)*iin))
             sl((1 + iin*0):(iin*1)) = vs%tile%tbas(ii1:ii2)
-            sl((1 + iin*1):(iin*2)) = vs%tile%rofs(ii1:ii2)
             do j = 0, s - 1
-                sl((1 + iin*(2 + j*4)):(iin*(3 + j*4))) = vs%tile%thic(ii1:ii2, j + 1)
-                sl((1 + iin*(3 + j*4)):(iin*(4 + j*4))) = vs%tile%thlq(ii1:ii2, j + 1)
-                sl((1 + iin*(4 + j*4)):(iin*(5 + j*4))) = vs%tile%tbar(ii1:ii2, j + 1)
-                sl((1 + iin*(5 + j*4)):(iin*(6 + j*4))) = vs%tile%gflx(ii1:ii2, j + 1)
+                sl((1 + iin*(1 + j*5)):(iin*(2 + j*5))) = vs%tile%rofs(ii1:ii2, j + 1)
+                sl((1 + iin*(2 + j*5)):(iin*(3 + j*5))) = vs%tile%thic(ii1:ii2, j + 1)
+                sl((1 + iin*(3 + j*5)):(iin*(4 + j*5))) = vs%tile%thlq(ii1:ii2, j + 1)
+                sl((1 + iin*(4 + j*5)):(iin*(5 + j*5))) = vs%tile%tbar(ii1:ii2, j + 1)
+                sl((1 + iin*(5 + j*5)):(iin*(6 + j*5))) = vs%tile%gflx(ii1:ii2, j + 1)
             end do
             call MPI_Isend(sl, size(sl), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
@@ -223,7 +223,7 @@ module sa_mesh_run_within_tile
                 allocate(cnpy(7*iin))
                 allocate(sno(7*iin))
                 allocate(sfc((13 + 4 + 2)*iin))
-                allocate(sl((2 + 4*s)*iin))
+                allocate(sl((1 + 5*s)*iin))
                 allocate(lz(iin))
                 allocate(dz(2*iin))
 
@@ -294,12 +294,12 @@ module sa_mesh_run_within_tile
 
                 !> Soil layers.
                 vs%tile%tbas(ii1:ii2) = sl((1 + iin*0):(iin*1))
-                vs%tile%rofs(ii1:ii2) = sl((1 + iin*1):(iin*2))
                 do j = 0, s - 1
-                    vs%tile%thic(ii1:ii2, j + 1) = sl((1 + iin*(2 + j*4)):(iin*(3 + j*4)))
-                    vs%tile%thlq(ii1:ii2, j + 1) = sl((1 + iin*(3 + j*4)):(iin*(4 + j*4)))
-                    vs%tile%tbar(ii1:ii2, j + 1) = sl((1 + iin*(4 + j*4)):(iin*(5 + j*4)))
-                    vs%tile%gflx(ii1:ii2, j + 1) = sl((1 + iin*(5 + j*4)):(iin*(6 + j*4)))
+                    vs%tile%rofs(ii1:ii2, j + 1) = sl((1 + iin*(1 + j*5)):(iin*(2 + j*5)))
+                    vs%tile%thic(ii1:ii2, j + 1) = sl((1 + iin*(2 + j*5)):(iin*(3 + j*5)))
+                    vs%tile%thlq(ii1:ii2, j + 1) = sl((1 + iin*(3 + j*5)):(iin*(4 + j*5)))
+                    vs%tile%tbar(ii1:ii2, j + 1) = sl((1 + iin*(4 + j*5)):(iin*(5 + j*5)))
+                    vs%tile%gflx(ii1:ii2, j + 1) = sl((1 + iin*(5 + j*5)):(iin*(6 + j*5)))
                 end do
 
                 !> Lower zone storage.
@@ -423,7 +423,7 @@ module sa_mesh_run_within_tile
         vs%tile%fstr(il1:il2) = 0.0
         vs%tile%hfs(il1:il2) = 0.0
         vs%tile%gzero(il1:il2) = 0.0
-        vs%tile%rofs(il1:il2) = 0.0
+        vs%tile%rofs(il1:il2, :) = 0.0
         vs%tile%gflx(il1:il2, :) = 0.0
         vs%tile%rofb(il1:il2) = 0.0
 

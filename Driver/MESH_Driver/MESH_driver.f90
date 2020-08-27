@@ -1138,7 +1138,7 @@ program RUNMESH
             TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%evap(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
             TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
             TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%rofo(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROFS = TOTAL_ROFS + sum(out%tot%grid%rofs(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFS = TOTAL_ROFS + sum(sum(out%tot%grid%rofs(1:shd%NA, :), 2)*shd%FRAC)*ic%dts/sum(shd%FRAC)
             TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%rofb(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
             STG_FIN = sum( &
                 (out%ts%grid%rcan(1:shd%NA) + out%ts%grid%sncan(1:shd%NA) + &

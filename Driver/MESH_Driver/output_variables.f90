@@ -37,7 +37,7 @@ module output_variables
         real, dimension(:), pointer :: gro => null()
         real, dimension(:), pointer :: rof => null()
         real, dimension(:), pointer :: rofo => null()
-        real, dimension(:), pointer :: rofs => null()
+        real, dimension(:, :), pointer :: rofs => null()
         real, dimension(:), pointer :: rofb => null()
         real, dimension(:), pointer :: rcan => null()
         real, dimension(:), pointer :: sncan => null()
@@ -317,8 +317,8 @@ module output_variables
                 end if
             case (VN_ROFS)
                 if (associated(fields%vs%rofs)) then
-                    call output_variables_allocate(fields%rofs, n1, pntr)
-                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%rofs, n1)
+                    call output_variables_allocate(fields%rofs, n1, n2, pntr, ig)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%rofs, n1, n2)
                     call output_variables_activate_pntr(fields, VN_ROF)
                 end if
             case (VN_ROFB)
@@ -946,7 +946,7 @@ module output_variables
             if (associated(group%rofs)) then
                 if (all(group%rofs == out%NO_DATA)) group%rofs = group_vs%rofs
                 if (lcheck) then
-                    where (group%rofs /= out%NO_DATA) group%rof = group%rof + group%rofs
+                    where (sum(group%rofs, 2) /= out%NO_DATA) group%rof = group%rof + sum(group%rofs, 2)
                 end if
             end if
             if (associated(group%rofb)) then
@@ -1352,9 +1352,9 @@ module output_variables
             if (associated(group%rofo)) then
                 call output_variables_field_update(group%rofo, group_ts%rofo, its, 'sum')
             end if
-            if (associated(group%rofs)) then
-                call output_variables_field_update(group%rofs, group_ts%rofs, its, 'sum')
-            end if
+!-            if (associated(group%rofs)) then
+!-                call output_variables_field_update(group%rofs, group_ts%rofs, its, 'sum')
+!-            end if
             if (associated(group%rofb)) then
                 call output_variables_field_update(group%rofb, group_ts%rofb, its, 'sum')
             end if
@@ -1409,6 +1409,9 @@ module output_variables
                 end if
                 if (associated(group%alws)) then
                     call output_variables_field_update(group%alws(:, j), group_ts%alws(:, j), its, 'avg')
+                end if
+                if (associated(group%rofs)) then
+                    call output_variables_field_update(group%rofs(:, j), group_ts%rofs(:, j), its, 'sum')
                 end if
             end do
             if (associated(group%stgw)) then

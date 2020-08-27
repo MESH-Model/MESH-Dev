@@ -959,9 +959,12 @@ module runsvs_mesh
             vs%tile%hfs(il1 + k) = bus(fc + k)
             vs%tile%rofo(il1 + k) = max(0.0, bus(runofftot + k))/ic%dts
 !EG_MOD add lateral flow from layers 1 to KHYD
-            vs%tile%rofs(il1 + k) = 0.0
+!-            vs%tile%rofs(il1 + k) = 0.0
+!-            do j = 1, KHYD
+!-                vs%tile%rofs(il1 + k) = vs%tile%rofs(il1 + k) + max(0.0, bus(latflw + (j - 1)*NG + k))/ic%dts
+!-            end do
             do j = 1, KHYD
-                vs%tile%rofs(il1 + k) = vs%tile%rofs(il1 + k) + max(0.0, bus(latflw + (j - 1)*NG + k))/ic%dts
+                vs%tile%rofs(il1 + k, j) = max(0.0, bus(latflw + (j - 1)*NG + k))/ic%dts
             end do
             vs%tile%thic(il1 + k, 1) = bus(isoil + k)
             vs%tile%thlq(il1 + k, 1) = bus(wsoil + k)

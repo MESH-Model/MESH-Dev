@@ -964,10 +964,10 @@ module save_basin_output
         !> Write the water balance to file.
         write(fik, 1010) &
             out%tot%basin%prec(ina), out%tot%basin%evap(ina)*ic%dts, out%tot%basin%rof(ina)*ic%dts, &
-            out%tot%basin%rofo(ina)*ic%dts, out%tot%basin%rofs(ina)*ic%dts, out%tot%basin%rofb(ina)*ic%dts, &
+            out%tot%basin%rofo(ina)*ic%dts, sum(out%tot%basin%rofs(ina, :))*ic%dts, out%tot%basin%rofb(ina)*ic%dts, &
             out%tot%basin%dstgw(ina), &
             series%basin%prec(ina), series%basin%evap(ina)*ic%dts, series%basin%rof(ina)*ic%dts, &
-            series%basin%rofo(ina)*ic%dts, series%basin%rofs(ina)*ic%dts, series%basin%rofb(ina)*ic%dts, &
+            series%basin%rofo(ina)*ic%dts, sum(series%basin%rofs(ina, :))*ic%dts, series%basin%rofb(ina)*ic%dts, &
             series%basin%sncan(ina), series%basin%rcan(ina), &
             series%basin%sno(ina), wsno, &
             pndw, &

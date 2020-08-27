@@ -352,9 +352,9 @@ module RUNCLASS36_save_output
                         cfi%PRE(k), cfi%TA(k) - TFREZ, cfi%VMOD(k), cfi%PRES(k), &
                         cfi%QA(k)
                     write(150 + i*10 + 7, "(999(e11.4,','))") &
-                        cdv%TROF(k), cdv%TROO(k), cdv%TROS(k), &
+                        cdv%TROF(k), cdv%TROO(k), sum(cdv%TROS(k, :))/max(1, count(cdv%TROS(k, :) > 0.0)), &
                         cdv%TROB(k), cdv%ROF(k), cdv%ROFO(k), &
-                        cdv%ROFS(k), cdv%ROFB(k), &
+                        sum(cdv%ROFS(k, :)), cdv%ROFB(k), &
                         cdv%FCS(k), cdv%FGS(k), cdv%FC(k), cdv%FG(k)
                     write(150 + i*10 + 8, "(999(f12.4,','))") &
                         cdv%FSGV(k), cdv%FSGS(k), cdv%FSGG(k), &
@@ -374,7 +374,7 @@ module RUNCLASS36_save_output
                         cdv%WTRS(k), cdv%WTRG(k)
                     write(150 + i*10 + 10, "(i2,',', i3,',', i5,',', i6,',', 999(f14.6,','))") &
                         ic%now%hour, ic%now%mins, ic%now%jday, ic%now%year, cfi%PRE(k)*DELT, cdv%QFS(k)*DELT, &
-                        cdv%ROF(k)*DELT, cdv%ROFO(k)*DELT, cdv%ROFS(k)*DELT, cdv%ROFB(k)*DELT, &
+                        cdv%ROF(k)*DELT, cdv%ROFO(k)*DELT, sum(cdv%ROFS(k, :))*DELT, cdv%ROFB(k)*DELT, &
                         cpv%SNCAN(k), cpv%RCAN(k), cpv%SNO(k), cpv%WSNO(k), &
                         cpv%ZPND(k)*RHOW, (cpv%THLQ(k, j)*RHOW*csfv%DELZW(k, j), j = 1, NSL), &
                         (cpv%THIC(k, j)*RHOICE*csfv%DELZW(k, j), j = 1, NSL)
@@ -389,7 +389,7 @@ module RUNCLASS36_save_output
                 co%HMFNACC(i) = co%HMFNACC(i) + cdv%HMFN(k)
                 co%ROFACC(i) = co%ROFACC(i) + cdv%ROF(k)*DELT
                 co%ROFOACC(i) = co%ROFOACC(i) + cdv%ROFO(k)*DELT
-                co%ROFSACC(i) = co%ROFSACC(i) + cdv%ROFS(k)*DELT
+                co%ROFSACC(i) = co%ROFSACC(i) + sum(cdv%ROFS(k, :))*DELT
                 co%ROFBACC(i) = co%ROFBACC(i) + cdv%ROFB(k)*DELT
                 co%WTBLACC(i) = co%WTBLACC(i) + cdv%WTAB(k)
                 do j = 1, NSL

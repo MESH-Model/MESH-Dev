@@ -270,7 +270,7 @@ module sa_mesh_run_within_grid
         vs%grid%qevp(i1:i2) = 0.0
         vs%grid%hfs(i1:i2) = 0.0
         vs%grid%gzero(i1:i2) = 0.0
-        vs%grid%rofs(i1:i2) = 0.0
+        vs%grid%rofs(i1:i2, :) = 0.0
         vs%grid%thic(i1:i2, :) = 0.0
         vs%grid%fzws(i1:i2, :) = 0.0
         vs%grid%thlq(i1:i2, :) = 0.0
@@ -327,7 +327,7 @@ module sa_mesh_run_within_grid
             vs%grid%qevp(ki) = vs%grid%qevp(ki) + vs%tile%qevp(k)*frac
             vs%grid%hfs(ki) = vs%grid%hfs(ki) + vs%tile%hfs(k)*frac
             vs%grid%gzero(ki) = vs%grid%gzero(ki) + vs%tile%gzero(k)*frac
-            vs%grid%rofs(ki) = vs%grid%rofs(ki) + vs%tile%rofs(k)*frac
+            vs%grid%rofs(ki, :) = vs%grid%rofs(ki, :) + vs%tile%rofs(k, :)*frac
             vs%grid%thic(ki, :) = vs%grid%thic(ki, :) + vs%tile%thic(k, :)*frac
             vs%grid%fzws(ki, :) = vs%grid%fzws(ki, :) + vs%tile%fzws(k, :)*frac
             vs%grid%thlq(ki, :) = vs%grid%thlq(ki, :) + vs%tile%thlq(k, :)*frac

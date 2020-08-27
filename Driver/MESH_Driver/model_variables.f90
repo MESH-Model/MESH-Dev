@@ -134,7 +134,7 @@ module model_variables
         real, dimension(:, :), pointer :: tsfs => null()
 
         !* ggeo: Geothermal heat flux. [W m-2].
-        !* rofs: Interflow component of total runoff. [kg m-2 s-1].
+        !* rofs: Interflow components of total runoff. [kg m-2 s-1].
         !* tbas: Temperature of bedrock in third soil layer. [K].
         !* delzw: Thickness of permeable part of soil layer. [m].
         !* zbotw: Depth of bottom of permeable part of soil layer. [m].
@@ -145,7 +145,7 @@ module model_variables
         !* tbar: Temperature of soil layers. [K].
         !* gflx: Heat conduction between soil layers. [W m-2].
         real, dimension(:), pointer :: ggeo => null()
-        real, dimension(:), pointer :: rofs => null()
+        real, dimension(:, :), pointer :: rofs => null()
         real, dimension(:), pointer :: tbas => null()
         real, dimension(:, :), pointer :: delzw => null()
         real, dimension(:, :), pointer :: zbotw => null()
@@ -400,7 +400,7 @@ module model_variables
         allocate(group%gzero(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tsfs(n, 4), stat = z); if (z /= 0) ierr = z
         allocate(group%ggeo(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%rofs(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%rofs(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%tbas(n), stat = z); if (z /= 0) ierr = z
         allocate(group%delzw(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%zbotw(n, nsl), stat = z); if (z /= 0) ierr = z

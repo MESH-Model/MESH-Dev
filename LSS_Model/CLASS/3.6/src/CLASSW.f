@@ -45,6 +45,10 @@
      3                  TSNOWC,TSNOWG,RHOSC,RHOSG,
      4                  XSNOWC,XSNOWG,XSNOCS,XSNOGS)
 C                                                                        
+C     * AUG 26/20 - D.PRINCZ.   CHANGED THE DIMENSIONS OF SUBFLW/TSUBFL
+C                               TO PRESERVE THE PER-LAYER VALUES FOR
+C                               INTERFLOW. THE TILE TOTALS ARE THE SUMS
+C                               OF THE VALUES ALONG THE 2ND DIMENSION.
 C     * JUL 20/20 - D.PRINCZ.   MODIFIED THE CALCULATION OF HTC TO
 C                               CONSIDER CHANGE IN ZPOND WHEN USING IWF
 C                               (ICEBAL).
@@ -159,8 +163,8 @@ C
      1     QFCF  (ILG),    QFCL  (ILG),    QFN   (ILG),    QFG   (ILG),    
      2     HMFC  (ILG),    HMFN  (ILG),    HTCC  (ILG),    HTCS  (ILG),    
      3     ROFC  (ILG),    ROFN  (ILG),    ROVG  (ILG),    WTRS  (ILG),    
-     4     WTRG  (ILG),    OVRFLW(ILG),    SUBFLW(ILG),    BASFLW(ILG),
-     5     TOVRFL(ILG),    TSUBFL(ILG),    TBASFL(ILG),    EVAP  (ILG),
+     4     WTRG  (ILG),    OVRFLW(ILG), SUBFLW(ILG,IG),    BASFLW(ILG),
+     5     TOVRFL(ILG), TSUBFL(ILG,IG),    TBASFL(ILG),    EVAP  (ILG),
      +     ICE   (ILG),    TICE  (ILG)
 C
       REAL QFC   (ILG,IG), HMFG  (ILG,IG), HTC   (ILG,IG)
@@ -765,7 +769,7 @@ C
           RUNOFF(I)=RUNOFF(I)*RHOW/DELT
           UMQ(I)   = UMQ(I)*RHOW/DELT                           
           OVRFLW(I)=OVRFLW(I)*RHOW/DELT
-          SUBFLW(I)=SUBFLW(I)*RHOW/DELT
+!-          SUBFLW(I)=SUBFLW(I)*RHOW/DELT
           BASFLW(I)=BASFLW(I)*RHOW/DELT
           EVAP  (I)=EVAP(I)-(FCS(I)*WLSTCS(I)+FGS(I)*WLSTGS(I)+
      1              FC(I)*WLOSTC(I)+FG(I)*WLOSTG(I))/DELT
@@ -963,6 +967,7 @@ C
      1               FC (I)*THICCO(I,J)+FG (I)*THICGO(I,J)
           GFLUX(I,J)=FCS(I)*GFLXCS(I,J)+FGS(I)*GFLXGS(I,J)+
      1               FC (I)*GFLXC (I,J)+FG (I)*GFLXG (I,J)
+          SUBFLW(I,J)=SUBFLW(I,J)*RHOW/DELT
 C     ipy test
 C          IF(THLIQ(I,J).GT.THFC(I,J))                               THEN
 C              BASFLW(I)=BASFLW(I)+(THLIQ(I,J)-THFC(I,J))*DELZW(I,J)*

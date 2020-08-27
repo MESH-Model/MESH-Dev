@@ -134,11 +134,11 @@ module RUNCLASS36_variables
             FLGS, FLGV, FSGG, FSGS, FSGV, FSNO, GA, GTE, HBL, HEVC, &
             HEVG, HEVS, HFS, HFSC, HFSG, HFSS, HMFC, HMFN, HTCC, HTCS, &
             ILMO, PCFC, PCLC, PCPG, PCPN, PET, QEVP, QFCF, QFCL, QFG, &
-            QFN, QFS, QFX, QG, ROF, ROFB, ROFC, ROFN, ROFO, ROFS, &
-            ROVG, SFCQ, SFCT, SFCU, SFCV, TFX, TROB, TROF, TROO, TROS, &
+            QFN, QFS, QFX, QG, ROF, ROFB, ROFC, ROFN, ROFO, &
+            ROVG, SFCQ, SFCT, SFCU, SFCV, TFX, TROB, TROF, TROO, &
             TSF, UE, WTAB, WTRC, WTRG, WTRS, ICE, TICE
         real, dimension(:, :), allocatable :: &
-            GFLX, HMFG, HTC, QFC
+            ROFS, TROS, GFLX, HMFG, HTC, QFC
     end type
 
     type CLASS_averaged_variables

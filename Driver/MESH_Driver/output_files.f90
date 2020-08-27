@@ -1565,7 +1565,11 @@ module output_files
                 case (VN_ROFO)
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ROFO, args, nargs, z, -1, real(ic%dts))
                 case (VN_ROFS)
-                    if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ROFS, args, nargs, z, -1, real(ic%dts))
+                    if (ro%RUNBALWB) then
+                        do j = 1, shd%lc%IGND
+                            call output_files_append_field(fls, shd, ts, VN_ROFS, args, nargs, z, j, real(ic%dts))
+                        end do
+                    end if
                 case (VN_ROFB)
                     if (ro%RUNBALWB) call output_files_append_field(fls, shd, ts, VN_ROFB, args, nargs, z, -1, real(ic%dts))
                 case (VN_RCAN)
