@@ -495,248 +495,300 @@ module sa_mesh_run_between_grid
 
         !> Local variables.
         integer j, ii, i
-        real frac(shd%NA), albtfrac(shd%NA), tpndfrac(shd%NA), tsnofrac(shd%NA), tcanfrac(shd%NA)
+        real albtfrac(shd%NA), tpndfrac(shd%NA), tsnofrac(shd%NA), tcanfrac(shd%NA), frac(shd%NA)
 
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
         !> Initialize variables.
-        vs%basin%fsin = vs%grid%fsin*shd%FRAC
-        vs%basin%fsdr = vs%grid%fsdr*shd%FRAC
-        vs%basin%fsdff = vs%grid%fsdff*shd%FRAC
-        vs%basin%flin = vs%grid%flin*shd%FRAC
-        vs%basin%ta = vs%grid%ta*shd%FRAC
-        vs%basin%qa = vs%grid%qa*shd%FRAC
-        vs%basin%pres = vs%grid%pres*shd%FRAC
-        vs%basin%uv = vs%grid%uv*shd%FRAC
-        vs%basin%wdir = vs%grid%wdir*shd%FRAC
-        vs%basin%uu = vs%grid%uu*shd%FRAC
-        vs%basin%vv = vs%grid%vv*shd%FRAC
-        vs%basin%pre = vs%grid%pre*shd%FRAC
-        vs%basin%prern = vs%grid%prern*shd%FRAC
-        vs%basin%presno = vs%grid%presno*shd%FRAC
-        vs%basin%rcan = vs%grid%rcan*shd%FRAC
-        vs%basin%sncan = vs%grid%sncan*shd%FRAC
-        vs%basin%cmas = vs%grid%cmas*shd%FRAC
-        vs%basin%tac = vs%grid%tac*shd%FRAC
-        vs%basin%tcan = vs%grid%tcan*shd%FRAC
-        vs%basin%qac = vs%grid%qac*shd%FRAC
-        vs%basin%gro = vs%grid%gro*shd%FRAC
-        vs%basin%sno = vs%grid%sno*shd%FRAC
-        vs%basin%fsno = vs%grid%fsno*shd%FRAC
-        vs%basin%rofsno = vs%grid%rofsno*shd%FRAC
-        vs%basin%albs = vs%grid%albs*shd%FRAC
-        vs%basin%rhos = vs%grid%rhos*shd%FRAC
-        vs%basin%wsno = vs%grid%wsno*shd%FRAC
-        vs%basin%tsno = vs%grid%tsno*shd%FRAC
-        vs%basin%albt = vs%grid%albt*shd%FRAC
-        vs%basin%alvs = vs%grid%alvs*shd%FRAC
-        vs%basin%alir = vs%grid%alir*shd%FRAC
-        vs%basin%gte = vs%grid%gte*shd%FRAC
-        vs%basin%zpnd = vs%grid%zpnd*shd%FRAC
-        vs%basin%pndw = vs%grid%pndw*shd%FRAC
-        vs%basin%tpnd = vs%grid%tpnd*shd%FRAC
-        vs%basin%fstr = vs%grid%fstr*shd%FRAC
-        vs%basin%pevp = vs%grid%pevp*shd%FRAC
-        vs%basin%evap = vs%grid%evap*shd%FRAC
-        vs%basin%evpb = vs%grid%evpb*shd%FRAC
-        vs%basin%arrd = vs%grid%arrd*shd%FRAC
-        vs%basin%rofo = vs%grid%rofo*shd%FRAC
-        vs%basin%qevp = vs%grid%qevp*shd%FRAC
-        vs%basin%hfs = vs%grid%hfs*shd%FRAC
-        vs%basin%gzero = vs%grid%gzero*shd%FRAC
+        if (associated(vs%basin%fsin) .and. associated(vs%grid%fsin)) vs%basin%fsin = vs%grid%fsin*shd%FRAC
+        if (associated(vs%basin%fsdr) .and. associated(vs%grid%fsdr)) vs%basin%fsdr = vs%grid%fsdr*shd%FRAC
+        if (associated(vs%basin%fsdff) .and. associated(vs%grid%fsdff)) vs%basin%fsdff = vs%grid%fsdff*shd%FRAC
+        if (associated(vs%basin%flin) .and. associated(vs%grid%flin)) vs%basin%flin = vs%grid%flin*shd%FRAC
+        if (associated(vs%basin%ta) .and. associated(vs%grid%ta)) vs%basin%ta = vs%grid%ta*shd%FRAC
+        if (associated(vs%basin%qa) .and. associated(vs%grid%qa)) vs%basin%qa = vs%grid%qa*shd%FRAC
+        if (associated(vs%basin%pres) .and. associated(vs%grid%pres)) vs%basin%pres = vs%grid%pres*shd%FRAC
+        if (associated(vs%basin%uv) .and. associated(vs%grid%uv)) vs%basin%uv = vs%grid%uv*shd%FRAC
+        if (associated(vs%basin%wdir) .and. associated(vs%grid%wdir)) vs%basin%wdir = vs%grid%wdir*shd%FRAC
+        if (associated(vs%basin%uu) .and. associated(vs%grid%uu)) vs%basin%uu = vs%grid%uu*shd%FRAC
+        if (associated(vs%basin%vv) .and. associated(vs%grid%vv)) vs%basin%vv = vs%grid%vv*shd%FRAC
+        if (associated(vs%basin%pre) .and. associated(vs%grid%pre)) vs%basin%pre = vs%grid%pre*shd%FRAC
+        if (associated(vs%basin%prern) .and. associated(vs%grid%prern)) vs%basin%prern = vs%grid%prern*shd%FRAC
+        if (associated(vs%basin%presno) .and. associated(vs%grid%presno)) vs%basin%presno = vs%grid%presno*shd%FRAC
+        if (associated(vs%basin%rcan) .and. associated(vs%grid%rcan)) vs%basin%rcan = vs%grid%rcan*shd%FRAC
+        if (associated(vs%basin%sncan) .and. associated(vs%grid%sncan)) vs%basin%sncan = vs%grid%sncan*shd%FRAC
+        if (associated(vs%basin%cmas) .and. associated(vs%grid%cmas)) vs%basin%cmas = vs%grid%cmas*shd%FRAC
+        if (associated(vs%basin%tac) .and. associated(vs%grid%tac)) vs%basin%tac = vs%grid%tac*shd%FRAC
+        if (associated(vs%basin%qac) .and. associated(vs%grid%qac)) vs%basin%qac = vs%grid%qac*shd%FRAC
+        if (associated(vs%basin%tcan) .and. associated(vs%grid%tcan)) then
+            vs%basin%tcan = vs%grid%tcan*shd%FRAC
+            where (vs%basin%tcan > 0.0)
+                tcanfrac = shd%FRAC
+            elsewhere
+                tcanfrac = 0.0
+            end where
+        end if
+        if (associated(vs%basin%gro) .and. associated(vs%grid%gro)) vs%basin%gro = vs%grid%gro*shd%FRAC
+        if (associated(vs%basin%sno) .and. associated(vs%grid%sno)) vs%basin%sno = vs%grid%sno*shd%FRAC
+        if (associated(vs%basin%rhos) .and. associated(vs%grid%rhos)) vs%basin%rhos = vs%grid%rhos*shd%FRAC
+        if (associated(vs%basin%zsno) .and. associated(vs%grid%zsno)) vs%basin%zsno = vs%grid%zsno*shd%FRAC
+        if (associated(vs%basin%fsno) .and. associated(vs%grid%fsno)) vs%basin%fsno = vs%grid%fsno*shd%FRAC
+        if (associated(vs%basin%albs) .and. associated(vs%grid%albs)) vs%basin%albs = vs%grid%albs*shd%FRAC
+        if (associated(vs%basin%wsno) .and. associated(vs%grid%wsno)) vs%basin%wsno = vs%grid%wsno*shd%FRAC
+        if (associated(vs%basin%tsno) .and. associated(vs%grid%tsno)) then
+            vs%basin%tsno = vs%grid%tsno*shd%FRAC
+            where (vs%basin%tsno > 0.0)
+                tsnofrac = shd%FRAC
+            elsewhere
+                tsnofrac = 0.0
+            end where
+        end if
+        if (associated(vs%basin%rofsno) .and. associated(vs%grid%rofsno)) vs%basin%rofsno = vs%grid%rofsno*shd%FRAC
+        if (associated(vs%basin%albt) .and. associated(vs%grid%albt)) then
+            vs%basin%albt = vs%grid%albt*shd%FRAC
+            where (vs%basin%albt > 0.0)
+                albtfrac = shd%FRAC
+            elsewhere
+                albtfrac = 0.0
+            end where
+        end if
+        if (associated(vs%basin%alvs) .and. associated(vs%grid%alvs)) vs%basin%alvs = vs%grid%alvs*shd%FRAC
+        if (associated(vs%basin%alir) .and. associated(vs%grid%alir)) vs%basin%alir = vs%grid%alir*shd%FRAC
+        if (associated(vs%basin%gte) .and. associated(vs%grid%gte)) vs%basin%gte = vs%grid%gte*shd%FRAC
+        if (associated(vs%basin%zpnd) .and. associated(vs%grid%zpnd)) vs%basin%zpnd = vs%grid%zpnd*shd%FRAC
+        if (associated(vs%basin%pndw) .and. associated(vs%grid%pndw)) vs%basin%pndw = vs%grid%pndw*shd%FRAC
+        if (associated(vs%basin%tpnd) .and. associated(vs%grid%tpnd)) then
+            vs%basin%tpnd = vs%grid%tpnd*shd%FRAC
+            where (vs%basin%tpnd > 0.0)
+                tpndfrac = shd%FRAC
+            elsewhere
+                tpndfrac = 0.0
+            end where
+        end if
+        if (associated(vs%basin%fstr) .and. associated(vs%grid%fstr)) vs%basin%fstr = vs%grid%fstr*shd%FRAC
+        if (associated(vs%basin%pevp) .and. associated(vs%grid%pevp)) vs%basin%pevp = vs%grid%pevp*shd%FRAC
+        if (associated(vs%basin%evap) .and. associated(vs%grid%evap)) vs%basin%evap = vs%grid%evap*shd%FRAC
+        if (associated(vs%basin%evpb) .and. associated(vs%grid%evpb)) vs%basin%evpb = vs%grid%evpb*shd%FRAC
+        if (associated(vs%basin%arrd) .and. associated(vs%grid%arrd)) vs%basin%arrd = vs%grid%arrd*shd%FRAC
+        if (associated(vs%basin%rofo) .and. associated(vs%grid%rofo)) vs%basin%rofo = vs%grid%rofo*shd%FRAC
+        if (associated(vs%basin%qevp) .and. associated(vs%grid%qevp)) vs%basin%qevp = vs%grid%qevp*shd%FRAC
+        if (associated(vs%basin%hfs) .and. associated(vs%grid%hfs)) vs%basin%hfs = vs%grid%hfs*shd%FRAC
+        if (associated(vs%basin%gzero) .and. associated(vs%grid%gzero)) vs%basin%gzero = vs%grid%gzero*shd%FRAC
         do j = 1, 4
-            vs%basin%tsfs(:, j) = vs%grid%tsfs(:, j)*shd%FRAC
+            if (associated(vs%basin%tsfs) .and. associated(vs%grid%tsfs)) vs%basin%tsfs(:, j) = vs%grid%tsfs(:, j)*shd%FRAC
         end do
-        vs%basin%ggeo = vs%grid%ggeo*shd%FRAC
-!-        vs%basin%rofs = vs%grid%rofs*shd%FRAC
-        vs%basin%tbas = vs%grid%tbas*shd%FRAC
+        if (associated(vs%basin%ggeo) .and. associated(vs%grid%ggeo)) vs%basin%ggeo = vs%grid%ggeo*shd%FRAC
+        if (associated(vs%basin%tbas) .and. associated(vs%grid%tbas)) vs%basin%tbas = vs%grid%tbas*shd%FRAC
         do j = 1, shd%lc%IGND
-            vs%basin%thic(:, j) = vs%grid%thic(:, j)*shd%FRAC
-            vs%basin%fzws(:, j) = vs%grid%fzws(:, j)*shd%FRAC
-            vs%basin%thlq(:, j) = vs%grid%thlq(:, j)*shd%FRAC
-            vs%basin%lqws(:, j) = vs%grid%lqws(:, j)*shd%FRAC
-            vs%basin%tbar(:, j) = vs%grid%tbar(:, j)*shd%FRAC
-            vs%basin%gflx(:, j) = vs%grid%gflx(:, j)*shd%FRAC
-            vs%basin%rofs(:, j) = vs%grid%rofs(:, j)*shd%FRAC
+            if (associated(vs%basin%thlq) .and. associated(vs%grid%thlq)) vs%basin%thlq(:, j) = vs%grid%thlq(:, j)*shd%FRAC
+            if (associated(vs%basin%thic) .and. associated(vs%grid%thic)) vs%basin%thic(:, j) = vs%grid%thic(:, j)*shd%FRAC
+            if (associated(vs%basin%lqws) .and. associated(vs%grid%lqws)) vs%basin%lqws(:, j) = vs%grid%lqws(:, j)*shd%FRAC
+            if (associated(vs%basin%fzws) .and. associated(vs%grid%fzws)) vs%basin%fzws(:, j) = vs%grid%fzws(:, j)*shd%FRAC
+            if (associated(vs%basin%tbar) .and. associated(vs%grid%tbar)) vs%basin%tbar(:, j) = vs%grid%tbar(:, j)*shd%FRAC
+            if (associated(vs%basin%gflx) .and. associated(vs%grid%gflx)) vs%basin%gflx(:, j) = vs%grid%gflx(:, j)*shd%FRAC
+            if (associated(vs%basin%rofs) .and. associated(vs%grid%rofs)) vs%basin%rofs(:, j) = vs%grid%rofs(:, j)*shd%FRAC
+            if (associated(vs%basin%delzw) .and. associated(vs%grid%delzw)) vs%basin%delzw(:, j) = vs%grid%delzw(:, j)*shd%FRAC
+            if (associated(vs%basin%zbotw) .and. associated(vs%grid%zbotw)) vs%basin%zbotw(:, j) = vs%grid%zbotw(:, j)*shd%FRAC
         end do
-        vs%basin%lzs = vs%grid%lzs*shd%FRAC
-        vs%basin%dzs = vs%grid%dzs*shd%FRAC
-        vs%basin%rofb = vs%grid%rofb*shd%FRAC
-        vs%basin%stgw = vs%grid%stgw*shd%FRAC
-        vs%basin%stge = vs%grid%stge*shd%FRAC
+        if (associated(vs%basin%rofb) .and. associated(vs%grid%rofb)) vs%basin%rofb = vs%grid%rofb*shd%FRAC
+        if (associated(vs%basin%rchg) .and. associated(vs%grid%rchg)) vs%basin%rchg = vs%grid%rchg*shd%FRAC
+        if (associated(vs%basin%lzs) .and. associated(vs%grid%lzs)) vs%basin%lzs = vs%grid%lzs*shd%FRAC
+        if (associated(vs%basin%dzs) .and. associated(vs%grid%dzs)) vs%basin%dzs = vs%grid%dzs*shd%FRAC
         frac = shd%FRAC
-        where (vs%basin%albt > 0.0)
-            albtfrac = shd%FRAC
-        elsewhere
-            albtfrac = 0.0
-        end where
-        where (vs%basin%tpnd > 0.0)
-            tpndfrac = shd%FRAC
-        elsewhere
-            tpndfrac = 0.0
-        end where
-        where (vs%basin%tsno > 0.0)
-            tsnofrac = shd%FRAC
-        elsewhere
-            tsnofrac = 0.0
-        end where
-        where (vs%basin%tcan > 0.0)
-            tcanfrac = shd%FRAC
-        elsewhere
-            tcanfrac = 0.0
-        end where
 
         !> Update variables.
         do i = 1, shd%NAA
             ii = shd%NEXT(i)
             if (ii > 0) then
-                vs%basin%fsin(ii) = vs%basin%fsin(ii) + vs%basin%fsin(i)
-                vs%basin%fsdr(ii) = vs%basin%fsdr(ii) + vs%basin%fsdr(i)
-                vs%basin%fsdff(ii) = vs%basin%fsdff(ii) + vs%basin%fsdff(i)
-                vs%basin%flin(ii) = vs%basin%flin(ii) + vs%basin%flin(i)
-                vs%basin%ta(ii) = vs%basin%ta(ii) + vs%basin%ta(i)
-                vs%basin%qa(ii) = vs%basin%qa(ii) + vs%basin%qa(i)
-                vs%basin%pres(ii) = vs%basin%pres(ii) + vs%basin%pres(i)
-                vs%basin%uv(ii) = vs%basin%uv(ii) + vs%basin%uv(i)
-                vs%basin%wdir(ii) = vs%basin%wdir(ii) + vs%basin%wdir(i)
-                vs%basin%uu(ii) = vs%basin%uu(ii) + vs%basin%uu(i)
-                vs%basin%vv(ii) = vs%basin%vv(ii) + vs%basin%vv(i)
-                vs%basin%pre(ii) = vs%basin%pre(ii) + vs%basin%pre(i)
-                vs%basin%prern(ii) = vs%basin%prern(ii) + vs%basin%prern(i)
-                vs%basin%presno(ii) = vs%basin%presno(ii) + vs%basin%presno(i)
-                vs%basin%rcan(ii) = vs%basin%rcan(ii) + vs%basin%rcan(i)
-                vs%basin%sncan(ii) = vs%basin%sncan(ii) + vs%basin%sncan(i)
-                vs%basin%cmas(ii) = vs%basin%cmas(ii) + vs%basin%cmas(i)
-                vs%basin%tac(ii) = vs%basin%tac(ii) + vs%basin%tac(i)
-                vs%basin%tcan(ii) = vs%basin%tcan(ii) + vs%basin%tcan(i)
-                vs%basin%qac(ii) = vs%basin%qac(ii) + vs%basin%qac(i)
-                vs%basin%gro(ii) = vs%basin%gro(ii) + vs%basin%gro(i)
-                vs%basin%sno(ii) = vs%basin%sno(ii) + vs%basin%sno(i)
-                vs%basin%fsno(ii) = vs%basin%fsno(ii) + vs%basin%fsno(i)
-                vs%basin%rofsno(ii) = vs%basin%rofsno(ii) + vs%basin%rofsno(i)
-                vs%basin%albs(ii) = vs%basin%albs(ii) + vs%basin%albs(i)
-                vs%basin%rhos(ii) = vs%basin%rhos(ii) + vs%basin%rhos(i)
-                vs%basin%wsno(ii) = vs%basin%wsno(ii) + vs%basin%wsno(i)
-                vs%basin%tsno(ii) = vs%basin%tsno(ii) + vs%basin%tsno(i)
-                vs%basin%albt(ii) = vs%basin%albt(ii) + vs%basin%albt(i)
-                vs%basin%alvs(ii) = vs%basin%alvs(ii) + vs%basin%alvs(i)
-                vs%basin%alir(ii) = vs%basin%alir(ii) + vs%basin%alir(i)
-                vs%basin%gte(ii) = vs%basin%gte(ii) + vs%basin%gte(i)
-                vs%basin%zpnd(ii) = vs%basin%zpnd(ii) + vs%basin%zpnd(i)
-                vs%basin%pndw(ii) = vs%basin%pndw(ii) + vs%basin%pndw(i)
-                vs%basin%tpnd(ii) = vs%basin%tpnd(ii) + vs%basin%tpnd(i)
-                vs%basin%fstr(ii) = vs%basin%fstr(ii) + vs%basin%fstr(i)
-                vs%basin%pevp(ii) = vs%basin%pevp(ii) + vs%basin%pevp(i)
-                vs%basin%evap(ii) = vs%basin%evap(ii) + vs%basin%evap(i)
-                vs%basin%evpb(ii) = vs%basin%evpb(ii) + vs%basin%evpb(i)
-                vs%basin%arrd(ii) = vs%basin%arrd(ii) + vs%basin%arrd(i)
-                vs%basin%rofo(ii) = vs%basin%rofo(ii) + vs%basin%rofo(i)
-                vs%basin%qevp(ii) = vs%basin%qevp(ii) + vs%basin%qevp(i)
-                vs%basin%hfs(ii) = vs%basin%hfs(ii) + vs%basin%hfs(i)
-                vs%basin%gzero(ii) = vs%basin%gzero(ii) + vs%basin%gzero(i)
-                vs%basin%tsfs(ii, :) = vs%basin%tsfs(ii, :) + vs%basin%tsfs(ii, :)
-                vs%basin%ggeo(ii) = vs%basin%ggeo(ii) + vs%basin%ggeo(i)
-                vs%basin%rofs(ii, :) = vs%basin%rofs(ii, :) + vs%basin%rofs(i, :)
-                vs%basin%tbas(ii) = vs%basin%tbas(ii) + vs%basin%tbas(i)
-                vs%basin%thic(ii, :) = vs%basin%thic(ii, :) + vs%basin%thic(i, :)
-                vs%basin%fzws(ii, :) = vs%basin%fzws(ii, :) + vs%basin%fzws(i, :)
-                vs%basin%thlq(ii, :) = vs%basin%thlq(ii, :) + vs%basin%thlq(i, :)
-                vs%basin%lqws(ii, :) = vs%basin%lqws(ii, :) + vs%basin%lqws(i, :)
-                vs%basin%tbar(ii, :) = vs%basin%tbar(ii, :) + vs%basin%tbar(i, :)
-                vs%basin%gflx(ii, :) = vs%basin%gflx(ii, :) + vs%basin%gflx(i, :)
-                vs%basin%lzs(ii) = vs%basin%lzs(ii) + vs%basin%lzs(i)
-                vs%basin%dzs(ii) = vs%basin%dzs(ii) + vs%basin%dzs(i)
-                vs%basin%rofb(ii) = vs%basin%rofb(ii) + vs%basin%rofb(i)
-                vs%basin%stgw(ii) = vs%basin%stgw(ii) + vs%basin%stgw(i)
-                vs%basin%stge(ii) = vs%basin%stge(ii) + vs%basin%stge(i)
+                if (associated(vs%basin%fsin)) vs%basin%fsin(ii) = vs%basin%fsin(ii) + vs%basin%fsin(i)
+                if (associated(vs%basin%fsdr)) vs%basin%fsdr(ii) = vs%basin%fsdr(ii) + vs%basin%fsdr(i)
+                if (associated(vs%basin%fsdff)) vs%basin%fsdff(ii) = vs%basin%fsdff(ii) + vs%basin%fsdff(i)
+                if (associated(vs%basin%flin)) vs%basin%flin(ii) = vs%basin%flin(ii) + vs%basin%flin(i)
+                if (associated(vs%basin%ta)) vs%basin%ta(ii) = vs%basin%ta(ii) + vs%basin%ta(i)
+                if (associated(vs%basin%qa)) vs%basin%qa(ii) = vs%basin%qa(ii) + vs%basin%qa(i)
+                if (associated(vs%basin%pres)) vs%basin%pres(ii) = vs%basin%pres(ii) + vs%basin%pres(i)
+                if (associated(vs%basin%uv)) vs%basin%uv(ii) = vs%basin%uv(ii) + vs%basin%uv(i)
+                if (associated(vs%basin%wdir)) vs%basin%wdir(ii) = vs%basin%wdir(ii) + vs%basin%wdir(i)
+                if (associated(vs%basin%uu)) vs%basin%uu(ii) = vs%basin%uu(ii) + vs%basin%uu(i)
+                if (associated(vs%basin%vv)) vs%basin%vv(ii) = vs%basin%vv(ii) + vs%basin%vv(i)
+                if (associated(vs%basin%pre)) vs%basin%pre(ii) = vs%basin%pre(ii) + vs%basin%pre(i)
+                if (associated(vs%basin%prern)) vs%basin%prern(ii) = vs%basin%prern(ii) + vs%basin%prern(i)
+                if (associated(vs%basin%presno)) vs%basin%presno(ii) = vs%basin%presno(ii) + vs%basin%presno(i)
+                if (associated(vs%basin%rcan)) vs%basin%rcan(ii) = vs%basin%rcan(ii) + vs%basin%rcan(i)
+                if (associated(vs%basin%sncan)) vs%basin%sncan(ii) = vs%basin%sncan(ii) + vs%basin%sncan(i)
+                if (associated(vs%basin%cmas)) vs%basin%cmas(ii) = vs%basin%cmas(ii) + vs%basin%cmas(i)
+                if (associated(vs%basin%tac)) vs%basin%tac(ii) = vs%basin%tac(ii) + vs%basin%tac(i)
+                if (associated(vs%basin%qac)) vs%basin%qac(ii) = vs%basin%qac(ii) + vs%basin%qac(i)
+                if (associated(vs%basin%tcan)) then
+                    vs%basin%tcan(ii) = vs%basin%tcan(ii) + vs%basin%tcan(i)
+                    if (vs%basin%tcan(i) > 0.0) then
+                        tcanfrac(ii) = tcanfrac(ii) + tcanfrac(i)
+                    end if
+                end if
+                if (associated(vs%basin%gro)) vs%basin%gro(ii) = vs%basin%gro(ii) + vs%basin%gro(i)
+                if (associated(vs%basin%sno)) vs%basin%sno(ii) = vs%basin%sno(ii) + vs%basin%sno(i)
+                if (associated(vs%basin%rhos)) vs%basin%rhos(ii) = vs%basin%rhos(ii) + vs%basin%rhos(i)
+                if (associated(vs%basin%zsno)) vs%basin%zsno(ii) = vs%basin%zsno(ii) + vs%basin%zsno(i)
+                if (associated(vs%basin%fsno)) vs%basin%fsno(ii) = vs%basin%fsno(ii) + vs%basin%fsno(i)
+                if (associated(vs%basin%albs)) vs%basin%albs(ii) = vs%basin%albs(ii) + vs%basin%albs(i)
+                if (associated(vs%basin%wsno)) vs%basin%wsno(ii) = vs%basin%wsno(ii) + vs%basin%wsno(i)
+                if (associated(vs%basin%tsno)) then
+                    vs%basin%tsno(ii) = vs%basin%tsno(ii) + vs%basin%tsno(i)
+                    if (vs%basin%tsno(i) > 0.0) then
+                        tsnofrac(ii) = tsnofrac(ii) + tsnofrac(i)
+                    end if
+                end if
+                if (associated(vs%basin%rofsno)) vs%basin%rofsno(ii) = vs%basin%rofsno(ii) + vs%basin%rofsno(i)
+                if (associated(vs%basin%albt)) then
+                    vs%basin%albt(ii) = vs%basin%albt(ii) + vs%basin%albt(i)
+                    if (vs%basin%albt(i) > 0.0) then
+                        albtfrac(ii) = albtfrac(ii) + albtfrac(i)
+                    end if
+                end if
+                if (associated(vs%basin%alvs)) vs%basin%alvs(ii) = vs%basin%alvs(ii) + vs%basin%alvs(i)
+                if (associated(vs%basin%alir)) vs%basin%alir(ii) = vs%basin%alir(ii) + vs%basin%alir(i)
+                if (associated(vs%basin%gte)) vs%basin%gte(ii) = vs%basin%gte(ii) + vs%basin%gte(i)
+                if (associated(vs%basin%zpnd)) vs%basin%zpnd(ii) = vs%basin%zpnd(ii) + vs%basin%zpnd(i)
+                if (associated(vs%basin%pndw)) vs%basin%pndw(ii) = vs%basin%pndw(ii) + vs%basin%pndw(i)
+                if (associated(vs%basin%tpnd)) then
+                    vs%basin%tpnd(ii) = vs%basin%tpnd(ii) + vs%basin%tpnd(i)
+                    if (vs%basin%tpnd(i) > 0.0) then
+                        tpndfrac(ii) = tpndfrac(ii) + tpndfrac(i)
+                    end if
+                end if
+                if (associated(vs%basin%fstr)) vs%basin%fstr(ii) = vs%basin%fstr(ii) + vs%basin%fstr(i)
+                if (associated(vs%basin%pevp)) vs%basin%pevp(ii) = vs%basin%pevp(ii) + vs%basin%pevp(i)
+                if (associated(vs%basin%evap)) vs%basin%evap(ii) = vs%basin%evap(ii) + vs%basin%evap(i)
+                if (associated(vs%basin%evpb)) vs%basin%evpb(ii) = vs%basin%evpb(ii) + vs%basin%evpb(i)
+                if (associated(vs%basin%arrd)) vs%basin%arrd(ii) = vs%basin%arrd(ii) + vs%basin%arrd(i)
+                if (associated(vs%basin%rofo)) vs%basin%rofo(ii) = vs%basin%rofo(ii) + vs%basin%rofo(i)
+                if (associated(vs%basin%qevp)) vs%basin%qevp(ii) = vs%basin%qevp(ii) + vs%basin%qevp(i)
+                if (associated(vs%basin%hfs)) vs%basin%hfs(ii) = vs%basin%hfs(ii) + vs%basin%hfs(i)
+                if (associated(vs%basin%gzero)) vs%basin%gzero(ii) = vs%basin%gzero(ii) + vs%basin%gzero(i)
+                if (associated(vs%basin%tsfs)) vs%basin%tsfs(ii, :) = vs%basin%tsfs(ii, :) + vs%basin%tsfs(i, :)
+                if (associated(vs%basin%ggeo)) vs%basin%ggeo(ii) = vs%basin%ggeo(ii) + vs%basin%ggeo(i)
+                if (associated(vs%basin%tbas)) vs%basin%tbas(ii) = vs%basin%tbas(ii) + vs%basin%tbas(i)
+                if (associated(vs%basin%thlq)) vs%basin%thlq(ii, :) = vs%basin%thlq(ii, :) + vs%basin%thlq(i, :)
+                if (associated(vs%basin%thic)) vs%basin%thic(ii, :) = vs%basin%thic(ii, :) + vs%basin%thic(i, :)
+                if (associated(vs%basin%lqws)) vs%basin%lqws(ii, :) = vs%basin%lqws(ii, :) + vs%basin%lqws(i, :)
+                if (associated(vs%basin%fzws)) vs%basin%fzws(ii, :) = vs%basin%fzws(ii, :) + vs%basin%fzws(i, :)
+                if (associated(vs%basin%tbar)) vs%basin%tbar(ii, :) = vs%basin%tbar(ii, :) + vs%basin%tbar(i, :)
+                if (associated(vs%basin%gflx)) vs%basin%gflx(ii, :) = vs%basin%gflx(ii, :) + vs%basin%gflx(i, :)
+                if (associated(vs%basin%rofs)) vs%basin%rofs(ii, :) = vs%basin%rofs(ii, :) + vs%basin%rofs(i, :)
+                if (associated(vs%basin%delzw)) vs%basin%delzw(ii, :) = vs%basin%delzw(ii, :) + vs%basin%delzw(i, :)
+                if (associated(vs%basin%zbotw)) vs%basin%zbotw(ii, :) = vs%basin%zbotw(ii, :) + vs%basin%zbotw(i, :)
+                if (associated(vs%basin%rofb)) vs%basin%rofb(ii) = vs%basin%rofb(ii) + vs%basin%rofb(i)
+                if (associated(vs%basin%rchg)) vs%basin%rchg(ii) = vs%basin%rchg(ii) + vs%basin%rchg(i)
+                if (associated(vs%basin%lzs)) vs%basin%lzs(ii) = vs%basin%lzs(ii) + vs%basin%lzs(i)
+                if (associated(vs%basin%dzs)) vs%basin%dzs(ii) = vs%basin%dzs(ii) + vs%basin%dzs(i)
+                if (associated(vs%basin%stge)) vs%basin%stge(ii) = vs%basin%stge(ii) + vs%basin%stge(i)
+                if (associated(vs%basin%stgw)) vs%basin%stgw(ii) = vs%basin%stgw(ii) + vs%basin%stgw(i)
+                if (associated(vs%basin%rff)) vs%basin%rff(ii) = vs%basin%rff(ii) + vs%basin%rff(i)
+                if (associated(vs%basin%qi)) vs%basin%qi(ii) = vs%basin%qi(ii) + vs%basin%qi(i)
+                if (associated(vs%basin%qo)) vs%basin%qo(ii) = vs%basin%qo(ii) + vs%basin%qo(i)
+                if (associated(vs%basin%stgch)) vs%basin%stgch(ii) = vs%basin%stgch(ii) + vs%basin%stgch(i)
+                if (associated(vs%basin%zlvl)) vs%basin%zlvl(ii) = vs%basin%zlvl(ii) + vs%basin%zlvl(i)
+                if (associated(vs%basin%div)) vs%basin%div(ii) = vs%basin%div(ii) + vs%basin%div(i)
+                if (associated(vs%basin%ab)) vs%basin%ab(ii) = vs%basin%ab(ii) + vs%basin%ab(i)
                 frac(ii) = frac(ii) + frac(i)
-                if (vs%basin%albt(i) > 0.0) albtfrac(ii) = albtfrac(ii) + albtfrac(i)
-                if (vs%basin%tpnd(i) > 0.0) tpndfrac(ii) = tpndfrac(ii) + tpndfrac(i)
-                if (vs%basin%tsno(i) > 0.0) tsnofrac(ii) = tsnofrac(ii) + tsnofrac(i)
-                if (vs%basin%tcan(i) > 0.0) tcanfrac(ii) = tcanfrac(ii) + tcanfrac(i)
             end if
         end do
 
+        !> Check for division by zero.
+        where (frac == 0.0) frac = 1.0
+
         !> DA average.
-        where (frac > 0.0)
-            vs%basin%fsin = vs%basin%fsin/frac
-            vs%basin%fsdr = vs%basin%fsdr/frac
-            vs%basin%fsdff = vs%basin%fsdff/frac
-            vs%basin%flin = vs%basin%flin/frac
-            vs%basin%ta = vs%basin%ta/frac
-            vs%basin%qa = vs%basin%qa/frac
-            vs%basin%pres = vs%basin%pres/frac
-            vs%basin%uv = vs%basin%uv/frac
-            vs%basin%wdir = vs%basin%wdir/frac
-            vs%basin%uu = vs%basin%uu/frac
-            vs%basin%vv = vs%basin%vv/frac
-            vs%basin%pre = vs%basin%pre/frac
-            vs%basin%prern = vs%basin%prern/frac
-            vs%basin%presno = vs%basin%presno/frac
-            vs%basin%rcan = vs%basin%rcan/frac
-            vs%basin%sncan = vs%basin%sncan/frac
-            where (tcanfrac > 0.0)
-                vs%basin%cmas = vs%basin%cmas/tcanfrac
-                vs%basin%tac = vs%basin%tac/tcanfrac
-                vs%basin%tcan = vs%basin%tcan/tcanfrac
-                vs%basin%qac = vs%basin%qac/tcanfrac
-                vs%basin%gro = vs%basin%gro/tcanfrac
-            end where
-            vs%basin%sno = vs%basin%sno/frac
-            vs%basin%fsno = vs%basin%fsno/frac
-            vs%basin%rofsno = vs%basin%rofsno/frac
-            vs%basin%wsno = vs%basin%wsno/frac
-            where (tsnofrac > 0.0)
-                vs%basin%albs = vs%basin%albs/tsnofrac
-                vs%basin%rhos = vs%basin%rhos/tsnofrac
-                vs%basin%tsno = vs%basin%tsno/tsnofrac
-            end where
-            where (albtfrac > 0.0)
-                vs%basin%albt = vs%basin%albt/albtfrac
-                vs%basin%alvs = vs%basin%alvs/albtfrac
-                vs%basin%alir = vs%basin%alir/albtfrac
-            end where
-            vs%basin%gte = vs%basin%gte/frac
-            vs%basin%zpnd = vs%basin%zpnd/frac
-            vs%basin%pndw = vs%basin%pndw/frac
-            where (tpndfrac > 0.0)
-                vs%basin%tpnd = vs%basin%tpnd/tpndfrac
-                vs%basin%fstr = vs%basin%fstr/tpndfrac
-            end where
-            vs%basin%pevp = vs%basin%pevp/frac
-            vs%basin%evap = vs%basin%evap/frac
-            vs%basin%evpb = vs%basin%evpb/frac
-            vs%basin%arrd = vs%basin%arrd/frac
-            vs%basin%rofo = vs%basin%rofo/frac
-            vs%basin%qevp = vs%basin%qevp/frac
-            vs%basin%hfs = vs%basin%hfs/frac
-            vs%basin%gzero = vs%basin%gzero/frac
-            vs%basin%ggeo = vs%basin%ggeo/frac
-!-            vs%basin%rofs = vs%basin%rofs/frac
-            vs%basin%tbas = vs%basin%tbas/frac
-            vs%basin%lzs = vs%basin%lzs/frac
-            vs%basin%dzs = vs%basin%dzs/frac
-            vs%basin%rofb = vs%basin%rofb/frac
-            vs%basin%stgw = vs%basin%stgw/frac
-            vs%basin%stge = vs%basin%stge/frac
-        end where
+        if (associated(vs%basin%fsin)) vs%basin%fsin = vs%basin%fsin/frac
+        if (associated(vs%basin%fsdr)) vs%basin%fsdr = vs%basin%fsdr/frac
+        if (associated(vs%basin%fsdff)) vs%basin%fsdff = vs%basin%fsdff/frac
+        if (associated(vs%basin%flin)) vs%basin%flin = vs%basin%flin/frac
+        if (associated(vs%basin%ta)) vs%basin%ta = vs%basin%ta/frac
+        if (associated(vs%basin%qa)) vs%basin%qa = vs%basin%qa/frac
+        if (associated(vs%basin%pres)) vs%basin%pres = vs%basin%pres/frac
+        if (associated(vs%basin%uv)) vs%basin%uv = vs%basin%uv/frac
+        if (associated(vs%basin%wdir)) vs%basin%wdir = vs%basin%wdir/frac
+        if (associated(vs%basin%uu)) vs%basin%uu = vs%basin%uu/frac
+        if (associated(vs%basin%vv)) vs%basin%vv = vs%basin%vv/frac
+        if (associated(vs%basin%pre)) vs%basin%pre = vs%basin%pre/frac
+        if (associated(vs%basin%prern)) vs%basin%prern = vs%basin%prern/frac
+        if (associated(vs%basin%presno)) vs%basin%presno = vs%basin%presno/frac
+        if (associated(vs%basin%rcan)) vs%basin%rcan = vs%basin%rcan/frac
+        if (associated(vs%basin%sncan)) vs%basin%sncan = vs%basin%sncan/frac
+        if (associated(vs%basin%cmas)) then
+            where (tcanfrac > 0.0) vs%basin%cmas = vs%basin%cmas/tcanfrac
+        end if
+        if (associated(vs%basin%tac)) then
+            where (tcanfrac > 0.0) vs%basin%tac = vs%basin%tac/tcanfrac
+        end if
+        if (associated(vs%basin%qac)) then
+            where (tcanfrac > 0.0) vs%basin%qac = vs%basin%qac/tcanfrac
+        end if
+        if (associated(vs%basin%tcan)) then
+            where (tcanfrac > 0.0) vs%basin%tcan = vs%basin%tcan/tcanfrac
+        end if
+        if (associated(vs%basin%gro)) then
+            where (tcanfrac > 0.0) vs%basin%gro = vs%basin%gro/tcanfrac
+        end if
+        if (associated(vs%basin%sno)) vs%basin%sno = vs%basin%sno/frac
+        if (associated(vs%basin%rhos)) then
+            where (tsnofrac > 0.0) vs%basin%rhos = vs%basin%rhos/tsnofrac
+        end if
+        if (associated(vs%basin%zsno)) vs%basin%zsno = vs%basin%zsno/frac
+        if (associated(vs%basin%fsno)) vs%basin%fsno = vs%basin%fsno/frac
+        if (associated(vs%basin%albs)) then
+            where (tsnofrac > 0.0) vs%basin%albs = vs%basin%albs/tsnofrac
+        end if
+        if (associated(vs%basin%wsno)) vs%basin%wsno = vs%basin%wsno/frac
+        if (associated(vs%basin%tsno)) then
+            where (tsnofrac > 0.0) vs%basin%tsno = vs%basin%tsno/tsnofrac
+        end if
+        if (associated(vs%basin%rofsno)) vs%basin%rofsno = vs%basin%rofsno/frac
+        if (associated(vs%basin%albt)) then
+            where (albtfrac > 0.0) vs%basin%albt = vs%basin%albt/albtfrac
+        end if
+        if (associated(vs%basin%alvs)) then
+            where (albtfrac > 0.0) vs%basin%alvs = vs%basin%alvs/albtfrac
+        end if
+        if (associated(vs%basin%alir)) then
+            where (albtfrac > 0.0) vs%basin%alir = vs%basin%alir/albtfrac
+        end if
+        if (associated(vs%basin%gte)) vs%basin%gte = vs%basin%gte/frac
+        if (associated(vs%basin%zpnd)) vs%basin%zpnd = vs%basin%zpnd/frac
+        if (associated(vs%basin%pndw)) vs%basin%pndw = vs%basin%pndw/frac
+        if (associated(vs%basin%tpnd)) then
+            where (tpndfrac > 0.0) vs%basin%tpnd = vs%basin%tpnd/tpndfrac
+        end if
+        if (associated(vs%basin%fstr)) then
+            where (tpndfrac > 0.0) vs%basin%fstr = vs%basin%fstr/tpndfrac
+        end if
+        if (associated(vs%basin%pevp)) vs%basin%pevp = vs%basin%pevp/frac
+        if (associated(vs%basin%evap)) vs%basin%evap = vs%basin%evap/frac
+        if (associated(vs%basin%evpb)) vs%basin%evpb = vs%basin%evpb/frac
+        if (associated(vs%basin%arrd)) vs%basin%arrd = vs%basin%arrd/frac
+        if (associated(vs%basin%rofo)) vs%basin%rofo = vs%basin%rofo/frac
+        if (associated(vs%basin%qevp)) vs%basin%qevp = vs%basin%qevp/frac
+        if (associated(vs%basin%hfs)) vs%basin%hfs = vs%basin%hfs/frac
+        if (associated(vs%basin%gzero)) vs%basin%gzero = vs%basin%gzero/frac
         do j = 1, 4
-            where (frac > 0.0)
-                vs%basin%tsfs(:, j) = vs%basin%tsfs(:, j)/frac
-            end where
+            if (associated(vs%basin%tsfs)) vs%basin%tsfs(:, j) = vs%basin%tsfs(:, j)/frac
         end do
+        if (associated(vs%basin%ggeo)) vs%basin%ggeo = vs%basin%ggeo/frac
+        if (associated(vs%basin%tbas)) vs%basin%tbas = vs%basin%tbas/frac
         do j = 1, shd%lc%IGND
-            where (frac > 0.0)
-                vs%basin%thic(:, j) = vs%basin%thic(:, j)/frac
-                vs%basin%fzws(:, j) = vs%basin%fzws(:, j)/frac
-                vs%basin%thlq(:, j) = vs%basin%thlq(:, j)/frac
-                vs%basin%lqws(:, j) = vs%basin%lqws(:, j)/frac
-                vs%basin%tbar(:, j) = vs%basin%tbar(:, j)/frac
-                vs%basin%gflx(:, j) = vs%basin%gflx(:, j)/frac
-                vs%basin%rofs(:, j) = vs%basin%rofs(:, j)/frac
-            end where
+            if (associated(vs%basin%thlq)) vs%basin%thlq(:, j) = vs%basin%thlq(:, j)/frac
+            if (associated(vs%basin%thic)) vs%basin%thic(:, j) = vs%basin%thic(:, j)/frac
+            if (associated(vs%basin%lqws)) vs%basin%lqws(:, j) = vs%basin%lqws(:, j)/frac
+            if (associated(vs%basin%fzws)) vs%basin%fzws(:, j) = vs%basin%fzws(:, j)/frac
+            if (associated(vs%basin%tbar)) vs%basin%tbar(:, j) = vs%basin%tbar(:, j)/frac
+            if (associated(vs%basin%gflx)) vs%basin%gflx(:, j) = vs%basin%gflx(:, j)/frac
+            if (associated(vs%basin%rofs)) vs%basin%rofs(:, j) = vs%basin%rofs(:, j)/frac
+            if (associated(vs%basin%delzw)) vs%basin%delzw(:, j) = vs%basin%delzw(:, j)/frac
+            if (associated(vs%basin%zbotw)) vs%basin%zbotw(:, j) = vs%basin%zbotw(:, j)/frac
         end do
+        if (associated(vs%basin%rofb)) vs%basin%rofb = vs%basin%rofb/frac
+        if (associated(vs%basin%rchg)) vs%basin%rchg = vs%basin%rchg/frac
+        if (associated(vs%basin%lzs)) vs%basin%lzs = vs%basin%lzs/frac
+        if (associated(vs%basin%dzs)) vs%basin%dzs = vs%basin%dzs/frac
 
     end subroutine
 
