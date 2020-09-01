@@ -170,7 +170,10 @@ module output_variables
         real, dimension(:), optional, pointer :: pntr
 
         !> Allocate and initialize variable
-        if (.not. associated(field)) allocate(field(n1))
+        if (.not. associated(field)) then
+            allocate(field(n1))
+            field = out%NO_DATA
+        end if
 
         !> Associate the pointer.
         if (present(pntr)) pntr => field
@@ -191,7 +194,10 @@ module output_variables
         real, dimension(:), optional, pointer :: pntr
 
         !> Allocate and initialize variable
-        if (.not. associated(field)) allocate(field(n1, n2))
+        if (.not. associated(field)) then
+            allocate(field(n1, n2))
+            field = out%NO_DATA
+        end if
 
         !> Associate the pointer.
         if (present(pntr) .and. present(ig)) pntr => field(:, ig)
@@ -537,14 +543,19 @@ module output_variables
                     call output_variables_allocate(fields%dzs, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%dzs, n1)
                 end if
-            case (VN_STGE, VN_DSTGE)
+            case (VN_STGE)
                 call output_variables_allocate(fields%stge, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%stge, n1)
                 call output_variables_allocate(fields%stg0e, n1)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%stg0e, n1)
                 call output_variables_allocate(fields%dstge, n1)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%dstge, n1)
-            case (VN_STGW, VN_DSTGW)
+            case (VN_DSTGE)
+                call output_variables_activate_pntr(fields, VN_STGE)
+                if (associated(fields%stge) .and. associated(fields%stg0e) .and. associated(fields%dstge)) then
+                    call output_variables_allocate(fields%dstge, n1, pntr)
+                end if
+            case (VN_STGW)
                 t = .true.
                 call output_variables_activate_pntr(fields, VN_RCAN); t = (t .and. associated(fields%rcan))
                 call output_variables_activate_pntr(fields, VN_SNCAN); t = (t .and. associated(fields%sncan))
@@ -562,6 +573,11 @@ module output_variables
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%stg0w, n1)
                     call output_variables_allocate(fields%dstgw, n1)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%dstgw, n1)
+                end if
+            case (VN_DSTGW)
+                call output_variables_activate_pntr(fields, VN_STGW)
+                if (associated(fields%stgw) .and. associated(fields%stg0w) .and. associated(fields%dstgw)) then
+                    call output_variables_allocate(fields%dstgw, n1, pntr)
                 end if
             case (VN_RFF)
                 if (associated(fields%vs%rff)) then
