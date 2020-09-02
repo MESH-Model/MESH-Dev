@@ -77,6 +77,14 @@ module permafrost_outputs_module
         !> Local variables.
         na = shd%NA; nml = shd%lc%NML; nsl = shd%lc%IGND
 
+        !> Check if model dependencies are active.
+        if (.not. associated(vs%tile%tbar) .or. .not. associated(vs%grid%tbar)) then
+            call print_error( &
+                "The active configuration for permafrost outputs is not valid. A necessary dependency for the output " // &
+                "of variable '" // trim(vname) // "' is not active.")
+            call program_abort()
+        end if
+
         !> TAVG and temperature statistics (for all outputs).
         if (.not. allocated(prmfst%out%tavg)) then
             allocate(prmfst%out%tavg(nsl), prmfst%out%tmax(nsl), prmfst%out%tmin(nsl), prmfst%out%trng(nsl))

@@ -221,13 +221,14 @@ module output_variables
 
         !> Local variables.
         logical t
-        integer n1, n2
+        integer n1, n2, z
 
         !> Indices.
         n1 = fields%n1
         n2 = fields%n2
 
         !> Copy the variable.
+        z = 0
         select case (vname)
 
             !> Meteorological forcing.
@@ -237,16 +238,22 @@ module output_variables
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsin, n1)
                     call output_variables_allocate(fields%ifsin, n1)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%ifsin, n1)
+                else
+                    z = 1
                 end if
             case (VN_FSDIR)
                 if (associated(fields%vs%fsdr)) then
                     call output_variables_allocate(fields%fsdr, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsdr, n1)
+                else
+                    z = 1
                 end if
             case (VN_FSDFF)
                 if (associated(fields%vs%fsdff)) then
                     call output_variables_allocate(fields%fsdff, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsdff, n1)
+                else
+                    z = 1
                 end if
             case (VN_FSOUT)
                 if (associated(fields%vs%fsin) .and. associated(fields%vs%albt)) then
@@ -254,97 +261,135 @@ module output_variables
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsout, n1)
                     call output_variables_allocate(fields%ifsin, n1)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%ifsin, n1)
+                else
+                    z = 1
                 end if
             case (VN_FLIN)
                 if (associated(fields%vs%flin)) then
                     call output_variables_allocate(fields%flin, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%flin, n1)
+                else
+                    z = 1
                 end if
             case (VN_FLOUT)
                 if (associated(fields%vs%gte)) then
                     call output_variables_allocate(fields%flout, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%flout, n1)
+                else
+                    z = 1
                 end if
             case (VN_TA)
                 if (associated(fields%vs%ta)) then
                     call output_variables_allocate(fields%ta, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%ta, n1)
+                else
+                    z = 1
                 end if
             case (VN_QA)
                 if (associated(fields%vs%qa)) then
                     call output_variables_allocate(fields%qa, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%qa, n1)
+                else
+                    z = 1
                 end if
             case (VN_PRES)
                 if (associated(fields%vs%pres)) then
                     call output_variables_allocate(fields%pres, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%pres, n1)
+                else
+                    z = 1
                 end if
             case (VN_UV)
                 if (associated(fields%vs%uv)) then
                     call output_variables_allocate(fields%uv, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%uv, n1)
+                else
+                    z = 1
                 end if
             case (VN_WDIR)
                 if (associated(fields%vs%wdir)) then
                     call output_variables_allocate(fields%wdir, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%wdir, n1)
+                else
+                    z = 1
                 end if
             case (VN_UU)
                 if (associated(fields%vs%uu)) then
                     call output_variables_allocate(fields%uu, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%uu, n1)
+                else
+                    z = 1
                 end if
             case (VN_VV)
                 if (associated(fields%vs%vv)) then
                     call output_variables_allocate(fields%vv, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%vv, n1)
+                else
+                    z = 1
                 end if
             case (VN_PRE)
                 if (associated(fields%vs%pre)) then
                     call output_variables_allocate(fields%pre, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%pre, n1)
+                else
+                    z = 1
                 end if
             case (VN_PRERN)
                 if (associated(fields%vs%prern)) then
                     call output_variables_allocate(fields%prern, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%prern, n1)
+                else
+                    z = 1
                 end if
             case (VN_PRESNO)
                 if (associated(fields%vs%presno)) then
                     call output_variables_allocate(fields%presno, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%presno, n1)
+                else
+                    z = 1
                 end if
             case (VN_PREC)
                 if (associated(fields%vs%pre)) then
                     call output_variables_allocate(fields%prec, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%prec, n1)
+                else
+                    z = 1
                 end if
             case (VN_PRECRN)
                 if (associated(fields%vs%prern)) then
                     call output_variables_allocate(fields%precrn, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%precrn, n1)
+                else
+                    z = 1
                 end if
             case (VN_PRECSNO)
                 if (associated(fields%vs%presno)) then
                     call output_variables_allocate(fields%precsno, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%precsno, n1)
+                else
+                    z = 1
                 end if
             case (VN_RCAN)
                 if (associated(fields%vs%rcan)) then
                     call output_variables_allocate(fields%rcan, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%rcan, n1)
+                else
+                    z = 1
                 end if
             case (VN_SNCAN)
                 if (associated(fields%vs%sncan)) then
                     call output_variables_allocate(fields%sncan, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%sncan, n1)
+                else
+                    z = 1
                 end if
             case (VN_CMAS)
                 call output_variables_activate_pntr(fields, VN_TCAN)
                 if (associated(fields%tcan) .and. associated(fields%vs%cmas)) then
                     call output_variables_allocate(fields%cmas, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%cmas, n1)
+                else
+                    z = 1
                 end if
             case (VN_TCAN)
                 if (associated(fields%vs%tcan)) then
@@ -352,36 +397,50 @@ module output_variables
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%tcan, n1)
                     call output_variables_allocate(fields%ican, n1)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
+                else
+                    z = 1
                 end if
             case (VN_GRO)
                 if (associated(fields%vs%gro)) then
                     call output_variables_allocate(fields%gro, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%gro, n1)
+                else
+                    z = 1
                 end if
             case (VN_SNO)
                 if (associated(fields%vs%sno)) then
                     call output_variables_allocate(fields%sno, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%sno, n1)
+                else
+                    z = 1
                 end if
             case (VN_RHOSNO)
                 if (associated(fields%vs%rhos)) then
                     call output_variables_allocate(fields%rhosno, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%rhosno, n1)
+                else
+                    z = 1
                 end if
             case (VN_ZSNO)
                 if (associated(fields%vs%zsno)) then
                     call output_variables_allocate(fields%zsno, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%zsno, n1)
+                else
+                    z = 1
                 end if
             case (VN_FSNO)
                 if (associated(fields%vs%fsno)) then
                     call output_variables_allocate(fields%fsno, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsno, n1)
+                else
+                    z = 1
                 end if
             case (VN_WSNO)
                 if (associated(fields%vs%wsno)) then
                     call output_variables_allocate(fields%wsno, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%wsno, n1)
+                else
+                    z = 1
                 end if
             case (VN_TSNO)
                 if (associated(fields%vs%tsno)) then
@@ -389,44 +448,60 @@ module output_variables
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%tsno, n1)
                     call output_variables_allocate(fields%isno, n1)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%isno, n1)
+                else
+                    z = 1
                 end if
             case (VN_ROFSNO)
                 if (associated(fields%vs%rofsno)) then
                     call output_variables_allocate(fields%rofsno, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%rofsno, n1)
+                else
+                    z = 1
                 end if
             case (VN_ALBT)
                 call output_variables_activate_pntr(fields, VN_FSIN)
                 if (associated(fields%fsin) .and. associated(fields%vs%albt)) then
                     call output_variables_allocate(fields%albt, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%albt, n1)
+                else
+                    z = 1
                 end if
             case (VN_ALVS)
                 call output_variables_activate_pntr(fields, VN_FSIN)
                 if (associated(fields%fsin) .and. associated(fields%vs%alvs)) then
                     call output_variables_allocate(fields%alvs, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%alvs, n1)
+                else
+                    z = 1
                 end if
             case (VN_ALIR)
                 call output_variables_activate_pntr(fields, VN_FSIN)
                 if (associated(fields%fsin) .and. associated(fields%vs%alir)) then
                     call output_variables_allocate(fields%alir, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%alir, n1)
+                else
+                    z = 1
                 end if
             case (VN_GTE)
                 if (associated(fields%vs%gte)) then
                     call output_variables_allocate(fields%gte, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%gte, n1)
+                else
+                    z = 1
                 end if
             case (VN_ZPND)
                 if (associated(fields%vs%zpnd)) then
                     call output_variables_allocate(fields%zpnd, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%zpnd, n1)
+                else
+                    z = 1
                 end if
             case (VN_PNDW)
                 if (associated(fields%vs%pndw)) then
                     call output_variables_allocate(fields%pndw, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%pndw, n1)
+                else
+                    z = 1
                 end if
             case (VN_TPND)
                 if (associated(fields%vs%tpnd)) then
@@ -434,56 +509,78 @@ module output_variables
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%tpnd, n1)
                     call output_variables_allocate(fields%ipnd, n1)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%ipnd, n1)
+                else
+                    z = 1
                 end if
             case (VN_PEVP)
                 if (associated(fields%vs%pevp)) then
                     call output_variables_allocate(fields%pevp, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%pevp, n1)
+                else
+                    z = 1
                 end if
             case (VN_EVAP)
                 if (associated(fields%vs%evap)) then
                     call output_variables_allocate(fields%evap, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%evap, n1)
+                else
+                    z = 1
                 end if
             case (VN_EVPB)
                 if (associated(fields%vs%evpb)) then
                     call output_variables_allocate(fields%evpb, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%evpb, n1)
+                else
+                    z = 1
                 end if
             case (VN_ARRD)
                 if (associated(fields%vs%arrd)) then
                     call output_variables_allocate(fields%arrd, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%arrd, n1)
+                else
+                    z = 1
                 end if
             case (VN_ROFO)
                 if (associated(fields%vs%rofo)) then
                     call output_variables_allocate(fields%rofo, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%rofo, n1)
+                else
+                    z = 1
                 end if
             case (VN_QE)
                 if (associated(fields%vs%qevp)) then
                     call output_variables_allocate(fields%qe, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%qe, n1)
+                else
+                    z = 1
                 end if
             case (VN_QH)
                 if (associated(fields%vs%hfs)) then
                     call output_variables_allocate(fields%qh, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%qh, n1)
+                else
+                    z = 1
                 end if
             case (VN_GZERO)
                 if (associated(fields%vs%gzero)) then
                     call output_variables_allocate(fields%gzero, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%gzero, n1)
+                else
+                    z = 1
                 end if
             case (VN_THLQ)
                 if (associated(fields%vs%thlq)) then
                     call output_variables_allocate(fields%thlq, n1, n2, pntr, ig)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%thlq, n1, n2)
+                else
+                    z = 1
                 end if
             case (VN_THIC)
                 if (associated(fields%vs%thic)) then
                     call output_variables_allocate(fields%thic, n1, n2, pntr, ig)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%thic, n1, n2)
+                else
+                    z = 1
                 end if
             case (VN_LQWS)
                 if (associated(fields%vs%lqws)) then
@@ -492,6 +589,8 @@ module output_variables
                         call output_variables_allocate(fields%lqws, n1, n2, pntr, ig)
                         if (associated(fields%ts)) call output_variables_allocate(fields%ts%lqws, n1, n2)
                     end if
+                else
+                    z = 1
                 end if
             case (VN_FZWS)
                 if (associated(fields%vs%fzws)) then
@@ -500,6 +599,8 @@ module output_variables
                         call output_variables_allocate(fields%fzws, n1, n2, pntr, ig)
                         if (associated(fields%ts)) call output_variables_allocate(fields%ts%fzws, n1, n2)
                     end if
+                else
+                    z = 1
                 end if
             case (VN_ALWS)
                 call output_variables_activate_pntr(fields, VN_LQWS)
@@ -507,41 +608,57 @@ module output_variables
                 if (associated(fields%lqws) .or. associated(fields%fzws)) then
                     call output_variables_allocate(fields%alws, n1, n2, pntr, ig)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%alws, n1, n2)
+                else
+                    z = 1
                 end if
             case (VN_TBAR)
                 if (associated(fields%vs%tbar)) then
                     call output_variables_allocate(fields%tbar, n1, n2, pntr, ig)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%tbar, n1, n2)
+                else
+                    z = 1
                 end if
             case (VN_GFLX)
                 if (associated(fields%vs%gflx)) then
                     call output_variables_allocate(fields%gflx, n1, n2, pntr, ig)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%gflx, n1, n2)
+                else
+                    z = 1
                 end if
             case (VN_ROFS)
                 if (associated(fields%vs%rofs)) then
                     call output_variables_allocate(fields%rofs, n1, n2, pntr, ig)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%rofs, n1, n2)
+                else
+                    z = 1
                 end if
             case (VN_ROFB)
                 if (associated(fields%vs%rofb)) then
                     call output_variables_allocate(fields%rofb, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%rofb, n1)
+                else
+                    z = 1
                 end if
             case (VN_RCHG)
                 if (associated(fields%vs%rchg)) then
                     call output_variables_allocate(fields%rchg, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%rchg, n1)
+                else
+                    z = 1
                 end if
             case (VN_LZS)
                 if (associated(fields%vs%lzs)) then
                     call output_variables_allocate(fields%lzs, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%lzs, n1)
+                else
+                    z = 1
                 end if
             case (VN_DZS)
                 if (associated(fields%vs%dzs)) then
                     call output_variables_allocate(fields%dzs, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%dzs, n1)
+                else
+                    z = 1
                 end if
             case (VN_STGE)
                 call output_variables_allocate(fields%stge, n1, pntr)
@@ -583,6 +700,8 @@ module output_variables
                 if (associated(fields%vs%rff)) then
                     call output_variables_allocate(fields%rff, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%rff, n1)
+                else
+                    z = 1
                 end if
             case (VN_ROF)
                 call output_variables_activate_pntr(fields, VN_ROFO)
@@ -591,28 +710,44 @@ module output_variables
                 if (associated(fields%rofo) .and. associated(fields%rofs) .and. associated(fields%rofb)) then
                     call output_variables_allocate(fields%rof, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%rof, n1)
+                else
+                    z = 1
                 end if
             case (VN_QI)
                 if (associated(fields%vs%qi)) then
                     call output_variables_allocate(fields%qi, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%qi, n1)
+                else
+                    z = 1
                 end if
             case (VN_QO)
                 if (associated(fields%vs%qo)) then
                     call output_variables_allocate(fields%qo, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%qo, n1)
+                else
+                    z = 1
                 end if
             case (VN_STGCH)
                 if (associated(fields%vs%stgch)) then
                     call output_variables_allocate(fields%stgch, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%stgch, n1)
+                else
+                    z = 1
                 end if
             case (VN_ZLVL)
                 if (associated(fields%vs%zlvl)) then
                     call output_variables_allocate(fields%zlvl, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%zlvl, n1)
+                else
+                    z = 1
                 end if
         end select
+
+        !> Assign 'NO_DATA' value if the pointer has not been assigned because a necessary variable is not active.
+        if (present(pntr) .and. z == 1) then
+            if (.not. associated(pntr)) allocate(pntr(n1))
+            pntr = out%NO_DATA
+        end if
 
     end subroutine
 
