@@ -542,7 +542,7 @@ module runsvs_mesh
                     else if (soiltext == 'SOILGRIDS') then
                         write(line, "('  ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") 'DB', dl_soilgrids(jj), weights(j, jj)
                     else if (soiltext == 'NIL') then
-                        write(line, "('  ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") 'DB', dl_soilgrids(jj), weights(j, jj)
+                        write(line, "('  ', (a), ' DEPTH: ', f8.3, ' WEIGHT: ', f8.3)") 'DB', dl_svs(jj), weights(j, jj)
                     end if
                     call print_message(line)
                 end do
