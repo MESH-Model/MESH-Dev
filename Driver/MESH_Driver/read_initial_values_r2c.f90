@@ -141,8 +141,8 @@ subroutine read_initial_values_r2c(shd, iun, fname, ierr)
                     z = 3
                 end if
             case ('lzs')
-                if (associated(vs%grid%lzs)) then
-                    vs%grid%lzs(1:shd%NA) = ffield
+                if (associated(vs%grid%stggw)) then
+                    vs%grid%stggw(1:shd%NA) = ffield
                 else
                     z = 3
                 end if

@@ -137,19 +137,19 @@ module baseflow_module
         end if
 
         !> Allocate and initialize local variables.
-        vs%tile%lzs = bflm%vs%WrchrgIni
-        vs%grid%lzs = bflm%vs%WrchrgIni
+        vs%tile%stggw = bflm%vs%WrchrgIni
+        vs%grid%stggw = bflm%vs%WrchrgIni
         select case (bflm%BASEFLOWFLAG)
             case (1)
                 allocate(Wseep(NML), Wrchrg(NML), Qb(NML))
                 Wseep = 0.0
-                Wrchrg = vs%tile%lzs
+                Wrchrg = vs%tile%stggw
                 Qb = bflm%vs%QbIni
             case (2)
                 if (bflm%BUCKETFLAG == 1) then
                     allocate(dlz(NA), lzs(NA))
                     dlz = 0.0
-                    lzs = vs%grid%lzs
+                    lzs = vs%grid%stggw
                     bflm%pm_grid%flz = 1.0 - (1.0 - bflm%pm_grid%flz)
                 end if
         end select
@@ -167,7 +167,7 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to resume states.')
                         call program_abort()
                     end if
-                    read(iun) vs%tile%lzs
+                    read(iun) vs%tile%stggw
                     read(iun) Qb
                     close(iun)
                 case (2)
@@ -180,7 +180,7 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to resume states.')
                         call program_abort()
                     end if
-                    read(iun) vs%tile%lzs
+                    read(iun) vs%tile%stggw
                     close(iun)
             end select
         end if
@@ -209,16 +209,16 @@ module baseflow_module
         !> Calculate contribution of baseflow to lower zone storage and redistribute runoff.
         select case (bflm%BASEFLOWFLAG)
             case (1)
-                Wseep(il1:il2) = vs%tile%rofb(il1:il2)*3600.0
-                Wrchrg(il1:il2) = vs%tile%lzs(il1:il2)
+                Wseep(il1:il2) = vs%tile%drainsol(il1:il2)*3600.0
+                Wrchrg(il1:il2) = vs%tile%stggw(il1:il2)
                 do k = il1, il2
                     call baseFlow_luo2012(Wseep(k), bflm%pm%dgw(k), Wrchrg(k), bflm%pm%agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
-                    vs%tile%rofb(k) = Qb_new/3600.0
+                    vs%tile%drainsol(k) = Qb_new/3600.0
                     Qb(k) = Qb_new
-                    vs%tile%lzs(k) = Wrchrg_new
+                    vs%tile%stggw(k) = Wrchrg_new
                 end do
             case (2)
-                vs%tile%lzs(il1:il2) = vs%tile%lzs(il1:il2) + vs%tile%rofb(il1:il2)*ic%dts
+                vs%tile%stggw(il1:il2) = vs%tile%stggw(il1:il2) + vs%tile%drainsol(il1:il2)*ic%dts
         end select
 
     end subroutine
@@ -246,15 +246,15 @@ module baseflow_module
         select case (bflm%BASEFLOWFLAG)
             case (2)
                 if ((bflm%dts - ic%dts*ic%ts_hourly) == 0) then
-                    lzs(i1:i2) = vs%grid%lzs(i1:i2)
+                    lzs(i1:i2) = vs%grid%stggw(i1:i2)
                     call baseflow_wfqlz(bflm%pm_grid%flz, bflm%pm_grid%pwr, lzs, dlz, shd%NA, i1, i2)
                     dlz(i1:i2) = max(min(dlz(i1:i2), lzs(i1:i2)), 0.0)/real(bflm%dts/ic%dts)
                 end if
-                vs%grid%rofb(i1:i2) = dlz(i1:i2)/real(ic%dts)
-                vs%grid%lzs(i1:i2) = vs%grid%lzs(i1:i2) - vs%grid%rofb(i1:i2)*ic%dts
+                vs%grid%drainsol(i1:i2) = dlz(i1:i2)/real(ic%dts)
+                vs%grid%stggw(i1:i2) = vs%grid%stggw(i1:i2) - vs%grid%drainsol(i1:i2)*ic%dts
                 do k = il1, il2
-                    vs%tile%rofb(k) = vs%grid%rofb(shd%lc%ILMOS(k))
-                    vs%tile%lzs(k) = vs%grid%lzs(shd%lc%ILMOS(k))
+                    vs%tile%drainsol(k) = vs%grid%drainsol(shd%lc%ILMOS(k))
+                    vs%tile%stggw(k) = vs%grid%stggw(shd%lc%ILMOS(k))
                 end do
         end select
 
@@ -295,7 +295,7 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to save states.')
                         call program_abort()
                     end if
-                    write(iun) vs%tile%lzs
+                    write(iun) vs%tile%stggw
                     write(iun) Qb
                     close(iun)
                 case (2)
@@ -308,7 +308,7 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to save states.')
                         call program_abort()
                     end if
-                    write(iun) vs%tile%lzs
+                    write(iun) vs%tile%stggw
                     close(iun)
             end select
         end if

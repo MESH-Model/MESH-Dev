@@ -26,7 +26,7 @@ module save_basin_output
         real, dimension(:, :), allocatable :: LQWS, FRWS
     end type
 
-    !> For PEVP-EVAP and EVPB output.
+    !> For evaporation related outputs.
 
     type BasinEvp
         real EVAP, PEVP, EVPB, ARRD
@@ -297,9 +297,9 @@ module save_basin_output
         !> Calculate initial storage and aggregate through neighbouring cells.
 !-        do ikey = 1, NKEY
 !-            bno%wb(ikey)%STG_INI = &
-!-                (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
-!-                 out%ts%grid%lzs + out%ts%grid%dzs + &
-!-                 sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC
+!-                (out%ts%grid%lqwscan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%lqwssno + out%ts%grid%lqwspnd + &
+!-                 out%ts%grid%stggw + out%ts%grid%dzs + &
+!-                 sum(out%ts%grid%lqwssol, 2) + sum(out%ts%grid%fzwssol, 2))*shd%FRAC
 !-        end do
 !-        do i = 1, shd%NAA
 !-            ii = shd%NEXT(i)
@@ -426,10 +426,10 @@ module save_basin_output
         !> Update the water balance.
 !-        call update_water_balance(shd, cm)
 
-        !> For PEVP-EVAP and EVPB output
+        !> For evaporation related outputs.
         if (BASINAVGEVPFILEFLAG > 0) then
-            bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%ts%grid%evap(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
-            bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%ts%grid%pevp(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
+            bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%ts%grid%et(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
+            bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%ts%grid%potevp(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
             bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(out%ts%grid%evpb(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
             bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(out%ts%grid%arrd(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
         end if
@@ -755,11 +755,12 @@ module save_basin_output
         type(output_series) series
 
         !> Allocate output variables.
-        call output_variables_activate(out%tot%basin, (/ VN_PREC, VN_EVAP, VN_ROF, VN_ROFO, VN_ROFS, VN_ROFB, VN_STGW /))
+        call output_variables_activate(out%tot%basin, (/ VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, VN_STGW /))
         call output_variables_activate( &
             series%basin, (/ &
-                VN_PREC, VN_EVAP, VN_ROF, VN_ROFO, VN_ROFS, VN_ROFB, &
-                VN_SNCAN, VN_RCAN, VN_SNO, VN_WSNO, VN_PNDW, VN_LZS, VN_DZS, VN_LQWS, VN_FZWS, VN_ALWS, VN_STGW /))
+                VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
+                VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_DZS, VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, &
+                VN_STGW /))
 
     end subroutine
 
@@ -792,21 +793,21 @@ module save_basin_output
 
         !> Accumulate variables and aggregate through neighbouring cells.
 !-        PRE = out%ts%grid%prec*shd%FRAC
-!-        EVAP = out%ts%grid%evap*ic%dts*shd%FRAC
+!-        EVAP = out%ts%grid%et*ic%dts*shd%FRAC
 !-        ROF = out%ts%grid%rof*ic%dts*shd%FRAC
-!-        ROFO = out%ts%grid%rofo*ic%dts*shd%FRAC
-!-        ROFS = out%ts%grid%rofs*ic%dts*shd%FRAC
-!-        ROFB = out%ts%grid%rofb*ic%dts*shd%FRAC
-!-        RCAN = out%ts%grid%rcan*shd%FRAC
-!-        SNCAN = out%ts%grid%sncan*shd%FRAC
+!-        ROFO = out%ts%grid%ovrflw*ic%dts*shd%FRAC
+!-        ROFS = out%ts%grid%latflw*ic%dts*shd%FRAC
+!-        ROFB = out%ts%grid%drainsol*ic%dts*shd%FRAC
+!-        RCAN = out%ts%grid%lqwscan*shd%FRAC
+!-        SNCAN = out%ts%grid%fzwscan*shd%FRAC
 !-        SNO = out%ts%grid%sno*shd%FRAC
-!-        WSNO = out%ts%grid%wsno*shd%FRAC
-!-        PNDW = out%ts%grid%pndw*shd%FRAC
+!-        WSNO = out%ts%grid%lqwssno*shd%FRAC
+!-        PNDW = out%ts%grid%lqwspnd*shd%FRAC
 !-        do j = 1, shd%lc%IGND
 !-            LQWS(:, j) = out%ts%grid%lqws(:, j)*shd%FRAC
-!-            FRWS(:, j) = out%ts%grid%fzws(:, j)*shd%FRAC
+!-            FRWS(:, j) = out%ts%grid%fzwssol(:, j)*shd%FRAC
 !-        end do
-!-        LZS = out%ts%grid%lzs*shd%FRAC
+!-        LZS = out%ts%grid%stggw*shd%FRAC
 !-        DZS = out%ts%grid%dzs*shd%FRAC
 
         !> Aggregate through neighbouring cells.
@@ -952,8 +953,8 @@ module save_basin_output
         ina = min(ina, shd%NAA)
 
         !> Check for 'NO_DATA' values and transform temperatures to degrees C.
-        if (series%basin%wsno(ina) /= out%NO_DATA) wsno = series%basin%wsno(ina)
-        if (series%basin%pndw(ina) /= out%NO_DATA) pndw = series%basin%pndw(ina)
+        if (series%basin%lqwssno(ina) /= out%NO_DATA) wsno = series%basin%lqwssno(ina)
+        if (series%basin%lqwspnd(ina) /= out%NO_DATA) pndw = series%basin%lqwspnd(ina)
 
         !> Write the time-stamp for the period.
         write(fik, 1010, advance = 'no') ic%now%year
@@ -963,20 +964,20 @@ module save_basin_output
 
         !> Write the water balance to file.
         write(fik, 1010) &
-            out%tot%basin%prec(ina), out%tot%basin%evap(ina)*ic%dts, out%tot%basin%rof(ina)*ic%dts, &
-            out%tot%basin%rofo(ina)*ic%dts, sum(out%tot%basin%rofs(ina, :))*ic%dts, out%tot%basin%rofb(ina)*ic%dts, &
+            out%tot%basin%prec(ina), out%tot%basin%et(ina)*ic%dts, out%tot%basin%rof(ina)*ic%dts, &
+            out%tot%basin%ovrflw(ina)*ic%dts, sum(out%tot%basin%latflw(ina, :))*ic%dts, out%tot%basin%drainsol(ina)*ic%dts, &
             out%tot%basin%dstgw(ina), &
-            series%basin%prec(ina), series%basin%evap(ina)*ic%dts, series%basin%rof(ina)*ic%dts, &
-            series%basin%rofo(ina)*ic%dts, sum(series%basin%rofs(ina, :))*ic%dts, series%basin%rofb(ina)*ic%dts, &
-            series%basin%sncan(ina), series%basin%rcan(ina), &
+            series%basin%prec(ina), series%basin%et(ina)*ic%dts, series%basin%rof(ina)*ic%dts, &
+            series%basin%ovrflw(ina)*ic%dts, sum(series%basin%latflw(ina, :))*ic%dts, series%basin%drainsol(ina)*ic%dts, &
+            series%basin%fzwscan(ina), series%basin%lqwscan(ina), &
             series%basin%sno(ina), wsno, &
             pndw, &
-            (series%basin%lqws(ina, j), series%basin%fzws(ina, j), &
-             series%basin%alws(ina, j), j = 1, shd%lc%IGND), &
-            sum(series%basin%lqws(ina, :)), &
-            sum(series%basin%fzws(ina, :)), &
-            sum(series%basin%alws(ina, :)), &
-            series%basin%lzs(ina), series%basin%dzs(ina), &
+            (series%basin%lqwssol(ina, j), series%basin%fzwssol(ina, j), &
+             series%basin%alwssol(ina, j), j = 1, shd%lc%IGND), &
+            sum(series%basin%lqwssol(ina, :)), &
+            sum(series%basin%fzwssol(ina, :)), &
+            sum(series%basin%alwssol(ina, :)), &
+            series%basin%stggw(ina), series%basin%dzs(ina), &
             series%basin%stgw(ina), &
             series%basin%dstgw(ina)
 
@@ -1023,7 +1024,7 @@ module save_basin_output
         type(output_series) series
 
         !> Allocate output variables.
-        call output_variables_activate(series%grid, (/ VN_EVAP, VN_PEVP, VN_EVPB, VN_ARRD /))
+        call output_variables_activate(series%grid, (/ VN_ET, VN_POTEVP, VN_EVPB, VN_ARRD /))
 
     end subroutine
 
@@ -1109,8 +1110,8 @@ module save_basin_output
         !> Allocate output variables.
         call output_variables_activate( &
             series%basin, (/ &
-                VN_FSIN, VN_FSOUT, VN_ALBT, VN_FLIN, VN_FLOUT, VN_GTE, VN_QH, VN_QE, VN_GZERO, &
-                VN_TA, VN_TCAN, VN_CMAS, VN_TSNO, VN_TPND, VN_TBAR, VN_QA, VN_UV, VN_PRES /))
+                VN_FSIN, VN_FSOUT, VN_ALBT, VN_FLIN, VN_FLOUT, VN_GTE, VN_QEVP, VN_QSENS, VN_GZERO, &
+                VN_TA, VN_TCAN, VN_CMAS, VN_TSNO, VN_TPND, VN_TSOL, VN_QA, VN_UV, VN_PRES /))
 
     end subroutine
 
@@ -1171,7 +1172,7 @@ module save_basin_output
 !-            IPOND = 1
 !-        end where
 !-        do j = 1, shd%lc%IGND
-!-            where (out%ts%grid%tbar(:, j) > 0.0) TBAR(:, j) = (out%ts%grid%tbar(:, j) - TFREZ)*shd%FRAC
+!-            where (out%ts%grid%tbar(:, j) > 0.0) TBAR(:, j) = (out%ts%grid%tsol(:, j) - TFREZ)*shd%FRAC
 !-        end do
 
         !> Accumulated fluxes.
@@ -1182,8 +1183,8 @@ module save_basin_output
 !-        end where
 !-        FLIN = out%ts%grid%flin*ic%dts*shd%FRAC
 !-        where (out%ts%grid%gte > 0.0) FLOUT = out%ts%grid%flout*ic%dts*shd%FRAC
-!-        QH = out%ts%grid%qh*ic%dts*shd%FRAC
-!-        QE = out%ts%grid%qe*ic%dts*shd%FRAC
+!-        QH = out%ts%grid%qsens*ic%dts*shd%FRAC
+!-        QE = out%ts%grid%qevp*ic%dts*shd%FRAC
 !-        GZERO = out%ts%grid%gzero*ic%dts*shd%FRAC
 
         !> Propagate through basin cells (by flow direction).
@@ -1368,7 +1369,7 @@ module save_basin_output
         if (series%basin%tsno(ina) > (TFREZ - 100.0)) tsno = series%basin%tsno(ina) - TFREZ
         if (series%basin%tpnd(ina) > (TFREZ - 100.0)) tpnd = series%basin%tpnd(ina) - TFREZ
         tbar = 0.0
-        where (series%basin%tbar(ina, :) > (TFREZ - 100.0)) tbar = series%basin%tbar(ina, :) - TFREZ
+        where (series%basin%tsol(ina, :) > (TFREZ - 100.0)) tbar = series%basin%tsol(ina, :) - TFREZ
 
         !> Write the time-stamp for the period.
         write(fik, 1010, advance = 'no') ic%now%year
@@ -1387,7 +1388,7 @@ module save_basin_output
             series%basin%fsin(ina), series%basin%fsout(ina), &
             albt, &
             series%basin%flin(ina), series%basin%flout(ina), gte, &
-            series%basin%qh(ina), series%basin%qe(ina), &
+            series%basin%qsens(ina), series%basin%qevp(ina), &
             series%basin%gzero(ina), &
             ta, tcan, cmas, &
             tsno, tpnd, &

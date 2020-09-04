@@ -78,7 +78,7 @@ module permafrost_outputs_module
         na = shd%NA; nml = shd%lc%NML; nsl = shd%lc%IGND
 
         !> Check if model dependencies are active.
-        if (.not. associated(vs%tile%tbar) .or. .not. associated(vs%grid%tbar)) then
+        if (.not. associated(vs%tile%tsol) .or. .not. associated(vs%grid%tsol)) then
             call print_error( &
                 "The active configuration for permafrost outputs is not valid. A necessary dependency for the output " // &
                 "of variable '" // trim(vname) // "' is not active.")
@@ -196,15 +196,15 @@ module permafrost_outputs_module
             end if
 
             !> Tile-based.
-            where (vs%tile%tbar(:, j) > 173.16 .and. vs%tile%tbar(:, j) < 373.16)
-                prmfst%out%tavg(j)%d_tile = prmfst%out%tavg(j)%d_tile + vs%tile%tbar(:, j)
+            where (vs%tile%tsol(:, j) > 173.16 .and. vs%tile%tsol(:, j) < 373.16)
+                prmfst%out%tavg(j)%d_tile = prmfst%out%tavg(j)%d_tile + vs%tile%tsol(:, j)
             elsewhere
                 prmfst%out%tavg(j)%d_tile = out%NO_DATA
             end where
 
             !> Grid-based.
-            where (vs%grid%tbar(:, j) > 173.16 .and. vs%grid%tbar(:, j) < 373.16)
-                prmfst%out%tavg(j)%d_grid = prmfst%out%tavg(j)%d_grid + vs%grid%tbar(:, j)
+            where (vs%grid%tsol(:, j) > 173.16 .and. vs%grid%tsol(:, j) < 373.16)
+                prmfst%out%tavg(j)%d_grid = prmfst%out%tavg(j)%d_grid + vs%grid%tsol(:, j)
             elsewhere
                 prmfst%out%tavg(j)%d_grid = out%NO_DATA
             end where

@@ -394,21 +394,21 @@ module runsvs_mesh
             !>       1              1-2
             !>       2               3
             !>       3              4-7
-!            bus(wsoil + k) = vs%tile%thlq(il1 + k, 1)
-!            bus(wsoil + NG + k) = vs%tile%thlq(il1 + k, 2)
-!            bus(wsoil + 2*NG + k) = vs%tile%thlq(il1 + k, 3)
+!            bus(wsoil + k) = vs%tile%thlqsol(il1 + k, 1)
+!            bus(wsoil + NG + k) = vs%tile%thlqsol(il1 + k, 2)
+!            bus(wsoil + 2*NG + k) = vs%tile%thlqsol(il1 + k, 3)
 !            do j = 3, 6
-!                bus(wsoil + j*NG + k) = vs%tile%thlq(il1 + k, 3)
+!                bus(wsoil + j*NG + k) = vs%tile%thlqsol(il1 + k, 3)
 !            end do
 
 ! EG_MOD: WE HAVE TO INITIALIZE SOIL MOISTURE FOR ALL SVS LAYERS, NOT ONLY THE KHYD FIRST LAYERS
 !            do j = 1, KHYD ! permeable layers, min from runsvs_init
             do j = 1, nl_svs
 ! EG_MOD: WFC IS NOT KNOWN AT THIS POINT (COMPUTED LATER BY INISOILI_SVS); USE CRITWATER INSTEAD
-!                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), bus(wfc + k))
-                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlq(il1 + k, j), CRITWATER)
+!                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlqsol(il1 + k, j), bus(wfc + k))
+                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlqsol(il1 + k, j), CRITWATER)
                 if (allocated(svs_mesh%vs%wsoil)) bus(wsoil + (j - 1)*NG + k) = max(svs_mesh%vs%wsoil(isvs, j), CRITWATER)
-                bus(isoil + (j - 1)*NG + k) = vs%tile%thic(il1 + k, j)
+                bus(isoil + (j - 1)*NG + k) = vs%tile%thicsol(il1 + k, j)
                 if (allocated(svs_mesh%vs%isoil)) bus(isoil + (j - 1)*NG + k) = svs_mesh%vs%isoil(isvs, j)
             end do
 
@@ -416,10 +416,10 @@ module runsvs_mesh
             !> CLASS layer  <->  SVS layer
             !>       1               1
             !>       2               2
-!            bus(tsoil + k) = vs%tile%tbar(il1 + k, 1)! + tcdk
-!            bus(tsoil + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
-            bus(tground + k) = vs%tile%tbar(il1 + k, 1)! + tcdk
-            bus(tground + NG + k) = vs%tile%tbar(il1 + k, 2)! + tcdk
+!            bus(tsoil + k) = vs%tile%tsol(il1 + k, 1)! + tcdk
+!            bus(tsoil + NG + k) = vs%tile%tsol(il1 + k, 2)! + tcdk
+            bus(tground + k) = vs%tile%tsol(il1 + k, 1)! + tcdk
+            bus(tground + NG + k) = vs%tile%tsol(il1 + k, 2)! + tcdk
             if (allocated(svs_mesh%vs%tground)) then
                 do j = 1, svs_mesh%vs%kthermal
                     bus(tground + (j - 1)*NG + k) = svs_mesh%vs%tground(isvs, j)
@@ -431,7 +431,7 @@ module runsvs_mesh
                 bus(tvege + j*NG + k) = vs%tile%tcan(il1 + k)! + tcdk
                 if (allocated(svs_mesh%vs%tvege)) bus(tvege + j*NG + k) = svs_mesh%vs%tvege(isvs, j + 1)
             end do
-            bus(wveg + k) = vs%tile%rcan(il1 + k)
+            bus(wveg + k) = vs%tile%lqwscan(il1 + k)
             if (allocated(svs_mesh%vs%wveg)) bus(wveg + k) = svs_mesh%vs%wveg(isvs)
 
             !> Map snow properties.
@@ -440,17 +440,17 @@ module runsvs_mesh
                 do j = 0, 1
                     bus(tsnow + j*NG + k) = vs%tile%tsno(il1 + k)! + tcdk
                 end do
-                bus(snodpl + k) = vs%tile%rhos(il1 + k)*vs%tile%sno(il1 + k)
-                bus(snoden + k) = vs%tile%rhos(il1 + k)
-                bus(snoal + k) = vs%tile%albs(il1 + k)
-                bus(wsnow + k) = vs%tile%wsno(il1 + k)
+                bus(snodpl + k) = vs%tile%rhosno(il1 + k)*vs%tile%sno(il1 + k)
+                bus(snoden + k) = vs%tile%rhosno(il1 + k)
+                bus(snoal + k) = vs%tile%albsno(il1 + k)
+                bus(wsnow + k) = vs%tile%lqwssno(il1 + k)
                 do j = 0, 1
                     bus(tsnowveg + j*NG + k) = vs%tile%tsno(il1 + k)! + tcdk
                 end do
-                bus(snvdp + k) = vs%tile%rhos(il1 + k)*vs%tile%sno(il1 + k)
-                bus(snvden + k) = vs%tile%rhos(il1 + k)
-                bus(snval + k) = vs%tile%albs(il1 + k)
-                bus(wsnv + k) = vs%tile%wsno(il1 + k)
+                bus(snvdp + k) = vs%tile%rhosno(il1 + k)*vs%tile%sno(il1 + k)
+                bus(snvden + k) = vs%tile%rhosno(il1 + k)
+                bus(snval + k) = vs%tile%albsno(il1 + k)
+                bus(wsnv + k) = vs%tile%lqwssno(il1 + k)
             end if
             if (allocated(svs_mesh%vs%snodpl)) then
                 if (svs_mesh%vs%snodpl(isvs) > 0.0) then
@@ -941,44 +941,44 @@ module runsvs_mesh
 
         !> Transfer variables.
         do k = 0, NG - 1
-            vs%tile%qac(il1 + k) = bus(qsurf + k)
-            vs%tile%rcan(il1 + k) = bus(wveg + k)
-            vs%tile%tac(il1 + k) = bus(tsurf + k)
+            vs%tile%qacan(il1 + k) = bus(qsurf + k)
+            vs%tile%lqwscan(il1 + k) = bus(wveg + k)
+            vs%tile%tacan(il1 + k) = bus(tsurf + k)
             vs%tile%tcan(il1 + k) = (bus(tvege + k) + bus(tvege + NG + k) + bus(tsnowveg + k) + bus(tsnowveg + NG + k))/4.0
             vs%tile%sno(il1 + k) = bus(snoma + k)
-            vs%tile%albs(il1 + k) = (bus(snoal + k) + bus(snval + k))/2.0
-            vs%tile%rhos(il1 + k) = ((bus(snoro + k) + bus(snvro + k))/2.0)*900.0
+            vs%tile%albsno(il1 + k) = (bus(snoal + k) + bus(snval + k))/2.0
+            vs%tile%rhosno(il1 + k) = ((bus(snoro + k) + bus(snvro + k))/2.0)*900.0
             vs%tile%tsno(il1 + k) = (bus(tsnow + k) + bus(tsnow + NG + k))/2.0
             if (bus(snoma + k) > 0.0) then
-                vs%tile%wsno(il1 + k) = bus(wsnow + k)
+                vs%tile%lqwssno(il1 + k) = bus(wsnow + k)
             else
-                vs%tile%wsno(il1 + k) = 0.0
+                vs%tile%lqwssno(il1 + k) = 0.0
             end if
-            vs%tile%evap(il1 + k) = bus(wflux + k)
+            vs%tile%et(il1 + k) = bus(wflux + k)
             vs%tile%qevp(il1 + k) = bus(fv + k)
-            vs%tile%hfs(il1 + k) = bus(fc + k)
-            vs%tile%rofo(il1 + k) = max(0.0, bus(runofftot + k))/ic%dts
+            vs%tile%qsens(il1 + k) = bus(fc + k)
+            vs%tile%ovrflw(il1 + k) = max(0.0, bus(runofftot + k))/ic%dts
 !EG_MOD add lateral flow from layers 1 to KHYD
-!-            vs%tile%rofs(il1 + k) = 0.0
+!-            vs%tile%latflw(il1 + k) = 0.0
 !-            do j = 1, KHYD
-!-                vs%tile%rofs(il1 + k) = vs%tile%rofs(il1 + k) + max(0.0, bus(latflw + (j - 1)*NG + k))/ic%dts
+!-                vs%tile%latflw(il1 + k) = vs%tile%latflw(il1 + k) + max(0.0, bus(latflw + (j - 1)*NG + k))/ic%dts
 !-            end do
             do j = 1, KHYD
-                vs%tile%rofs(il1 + k, j) = max(0.0, bus(latflw + (j - 1)*NG + k))/ic%dts
+                vs%tile%latflw(il1 + k, j) = max(0.0, bus(latflw + (j - 1)*NG + k))/ic%dts
             end do
-            vs%tile%thic(il1 + k, 1) = bus(isoil + k)
-            vs%tile%thlq(il1 + k, 1) = bus(wsoil + k)
-            vs%tile%thlq(il1 + k, 2) = bus(wsoil + NG + k)
+            vs%tile%thicsol(il1 + k, 1) = bus(isoil + k)
+            vs%tile%thlqsol(il1 + k, 1) = bus(wsoil + k)
+            vs%tile%thlqsol(il1 + k, 2) = bus(wsoil + NG + k)
             do j = 3, shd%lc%IGND
-                vs%tile%thlq(il1 + k, j) = bus(wsoil + (j - 1)*NG + k)
+                vs%tile%thlqsol(il1 + k, j) = bus(wsoil + (j - 1)*NG + k)
             end do
-            vs%tile%tbar(il1 + k, 1) = bus(tground + k)
+            vs%tile%tsol(il1 + k, 1) = bus(tground + k)
             do j = 2, shd%lc%IGND
-                vs%tile%tbar(il1 + k, j) = bus(tground + NG + k)
+                vs%tile%tsol(il1 + k, j) = bus(tground + NG + k)
             end do
 
 !-            vs%tile%gflx(il1 + k, :) =
-            vs%tile%rofb(il1 + k) = max(0.0, bus(watflow + KHYD*NG + k))/ic%dts
+            vs%tile%drainsol(il1 + k) = max(0.0, bus(watflow + KHYD*NG + k))/ic%dts
         end do
 
 !>>>svs_output

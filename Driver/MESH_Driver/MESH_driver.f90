@@ -255,18 +255,18 @@ program RUNMESH
 
     !> Allocate output variables for screen output.
     if (PRINTSIMSTATUS == OUT_JDATE_DLY .or. PRINTSIMSTATUS == OUT_DATE_DLY) then
-        call output_variables_activate(out%d%grid, (/ VN_PREC, VN_EVAP, VN_ROF /))
+        call output_variables_activate(out%d%grid, (/ VN_PREC, VN_ET, VN_ROF /))
     end if
     call output_variables_activate(out%d%grid, VN_QO)
     if (PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) then
-        call output_variables_activate(out%m%grid, (/ VN_PREC, VN_EVAP, VN_ROF, VN_QO /))
+        call output_variables_activate(out%m%grid, (/ VN_PREC, VN_ET, VN_ROF, VN_QO /))
     end if
 
     !> Allocate output variables for run totals.
     call output_variables_activate( &
         out%tot%grid, (/ &
-            VN_PREC, VN_EVAP, VN_ROF, VN_ROFO, VN_ROFS, VN_ROFB, &
-            VN_RCAN, VN_SNCAN, VN_SNO, VN_WSNO, VN_PNDW, VN_LZS, VN_DZS, VN_LQWS, VN_FZWS /))
+            VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
+            VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_DZS, VN_LQWSSOL, VN_FZWSSOL /))
 
     !> Initialize process modules.
     if (ro%RUNTILE) then
@@ -795,10 +795,10 @@ program RUNMESH
     !> Calculate initial storage.
     if (ro%RUNBALWB .and. ISHEADNODE) then
         STG_INI = sum( &
-            (out%ts%grid%rcan(1:shd%NA) + out%ts%grid%sncan(1:shd%NA) + &
-             out%ts%grid%sno(1:shd%NA) + out%ts%grid%wsno(1:shd%NA) + out%ts%grid%pndw(1:shd%NA) + &
-             out%ts%grid%lzs(1:shd%NA) + out%ts%grid%dzs(1:shd%NA) + &
-             sum(out%ts%grid%lqws(1:shd%NA, :), 2) + sum(out%ts%grid%fzws(1:shd%NA, :), 2))*shd%FRAC)
+            (out%ts%grid%lqwscan(1:shd%NA) + out%ts%grid%fzwscan(1:shd%NA) + &
+             out%ts%grid%sno(1:shd%NA) + out%ts%grid%lqwssno(1:shd%NA) + out%ts%grid%lqwspnd(1:shd%NA) + &
+             out%ts%grid%stggw(1:shd%NA) + out%ts%grid%dzs(1:shd%NA) + &
+             sum(out%ts%grid%lqwssol(1:shd%NA, :), 2) + sum(out%ts%grid%fzwssol(1:shd%NA, :), 2))*shd%FRAC)
         STG_INI = STG_INI/sum(shd%FRAC)
     end if
 
@@ -976,7 +976,7 @@ program RUNMESH
                         write(line, '((a), 3(f10.3))') &
                             trim(line), &
                             sum(out%d%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC), &
-                            sum(out%d%grid%evap(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%d%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC), &
                             sum(out%d%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
                     end if
                     call print_screen(line)
@@ -995,7 +995,7 @@ program RUNMESH
                         write(line, '((a), 3(f10.3))') &
                             trim(line), &
                             sum(out%m%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC), &
-                            sum(out%m%grid%evap(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%m%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC), &
                             sum(out%m%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
                     end if
                     call print_screen(line)
@@ -1135,16 +1135,16 @@ program RUNMESH
         !> Basin totals for the run.
         if (ro%RUNBALWB) then
             TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
-            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%evap(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
             TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%rofo(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROFS = TOTAL_ROFS + sum(sum(out%tot%grid%rofs(1:shd%NA, :), 2)*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%rofb(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%ovrflw(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFS = TOTAL_ROFS + sum(sum(out%tot%grid%latflw(1:shd%NA, :), 2)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%drainsol(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
             STG_FIN = sum( &
-                (out%ts%grid%rcan(1:shd%NA) + out%ts%grid%sncan(1:shd%NA) + &
-                 out%ts%grid%sno(1:shd%NA) + out%ts%grid%wsno(1:shd%NA) + out%ts%grid%pndw(1:shd%NA) + &
-                 out%ts%grid%lzs(1:shd%NA) + out%ts%grid%dzs(1:shd%NA) + &
-                 sum(out%ts%grid%lqws(1:shd%NA, :), 2) + sum(out%ts%grid%fzws(1:shd%NA, :), 2))*shd%FRAC)/sum(shd%FRAC)
+                (out%ts%grid%lqwscan(1:shd%NA) + out%ts%grid%fzwscan(1:shd%NA) + &
+                 out%ts%grid%sno(1:shd%NA) + out%ts%grid%lqwssno(1:shd%NA) + out%ts%grid%lqwspnd(1:shd%NA) + &
+                 out%ts%grid%stggw(1:shd%NA) + out%ts%grid%dzs(1:shd%NA) + &
+                 sum(out%ts%grid%lqwssol(1:shd%NA, :), 2) + sum(out%ts%grid%fzwssol(1:shd%NA, :), 2))*shd%FRAC)/sum(shd%FRAC)
         end if
 
         !> Save the current state of the model for SAVERESUMEFLAG.
@@ -1204,12 +1204,12 @@ program RUNMESH
 !-                    tcan(2, m) = minval(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tcan /= 0.0)
 !-                end if
 !-                where (tcan < 173.16 .or. tcan > 373.16 .or. tcan == 0.0) tcan = 273.16
-!-                rcan(2, m) = minval(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)
-!-                rcan(3, m) = maxval(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)
-!-                rcan(1, m) = sum(vs%tile%rcan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-!-                sncan(2, m) = minval(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)
-!-                sncan(3, m) = maxval(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)
-!-                sncan(1, m) = sum(vs%tile%sncan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                rcan(2, m) = minval(vs%tile%lqwscan, shd%lc%JLMOS(1:NML) == m)
+!-                rcan(3, m) = maxval(vs%tile%lqwscan, shd%lc%JLMOS(1:NML) == m)
+!-                rcan(1, m) = sum(vs%tile%lqwscan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                sncan(2, m) = minval(vs%tile%fzwscan, shd%lc%JLMOS(1:NML) == m)
+!-                sncan(3, m) = maxval(vs%tile%fzwscan, shd%lc%JLMOS(1:NML) == m)
+!-                sncan(1, m) = sum(vs%tile%fzwscan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
 !-                gro(2, m) = minval(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)
 !-                gro(3, m) = maxval(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)
 !-                gro(1, m) = sum(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
@@ -1238,29 +1238,29 @@ program RUNMESH
 !-                end if
 !-                where (tsno < 173.16 .or. tsno > 373.16 .or. tsno == 0.0) tsno = 273.16
 !-                if (sno(3, m) > 0.0) then
-!-                    albs(1, m) = sum(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. &
+!-                    albs(1, m) = sum(vs%tile%albsno, shd%lc%JLMOS(1:NML) == m .and. &
 !-                                     vs%tile%sno > 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
-!-                    albs(2, m) = minval(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
-!-                    albs(3, m) = maxval(vs%tile%albs, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+!-                    albs(2, m) = minval(vs%tile%albsno, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+!-                    albs(3, m) = maxval(vs%tile%albsno, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
 !-                end if
-!-                rhos(3, m) = maxval(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m)
+!-                rhos(3, m) = maxval(vs%tile%rhosno, shd%lc%JLMOS(1:NML) == m)
 !-                if (rhos(3, m) > 0.0) then
-!-                    rhos(1, m) = sum(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m .and. &
-!-                                     vs%tile%rhos /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhos /= 0.0)
-!-                    rhos(2, m) = minval(vs%tile%rhos, shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhos /= 0.0)
+!-                    rhos(1, m) = sum(vs%tile%rhosno, shd%lc%JLMOS(1:NML) == m .and. &
+!-                                     vs%tile%rhosno /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhosno /= 0.0)
+!-                    rhos(2, m) = minval(vs%tile%rhosno, shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhosno /= 0.0)
 !-                end if
 
                 !> Soil.
 !-                do j = 1, NSL
-!-                    tbar(1, m, j) = sum(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-!-                    tbar(2, m, j) = minval(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
-!-                    tbar(3, m, j) = maxval(vs%tile%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
-!-                    thlq(1, m, j) = sum(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-!-                    thlq(2, m, j) = minval(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
-!-                    thlq(3, m, j) = maxval(vs%tile%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
-!-                    thic(1, m, j) = sum(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-!-                    thic(2, m, j) = minval(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)
-!-                    thic(3, m, j) = maxval(vs%tile%thic(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                    tbar(1, m, j) = sum(vs%tile%tsol(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                    tbar(2, m, j) = minval(vs%tile%tsol(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                    tbar(3, m, j) = maxval(vs%tile%tsol(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                    thlq(1, m, j) = sum(vs%tile%thlqsol(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                    thlq(2, m, j) = minval(vs%tile%thlqsol(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                    thlq(3, m, j) = maxval(vs%tile%thlqsol(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                    thic(1, m, j) = sum(vs%tile%thicsol(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                    thic(2, m, j) = minval(vs%tile%thicsol(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                    thic(3, m, j) = maxval(vs%tile%thicsol(:, j), shd%lc%JLMOS(1:NML) == m)
 !-                end do
 !-            end do
 

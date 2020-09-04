@@ -98,7 +98,7 @@ module SA_RTE_module
 
         !> For: Runoff (RFF).
         if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
-            call tile_connector(shd, (vs%grid%rofo + sum(vs%grid%rofs, 2))*shd%FRAC*ic%dts, RFF, .true.)
+            call tile_connector(shd, (vs%grid%ovrflw + sum(vs%grid%latflw, 2))*shd%FRAC*ic%dts, RFF, .true.)
             if (writeout) then
                 call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, (frame_now + 1), 0, frame_now, 0, 6, RFF)
                 RFF = 0.0
@@ -107,7 +107,7 @@ module SA_RTE_module
 
         !> For: Recharge (RCH).
         if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
-            call tile_connector(shd, vs%grid%rofb*shd%FRAC*ic%dts, RCH, .true.)
+            call tile_connector(shd, vs%grid%drainsol*shd%FRAC*ic%dts, RCH, .true.)
             if (writeout) then
                 call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, (frame_now + 1), 0, frame_now, 0, 6, RCH)
                 RCH = 0.0

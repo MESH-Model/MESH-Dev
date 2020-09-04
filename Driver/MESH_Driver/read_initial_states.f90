@@ -61,28 +61,28 @@ subroutine read_initial_states(fls, shd, ierr)
         if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
             vs%tile%tcan(k) = vs%gru%tcan(m) + TFREZ
             vs%tile%tsno(k) = vs%gru%tsno(m) + TFREZ
-            vs%tile%rhos(k) = vs%gru%rhos(m)
-            vs%tile%albs(k) = vs%gru%albs(m)
-            vs%tile%tbar(k, :) = vs%gru%tbar(m, :) + TFREZ
-            vs%tile%thlq(k, :) = vs%gru%thlq(m, :)
-            vs%tile%thic(k, :) = vs%gru%thic(m, :)
+            vs%tile%rhosno(k) = vs%gru%rhosno(m)
+            vs%tile%albsno(k) = vs%gru%albsno(m)
+            vs%tile%tsol(k, :) = vs%gru%tsol(m, :) + TFREZ
+            vs%tile%thlqsol(k, :) = vs%gru%thlqsol(m, :)
+            vs%tile%thicsol(k, :) = vs%gru%thicsol(m, :)
         end if
 
         !> RUNCLASS36.
         if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-            vs%tile%tac(k) = vs%gru%tcan(m) + TFREZ
-            vs%tile%qac(k) = 0.5e-2
+            vs%tile%tacan(k) = vs%gru%tcan(m) + TFREZ
+            vs%tile%qacan(k) = 0.5e-2
             vs%tile%tpnd(k) = vs%gru%tpnd(m) + TFREZ
             vs%tile%zpnd(k) = vs%gru%zpnd(m)
-            vs%tile%rcan(k) = vs%gru%rcan(m)
-            vs%tile%sncan(k) = vs%gru%sncan(m)
+            vs%tile%lqwscan(k) = vs%gru%lqwscan(m)
+            vs%tile%fzwscan(k) = vs%gru%fzwscan(m)
             vs%tile%sno(k) = vs%gru%sno(m)
             vs%tile%gro(k) = vs%gru%gro(m)
             vs%tile%tsfs(k, 1) = TFREZ
             vs%tile%tsfs(k, 2) = TFREZ
-            vs%tile%tsfs(k, 3) = vs%gru%tbar(m, 1) + TFREZ
-            vs%tile%tsfs(k, 4) = vs%gru%tbar(m, 1) + TFREZ
-            vs%tile%tbas(k) = vs%gru%tbar(m, NSL) + TFREZ
+            vs%tile%tsfs(k, 3) = vs%gru%tsol(m, 1) + TFREZ
+            vs%tile%tsfs(k, 4) = vs%gru%tsol(m, 1) + TFREZ
+            vs%tile%tbas(k) = vs%gru%tsol(m, NSL) + TFREZ
         end if
 
     end do !k = 1, shd%lc%NML
@@ -121,9 +121,9 @@ subroutine read_initial_states(fls, shd, ierr)
         !> Assign states to layers lower than the "last configured layer" read from file.
         if (ignd > 0) then
             do j = (ignd + 1), shd%lc%IGND
-                vs%tile%tbar(:, j) = vs%tile%tbar(:, ignd)
-                vs%tile%thlq(:, j) = vs%tile%thlq(:, ignd)
-                vs%tile%thic(:, j) = vs%tile%thic(:, ignd)
+                vs%tile%tsol(:, j) = vs%tile%tsol(:, ignd)
+                vs%tile%thlqsol(:, j) = vs%tile%thlqsol(:, ignd)
+                vs%tile%thicsol(:, j) = vs%tile%thicsol(:, ignd)
             end do
         end if
     end if

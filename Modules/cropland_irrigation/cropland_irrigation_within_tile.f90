@@ -41,8 +41,8 @@ module cropland_irrigation_within_tile
                 !> Grab the grid index (for ylat, xlng)
                 ki = shd%lc%ILMOS(k)
 
-                !> Calc 'calc_ET0' (PEVP).
-                vs%tile%pevp(k) = calc_ET0( &
+                !> Calc 'calc_ET0' (POTEVP).
+                vs%tile%potevp(k) = calc_ET0( &
                     vs%tile%ta(k), vs%tile%uv(k), vs%tile%qa(k), vs%tile%pres(k), vs%tile%fsin(k), &
                     shd%ylat(ki), shd%xlng(ki), shd%ELEV(ki), &
                     pm%tile%zrfm(k), &
@@ -86,18 +86,18 @@ module cropland_irrigation_within_tile
                         !> Daily.
                         if (btest(cifg%ts_flag, 0)) then
                             civ%vars(civ%fk%KDLY)%lqws2_mm(k) = civ%vars(civ%fk%KDLY)%lqws2_mm(k) + &
-                                (sum(vs%tile%lqws(k, :))*pm%tile%fcan(k, 3))/((3600.0/ic%dts)*24.0)
+                                (sum(vs%tile%lqwssol(k, :))*pm%tile%fcan(k, 3))/((3600.0/ic%dts)*24.0)
                         end if
 
                         !> Hourly.
                         if (btest(cifg%ts_flag, 2) .and. ic%ts_daily > (3600.0/ic%dts)*23.0) then
                             civ%vars(civ%fk%KHLY)%lqws2_mm(k) = civ%vars(civ%fk%KHLY)%lqws2_mm(k) + &
-                                (sum(vs%tile%lqws(k, :))*pm%tile%fcan(k, 3))/(3600.0/ic%dts)
+                                (sum(vs%tile%lqwssol(k, :))*pm%tile%fcan(k, 3))/(3600.0/ic%dts)
                         end if
 
                         !> Per time-step.
                         if (btest(cifg%ts_flag, 3) .and. ic%ts_daily == (3600.0/ic%dts)*24.0) then
-                            civ%vars(civ%fk%KTS)%lqws2_mm(k) = sum(vs%tile%lqws(k, :))*pm%tile%fcan(k, 3)
+                            civ%vars(civ%fk%KTS)%lqws2_mm(k) = sum(vs%tile%lqwssol(k, :))*pm%tile%fcan(k, 3)
                         end if
 
                     end if
@@ -117,8 +117,8 @@ module cropland_irrigation_within_tile
                         !> Accumulate states for the present period.
                         do ikey = civ%fk%kmin, civ%fk%kmax
                             civ%vars(ikey)%pre_mm(k) = civ%vars(ikey)%pre_mm(k) + vs%tile%pre(k)*pm%tile%fcan(k, 3)*ic%dts
-                            civ%vars(ikey)%pevp_mm(k) = civ%vars(ikey)%pevp_mm(k) + vs%tile%pevp(k)*pm%tile%fcan(k, 3)*ic%dts
-                            civ%vars(ikey)%lqws1_mm(k) = civ%vars(ikey)%lqws1_mm(k) + sum(vs%tile%lqws(k, :))*pm%tile%fcan(k, 3)
+                            civ%vars(ikey)%pevp_mm(k) = civ%vars(ikey)%pevp_mm(k) + vs%tile%potevp(k)*pm%tile%fcan(k, 3)*ic%dts
+                            civ%vars(ikey)%lqws1_mm(k) = civ%vars(ikey)%lqws1_mm(k) + sum(vs%tile%lqwssol(k, :))*pm%tile%fcan(k, 3)
                         end do
 
                         !> Determine Kc.
@@ -192,8 +192,8 @@ module cropland_irrigation_within_tile
                 i = i + 1
                 call mpi_isend(civ%vars(ikey)%lqws2_mm(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
                 i = i + 1
-!todo: remove pevp (global var)
-                call mpi_isend(vs%tile%pevp(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!todo: remove potevp (global var)
+                call mpi_isend(vs%tile%potevp(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             end do
             lstat = .false.
             do while (.not. lstat)
@@ -219,8 +219,8 @@ module cropland_irrigation_within_tile
                     i = i + 1
                     call mpi_irecv(civ%vars(ikey)%lqws2_mm(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
-!todo: remove pevp (global var)
-                    call mpi_irecv(vs%tile%pevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!todo: remove potevp (global var)
+                    call mpi_irecv(vs%tile%potevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end do
                 lstat = .false.
                 do while (.not. lstat)

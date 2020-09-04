@@ -1552,10 +1552,10 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_PRECRN, args, nargs, z)
                 case (VN_PRECSNO)
                     call output_files_append_field(fls, shd, ts, VN_PRECSNO, args, nargs, z)
-                case (VN_RCAN)
-                    call output_files_append_field(fls, shd, ts, VN_RCAN, args, nargs, z)
-                case (VN_SNCAN, 'SCAN')
-                    call output_files_append_field(fls, shd, ts, VN_SNCAN, args, nargs, z)
+                case (VN_LQWSCAN, 'RCAN')
+                    call output_files_append_field(fls, shd, ts, VN_LQWSCAN, args, nargs, z)
+                case (VN_FZWSCAN, 'SNCAN', 'SCAN')
+                    call output_files_append_field(fls, shd, ts, VN_FZWSCAN, args, nargs, z)
                 case (VN_CMAS)
                     call output_files_append_field(fls, shd, ts, VN_CMAS, args, nargs, z)
                 case (VN_TCAN)
@@ -1570,12 +1570,12 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_ZSNO, args, nargs, z)
                 case (VN_FSNO)
                     call output_files_append_field(fls, shd, ts, VN_FSNO, args, nargs, z)
-                case (VN_WSNO)
-                    call output_files_append_field(fls, shd, ts, VN_WSNO, args, nargs, z)
+                case (VN_LQWSSNO, 'WSNO')
+                    call output_files_append_field(fls, shd, ts, VN_LQWSSNO, args, nargs, z)
                 case (VN_TSNO)
                     call output_files_append_field(fls, shd, ts, VN_TSNO, args, nargs, z)
-                case (VN_ROFSNO)
-                    call output_files_append_field(fls, shd, ts, VN_ROFSNO, args, nargs, z, -1, real(ic%dts))
+                case (VN_DRAINSNO, 'ROFSNO')
+                    call output_files_append_field(fls, shd, ts, VN_DRAINSNO, args, nargs, z, -1, real(ic%dts))
                 case (VN_ALBT)
                     call output_files_append_field(fls, shd, ts, VN_ALBT, args, nargs, z)
                 case (VN_ALVS)
@@ -1586,64 +1586,64 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_GTE, args, nargs, z)
                 case (VN_ZPND)
                     call output_files_append_field(fls, shd, ts, VN_ZPND, args, nargs, z)
-                case (VN_PNDW)
-                    call output_files_append_field(fls, shd, ts, VN_PNDW, args, nargs, z)
+                case (VN_LQWSPND, 'PNDW')
+                    call output_files_append_field(fls, shd, ts, VN_LQWSPND, args, nargs, z)
                 case (VN_TPND)
                     call output_files_append_field(fls, shd, ts, VN_TPND, args, nargs, z)
-                case (VN_PEVP)
-                    call output_files_append_field(fls, shd, ts, VN_PEVP, args, nargs, z, -1, real(ic%dts))
-                case (VN_EVAP, 'Evapotranspiration')
-                    call output_files_append_field(fls, shd, ts, VN_EVAP, args, nargs, z, -1, real(ic%dts))
+                case (VN_POTEVP, 'PEVP')
+                    call output_files_append_field(fls, shd, ts, VN_POTEVP, args, nargs, z, -1, real(ic%dts))
+                case (VN_ET, 'EVAP', 'Evapotranspiration')
+                    call output_files_append_field(fls, shd, ts, VN_ET, args, nargs, z, -1, real(ic%dts))
                 case (VN_EVPB)
                     call output_files_append_field(fls, shd, ts, VN_EVPB, args, nargs, z)
                 case (VN_ARRD)
                     call output_files_append_field(fls, shd, ts, VN_ARRD, args, nargs, z)
-                case (VN_ROFO)
-                    call output_files_append_field(fls, shd, ts, VN_ROFO, args, nargs, z, -1, real(ic%dts))
-                case (VN_QE, 'QEVP', 'LatentHeat')
-                    call output_files_append_field(fls, shd, ts, VN_QE, args, nargs, z)
-                case (VN_QH, 'HFS', 'SensibleHeat')
-                    call output_files_append_field(fls, shd, ts, VN_QH, args, nargs, z)
+                case (VN_OVRFLW, 'ROFO')
+                    call output_files_append_field(fls, shd, ts, VN_OVRFLW, args, nargs, z, -1, real(ic%dts))
+                case (VN_QEVP, 'QE', 'LatentHeat')
+                    call output_files_append_field(fls, shd, ts, VN_QEVP, args, nargs, z)
+                case (VN_QSENS, 'QH', 'HFS', 'SensibleHeat')
+                    call output_files_append_field(fls, shd, ts, VN_QSENS, args, nargs, z)
                 case (VN_GZERO)
                     call output_files_append_field(fls, shd, ts, VN_GZERO, args, nargs, z)
-                case (VN_THLQ)
+                case (VN_THLQSOL, 'THLQ')
                     do j = 1, shd%lc%IGND
-                        call output_files_append_field(fls, shd, ts, VN_THLQ, args, nargs, z, j)
+                        call output_files_append_field(fls, shd, ts, VN_THLQSOL, args, nargs, z, j)
                     end do
-                case (VN_THIC)
+                case (VN_THICSOL, 'THIC')
                     do j = 1, shd%lc%IGND
-                        call output_files_append_field(fls, shd, ts, VN_THIC, args, nargs, z, j)
+                        call output_files_append_field(fls, shd, ts, VN_THICSOL, args, nargs, z, j)
                     end do
-                case (VN_LQWS)
+                case (VN_LQWSSOL, 'LQWS')
                     do j = 1, shd%lc%IGND
-                        call output_files_append_field(fls, shd, ts, VN_LQWS, args, nargs, z, j)
+                        call output_files_append_field(fls, shd, ts, VN_LQWSSOL, args, nargs, z, j)
                     end do
-                case (VN_FZWS, 'FRWS')
+                case (VN_FZWSSOL, 'FZWS', 'FRWS')
                     do j = 1, shd%lc%IGND
-                        call output_files_append_field(fls, shd, ts, VN_FZWS, args, nargs, z, j)
+                        call output_files_append_field(fls, shd, ts, VN_FZWSSOL, args, nargs, z, j)
                     end do
-                case (VN_ALWS)
+                case (VN_ALWSSOL, 'ALWS')
                     do j = 1, shd%lc%IGND
-                        call output_files_append_field(fls, shd, ts, VN_ALWS, args, nargs, z, j)
+                        call output_files_append_field(fls, shd, ts, VN_ALWSSOL, args, nargs, z, j)
                     end do
-                case (VN_TBAR, 'TempSoil', 'Temperature_soil_layers')
+                case (VN_TSOL, 'TBAR', 'TempSoil', 'Temperature_soil_layers')
                     do j = 1, shd%lc%IGND
-                        call output_files_append_field(fls, shd, ts, VN_TBAR, args, nargs, z, j)
+                        call output_files_append_field(fls, shd, ts, VN_TSOL, args, nargs, z, j)
                     end do
                 case (VN_GFLX, 'HeatConduction')
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, VN_GFLX, args, nargs, z, j)
                     end do
-                case (VN_ROFS)
+                case (VN_LATFLW, 'ROFS')
                     do j = 1, shd%lc%IGND
-                        call output_files_append_field(fls, shd, ts, VN_ROFS, args, nargs, z, j, real(ic%dts))
+                        call output_files_append_field(fls, shd, ts, VN_LATFLW, args, nargs, z, j, real(ic%dts))
                     end do
-                case (VN_ROFB)
-                    call output_files_append_field(fls, shd, ts, VN_ROFB, args, nargs, z, -1, real(ic%dts))
+                case (VN_DRAINSOL, 'ROFB')
+                    call output_files_append_field(fls, shd, ts, VN_DRAINSOL, args, nargs, z, -1, real(ic%dts))
                 case (VN_RCHG, 'WR_RECHARGE')
                     call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs, z)
-                case (VN_LZS)
-                    call output_files_append_field(fls, shd, ts, VN_LZS, args, nargs, z)
+                case (VN_STGGW, 'LZS')
+                    call output_files_append_field(fls, shd, ts, VN_STGGW, args, nargs, z)
                 case (VN_DZS)
                     call output_files_append_field(fls, shd, ts, VN_DZS, args, nargs, z)
                 case (VN_STGE)
@@ -1679,25 +1679,25 @@ module output_files
                     call output_files_append_field(fls, shd, ts, PMFRSTVN_ALTENV, prmfst%out%altenv, args, nargs, z)
                 case (PMFRSTVN_TAVG)
                     call permafrost_outputs_init(fls, shd, PMFRSTVN_TAVG)
-                    line = trim(VN_TBAR) // '_AVG'
+                    line = trim(VN_TSOL) // '_AVG'
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, line, prmfst%out%tavg(j), args, nargs, z, j)
                     end do
                 case (PMFRSTVN_TMAX)
                     call permafrost_outputs_init(fls, shd, PMFRSTVN_TMAX)
-                    line = trim(VN_TBAR) // '_MAX'
+                    line = trim(VN_TSOL) // '_MAX'
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, line, prmfst%out%tmax(j), args, nargs, z, j)
                     end do
                 case (PMFRSTVN_TMIN)
                     call permafrost_outputs_init(fls, shd, PMFRSTVN_TMIN)
-                    line = trim(VN_TBAR) // '_MIN'
+                    line = trim(VN_TSOL) // '_MIN'
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, line, prmfst%out%tmin(j), args, nargs, z, j)
                     end do
                 case (PMFRSTVN_TRNG, 'TENV')
                     call permafrost_outputs_init(fls, shd, PMFRSTVN_TRNG)
-                    line = trim(VN_TBAR) // '_RNG'
+                    line = trim(VN_TSOL) // '_RNG'
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, line, prmfst%out%trng(j), args, nargs, z, j)
                     end do

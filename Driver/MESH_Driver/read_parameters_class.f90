@@ -110,11 +110,11 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
         read(iun, *, err = 98) (pm%gru%clay(m, j), j = 1, ignd)
         read(iun, *, err = 98) (pm%gru%orgm(m, j), j = 1, ignd)
         read(iun, *, err = 98) &
-            (vs%gru%tbar(m, j), j = 1, ignd), vs%gru%tcan(m), vs%gru%tsno(m), vs%gru%tpnd(m)
-        read(iun, *, err = 98) (vs%gru%thlq(m, j), j = 1, ignd), (vs%gru%thic(m, j), j = 1, ignd), vs%gru%zpnd(m)
+            (vs%gru%tsol(m, j), j = 1, ignd), vs%gru%tcan(m), vs%gru%tsno(m), vs%gru%tpnd(m)
+        read(iun, *, err = 98) (vs%gru%thlqsol(m, j), j = 1, ignd), (vs%gru%thicsol(m, j), j = 1, ignd), vs%gru%zpnd(m)
         read(iun, *, err = 98) &
-            vs%gru%rcan(m), vs%gru%sncan(m), vs%gru%sno(m), vs%gru%albs(m), &
-            vs%gru%rhos(m), vs%gru%gro(m)
+            vs%gru%lqwscan(m), vs%gru%fzwscan(m), vs%gru%sno(m), vs%gru%albsno(m), &
+            vs%gru%rhosno(m), vs%gru%gro(m)
     end do
 
     !> Read CLASS output start/stop dates.

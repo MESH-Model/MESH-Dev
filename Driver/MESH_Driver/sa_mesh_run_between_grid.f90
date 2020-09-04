@@ -368,8 +368,8 @@ module sa_mesh_run_between_grid
 
         !> Update variables.
         if (ro%RUNLSS) then
-            vs%grid%rff = (vs%grid%rofo + sum(vs%grid%rofs, 2))*ic%dts
-            vs%grid%rchg = vs%grid%rofb*ic%dts
+            vs%grid%rff = (vs%grid%ovrflw + sum(vs%grid%latflw, 2))*ic%dts
+            vs%grid%rchg = vs%grid%drainsol*ic%dts
         end if
 
         !> Call processes.
@@ -515,11 +515,11 @@ module sa_mesh_run_between_grid
         if (associated(vs%basin%pre) .and. associated(vs%grid%pre)) vs%basin%pre = vs%grid%pre*shd%FRAC
         if (associated(vs%basin%prern) .and. associated(vs%grid%prern)) vs%basin%prern = vs%grid%prern*shd%FRAC
         if (associated(vs%basin%presno) .and. associated(vs%grid%presno)) vs%basin%presno = vs%grid%presno*shd%FRAC
-        if (associated(vs%basin%rcan) .and. associated(vs%grid%rcan)) vs%basin%rcan = vs%grid%rcan*shd%FRAC
-        if (associated(vs%basin%sncan) .and. associated(vs%grid%sncan)) vs%basin%sncan = vs%grid%sncan*shd%FRAC
+        if (associated(vs%basin%lqwscan) .and. associated(vs%grid%lqwscan)) vs%basin%lqwscan = vs%grid%lqwscan*shd%FRAC
+        if (associated(vs%basin%fzwscan) .and. associated(vs%grid%fzwscan)) vs%basin%fzwscan = vs%grid%fzwscan*shd%FRAC
         if (associated(vs%basin%cmas) .and. associated(vs%grid%cmas)) vs%basin%cmas = vs%grid%cmas*shd%FRAC
-        if (associated(vs%basin%tac) .and. associated(vs%grid%tac)) vs%basin%tac = vs%grid%tac*shd%FRAC
-        if (associated(vs%basin%qac) .and. associated(vs%grid%qac)) vs%basin%qac = vs%grid%qac*shd%FRAC
+        if (associated(vs%basin%tacan) .and. associated(vs%grid%tacan)) vs%basin%tacan = vs%grid%tacan*shd%FRAC
+        if (associated(vs%basin%qacan) .and. associated(vs%grid%qacan)) vs%basin%qacan = vs%grid%qacan*shd%FRAC
         if (associated(vs%basin%tcan) .and. associated(vs%grid%tcan)) then
             vs%basin%tcan = vs%grid%tcan*shd%FRAC
             where (vs%basin%tcan > 0.0)
@@ -530,11 +530,11 @@ module sa_mesh_run_between_grid
         end if
         if (associated(vs%basin%gro) .and. associated(vs%grid%gro)) vs%basin%gro = vs%grid%gro*shd%FRAC
         if (associated(vs%basin%sno) .and. associated(vs%grid%sno)) vs%basin%sno = vs%grid%sno*shd%FRAC
-        if (associated(vs%basin%rhos) .and. associated(vs%grid%rhos)) vs%basin%rhos = vs%grid%rhos*shd%FRAC
+        if (associated(vs%basin%rhosno) .and. associated(vs%grid%rhosno)) vs%basin%rhosno = vs%grid%rhosno*shd%FRAC
         if (associated(vs%basin%zsno) .and. associated(vs%grid%zsno)) vs%basin%zsno = vs%grid%zsno*shd%FRAC
         if (associated(vs%basin%fsno) .and. associated(vs%grid%fsno)) vs%basin%fsno = vs%grid%fsno*shd%FRAC
-        if (associated(vs%basin%albs) .and. associated(vs%grid%albs)) vs%basin%albs = vs%grid%albs*shd%FRAC
-        if (associated(vs%basin%wsno) .and. associated(vs%grid%wsno)) vs%basin%wsno = vs%grid%wsno*shd%FRAC
+        if (associated(vs%basin%albsno) .and. associated(vs%grid%albsno)) vs%basin%albsno = vs%grid%albsno*shd%FRAC
+        if (associated(vs%basin%lqwssno) .and. associated(vs%grid%lqwssno)) vs%basin%lqwssno = vs%grid%lqwssno*shd%FRAC
         if (associated(vs%basin%tsno) .and. associated(vs%grid%tsno)) then
             vs%basin%tsno = vs%grid%tsno*shd%FRAC
             where (vs%basin%tsno > 0.0)
@@ -543,7 +543,7 @@ module sa_mesh_run_between_grid
                 tsnofrac = 0.0
             end where
         end if
-        if (associated(vs%basin%rofsno) .and. associated(vs%grid%rofsno)) vs%basin%rofsno = vs%grid%rofsno*shd%FRAC
+        if (associated(vs%basin%drainsno) .and. associated(vs%grid%drainsno)) vs%basin%drainsno = vs%grid%drainsno*shd%FRAC
         if (associated(vs%basin%albt) .and. associated(vs%grid%albt)) then
             vs%basin%albt = vs%grid%albt*shd%FRAC
             where (vs%basin%albt > 0.0)
@@ -556,7 +556,7 @@ module sa_mesh_run_between_grid
         if (associated(vs%basin%alir) .and. associated(vs%grid%alir)) vs%basin%alir = vs%grid%alir*shd%FRAC
         if (associated(vs%basin%gte) .and. associated(vs%grid%gte)) vs%basin%gte = vs%grid%gte*shd%FRAC
         if (associated(vs%basin%zpnd) .and. associated(vs%grid%zpnd)) vs%basin%zpnd = vs%grid%zpnd*shd%FRAC
-        if (associated(vs%basin%pndw) .and. associated(vs%grid%pndw)) vs%basin%pndw = vs%grid%pndw*shd%FRAC
+        if (associated(vs%basin%lqwspnd) .and. associated(vs%grid%lqwspnd)) vs%basin%lqwspnd = vs%grid%lqwspnd*shd%FRAC
         if (associated(vs%basin%tpnd) .and. associated(vs%grid%tpnd)) then
             vs%basin%tpnd = vs%grid%tpnd*shd%FRAC
             where (vs%basin%tpnd > 0.0)
@@ -566,13 +566,13 @@ module sa_mesh_run_between_grid
             end where
         end if
         if (associated(vs%basin%fstr) .and. associated(vs%grid%fstr)) vs%basin%fstr = vs%grid%fstr*shd%FRAC
-        if (associated(vs%basin%pevp) .and. associated(vs%grid%pevp)) vs%basin%pevp = vs%grid%pevp*shd%FRAC
-        if (associated(vs%basin%evap) .and. associated(vs%grid%evap)) vs%basin%evap = vs%grid%evap*shd%FRAC
+        if (associated(vs%basin%potevp) .and. associated(vs%grid%potevp)) vs%basin%potevp = vs%grid%potevp*shd%FRAC
+        if (associated(vs%basin%et) .and. associated(vs%grid%et)) vs%basin%et = vs%grid%et*shd%FRAC
         if (associated(vs%basin%evpb) .and. associated(vs%grid%evpb)) vs%basin%evpb = vs%grid%evpb*shd%FRAC
         if (associated(vs%basin%arrd) .and. associated(vs%grid%arrd)) vs%basin%arrd = vs%grid%arrd*shd%FRAC
-        if (associated(vs%basin%rofo) .and. associated(vs%grid%rofo)) vs%basin%rofo = vs%grid%rofo*shd%FRAC
+        if (associated(vs%basin%ovrflw) .and. associated(vs%grid%ovrflw)) vs%basin%ovrflw = vs%grid%ovrflw*shd%FRAC
         if (associated(vs%basin%qevp) .and. associated(vs%grid%qevp)) vs%basin%qevp = vs%grid%qevp*shd%FRAC
-        if (associated(vs%basin%hfs) .and. associated(vs%grid%hfs)) vs%basin%hfs = vs%grid%hfs*shd%FRAC
+        if (associated(vs%basin%qsens) .and. associated(vs%grid%qsens)) vs%basin%qsens = vs%grid%qsens*shd%FRAC
         if (associated(vs%basin%gzero) .and. associated(vs%grid%gzero)) vs%basin%gzero = vs%grid%gzero*shd%FRAC
         do j = 1, 4
             if (associated(vs%basin%tsfs) .and. associated(vs%grid%tsfs)) vs%basin%tsfs(:, j) = vs%grid%tsfs(:, j)*shd%FRAC
@@ -580,19 +580,29 @@ module sa_mesh_run_between_grid
         if (associated(vs%basin%ggeo) .and. associated(vs%grid%ggeo)) vs%basin%ggeo = vs%grid%ggeo*shd%FRAC
         if (associated(vs%basin%tbas) .and. associated(vs%grid%tbas)) vs%basin%tbas = vs%grid%tbas*shd%FRAC
         do j = 1, shd%lc%IGND
-            if (associated(vs%basin%thlq) .and. associated(vs%grid%thlq)) vs%basin%thlq(:, j) = vs%grid%thlq(:, j)*shd%FRAC
-            if (associated(vs%basin%thic) .and. associated(vs%grid%thic)) vs%basin%thic(:, j) = vs%grid%thic(:, j)*shd%FRAC
-            if (associated(vs%basin%lqws) .and. associated(vs%grid%lqws)) vs%basin%lqws(:, j) = vs%grid%lqws(:, j)*shd%FRAC
-            if (associated(vs%basin%fzws) .and. associated(vs%grid%fzws)) vs%basin%fzws(:, j) = vs%grid%fzws(:, j)*shd%FRAC
-            if (associated(vs%basin%tbar) .and. associated(vs%grid%tbar)) vs%basin%tbar(:, j) = vs%grid%tbar(:, j)*shd%FRAC
+            if (associated(vs%basin%thlqsol) .and. associated(vs%grid%thlqsol)) then
+                vs%basin%thlqsol(:, j) = vs%grid%thlqsol(:, j)*shd%FRAC
+            end if
+            if (associated(vs%basin%thicsol) .and. associated(vs%grid%thicsol)) then
+                vs%basin%thicsol(:, j) = vs%grid%thicsol(:, j)*shd%FRAC
+            end if
+            if (associated(vs%basin%lqwssol) .and. associated(vs%grid%lqwssol)) then
+                vs%basin%lqwssol(:, j) = vs%grid%lqwssol(:, j)*shd%FRAC
+            end if
+            if (associated(vs%basin%fzwssol) .and. associated(vs%grid%fzwssol)) then
+                vs%basin%fzwssol(:, j) = vs%grid%fzwssol(:, j)*shd%FRAC
+            end if
+            if (associated(vs%basin%tsol) .and. associated(vs%grid%tsol)) vs%basin%tsol(:, j) = vs%grid%tsol(:, j)*shd%FRAC
             if (associated(vs%basin%gflx) .and. associated(vs%grid%gflx)) vs%basin%gflx(:, j) = vs%grid%gflx(:, j)*shd%FRAC
-            if (associated(vs%basin%rofs) .and. associated(vs%grid%rofs)) vs%basin%rofs(:, j) = vs%grid%rofs(:, j)*shd%FRAC
-            if (associated(vs%basin%delzw) .and. associated(vs%grid%delzw)) vs%basin%delzw(:, j) = vs%grid%delzw(:, j)*shd%FRAC
-            if (associated(vs%basin%zbotw) .and. associated(vs%grid%zbotw)) vs%basin%zbotw(:, j) = vs%grid%zbotw(:, j)*shd%FRAC
+            if (associated(vs%basin%latflw) .and. associated(vs%grid%latflw)) vs%basin%latflw(:, j) = vs%grid%latflw(:, j)*shd%FRAC
+            if (associated(vs%basin%dzwat) .and. associated(vs%grid%dzwat)) vs%basin%dzwat(:, j) = vs%grid%dzwat(:, j)*shd%FRAC
+            if (associated(vs%basin%zbotwat) .and. associated(vs%grid%zbotwat)) then
+                vs%basin%zbotwat(:, j) = vs%grid%zbotwat(:, j)*shd%FRAC
+            end if
         end do
-        if (associated(vs%basin%rofb) .and. associated(vs%grid%rofb)) vs%basin%rofb = vs%grid%rofb*shd%FRAC
+        if (associated(vs%basin%drainsol) .and. associated(vs%grid%drainsol)) vs%basin%drainsol = vs%grid%drainsol*shd%FRAC
         if (associated(vs%basin%rchg) .and. associated(vs%grid%rchg)) vs%basin%rchg = vs%grid%rchg*shd%FRAC
-        if (associated(vs%basin%lzs) .and. associated(vs%grid%lzs)) vs%basin%lzs = vs%grid%lzs*shd%FRAC
+        if (associated(vs%basin%stggw) .and. associated(vs%grid%stggw)) vs%basin%stggw = vs%grid%stggw*shd%FRAC
         if (associated(vs%basin%dzs) .and. associated(vs%grid%dzs)) vs%basin%dzs = vs%grid%dzs*shd%FRAC
         frac = shd%FRAC
 
@@ -614,11 +624,11 @@ module sa_mesh_run_between_grid
                 if (associated(vs%basin%pre)) vs%basin%pre(ii) = vs%basin%pre(ii) + vs%basin%pre(i)
                 if (associated(vs%basin%prern)) vs%basin%prern(ii) = vs%basin%prern(ii) + vs%basin%prern(i)
                 if (associated(vs%basin%presno)) vs%basin%presno(ii) = vs%basin%presno(ii) + vs%basin%presno(i)
-                if (associated(vs%basin%rcan)) vs%basin%rcan(ii) = vs%basin%rcan(ii) + vs%basin%rcan(i)
-                if (associated(vs%basin%sncan)) vs%basin%sncan(ii) = vs%basin%sncan(ii) + vs%basin%sncan(i)
+                if (associated(vs%basin%lqwscan)) vs%basin%lqwscan(ii) = vs%basin%lqwscan(ii) + vs%basin%lqwscan(i)
+                if (associated(vs%basin%fzwscan)) vs%basin%fzwscan(ii) = vs%basin%fzwscan(ii) + vs%basin%fzwscan(i)
                 if (associated(vs%basin%cmas)) vs%basin%cmas(ii) = vs%basin%cmas(ii) + vs%basin%cmas(i)
-                if (associated(vs%basin%tac)) vs%basin%tac(ii) = vs%basin%tac(ii) + vs%basin%tac(i)
-                if (associated(vs%basin%qac)) vs%basin%qac(ii) = vs%basin%qac(ii) + vs%basin%qac(i)
+                if (associated(vs%basin%tacan)) vs%basin%tacan(ii) = vs%basin%tacan(ii) + vs%basin%tacan(i)
+                if (associated(vs%basin%qacan)) vs%basin%qacan(ii) = vs%basin%qacan(ii) + vs%basin%qacan(i)
                 if (associated(vs%basin%tcan)) then
                     vs%basin%tcan(ii) = vs%basin%tcan(ii) + vs%basin%tcan(i)
                     if (vs%basin%tcan(i) > 0.0) then
@@ -627,18 +637,18 @@ module sa_mesh_run_between_grid
                 end if
                 if (associated(vs%basin%gro)) vs%basin%gro(ii) = vs%basin%gro(ii) + vs%basin%gro(i)
                 if (associated(vs%basin%sno)) vs%basin%sno(ii) = vs%basin%sno(ii) + vs%basin%sno(i)
-                if (associated(vs%basin%rhos)) vs%basin%rhos(ii) = vs%basin%rhos(ii) + vs%basin%rhos(i)
+                if (associated(vs%basin%rhosno)) vs%basin%rhosno(ii) = vs%basin%rhosno(ii) + vs%basin%rhosno(i)
                 if (associated(vs%basin%zsno)) vs%basin%zsno(ii) = vs%basin%zsno(ii) + vs%basin%zsno(i)
                 if (associated(vs%basin%fsno)) vs%basin%fsno(ii) = vs%basin%fsno(ii) + vs%basin%fsno(i)
-                if (associated(vs%basin%albs)) vs%basin%albs(ii) = vs%basin%albs(ii) + vs%basin%albs(i)
-                if (associated(vs%basin%wsno)) vs%basin%wsno(ii) = vs%basin%wsno(ii) + vs%basin%wsno(i)
+                if (associated(vs%basin%albsno)) vs%basin%albsno(ii) = vs%basin%albsno(ii) + vs%basin%albsno(i)
+                if (associated(vs%basin%lqwssno)) vs%basin%lqwssno(ii) = vs%basin%lqwssno(ii) + vs%basin%lqwssno(i)
                 if (associated(vs%basin%tsno)) then
                     vs%basin%tsno(ii) = vs%basin%tsno(ii) + vs%basin%tsno(i)
                     if (vs%basin%tsno(i) > 0.0) then
                         tsnofrac(ii) = tsnofrac(ii) + tsnofrac(i)
                     end if
                 end if
-                if (associated(vs%basin%rofsno)) vs%basin%rofsno(ii) = vs%basin%rofsno(ii) + vs%basin%rofsno(i)
+                if (associated(vs%basin%drainsno)) vs%basin%drainsno(ii) = vs%basin%drainsno(ii) + vs%basin%drainsno(i)
                 if (associated(vs%basin%albt)) then
                     vs%basin%albt(ii) = vs%basin%albt(ii) + vs%basin%albt(i)
                     if (vs%basin%albt(i) > 0.0) then
@@ -649,7 +659,7 @@ module sa_mesh_run_between_grid
                 if (associated(vs%basin%alir)) vs%basin%alir(ii) = vs%basin%alir(ii) + vs%basin%alir(i)
                 if (associated(vs%basin%gte)) vs%basin%gte(ii) = vs%basin%gte(ii) + vs%basin%gte(i)
                 if (associated(vs%basin%zpnd)) vs%basin%zpnd(ii) = vs%basin%zpnd(ii) + vs%basin%zpnd(i)
-                if (associated(vs%basin%pndw)) vs%basin%pndw(ii) = vs%basin%pndw(ii) + vs%basin%pndw(i)
+                if (associated(vs%basin%lqwspnd)) vs%basin%lqwspnd(ii) = vs%basin%lqwspnd(ii) + vs%basin%lqwspnd(i)
                 if (associated(vs%basin%tpnd)) then
                     vs%basin%tpnd(ii) = vs%basin%tpnd(ii) + vs%basin%tpnd(i)
                     if (vs%basin%tpnd(i) > 0.0) then
@@ -657,29 +667,29 @@ module sa_mesh_run_between_grid
                     end if
                 end if
                 if (associated(vs%basin%fstr)) vs%basin%fstr(ii) = vs%basin%fstr(ii) + vs%basin%fstr(i)
-                if (associated(vs%basin%pevp)) vs%basin%pevp(ii) = vs%basin%pevp(ii) + vs%basin%pevp(i)
-                if (associated(vs%basin%evap)) vs%basin%evap(ii) = vs%basin%evap(ii) + vs%basin%evap(i)
+                if (associated(vs%basin%potevp)) vs%basin%potevp(ii) = vs%basin%potevp(ii) + vs%basin%potevp(i)
+                if (associated(vs%basin%et)) vs%basin%et(ii) = vs%basin%et(ii) + vs%basin%et(i)
                 if (associated(vs%basin%evpb)) vs%basin%evpb(ii) = vs%basin%evpb(ii) + vs%basin%evpb(i)
                 if (associated(vs%basin%arrd)) vs%basin%arrd(ii) = vs%basin%arrd(ii) + vs%basin%arrd(i)
-                if (associated(vs%basin%rofo)) vs%basin%rofo(ii) = vs%basin%rofo(ii) + vs%basin%rofo(i)
+                if (associated(vs%basin%ovrflw)) vs%basin%ovrflw(ii) = vs%basin%ovrflw(ii) + vs%basin%ovrflw(i)
                 if (associated(vs%basin%qevp)) vs%basin%qevp(ii) = vs%basin%qevp(ii) + vs%basin%qevp(i)
-                if (associated(vs%basin%hfs)) vs%basin%hfs(ii) = vs%basin%hfs(ii) + vs%basin%hfs(i)
+                if (associated(vs%basin%qsens)) vs%basin%qsens(ii) = vs%basin%qsens(ii) + vs%basin%qsens(i)
                 if (associated(vs%basin%gzero)) vs%basin%gzero(ii) = vs%basin%gzero(ii) + vs%basin%gzero(i)
                 if (associated(vs%basin%tsfs)) vs%basin%tsfs(ii, :) = vs%basin%tsfs(ii, :) + vs%basin%tsfs(i, :)
                 if (associated(vs%basin%ggeo)) vs%basin%ggeo(ii) = vs%basin%ggeo(ii) + vs%basin%ggeo(i)
                 if (associated(vs%basin%tbas)) vs%basin%tbas(ii) = vs%basin%tbas(ii) + vs%basin%tbas(i)
-                if (associated(vs%basin%thlq)) vs%basin%thlq(ii, :) = vs%basin%thlq(ii, :) + vs%basin%thlq(i, :)
-                if (associated(vs%basin%thic)) vs%basin%thic(ii, :) = vs%basin%thic(ii, :) + vs%basin%thic(i, :)
-                if (associated(vs%basin%lqws)) vs%basin%lqws(ii, :) = vs%basin%lqws(ii, :) + vs%basin%lqws(i, :)
-                if (associated(vs%basin%fzws)) vs%basin%fzws(ii, :) = vs%basin%fzws(ii, :) + vs%basin%fzws(i, :)
-                if (associated(vs%basin%tbar)) vs%basin%tbar(ii, :) = vs%basin%tbar(ii, :) + vs%basin%tbar(i, :)
+                if (associated(vs%basin%thlqsol)) vs%basin%thlqsol(ii, :) = vs%basin%thlqsol(ii, :) + vs%basin%thlqsol(i, :)
+                if (associated(vs%basin%thicsol)) vs%basin%thicsol(ii, :) = vs%basin%thicsol(ii, :) + vs%basin%thicsol(i, :)
+                if (associated(vs%basin%lqwssol)) vs%basin%lqwssol(ii, :) = vs%basin%lqwssol(ii, :) + vs%basin%lqwssol(i, :)
+                if (associated(vs%basin%fzwssol)) vs%basin%fzwssol(ii, :) = vs%basin%fzwssol(ii, :) + vs%basin%fzwssol(i, :)
+                if (associated(vs%basin%tsol)) vs%basin%tsol(ii, :) = vs%basin%tsol(ii, :) + vs%basin%tsol(i, :)
                 if (associated(vs%basin%gflx)) vs%basin%gflx(ii, :) = vs%basin%gflx(ii, :) + vs%basin%gflx(i, :)
-                if (associated(vs%basin%rofs)) vs%basin%rofs(ii, :) = vs%basin%rofs(ii, :) + vs%basin%rofs(i, :)
-                if (associated(vs%basin%delzw)) vs%basin%delzw(ii, :) = vs%basin%delzw(ii, :) + vs%basin%delzw(i, :)
-                if (associated(vs%basin%zbotw)) vs%basin%zbotw(ii, :) = vs%basin%zbotw(ii, :) + vs%basin%zbotw(i, :)
-                if (associated(vs%basin%rofb)) vs%basin%rofb(ii) = vs%basin%rofb(ii) + vs%basin%rofb(i)
+                if (associated(vs%basin%latflw)) vs%basin%latflw(ii, :) = vs%basin%latflw(ii, :) + vs%basin%latflw(i, :)
+                if (associated(vs%basin%dzwat)) vs%basin%dzwat(ii, :) = vs%basin%dzwat(ii, :) + vs%basin%dzwat(i, :)
+                if (associated(vs%basin%zbotwat)) vs%basin%zbotwat(ii, :) = vs%basin%zbotwat(ii, :) + vs%basin%zbotwat(i, :)
+                if (associated(vs%basin%drainsol)) vs%basin%drainsol(ii) = vs%basin%drainsol(ii) + vs%basin%drainsol(i)
                 if (associated(vs%basin%rchg)) vs%basin%rchg(ii) = vs%basin%rchg(ii) + vs%basin%rchg(i)
-                if (associated(vs%basin%lzs)) vs%basin%lzs(ii) = vs%basin%lzs(ii) + vs%basin%lzs(i)
+                if (associated(vs%basin%stggw)) vs%basin%stggw(ii) = vs%basin%stggw(ii) + vs%basin%stggw(i)
                 if (associated(vs%basin%dzs)) vs%basin%dzs(ii) = vs%basin%dzs(ii) + vs%basin%dzs(i)
                 if (associated(vs%basin%stge)) vs%basin%stge(ii) = vs%basin%stge(ii) + vs%basin%stge(i)
                 if (associated(vs%basin%stgw)) vs%basin%stgw(ii) = vs%basin%stgw(ii) + vs%basin%stgw(i)
@@ -689,7 +699,7 @@ module sa_mesh_run_between_grid
                 if (associated(vs%basin%stgch)) vs%basin%stgch(ii) = vs%basin%stgch(ii) + vs%basin%stgch(i)
                 if (associated(vs%basin%zlvl)) vs%basin%zlvl(ii) = vs%basin%zlvl(ii) + vs%basin%zlvl(i)
                 if (associated(vs%basin%div)) vs%basin%div(ii) = vs%basin%div(ii) + vs%basin%div(i)
-                if (associated(vs%basin%ab)) vs%basin%ab(ii) = vs%basin%ab(ii) + vs%basin%ab(i)
+                if (associated(vs%basin%abstr)) vs%basin%abstr(ii) = vs%basin%abstr(ii) + vs%basin%abstr(i)
                 frac(ii) = frac(ii) + frac(i)
             end if
         end do
@@ -712,16 +722,16 @@ module sa_mesh_run_between_grid
         if (associated(vs%basin%pre)) vs%basin%pre = vs%basin%pre/frac
         if (associated(vs%basin%prern)) vs%basin%prern = vs%basin%prern/frac
         if (associated(vs%basin%presno)) vs%basin%presno = vs%basin%presno/frac
-        if (associated(vs%basin%rcan)) vs%basin%rcan = vs%basin%rcan/frac
-        if (associated(vs%basin%sncan)) vs%basin%sncan = vs%basin%sncan/frac
+        if (associated(vs%basin%lqwscan)) vs%basin%lqwscan = vs%basin%lqwscan/frac
+        if (associated(vs%basin%fzwscan)) vs%basin%fzwscan = vs%basin%fzwscan/frac
         if (associated(vs%basin%cmas)) then
             where (tcanfrac > 0.0) vs%basin%cmas = vs%basin%cmas/tcanfrac
         end if
-        if (associated(vs%basin%tac)) then
-            where (tcanfrac > 0.0) vs%basin%tac = vs%basin%tac/tcanfrac
+        if (associated(vs%basin%tacan)) then
+            where (tcanfrac > 0.0) vs%basin%tacan = vs%basin%tacan/tcanfrac
         end if
-        if (associated(vs%basin%qac)) then
-            where (tcanfrac > 0.0) vs%basin%qac = vs%basin%qac/tcanfrac
+        if (associated(vs%basin%qacan)) then
+            where (tcanfrac > 0.0) vs%basin%qacan = vs%basin%qacan/tcanfrac
         end if
         if (associated(vs%basin%tcan)) then
             where (tcanfrac > 0.0) vs%basin%tcan = vs%basin%tcan/tcanfrac
@@ -730,19 +740,19 @@ module sa_mesh_run_between_grid
             where (tcanfrac > 0.0) vs%basin%gro = vs%basin%gro/tcanfrac
         end if
         if (associated(vs%basin%sno)) vs%basin%sno = vs%basin%sno/frac
-        if (associated(vs%basin%rhos)) then
-            where (tsnofrac > 0.0) vs%basin%rhos = vs%basin%rhos/tsnofrac
+        if (associated(vs%basin%rhosno)) then
+            where (tsnofrac > 0.0) vs%basin%rhosno = vs%basin%rhosno/tsnofrac
         end if
         if (associated(vs%basin%zsno)) vs%basin%zsno = vs%basin%zsno/frac
         if (associated(vs%basin%fsno)) vs%basin%fsno = vs%basin%fsno/frac
-        if (associated(vs%basin%albs)) then
-            where (tsnofrac > 0.0) vs%basin%albs = vs%basin%albs/tsnofrac
+        if (associated(vs%basin%albsno)) then
+            where (tsnofrac > 0.0) vs%basin%albsno = vs%basin%albsno/tsnofrac
         end if
-        if (associated(vs%basin%wsno)) vs%basin%wsno = vs%basin%wsno/frac
+        if (associated(vs%basin%lqwssno)) vs%basin%lqwssno = vs%basin%lqwssno/frac
         if (associated(vs%basin%tsno)) then
             where (tsnofrac > 0.0) vs%basin%tsno = vs%basin%tsno/tsnofrac
         end if
-        if (associated(vs%basin%rofsno)) vs%basin%rofsno = vs%basin%rofsno/frac
+        if (associated(vs%basin%drainsno)) vs%basin%drainsno = vs%basin%drainsno/frac
         if (associated(vs%basin%albt)) then
             where (albtfrac > 0.0) vs%basin%albt = vs%basin%albt/albtfrac
         end if
@@ -754,20 +764,20 @@ module sa_mesh_run_between_grid
         end if
         if (associated(vs%basin%gte)) vs%basin%gte = vs%basin%gte/frac
         if (associated(vs%basin%zpnd)) vs%basin%zpnd = vs%basin%zpnd/frac
-        if (associated(vs%basin%pndw)) vs%basin%pndw = vs%basin%pndw/frac
+        if (associated(vs%basin%lqwspnd)) vs%basin%lqwspnd = vs%basin%lqwspnd/frac
         if (associated(vs%basin%tpnd)) then
             where (tpndfrac > 0.0) vs%basin%tpnd = vs%basin%tpnd/tpndfrac
         end if
         if (associated(vs%basin%fstr)) then
             where (tpndfrac > 0.0) vs%basin%fstr = vs%basin%fstr/tpndfrac
         end if
-        if (associated(vs%basin%pevp)) vs%basin%pevp = vs%basin%pevp/frac
-        if (associated(vs%basin%evap)) vs%basin%evap = vs%basin%evap/frac
+        if (associated(vs%basin%potevp)) vs%basin%potevp = vs%basin%potevp/frac
+        if (associated(vs%basin%et)) vs%basin%et = vs%basin%et/frac
         if (associated(vs%basin%evpb)) vs%basin%evpb = vs%basin%evpb/frac
         if (associated(vs%basin%arrd)) vs%basin%arrd = vs%basin%arrd/frac
-        if (associated(vs%basin%rofo)) vs%basin%rofo = vs%basin%rofo/frac
+        if (associated(vs%basin%ovrflw)) vs%basin%ovrflw = vs%basin%ovrflw/frac
         if (associated(vs%basin%qevp)) vs%basin%qevp = vs%basin%qevp/frac
-        if (associated(vs%basin%hfs)) vs%basin%hfs = vs%basin%hfs/frac
+        if (associated(vs%basin%qsens)) vs%basin%qsens = vs%basin%qsens/frac
         if (associated(vs%basin%gzero)) vs%basin%gzero = vs%basin%gzero/frac
         do j = 1, 4
             if (associated(vs%basin%tsfs)) vs%basin%tsfs(:, j) = vs%basin%tsfs(:, j)/frac
@@ -775,19 +785,19 @@ module sa_mesh_run_between_grid
         if (associated(vs%basin%ggeo)) vs%basin%ggeo = vs%basin%ggeo/frac
         if (associated(vs%basin%tbas)) vs%basin%tbas = vs%basin%tbas/frac
         do j = 1, shd%lc%IGND
-            if (associated(vs%basin%thlq)) vs%basin%thlq(:, j) = vs%basin%thlq(:, j)/frac
-            if (associated(vs%basin%thic)) vs%basin%thic(:, j) = vs%basin%thic(:, j)/frac
-            if (associated(vs%basin%lqws)) vs%basin%lqws(:, j) = vs%basin%lqws(:, j)/frac
-            if (associated(vs%basin%fzws)) vs%basin%fzws(:, j) = vs%basin%fzws(:, j)/frac
-            if (associated(vs%basin%tbar)) vs%basin%tbar(:, j) = vs%basin%tbar(:, j)/frac
+            if (associated(vs%basin%thlqsol)) vs%basin%thlqsol(:, j) = vs%basin%thlqsol(:, j)/frac
+            if (associated(vs%basin%thicsol)) vs%basin%thicsol(:, j) = vs%basin%thicsol(:, j)/frac
+            if (associated(vs%basin%lqwssol)) vs%basin%lqwssol(:, j) = vs%basin%lqwssol(:, j)/frac
+            if (associated(vs%basin%fzwssol)) vs%basin%fzwssol(:, j) = vs%basin%fzwssol(:, j)/frac
+            if (associated(vs%basin%tsol)) vs%basin%tsol(:, j) = vs%basin%tsol(:, j)/frac
             if (associated(vs%basin%gflx)) vs%basin%gflx(:, j) = vs%basin%gflx(:, j)/frac
-            if (associated(vs%basin%rofs)) vs%basin%rofs(:, j) = vs%basin%rofs(:, j)/frac
-            if (associated(vs%basin%delzw)) vs%basin%delzw(:, j) = vs%basin%delzw(:, j)/frac
-            if (associated(vs%basin%zbotw)) vs%basin%zbotw(:, j) = vs%basin%zbotw(:, j)/frac
+            if (associated(vs%basin%latflw)) vs%basin%latflw(:, j) = vs%basin%latflw(:, j)/frac
+            if (associated(vs%basin%dzwat)) vs%basin%dzwat(:, j) = vs%basin%dzwat(:, j)/frac
+            if (associated(vs%basin%zbotwat)) vs%basin%zbotwat(:, j) = vs%basin%zbotwat(:, j)/frac
         end do
-        if (associated(vs%basin%rofb)) vs%basin%rofb = vs%basin%rofb/frac
+        if (associated(vs%basin%drainsol)) vs%basin%drainsol = vs%basin%drainsol/frac
         if (associated(vs%basin%rchg)) vs%basin%rchg = vs%basin%rchg/frac
-        if (associated(vs%basin%lzs)) vs%basin%lzs = vs%basin%lzs/frac
+        if (associated(vs%basin%stggw)) vs%basin%stggw = vs%basin%stggw/frac
         if (associated(vs%basin%dzs)) vs%basin%dzs = vs%basin%dzs/frac
 
     end subroutine
