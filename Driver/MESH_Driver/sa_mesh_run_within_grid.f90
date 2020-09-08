@@ -298,7 +298,7 @@ module sa_mesh_run_within_grid
         if (associated(vs%grid%dzwat)) vs%grid%dzwat(i1:i2, :) = 0.0
         if (associated(vs%grid%zbotwat)) vs%grid%zbotwat(i1:i2, :) = 0.0
         if (associated(vs%grid%drainsol)) vs%grid%drainsol(i1:i2) = 0.0
-        if (associated(vs%grid%rchg)) vs%grid%rchg(i1:i2) = 0.0
+!+        if (associated(vs%grid%rchg)) vs%grid%rchg(i1:i2) = 0.0
         if (associated(vs%grid%stggw)) vs%grid%stggw(i1:i2) = 0.0
         if (associated(vs%grid%dzs)) vs%grid%dzs(i1:i2) = 0.0
         if (associated(vs%grid%stge)) vs%grid%stge(i1:i2) = 0.0
@@ -501,9 +501,9 @@ module sa_mesh_run_within_grid
             if (associated(vs%grid%drainsol) .and. associated(vs%tile%drainsol)) then
                 vs%grid%drainsol(ki) = vs%grid%drainsol(ki) + vs%tile%drainsol(k)*frac
             end if
-            if (associated(vs%grid%rchg) .and. associated(vs%tile%rchg)) then
-                vs%grid%rchg(ki) = vs%grid%rchg(ki) + vs%tile%rchg(k)*frac
-            end if
+!+            if (associated(vs%grid%rchg) .and. associated(vs%tile%rchg)) then
+!+                vs%grid%rchg(ki) = vs%grid%rchg(ki) + vs%tile%rchg(k)*frac
+!+            end if
             if (associated(vs%grid%stggw) .and. associated(vs%tile%stggw)) then
                 vs%grid%stggw(ki) = vs%grid%stggw(ki) + vs%tile%stggw(k)*frac
             end if
