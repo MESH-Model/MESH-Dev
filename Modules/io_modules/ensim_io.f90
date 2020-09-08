@@ -8,16 +8,16 @@ module ensim_io
     integer, parameter :: MAX_WORDS = 500, MAX_WORD_LENGTH = 200, MAX_LINE_LENGTH = 5000
 
     interface get_keyword_value
-        module procedure get_keyword_value_field_char
-        module procedure get_keyword_value_field_double
-        module procedure get_keyword_value_field_float
-        module procedure get_keyword_value_field_long
-        module procedure get_keyword_value_field_int
-        module procedure get_keyword_value_value_char
-        module procedure get_keyword_value_value_double
-        module procedure get_keyword_value_value_float
-        module procedure get_keyword_value_value_long
-        module procedure get_keyword_value_value_int
+        module procedure get_keyword_field_char
+        module procedure get_keyword_field_double
+        module procedure get_keyword_field_float
+        module procedure get_keyword_field_long
+        module procedure get_keyword_field_int
+        module procedure get_keyword_value_char
+        module procedure get_keyword_value_double
+        module procedure get_keyword_value_float
+        module procedure get_keyword_value_long
+        module procedure get_keyword_value_int
     end interface
 
     interface validate_header_spatial
@@ -68,7 +68,9 @@ module ensim_io
         open(iun, file = fpath, status = 'old', action = 'read', iostat = ierr)
 
         !> Print error if unable to open file.
-        if (ierr /= 0) call print_error('Unable to open the file: ' // trim(fpath))
+        if (ierr /= 0) then
+            call print_error('Unable to open the file: ' // trim(fpath))
+        end if
 
         return
 
@@ -297,7 +299,7 @@ module ensim_io
     end subroutine
 
     !> Description: 'get_keyword_value' for a vector of type character.
-    subroutine get_keyword_value_field_char(iun, vkeyword, nkeyword, cname, cfield, ncol, ierr)
+    subroutine get_keyword_field_char(iun, vkeyword, nkeyword, cname, cfield, ncol, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -337,7 +339,7 @@ module ensim_io
     end subroutine
 
     !> Description: 'get_keyword_value' for a vector of type 8-byte real.
-    subroutine get_keyword_value_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
+    subroutine get_keyword_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -358,7 +360,7 @@ module ensim_io
         dfield = 0.0
 
         !> Call base routine.
-        call get_keyword_value_field_char(iun, vkeyword, nkeyword, cname, cfield, ncol, ierr)
+        call get_keyword_field_char(iun, vkeyword, nkeyword, cname, cfield, ncol, ierr)
         if (ierr /= 0) return
 
         !> Check for blank fields (if the field was not found).
@@ -382,7 +384,7 @@ module ensim_io
     end subroutine
 
     !> Description: 'get_keyword_value' for a vector of type 4-byte real.
-    subroutine get_keyword_value_field_float(iun, vkeyword, nkeyword, cname, ffield, ncol, ierr)
+    subroutine get_keyword_field_float(iun, vkeyword, nkeyword, cname, ffield, ncol, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -401,7 +403,7 @@ module ensim_io
         ffield = 0
 
         !> Call base routine.
-        call get_keyword_value_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
+        call get_keyword_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
         if (ierr /= 0) return
 
         !> Convert values.
@@ -412,7 +414,7 @@ module ensim_io
     end subroutine
 
     !> Description: 'get_keyword_value' for a vector of type 8-byte integer.
-    subroutine get_keyword_value_field_long(iun, vkeyword, nkeyword, cname, ifield, ncol, ierr)
+    subroutine get_keyword_field_long(iun, vkeyword, nkeyword, cname, ifield, ncol, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -431,7 +433,7 @@ module ensim_io
         ifield = 0
 
         !> Call base routine.
-        call get_keyword_value_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
+        call get_keyword_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
         if (ierr /= 0) return
 
         !> Convert values.
@@ -442,7 +444,7 @@ module ensim_io
     end subroutine
 
     !> Description: 'get_keyword_value' for a vector of type 4-byte integer.
-    subroutine get_keyword_value_field_int(iun, vkeyword, nkeyword, cname, ifield, ncol, ierr)
+    subroutine get_keyword_field_int(iun, vkeyword, nkeyword, cname, ifield, ncol, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -461,7 +463,7 @@ module ensim_io
         ifield = 0
 
         !> Call base routine.
-        call get_keyword_value_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
+        call get_keyword_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
         if (ierr /= 0) return
 
         !> Convert values.
@@ -472,7 +474,7 @@ module ensim_io
     end subroutine
 
     !> Description: 'get_keyword_value' for type character.
-    subroutine get_keyword_value_value_char(iun, vkeyword, nkeyword, cname, cvalue, ierr)
+    subroutine get_keyword_value_char(iun, vkeyword, nkeyword, cname, cvalue, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -490,7 +492,8 @@ module ensim_io
         ierr = 0
 
         !> Call base routine.
-        call get_keyword_value_field_char(iun, vkeyword, nkeyword, cname, cfield, 1, ierr)
+        call get_keyword_field_char(iun, vkeyword, nkeyword, cname, cfield, 1, ierr)
+        if (ierr /= 0) return
 
         !> Transfer value.
         cvalue = cfield(1)
@@ -500,7 +503,7 @@ module ensim_io
     end subroutine
 
     !> Description: 'get_keyword_value' for type 8-byte real.
-    subroutine get_keyword_value_value_double(iun, vkeyword, nkeyword, cname, dvalue, ierr)
+    subroutine get_keyword_value_double(iun, vkeyword, nkeyword, cname, dvalue, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -518,7 +521,8 @@ module ensim_io
         ierr = 0
 
         !> Call base routine.
-        call get_keyword_value_field_double(iun, vkeyword, nkeyword, cname, dfield, 1, ierr)
+        call get_keyword_field_double(iun, vkeyword, nkeyword, cname, dfield, 1, ierr)
+        if (ierr /= 0) return
 
         !> Transfer value.
         dvalue = dfield(1)
@@ -528,7 +532,7 @@ module ensim_io
     end subroutine
 
     !> Description: 'get_keyword_value' for type 4-byte real.
-    subroutine get_keyword_value_value_float(iun, vkeyword, nkeyword, cname, fvalue, ierr)
+    subroutine get_keyword_value_float(iun, vkeyword, nkeyword, cname, fvalue, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -546,7 +550,8 @@ module ensim_io
         ierr = 0
 
         !> Call base routine.
-        call get_keyword_value_field_float(iun, vkeyword, nkeyword, cname, ffield, 1, ierr)
+        call get_keyword_field_float(iun, vkeyword, nkeyword, cname, ffield, 1, ierr)
+        if (ierr /= 0) return
 
         !> Transfer value.
         fvalue = ffield(1)
@@ -556,7 +561,7 @@ module ensim_io
     end subroutine
 
     !> Description: 'get_keyword_value' for type 8-byte integer.
-    subroutine get_keyword_value_value_long(iun, vkeyword, nkeyword, cname, ivalue, ierr)
+    subroutine get_keyword_value_long(iun, vkeyword, nkeyword, cname, ivalue, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -574,7 +579,8 @@ module ensim_io
         ierr = 0
 
         !> Call base routine.
-        call get_keyword_value_field_long(iun, vkeyword, nkeyword, cname, ifield, 1, ierr)
+        call get_keyword_field_long(iun, vkeyword, nkeyword, cname, ifield, 1, ierr)
+        if (ierr /= 0) return
 
         !> Transfer value.
         ivalue = ifield(1)
@@ -584,7 +590,7 @@ module ensim_io
     end subroutine
 
     !> Description: 'get_keyword_value' for type 4-byte integer.
-    subroutine get_keyword_value_value_int(iun, vkeyword, nkeyword, cname, ivalue, ierr)
+    subroutine get_keyword_value_int(iun, vkeyword, nkeyword, cname, ivalue, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -602,7 +608,8 @@ module ensim_io
         ierr = 0
 
         !> Call base routine.
-        call get_keyword_value_field_int(iun, vkeyword, nkeyword, cname, ifield, 1, ierr)
+        call get_keyword_field_int(iun, vkeyword, nkeyword, cname, ifield, 1, ierr)
+        if (ierr /= 0) return
 
         !> Transfer value.
         ivalue = ifield(1)
@@ -791,7 +798,9 @@ module ensim_io
         end do
 
         !> Print a warning if no columns were found in the table.
-        if (ncol == 0) call print_warning('No columns were found in the table in the file.', PAD_3)
+        if (ncol == 0) then
+            call print_warning('No columns were found in the table in the file.', PAD_3)
+        end if
 
         return
 
@@ -898,7 +907,9 @@ module ensim_io
             if (ierr /= 0) exit
             if (is_header(line)) exit
         end do
-        if (ierr /= 0) call print_warning('Reached end of file: ' // trim(fname), PAD_3)
+        if (ierr /= 0) then
+            call print_warning('Reached end of file: ' // trim(fname), PAD_3)
+        end if
 
         return
 
@@ -957,7 +968,9 @@ module ensim_io
         end do
 
         !> Check for errors.
-        if (ierr /= 0) call print_error('An error occurred reading data from the file: ' // trim(fname))
+        if (ierr /= 0) then
+            call print_error('An error occurred reading data from the file: ' // trim(fname))
+        end if
 
         return
 
@@ -1043,8 +1056,11 @@ module ensim_io
 
         !> Call base routine.
         call r2c_to_rank_field_double(iun, vattr, nattr, iattr, xxx, yyy, na, dfield, nfield, ierr)
+        if (ierr /= 0) return
 
         !> Transfer data.
+        if (.not. allocated(ffield)) allocate(ffield(nfield))
+        ffield = 0.0
         ffield = real(dfield, kind = 4)
 
         return
@@ -1071,8 +1087,11 @@ module ensim_io
 
         !> Call base routine.
         call r2c_to_rank_field_double(iun, vattr, nattr, iattr, xxx, yyy, na, dfield, nfield, ierr)
+        if (ierr /= 0) return
 
         !> Transfer data.
+        if (.not. allocated(ifield)) allocate(ifield(nfield))
+        ifield = 0
         ifield = int(dfield, kind = 8)
 
         return
@@ -1099,8 +1118,11 @@ module ensim_io
 
         !> Call base routine.
         call r2c_to_rank_field_double(iun, vattr, nattr, iattr, xxx, yyy, na, dfield, nfield, ierr)
+        if (ierr /= 0) return
 
         !> Transfer data.
+        if (.not. allocated(ifield)) allocate(ifield(nfield))
+        ifield = 0
         ifield = int(dfield, kind = 4)
 
         return

@@ -74,7 +74,7 @@ module txt_io
         dvals = 0.0
 
         !> Call main subroutine to read records.
-        ierr = read_records_txt_multi_line_double(iun, dvals, 1)
+        ierr = read_records_txt_multi_line_double(iun, dvals, nrows)
 
         !> Convert field.
         if (ierr == 0) then
