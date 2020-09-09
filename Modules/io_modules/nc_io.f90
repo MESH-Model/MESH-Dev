@@ -146,13 +146,13 @@ module nc_io
     end interface
 
     interface nc4_add_vname
-        module procedure nc4_add_vname_xy_nf90_float
-        module procedure nc4_add_vname_xyt_nf90_float
+        module procedure nc4_add_vname_xy
+        module procedure nc4_add_vname_xyt
     end interface
 
     interface nc4_write_field
-        module procedure nc4_write_field_xy_nf90_float
-        module procedure nc4_write_field_xyt_nf90_float
+        module procedure nc4_write_field_xy
+        module procedure nc4_write_field_xyt
     end interface
 
     contains
@@ -8883,7 +8883,7 @@ module nc_io
 
     end subroutine
 
-    subroutine nc4_add_vname_xy_nf90_float( &
+    subroutine nc4_add_vname_xy( &
         shd, vname, long_name, units, fill, fname, iun, vid, &
         constmul, constadd, constrmax, constrmin, ierr)
 
@@ -8948,10 +8948,10 @@ module nc_io
 !        if (z == 0) call nc4_set_attr(iun, fname, vid_y, 'latitude', 'latitude', 'degrees_north', z)
 !        if (ierr == 0) call nc4_add_lonlat(iun, fname, lon, lat, did_x, did_y, ierr)
         if (ierr == 0) call nc4_define_dimension(iun, fname, 'lon', did_x, ierr, dim_length = size(lon))
-        if (ierr == 0) call nc4_add_variable_n_nf90_float( &
+        if (ierr == 0) call nc4_add_variable_n( &
             iun, fname, 'longitude', 'longitude', 'degrees_east', fill, lon, did_x, n, ierr)
         if (ierr == 0) call nc4_define_dimension(iun, fname, 'lat', did_y, ierr, dim_length = size(lat))
-        if (ierr == 0) call nc4_add_variable_n_nf90_float( &
+        if (ierr == 0) call nc4_add_variable_n( &
             iun, fname, 'latitude', 'latitude', 'degrees_north', fill, lat, did_y, n, ierr)
 !        if (z /= 0) return
 
@@ -8982,7 +8982,7 @@ module nc_io
 !        end if
 !        z = 0
         if (ierr == 0) then
-            call nc4_define_variable_xy_nf90_float( &
+            call nc4_add_variable_xy( &
                 iun, fname, vname, long_name, units, fill, did_x, did_y, vid, ierr, &
                 constmul, constadd, constrmax, constrmin)
         end if
@@ -9008,7 +9008,7 @@ module nc_io
 
     end subroutine
 
-    subroutine nc4_add_vname_xyt_nf90_float( &
+    subroutine nc4_add_vname_xyt( &
         shd, vname, long_name, units, ffreq, start_year, fill, fname, iun, tid, vid, &
         constmul, constadd, constrmax, constrmin, ierr)
 
@@ -9074,10 +9074,10 @@ module nc_io
 !        if (z == 0) call nc4_set_attr(iun, fname, vid_y, 'latitude', 'latitude', 'degrees_north', z)
 !        if (ierr == 0) call nc4_add_lonlat(iun, fname, lon, lat, did_x, did_y, ierr)
         if (ierr == 0) call nc4_define_dimension(iun, fname, 'lon', did_x, ierr, dim_length = size(lon))
-        if (ierr == 0) call nc4_add_variable_n_nf90_float( &
+        if (ierr == 0) call nc4_add_variable_n( &
             iun, fname, 'longitude', 'longitude', 'degrees_east', fill, lon, did_x, n, ierr)
         if (ierr == 0) call nc4_define_dimension(iun, fname, 'lat', did_y, ierr, dim_length = size(lat))
-        if (ierr == 0) call nc4_add_variable_n_nf90_float( &
+        if (ierr == 0) call nc4_add_variable_n( &
             iun, fname, 'latitude', 'latitude', 'degrees_north', fill, lat, did_y, n, ierr)
 !        if (z /= 0) return
 
@@ -9112,7 +9112,7 @@ module nc_io
 !            return
 !        end if
         if (ierr == 0) then
-            call nc4_define_variable_xyt_nf90_float( &
+            call nc4_add_variable_xyt( &
                 iun, fname, vname, long_name, units, fill, did_x, did_y, did_t, vid, ierr, &
                 constmul, constadd, constrmax, constrmin)
         end if
@@ -9138,12 +9138,12 @@ module nc_io
 
     end subroutine
 
-    subroutine nc4_write_field_xy_nf90_float(shd, iun, vid, dat, ierr)
+    subroutine nc4_write_field_xy(shd, iun, vid, dat, ierr)
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
         integer, intent(in) :: iun, vid
-        real(kind = FourByteReal), dimension(:), intent(in) :: dat
+        real, dimension(:), intent(in) :: dat
 
         !> Output variables.
         integer, intent(out) :: ierr
@@ -9177,12 +9177,12 @@ module nc_io
 
     end subroutine
 
-    subroutine nc4_write_field_xyt_nf90_float(shd, iun, ffreq, tid, vid, dat, dates, ierr)
+    subroutine nc4_write_field_xyt(shd, iun, ffreq, tid, vid, dat, dates, ierr)
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
         integer, intent(in) :: iun, ffreq, tid, vid
-        real(kind = FourByteReal), dimension(:, :), intent(in) :: dat
+        real, dimension(:, :), intent(in) :: dat
         integer, dimension(:, :), intent(in) :: dates
 
         !> Output variables.
