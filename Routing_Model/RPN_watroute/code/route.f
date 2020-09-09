@@ -68,25 +68,25 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      *           rbin,lsta,nnn1,jz,n,ll,lll,l,iz,jjz,
      *           i,j,ii,ic,jj,ios,itracker,unt,ln,n_dt_min,hour_offset,
      *           hour_offset_div,rr,repirr,rr2,repn,repn2
-      REAL    :: old,oldwet,convert,ovbfact,qo2remtemp
+      REAL*4    :: old,oldwet,convert,ovbfact,qo2remtemp
       REAL(4) :: time,newstore,try1,try2,try3,div,thr,at,dtmin,hold,
      *             wt,atemp,ax,xa,at1,ice_fctr,dt_min_n
-      REAL    :: mindtmin
+      REAL*4    :: mindtmin
       character*1 :: flowsta,firstpass
       character*80 :: junk
       character(14) :: date
       logical :: exists      
-      REAL :: storetest1
-      REAL ovD/0.01/  ! ovD is the slope of the overbanks (set to 1% but could be read using topographic information)
-      REAL conv,convthresh
+      REAL*4 :: storetest1
+      REAL*4 ovD/0.01_4/  ! ovD is the slope of the overbanks (set to 1% but could be read using topographic information)
+      REAL*4 conv,convthresh
       integer :: maxic = 1000
-      REAL minwt/0.5/  ! damps the calculation of qo2; values ranges from 0 to 1; larger values damp more
-      REAL wtstore/0.5/  ! damps the calculation of store2; values ranges from 0 to 1; larger values damp less
-      REAL wtfact
+      REAL*4 minwt/0.5/  ! damps the calculation of qo2; values ranges from 0 to 1; larger values damp more
+      REAL*4 wtstore/0.5/  ! damps the calculation of store2; values ranges from 0 to 1; larger values damp less
+      REAL*4 wtfact
       INTEGER exitstatus,ixxx,iyyy
-      REAL teststore1
+      REAL*4 teststore1
       INTEGER mate
-      REAL qo2add
+      REAL*4 qo2add
 
       CHARACTER fmtfile*100
 
@@ -106,8 +106,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !       NNN1=NA IS JUST A DUMMY VARIABLE FOR AN UNUSED STORAGE
         
         nnn1=na
-        convert=al*al*1000.0  ! converts vol in m^3 to mm on the unit grid
-        ovbfact=0.75*ovD**0.3333 ! ovbfact is a constant used in the calculation of Qo2 for the overbank part        
+        convert=al*al*1000.0_4  ! converts vol in m^3 to mm on the unit grid
+        ovbfact=0.75_4*ovD**0.3333_4 ! ovbfact is a constant used in the calculation of Qo2 for the overbank part        
 
 !       first time through
         do n=1,naa
@@ -178,7 +178,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !                 use 2 coefficients  
 
                   if(resumflg.ne.'y')then
-                    store1(n)=(qo1(lll)/b1(l))**(1.0/b2(l))
+                    store1(n)=(qo1(lll)/b1(l))**(1.0_4/b2(l))
                   endif
 
                 else
@@ -186,7 +186,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                   if(b3(l).eq.0.0)then
 !                   use 2 coefficients  
                     if(resumflg.ne.'y')then
-                      store1(n)=(qo1(lll)/b1(l))**(1.0/b2(l))
+                      store1(n)=(qo1(lll)/b1(l))**(1.0_4/b2(l))
                     endif
                   else
 !                   use bisection to get init flow
@@ -200,7 +200,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                       do while(try1.lt.qo1(lll))
 !                       keep doubling the res. storage until the corresponding
 !                       flow is larger than the initialized streamflow.
-                        store1(n)=2.0*store1(n)                      
+                        store1(n)=2.0_4*store1(n)                      
                         try1=b1(l)*store1(n)+
      *                       b2(l)*store1(n)**2+
      *                       b3(l)*store1(n)**3+
@@ -230,7 +230,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                 endif
 
                   if(resumflg.ne.'y')then
-                    store1(n)=max(100.0,store1(n))
+                    store1(n)=max(100.0_4,store1(n))
                     store2(n)=store1(n)
                     store2_strt(n)=store2(n)
                     if(iopt.ge.1)then
@@ -289,7 +289,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
  
       jjz=fhr
       if(jjz.lt.1) jjz=1
-      dt_min_n=1.0e32
+      dt_min_n=1.0e32_4
 
       do rbin=1,noresv
         qdwpr(rbin,jjz)=0.0
@@ -310,9 +310,9 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
         if(res(n).eq.0)qo2(n)=0.0
         qowet1(n)=qowet2(n)
         qi1(n)=qi2(n)
-        qi2(n)=1.0e-10 ! Initializing value
+        qi2(n)=1.0e-10_4 ! Initializing value
         qiwet1(n)=qiwet2(n)
-        qiwet2(n)=1.0e-10
+        qiwet2(n)=1.0e-10_4
 
 !       EG_MOD if flow insertion or flow diversion,
 !       initiate QO1 with qo2sim (simulated) due to possibility of modified qo2
@@ -470,7 +470,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 19          ii=ibn(n)
             lll=next(n)
             old=qo1(n)
-            hold=1.0e+25
+            hold=1.0e+25_4
            
             do ic=1,maxic ! UP TO maxic ITERATIONS ARE ALLOWED
               if(abs(hold-store2(n)).gt.convthresh*hold)then
@@ -492,8 +492,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !     with: A, P: wetted cross-section and perimeter; S slope, N manning coef.
 !     slope below already square-root of true slope
 
-                    qo2(n)=ax**1.67*slope(n)/
-     *                (chawid(n)+2.0*ax/chawid(n))**0.667/r2n(n)
+                    qo2(n)=ax**1.67_4*slope(n)/
+     *                (chawid(n)+2.0_4*ax/chawid(n))**0.667_4/r2n(n)
 !                    qo2(n)=ice_fctr*qo2(n)
                   else
 !                   CHANNEL + FLOOD PLAIN FLOW
@@ -502,8 +502,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !     rev. 9.2.11  Sep.  15/05  - NK: added Manning's n  r1n & r2n
 !                   use quadratic equation to solve for fp. depth
                     hwet2(n)=
-     * (-1.0*chawid(n)+sqrt(chawid(n)*chawid(n)+4.0/ovD*over(n)))/
-     *    (2.0/ovD)
+     * (-1.0_4*chawid(n)+sqrt(chawid(n)*chawid(n)+4.0_4/ovD*over(n)))/
+     *    (2.0_4/ovD)
 
 !                    hcha2(n) is the bankfull depth here
                     hcha2(n)=chaxa(n)/chawid(n)
@@ -512,18 +512,18 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
                     if(over(n)-hwet2(n)*chawid(n).gt.0.0)then
                       qo2(n)=
-     *                xa**1.67*slope(n)/(chawid(n)+2.0*hcha2(n))**0.667
-     *                /r2n(n)+(over(n)-hwet2(n)*chawid(n))**1.33
+     *           xa**1.67_4*slope(n)/(chawid(n)+2.0_4*hcha2(n))**0.667_4
+     *                /r2n(n)+(over(n)-hwet2(n)*chawid(n))**1.33_4
      *                *slope(n)*ovbfact/r1n(n)
                     else
                       qo2(n)=
-     *                xa**1.67*slope(n)/(chawid(n)+2.0*hcha2(n))**0.667
+     *           xa**1.67_4*slope(n)/(chawid(n)+2.0_4*hcha2(n))**0.667_4
      *                /r2n(n)
                     endif
 !                      qo2(n)=ice_fctr*qo2(n)
                   endif
-                  wt=amax1(minwt,float(ic)/real(maxic+1))
-                  qo2(n)=(1.0-wt)*qo2(n)+wt*old
+                  wt=max(minwt,real(ic,4)/real(maxic+1,4))
+                  qo2(n)=(1.0_4-wt)*qo2(n)+wt*old
                   old=qo2(n)
                   if (nocrashflg == 'y') then
                     if (qo2(n) .lt. 0.0) then   ! Reset qo2 to zero to prevent model crashes; does not conserve water
@@ -549,7 +549,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
      1                   'ERROR: RESETTING QO1 FROM ', qo1(n),
      2                   ' M3/S TO .75*QO1=', qo1(n)*.75,
      3                   ' M3/S AT POINT AT X,Y: ', xxx(n), yyy(n)
-                    qo1(n) = qo1(n) * .75        ! Reduce qo1 to prevent model crashes; does not conserve water
+                    qo1(n) = qo1(n) * .75_4        ! Reduce qo1 to prevent model crashes; does not conserve water
                     store2(n) = store1(n)        ! Reassign the initial value of store2
                     GO TO 19                     ! Restart the iteration loop
                   end if
@@ -601,14 +601,14 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
             j=xxx(n)
 !           csubich -- segfault here when bnkfill is 0,
 !           so cap bnkfll at a tiny value away from 0
-            bnkfll(n) = amax1(bnkfll(n),1e-8)
-            atemp=qo2(n)/(0.4*bnkfll(n))+1.0
+            bnkfll(n) = max(bnkfll(n),1.0e-08_4)
+            atemp=qo2(n)/(0.4_4*bnkfll(n))+1.0_4
 
 !           TO PREVENT INTEGER UNDERFLOW OR OVEFLOW:  
 
-            atemp=amax1(atemp,1.0)
-            atemp=amin1(atemp,99.0)
-            istate(i,j)=int(atemp)
+            atemp=max(atemp,1.0_4)
+            atemp=min(atemp,99.0_4)
+            istate(i,j)=int(atemp,4)
 
             if(iopt.ge.4)write(53,1002)
      *                   i,j,n,istate(i,j),bnkfll(n),qo2(n)
@@ -623,8 +623,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 ! D. Deacu: Inserted 'hour_offset' to select the discharges  
 !         corresponding to the current day and hour 
 ! D. Durnford: permit a run start time other than 00 UTC, and a first date/hour in the streamflow file other than 01/01
-          hour_offset = 24*(day1-strday1) + (hour1-strhour1)
-          hour_offset_div = 24*(day1-divday1) + (hour1-divhour1)
+          hour_offset = 24_4*(day1-strday1) + (hour1-strhour1)
+          hour_offset_div = 24_4*(day1-divday1) + (hour1-divhour1)
 
           qo2sim(n) = 0.0
           qo2rem(n) = 0.0
@@ -698,29 +698,29 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                           repn2 = resindex(rr2)
                           if (res(repn2).eq.ireach(repn)) then
                             store2(repn2)=store2(repn2)-
-     *                      qdivirrig(repirr,hour_offset_div+fhr)*div*2.
+     *                    qdivirrig(repirr,hour_offset_div+fhr)*div*2._4
                             if(iz.eq.no_dt) then
                               qo2remirr(repn2) = qo2remirr(repn2) +
      *                        min(qdivirrig(repirr,hour_offset_div+fhr),
      *                        (store2(repn2) +
      *                        qdivirrig(repirr,hour_offset_div+fhr)*
-     *                        div*2.) / div/2.)
+     *                        div*2._4) / div/2._4)
                             endif
-                            store2(repn2)=max(store2(repn2),0.0)
+                            store2(repn2)=max(store2(repn2),0.0_4)
                           endif
                         enddo  
                       else
 !                     not in a reach: remove fraction from streamflow for this point
-                        qo2(repn) = qo2(repn) - (1.-val1div(l))*
+                        qo2(repn) = qo2(repn) - (1._4-val1div(l))*
      *                  qdivirrig(repirr,hour_offset_div+fhr)
                         if(iz.eq.no_dt) then
                           qo2remirr(repn) = qo2remirr(repn) +
      *                    min(qdivirrig(repirr,hour_offset_div+fhr)
-     *                    * (1.-val1div(l)),
-     *                    qo2(repn) + (1.-val1div(l))*
+     *                    * (1._4-val1div(l)),
+     *                    qo2(repn) + (1._4-val1div(l))*
      *                    qdivirrig(repirr,hour_offset_div+fhr))
                         endif
-                        qo2(repn) = max(qo2(repn),0.001)
+                        qo2(repn) = max(qo2(repn),0.001_4)
                       endif
 !                     end check if in a reach
                     endif
@@ -757,15 +757,15 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !		      diverted flow taken from grid point outflow
 		        qo2remtemp = qo2(n) * val1div(l)
 	              endif
-	              store2(n) = store2(n) - qo2remtemp * div * 2.
+	              store2(n) = store2(n) - qo2remtemp * div * 2._4
 
 	              if (store2(n).lt.0.0) then
-	                qo2rem(n) = (store2(n)+qo2remtemp*div*2.)/div/2.
+	              qo2rem(n) = (store2(n)+qo2remtemp*div*2._4)/div/2._4
 !		        not impossible that store2 was -ve initially, so cap qo2rem
-			qo2rem(n) = max(qo2rem(n),0.0)
+			qo2rem(n) = max(qo2rem(n),0.0_4)
 !			reset store2 to initial value minus qo2rem
-			store2(n) = store2(n)+qo2remtemp*div*2.-
-     *                  qo2rem(n)*div*2.
+			store2(n) = store2(n)+qo2remtemp*div*2._4-
+     *                  qo2rem(n)*div*2._4
                       else
                         qo2rem(n) = qo2remtemp
 	              end if
@@ -780,7 +780,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 		      else
 		        qo2remtemp = qo2rem(divstrindex(l))											    
 		      endif
-		      store2(n) = store2(n)+qo2remtemp*div*2.
+		      store2(n) = store2(n)+qo2remtemp*div*2._4
 
                     end if
 !                   end check if removing or adding water
@@ -804,8 +804,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                       endif
 		      qo2(n) = qo2(n) - qo2remtemp
               	      if (qo2(n).lt.0.) then
-                        qo2rem(n) = qo2(n)+qo2remtemp-0.001
-                	qo2(n) = max(0.001,qo2(n)-qo2rem(n))
+                        qo2rem(n) = qo2(n)+qo2remtemp-0.001_4
+                	qo2(n) = max(0.001_4,qo2(n)-qo2rem(n))
               	      else
                 	qo2rem(n) = qo2remtemp
                       end if
@@ -860,22 +860,22 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !                           with the old way, -ve diversion flows are reset to 0
                                 qo2remtemp = 0.0
                             endif
-                            store2(n) = store2(n) - qo2remtemp*div*2.
+                            store2(n) = store2(n) - qo2remtemp*div*2._4
                             if (store2(n).lt.0.0) then
-                              qo2rem(n) = (store2(n)+qo2remtemp*div*2.) 
-     *                        /div/2.
+                             qo2rem(n) = (store2(n)+qo2remtemp*div*2._4) 
+     *                        /div/2._4
 !                             not impossible that store2 was -ve initially,so cap qo2rem
-                              qo2rem(n) = max(qo2rem(n),0.0)
+                              qo2rem(n) = max(qo2rem(n),0.0_4)
 !                             reset store2 to initial value minus qo2rem
                               store2(n) = store2(n) +
-     *                        qo2remtemp * div * 2. - qo2rem(n)*div*2.
+     *                      qo2remtemp * div * 2._4 - qo2rem(n)*div*2._4
                             else
                               qo2rem(n) = qo2remtemp
                             end if
                         elseif ( divendindex(l).eq.n ) then
 !                       end point considered : adding water
                             qo2remtemp = qo2rem(divstrindex(l))
-                            store2(n) = store2(n) + qo2remtemp*div*2.
+                            store2(n) = store2(n) + qo2remtemp*div*2._4
                         end if
 !                       end check if remove or add water
                       endif
@@ -895,8 +895,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                         endif
                         qo2(n) = qo2(n) - qo2remtemp
                         if (qo2(n).lt.0.0) then
-                          qo2rem(n) = qo2(n) + qo2remtemp - 0.001
-                          qo2(n) = max(0.001,qo2(n) - qo2rem(n))
+                          qo2rem(n) = qo2(n) + qo2remtemp - 0.001_4
+                          qo2(n) = max(0.001_4,qo2(n) - qo2rem(n))
                         else
                           qo2rem(n) = qo2remtemp
                         end if
@@ -932,7 +932,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
 
           if(iopt.ge.3)then
-            at1=at/3600.0
+            at1=at/3600.0_4
             write(53,6037,iostat=ios) 
      *        n,yyy(n),xxx(n),ic,at1,qr(n),qi1(n),qi2(n),
      *        qo1(n),qo2(n),qi2(lll),store1(n),store2(n),cap(n),lll
@@ -946,7 +946,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
         if(iopt.eq.2.and.n.eq.naa)print*,'In route, passed 901'
 
-        att(n)=at/3600.
+        att(n)=at/3600._4
 
 !       added Dec. 12/00 nk.
 
@@ -976,7 +976,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !     EG_MOD compute average flow when at the end of last hourly time-step
       if(iz.eq.no_dt) then
         do n=1,naa
-          avr_qo(n)=avr_qo(n)/3600.
+          avr_qo(n)=avr_qo(n)/3600._4
         end do        
       end if 
 

@@ -162,16 +162,16 @@ c     *      183.2,175.98,174.8,174.01,74.61/
       if(resname(l).eq.'Superior     ')then
 !       Lake Superior
 
-        levdiff = max(0.0, sup-181.43)
-        qo2(n)=max(0.0, 824.7*levdiff**1.5-retard_factor(mo1,1))
+        levdiff = max(0.0_4, sup-181.43_4)
+        qo2(n)=max(0.0_4, 824.7_4*levdiff**1.5_4-retard_factor(mo1,1))
         if(firstpass.eq.'y')then
-	  store1(n)=(sup-181.43)*82.1e+09
+	  store1(n)=(sup-181.43_4)*82.1e+09_4
 	  store2(n)=store1(n)
           qo1(n)=qo2(n)
 	endif
 
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        sup=store2(n)/82.1e+09+181.43
+        sup=store2(n)/82.1e+09_4+181.43_4
         lake_elv(l,fhr)=sup
         lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)
@@ -180,27 +180,27 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       Lake Michigan-Huron
 
         if(firstpass.eq.'y')then
-          levdiff = max(0.0, mhu-166.98)
-	  store1(n)=levdiff*117.4e+09
+          levdiff = max(0.0_4, mhu-166.98_4)
+	  store1(n)=levdiff*117.4e+09_4
 	  store2(n)=store1(n)
 	  delta_elv=mhu-stc
-	  mean_elv=(mhu+stc)/2.0
+	  mean_elv=(mhu+stc)/2.0_4
 	else
 !     rev. 9.4.11  Jun.  22/07  - NK: reordered rerout for glake 
 	  delta_elv=mhu-stc
-	  mean_elv=amax1(166.98+0.1,mean_elv)   ! prevent div by 0
-!	  delta_elv=amax1(0.001,delta_elv)      ! prevent div by 0; DAD: moved it below the endif
+	  mean_elv=max(166.98_4+0.1_4,mean_elv)   ! prevent div by 0
+!	  delta_elv=max(0.001,delta_elv)      ! prevent div by 0; DAD: moved it below the endif
 	endif
-        delta_elv=amax1(0.001,delta_elv)      ! prevent div by 0; DAD: it's safer here
+        delta_elv=max(0.001_4,delta_elv)      ! prevent div by 0; DAD: it's safer here
 !     use stc from the previous time step. Slow change anyway.
 
-        levdiff = max(0.0, mean_elv-166.98)
-        qo2(n)=max(0.0, 82.2*levdiff**1.87*(delta_elv)**0.36
+        levdiff = max(0.0_4, mean_elv-166.98_4)
+        qo2(n)=max(0.0_4, 82.2_4*levdiff**1.87_4*(delta_elv)**0.36_4
      *                  -retard_factor(mo1,2))
 !        qo2(n)=82.2*(mean_elv-166.98)**1.87*(delta_elv)**0.36
 !     *        -retard_factor(mo1,2)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        mhu=store1(n)/117.4e+09+166.98
+        mhu=store1(n)/117.4e+09_4+166.98_4
         lake_elv(l,fhr)=mhu
         lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
@@ -211,8 +211,8 @@ c     *      183.2,175.98,174.8,174.01,74.61/
         if(firstpass.eq.'y')then
 !         initialize storage	   
 !         storage = live storage 
-          levdiff = max(0.0, stc-164.91)
-	  store1(n)=levdiff*1.11e+09
+          levdiff = max(0.0_4, stc-164.91_4)
+	  store1(n)=levdiff*1.11e+09_4
 	  store2(n)=store1(n)
 !          delta_elv=stc-eri
 !	else
@@ -220,17 +220,17 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !          delta_elv=stc-eri
 !	  delta_elv=amax1(0.001,delta_elv)    ! prevent div by 0; DAD: moved it below the endif
 	endif
-        delta_elv=amax1(0.001, stc-eri)
-        stc=amax1(0.1,stc)                    ! prevent div by 0
+        delta_elv=max(0.001_4, stc-eri)
+        stc=max(0.1_4,stc)                    ! prevent div by 0
 !     use eri from the previous time step. Slow change anyway.
 
-        levdiff = max(0.0, stc-164.91)
-        qo2(n)=max(0.0, 28.8*levdiff**2.28*(delta_elv)**0.305
+        levdiff = max(0.0_4, stc-164.91_4)
+        qo2(n)=max(0.0_4, 28.8_4*levdiff**2.28_4*(delta_elv)**0.305_4
      *                  -retard_factor(mo1,3)) 
 !        qo2(n)=28.8*(stc-164.91)**2.28*(delta_elv)**0.305        
 !     *        -retard_factor(mo1,3)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        stc=store1(n)/1.11e+09+164.91
+        stc=store1(n)/1.11e+09_4+164.91_4
         lake_elv(l,fhr)=stc
         lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
@@ -238,18 +238,18 @@ c     *      183.2,175.98,174.8,174.01,74.61/
       elseif(resname(l).eq.'Erie         ')then
 !       Lake Erie
 
-        levdiff = max(0.0, eri-169.86)
+        levdiff = max(0.0_4, eri-169.86_4)
         if(firstpass.eq.'y')then
 !         initialize storage	   
 !         storage = live storage 
-	  store1(n)=levdiff*25.7e+09
+	  store1(n)=levdiff*25.7e+09_4
 	  store2(n)=store1(n)
         endif       
 
-        qo2(n)=max(0.0, 558.3*levdiff**1.60-retard_factor(mo1,4))
+        qo2(n)=max(0.0_4, 558.3_4*levdiff**1.60_4-retard_factor(mo1,4))
 !        qo2(n)=558.3*(eri-169.86)**1.60-retard_factor(mo1,4)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        eri=store1(n)/25.7e+09+169.86  
+        eri=store1(n)/25.7e+09_4+169.86_4  
         lake_elv(l,fhr)=eri
         lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
@@ -260,17 +260,17 @@ c     *      183.2,175.98,174.8,174.01,74.61/
         if(firstpass.eq.'y')then
 !         initialize storage	   
 !         storage = live storage 
-	  levdiff = max(0.0, ont-69.474)
-	  store1(n)=levdiff*18.96e+09
+	  levdiff = max(0.0_4, ont-69.474_4)
+	  store1(n)=levdiff*18.96e+09_4
 	  store2(n)=store1(n)
 	endif
 
-        levdiff = max(0.0, ont-0.0014*real(2000-1985)-69.474)
-        qo2(n)=max(0.0, 555.823*levdiff**1.5-retard_factor(mo1,5))
+        levdiff = max(0.0_4, ont-0.0014_4*real(2000-1985,4)-69.474_4)
+        qo2(n)=max(0.0_4, 555.823_4*levdiff**1.5_4-retard_factor(mo1,5))
 !        qo2(n)=555.823*(ont-0.0014*real(2000-1985)-69.474)**1.5
 !     *        -retard_factor(mo1,5)        
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
-        ont=store1(n)/18.96e+09+69.474         
+        ont=store1(n)/18.96e+09_4+69.474_4         
         lake_elv(l,fhr)=ont
 	lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
@@ -279,10 +279,10 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !       Lake Champlain
 !       rating curve = sfactor * (level - zflow) ** b2(l)
         zflow=28.0           !m    the level at and below which outflow from the reach is zero-valued
-        reacharea=1.181e+09  !m2   the surface are of the reach
+        reacharea=1.181e+09_4  !m2   the surface are of the reach
         sfactor=240          !m2/s the rating curve constant
 
-        levdiff = max(0.0, cha-zflow)
+        levdiff = max(0.0_4, cha-zflow)
         if(firstpass.eq.'y')then
 !         initialize storage	   
 !         storage = live storage 
@@ -290,7 +290,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
           store2(n)=store1(n)
         endif
 
-        qo2(n)=max(0.0, sfactor*levdiff**b2(l)-retard_factor(mo1,6))
+        qo2(n)=max(0.0_4, sfactor*levdiff**b2(l)-retard_factor(mo1,6))
         store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
         cha=store1(n)/reacharea+zflow
         lake_elv(l,fhr)=cha
@@ -312,7 +312,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 
           zflow=b7(l)            !m
           reacharea=b6(l)        !m2   the surface area of the reach
-          levdiff = max(0.0, niv(l)-zflow)
+          levdiff = max(0.0_4, niv(l)-zflow)
 
           if(firstpass.eq.'y'.and.resumflg.eq.'y')then
             store1(n)=levdiff*reacharea
@@ -322,9 +322,9 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 
           if(store2(n).gt.0.0)then
             if(b3(l).eq.0.0)then
-              qo2(n)=max(0.0,b1(l)*store2(n)**b2(l))
+              qo2(n)=max(0.0_4,b1(l)*store2(n)**b2(l))
             else
-              qo2(n)=max(0.0,store2(n)*(b1(l)+store2(n)*
+              qo2(n)=max(0.0_4,store2(n)*(b1(l)+store2(n)*
      *        (b2(l)+store2(n)*
      *        (b3(l)+store2(n)*(b4(l)+b5(l)*store2(n))))))
             end if
@@ -354,15 +354,15 @@ c     *      183.2,175.98,174.8,174.01,74.61/
               qo2(n)=b1(l)*store2(n)**b2(l)
             else
               old=qo1(n)
-              hold=1.0e+25
+              hold=1.0e+25_4
               do ic=1,20 
                 if(abs(hold-store2(n)).gt.0.003*hold)then
 !                 rev  9.1.03  July  24/01  - added polinomial 
                   qo2(n)=store2(n)*(b1(l)+store2(n)*(b2(l)+store2(n)*
      *               (b3(l)+store2(n)*(b4(l)+b5(l)*store2(n)))))
       
-                  wt=amax1(0.5,float(ic)/21.0)
-                  qo2(n)=(1.0-wt)*qo2(n)+wt*old
+                  wt=max(0.5_4,real(ic,4)/21.0_4)
+                  qo2(n)=(1.0_4-wt)*qo2(n)+wt*old
                   old=qo2(n)
                   hold=store2(n)
                   store2(n)=store1(n)+(qi2(n)-qo2(n))*div
@@ -400,7 +400,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
           else
             write(*,'(a36,a50)') 'WARNING: rerout.f: dividing by zero-',
      *       'valued qo2 in calculation of at; at set to 9999.99'
-            at=9999.99   ! Arbitrary strange value
+            at=9999.99_4   ! Arbitrary strange value
           end if
         end if
   

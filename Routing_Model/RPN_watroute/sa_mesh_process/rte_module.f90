@@ -5,13 +5,14 @@ module rte_module
     !> Input variables for dynamic time-stepping.
     !*  dtminusr: Maximum time-step for dynamic time-stepping [s].
     !*  mindtmin: Minimum time-step for dynamic time-stepping [s].
-    !*  maxindex: Maximum number of interations allowed in for dynamic time-stepping [--].
     !*  dtminfrac: Time-step reducing factor [--].
-    real(kind = 4) :: dtminusr = 1800.0, mindtmin = 10.0, maxindex = 50, dtminfrac = 0.75
+    !*  maxindex: Maximum number of interations allowed in for dynamic time-stepping [--].
+    real(kind = 4) :: dtminusr = 1800.0, mindtmin = 10.0, dtminfrac = 0.75
+    integer :: maxindex = 50
 
     !> Convergence threshold.
     !*  convthreshusr: Convergence threshold for channel routing.
-    real(kind = 4) :: convthreshusr = 0.01
+    real(kind = 4) :: convthreshusr = 0.01_4
 
     !> Input parameters.
     !*  r1n: Manning coefficient for floodplain routing.
@@ -35,13 +36,14 @@ module rte_module
     !*  cap_shd: Set to '1' to use the bankfull capacity read from file (default: '0').
     !*  dtminusr: Maximum time-step for dynamic time-stepping [s] (default: 1800.0).
     !*  mindtmin: Minimum time-step for dynamic time-stepping [s] (default: 10.0).
-    !*  maxindex: Maximum number of interations allowed in for dynamic time-stepping [--] (default: 50).
     !*  dtminfrac: Time-step reducing factor [--] (default: 0.75).
+    !*  maxindex: Maximum number of interations allowed in for dynamic time-stepping [--] (default: 50).
     !*  convthreshusr: Convergence threshold for channel routing (default: 0.01).
     type rte_flags
         logical :: PROCESS_ACTIVE = .false.
         integer :: RTE_TS = 3600, cap_shd = 0
-        real :: dtminusr = 1800.0, mindtmin = 10.0, maxindex = 50, dtminfrac = 0.75
+        real :: dtminusr = 1800.0, mindtmin = 10.0, dtminfrac = 0.75
+        integer :: maxindex = 50
         real :: convthreshusr = 0.01
     end type
 
@@ -57,7 +59,7 @@ module rte_module
     type(rte_options), save :: rteops
 
 !temp: Override for diversions.
-    real, dimension(:), allocatable, save :: qdiv2
+    real(kind = 4), dimension(:), allocatable, save :: qdiv2
 !    character*12, dimension(4), save :: &
 !        tdivname = ['06EC002', 'irrigat', '05LL019', '05QB005']
 !    real*4, dimension(4), save :: &
@@ -100,6 +102,7 @@ module rte_module
 
         !> Local variables.
         integer n, l, ierr, iun
+        integer(kind = 4) fhr_i4
 
 !temp: for overrides
 !        integer, dimension(4) :: jstrdiv, istrdiv, jenddiv, ienddiv
@@ -177,8 +180,8 @@ module rte_module
         !> Transfer time-stepping and convergence variables.
         dtminusr = real(rteflg%dtminusr, kind = kind(dtminusr))
         mindtmin = real(rteflg%mindtmin, kind = kind(mindtmin))
-        maxindex = real(rteflg%maxindex, kind = kind(maxindex))
         dtminfrac = real(rteflg%dtminfrac, kind = kind(dtminfrac))
+        maxindex = rteflg%maxindex
         convthreshusr = real(rteflg%convthreshusr, kind = kind(convthreshusr))
 
         !> Allocate many of the arrays used by the routing code. This block
@@ -263,12 +266,12 @@ module rte_module
                 !> rev. 9.2.12  Sep.  15/05  - NK: added EXCEL eqn to flowinit
                 !> EXCEL compatible equation. aa4 must be -ve in the par file
                 else
-                    chaxa(n) = 10.0**(aa2(n)*alog10(da(n)) + aa3(n))
+                    chaxa(n) = 10.0_4**(aa2(n)*log10(da(n)) + aa3(n))
                 end if
 
                 !> had to put a lower bound on channel area to avoid NaN in resume file
                 !> NK  Oct. 5/05
-                chaxa(n) = amax1(1.0, chaxa(n))
+                chaxa(n) = max(1.0_4, chaxa(n))
 
             end if
 
@@ -602,7 +605,7 @@ module rte_module
 
         !> Local variables for dynamic time-stepping.
         real(kind = 4) qi2_strt(naa), qo2_strt(naa), route_dt, hr_div, sec_div, dtmin
-        real tqi1, tqo1, tax, tqo2, tstore2, tstore1
+        real(kind = 4) tqi1, tqo1, tax, tqo2, tstore2, tstore1
         integer indexi, no_dtold
 
         !> Local variables for output averaging.
@@ -656,7 +659,7 @@ module rte_module
                 irindex = 0
                 if (divname(l)(1:5) == 'irrig' .or. divname(l)(1:5) == 'Irrig') then
                     irindex = irindex + 1
-                    qdivirrig(irindex, 1) = qdiv(l, 1)/totirrigpts(irindex)
+                    qdivirrig(irindex, 1) = qdiv(l, 1)/real(totirrigpts(irindex), 4)
                 end if
             end do
             qdiv(:, fhr) = qdiv2
@@ -669,7 +672,7 @@ module rte_module
 !        hour_now = ic%now%hour + 1
 
         !> Convert surface runoff from [kg/m^2] to [cms].
-        qr(1:naa) = qr(1:naa)*1000.0*step2/3600.0
+        qr(1:naa) = qr(1:naa)*1000.0_4*step2/3600.0_4
 
         !> Update from SA_MESH variables.
         qi2 = vs%grid%qi
@@ -727,17 +730,17 @@ module rte_module
 15          indexi = 0
             if (dtmin <= mindtmin) exit
             no_dt = max(int(3599.0/dtmin) + 1, 1)
-            route_dt = 3600.0/float(no_dt)
-            sec_div = route_dt/2.0
+            route_dt = 3600.0_4/real(no_dt, 4)
+            sec_div = route_dt/2.0_4
             tax = store1(n)/rl(n)
 !            tqo2 = 0.0
-            tqo2 = max(tax, 0.0)**1.67*slope(n)/chawid(n)**0.667/r2n(n)
+            tqo2 = max(tax, 0.0_4)**1.67_4*slope(n)/chawid(n)**0.667_4/r2n(n)
 
             !> Use qi2 = 0.0 below to really constrain dtmin by keeping store2 low
             !> We don't want to set qi2 to zero though because it is used in route
             !> so we just use a hard-coded 0.0 in this equation
 !16          tstore2 = store1(n)
-16          tstore2 = store1(n) + (tqi1 + 0.0 - tqo1 - tqo2)*sec_div
+16          tstore2 = store1(n) + (tqi1 + 0.0_4 - tqo1 - tqo2)*sec_div
 
             !> Now check to see if this qo2 is large enough that it will cause problems
             !> in the next time step when it is put into qo1.
@@ -755,7 +758,7 @@ module rte_module
             if (tstore2 < 0.0 .or. tstore1 < 0.0) then
 
                 !> Keep making qo2 smaller untill store2 becomes positive.
-                tqo2 = tqo2/2.0
+                tqo2 = tqo2/2.0_4
                 indexi = indexi + 1
 
                 !> Reduce the time step by a factor of dtminfrac (default = 0.75, set above).
@@ -780,10 +783,10 @@ module rte_module
         !> Let the time step be as small as mindtmin.
 17      dtmin = max(mindtmin, dtmin)
         no_dt = max(int(3599.0/dtmin) + 1, 1)
-        dtmin = 3600.0/real(no_dt)
-        route_dt = 3600.0/float(no_dt)
-        sec_div = route_dt/2.0
-        hr_div = sec_div/3600.0
+        dtmin = 3600.0_4/real(no_dt, 4)
+        route_dt = 3600.0_4/real(no_dt, 4)
+        sec_div = route_dt/2.0_4
+        hr_div = sec_div/3600.0_4
         exitstatus = 0
 
         !> Initialize the local variables for output averaging.
@@ -833,7 +836,7 @@ module rte_module
                         no_dtold = no_dt
                         no_dt = max(int(3599.0/dtmin) + 1, 1)
                     end do
-                    dtmin = 3600.0/real(no_dt)
+                    dtmin = 3600.0_4/real(no_dt, 4)
 
                     !> Restore the input values from the start of the time step.
                     qi2(1:naa) = qi2_strt(1:naa)
