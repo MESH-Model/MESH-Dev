@@ -91,7 +91,7 @@ module sa_mesh_run_within_tile
         type(clim_info) cm
 
         !> Local variables.
-        integer nvars, t, i, j, u, s, ii1, ii2, iin, z
+        integer nvars, t, c, i, j, u, s, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
         real, dimension(:), allocatable :: met, cnpy, sno, sfc, sl, lz, dz
@@ -108,6 +108,13 @@ module sa_mesh_run_within_tile
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
+
+        !> Check active kind of 'real'.
+        if (kind(2.0) == 8) then
+            c = MPI_REAL8
+        else
+            c = MPI_REAL
+        end if
 
         !> Other variables
         s = shd%lc%IGND
@@ -127,7 +134,7 @@ module sa_mesh_run_within_tile
             allocate(met(2*iin))
             met((1 + iin*0):(iin*1)) = vs%tile%prern(ii1:ii2)
             met((1 + iin*1):(iin*2)) = vs%tile%presno(ii1:ii2)
-            call MPI_Isend(met, size(met), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            call MPI_Isend(met, size(met), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> Canopy variables.
@@ -139,7 +146,7 @@ module sa_mesh_run_within_tile
             cnpy((1 + iin*4):(iin*5)) = vs%tile%qacan(ii1:ii2)
             cnpy((1 + iin*5):(iin*6)) = vs%tile%tcan(ii1:ii2)
             cnpy((1 + iin*6):(iin*7)) = vs%tile%gro(ii1:ii2)
-            call MPI_Isend(cnpy, size(cnpy), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            call MPI_Isend(cnpy, size(cnpy), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> Snow variables.
@@ -152,7 +159,7 @@ module sa_mesh_run_within_tile
             sno((1 + iin*5):(iin*6)) = vs%tile%lqwssno(ii1:ii2)
             sno((1 + iin*6):(iin*7)) = vs%tile%tsno(ii1:ii2)
             sno((1 + iin*7):(iin*8)) = vs%tile%drainsno(ii1:ii2)
-            call MPI_Isend(sno, size(sno), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            call MPI_Isend(sno, size(sno), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> Surface variables.
@@ -173,7 +180,7 @@ module sa_mesh_run_within_tile
             do j = 0, 3
                 sfc((1 + iin*(13 + j)):(iin*(14 + j))) = vs%tile%tsfs(ii1:ii2, j + 1)
             end do
-            call MPI_Isend(sfc, size(sfc), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            call MPI_Isend(sfc, size(sfc), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> Subsurface/soil variables.
@@ -188,7 +195,7 @@ module sa_mesh_run_within_tile
                 sl((1 + iin*(6 + j*5)):(iin*(7 + j*5))) = vs%tile%gflx(ii1:ii2, j + 1)
                 sl((1 + iin*(7 + j*5)):(iin*(8 + j*5))) = vs%tile%latflw(ii1:ii2, j + 1)
             end do
-            call MPI_Isend(sl, size(sl), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            call MPI_Isend(sl, size(sl), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> Groundwater/lower zone storage variables.
@@ -196,12 +203,12 @@ module sa_mesh_run_within_tile
             lz((1 + iin*0):(iin*1)) = vs%tile%rchg(ii1:ii2)
             lz((1 + iin*1):(iin*2)) = vs%tile%stggw(ii1:ii2)
             lz((1 + iin*2):(iin*3)) = vs%tile%dzs(ii1:ii2)
-            call MPI_Isend(lz, size(lz), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            call MPI_Isend(lz, size(lz), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> BASEFLOWFLAG.
             if (bflm%BASEFLOWFLAG == 1) then
-                call MPI_Isend(Qb(ii1:ii2), iin, MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+                call MPI_Isend(Qb(ii1:ii2), iin, c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
                 i = i + 1
             end if
 
@@ -237,16 +244,16 @@ module sa_mesh_run_within_tile
                 i = 1
 
                 !> Receive variables.
-                call MPI_Irecv(met, size(met), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
-                call MPI_Irecv(cnpy, size(cnpy), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
-                call MPI_Irecv(sno, size(sno), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
-                call MPI_Irecv(sfc, size(sfc), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
-                call MPI_Irecv(sl, size(sl), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
-                call MPI_Irecv(lz, size(lz), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(met, size(met), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(cnpy, size(cnpy), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(sno, size(sno), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(sfc, size(sfc), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(sl, size(sl), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(lz, size(lz), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
 
                 !> BASEFLOWFLAG.
                 if (bflm%BASEFLOWFLAG == 1) then
-                    call MPI_Irecv(Qb(ii1:ii2), iin, MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                    call MPI_Irecv(Qb(ii1:ii2), iin, c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
                 end if
 
                 !> Wait until the exchange completes.

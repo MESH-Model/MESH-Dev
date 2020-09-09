@@ -51,6 +51,8 @@ module climate_forcing
         logical ENDDATA
 
         !> Local variables.
+        integer(kind = 4) i4, iblock_i4, itimestep_i4, ipflg_i4
+        real(kind = 4), dimension(:, :), allocatable :: blocks_r4, ipdat_r4
         integer vid, iun, isteps1, isteps2, month, day, t, s, k, j, i, ierr
         character(len = DEFAULT_LINE_LENGTH) line
 
@@ -291,10 +293,10 @@ module climate_forcing
             end if
 
             !> Stop if the state file does not contain the expected number of climate variables.
-            read(iun) ierr
-            if (ierr /= 7) then
+            read(iun) i4
+            if (int(i4) /= 7) then
                 call print_error('Incompatible ranking in climate state file.')
-                write(line, FMT_GEN) ierr
+                write(line, FMT_GEN) i4
                 call print_message_detail('Number of clim. variables read: ' // trim(adjustl(line)))
                 write(line, FMT_GEN) 7
                 call print_message_detail('Number of clim. variables expected: ' // trim(adjustl(line)))
@@ -305,16 +307,27 @@ module climate_forcing
             do vid = 1, 7
 
                 !> Read the state of the climate variable (in case reading into memory).
-                read(iun) cm%dat(vid)%blocks
-                read(iun) cm%dat(vid)%iblock
+                allocate(blocks_r4(size(cm%dat(vid)%blocks, 1), size(cm%dat(vid)%blocks, 2)))
+                blocks_r4 = 0.0
+                read(iun) blocks_r4
+                cm%dat(vid)%blocks = real(blocks_r4, kind(cm%dat(vid)%blocks))
+                read(iun) iblock_i4
+                cm%dat(vid)%iblock = int(iblock_i4, kind(cm%dat(vid)%iblock))
+                deallocate(blocks_r4)
 
                 !> Read the last time-step read from file.
-                read(iun) cm%dat(vid)%itimestep
+                read(iun) itimestep_i4
+                cm%dat(vid)%itimestep = int(itimestep_i4, kind(cm%dat(vid)%itimestep))
 
                 !> Read the interpolation state (if active).
-                read(iun) cm%dat(vid)%ipflg
+                read(iun) ipflg_i4
+                cm%dat(vid)%ipflg = int(ipflg_i4, kind(cm%dat(vid)%ipflg))
                 if (cm%dat(vid)%ipflg == 1) then
-                    read(iun) cm%dat(vid)%ipdat
+                    allocate(ipdat_r4(size(cm%dat(vid)%ipdat, 1), size(cm%dat(vid)%ipdat, 2)))
+                    ipdat_r4 = 0.0
+                    read(iun) ipdat_r4
+                    cm%dat(vid)%ipdat = real(ipdat_r4, kind(cm%dat(vid)%ipdat))
+                    deallocate(ipdat_r4)
 
                     !> INTERPOLATIONFLAG 1 requires an additional frame be read from the next time-step.
                     if (cm%dat(vid)%itimestep == 0) then
@@ -722,22 +735,22 @@ module climate_forcing
             end if
 
             !> Write the number of climate variables.
-            write(iun) 7
+            write(iun) int(7, kind = 4)
 
             !> Loop through variables in the climate forcing object and write the states to file.
             do vid = 1, 7
 
                 !> Save the state of the climate variable (in case reading into memory).
-                write(iun) cm%dat(vid)%blocks
-                write(iun) cm%dat(vid)%iblock
+                write(iun) real(cm%dat(vid)%blocks, kind = 4)
+                write(iun) int(cm%dat(vid)%iblock, kind = 4)
 
                 !> Save the current time-step read from file.
-                write(iun) cm%dat(vid)%itimestep
+                write(iun) int(cm%dat(vid)%itimestep, kind = 4)
 
                 !> Save the interpolation state (if active).
-                write(iun) cm%dat(vid)%ipflg
+                write(iun) int(cm%dat(vid)%ipflg, kind = 4)
                 if (cm%dat(vid)%ipflg == 1) then
-                    write(iun) cm%dat(vid)%ipdat
+                    write(iun) real(cm%dat(vid)%ipdat, kind = 4)
                 end if
             end do
 

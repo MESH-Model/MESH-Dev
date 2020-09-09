@@ -120,14 +120,14 @@ module rte_module
         !> Transfer grid properties.
         ycount = shd%yCount
         imax = shd%yCount !> ycount and imax are used interchangeably in the code
-        ydelta = shd%yDelta
-        yorigin = shd%yOrigin
+        ydelta = real(shd%yDelta, kind(ydelta))
+        yorigin = real(shd%yOrigin, kind(yorigin))
         xcount = shd%xCount
         jmax = shd%xCount !> jmax and xcount are used interghangeably in the code
-        xdelta = shd%xDelta
-        xorigin = shd%xOrigin
-        al = shd%AL
-        astep = al/1000.0
+        xdelta = real(shd%xDelta, kind(xdelta))
+        xorigin = real(shd%xOrigin, kind(xorigin))
+        al = real(shd%AL, kind(al))
+        astep = real(shd%AL/1000.0, kind(astep))
         istep = int(astep)
         step2 = astep*astep
         na = shd%NA
@@ -148,27 +148,28 @@ module rte_module
         yyy = shd%yyy
         s = shd%RNKGRD
         next = shd%NEXT
-        da = shd%DA
-        bnkfll = shd%BNKFLL
-        slope = sqrt(shd%SLOPE_CHNL)
+        da = real(shd%DA, kind(da))
+        bnkfll = real(shd%BNKFLL, kind(bnkfll))
+        slope = sqrt(real(shd%SLOPE_CHNL, kind(slope)))
 !+        elev = shd%ELEV
-        rl = shd%CHNL_LEN
+        rl = real(shd%CHNL_LEN, kind(rl))
         ibn = shd%IAK
 !+        sl1 = shd%SLOPE_INT
         ichnl = shd%ICHNL
         ireach = shd%IREACH
         Nreaches = maxval(shd%IREACH)
-        grid_area = shd%AREA
-        frac = shd%FRAC
-        aclass = 0.0; aclass(:, 1:ntype) = shd%lc%ACLASS
+        grid_area = real(shd%AREA, kind(grid_area))
+        frac = real(shd%FRAC, kind(frac))
+        aclass = 0.0; aclass(:, 1:ntype) = real(shd%lc%ACLASS, kind(aclass))
         nhyd = 0
         glacier_flag = 'n'
 
         !> Allocate and assign parameter values.
         allocate(r1n(na), r2n(na), rlake(na), &
                  mndr(na), aa2(na), aa3(na), aa4(na), theta(na), widep(na), kcond(na))
-        r1n = rtepm%r1n; r2n = rtepm%r2n
-        mndr = rtepm%mndr; aa2 = rtepm%aa2; aa3 = rtepm%aa3; aa4 = rtepm%aa4; widep = rtepm%widep
+        r1n = real(rtepm%r1n, kind(r1n)); r2n = real(rtepm%r2n, kind(r2n))
+        mndr = real(rtepm%mndr, kind(mndr)); aa2 = real(rtepm%aa2, kind(aa2)); aa3 = real(rtepm%aa3, kind(aa3))
+        aa4 = real(rtepm%aa4, kind(aa4)); widep = real(rtepm%widep, kind(widep))
         rlake = 0.0; theta = 0.0; kcond = 0.0
 
         !> Force use of Manning's coefficients (e.g., r2n, r1n).
@@ -349,13 +350,13 @@ module rte_module
             !> Routing coefficients.
             allocate(b1(noresv), b2(noresv), b3(noresv), b4(noresv), b5(noresv), b6(noresv), b7(noresv))
 !                poliflg(noresv)
-            b1 = fms%rsvr%rls%b1
-            b2 = fms%rsvr%rls%b2
-            b3 = fms%rsvr%rls%b3
-            b4 = fms%rsvr%rls%b4
-            b5 = fms%rsvr%rls%b5
-            b6 = fms%rsvr%rls%b6
-            b7 = fms%rsvr%rls%b7
+            b1 = real(fms%rsvr%rls%b1, kind(b1))
+            b2 = real(fms%rsvr%rls%b2, kind(b2))
+            b3 = real(fms%rsvr%rls%b3, kind(b3))
+            b4 = real(fms%rsvr%rls%b4, kind(b4))
+            b5 = real(fms%rsvr%rls%b5, kind(b5))
+            b6 = real(fms%rsvr%rls%b6, kind(b6))
+            b7 = real(fms%rsvr%rls%b7, kind(b7))
 !            where (b3 == 0.0)
 !                poliflg = 'n'
 !            elsewhere
@@ -371,9 +372,9 @@ module rte_module
             allocate(qdwpr(noresv, 999999), qrel(noresv, 999999))
             qdwpr = 0.0
             if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
+                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0)), kind(qrel))
             else
-                qrel(:, 1) = fms%rsvr%rlsmeas%val
+                qrel(:, 1) = real(fms%rsvr%rlsmeas%val, kind(qrel))
             end if
 
             !> Initial lake level (from file).
@@ -381,8 +382,8 @@ module rte_module
             !*  lake_area: Used to convert reservoir storage to level (for diagnostic output). [m2].
             !*  lake_elv: Lake elevation (for diagnostic output). [m].
             allocate(reach_last(noresv), lake_area(noresv), lake_elv(noresv, 999999))
-            lake_area = fms%rsvr%rls%area
-            lake_elv(:, 1) = fms%rsvr%rls%zlvl0
+            lake_area = real(fms%rsvr%rls%area, kind(lake_area))
+            lake_elv(:, 1) = real(fms%rsvr%rls%zlvl0, kind(lake_elv))
         end if
 
         !> Streamflow gauge locations.
@@ -394,7 +395,7 @@ module rte_module
                 qhyd(no, 999999))
             iflowgrid = fms%stmg%meta%rnk
             nopt = -1
-            qhyd(:, 1) = fms%stmg%qomeas%val
+            qhyd(:, 1) = real(fms%stmg%qomeas%val, kind(qhyd))
         end if
 
         !> Channel and reservoir initialization.
@@ -545,7 +546,8 @@ module rte_module
 
             !> Read inital values from the file.
             if (RESUMEFLAG == 4) then
-                read(iun) fhr
+                read(iun) fhr_i4
+                fhr = int(fhr_i4)
             else
                 read(iun)
             end if
@@ -629,8 +631,8 @@ module rte_module
         if (ic%ts_hourly == 1) then
             qr(1:naa) = 0.0
         end if
-        qr(1:naa) = qr(1:naa) + vs%grid%rff(1:naa)*shd%FRAC(1:naa)
-        qr(1:naa) = qr(1:naa) + vs%grid%rchg(1:naa)*shd%FRAC(1:naa)
+        qr(1:naa) = qr(1:naa) + real(vs%grid%rff(1:naa)*shd%FRAC(1:naa), kind(qr))
+        qr(1:naa) = qr(1:naa) + real(vs%grid%rchg(1:naa)*shd%FRAC(1:naa), kind(qr))
 
         !> Reset SA_MESH output variables (for averaging).
         !> Setting these to zero also prevents updating from the state variables upon return.
@@ -675,20 +677,20 @@ module rte_module
         qr(1:naa) = qr(1:naa)*1000.0_4*step2/3600.0_4
 
         !> Update from SA_MESH variables.
-        qi2 = vs%grid%qi
-        store2 = vs%grid%stgch
-        qo2 = vs%grid%qo
+        qi2 = real(vs%grid%qi, kind(qi2))
+        store2 = real(vs%grid%stgch, kind(store2))
+        qo2 = real(vs%grid%qo, kind(qo2))
 
         !> Remember the input values from the start of the time step.
         qi2_strt(1:naa) = qi2(1:naa)
         qo2_strt(1:naa) = qo2(1:naa)
         store2_strt(1:naa) = store2(1:naa)
-        if (fms%stmg%n > 0) qhyd(:, fhr) = fms%stmg%qomeas%val
+        if (fms%stmg%n > 0) qhyd(:, fhr) = real(fms%stmg%qomeas%val, kind(qhyd))
         if (fms%rsvr%n > 0) then
             if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
+                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0)), kind(qrel))
             else
-                qrel(:, 1) = fms%rsvr%rlsmeas%val
+                qrel(:, 1) = real(fms%rsvr%rlsmeas%val, kind(qrel))
             end if
         end if
 
@@ -915,7 +917,7 @@ module rte_module
 !todo: condition for ierr.
 
             !> Write the current state of these variables to the file.
-            write(iun) fhr
+            write(iun) int(fhr, kind = 4)
             write(iun) qo2
             write(iun) store2
             write(iun) qi2

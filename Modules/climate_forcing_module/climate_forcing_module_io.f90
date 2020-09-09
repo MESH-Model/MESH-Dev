@@ -471,6 +471,7 @@ module climate_forcing_io
 
         !> Local variables.
         integer t, n, j, i, z
+        real(kind = 4), allocatable :: blocks_r4(:, :)
         real GRD(shd%yCount, shd%xCount), MET(9)
         character(len = DEFAULT_LINE_LENGTH) line
 #ifdef NETCDF
@@ -524,15 +525,21 @@ module climate_forcing_io
 
             !> Binary sequential format.
             case (3)
+                allocate(blocks_r4(shd%NA, n))
+                blocks_r4 = 0.0
                 do t = 1, n
                     if (iskip == 0) then
                         read(cm%dat(vid)%fiun, end = 999) !NTIME
-                        read(cm%dat(vid)%fiun, end = 999) (cm%dat(vid)%blocks(i, t), i = 1, shd%NA)
+                        read(cm%dat(vid)%fiun, end = 999) (blocks_r4(i, t), i = 1, shd%NA)
                     else
                         read(cm%dat(vid)%fiun, end = 999)
                         read(cm%dat(vid)%fiun, end = 999)
                     end if
                 end do
+                if (iskip == 0) then
+                    cm%dat(vid)%blocks(1:shd%NA, 1:n) = blocks_r4
+                end if
+                deallocate(blocks_r4)
 
             !> ASCII format.
             case (4)

@@ -336,12 +336,12 @@ module SIMSTATS
 !todo: condition for ierr.
 
         !> Write the values of the variables to file.
-        write(iun) ncal
-        write(iun) ns
-        write(iun) fbest, ftest
+        write(iun) int(ncal, kind = 4)
+        write(iun) int(ns, kind = 4)
+        write(iun) real(fbest, kind = 4), real(ftest, kind = 4)
         do j = 1, ns
-            write(iun) qobs(1:ncal, j)
-            write(iun) qsim(1:ncal, j)
+            write(iun) real(qobs(1:ncal, j), kind = 4)
+            write(iun) real(qsim(1:ncal, j), kind = 4)
         end do
 
         !> Close the file to free the unit.
@@ -358,6 +358,9 @@ module SIMSTATS
         type(fl_ids) :: fls
 
         !> Local variables.
+        integer(kind = 4) ncal_i4, ns_i4
+        real(kind = 4) fbest_r4, ftest_r4
+        real(kind = 4), dimension(:, :), allocatable :: qobs_r4, qsim_r4
         integer j, iun, ierr
 
         !> Return if AUTOCALIBRATIONFLAG has not been enabled.
@@ -373,15 +376,22 @@ module SIMSTATS
 !todo: condition for ierr.
 
         !> Read the values of the variables from file.
-        read(iun) ncal
-        read(iun) ns
-        read(iun) fbest, ftest
+        read(iun) ncal_i4
+        ncal = int(ncal_i4, kind(ncal))
+        read(iun) ns_i4
+        ns = int(ns_i4, kind(ns))
+        read(iun) fbest_r4, ftest_r4
+        fbest = real(fbest_r4, kind(fbest))
+        ftest = real(ftest_r4, kind(ftest))
         if (allocated(qobs)) deallocate(qobs, qsim)
-        allocate(qobs(ncal, ns), qsim(ncal, ns))
+        allocate(qobs_r4(ncal, ns), qobs(ncal, ns), qsim_r4(ncal, ns), qsim(ncal, ns))
         do j = 1, ns
-            read(iun) qobs(1:ncal, j)
-            read(iun) qsim(1:ncal, j)
+            read(iun) qobs_r4(1:ncal, j)
+            read(iun) qsim_r4(1:ncal, j)
         end do
+        qobs = real(qobs_r4, kind(qobs))
+        qsim = real(qsim_r4, kind(qsim))
+        deallocate(qobs_r4, qsim_r4)
 
         !> Close the file to free the unit.
         close(iun)

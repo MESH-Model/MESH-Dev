@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1717'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1720'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -151,6 +151,14 @@ program RUNMESH
     type(CLIM_INFO) cm
 
     !> Basin totals for the run from RESUMEFLAG.
+    integer(kind = 4) &
+        now_year_i4, now_jday_i4, now_month_i4, now_day_i4, now_hour_i4, now_mins_i4, &
+        iter_year_i4, iter_jday_i4, iter_month_i4, iter_day_i4, iter_hour_i4, iter_mins_i4, &
+        ts_daily_i4, ts_hourly_i4, ts_halfhourly_i4, ts_count_i4
+    real(kind = 4) &
+        TOTAL_PRE_r4, TOTAL_EVAP_r4, TOTAL_ROF_r4, TOTAL_ROFO_r4, TOTAL_ROFS_r4, TOTAL_ROFB_r4, &
+        STG_INI_r4
+    real(kind = 4), dimension(:), allocatable :: qomeas_val_r4, grid_qo_stmg_r4
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
 
     !> End of run states for prognostic variables.
@@ -812,21 +820,50 @@ program RUNMESH
 !todo: condition for ierr.
 
         !> Time-stepping information.
-        read(iun) ic%now%year, ic%now%jday, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins
-        read(iun) ic%iter%year, ic%iter%jday, ic%iter%month, ic%iter%jday, ic%iter%hour, ic%iter%mins
-        read(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
+        read(iun) now_year_i4, now_jday_i4, now_month_i4, now_day_i4, now_hour_i4, now_mins_i4
+        ic%now%year = int(now_year_i4, kind(ic%now%year))
+        ic%now%jday = int(now_jday_i4, kind(ic%now%jday))
+        ic%now%month = int(now_month_i4, kind(ic%now%month))
+        ic%now%day = int(now_day_i4, kind(ic%now%day))
+        ic%now%hour = int(now_hour_i4, kind(ic%now%hour))
+        ic%now%mins = int(now_mins_i4, kind(ic%now%mins))
+        read(iun) iter_year_i4, iter_jday_i4, iter_month_i4, iter_day_i4, iter_hour_i4, iter_mins_i4
+        ic%iter%year = int(iter_year_i4, kind(ic%iter%year))
+        ic%iter%jday = int(iter_jday_i4, kind(ic%iter%jday))
+        ic%iter%month = int(iter_month_i4, kind(ic%iter%month))
+        ic%iter%day = int(iter_day_i4, kind(ic%iter%day))
+        ic%iter%hour = int(iter_hour_i4, kind(ic%iter%hour))
+        ic%iter%mins = int(iter_mins_i4, kind(ic%iter%mins))
+        read(iun) ts_daily_i4, ts_hourly_i4, ts_halfhourly_i4, ts_count_i4
+        ic%ts_daily = int(ts_daily_i4, kind(ic%ts_daily))
+        ic%ts_hourly = int(ts_hourly_i4, kind(ic%ts_hourly))
+        ic%ts_halfhourly = int(ts_halfhourly_i4, kind(ic%ts_halfhourly))
+        ic%ts_count = int(ts_count_i4, kind(ic%ts_count))
 
         !> Read states for the driver (for the head node or in serial).
         if (ISHEADNODE) then
 
             !> Water balance totals.
-            read(iun) TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-            read(iun) STG_INI
+            read(iun) TOTAL_PRE_r4, TOTAL_EVAP_r4, TOTAL_ROF_r4, TOTAL_ROFO_r4, TOTAL_ROFS_r4, TOTAL_ROFB_r4
+            TOTAL_PRE = real(TOTAL_PRE_r4, kind(TOTAL_PRE))
+            TOTAL_EVAP = real(TOTAL_EVAP_r4, kind(TOTAL_EVAP))
+            TOTAL_ROF = real(TOTAL_ROF_r4, kind(TOTAL_ROF))
+            TOTAL_ROFO = real(TOTAL_ROFO_r4, kind(TOTAL_ROFO))
+            TOTAL_ROFS = real(TOTAL_ROFS_r4, kind(TOTAL_ROFS))
+            TOTAL_ROFB = real(TOTAL_ROFB_r4, kind(TOTAL_ROFB))
+            read(iun) STG_INI_r4
+            STG_INI = real(STG_INI_r4, kind(STG_INI))
 
             !> Daily streamflow values.
             if (fms%stmg%n > 0) then
-                read(iun) fms%stmg%qomeas%val
-                read(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
+                allocate(qomeas_val_r4(size(fms%stmg%qomeas%val)), grid_qo_stmg_r4(size(fms%stmg%meta%rnk)))
+                qomeas_val_r4 = 0.0
+                read(iun) qomeas_val_r4
+                fms%stmg%qomeas%val = real(qomeas_val_r4, kind(fms%stmg%qomeas%val))
+                grid_qo_stmg_r4 = 0.0
+                read(iun) grid_qo_stmg_r4
+                out%d%grid%qo(fms%stmg%meta%rnk(:)) = real(grid_qo_stmg_r4, kind(out%d%grid%qo))
+                deallocate(qomeas_val_r4, grid_qo_stmg_r4)
             end if
 
         end if
@@ -1157,18 +1194,25 @@ program RUNMESH
 !todo: condition for ierr.
 
             !> Time-stepping information.
-            write(iun) ic%now%year, ic%now%jday, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins
-            write(iun) ic%iter%year, ic%iter%jday, ic%iter%month, ic%iter%jday, ic%iter%hour, ic%iter%mins
-            write(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
+            write(iun) &
+                int(ic%now%year, kind = 4), int(ic%now%jday, kind = 4), int(ic%now%month, kind = 4), int(ic%now%day, kind = 4), &
+                int(ic%now%hour, kind = 4), int(ic%now%mins, kind = 4)
+            write(iun) &
+                int(ic%iter%year, kind = 4), int(ic%iter%jday, kind = 4), int(ic%iter%month, kind = 4), &
+                int(ic%iter%jday, kind = 4), int(ic%iter%hour, kind = 4), int(ic%iter%mins, kind = 4)
+            write(iun) &
+                int(ic%ts_daily, kind = 4), int(ic%ts_hourly, kind = 4), int(ic%ts_halfhourly, kind = 4), int(ic%ts_count, kind = 4)
 
             !> Water balance totals.
-            write(iun) TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-            write(iun) STG_INI
+            write(iun) &
+                real(TOTAL_PRE, kind = 4), real(TOTAL_EVAP, kind = 4), real(TOTAL_ROF, kind = 4), &
+                real(TOTAL_ROFO, kind = 4), real(TOTAL_ROFS, kind = 4), real(TOTAL_ROFB, kind = 4)
+            write(iun) real(STG_INI, kind = 4)
 
             !> Daily streamflow values.
             if (fms%stmg%n > 0) then
-                write(iun) fms%stmg%qomeas%val
-                write(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
+                write(iun) real(fms%stmg%qomeas%val, kind = 4)
+                write(iun) real(out%d%grid%qo(fms%stmg%meta%rnk(:)), kind = 4)
             end if
 
             !> Close the file to free the unit.

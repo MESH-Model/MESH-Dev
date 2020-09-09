@@ -27,7 +27,7 @@ module cropland_irrigation_within_tile
         logical lstat
 
         !> Local variables.
-        integer k, ki, t, i, ikey
+        integer k, ki, t, c, i, ikey
         real Kc
 
         !> Return if the cropland irrigation module is not active.
@@ -175,6 +175,13 @@ module cropland_irrigation_within_tile
 
         !> Gather variables from parallel nodes.
 
+        !> Check active kind of 'real'.
+        if (kind(2.0) == 8) then
+            c = MPI_REAL8
+        else
+            c = MPI_REAL
+        end if
+
         !> Send/receive process.
         invars = 3*(civ%fk%kmax - civ%fk%kmin + 1)
 
@@ -188,12 +195,12 @@ module cropland_irrigation_within_tile
             t = itag
             i = 1
             do ikey = civ%fk%kmin, civ%fk%kmax
-                call mpi_isend(civ%vars(ikey)%icu_mm(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
+                call mpi_isend(civ%vars(ikey)%icu_mm(il1:il2), iln, c, 0, itag + i, mpi_comm_world, irqst(i), ierr)
                 i = i + 1
-                call mpi_isend(civ%vars(ikey)%lqws2_mm(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
+                call mpi_isend(civ%vars(ikey)%lqws2_mm(il1:il2), iln, c, 0, itag + i, mpi_comm_world, irqst(i), ierr)
                 i = i + 1
 !todo: remove potevp (global var)
-                call mpi_isend(vs%tile%potevp(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                call mpi_isend(vs%tile%potevp(il1:il2), iln, c, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             end do
             lstat = .false.
             do while (.not. lstat)
@@ -215,12 +222,12 @@ module cropland_irrigation_within_tile
                 t = itag
                 i = 1
                 do ikey = civ%fk%kmin, civ%fk%kmax
-                    call mpi_irecv(civ%vars(ikey)%icu_mm(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    call mpi_irecv(civ%vars(ikey)%icu_mm(ii1:ii2), iiln, c, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
-                    call mpi_irecv(civ%vars(ikey)%lqws2_mm(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    call mpi_irecv(civ%vars(ikey)%lqws2_mm(ii1:ii2), iiln, c, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
 !todo: remove potevp (global var)
-                    call mpi_irecv(vs%tile%potevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+                    call mpi_irecv(vs%tile%potevp(ii1:ii2), iiln, c, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end do
                 lstat = .false.
                 do while (.not. lstat)

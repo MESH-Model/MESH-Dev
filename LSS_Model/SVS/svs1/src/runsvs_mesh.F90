@@ -769,6 +769,12 @@ module runsvs_mesh
         type(fl_ids) fls
 
         !> Local variables.
+        integer(kind = 4) datecmc_o_i4
+        real(kind = 4) tground_r4(svs_mesh%vs%kthermal*NG)
+        real(kind = 4), dimension(2*NG) :: tvege_r4, tsnow_r4, tsnowveg_r4
+        real(kind = 4), dimension(nl_svs*NG) :: wsoil_r4, isoil_r4
+        real(kind = 4), dimension(NG) :: &
+            snoma_r4, snvma_r4, wsnow_r4, wsnv_r4, snoal_r4, snval_r4, snoden_r4, snvden_r4, snodpl_r4, snvdp_r4, wveg_r4
         integer iun, j, k, z, ierr
         character(len = DEFAULT_FIELD_LENGTH) code
 
@@ -796,35 +802,65 @@ module runsvs_mesh
         !>  file, so this date must be resumed separately.
         !> Only resume the date if model dates are also resumed.
         if (RESUMEFLAG == 4) then
-            read(iun, iostat = z) datecmc_o
+            read(iun, iostat = z) datecmc_o_i4
+            datecmc_o = int(datecmc_o_i4)
         else
             read(iun, iostat = z)
         end if
 
         !> Resume temperatures.
-        if (z == 0) read(iun, iostat = z) ((bus(tground + (j - 1)*NG + k), j = 1, svs_mesh%vs%kthermal), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) ((bus(tvege + j*NG + k), j = 0, 1), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) ((bus(tsnow + j*NG + k), j = 0, 1), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) ((bus(tsnowveg + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) tground_r4
+        if (z == 0) read(iun, iostat = z) tvege_r4
+        if (z == 0) read(iun, iostat = z) tsnow_r4
+        if (z == 0) read(iun, iostat = z) tsnowveg_r4
 
         !> Resume moisture.
-        if (z == 0) read(iun, iostat = z) ((bus(wsoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) ((bus(isoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) wsoil_r4
+        if (z == 0) read(iun, iostat = z) isoil_r4
 
         !> Resume snow variables.
-        if (z == 0) read(iun, iostat = z) (bus(snoma + k), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) (bus(snvma + k), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) (bus(wsnow + k), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) (bus(wsnv + k), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) (bus(snoal + k), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) (bus(snval + k), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) (bus(snoden + k), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) (bus(snvden + k), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) (bus(snodpl + k), k = 0, NG - 1)
-        if (z == 0) read(iun, iostat = z) (bus(snvdp + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) snoma_r4
+        if (z == 0) read(iun, iostat = z) snvma_r4
+        if (z == 0) read(iun, iostat = z) wsnow_r4
+        if (z == 0) read(iun, iostat = z) wsnv_r4
+        if (z == 0) read(iun, iostat = z) snoal_r4
+        if (z == 0) read(iun, iostat = z) snval_r4
+        if (z == 0) read(iun, iostat = z) snoden_r4
+        if (z == 0) read(iun, iostat = z) snvden_r4
+        if (z == 0) read(iun, iostat = z) snodpl_r4
+        if (z == 0) read(iun, iostat = z) snvdp_r4
 
         !> Resume 'other'.
-        if (z == 0) read(iun, iostat = z) (bus(wveg + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) wveg_r4
+
+        !> Assign variables.
+        if (z == 0) then
+            do k = 0, NG -1
+                do j = 1, svs_mesh%vs%kthermal
+                    bus(tground + (j - 1)*NG + k) = real(tground_r4(1 + (j - 1)*NG + k), kind(bus))
+                end do
+                do j = 0, 1
+                    bus(tvege + j*NG + k) = real(tvege_r4(1 + j*NG + k), kind(bus))
+                    bus(tsnow + j*NG + k) = real(tsnow_r4(1 + j*NG + k), kind(bus))
+                    bus(tsnowveg + j*NG + k) = real(tsnowveg_r4(1 + j*NG + k), kind(bus))
+                end do
+                do j = 1, nl_svs
+                    bus(wsoil + (j - 1)*NG + k) = real(wsoil_r4(1 + (j - 1)*NG + k), kind(bus))
+                    bus(isoil + (j - 1)*NG + k) = real(isoil_r4(1 + (j - 1)*NG + k), kind(bus))
+                end do
+                bus(snoma + k) = real(snoma_r4(1 + k), kind(bus))
+                bus(snvma + k) = real(snvma_r4(1 + k), kind(bus))
+                bus(wsnow + k) = real(wsnow_r4(1 + k), kind(bus))
+                bus(wsnv + k) = real(wsnv_r4(1 + k), kind(bus))
+                bus(snoal + k) = real(snoal_r4(1 + k), kind(bus))
+                bus(snval + k) = real(snval_r4(1 + k), kind(bus))
+                bus(snoden + k) = real(snoden_r4(1 + k), kind(bus))
+                bus(snvden + k) = real(snvden_r4(1 + k), kind(bus))
+                bus(snodpl + k) = real(snodpl_r4(1 + k), kind(bus))
+                bus(snvdp + k) = real(snvdp_r4(1 + k), kind(bus))
+                bus(wveg + k) = real(wveg_r4(1 + k), kind(bus))
+            end do
+        end if
 
         !> Close the file to free the unit.
         close(iun)
@@ -1161,32 +1197,33 @@ module runsvs_mesh
         !>  SVS resume file, so this date must be saved separately.
         !> Save the date regardless of option so the file is compatible
         !>  with all resume options.
-        write(iun, iostat = z) datecmc_o
+        write(iun, iostat = z) int(datecmc_o, kind = 4)
 
         !> Save temperatures.
-        if (z == 0) write(iun, iostat = z) ((bus(tground + (j - 1)*NG + k), j = 1, svs_mesh%vs%kthermal), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) ((bus(tvege + j*NG + k), j = 0, 1), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) ((bus(tsnow + j*NG + k), j = 0, 1), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) ((bus(tsnowveg + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) &
+            ((real(bus(tground + (j - 1)*NG + k), kind = 4), j = 1, svs_mesh%vs%kthermal), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((real(bus(tvege + j*NG + k), kind = 4), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((real(bus(tsnow + j*NG + k), kind = 4), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((real(bus(tsnowveg + j*NG + k), kind = 4), j = 0, 1), k = 0, NG - 1)
 
         !> Save moisture.
-        if (z == 0) write(iun, iostat = z) ((bus(wsoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) ((bus(isoil + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((real(bus(wsoil + (j - 1)*NG + k), kind = 4), j = 1, nl_svs), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) ((real(bus(isoil + (j - 1)*NG + k), kind = 4), j = 1, nl_svs), k = 0, NG - 1)
 
         !> Save snow variables.
-        if (z == 0) write(iun, iostat = z) (bus(snoma + k), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) (bus(snvma + k), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) (bus(wsnow + k), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) (bus(wsnv + k), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) (bus(snoal + k), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) (bus(snval + k), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) (bus(snoden + k), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) (bus(snvden + k), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) (bus(snodpl + k), k = 0, NG - 1)
-        if (z == 0) write(iun, iostat = z) (bus(snvdp + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (real(bus(snoma + k), kind = 4), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (real(bus(snvma + k), kind = 4), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (real(bus(wsnow + k), kind = 4), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (real(bus(wsnv + k), kind = 4), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (real(bus(snoal + k), kind = 4), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (real(bus(snval + k), kind = 4), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (real(bus(snoden + k), kind = 4), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (real(bus(snvden + k), kind = 4), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (real(bus(snodpl + k), kind = 4), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (real(bus(snvdp + k), kind = 4), k = 0, NG - 1)
 
         !> Save 'other'.
-        if (z == 0) write(iun, iostat = z) (bus(wveg + k), k = 0, NG - 1)
+        if (z == 0) write(iun, iostat = z) (real(bus(wveg + k), kind = 4), k = 0, NG - 1)
 
         !> Close the file to free the unit.
         close(iun)

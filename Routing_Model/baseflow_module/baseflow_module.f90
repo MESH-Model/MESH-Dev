@@ -70,6 +70,7 @@ module baseflow_module
         type(clim_info), intent(in) :: cm
 
         !> Local variables.
+        real(kind = 4), dimension(:), allocatable :: lzs_r4, Qb_r4
         integer NA, NML, NTYPE, NRVR, iun, n, i, ierr
         character(len = DEFAULT_LINE_LENGTH) line
 
@@ -167,9 +168,14 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to resume states.')
                         call program_abort()
                     end if
-                    read(iun) vs%tile%stggw
-                    read(iun) Qb
+                    allocate(lzs_r4(NML), Qb_r4(NML))
+                    lzs_r4 = 0.0
+                    Qb_r4 = 0.0
+                    read(iun) lzs_r4
+                    read(iun) Qb_r4
                     close(iun)
+                    vs%tile%stggw = lzs_r4
+                    Qb = Qb_r4
                 case (2)
                     iun = fls%fl(mfk%f883)%iun
                     open( &
@@ -180,8 +186,11 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to resume states.')
                         call program_abort()
                     end if
-                    read(iun) vs%tile%stggw
+                    allocate(lzs_r4(NML))
+                    lzs_r4 = 0.0
+                    read(iun) lzs_r4
                     close(iun)
+                    vs%tile%stggw = lzs_r4
             end select
         end if
 
@@ -295,8 +304,8 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to save states.')
                         call program_abort()
                     end if
-                    write(iun) vs%tile%stggw
-                    write(iun) Qb
+                    write(iun) real(vs%tile%stggw, kind = 4)
+                    write(iun) real(Qb, kind = 4)
                     close(iun)
                 case (2)
                     iun = fls%fl(mfk%f883)%iun
@@ -308,7 +317,7 @@ module baseflow_module
                             'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to save states.')
                         call program_abort()
                     end if
-                    write(iun) vs%tile%stggw
+                    write(iun) real(vs%tile%stggw, kind = 4)
                     close(iun)
             end select
         end if

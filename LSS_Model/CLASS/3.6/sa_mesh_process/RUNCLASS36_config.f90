@@ -433,11 +433,11 @@ module RUNCLASS36_config
 
             !> RESUMEFLAG 4.
             case (4)
-                call read_init_prog_variables_class(fls)
+                call read_init_prog_variables_class(fls, shd)
 
             !> RESUMEFLAG 5.
             case (5)
-                call read_init_prog_variables_class(fls)
+                call read_init_prog_variables_class(fls, shd)
 
         end select !case (RESUMEFLAG)
 
@@ -827,25 +827,25 @@ module RUNCLASS36_config
                     jk = shd%lc%JLMOS(k)
 
                     !> Assign values.
-                    ALBSROW(ik, jk) = vs%tile%albsno(k)
-                    CMAIROW(ik, jk) = vs%tile%cmas(k)
-                    GROROW(ik, jk) = vs%tile%gro(k)
-                    QACROW(ik, jk) = vs%tile%qacan(k)
-                    RCANROW(ik, jk) = vs%tile%lqwscan(k)
-                    RHOSROW(ik, jk) = vs%tile%rhosno(k)
-                    SCANROW(ik, jk) = vs%tile%fzwscan(k)
-                    SNOROW(ik, jk) = vs%tile%sno(k)
-                    TACROW(ik, jk) = vs%tile%tacan(k)
-                    TBARROW(ik, jk, :) = vs%tile%tsol(k, :)
-                    TBASROW(ik, jk) = vs%tile%tbas(k)
-                    TCANROW(ik, jk) = vs%tile%tcan(k)
-                    THICROW(ik, jk, :) = vs%tile%thicsol(k, :)
-                    THLQROW(ik, jk, :) = vs%tile%thlqsol(k, :)
-                    TPNDROW(ik, jk) = vs%tile%tpnd(k)
-                    TSFSROW(ik, jk, :) = vs%tile%tsfs(k, :)
-                    TSNOROW(ik, jk) = vs%tile%tsno(k)
-                    WSNOROW(ik, jk) = vs%tile%lqwssno(k)
-                    ZPNDROW(ik, jk) = vs%tile%zpnd(k)
+                    ALBSROW(ik, jk) = real(vs%tile%albsno(k), kind = 4)
+                    CMAIROW(ik, jk) = real(vs%tile%cmas(k), kind = 4)
+                    GROROW(ik, jk) = real(vs%tile%gro(k), kind = 4)
+                    QACROW(ik, jk) = real(vs%tile%qacan(k), kind = 4)
+                    RCANROW(ik, jk) = real(vs%tile%lqwscan(k), kind = 4)
+                    RHOSROW(ik, jk) = real(vs%tile%rhosno(k), kind = 4)
+                    SCANROW(ik, jk) = real(vs%tile%fzwscan(k), kind = 4)
+                    SNOROW(ik, jk) = real(vs%tile%sno(k), kind = 4)
+                    TACROW(ik, jk) = real(vs%tile%tacan(k), kind = 4)
+                    TBARROW(ik, jk, :) = real(vs%tile%tsol(k, :), kind = 4)
+                    TBASROW(ik, jk) = real(vs%tile%tbas(k), kind = 4)
+                    TCANROW(ik, jk) = real(vs%tile%tcan(k), kind = 4)
+                    THICROW(ik, jk, :) = real(vs%tile%thicsol(k, :), kind = 4)
+                    THLQROW(ik, jk, :) = real(vs%tile%thlqsol(k, :), kind = 4)
+                    TPNDROW(ik, jk) = real(vs%tile%tpnd(k), kind = 4)
+                    TSFSROW(ik, jk, :) = real(vs%tile%tsfs(k, :), kind = 4)
+                    TSNOROW(ik, jk) = real(vs%tile%tsno(k), kind = 4)
+                    WSNOROW(ik, jk) = real(vs%tile%lqwssno(k), kind = 4)
+                    ZPNDROW(ik, jk) = real(vs%tile%zpnd(k), kind = 4)
 
                 end do
 
@@ -881,11 +881,11 @@ module RUNCLASS36_config
 
             !> SAVERESUMEFLAG 4.
             case (4)
-                call save_init_prog_variables_class(fls)
+                call save_init_prog_variables_class(fls, shd)
 
             !> RESUMEFLAG 5.
             case (5)
-                call save_init_prog_variables_class(fls)
+                call save_init_prog_variables_class(fls, shd)
 
         end select !case (SAVERESUMEFLAG)
 

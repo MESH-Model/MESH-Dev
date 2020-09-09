@@ -60,6 +60,12 @@ DEBUG=yes
 endif
 
 # ======================================================================
+# Pre-configured targets: Double precision (where supported).
+ifeq ($(filter double,$(MAKECMDGOALS)),double)
+DOUBLE=yes
+endif
+
+# ======================================================================
 # Pre-configured targets: netCDF library.
 # This target will call 'nf-config' via the active shell.
 # However, if the netCDF library is installed,
@@ -77,6 +83,7 @@ mingw_static: all
 mpi_gcc: all
 mpi_intel: all
 debug: all
+double: all
 netcdf: all
 
 # ======================================================================
@@ -98,6 +105,15 @@ endif
 ifndef DEBUG
 LFLAG=-c -O2
 CLEANUP=@$(MAKE) -s clean DIST=$(DIST)
+endif
+
+# Override compile options if 'DOUBLE' enabled.
+ifdef DOUBLE
+ifeq ($(DIST),intel)
+LFLAG+=-r8
+else
+LFLAG+=-fdefault-double-8 -fdefault-real-8
+endif
 endif
 
 # Output: sa_mesh.

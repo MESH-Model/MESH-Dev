@@ -46,14 +46,14 @@ module WF_ROUTE_config
         !> Channel roughness coefficients.
         !* r2: River channel roughness coefficient.
         !* r1: Overbank channel roughness coefficient.
-        real(kind=4), dimension(:), allocatable :: r2, r1
+        real, dimension(:), allocatable :: r2, r1
 
         !> Fitting coefficients.
         !* aa1: Channel length coefficient.
         !* aa2: Bankfull area coefficient.
         !* aa3: Bankfull area coefficient.
         !* aa4: Bankfull area coefficient.
-        real(kind=4), dimension(:), allocatable :: aa1, aa2, aa3, aa4
+        real, dimension(:), allocatable :: aa1, aa2, aa3, aa4
 
     end type
 
@@ -132,6 +132,8 @@ module WF_ROUTE_config
         !> Local variables.
         !* iun: Unit number.
         !* ierr: Error return from external calls.
+        integer(kind = 4) JAN_i4, WF_TIMECOUNT_i4
+        real(kind = 4), dimension(:), allocatable :: qo_r4, stgch_r4, qi_r4
         integer iun, ierr, i
 
         !> Return if the process is inactive.
@@ -209,23 +211,29 @@ module WF_ROUTE_config
                  form = 'unformatted', access = 'sequential', iostat = ierr)
 !todo: condition for ierr.
 
+            !> Allocate and initialize local variables.
+            allocate(qo_r4(NA), stgch_r4(NA), qi_r4(NA))
+            qo_r4 = 0.0
+            stgch_r4 = 0.0
+            qi_r4 = 0.0
+
             !> Read inital values from the file.
             if (RESUMEFLAG == 4) then
-                read(iun) JAN
-                read(iun) WF_TIMECOUNT
+                read(iun) JAN_i4
+                read(iun) WF_TIMECOUNT_i4
                 read(iun)
                 read(iun)
                 read(iun)
                 read(iun)
                 read(iun)
                 read(iun)
-                read(iun) vs%grid%qo
-                read(iun) vs%grid%stgch
-                read(iun) vs%grid%qi
+                read(iun) qo_r4
+                read(iun) stgch_r4
+                read(iun) qi_r4
                 read(iun)
                 read(iun)
             else
-                read(iun) JAN
+                read(iun) JAN_i4
                 read(iun)
                 read(iun)
                 read(iun)
@@ -233,12 +241,19 @@ module WF_ROUTE_config
                 read(iun)
                 read(iun)
                 read(iun)
-                read(iun) vs%grid%qo
-                read(iun) vs%grid%stgch
-                read(iun) vs%grid%qi
+                read(iun) qo_r4
+                read(iun) stgch_r4
+                read(iun) qi_r4
                 read(iun)
                 read(iun)
             end if
+
+            !> Transfer variables.
+            JAN = int(JAN_i4, kind(JAN))
+            WF_TIMECOUNT = int(WF_TIMECOUNT_i4, kind(WF_TIMECOUNT))
+            vs%grid%qo = real(qo_r4, kind(vs%grid%qo))
+            vs%grid%stgch = real(stgch_r4, kind(vs%grid%stgch))
+            vs%grid%qi = real(qi_r4, kind(vs%grid%qi))
 
             !> Close the file to free the unit.
             close(iun)
@@ -276,17 +291,17 @@ module WF_ROUTE_config
 !todo: condition for ierr.
 
             !> Write the current state of these variables to the file.
-            write(iun) JAN
-            write(iun) WF_TIMECOUNT
+            write(iun) int(JAN, kind = 4)
+            write(iun) int(WF_TIMECOUNT, kind = 4)
             write(iun)
             write(iun)
             write(iun)
             write(iun)
             write(iun)
             write(iun)
-            write(iun) vs%grid%qo
-            write(iun) vs%grid%stgch
-            write(iun) vs%grid%qi
+            write(iun) real(vs%grid%qo, kind = 4)
+            write(iun) real(vs%grid%stgch, kind = 4)
+            write(iun) real(vs%grid%qi, kind = 4)
             write(iun)
             write(iun)
 
