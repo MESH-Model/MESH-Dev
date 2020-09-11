@@ -12,14 +12,14 @@ module permafrost_outputs_module
     implicit none
 
     !> Variable names.
-    character(len = 10), parameter :: PMFRSTVN_ALT = 'ALT'
-    character(len = 10), parameter :: PMFRSTVN_ALTDOY = 'ALT_DOY'
-    character(len = 10), parameter :: PMFRSTVN_ALTENV = 'ALT_ENV'
-    character(len = 10), parameter :: PMFRSTVN_TAVG = 'TAVG'
-    character(len = 10), parameter :: PMFRSTVN_TMAX = 'TMAX'
-    character(len = 10), parameter :: PMFRSTVN_TMIN = 'TMIN'
-    character(len = 10), parameter :: PMFRSTVN_TRNG = 'TRNG'
-    character(len = 10), parameter :: PMFRSTVN_DZAA = 'DZAA'
+    character(len = *), parameter :: PMFRSTVN_ALT = 'ALT'
+    character(len = *), parameter :: PMFRSTVN_ALTDOY = 'ALT_DOY'
+    character(len = *), parameter :: PMFRSTVN_ALTENV = 'ALT_ENV'
+    character(len = *), parameter :: PMFRSTVN_TAVG = 'TAVG'
+    character(len = *), parameter :: PMFRSTVN_TMAX = 'TMAX'
+    character(len = *), parameter :: PMFRSTVN_TMIN = 'TMIN'
+    character(len = *), parameter :: PMFRSTVN_TRNG = 'TRNG'
+    character(len = *), parameter :: PMFRSTVN_DZAA = 'DZAA'
 
     !> Description:
     !>  Data type for parameters.

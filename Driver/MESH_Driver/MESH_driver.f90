@@ -263,17 +263,17 @@ program RUNMESH
 
     !> Allocate output variables for screen output.
     if (PRINTSIMSTATUS == OUT_JDATE_DLY .or. PRINTSIMSTATUS == OUT_DATE_DLY) then
-        call output_variables_activate(out%d%grid, (/ VN_PREC, VN_ET, VN_ROF /))
+        call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF /))
     end if
     call output_variables_activate(out%d%grid, VN_QO)
     if (PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) then
-        call output_variables_activate(out%m%grid, (/ VN_PREC, VN_ET, VN_ROF, VN_QO /))
+        call output_variables_activate(out%m%grid, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_QO /))
     end if
 
     !> Allocate output variables for run totals.
     call output_variables_activate( &
         out%tot%grid, (/ &
-            VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
+            VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
             VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_DZS, VN_LQWSSOL, VN_FZWSSOL /))
 
     !> Initialize process modules.

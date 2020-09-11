@@ -264,7 +264,7 @@ module sa_mesh_run_between_grid
         end if
 
         !> Allocate output variables.
-        call output_variables_activate(out%d%grid, (/ VN_QI, VN_STGCH, VN_QO, VN_ZLVL /))
+        call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_QI, VN_STGCH, VN_QO, VN_ZLVL /))
 
         !> Call processes.
         call SA_RTE_init(shd)

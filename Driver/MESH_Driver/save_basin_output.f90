@@ -755,10 +755,12 @@ module save_basin_output
         type(output_series) series
 
         !> Allocate output variables.
-        call output_variables_activate(out%tot%basin, (/ VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, VN_STGW /))
+        call output_variables_activate( &
+            out%tot%basin, (/ &
+                VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, VN_STGW /))
         call output_variables_activate( &
             series%basin, (/ &
-                VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
+                VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
                 VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_DZS, VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, &
                 VN_STGW /))
 
@@ -1024,7 +1026,7 @@ module save_basin_output
         type(output_series) series
 
         !> Allocate output variables.
-        call output_variables_activate(series%grid, (/ VN_ET, VN_POTEVP, VN_EVPB, VN_ARRD /))
+        call output_variables_activate(series%grid, (/ VN_DUMMY_LENGTH, VN_ET, VN_POTEVP, VN_EVPB, VN_ARRD /))
 
     end subroutine
 
@@ -1110,7 +1112,7 @@ module save_basin_output
         !> Allocate output variables.
         call output_variables_activate( &
             series%basin, (/ &
-                VN_FSIN, VN_FSOUT, VN_ALBT, VN_FLIN, VN_FLOUT, VN_GTE, VN_QEVP, VN_QSENS, VN_GZERO, &
+                VN_DUMMY_LENGTH, VN_FSIN, VN_FSOUT, VN_ALBT, VN_FLIN, VN_FLOUT, VN_GTE, VN_QEVP, VN_QSENS, VN_GZERO, &
                 VN_TA, VN_TCAN, VN_CMAS, VN_TSNO, VN_TPND, VN_TSOL, VN_QA, VN_UV, VN_PRES /))
 
     end subroutine
