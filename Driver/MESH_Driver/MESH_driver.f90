@@ -213,7 +213,7 @@ program RUNMESH
 
     !> Write MESH version to screen.
     write(RELEASE_STRING, "('MESH ', (a), ' ---  (', (a), ')')") trim(RELEASE), trim(VERSION)
-    call print_screen(RELEASE_STRING)
+    call print_screen(trim(RELEASE_STRING))
     call print_screen('')
 
     !> Check if any command line arguments are found.
@@ -439,17 +439,17 @@ program RUNMESH
                         if (GRD(i) == 1) then
                             NR2CFILES = NR2CFILES + 1
                             write(line, "(i3, ' (GRD)    : ', (a))") NR2CFILES, R2C_ATTRIBUTES(i, 3)
-                            call print_echo_txt(line)
+                            call print_echo_txt(trim(line))
                         end if
                         if (GAT(i) == 1) then
                             NR2CFILES = NR2CFILES + 1
                             write(line, "(i3, ' (GRD)    : ', (a))") NR2CFILES, R2C_ATTRIBUTES(i, 3)
-                            call print_echo_txt(line)
+                            call print_echo_txt(trim(line))
                         end if
                         if (GRDGAT(i) == 1) then
                             NR2CFILES = NR2CFILES + 1
                             write(line, "(i3, ' (GRDGAT) : ', (a))") NR2CFILES, R2C_ATTRIBUTES(i, 3)
-                            call print_echo_txt(line)
+                            call print_echo_txt(trim(line))
                         end if
                     end if
                 end do
@@ -487,7 +487,7 @@ program RUNMESH
 
       !> Check if we are reading in a resume_state.r2c file
 !+    if (RESUMEFLAG == 2) then
-!+        call print_screen('Reading saved state variables')
+!+        call print_message('Reading saved state variables')
 
           !> Allocate arrays for resume_state_r2c
 !+        open(54, file = 'resume_state_r2c.txt', action = 'read')
@@ -1016,7 +1016,7 @@ program RUNMESH
                             sum(out%d%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC), &
                             sum(out%d%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
                     end if
-                    call print_screen(line)
+                    call print_screen(trim(line))
                 end if
 
                 !> Monthly.
@@ -1035,7 +1035,7 @@ program RUNMESH
                             sum(out%m%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC), &
                             sum(out%m%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
                     end if
-                    call print_screen(line)
+                    call print_screen(trim(line))
                 end if
             end if
         end if
@@ -1086,7 +1086,7 @@ program RUNMESH
 
     !> Write the resume file
 !+    if (SAVERESUMEFLAG == 2) then !todo: done: use a flag
-!+        call print_screen('Saving state variables in r2c file format')
+!+        call print_message('Saving state variables in r2c file format')
 
     !> Allocate arrays for save_state_r2c
 !+        open(55, file = 'save_state_r2c.txt', action = 'read')

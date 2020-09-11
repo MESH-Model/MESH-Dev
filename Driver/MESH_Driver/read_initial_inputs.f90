@@ -59,7 +59,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 
     !> Write MESH version to file.
     call reset_tab()
-    call print_echo_txt(release)
+    call print_echo_txt(trim(release))
     call print_echo_txt('')
 
     !> Assign default configuration
@@ -600,10 +600,10 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         call print_echo_txt('Number of land tiles (NML): ' // trim(adjustl(line)))
         if (shd%lc%NML > 0) then
             write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU'
-            call print_echo_txt(line)
+            call print_echo_txt(trim(line))
             do k = 1, shd%lc%NML
                 write(line, FMT_GEN) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
-                call print_echo_txt(line)
+                call print_echo_txt(trim(line))
             end do
         end if
 
@@ -612,10 +612,10 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         call print_echo_txt('Number of water tiles (NMW): ' // trim(adjustl(line)))
         if (shd%wc%NML > 0) then
             write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU'
-            call print_echo_txt(line)
+            call print_echo_txt(trim(line))
             do k = 1, shd%wc%NML
                 write(line, FMT_GEN) k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
-                call print_echo_txt(line)
+                call print_echo_txt(trim(line))
             end do
         end if
     end if

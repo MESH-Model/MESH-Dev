@@ -64,14 +64,14 @@ module model_variables
         real, dimension(:), pointer :: tcan => null()
         real, dimension(:), pointer :: gro => null()
 
-        !* sno: Snow mass. [kg m-2].
-        !* rhosno: Snow density. [kg m-3].
+        !* sno: Snow mass. [kg m**-2].
+        !* rhosno: Snow density. [kg m**-3].
         !* zsno: Snow depth. [m].
         !* fsno: Fraction of fully snow covered area. [fraction].
-        !* albsno: Snow albedo.
-        !* lqwssno: Liquid water content of the snow. [kg m-2].
+        !* albsno: Snow albedo. [fraction].
+        !* lqwssno: Liquid water content of the snow. [kg m**-2].
         !* tsno: Snowpack temperature. [K].
-        !* drainsno: Drainage from the bottom of the snowpack (runoff rate). [kg m-2 s-1].
+        !* drainsno: Drainage from the bottom of the snowpack (runoff rate). [kg m**-2 s**-1].
         real, dimension(:), pointer :: sno => null()
         real, dimension(:), pointer :: rhosno => null()
         real, dimension(:), pointer :: zsno => null()
@@ -82,8 +82,8 @@ module model_variables
         real, dimension(:), pointer :: drainsno => null()
 
         !* albt: Total albedo of the surface (visible and near-infrared). [fraction].
-        !* alvs: Visible albedo of the surface. [fraction].
-        !* alir: Near-infrared albedo of the surface. [fraction].
+        !* alvs: Visible component of the total albedo of the surface. [fraction].
+        !* alir: Near-infrared components of the total albedo of the surface. [fraction].
         !* gte: Effective black-body temperature at the surface. [K].
         !* zpnd: Depth of ponded water. [m].
         !* lqwspnd: Liquid water storage of ponded water. [kg m**-2].
@@ -96,7 +96,7 @@ module model_variables
         !* ovrflw: Overland runoff rate. [kg m**-2 s**-1].
         !* qevp: Latent heat flux at the surface. [W m**-2].
         !* qsens: Sensible heat flux at the surface. [W m**-2].
-        !* gzero: Heat flux into the soil at the surface. [W m**-2].
+        !* gzero: Heat flux into the ground. [W m**-2].
         !* tsfs: Ground surface temperature over subarea. [K].
         real, dimension(:), pointer :: albt => null()
         real, dimension(:), pointer :: alvs => null()
@@ -116,15 +116,15 @@ module model_variables
         real, dimension(:), pointer :: gzero => null()
         real, dimension(:, :), pointer :: tsfs => null()
 
-        !* ggeo: Geothermal heat flux. [W m-2].
+        !* ggeo: Geothermal heat flux. [W m**-2].
         !* tbas: Temperature of bedrock in third soil layer. [K].
-        !* thlqsol: Volumetric liquid water content of soil layers. [m3 m-3].
-        !* thicsol: Volumetric frozen water content of soil layers. [m3 m-3].
-        !* lqwssol: Liquid water storage. [kg m-2].
-        !* fzwssol: Frozen water storage. [kg m-2].
-        !* tsol: Temperature of soil layers. [K].
-        !* gflx: Heat conduction between soil layers. [W m-2].
-        !* latflw: Interflow runoff rate. [kg m-2 s-1].
+        !* thlqsol: Volumetric liquid water content of the soil. [m3 m**-3].
+        !* thicsol: Volumetric frozen water content of the soil. [m3 m**-3].
+        !* lqwssol: Liquid water storage in the soil. [kg m**-2].
+        !* fzwssol: Frozen water storage in the soil. [kg m**-2].
+        !* tsol: Temperature of the soil. [K].
+        !* gflx: Heat conduction between soil layers. [W m**-2].
+        !* latflw: Interflow runoff rate. [kg m**-2 s**-1].
         !* dzwat: Permeable thickness of the soil layer. [m].
         !* zbotwat: Permeable depth of the soil layer. [m].
         !* drainsol: Drainage from the bottom of the permeable soil column (runoff rate). [kg m**-2 s**-1].
@@ -141,15 +141,15 @@ module model_variables
         real, dimension(:, :), pointer :: zbotwat => null()
         real, dimension(:), pointer :: drainsol => null()
 
-        !* rchg: Drainage into lower zone storage. [mm].
-        !* stggw: Groundwater storage. [mm].
+        !* rchg: Drainage into groundwater/lower zone storage. [mm].
+        !* stggw: Groundwater/lower zone storage. [mm].
         !* dzs: Deep aquifer water storage. [mm].
         real, dimension(:), pointer :: rchg => null()
         real, dimension(:), pointer :: stggw => null()
         real, dimension(:), pointer :: dzs => null()
 
-        !* stge: Total energy stored in the system. [W m-2].
-        !* stgw: Total liquid water storage in the land surface. [kg m-2].
+        !* stge: Total energy stored in the system. [W m**-2].
+        !* stgw: Total liquid water storage in the land surface. [kg m**-2].
         real, dimension(:), pointer :: stge => null()
         real, dimension(:), pointer :: stgw => null()
 

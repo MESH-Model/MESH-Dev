@@ -136,7 +136,7 @@ module sa_mesh_run_within_grid
         type(clim_info) cm
 
         !> Local variables.
-        integer nvars, t, i, j, u, ii1, ii2, iin, z
+        integer nvars, t, c, i, j, u, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
         real, dimension(:), allocatable :: chnl
@@ -158,6 +158,13 @@ module sa_mesh_run_within_grid
         ii2 = shd%NA
         iin = (ii2 - ii1) + 1
 
+        !> Check active kind of 'real'.
+        if (kind(2.0) == 8) then
+            c = MPI_REAL8
+        else
+            c = MPI_REAL
+        end if
+
         !> Allocate temporary arrays.
         allocate(chnl(iin)) !3*iin if diversion/abstraction
 
@@ -176,7 +183,7 @@ module sa_mesh_run_within_grid
 !                chnl((1 + iin*0):(iin*1)) = vs%grid%stgch(ii1:ii2)
 !                chnl((1 + iin*1):(iin*2)) = vs%grid%div(ii1:ii2)
 !                chnl((1 + iin*2):(iin*3)) = vs%grid%abstr(ii1:ii2)
-!                call MPI_Isend(chnl, size(chnl), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z)
+!                call MPI_Isend(chnl, size(chnl), c, u, t + i, MPI_COMM_WORLD, irqst(i), z)
 !                i = i + 1
 
                 !> Wait until the exchange completes.
@@ -196,7 +203,7 @@ module sa_mesh_run_within_grid
             i = 1
 
             !> Receive variables.
-!            call MPI_Irecv(chnl, size(chnl), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+!            call MPI_Irecv(chnl, size(chnl), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
 
             !> Wait until the exchange completes.
             lstat = .false.

@@ -1474,8 +1474,7 @@ module output_files
         fls_out%dates%iter_s = 0
 
         !> Open output fields configuration file.
-        call print_screen('READING: outputs_balance.txt')
-        call print_echo_txt('outputs_balance.txt')
+        call print_message('READING: outputs_balance.txt')
         iun = 100
         call open_txt_input(iun, 'outputs_balance.txt', ierr)
         fls_out%fclose = .false.

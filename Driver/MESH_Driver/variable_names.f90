@@ -27,9 +27,7 @@ module variable_names
 
     !> Canopy variables.
     character(len = 10), parameter :: VN_LQWSCAN = 'LQWSCAN'
-!-    character(len = 10), parameter :: VN_RCAN = 'RCAN'
     character(len = 10), parameter :: VN_FZWSCAN = 'FZWSCAN'
-!-    character(len = 10), parameter :: VN_SNCAN = 'SNCAN'
     character(len = 10), parameter :: VN_CMAS = 'CMAS'
     character(len = 10), parameter :: VN_TCAN = 'TCAN'
     character(len = 10), parameter :: VN_GRO = 'GRO'
@@ -40,10 +38,8 @@ module variable_names
     character(len = 10), parameter :: VN_ZSNO = 'ZSNO'
     character(len = 10), parameter :: VN_FSNO = 'FSNO'
     character(len = 10), parameter :: VN_LQWSSNO = 'LQWSSNO'
-!-    character(len = 10), parameter :: VN_WSNO = 'WSNO'
     character(len = 10), parameter :: VN_TSNO = 'TSNO'
     character(len = 10), parameter :: VN_DRAINSNO = 'DRAINSNO'
-!-    character(len = 10), parameter :: VN_ROFSNO = 'ROFSNO'
 
     !> Surface variables.
     character(len = 10), parameter :: VN_ALBT = 'ALBT'
@@ -52,45 +48,30 @@ module variable_names
     character(len = 10), parameter :: VN_GTE = 'GTE'
     character(len = 10), parameter :: VN_ZPND = 'ZPND'
     character(len = 10), parameter :: VN_LQWSPND = 'LQWSPND'
-!-    character(len = 10), parameter :: VN_PNDW = 'PNDW'
     character(len = 10), parameter :: VN_TPND = 'TPND'
     character(len = 10), parameter :: VN_POTEVP = 'POTEVP'
-!-    character(len = 10), parameter :: VN_PEVP = 'PEVP'
     character(len = 10), parameter :: VN_ET = 'ET'
-!-    character(len = 10), parameter :: VN_EVAP = 'EVAP'
     character(len = 10), parameter :: VN_EVPB = 'EVPB'
     character(len = 10), parameter :: VN_ARRD = 'ARRD'
     character(len = 10), parameter :: VN_OVRFLW = 'OVRFLW'
-!-    character(len = 10), parameter :: VN_ROFO = 'ROFO'
     character(len = 10), parameter :: VN_QEVP = 'QEVP'
-!-    character(len = 10), parameter :: VN_QE = 'QE'
     character(len = 10), parameter :: VN_QSENS = 'QSENS'
-!-    character(len = 10), parameter :: VN_QH = 'QH'
     character(len = 10), parameter :: VN_GZERO = 'GZERO'
 
     !> Subsurface/soil variables.
     character(len = 10), parameter :: VN_THLQSOL = 'THLQSOL'
-!-    character(len = 10), parameter :: VN_THLQ = 'THLQ'
     character(len = 10), parameter :: VN_THICSOL = 'THICSOL'
-!-    character(len = 10), parameter :: VN_THIC = 'THIC'
     character(len = 10), parameter :: VN_LQWSSOL = 'LQWSSOL'
-!-    character(len = 10), parameter :: VN_LQWS = 'LQWS'
     character(len = 10), parameter :: VN_FZWSSOL = 'FZWSSOL'
-!-    character(len = 10), parameter :: VN_FZWS = 'FZWS'
     character(len = 10), parameter :: VN_ALWSSOL = 'ALWSSOL'
-!-    character(len = 10), parameter :: VN_ALWS = 'ALWS'
     character(len = 10), parameter :: VN_TSOL = 'TSOL'
-!-    character(len = 10), parameter :: VN_TBAR = 'TBAR'
     character(len = 10), parameter :: VN_GFLX = 'GFLX'
     character(len = 10), parameter :: VN_LATFLW = 'LATFLW'
-!-    character(len = 10), parameter :: VN_ROFS = 'ROFS'
     character(len = 10), parameter :: VN_DRAINSOL = 'DRAINSOL'
-!-    character(len = 10), parameter :: VN_ROFB = 'ROFB'
 
     !> Groundwater/lower zone storage variables.
     character(len = 10), parameter :: VN_RCHG = 'RCHG'
     character(len = 10), parameter :: VN_STGGW = 'STGGW'
-!-    character(len = 10), parameter :: VN_LZS = 'LZS'
     character(len = 10), parameter :: VN_DZS = 'DZS'
 
     !> Diagnostic variables.
