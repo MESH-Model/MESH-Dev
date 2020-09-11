@@ -913,21 +913,22 @@ module save_basin_output
         character(len = 3) ffmti
 
         !> Time-step information.
-        write(fik, 1010, advance = 'no') 'YEAR', 'DAY'
-        if (dts < 86400) write(fik, 1010, advance = 'no') 'HOUR'
-        if (dts < 3600) write(fik, 1010, advance = 'no') 'MINS'
+        write(fik, 1010, advance = 'no') VN_YEAR, VN_JDAY
+        if (dts < 86400) write(fik, 1010, advance = 'no') VN_HOUR
+        if (dts < 3600) write(fik, 1010, advance = 'no') VN_MINS
 
         !> Variables.
         write(fik, 1010, advance = 'no') &
-            'PREACC', 'EVAPACC', 'ROFACC', 'ROFOACC', &
-            'ROFSACC', 'ROFBACC', 'DSTGACC', &
-            'PRE', 'EVAP', 'ROF', 'ROFO', 'ROFS', 'ROFB', 'SNCAN', 'RCAN', 'SNO', 'WSNO', 'PNDW'
+            VN_PREC // VN_ACC, VN_ET // VN_ACC, VN_ROF // VN_ACC, VN_OVRFLW // VN_ACC, &
+            VN_LATFLW // VN_ACC, VN_DRAINSOL // VN_ACC, VN_DSTGW // VN_ACC, &
+            VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, VN_FZWSCAN, VN_LQWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND
         do j = 1, shd%lc%IGND
             write(ffmti, '(i3)') j
             write(fik, 1010, advance = 'no') &
-                'LQWS' // trim(adjustl(ffmti)), 'FRWS' // trim(adjustl(ffmti)), 'ALWS' // trim(adjustl(ffmti))
+                VN_LQWSSOL // trim(adjustl(ffmti)), VN_FZWSSOL // trim(adjustl(ffmti)), &
+                VN_ALWSSOL // trim(adjustl(ffmti))
         end do
-        write(fik, 1010) 'LQWS', 'FRWS', 'ALWS', 'LZS', 'DZS', 'STG', 'DSTG'
+        write(fik, 1010) VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, VN_STGGW, VN_DZS, VN_STGW, VN_DSTGW
 
 1010    format(9999(g15.7e2, ','))
 
@@ -1085,12 +1086,12 @@ module save_basin_output
         integer dts
 
         !> Time-step information.
-        write(fik, 1010, advance = 'no') 'YEAR', 'DAY'
-        if (dts < 86400) write(fik, 1010, advance = 'no') 'HOUR'
-        if (dts < 3600) write(fik, 1010, advance = 'no') 'MINS'
+        write(fik, 1010, advance = 'no') VN_YEAR, VN_JDAY
+        if (dts < 86400) write(fik, 1010, advance = 'no') VN_HOUR
+        if (dts < 3600) write(fik, 1010, advance = 'no') VN_MINS
 
         !> Variables.
-        write(fik, 1010) 'EVAP', 'PEVP', 'EVPB', 'ARRD'
+        write(fik, 1010) VN_ET, VN_POTEVP, VN_EVPB, VN_ARRD
 
 1010    format(9999(g15.7e2, ','))
 
@@ -1314,19 +1315,19 @@ module save_basin_output
         character(len = 3) ffmti
 
         !> Time-step information.
-        write(fik, 1010, advance = 'no') 'YEAR', 'DAY'
-        if (dts < 86400) write(fik, 1010, advance = 'no') 'HOUR'
-        if (dts < 3600) write(fik, 1010, advance = 'no') 'MINS'
+        write(fik, 1010, advance = 'no') VN_YEAR, VN_JDAY
+        if (dts < 86400) write(fik, 1010, advance = 'no') VN_HOUR
+        if (dts < 3600) write(fik, 1010, advance = 'no') VN_MINS
 
         !> Variable names.
         write(fik, 1010, advance = 'no') &
-            'FSIN', 'FSOUT', 'ALBT', 'FLIN', 'FLOUT', 'GTE', 'QH', 'QE', 'GZERO', &
-            'TA', 'TCAN', 'CMAS', 'TSNOW', 'TPOND'
+            VN_FSIN, VN_FSOUT, VN_ALBT, VN_FLIN, VN_FLOUT, VN_GTE, VN_QSENS, VN_QEVP, VN_GZERO, &
+            VN_TA, VN_TCAN, VN_CMAS, VN_TSNO, VN_TPND
         do j = 1, shd%lc%IGND
             write(ffmti, '(i3)') j
-            write(fik, 1010, advance = 'no') 'TBAR' // trim(adjustl(ffmti))
+            write(fik, 1010, advance = 'no') VN_TSOL // trim(adjustl(ffmti))
         end do
-        write(fik, 1010, advance = 'no') 'QA', 'UV', 'PRES'
+        write(fik, 1010, advance = 'no') VN_QA, VN_UV, VN_PRES
         write(fik, 1010)
 
 1010    format(9999(g15.7e2, ','))

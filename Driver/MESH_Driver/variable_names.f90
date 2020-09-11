@@ -2,6 +2,29 @@ module variable_names
 
     implicit none
 
+    !> Date/time columns.
+    character(len = *), parameter :: VN_YEAR = 'YEAR'
+    character(len = *), parameter :: VN_MONTH = 'MONTH'
+    character(len = *), parameter :: VN_DAY = 'DAY'
+    character(len = *), parameter :: VN_JDAY = 'JDAY'
+    character(len = *), parameter :: VN_HOUR = 'HOUR'
+    character(len = *), parameter :: VN_MINS = 'MINS'
+
+    !> Suffixes.
+    character(len = *), parameter :: VN_ACC = 'ACC'
+    character(len = *), parameter :: VN_AVG = 'AVG'
+    character(len = *), parameter :: VN_MAX = 'MAX'
+    character(len = *), parameter :: VN_MIN = 'MIN'
+    character(len = *), parameter :: VN_RNG = 'RNG'
+    character(len = *), parameter :: VN_MEAS = 'MEAS'
+    character(len = *), parameter :: VN_SIM = 'SIM'
+
+    !> Labels.
+    character(len = *), parameter :: VN_GRD = 'GRD'
+    character(len = *), parameter :: VN_GRU = 'GRU'
+    character(len = *), parameter :: VN_NML = 'NML'
+    character(len = *), parameter :: VN_IG = 'IG'
+
     !> Meteorology/climatology variables.
     character(len = *), parameter :: VN_FSIN = 'FSIN'
     character(len = *), parameter :: VN_FSVH = 'FSVH'

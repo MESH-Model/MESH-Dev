@@ -104,7 +104,7 @@ module output_files
     !*  ilvl: Variable layer and/or level (default: none).
     !*  cfactorm: Multiplicative transform to apply when updating the field (default: 1.0).
     !*  cfactora: Additive transform to apply when updating the field (default: 0.0).
-    !*  fn: Function to use when updating the field (e.g., 'val', 'sum', 'min', 'max'; default: none).
+    !*  fn: Function to use when updating the field (e.g., 'val', 'acc', 'min', 'max'; default: none).
     !*  ffmt: Output file formats (default: none).
     !*  fgroup: Variable groups (default: none).
     !*  ffreq: Output file frequencies (default: none).
@@ -667,7 +667,7 @@ module output_files
         fname = trim(group%fname)
         if (field%ilvl > 0) then
             write(str, '(i6)') field%ilvl
-            fname = trim(fname) // '_IG' // trim(adjustl(str))
+            fname = trim(fname) // '_' // VN_IG // trim(adjustl(str))
         end if
         ierr = 0
 
@@ -698,7 +698,7 @@ module output_files
                 if (n > 0) then
                     do j = 1, n
                         write(str, '(i6)') field%gru(j)
-                        fname = trim(fname) // '_GRU' // trim(adjustl(str))
+                        fname = trim(fname) // '_' // VN_GRU // trim(adjustl(str))
                     end do
                 end if
             end if
@@ -779,16 +779,18 @@ module output_files
             if (btest(field%ffmt, IO_TYPE_TSI)) then
                 z = 0
                 lopen = .false.
-                inquire(file = trim(fname) // '_GRD.ts', opened = lopen)
+                inquire(file = trim(fname) // '_' // VN_GRD // '.ts', opened = lopen)
                 if (.not. lopen) then
-                    call open_txt_output(fls, group%grid%iun + iun, trim(fname) // '_GRD.ts', z)
+                    call open_txt_output(fls, group%grid%iun + iun, trim(fname) // '_' // VN_GRD // '.ts', z)
                     if (z /= 0) then
-                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '_GRD.ts')
+                        call print_message_detail( &
+                            'ERROR: Unable to open file for output: ' // trim(fname) // '_' // VN_GRD // '.ts')
                         ierr = z
                     end if
                 else
                     call print_message_detail( &
-                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_GRD.ts')
+                        'ERROR: Another output variable has already opened the file: ' // &
+                        trim(fname) // '_' // VN_GRD // '.ts')
                     z = 1
                 end if
                 iun = iun + 1
@@ -797,19 +799,20 @@ module output_files
             if (btest(field%ffmt, IO_TYPE_NC4)) then
                 z = 0
                 lopen = .false.
-                inquire(file = trim(fname) // '_GRD.nc', opened = lopen)
+                inquire(file = trim(fname) // '_' // VN_GRD // '.nc', opened = lopen)
                 if (.not. lopen) then
                     call nc4_add_vname( &
-                        shd, field%vname, '', '', ffreq, ic%start%year, out%NO_DATA, trim(fname) // '_GRD.nc', &
+                        shd, field%vname, '', '', ffreq, ic%start%year, out%NO_DATA, trim(fname) // '_' // VN_GRD // '.nc', &
                         group%grid%nid, group%grid%tid, group%grid%vid, &
                         ierr = z)
                     if (z /= 0) then
-                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '_GRD.nc')
+                        call print_message_detail( &
+                            'ERROR: Unable to open file for output: ' // trim(fname) // '_' // VN_GRD // '.nc')
                         ierr = z
                     end if
                 else
                     call print_message_detail( &
-                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_GRD.nc')
+                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_' // VN_GRD // '.nc')
                     z = 1
                 end if
             end if
@@ -844,16 +847,17 @@ module output_files
             if (btest(field%ffmt, IO_TYPE_TSK)) then
                 z = 0
                 lopen = .false.
-                inquire(file = trim(fname) // '_NML.ts', opened = lopen)
+                inquire(file = trim(fname) // '_' // VN_NML // '.ts', opened = lopen)
                 if (.not. lopen) then
-                    call open_txt_output(fls, group%tile%iun + iun, trim(fname) // '_NML.ts', z)
+                    call open_txt_output(fls, group%tile%iun + iun, trim(fname) // '_' // VN_NML // '.ts', z)
                     if (z /= 0) then
-                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '_NML.ts')
+                        call print_message_detail( &
+                            'ERROR: Unable to open file for output: ' // trim(fname) // '_' // VN_NML // '.ts')
                         ierr = z
                     end if
                 else
                     call print_message_detail( &
-                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_NML.ts')
+                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_' // VN_NML // '.ts')
                     z = 1
                 end if
                 iun = iun + 1
@@ -923,7 +927,7 @@ module output_files
         !> Per 'n' time-steps (user-defined).
         if (btest(field%ffreq, IO_FREQ_PTS)) then
             write(label, FMT_GEN) field%pts_length
-            field%pts%fname = trim(fname) // '_PTS-' // trim(adjustl(label)) // 'M_' // trim(uppercase(field%fn))
+            field%pts%fname = trim(fname) // '_PTS-' // trim(adjustl(label)) // 'M_' // trim(field%fn)
             call output_files_allocate_group(fls, shd, IO_FREQ_PTS, out%ts, field, field%pts, t, z)
             if (z /= 0) ierr = z
         end if
@@ -1194,10 +1198,14 @@ module output_files
                         field%print_date = .false.
 
                     !> Function.
-                    case ('cum', 'acc', 'sum')
-                        field%fn = 'sum'
-                    case ('avg', 'max', 'min')
-                        field%fn = adjustl(str)
+                    case ('acc', 'cum', 'sum')
+                        field%fn = VN_ACC
+                    case ('avg')
+                        field%fn = VN_AVG
+                    case ('max')
+                        field%fn = VN_MAX
+                    case ('min')
+                        field%fn = VN_MIN
 
                     !> Permafrost option (dealt with elsewhere).
                     case ('ttol')
@@ -1279,8 +1287,9 @@ module output_files
         else if (btest(field%ffreq, IO_FREQ_PTS) .and. len_trim(field%fn) == 0) then
             call print_remark( &
                 "The 'pts' frequency format is active but no aggregation option is specified. " // &
-                "The default aggregation option of 'avg' is assumed (Variable '" // trim(field%vname) // "').", PAD_3)
-            field%fn = 'avg'
+                "The default aggregation option of '" // VN_ACC // "' is assumed " // &
+                "(Variable '" // trim(field%vname) // "').", PAD_3)
+            field%fn = VN_AVG
         end if
 
         !> Allocate output fields and open output files.
@@ -1678,25 +1687,25 @@ module output_files
                     call output_files_append_field(fls, shd, ts, PMFRSTVN_ALTENV, prmfst%out%altenv, args, nargs, z)
                 case (PMFRSTVN_TAVG)
                     call permafrost_outputs_init(fls, shd, PMFRSTVN_TAVG)
-                    line = trim(VN_TSOL) // '_AVG'
+                    line = VN_TSOL // '_' // VN_AVG
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, line, prmfst%out%tavg(j), args, nargs, z, j)
                     end do
                 case (PMFRSTVN_TMAX)
                     call permafrost_outputs_init(fls, shd, PMFRSTVN_TMAX)
-                    line = trim(VN_TSOL) // '_MAX'
+                    line = VN_TSOL // '_' // VN_MAX
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, line, prmfst%out%tmax(j), args, nargs, z, j)
                     end do
                 case (PMFRSTVN_TMIN)
                     call permafrost_outputs_init(fls, shd, PMFRSTVN_TMIN)
-                    line = trim(VN_TSOL) // '_MIN'
+                    line = VN_TSOL // '_' // VN_MIN
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, line, prmfst%out%tmin(j), args, nargs, z, j)
                     end do
                 case (PMFRSTVN_TRNG, 'TENV')
                     call permafrost_outputs_init(fls, shd, PMFRSTVN_TRNG)
-                    line = trim(VN_TSOL) // '_RNG'
+                    line = VN_TSOL // '_' // VN_RNG
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, line, prmfst%out%trng(j), args, nargs, z, j)
                     end do
@@ -1960,15 +1969,15 @@ module output_files
 
             !> Apply transforms and update values.
             select case (fn)
-                case ('max')
+                case (VN_MAX)
                     where (file%dat(:, t) /= out%NO_DATA)
                         file%dat(:, t) = max(file%dat(:, t), (cfactorm*file%src + cfactora))
                     end where
-                case ('min')
+                case (VN_MIN)
                     where (file%dat(:, t) /= out%NO_DATA)
                         file%dat(:, t) = min(file%dat(:, t), (cfactorm*file%src + cfactora))
                     end where
-                case ('sum')
+                case (VN_ACC)
                     where (file%dat(:, t) /= out%NO_DATA)
                         file%dat(:, t) = file%dat(:, t) + (cfactorm*file%src + cfactora)
                     end where
@@ -2106,8 +2115,8 @@ module output_files
 
             !> Update group.
             t = 1
-            if (field%fn == 'sum' .or. field%fn == 'avg') then
-                call output_files_update_group(fls, shd, field, field%pts, t, field%cfactorm, field%cfactora, 'sum')
+            if (field%fn == VN_ACC .or. field%fn == VN_AVG) then
+                call output_files_update_group(fls, shd, field, field%pts, t, field%cfactorm, field%cfactora, VN_ACC)
             else
                 call output_files_update_group(fls, shd, field, field%pts, t, field%cfactorm, field%cfactora, field%fn)
             end if
@@ -2118,10 +2127,10 @@ module output_files
             end if
             field%pts_aggregator = field%pts_aggregator + ic%dtmins
             if (field%pts_aggregator >= field%pts_length) then
-                if (btest(field%fgroup, DATA_TYPE_GRID) .and. field%fn == 'avg') then
+                if (btest(field%fgroup, DATA_TYPE_GRID) .and. field%fn == VN_AVG) then
                     field%pts%grid%dat(:, t) = field%pts%grid%dat(:, t)/(field%pts_aggregator/ic%dtmins)
                 end if
-                if (btest(field%fgroup, DATA_TYPE_TILE) .and. field%fn == 'avg') then
+                if (btest(field%fgroup, DATA_TYPE_TILE) .and. field%fn == VN_AVG) then
                     field%pts%tile%dat(:, t) = field%pts%tile%dat(:, t)/(field%pts_aggregator/ic%dtmins)
                 end if
                 if ((.not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
@@ -2136,7 +2145,7 @@ module output_files
             if (ic%now%month /= ic%next%month) then
                 t = ic%now%month
                 call output_files_update_dates(fls_out%dates%s, t, t, ic%now%year, ic%now%month, 1)
-                call output_files_update_group(fls, shd, field, field%s, t, field%cfactorm, field%cfactora, 'sum')
+                call output_files_update_group(fls, shd, field, field%s, t, field%cfactorm, field%cfactora, VN_ACC)
             end if
             if (fls_out%fclose) then
 

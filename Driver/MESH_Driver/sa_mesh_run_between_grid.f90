@@ -174,10 +174,10 @@ module sa_mesh_run_between_grid
                              status = 'unknown', action = 'write', &
                              iostat = ierr)
                         if (WF_RTE_frsvrout%fout_header) then
-                            write(iun, 1010, advance = 'no') 'YEAR', 'DAY'
-                            if (j == WF_RTE_frsvrout%KTS .or. j == WF_RTE_frsvrout%KHLY) write(iun, 1010, advance = 'no') 'HOUR'
-                            if (j == WF_RTE_frsvrout%KTS) write(iun, 1010, advance = 'no') 'MINS'
-                            write(iun, 1010, advance = 'no') 'QISIM', 'STGCH', 'QOSIM'
+                            write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
+                            if (j == WF_RTE_frsvrout%KTS .or. j == WF_RTE_frsvrout%KHLY) write(iun, 1010, advance = 'no') VN_HOUR
+                            if (j == WF_RTE_frsvrout%KTS) write(iun, 1010, advance = 'no') VN_MINS
+                            write(iun, 1010, advance = 'no') VN_QI, VN_STGCH, VN_QO
                             write(iun, *)
                         end if
                     end do
@@ -187,10 +187,10 @@ module sa_mesh_run_between_grid
             iun = 707
             open(iun, file = './' // trim(fls%GENDIR_OUT) // '/' // 'MESH_output_lake_level.csv', &
                  status = 'unknown', action = 'write')
-            write(iun, 1010, advance = 'no') 'YEAR', 'DAY'
+            write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
             do l = 1, fms%rsvr%n
                 write(ffmti, '(i3)') l
-                write(iun, 1010, advance = 'no') 'LVLSIM' // trim(adjustl(ffmti))
+                write(iun, 1010, advance = 'no') VN_ZLVL // trim(adjustl(ffmti))
             end do
             write(iun, *)
         end if
@@ -243,18 +243,22 @@ module sa_mesh_run_between_grid
                          status = 'unknown', action = 'write', &
                          iostat = ierr)
                     if (WF_RTE_fstflout%fout_header) then
-                        write(iun, 1010, advance = 'no') 'YEAR', 'DAY'
-                        if (j == WF_RTE_fstflout%KTS) write(iun, 1010, advance = 'no') 'HOUR', 'MINS'
+                        write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
+                        if (j == WF_RTE_fstflout%KTS) write(iun, 1010, advance = 'no') VN_HOUR, VN_MINS
                         do i = 1, fms%stmg%n
                             write(ffmti, '(i3)') i
                             if (WF_RTE_fstflout%fout_acc) then
-                                write(iun, 1010, advance = 'no') 'QOMACC' // trim(adjustl(ffmti)), 'QOSACC' // trim(adjustl(ffmti))
+                                write(iun, 1010, advance = 'no') &
+                                    VN_QO // VN_MEAS // VN_ACC // trim(adjustl(ffmti)), &
+                                    VN_QO // VN_SIM // VN_ACC // trim(adjustl(ffmti))
                             end if
                             if (WF_RTE_fstflout%fout_hyd) then
-                                write(iun, 1010, advance = 'no') 'QOMEAS' // trim(adjustl(ffmti)), 'QOSIM' // trim(adjustl(ffmti))
+                                write(iun, 1010, advance = 'no') &
+                                    VN_QO // VN_MEAS // trim(adjustl(ffmti)), VN_QO // VN_SIM // trim(adjustl(ffmti))
                             end if
                             if (WF_RTE_fstflout%fout_bal) then
-                                write(iun, 1010, advance = 'no') 'RSIM' // trim(adjustl(ffmti)), 'STGCH' // trim(adjustl(ffmti))
+                                write(iun, 1010, advance = 'no') &
+                                    'RSIM' // trim(adjustl(ffmti)), VN_STGCH // trim(adjustl(ffmti))
                             end if
                         end do
                         write(iun, *)

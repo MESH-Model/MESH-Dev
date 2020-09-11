@@ -607,23 +607,23 @@ module runsvs_mesh
 
             !> Daily.
 !            open(iout_dly, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs_out.csv', action = 'write')
-!            write(iout_dly, 1010) 'YEAR', 'DAY', 'PRE', 'PRATE'
+!            write(iout_dly, 1010) VN_YEAR, VN_JDAY, 'PRE', 'PRATE'
 !            preacc_dly = 0.0 !reset accumulators
 
             !> Hourly.
 !            open(iout_hly, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs1_temp_hourly.csv', action = 'write')
-!            write(iout_hly, 1010) 'YEAR', 'DAY', 'HOUR', &
+!            write(iout_hly, 1010) VN_YEAR, VN_JDAY, VN_HOUR, &
 !                'SWE', 'SD', 'SNALB', 'TSN1', 'TSN2', 'TSNAVG', 'RAINRATE', 'SNOWRATE', 'WSN'
-!            write(iout_hly, 1010) 'YEAR', 'DAY', 'HOUR', 'PRE'
+!            write(iout_hly, 1010) VN_YEAR, VN_JDAY, VN_HOUR, 'PRE'
 !            preacc_hly = 0.0 !reset accumulators
 
 !            open(iout_wat_bal, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs1_out_watbal_hourly.csv', action = 'write')
-!            write(iout_wat_bal, 1010) 'YEAR', 'DAY', 'HOUR', &
+!            write(iout_wat_bal, 1010) VN_YEAR, VN_JDAY, VN_HOUR, &
 !                'PCP_ACC', 'EVP_ACC', 'LATF_ACC', 'DRAI_ACC', 'RUNO_ACC', 'WSOIL_TOT', 'ISOIL_TOT', &
 !                'SWE', 'SWE_VEG', 'WSN', 'WSN_VEG', 'WVEG', 'VEGH', 'VEGL'
 
 !            open(iout_ts, file = './' // trim(fls%GENDIR_OUT) // '/' // 'svs_out_ts.csv', action = 'write')
-!            write(iout_ts, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'RPCP', 'SPCP'
+!            write(iout_ts, 1010) VN_YEAR, VN_JDAY, VN_HOUR, VN_MINS, 'RPCP', 'SPCP'
 !        end if
 
 !1010    format(9999(g15.7e2, ','))
@@ -701,7 +701,7 @@ module runsvs_mesh
                     iun = iun + 1
                     open(iun, file = './' // trim(adjustl(op%DIR_OUT(i))) // '/svs_output_ts.csv')
                     write(iun, FMT_CSV, advance = 'no') &
-                        'YEAR', 'JDAY', 'HOUR', 'MINS', &
+                        VN_YEAR, VN_JDAY, VN_HOUR, VN_MINS, &
                         'RAINRATE', 'SNOWRATE', 'FLUSOLIS', 'FDSI', 'TMOINS', 'HUMOINS', &
                         'UMOINS', 'VMOINS', 'PMOINS', &
                         'FC', 'FL', 'FTEMP', 'FV', 'FVAP', 'HFLUXSA', &
@@ -714,22 +714,22 @@ module runsvs_mesh
                     do j = 1, svs_mesh%vs%kthermal
                         write(level, FMT_GEN) j
                         write(iun, FMT_CSV, advance = 'no') &
-                            trim(VN_SVS_TGROUND) // trim(adjustl(level))
+                            VN_SVS_TGROUND // trim(adjustl(level))
                     end do
                     write(iun, FMT_CSV, advance = 'no') &
                         'THETAA', 'TSA'
                     do j = 0, 1
                         write(level, FMT_GEN) j
                         write(iun, FMT_CSV, advance = 'no') &
-                            trim(VN_SVS_TSNOW) // trim(adjustl(level)), &
-                            trim(VN_SVS_TSNOWVEG) // trim(adjustl(level))
+                            VN_SVS_TSNOW // trim(adjustl(level)), &
+                            VN_SVS_TSNOWVEG // trim(adjustl(level))
                     end do
                     write(iun, FMT_CSV, advance = 'no') &
                         VN_SVS_WSNOW, VN_SVS_WSNV
                     do j = 0, 1
                         write(level, FMT_GEN) j
                         write(iun, FMT_CSV, advance = 'no') &
-                            trim(VN_SVS_TVEGE) // trim(adjustl(level))
+                            VN_SVS_TVEGE // trim(adjustl(level))
                     end do
                     write(iun, FMT_CSV, advance = 'no') &
                         VN_SVS_WVEG, &
@@ -738,8 +738,8 @@ module runsvs_mesh
                     do j = 1, svs_mesh%vs%khyd
                         write(level, FMT_GEN) j
                         write(iun, FMT_CSV, advance = 'no') &
-                            trim(VN_SVS_ISOIL) // trim(adjustl(level)), &
-                            trim(VN_SVS_WSOIL) // trim(adjustl(level)), &
+                            VN_SVS_ISOIL // trim(adjustl(level)), &
+                            VN_SVS_WSOIL // trim(adjustl(level)), &
                             'LATFLW' // trim(adjustl(level))
                     end do
                     write(iun, FMT_CSV, advance = 'no') &

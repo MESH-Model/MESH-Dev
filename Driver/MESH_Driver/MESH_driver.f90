@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1720'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1723'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -1345,38 +1345,44 @@ program RUNMESH
 
     end if
 
-    !> Print end of run diagnostics and information.
-
-    !> Basin vertical water balance totals.
-    call print_message('')
-    call print_message('End of run totals')
-    call print_message('')
+    !> Print basin vertical water balance totals.
+    call print_new_section('Basin water balance end of run totals (mm)')
+    call increase_tab()
     write(line, FMT_GEN) TOTAL_PRE
-    call print_message_detail('Total Precipitation         (mm) =' // trim(line))
+    call print_message('Total precipitation              =' // trim(line))
     write(line, FMT_GEN) TOTAL_EVAP
-    call print_message_detail('Total Evaporation           (mm) =' // trim(line))
+    call print_message('Total evapotranspiration         =' // trim(line))
     write(line, FMT_GEN) TOTAL_ROF
-    call print_message_detail('Total Runoff                (mm) =' // trim(line))
-    write(line, FMT_GEN) (STG_FIN - STG_INI), STG_INI, STG_FIN
-    call print_message_detail('Storage(Change/Init/Final)  (mm) =' // trim(line))
-    call print_message('')
+    call print_message('Total runoff                     =' // trim(line))
+    call increase_tab()
     write(line, FMT_GEN) TOTAL_ROFO
-    call print_message_detail('Total Overland flow         (mm) =' // trim(line))
+    call print_message('Overland         =' // trim(line))
     write(line, FMT_GEN) TOTAL_ROFS
-    call print_message_detail('Total Interflow             (mm) =' // trim(line))
+    call print_message('Lateral          =' // trim(line))
     write(line, FMT_GEN) TOTAL_ROFB
-    call print_message_detail('Total Baseflow              (mm) =' // trim(line))
-    call print_message('')
+    call print_message('Drainage (soil)  =' // trim(line))
+    call decrease_tab()
+    write(line, FMT_GEN) (STG_FIN - STG_INI)
+    call print_message('Change in storage                =' // trim(line))
+    call increase_tab()
+    write(line, FMT_GEN) STG_INI
+    call print_message('Initial          =' // trim(line))
+    write(line, FMT_GEN) STG_FIN
+    call print_message('Final            =' // trim(line))
 
     !> Normal end of run message.
-    call print_message('')
-    call print_message('Program has terminated normally.')
+    call print_new_section('Program has terminated normally.', leading_lines = 2)
 
     !> Calculate and save program run time (to file only).
     call print_echo_txt('')
     call cpu_time(endprog)
-    write(line, FMT_GEN) (endprog - startprog)
-    call print_echo_txt('Time = ' // trim(adjustl(line)) // ' seconds.')
+    endprog = endprog - startprog
+    call print_echo_txt(' Time = ' // trim(friendly_time_length(endprog)), no_advance = .true.)
+    if (ic%iter%year > 1) then
+        endprog = endprog/ic%iter%year
+        call print_echo_txt(' (averaging ' // trim(friendly_time_length(endprog)) // ' per simulation year)', no_advance = .true.)
+    end if
+    call print_echo_txt('.')
 
     !> Absolute termination point (e.g., for worker nodes).
 99  continue

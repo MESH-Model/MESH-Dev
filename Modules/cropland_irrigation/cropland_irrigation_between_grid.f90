@@ -26,19 +26,19 @@ module cropland_irrigation_between_grid
         !> Daily.
         if (btest(cifg%ts_flag, civ%fk%KDLY)) then
             open(950, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation.csv')
-            write(950, 1010) 'YEAR', 'DAY', 'ICU'
+            write(950, 1010) VN_YEAR, VN_JDAY, 'ICU'
         end if
 
         !> Hourly.
         if (btest(cifg%ts_flag, civ%fk%KHLY)) then
             open(952, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation_Hourly.csv')
-            write(952, 1010) 'YEAR', 'DAY', 'HOUR', 'ICU'
+            write(952, 1010) VN_YEAR, VN_JDAY, VN_HOUR, 'ICU'
         end if
 
         !> Per time-step.
         if (btest(cifg%ts_flag, civ%fk%KTS)) then
             open(953, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_crop_irrigation_ts.csv')
-            write(953, 1010) 'YEAR', 'DAY', 'HOUR', 'MINS', 'ICU'
+            write(953, 1010) VN_YEAR, VN_JDAY, VN_HOUR, VN_MINS, 'ICU'
         end if
 
 1010    format(9999(g15.7e2, ','))
