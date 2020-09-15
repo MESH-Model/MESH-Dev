@@ -51,6 +51,7 @@ module model_files_variables
     integer, parameter :: IO_TYPE_TSI = 7
     integer, parameter :: IO_TYPE_TSK = 8
     integer, parameter :: IO_TYPE_NC4 = 9
+    integer, parameter :: IO_TYPE_R2C_BIN = 10
 
     !> Description:
     !>  Keys for output file scale.

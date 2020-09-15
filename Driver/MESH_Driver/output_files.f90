@@ -73,6 +73,7 @@ module output_files
     !*  fname: Base file name (default: none).
     !*  vid: Variable ID (default: none).
     !*  tid: Time ID (default: none).
+    !*  record: Current record (default: 1).
     !*  src: Source data (1: Index).
     !*  dat: Data (1: Index; 2: Time-series index).
     type output_file
@@ -81,6 +82,7 @@ module output_files
         integer :: nid = -1
         integer :: vid = -1
         integer :: tid = -1
+        integer :: record = 1
         real, dimension(:), pointer :: src => null()
         real, dimension(:, :), allocatable :: dat
     end type
@@ -276,6 +278,9 @@ module output_files
 
     subroutine open_r2c_output(fls, shd, iun, fname, attname, attunits, ierr)
 
+        !> 'strings': For 'uppercase' function.
+        use strings
+
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
@@ -286,8 +291,8 @@ module output_files
         integer, intent(out) :: ierr
 
         !> Local variables.
-        character(len = 10) str10
-        character(len = 8) str8
+        integer dat(8)
+        character(len = DEFAULT_LINE_LENGTH) line
 
         !> Open the file (write access).
         ierr = 0
@@ -295,51 +300,48 @@ module output_files
         if (ierr /= 0) return
 
         !> Write header.
-        write(iun, 3005) '########################################'
-        write(iun, 3005) ':FileType r2c  ASCII  EnSim 1.0         '
-        write(iun, 3005) '#                                       '
-        write(iun, 3005) '# DataType               2D Rect Cell   '
-        write(iun, 3005) '#                                       '
-        write(iun, 3005) ':Application               MeshOutput   '
-        write(iun, 3005) ':Version                 1.0.00         '
-        write(iun, 3005) ':WrittenBy          MESH_DRIVER         '
-        call date_and_time(str8, str10)
-        write(iun, 3010) ':CreationDate       ', str8(1:4), str8(5:6), str8(7:8), str10(1:2), str10(3:4)
-        write(iun, 3005) '#                                       '
-        write(iun, 3005) '#---------------------------------------'
-        write(iun, 3005) '#                                       '
-        write(iun, 3002) ':Name               ', trim(attname)
-        write(iun, 3005) '#                                       '
-        write(iun, 3004) ':Projection         ', shd%CoordSys%Proj
-        if (shd%CoordSys%Proj == 'LATLONG   ') &
-            write(iun, 3004) ':Ellipsoid          ', shd%CoordSys%Ellips
-        if (shd%CoordSys%Proj == 'UTM       ') then
-            write(iun, 3004) ':Ellipsoid          ', shd%CoordSys%Ellips
-            write(iun, 3004) ':Zone               ', shd%CoordSys%Zone
-        end if
-        write(iun, 3005) '#                                       '
-        write(iun, 3003) ':xOrigin            ', shd%xOrigin
-        write(iun, 3003) ':yOrigin            ', shd%yOrigin
-        write(iun, 3005) '#                                       '
-        write(iun, 3005) ':SourceFile            MESH_DRIVER      '
-        write(iun, 3005) '#                                       '
-        write(iun, 3002) ':AttributeName      ', trim(attname)
-        write(iun, 3002) ':AttributeUnits     ', ''
-        write(iun, 3005) '#                                       '
-        write(iun, 3001) ':xCount             ', shd%xCount
-        write(iun, 3001) ':yCount             ', shd%yCount
-        write(iun, 3003) ':xDelta             ', shd%xDelta
-        write(iun, 3003) ':yDelta             ', shd%yDelta
-        write(iun, 3005) '#                                       '
-        write(iun, 3005) '#                                       '
-        write(iun, 3005) ':endHeader                              '
-
-3001    format((a), i8)
-3002    format((a), 3x, (a))
-3003    format((a), f16.7)
-3004    format((a), 1x, (a))
-3005    format((a))
-3010    format(a20, a4, '-', a2, '-', a2, 2x, a2, ':', a2)
+        write(iun, FMT_CHR) repeat('#', 73)
+        write(iun, FMT_CHR) ':FileType r2c ASCII EnSim 1.0 '
+        write(iun, FMT_CHR) '#'
+        write(iun, FMT_CHR) '# DataType 2D Rect Cell'
+        write(iun, FMT_CHR) '#'
+        write(iun, FMT_CHR) ':Application SA_MESH'
+        write(iun, FMT_CHR) ':Version 1.4'
+        write(iun, FMT_CHR) '#'
+        call date_and_time(values = dat)
+        write(line, "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2)") dat(1), dat(2), dat(3), dat(5), dat(6), dat(7)
+        write(iun, FMT_CHR) ':CreationDate ' // trim(adjustl(line))
+        write(iun, FMT_CHR) '#'
+        write(iun, FMT_CHR) '#' // repeat('-', 72)
+        write(iun, FMT_CHR) '#'
+        write(iun, FMT_CHR) ':Name ' // trim(attname)
+        write(iun, FMT_CHR) '#'
+        write(iun, FMT_CHR) ':Projection ' // trim(uppercase(shd%CoordSys%Proj))
+        select case (uppercase(shd%CoordSys%Proj))
+            case ('LATLONG')
+                write(iun, FMT_CHR) ':Ellipsoid ' // trim(uppercase(shd%CoordSys%Ellips))
+            case ('UTM')
+                write(iun, FMT_CHR) ':Ellipsoid ' // trim(uppercase(shd%CoordSys%Ellips))
+                write(iun, FMT_CHR) ':Zone ' // trim(uppercase(shd%CoordSys%Zone))
+        end select
+        write(iun, FMT_CHR) '#'
+        write(line, FMT_GEN) shd%xOrigin
+        write(iun, FMT_CHR) ':xOrigin ' // trim(adjustl(line))
+        write(line, FMT_GEN) shd%yOrigin
+        write(iun, FMT_CHR) ':yOrigin ' // trim(adjustl(line))
+        write(iun, FMT_CHR) '#'
+        write(iun, FMT_CHR) ':AttributeName 1 ' // trim(attname)
+        write(iun, FMT_CHR) '#'
+        write(line, FMT_GEN) shd%xCount
+        write(iun, FMT_CHR) ':xCount ' // trim(line)
+        write(line, FMT_GEN) shd%yCount
+        write(iun, FMT_CHR) ':yCount ' // trim(line)
+        write(line, FMT_GEN) shd%xDelta
+        write(iun, FMT_CHR) ':xDelta ' // trim(line)
+        write(line, FMT_GEN) shd%yDelta
+        write(iun, FMT_CHR) ':yDelta ' // trim(line)
+        write(iun, FMT_CHR) '#'
+        write(iun, FMT_CHR) ':EndHeader'
 
     end subroutine
 
@@ -387,7 +389,7 @@ module output_files
         !> Write frame number and time-stamp.
         !> Standard format for 'r2c': "yyyy/MM/dd HH:mm:ss.SSS"
         ierr = 0
-        write(iun, "(':Frame', 2i10, 3x, (a), i4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':00.000', (a))", iostat = ierr) &
+        write(iun, "(':Frame', 2i10, 3x, (a), i4.4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':00.000', (a))", iostat = ierr) &
             number, number, """", year, month, day, hour, mins, """"
 
     end subroutine
@@ -420,7 +422,7 @@ module output_files
 
         !> Write data.
         do j = 1, size(dat, 1)
-            write(iun, *, iostat = ierr) (dat(j, i), i = 1, size(dat, 2))
+            write(iun, FMT_GEN, iostat = ierr) (dat(j, i), i = 1, size(dat, 2))
             if (ierr /= 0) return
         end do
 
@@ -440,7 +442,7 @@ module output_files
 
         !> Write data.
         do j = 1, size(dat, 1)
-            write(iun, *, iostat = ierr) (dat(j, i), i = 1, size(dat, 2))
+            write(iun, FMT_GEN, iostat = ierr) (dat(j, i), i = 1, size(dat, 2))
             if (ierr /= 0) return
         end do
 
@@ -640,6 +642,295 @@ module output_files
         end do
 
     end subroutine
+
+    subroutine write_r2c_binary_line(iun, record, line, ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: line
+
+        !> Input/output variables.
+        integer record
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        integer l, r, m
+        character(len = 4) t
+
+        !> Initialize the return variable.
+        ierr = 0
+
+        !> Find how many 4-byte characters exist in the line (considering space for EOL character).
+        m = len_trim(line) - mod(len_trim(line), 4) + 1
+
+        !> Write the even 4-byte substrings to the line.
+        l = 1
+        do while (l < m)
+            r = l + 3
+            write(iun, rec = record, iostat = ierr) line(l:r); record = record + 1
+            if (ierr /= 0) return
+            l = r + 1
+        end do
+
+        !> Write the remaining substring for the end of the line.
+        t = ''
+        if (l <= len_trim(line)) t = line(l:len_trim(line))
+
+        !> Pad end of line with spaces.
+        !> Adapted from 'wat_ensim.f'.
+        do l = len_trim(t) + 1, 3
+            t(l:l) = ' '
+        end do
+
+        !> Add the end of line (EOL) character.
+        t(4:4) = char(10)
+
+        !> Write the end of the line.
+        write(iun, rec = record, iostat = ierr) t; record = record + 1
+
+    end subroutine
+
+    subroutine open_r2c_binary_output(fls, shd, iun, fname, record, attname, attunits, ierr)
+
+        !> 'strings': For 'uppercase' function.
+        use strings
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: fname, attname, attunits
+
+        !> Input/output variables.
+        integer record
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        real(kind = 4) d
+        integer dat(8), r, z
+        character(len = DEFAULT_LINE_LENGTH) line
+
+        !> Initialize the return variable.
+        ierr = 0
+
+        !> Determine record length.
+        inquire(iolength = r) d
+
+        !> Open the file (write access).
+        z = 0
+        open(iun, file = fname, status = 'replace', form = 'unformatted', access = 'direct', recl = r, action = 'write', iostat = z)
+
+        !> Write header.
+        if (z == 0) call write_r2c_binary_line(iun, record, repeat('#', 73), z)
+        if (z == 0) call write_r2c_binary_line(iun, record, ':FileType r2c BINARY EnSim 1.0 ', z)
+        if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
+        if (z == 0) call write_r2c_binary_line(iun, record, '# DataType 2D Rect Cell', z)
+        if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
+        if (z == 0) call write_r2c_binary_line(iun, record, ':Application SA_MESH', z)
+        if (z == 0) call write_r2c_binary_line(iun, record, ':Version 1.4', z)
+        if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
+        if (z == 0) then
+            call date_and_time(values = dat)
+            write(line, "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2)") &
+                dat(1), dat(2), dat(3), dat(5), dat(6), dat(7)
+            call write_r2c_binary_line(iun, record, ':CreationDate ' // trim(adjustl(line)), z)
+        end if
+        if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
+        if (z == 0) call write_r2c_binary_line(iun, record, '#' // repeat('-', 72), z)
+        if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
+        if (z == 0) call write_r2c_binary_line(iun, record, ':Name ' // trim(attname), z)
+        if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
+        if (z == 0) call write_r2c_binary_line(iun, record, ':Projection ' // trim(uppercase(shd%CoordSys%Proj)), z)
+        select case (uppercase(shd%CoordSys%Proj))
+            case ('LATLONG')
+                if (z == 0) call write_r2c_binary_line(iun, record, ':Ellipsoid ' // trim(uppercase(shd%CoordSys%Ellips)), z)
+            case ('UTM')
+                if (z == 0) call write_r2c_binary_line(iun, record, ':Ellipsoid ' // trim(uppercase(shd%CoordSys%Ellips)), z)
+                if (z == 0) call write_r2c_binary_line(iun, record, ':Zone ' // trim(uppercase(shd%CoordSys%Zone)), z)
+        end select
+        if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
+        if (z == 0) then
+            write(line, FMT_GEN) shd%xOrigin
+            call write_r2c_binary_line(iun, record, ':xOrigin ' // trim(adjustl(line)), z)
+        end if
+        if (z == 0) then
+            write(line, FMT_GEN) shd%yOrigin
+            call write_r2c_binary_line(iun, record, ':yOrigin ' // trim(adjustl(line)), z)
+        end if
+        if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
+        if (z == 0) call write_r2c_binary_line(iun, record, ':AttributeName 1 ' // trim(attname), z)
+        if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
+        if (z == 0) then
+            write(line, FMT_GEN) shd%xCount
+            call write_r2c_binary_line(iun, record, ':xCount ' // trim(line), z)
+        end if
+        if (z == 0) then
+            write(line, FMT_GEN) shd%yCount
+            call write_r2c_binary_line(iun, record, ':yCount ' // trim(line), z)
+        end if
+        if (z == 0) then
+            write(line, FMT_GEN) shd%xDelta
+            call write_r2c_binary_line(iun, record, ':xDelta ' // trim(line), z)
+        end if
+        if (z == 0) then
+            write(line, FMT_GEN) shd%yDelta
+            call write_r2c_binary_line(iun, record, ':yDelta ' // trim(line), z)
+        end if
+        if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
+        if (z == 0) call write_r2c_binary_line(iun, record, ':EndHeader', z)
+
+        !> Update the return variable.
+        ierr = z
+
+    end subroutine
+
+    subroutine write_r2c_binary_frame_start(iun, record, number, year, month, day, hour, mins, ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, number, year, month, day, hour, mins
+
+        !> Input/output variables.
+        integer record
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        integer(kind = 4) f, y, m, d, h, n, s
+        integer z
+
+        !> Initialize the return variable.
+        ierr = 0
+
+        !> Transfer to local variables.
+        f = int(number, 4)
+        y = int(year, 4)
+        m = int(month, 4)
+        d = int(day, 4)
+        h = int(hour, 4)
+        n = int(mins, 4)
+        s = int(0, 4)
+
+        !> Write frame number and time-stamp.
+        !> Adapted from 'wat_ensim.f'.
+        !> Standard format for 'r2c' (binary): frame, frame, year, month, day, hour, minutes, seconds, milliseconds (as 4-byte int).
+        z = 0
+        if (z == 0) then
+            write(iun, rec = record, iostat = z) f
+            record = record + 1
+        end if
+        if (z == 0) then
+            write(iun, rec = record, iostat = z) f
+            record = record + 1
+        end if
+        if (z == 0) then
+            write(iun, rec = record, iostat = z) y
+            record = record + 1
+        end if
+        if (z == 0) then
+            write(iun, rec = record, iostat = z) m
+            record = record + 1
+        end if
+        if (z == 0) then
+            write(iun, rec = record, iostat = z) d
+            record = record + 1
+        end if
+        if (z == 0) then
+            write(iun, rec = record, iostat = z) h
+            record = record + 1
+        end if
+        if (z == 0) then
+            write(iun, rec = record, iostat = z) n
+            record = record + 1
+        end if
+        if (z == 0) then
+            write(iun, rec = record, iostat = z) s
+            record = record + 1
+        end if
+        if (z == 0) then
+            write(iun, rec = record, iostat = z) s
+            record = record + 1
+        end if
+
+        !> Update the return variable.
+        ierr = z
+
+    end subroutine
+
+    subroutine write_r2c_binary_grid_real(iun, record, dat, ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        real, dimension(:, :), intent(in) :: dat
+
+        !> Input/output variables.
+        integer record
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        real(kind = 4), dimension(size(dat, 1), size(dat, 2)) :: d
+        integer j, i
+
+        !> Initialize the return variable.
+        ierr = 0
+
+        !> Transfer to local variables.
+        d = real(dat, 4)
+
+        !> Write data.
+        do j = 1, size(d, 1)
+            do i = 1, size(d, 2)
+                write(iun, rec = record, iostat = ierr) d(j, i); record = record + 1
+                if (ierr /= 0) return
+            end do
+        end do
+
+    end subroutine
+
+    subroutine output_files_write_r2c_binary(fls, shd, iun, dat, record, dates, ierr)
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+        integer, intent(in) :: iun
+        real, dimension(:, :), intent(in) :: dat
+        integer, dimension(:, :), intent(in) :: dates
+
+        !> Input/output variables.
+        integer record
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        integer t, j, i
+        real, dimension(shd%yCount, shd%xCount) :: r2c_grid
+
+        !> Write series.
+        ierr = 0
+        do t = 1, size(dat, 2)
+
+            !> Transfer data to temporary variable.
+            r2c_grid = out%NO_DATA
+            do i = 1, shd%NA
+                r2c_grid(shd%yyy(i), shd%xxx(i)) = dat(i, t)
+            end do
+
+            !> Write data.
+            call write_r2c_binary_frame_start( &
+                iun, record, dates(1, t), dates(2, t), dates(3, t), dates(4, t), dates(5, t), dates(6, t), ierr)
+            if (ierr /= 0) return
+            call write_r2c_binary_grid_real(iun, record, r2c_grid, ierr)
+            if (ierr /= 0) return
+        end do
+
+    end subroutine
 !<<<<<temporarily_here
 
     subroutine output_files_allocate_group(fls, shd, ffreq, out_group, field, group, t, ierr)
@@ -713,7 +1004,7 @@ module output_files
                 lopen = .false.
                 inquire(file = trim(fname) // '.r2c', opened = lopen)
                 if (.not. lopen) then
-                    call open_r2c_output(fls, shd, group%grid%iun + iun, trim(fname) // '.r2c', field%vname, '', z)
+                    call open_r2c_output(fls, shd, group%grid%iun + iun, trim(fname) // '.r2c', trim(fname), '', z)
                     if (z /= 0) then
                         call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '.r2c')
                         ierr = z
@@ -817,6 +1108,24 @@ module output_files
                 end if
             end if
 #endif
+            if (btest(field%ffmt, IO_TYPE_R2C_BIN)) then
+                z = 0
+                lopen = .false.
+                inquire(file = trim(fname) // '_binary.r2c', opened = lopen)
+                if (.not. lopen) then
+                    call open_r2c_binary_output( &
+                        fls, shd, group%grid%iun + iun, trim(fname) // '_binary.r2c', group%grid%record, trim(fname), '', z)
+                    if (z /= 0) then
+                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '_binary.r2c')
+                        ierr = z
+                    end if
+                else
+                    call print_message_detail( &
+                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_binary.r2c')
+                    z = 1
+                end if
+                iun = iun + 1
+            end if
             if (z /= 0) ierr = z
 
             !> Update shared file unit.
@@ -1126,6 +1435,13 @@ module output_files
                         ierr = 1
                         return
 #endif
+                    case ('r2c_bin', 'r2c_binary')
+                        if (.not. btest(field%ffmt, IO_TYPE_R2C_BIN)) then
+                            field%ffmt = field%ffmt + radix(IO_TYPE_R2C_BIN)**IO_TYPE_R2C_BIN
+                        end if
+                        if (.not. btest(field%fgroup, DATA_TYPE_GRID)) then
+                            field%fgroup = field%fgroup + radix(DATA_TYPE_GRID)**DATA_TYPE_GRID
+                        end if
 
                     !> Order of the selection being saved.
                     case ('gridorder', 'shedorder')
@@ -1338,7 +1654,7 @@ module output_files
 
                 !> Single-word options.
                 select case (lowercase(args(i)))
-                    case ('y', 'm', 's', 'd', 'h', 'r2c', 'seq', 'binseq', 'txt', 'csv', 'tsi', 'tsk')
+                    case ('y', 'm', 's', 'd', 'h')
                         n = 1
                 end select
             end if
@@ -1849,6 +2165,15 @@ module output_files
                 end if
             end if
 #endif
+            if (btest(field%ffmt, IO_TYPE_R2C_BIN)) then
+                z = 0
+                call output_files_write_r2c_binary(fls, shd, group%grid%iun + iun, group%grid%dat, group%grid%record, dates, z)
+                if (z /= 0) then
+                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_binary.r2c')
+                    call program_abort()
+                end if
+                iun = iun + 1
+            end if
 
             !> Reset 'dat' for the next time-step.
             group%grid%dat = out%NO_DATA
