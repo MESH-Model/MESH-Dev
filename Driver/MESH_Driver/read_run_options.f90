@@ -10,7 +10,8 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use variable_names
 
     use FLAGS
-    use save_basin_output, only: BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, BASINAVGEVPFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
+    use save_basin_output, only: &
+        BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, BASINAVGEVPFILEFLAG, BASINSWEOUTFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
     use RUNCLASS36_variables
     use RUNCLASS36_save_output
     use runsvs_mesh
@@ -205,7 +206,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     !> If enabled, saves the SCA and SWE output files.
     !>     0 = Create no output.
     !>     1 = Save the SCA and SWE output files.
-    BASINSWEOUTFLAG = 0
+!-    BASINSWEOUTFLAG = 0
 
     !> The above parameter values are defaults, to change to a different
     !> value, use the MESH_input_run_options.ini file
@@ -567,6 +568,8 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     BASINAVGEBFILEFLAG = adjustl(line)
                 case ('BASINAVGEVPFILEFLAG')
                     BASINAVGEVPFILEFLAG = adjustl(line)
+                case ('BASINSWEOUTFLAG')
+                    BASINSWEOUTFLAG = adjustl(line)
                 case ('STREAMFLOWOUTFLAG')
                     STREAMFLOWOUTFLAG = adjustl(line)
                 case ('REACHOUTFLAG')
@@ -600,8 +603,8 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 !-                        end select
 !-                    end do
 
-                case ('BASINSWEOUTFLAG')
-                    call value(args(2), BASINSWEOUTFLAG, z)
+!-                case ('BASINSWEOUTFLAG')
+!-                    call value(args(2), BASINSWEOUTFLAG, z)
 
                 !> BASEFLOW routing.
                 case ('BASEFLOWFLAG')

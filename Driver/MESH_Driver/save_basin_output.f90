@@ -10,13 +10,14 @@ module save_basin_output
     character(len = DEFAULT_LINE_LENGTH), save :: BASINAVGWBFILEFLAG = 'daily'
     character(len = DEFAULT_LINE_LENGTH), save :: BASINAVGEBFILEFLAG = 'daily'
     character(len = DEFAULT_LINE_LENGTH), save :: BASINAVGEVPFILEFLAG = 'none'
+    character(len = DEFAULT_LINE_LENGTH), save :: BASINSWEOUTFLAG = 'none'
     character(len = DEFAULT_LINE_LENGTH), save :: STREAMFLOWOUTFLAG = 'daily'
     character(len = DEFAULT_LINE_LENGTH), save :: REACHOUTFLAG = 'daily'
 
     private
 
     public run_save_basin_output_init, run_save_basin_output, run_save_basin_output_finalize
-    public BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, BASINAVGEVPFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
+    public BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, BASINAVGEVPFILEFLAG, BASINSWEOUTFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
 
     !> Global types.
 
@@ -80,7 +81,7 @@ module save_basin_output
     end type
 
     type BasinOutputConfig
-        type(BasinOutputConfigFlag) wb, eb, evp
+        type(BasinOutputConfigFlag) wb, eb, evp, swe
     end type
 
     !> Variable type: WF_RTE_fout_stfl
@@ -191,6 +192,9 @@ module save_basin_output
         if (len_trim(BASINAVGEVPFILEFLAG) > 0) then
             call parse_basin_output_flag(shd, BASINAVGEVPFILEFLAG, bnoflg%evp)
         end if
+        if (len_trim(BASINSWEOUTFLAG) > 0) then
+            call parse_basin_output_flag(shd, BASINSWEOUTFLAG, bnoflg%swe)
+        end if
 
         !> Grab values for common indices.
 !-        NA = shd%NA
@@ -278,7 +282,9 @@ module save_basin_output
         if (btest(bnoflg%evp%t, 0)) then
             open(910, file = './' // trim(fls%GENDIR_OUT) // '/' // '/Basin_average_evap.csv')
             call allocate_evp_out(shd, out%d)
-            call update_evp_header(fls, shd, 910, 86400)
+            if (bnoflg%evp%fout_header) then
+                call update_evp_header(fls, shd, 910, 86400)
+            end if
         end if
 
         !> Monthly.
@@ -313,7 +319,9 @@ module save_basin_output
         if (btest(bnoflg%evp%t, 1)) then
             open(911, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_Monthly.csv')
             call allocate_evp_out(shd, out%m)
-            call update_evp_header(fls, shd, 911, 86400)
+            if (bnoflg%evp%fout_header) then
+                call update_evp_header(fls, shd, 911, 86400)
+            end if
         end if
 
         !> Hourly.
@@ -348,7 +356,9 @@ module save_basin_output
         if (btest(bnoflg%evp%t, 2)) then
             open(912, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_Hourly.csv')
             call allocate_evp_out(shd, out%h)
-            call update_evp_header(fls, shd, 912, 3600)
+            if (bnoflg%evp%fout_header) then
+                call update_evp_header(fls, shd, 912, 3600)
+            end if
         end if
 
         !> Per time-step.
@@ -383,7 +393,9 @@ module save_basin_output
         if (btest(bnoflg%evp%t, 3)) then
             open(913, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_ts.csv')
             call allocate_evp_out(shd, out%ts)
-            call update_evp_header(fls, shd, 913, ic%dts)
+            if (bnoflg%evp%fout_header) then
+                call update_evp_header(fls, shd, 913, ic%dts)
+            end if
         end if
 
         !> Calculate initial storage and aggregate through neighbouring cells.
@@ -411,10 +423,17 @@ module save_basin_output
 !-            bno%evpdts(:)%ARRD = 0.0
 !-        end if
 
-        if (BASINSWEOUTFLAG > 0) then
+        if (btest(bnoflg%swe%t, 0)) then
             open(85, file = './' // trim(fls%GENDIR_OUT) // '/basin_SCA_alldays.csv')
+            if (bnoflg%swe%fout_header) then
+                write(85, 1010) VN_YEAR, VN_JDAY, VN_FSNO
+            end if
             open(86, file = './' // trim(fls%GENDIR_OUT) // '/basin_SWE_alldays.csv')
-        end if !(BASINSWEOUTFLAG > 0) then
+            if (bnoflg%swe%fout_header) then
+                write(86, 1010) VN_YEAR, VN_JDAY, VN_SNO
+            end if
+            call output_variables_activate(out%d%basin, (/ VN_DUMMY_LENGTH, VN_FSNO, VN_SNO /))
+        end if
 
         RTE_TS = ic%dts
         if (WF_RTE_flgs%PROCESS_ACTIVE) RTE_TS = WF_RTE_flgs%RTE_TS
@@ -783,27 +802,27 @@ module save_basin_output
         !> Same code than in wf_ensim.f subrutine of watclass3.0f8
         !> Especially for version MESH_Prototype 3.3.1.7b (not to be incorporated in future versions)
         !> calculate and write the basin avg SWE using the similar fudge factor!!!
-        if (BASINSWEOUTFLAG > 0) then
-
+        if (btest(bnoflg%swe%t, 0)) then
             if (ic%now%hour == 12 .and. ic%now%mins == 0) then
-                basin_SCA = 0.0
-                basin_SWE = 0.0
-                TOTAL_AREA = sum(shd%FRAC)
-                do k = 1, shd%lc%NML
-                    ki = shd%lc%ILMOS(k)
-                    FRAC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))
-                    basin_SCA = basin_SCA + vs%tile%fsno(k)*FRAC
-                    basin_SWE = basin_SWE + vs%tile%sno(k)*FRAC
-                end do
-                basin_SCA = basin_SCA/TOTAL_AREA
-                basin_SWE = basin_SWE/TOTAL_AREA
-                if (BASINSWEOUTFLAG > 0) then
-                    write(85, "(i5,',', f10.3)") ic%now%jday, basin_SCA
-                    write(86, "(i5,',', f10.3)") ic%now%jday, basin_SWE
-                end if
+!-                basin_SCA = 0.0
+!-                basin_SWE = 0.0
+!-                TOTAL_AREA = sum(shd%FRAC)
+!-                do k = 1, shd%lc%NML
+!-                    ki = shd%lc%ILMOS(k)
+!-                    FRAC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))
+!-                    basin_SCA = basin_SCA + vs%tile%fsno(k)*FRAC
+!-                    basin_SWE = basin_SWE + vs%tile%sno(k)*FRAC
+!-                end do
+!-                basin_SCA = basin_SCA/TOTAL_AREA
+!-                basin_SWE = basin_SWE/TOTAL_AREA
+!-                if (btest(bnoflg%swe%t, 0)) then
+!-                    write(85, "(i5,',', f10.3)") ic%now%jday, basin_SCA
+!-                    write(86, "(i5,',', f10.3)") ic%now%jday, basin_SWE
+!-                end if
+                write(85, 1010) ic%now%year, ic%now%jday, out%d%basin%fsno(shd%NAA)
+                write(86, 1010) ic%now%year, ic%now%jday, out%d%basin%sno(shd%NAA)
             end if
-
-        end if !(ipid == 0) then
+        end if
 
         if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0 .and. ro%RUNCHNL) then
 
