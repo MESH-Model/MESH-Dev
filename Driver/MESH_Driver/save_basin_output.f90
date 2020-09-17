@@ -1,36 +1,41 @@
 module save_basin_output
 
+    use print_routines
+    use model_files_variabletypes, only: fl_ids
     use output_variables
 
     implicit none
 
     !> String read from run_options.ini.
-    character(len = 100), save :: &
-        BASINAVGWBFILEFLAG = '', BASINAVGEBFILEFLAG = '', STREAMFLOWOUTFLAG = '', REACHOUTFLAG = ''
+    character(len = DEFAULT_LINE_LENGTH), save :: BASINAVGWBFILEFLAG = 'daily'
+    character(len = DEFAULT_LINE_LENGTH), save :: BASINAVGEBFILEFLAG = 'daily'
+    character(len = DEFAULT_LINE_LENGTH), save :: BASINAVGEVPFILEFLAG = 'none'
+    character(len = DEFAULT_LINE_LENGTH), save :: STREAMFLOWOUTFLAG = 'daily'
+    character(len = DEFAULT_LINE_LENGTH), save :: REACHOUTFLAG = 'daily'
 
     private
 
     public run_save_basin_output_init, run_save_basin_output, run_save_basin_output_finalize
-    public BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
+    public BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, BASINAVGEVPFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
 
     !> Global types.
 
     !> For basin water balance.
 
-    type BasinWaterBalance
-        real, dimension(:), allocatable :: PRE, EVAP, ROF, ROFO, ROFS, ROFB, STG_INI, STG_FIN
-    end type
+!-    type BasinWaterBalance
+!-        real, dimension(:), allocatable :: PRE, EVAP, ROF, ROFO, ROFS, ROFB, STG_INI, STG_FIN
+!-    end type
 
-    type, extends(BasinWaterBalance) :: BasinWaterStorage
-        real, dimension(:), allocatable :: RCAN, SNCAN, SNO, WSNO, PNDW, LZS, DZS
-        real, dimension(:, :), allocatable :: LQWS, FRWS
-    end type
+!-    type, extends(BasinWaterBalance) :: BasinWaterStorage
+!-        real, dimension(:), allocatable :: RCAN, SNCAN, SNO, WSNO, PNDW, LZS, DZS
+!-        real, dimension(:, :), allocatable :: LQWS, FRWS
+!-    end type
 
     !> For evaporation related outputs.
 
-    type BasinEvp
-        real EVAP, PEVP, EVPB, ARRD
-    end type
+!-    type BasinEvp
+!-        real EVAP, PEVP, EVPB, ARRD
+!-    end type
 
     !> For energy balance.
     !*  FSIN: Incoming shortwave radiation at the surface. [J m-2 during acc.; W m-2 output].
@@ -50,39 +55,82 @@ module save_basin_output
     !*  TBAR: Temperature of soil layers. [dC].
     !*  BAL0: Balance at the beginning of the time-step. [W m-2].
     !*  BAL1: Balance at the end of the time-step. [W m-2].
-    type BasinEnergyBalance
-        integer, dimension(:), allocatable :: &
-            IFS, IPOND, ICAN, ISNOW
-        real, dimension(:), allocatable :: &
-            FSIN, ALBT, FSOUT, FLIN, GTE, FLOUT, QH, QE, GZERO, &
-            TA, TCAN, CMAS, TSNOW, TPOND
-        real, dimension(:, :), allocatable :: TBAR
-        real, dimension(:), allocatable :: BAL0, BAL1
-    end type
+!-    type BasinEnergyBalance
+!-        integer, dimension(:), allocatable :: &
+!-            IFS, IPOND, ICAN, ISNOW
+!-        real, dimension(:), allocatable :: &
+!-            FSIN, ALBT, FSOUT, FLIN, GTE, FLOUT, QH, QE, GZERO, &
+!-            TA, TCAN, CMAS, TSNOW, TPOND
+!-        real, dimension(:, :), allocatable :: TBAR
+!-        real, dimension(:), allocatable :: BAL0, BAL1
+!-    end type
 
     !> Basin output.
 
-    type BasinOutput
-        type(BasinWaterStorage), dimension(:), allocatable :: wb
-        type(BasinEvp), dimension(:), allocatable :: evpdts
-        type(BasinEnergyBalance), dimension(:), allocatable :: eb
-    end type
+!-    type BasinOutput
+!-        type(BasinWaterStorage), dimension(:), allocatable :: wb
+!-        type(BasinEvp), dimension(:), allocatable :: evpdts
+!-        type(BasinEnergyBalance), dimension(:), allocatable :: eb
+!-    end type
 
     type BasinOutputConfigFlag
-        integer :: t = 1
+        integer :: t = 0
         integer, dimension(:), allocatable :: n, ns, nr
         logical :: fout_header = .true.
     end type
 
     type BasinOutputConfig
-        type(BasinOutputConfigFlag) wb, eb
+        type(BasinOutputConfigFlag) wb, eb, evp
     end type
+
+    !> Variable type: WF_RTE_fout_stfl
+    !>  Description: Internal file keys used for output files for streamflow.
+    !>
+    !> Variables:
+    !*  KDLY: Daily output
+    !*  KTS: Per time-step output
+    !*  freq: Time intervals of the output (daily, ts).
+    !*  fout_hyd: .true. to print observed and simulated values (default).
+    !*  fout_bal: .true. to print channel storage terms (optional).
+    !*  fout_acc: .true. to print accumulated (cumulative) observed and simulated values (optional).
+    !*  fout_header: .true. to print header (default).
+    !*  fls: Output file definitions.
+    type WF_RTE_fout_stfl
+        integer :: KDLY = 0, KTS = 1
+        integer :: kmin = 0, kmax = 1
+        integer :: freq = 1
+        logical :: fout_hyd = .true., fout_bal = .false., fout_acc = .false.
+        logical :: fout_header = .true.
+        type(fl_ids) :: fls
+    end type
+
+    !> Variable type: WF_RTE_fout_rsvr
+    !>  Description: Internal file keys used for output files for lakes and reservoirs.
+    !>
+    !> Variables:
+    !*  KTS: Per time-step output
+    !*  freq: Time intervals of the output (ts).
+    !*  fout_header: .true. to print header (default).
+    !*  fls: Output file definitions.
+    type WF_RTE_fout_rsvr
+        integer :: KDLY = 0, KTS = 1, KHLY = 2
+        integer :: kmin = 0, kmax = 2
+        integer :: freq = 0
+        logical :: fout_header = .true.
+        type(fl_ids) :: fls
+    end type
+
+    real, dimension(:), allocatable :: WF_QHYD_CUM
+    real, dimension(:), allocatable :: WF_QO2_ACC, WF_QO2_ACC_MM, WF_STORE2_ACC_MM
+
+!todo: Move to ro%?
+    integer RTE_TS
 
     !> Local type instances.
 
     type(BasinOutputConfig), save :: bnoflg
 
-    type(BasinOutput), save :: bno
+!-    type(BasinOutput), save :: bno
 
     !> Indices for basin average output.
     !* IKEY_ACC: Accumulated over the run (per time-step).
@@ -92,7 +140,11 @@ module save_basin_output
     !* IKEY_MLY: Monthly average.
     !* IKEY_HLY: Hourly average.
     !*(IKEY_SSL: Seasonal average.)
-    integer :: IKEY_ACC = 1, IKEY_DLY = 2, IKEY_MLY = 3, IKEY_HLY = 4, IKEY_TSP = 5, NKEY = 5
+!-    integer :: IKEY_ACC = 1, IKEY_DLY = 2, IKEY_MLY = 3, IKEY_HLY = 4, IKEY_TSP = 5, NKEY = 5
+
+    !> Output files
+    type(WF_RTE_fout_stfl), save :: WF_RTE_fstflout
+    type(WF_RTE_fout_rsvr), save :: WF_RTE_frsvrout
 
     contains
 
@@ -104,25 +156,45 @@ module save_basin_output
         use sa_mesh_common
         use FLAGS
         use climate_forcing
+        use strings
+
+        !> Process modules.
+        use WF_ROUTE_config
+        use rte_module
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
         type(clim_info) :: cm
 
         !> Local variables.
-        integer NA, NSL, ikey, n, ii, i, iun, ierr
+        integer, parameter :: MaxLenField = 20, MaxArgs = 20, MaxLenLine = 100
+        integer NA
+        integer NS, NR
+        character(len = 4) ffmti
+        character(len = 500) fn
+        character(MaxLenField), dimension(MaxArgs) :: out_args
+        integer nargs
+!-        integer NA, NSL, ikey, ii, i
+        integer n, l, j, i, iun, ierr
         character(len = 3) nc
 
         !> Return if basin output has been disabled.
 !-        if (BASINBALANCEOUTFLAG == 0) return
 
         !> Parse output file flags.
-        if (len_trim(BASINAVGWBFILEFLAG) > 0) call parse_basin_output_flag(shd, BASINAVGWBFILEFLAG, bnoflg%wb)
-        if (len_trim(BASINAVGEBFILEFLAG) > 0) call parse_basin_output_flag(shd, BASINAVGEBFILEFLAG, bnoflg%eb)
+        if (len_trim(BASINAVGWBFILEFLAG) > 0) then
+            call parse_basin_output_flag(shd, BASINAVGWBFILEFLAG, bnoflg%wb)
+        end if
+        if (len_trim(BASINAVGEBFILEFLAG) > 0) then
+            call parse_basin_output_flag(shd, BASINAVGEBFILEFLAG, bnoflg%eb)
+        end if
+        if (len_trim(BASINAVGEVPFILEFLAG) > 0) then
+            call parse_basin_output_flag(shd, BASINAVGEVPFILEFLAG, bnoflg%evp)
+        end if
 
         !> Grab values for common indices.
-        NA = shd%NA
-        NSL = shd%lc%IGND
+!-        NA = shd%NA
+!-        NSL = shd%lc%IGND
 
         !> Allocate and zero variables for accumulations.
 !-        allocate(bno%wb(NKEY))
@@ -203,6 +275,11 @@ module save_basin_output
                 call write_energy_balance_header(fls, shd, 901, 86400)
             end if
         end if
+        if (btest(bnoflg%evp%t, 0)) then
+            open(910, file = './' // trim(fls%GENDIR_OUT) // '/' // '/Basin_average_evap.csv')
+            call allocate_evp_out(shd, out%d)
+            call update_evp_header(fls, shd, 910, 86400)
+        end if
 
         !> Monthly.
         if (btest(bnoflg%wb%t, 1)) then
@@ -232,6 +309,11 @@ module save_basin_output
             if (bnoflg%eb%fout_header) then
                 call write_energy_balance_header(fls, shd, 905, 86400)
             end if
+        end if
+        if (btest(bnoflg%evp%t, 1)) then
+            open(911, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_Monthly.csv')
+            call allocate_evp_out(shd, out%m)
+            call update_evp_header(fls, shd, 911, 86400)
         end if
 
         !> Hourly.
@@ -263,6 +345,11 @@ module save_basin_output
                 call write_energy_balance_header(fls, shd, 906, 3600)
             end if
         end if
+        if (btest(bnoflg%evp%t, 2)) then
+            open(912, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_Hourly.csv')
+            call allocate_evp_out(shd, out%h)
+            call update_evp_header(fls, shd, 912, 3600)
+        end if
 
         !> Per time-step.
         if (btest(bnoflg%wb%t, 3)) then
@@ -293,6 +380,11 @@ module save_basin_output
                 call write_energy_balance_header(fls, shd, 907, ic%dts)
             end if
         end if
+        if (btest(bnoflg%evp%t, 3)) then
+            open(913, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_ts.csv')
+            call allocate_evp_out(shd, out%ts)
+            call update_evp_header(fls, shd, 913, ic%dts)
+        end if
 
         !> Calculate initial storage and aggregate through neighbouring cells.
 !-        do ikey = 1, NKEY
@@ -311,41 +403,188 @@ module save_basin_output
 !-        end do
 
         !> Allocate and zero variables for accumulations.
-        if (BASINAVGEVPFILEFLAG > 0) then
-            allocate(bno%evpdts(NKEY))
-            bno%evpdts(:)%EVAP = 0.0
-            bno%evpdts(:)%PEVP = 0.0
-            bno%evpdts(:)%EVPB = 0.0
-            bno%evpdts(:)%ARRD = 0.0
+!-        if (BASINAVGEVPFILEFLAG > 0) then
+!-            allocate(bno%evpdts(NKEY))
+!-            bno%evpdts(:)%EVAP = 0.0
+!-            bno%evpdts(:)%PEVP = 0.0
+!-            bno%evpdts(:)%EVPB = 0.0
+!-            bno%evpdts(:)%ARRD = 0.0
+!-        end if
+
+        if (BASINSWEOUTFLAG > 0) then
+            open(85, file = './' // trim(fls%GENDIR_OUT) // '/basin_SCA_alldays.csv')
+            open(86, file = './' // trim(fls%GENDIR_OUT) // '/basin_SWE_alldays.csv')
+        end if !(BASINSWEOUTFLAG > 0) then
+
+        RTE_TS = ic%dts
+        if (WF_RTE_flgs%PROCESS_ACTIVE) RTE_TS = WF_RTE_flgs%RTE_TS
+        if (rteflg%PROCESS_ACTIVE) RTE_TS = rteflg%RTE_TS
+
+        NA = shd%NA
+        NR = fms%rsvr%n
+        NS = fms%stmg%n
+
+        !> Allocate file object.
+        allocate( &
+            WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%kmin:WF_RTE_fstflout%kmax), &
+            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%kmin:WF_RTE_frsvrout%kmax))
+        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%fn = 'MESH_output_streamflow.csv'
+        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun = 70
+        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%fn = 'MESH_output_streamflow_ts.csv'
+        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun = 71
+
+        allocate(WF_QO2_ACC(NA), WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
+        WF_QO2_ACC = 0.0
+        WF_QO2_ACC_MM = 0.0
+        WF_STORE2_ACC_MM = 0.0
+
+        if (NR > 0) then
+
+            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%fn = 'MESH_output_reach.csv'
+            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun = 708
+            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%fn = 'MESH_output_reach_ts.csv'
+            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun = 708+NR
+!            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%fn = 'MESH_output_reach_Hourly.csv'
+!            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%iun = 708+(NR*2)
+
+            if (len_trim(REACHOUTFLAG) == 0) REACHOUTFLAG = 'REACHOUTFLAG default'
+            call parse(REACHOUTFLAG, ' ', out_args, nargs)
+            WF_RTE_frsvrout%freq = 0
+            do j = 2, nargs
+                select case (lowercase(out_args(j)))
+                    case ('daily')
+                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KDLY)**WF_RTE_frsvrout%KDLY
+                    case ('ts')
+                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
+                    case ('hourly')
+                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KHLY)**WF_RTE_frsvrout%KHLY
+                    case ('default')
+                        WF_RTE_frsvrout%freq = 0
+                        exit
+                    case ('no_header')
+                        WF_RTE_frsvrout%fout_header = .false.
+                    case ('all')
+                        WF_RTE_frsvrout%freq = 0
+                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KDLY)**WF_RTE_frsvrout%KDLY
+                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
+                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KHLY)**WF_RTE_frsvrout%KHLY
+                        exit
+                    case ('none')
+                        WF_RTE_frsvrout%freq = 0
+                        exit
+                end select
+            end do
+
+            !> Open output files for reaches.
+            do j = WF_RTE_frsvrout%kmin, WF_RTE_frsvrout%kmax
+!temp: Code missing to write hourly values
+                if (j == WF_RTE_frsvrout%KHLY) cycle
+                if (btest(WF_RTE_frsvrout%freq, j)) then
+                    do i = 1, fms%rsvr%n
+                        iun = WF_RTE_frsvrout%fls%fl(j)%iun + i
+                        write(ffmti, '(i3)') i
+                        fn = trim(adjustl(WF_RTE_frsvrout%fls%fl(j)%fn))
+                        call insertstr(fn, trim(adjustl(ffmti)), index(fn, 'reach') + len_trim('reach'))
+                        open(iun, &
+                             file = './' // trim(fls%GENDIR_OUT) // '/' // fn, &
+                             status = 'unknown', action = 'write', &
+                             iostat = ierr)
+                        if (WF_RTE_frsvrout%fout_header) then
+                            write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
+                            if (j == WF_RTE_frsvrout%KTS .or. j == WF_RTE_frsvrout%KHLY) write(iun, 1010, advance = 'no') VN_HOUR
+                            if (j == WF_RTE_frsvrout%KTS) write(iun, 1010, advance = 'no') VN_MINS
+                            write(iun, 1010, advance = 'no') VN_QI, VN_STGCH, VN_QO
+                            write(iun, *)
+                        end if
+                    end do
+                end if
+            end do
+
+            iun = 707
+            open(iun, file = './' // trim(fls%GENDIR_OUT) // '/' // 'MESH_output_lake_level.csv', &
+                 status = 'unknown', action = 'write')
+            write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
+            do l = 1, fms%rsvr%n
+                write(ffmti, '(i3)') l
+                write(iun, 1010, advance = 'no') VN_ZLVL // trim(adjustl(ffmti))
+            end do
+            write(iun, *)
         end if
 
-        !> Daily.
-        if (btest(BASINAVGEVPFILEFLAG, 0)) then
-            open(910, file = './' // trim(fls%GENDIR_OUT) // '/' // '/Basin_average_evap.csv')
-            call allocate_evp_out(shd, out%d)
-            call update_evp_header(fls, shd, 910, 86400)
+        if (NS > 0) then
+            allocate(WF_QHYD_CUM(NS))
+            WF_QHYD_CUM = 0.0
+
+            if (len_trim(STREAMFLOWOUTFLAG) == 0) STREAMFLOWOUTFLAG = 'STREAMFLOWOUTFLAG default'
+            call parse(STREAMFLOWOUTFLAG, ' ', out_args, nargs)
+            WF_RTE_fstflout%freq = 0
+            do j = 2, nargs
+                select case (lowercase(out_args(j)))
+                    case ('daily')
+                        WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
+                    case ('ts')
+                        WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
+                    case ('bal')
+                        WF_RTE_fstflout%fout_bal = .true.
+                    case ('acc')
+                        WF_RTE_fstflout%fout_acc = .true.
+                    case ('default')
+                        WF_RTE_fstflout%freq = radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
+                        WF_RTE_fstflout%fout_hyd = .true.
+                        WF_RTE_fstflout%fout_bal = .false.
+                        WF_RTE_fstflout%fout_acc = .false.
+                        WF_RTE_fstflout%fout_header = .true.
+                        exit
+                    case ('no_header')
+                        WF_RTE_fstflout%fout_header = .false.
+                    case ('all')
+                        WF_RTE_fstflout%freq = radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
+                        WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
+                        WF_RTE_fstflout%fout_hyd = .true.
+                        WF_RTE_fstflout%fout_bal = .true.
+                        WF_RTE_fstflout%fout_acc = .true.
+                        exit
+                    case ('none')
+                        WF_RTE_fstflout%freq = 0
+                        exit
+                end select
+            end do
+
+            !> Open output files for streamflow.
+            do j = WF_RTE_fstflout%kmin, WF_RTE_fstflout%kmax
+                if (btest(WF_RTE_fstflout%freq, j)) then
+                    iun = WF_RTE_fstflout%fls%fl(j)%iun
+                    open(iun, &
+                         file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(WF_RTE_fstflout%fls%fl(j)%fn)), &
+                         status = 'unknown', action = 'write', &
+                         iostat = ierr)
+                    if (WF_RTE_fstflout%fout_header) then
+                        write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
+                        if (j == WF_RTE_fstflout%KTS) write(iun, 1010, advance = 'no') VN_HOUR, VN_MINS
+                        do i = 1, fms%stmg%n
+                            write(ffmti, '(i3)') i
+                            if (WF_RTE_fstflout%fout_acc) then
+                                write(iun, 1010, advance = 'no') &
+                                    VN_QO // VN_MEAS // VN_ACC // trim(adjustl(ffmti)), &
+                                    VN_QO // VN_SIM // VN_ACC // trim(adjustl(ffmti))
+                            end if
+                            if (WF_RTE_fstflout%fout_hyd) then
+                                write(iun, 1010, advance = 'no') &
+                                    VN_QO // VN_MEAS // trim(adjustl(ffmti)), VN_QO // VN_SIM // trim(adjustl(ffmti))
+                            end if
+                            if (WF_RTE_fstflout%fout_bal) then
+                                write(iun, 1010, advance = 'no') &
+                                    'RSIM' // trim(adjustl(ffmti)), VN_STGCH // trim(adjustl(ffmti))
+                            end if
+                        end do
+                        write(iun, *)
+                    end if
+                end if
+            end do
         end if
 
-        !> Monthly.
-        if (btest(BASINAVGEVPFILEFLAG, 1)) then
-            open(911, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_Monthly.csv')
-            call allocate_evp_out(shd, out%m)
-            call update_evp_header(fls, shd, 911, 86400)
-        end if
-
-        !> Hourly.
-        if (btest(BASINAVGEVPFILEFLAG, 2)) then
-            open(912, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_Hourly.csv')
-            call allocate_evp_out(shd, out%h)
-            call update_evp_header(fls, shd, 912, 3600)
-        end if
-
-        !> Per time-step.
-        if (btest(BASINAVGEVPFILEFLAG, 3)) then
-            open(913, file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_evap_ts.csv')
-            call allocate_evp_out(shd, out%ts)
-            call update_evp_header(fls, shd, 913, ic%dts)
-        end if
+        !> Allocate output variables.
+        call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_QI, VN_STGCH, VN_QO, VN_ZLVL /))
 
         !> Read initial variables values from file.
         if (RESUMEFLAG == 4) then
@@ -410,6 +649,7 @@ module save_basin_output
         use FLAGS
         use model_dates
         use climate_forcing
+        use txt_io
 
         !> Input variables.
         type(fl_ids) :: fls
@@ -418,7 +658,12 @@ module save_basin_output
 
         !> Local variables.
         integer nmth, ndy, n
-        real dnar
+!-        real dnar
+        integer k, ki, ierr
+        integer l, i, iun
+
+        !> SCA variables
+        real TOTAL_AREA, FRAC, basin_SCA, basin_SWE
 
         !> Return if basin output has been disabled.
 !-        if (BASINBALANCEOUTFLAG == 0) return
@@ -427,15 +672,15 @@ module save_basin_output
 !-        call update_water_balance(shd, cm)
 
         !> For evaporation related outputs.
-        if (BASINAVGEVPFILEFLAG > 0) then
-            bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%ts%grid%et(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
-            bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%ts%grid%potevp(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
-            bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(out%ts%grid%evpb(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
-            bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(out%ts%grid%arrd(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
-        end if
+!-        if (BASINAVGEVPFILEFLAG > 0) then
+!-            bno%evpdts(:)%EVAP = bno%evpdts(:)%EVAP + sum(out%ts%grid%et(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
+!-            bno%evpdts(:)%PEVP = bno%evpdts(:)%PEVP + sum(out%ts%grid%potevp(1:shd%NA)*ic%dts*shd%FRAC)/sum(shd%FRAC)
+!-            bno%evpdts(:)%EVPB = bno%evpdts(:)%EVPB + sum(out%ts%grid%evpb(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
+!-            bno%evpdts(:)%ARRD = bno%evpdts(:)%ARRD + sum(out%ts%grid%arrd(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
+!-        end if
 
         !> Update the energy balance.
-        call update_energy_balance(shd, cm)
+!-        call update_energy_balance(shd, cm)
 
         !> Hourly: IKEY_HLY
         if (ic%now%hour /= ic%next%hour) then
@@ -452,11 +697,11 @@ module save_basin_output
                 end if
 !-                call reset_water_balance(IKEY_HLY)
             end if
-            if (btest(BASINAVGEVPFILEFLAG, 2)) call update_evp(fls, shd, 912, 3600, IKEY_HLY)
+            if (btest(bnoflg%evp%t, 2)) call update_evp(fls, shd, 912, 3600, shd%NAA, out%h)
             if (btest(bnoflg%eb%t, 2)) then
-                call save_energy_balance(shd, 3600, IKEY_HLY)
+!-                call save_energy_balance(shd, 3600, IKEY_HLY)
                 call write_energy_balance(fls, shd, 906, 3600, shd%NAA, out%h)
-                call reset_energy_balance(IKEY_HLY)
+!-                call reset_energy_balance(IKEY_HLY)
             end if
         end if
 
@@ -475,11 +720,11 @@ module save_basin_output
                 end if
 !-                call reset_water_balance(IKEY_DLY)
             end if
-            if (btest(BASINAVGEVPFILEFLAG, 0)) call update_evp(fls, shd, 910, 86400, IKEY_DLY)
+            if (btest(bnoflg%evp%t, 0)) call update_evp(fls, shd, 910, 86400, shd%NAA, out%d)
             if (btest(bnoflg%eb%t, 0)) then
-                call save_energy_balance(shd, 86400, IKEY_DLY)
+!-                call save_energy_balance(shd, 86400, IKEY_DLY)
                 call write_energy_balance(fls, shd, 901, 86400, shd%NAA, out%d)
-                call reset_energy_balance(IKEY_DLY)
+!-                call reset_energy_balance(IKEY_DLY)
             end if
         end if
 
@@ -505,11 +750,11 @@ module save_basin_output
                     end if
 !-                    call reset_water_balance(IKEY_MLY)
                 end if
-                if (btest(BASINAVGEVPFILEFLAG, 1)) call update_evp(fls, shd, 911, (86400*ndy), IKEY_MLY)
+                if (btest(bnoflg%evp%t, 1)) call update_evp(fls, shd, 911, (86400*ndy), shd%NAA, out%m)
                 if (btest(bnoflg%eb%t, 1)) then
-                    call save_energy_balance(shd, (86400*ndy), IKEY_MLY)
+!-                    call save_energy_balance(shd, (86400*ndy), IKEY_MLY)
                     call write_energy_balance(fls, shd, 905, (86400*ndy), shd%NAA, out%m)
-                    call reset_energy_balance(IKEY_MLY)
+!-                    call reset_energy_balance(IKEY_MLY)
                 end if
             end if
         end if
@@ -527,11 +772,134 @@ module save_basin_output
             end if
 !-            call reset_water_balance(IKEY_TSP)
         end if
-        if (btest(BASINAVGEVPFILEFLAG, 3)) call update_evp(fls, shd, 913, ic%dts, IKEY_TSP)
+        if (btest(bnoflg%evp%t, 3)) call update_evp(fls, shd, 913, ic%dts, shd%NAA, out%ts)
         if (btest(bnoflg%eb%t, 3)) then
-            call save_energy_balance(shd, ic%dts, IKEY_TSP)
+!-            call save_energy_balance(shd, ic%dts, IKEY_TSP)
             call write_energy_balance(fls, shd, 907, ic%dts, shd%NAA, out%ts)
-            call reset_energy_balance(IKEY_TSP)
+!-            call reset_energy_balance(IKEY_TSP)
+        end if
+
+        !> calculate and write the basin avg SCA similar to watclass3.0f5
+        !> Same code than in wf_ensim.f subrutine of watclass3.0f8
+        !> Especially for version MESH_Prototype 3.3.1.7b (not to be incorporated in future versions)
+        !> calculate and write the basin avg SWE using the similar fudge factor!!!
+        if (BASINSWEOUTFLAG > 0) then
+
+            if (ic%now%hour == 12 .and. ic%now%mins == 0) then
+                basin_SCA = 0.0
+                basin_SWE = 0.0
+                TOTAL_AREA = sum(shd%FRAC)
+                do k = 1, shd%lc%NML
+                    ki = shd%lc%ILMOS(k)
+                    FRAC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))
+                    basin_SCA = basin_SCA + vs%tile%fsno(k)*FRAC
+                    basin_SWE = basin_SWE + vs%tile%sno(k)*FRAC
+                end do
+                basin_SCA = basin_SCA/TOTAL_AREA
+                basin_SWE = basin_SWE/TOTAL_AREA
+                if (BASINSWEOUTFLAG > 0) then
+                    write(85, "(i5,',', f10.3)") ic%now%jday, basin_SCA
+                    write(86, "(i5,',', f10.3)") ic%now%jday, basin_SWE
+                end if
+            end if
+
+        end if !(ipid == 0) then
+
+        if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0 .and. ro%RUNCHNL) then
+
+            where (shd%DA > 0.0)
+                WF_QO2_ACC_MM = WF_QO2_ACC_MM + vs%grid%qo/shd%DA/1000.0*RTE_TS
+                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + vs%grid%stgch/shd%DA/1000.0
+            elsewhere
+                WF_QO2_ACC_MM = out%NO_DATA
+                WF_STORE2_ACC_MM = out%NO_DATA
+            end where
+
+            !> Write per time-step output for reaches.
+            !> Divide by number of time-steps in routing time-step to resolve issues when RTE_TS > ic%dts.
+            if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KTS)) then
+                do l = 1, fms%rsvr%n
+                    iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun + l
+                    write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
+                    write(iun, 1010, advance = 'no') &
+                        out%ts%grid%qi(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+                        out%ts%grid%stgch(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+                        out%ts%grid%qo(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts)
+                    write(iun, *)
+                end do
+            end if
+
+            !> Write per time-step output for streamflow.
+            !> Divide by number of time-steps in routing time-step to resolve issues when RTE_TS > ic%dts.
+            if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KTS)) then
+                iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun
+                write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
+                do i = 1, fms%stmg%n
+!todo
+                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
+                    if (WF_RTE_fstflout%fout_hyd) then
+                        write(iun, 1010, advance = 'no') &
+                            fms%stmg%qomeas%val(i), &
+                            out%ts%grid%qo(fms%stmg%meta%rnk(i))/real(RTE_TS/ic%dts)
+                    end if
+!todo
+                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
+                end do
+                write(iun, *)
+            end if
+
+        end if
+
+        !> This occurs the last time-step of the day.
+        if (ic%now%day /= ic%next%day .and. ro%RUNCHNL) then
+
+            if (fms%rsvr%n > 0) then
+                where (out%d%grid%stgch(fms%rsvr%meta%rnk(:)) > 0.0 .and. fms%rsvr%rls%area > 0.0)
+                    out%d%grid%zlvl(fms%rsvr%meta%rnk(:)) = out%d%grid%stgch(fms%rsvr%meta%rnk(:))/fms%rsvr%rls%area
+                elsewhere
+                    out%d%grid%zlvl(fms%rsvr%meta%rnk(:)) = out%NO_DATA
+                end where
+                iun = 707
+                write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
+                write(iun, 1010, advance = 'no') (out%d%grid%zlvl(fms%rsvr%meta%rnk(l)), l = 1, fms%rsvr%n)
+                write(iun, *)
+                if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KDLY)) then
+                    do l = 1, fms%rsvr%n
+                        iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun + l
+                        write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
+                        write(iun, 1010, advance = 'no') &
+                            out%d%grid%qi(fms%rsvr%meta%rnk(l)), &
+                            out%d%grid%stgch(fms%rsvr%meta%rnk(l)), &
+                            out%d%grid%qo(fms%rsvr%meta%rnk(l))
+                        write(iun, *)
+                    end do
+                end if
+            end if
+
+            do i = 1, fms%stmg%n
+                if (fms%stmg%qomeas%val(i) /= fms%stmg%qomeas%val(i)) then
+                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + fms%stmg%qomeas%val(i)
+                else
+                    WF_QHYD_CUM(i) = out%NO_DATA
+                end if
+            end do
+
+            !> Write daily output for streamflow.
+            if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KDLY)) then
+                WF_QO2_ACC = WF_QO2_ACC + out%d%grid%qo
+                where (WF_STORE2_ACC_MM /= out%NO_DATA) WF_STORE2_ACC_MM = WF_STORE2_ACC_MM/ic%ts_count
+                iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun
+                write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
+                do i = 1, fms%stmg%n
+                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') &
+                        WF_QHYD_CUM(i), WF_QO2_ACC(fms%stmg%meta%rnk(i))
+                    if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') &
+                        fms%stmg%qomeas%val(i), out%d%grid%qo(fms%stmg%meta%rnk(i))
+                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') &
+                        WF_QO2_ACC_MM(fms%stmg%meta%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%meta%rnk(i))
+                end do
+                write(iun, *)
+            end if
         end if
 
 1010    format(9999(g15.7e2, ','))
@@ -766,20 +1134,20 @@ module save_basin_output
 
     end subroutine
 
-    subroutine update_water_balance(shd, cm)
+!-    subroutine update_water_balance(shd, cm)
 
         !> For 'shd' variable type and output variables.
-        use sa_mesh_common
+!-        use sa_mesh_common
 
         !> For 'cm' variable type.
-        use climate_forcing
+!-        use climate_forcing
 
         !> For 'ic' variable.
-        use model_dates
+!-        use model_dates
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+!-        type(ShedGridParams) :: shd
+!-        type(clim_info) :: cm
 
         !> Local variables.
 !-        real, dimension(:), allocatable :: PRE, EVAP, ROF, ROFO, ROFS, ROFB, RCAN, SNCAN, SNO, WSNO, PNDW, LZS, DZS
@@ -853,16 +1221,16 @@ module save_basin_output
 !-            bno%wb(ikey)%DZS = bno%wb(ikey)%DZS + DZS
 !-        end do
 
-    end subroutine
+!-    end subroutine
 
-    subroutine save_water_balance(shd, dts, ikdts)
+!-    subroutine save_water_balance(shd, dts, ikdts)
 
-        use sa_mesh_common
-        use model_dates
+!-        use sa_mesh_common
+!-        use model_dates
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        integer dts, ikdts
+!-        type(ShedGridParams) :: shd
+!-        integer dts, ikdts
 
         !> Local variables.
 !-        real dnts
@@ -894,7 +1262,7 @@ module save_basin_output
 !-                                    bno%wb(IKEY_ACC)%LZS + bno%wb(IKEY_ACC)%DZS) &
 !-                                   /ic%ts_count
 
-    end subroutine
+!-    end subroutine
 
     subroutine write_water_balance_header(fls, shd, fik, dts)
 
@@ -988,10 +1356,10 @@ module save_basin_output
 
     end subroutine
 
-    subroutine reset_water_balance(ikdts)
+!-    subroutine reset_water_balance(ikdts)
 
         !> Input variables.
-        integer ikdts
+!-        integer ikdts
 
         !> Update the final storage.
 !-        bno%wb(ikdts)%STG_INI = bno%wb(ikdts)%STG_FIN
@@ -1011,7 +1379,7 @@ module save_basin_output
 !-        bno%wb(ikdts)%LQWS = 0.0
 !-        bno%wb(ikdts)%FRWS = 0.0
 
-    end subroutine
+!-    end subroutine
 
     subroutine allocate_evp_out(shd, series)
 
@@ -1027,11 +1395,11 @@ module save_basin_output
         type(output_series) series
 
         !> Allocate output variables.
-        call output_variables_activate(series%grid, (/ VN_DUMMY_LENGTH, VN_ET, VN_POTEVP, VN_EVPB, VN_ARRD /))
+        call output_variables_activate(series%basin, (/ VN_DUMMY_LENGTH, VN_ET, VN_POTEVP, VN_EVPB, VN_ARRD /))
 
     end subroutine
 
-    subroutine update_evp(fls, shd, fik, dts, ikdts)
+    subroutine update_evp(fls, shd, fik, dts, ina, series)
 
         use model_files_variables
         use sa_mesh_common
@@ -1042,7 +1410,8 @@ module save_basin_output
         type(ShedGridParams) :: shd
 !todo: change this to the unit attribute of the file object.
         integer fik
-        integer dts, ikdts
+        integer dts, ina
+        type(output_series) series
 
         !> Local variables.
         real dnts
@@ -1051,8 +1420,8 @@ module save_basin_output
         dnts = real(dts/ic%dts)
 
         !> Average of the storage components.
-        bno%evpdts(ikdts)%EVPB = bno%evpdts(ikdts)%EVPB/dnts
-        bno%evpdts(ikdts)%ARRD = bno%evpdts(ikdts)%ARRD/dnts
+!-        bno%evpdts(ikdts)%EVPB = bno%evpdts(ikdts)%EVPB/dnts
+!-        bno%evpdts(ikdts)%ARRD = bno%evpdts(ikdts)%ARRD/dnts
 
         !> Write the time-stamp for the period.
         write(fik, 1010, advance = 'no') ic%now%year
@@ -1061,13 +1430,14 @@ module save_basin_output
         if (dts < 3600) write(fik, 1010, advance = 'no') ic%now%mins
 
         !> Write the water balance to file.
-        write(fik, 1010) bno%evpdts(ikdts)%EVAP, bno%evpdts(ikdts)%PEVP, bno%evpdts(ikdts)%EVPB, bno%evpdts(ikdts)%ARRD
+        write(fik, 1010) &
+            series%basin%ET(ina)*ic%dts, series%basin%POTEVP(ina)*ic%dts, series%basin%EVPB(ina), series%basin%ARRD(ina)
 
         !> Reset the accumulation for time-averaged output.
-        bno%evpdts(ikdts)%EVAP = 0.0
-        bno%evpdts(ikdts)%PEVP = 0.0
-        bno%evpdts(ikdts)%EVPB = 0.0
-        bno%evpdts(ikdts)%ARRD = 0.0
+!-        bno%evpdts(ikdts)%EVAP = 0.0
+!-        bno%evpdts(ikdts)%PEVP = 0.0
+!-        bno%evpdts(ikdts)%EVPB = 0.0
+!-        bno%evpdts(ikdts)%ARRD = 0.0
 
 1010    format(9999(g15.7e2, ','))
 
@@ -1118,20 +1488,20 @@ module save_basin_output
 
     end subroutine
 
-    subroutine update_energy_balance(shd, cm)
+!-    subroutine update_energy_balance(shd, cm)
 
         !> For 'shd' variable type and output variables.
-        use sa_mesh_common
+!-        use sa_mesh_common
 
         !> For 'cm' variable type.
-        use climate_forcing
+!-        use climate_forcing
 
         !> For 'ic' variable.
-        use model_dates
+!-        use model_dates
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        type(clim_info) :: cm
+!-        type(ShedGridParams) :: shd
+!-        type(clim_info) :: cm
 
         !> Local variables.
 !-        integer, dimension(:), allocatable :: &
@@ -1250,16 +1620,16 @@ module save_basin_output
 !-            bno%eb(ikey)%GZERO = bno%eb(ikey)%GZERO + GZERO
 !-        end do
 
-    end subroutine
+!-    end subroutine
 
-    subroutine save_energy_balance(shd, dts, ikdts)
+!-    subroutine save_energy_balance(shd, dts, ikdts)
 
-        use sa_mesh_common
-        use model_dates
+!-        use sa_mesh_common
+!-        use model_dates
 
         !> Input variables.
-        type(ShedGridParams) :: shd
-        integer dts, ikdts
+!-        type(ShedGridParams) :: shd
+!-        integer dts, ikdts
 
         !> Local variables.
 !-        real dnts
@@ -1296,7 +1666,7 @@ module save_basin_output
 !-        bno%eb(ikdts)%QE = bno%eb(ikdts)%QE/dnts
 !-        bno%eb(ikdts)%GZERO = bno%eb(ikdts)%GZERO/dnts
 
-    end subroutine
+!-    end subroutine
 
     subroutine write_energy_balance_header(fls, shd, fik, dts)
 
@@ -1401,10 +1771,10 @@ module save_basin_output
 
     end subroutine
 
-    subroutine reset_energy_balance(ikdts)
+!-    subroutine reset_energy_balance(ikdts)
 
         !> Input variables.
-        integer ikdts
+!-        integer ikdts
 
         !> Preserve the previous balance value.
 !-        bno%eb(ikdts)%BAL0 = bno%eb(ikdts)%BAL1
@@ -1419,6 +1789,6 @@ module save_basin_output
 !-        bno%eb(ikdts)%TSNOW = 0.0; bno%eb(ikdts)%TPOND = 0.0
 !-        bno%eb(ikdts)%TBAR = 0.0
 
-    end subroutine
+!-    end subroutine
 
 end module

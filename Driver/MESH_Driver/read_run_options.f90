@@ -10,7 +10,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use variable_names
 
     use FLAGS
-    use save_basin_output, only: BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
+    use save_basin_output, only: BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, BASINAVGEVPFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
     use RUNCLASS36_variables
     use RUNCLASS36_save_output
     use runsvs_mesh
@@ -558,46 +558,47 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 
                 !> Basin output files.
                 case ('BASINBALANCEOUTFLAG')
-                    if (args(2) == '0' .or. lowercase(args(2)) == 'off' .or. lowercase(args(2)) == 'none') then
-                        BASINAVGEBFILEFLAG = 'none'
-                        BASINAVGWBFILEFLAG = 'none'
-                    end if
-                case ('BASINAVGEBFILEFLAG')
+                    BASINAVGWBFILEFLAG = adjustl(line)
                     BASINAVGEBFILEFLAG = adjustl(line)
+                    BASINAVGEVPFILEFLAG = adjustl(line)
                 case ('BASINAVGWBFILEFLAG')
                     BASINAVGWBFILEFLAG = adjustl(line)
+                case ('BASINAVGEBFILEFLAG')
+                    BASINAVGEBFILEFLAG = adjustl(line)
+                case ('BASINAVGEVPFILEFLAG')
+                    BASINAVGEVPFILEFLAG = adjustl(line)
                 case ('STREAMFLOWOUTFLAG')
                     STREAMFLOWOUTFLAG = adjustl(line)
                 case ('REACHOUTFLAG')
                     REACHOUTFLAG = adjustl(line)
 
                 !> Time-averaged basin PEVP-EVAP and EVPB output.
-                case ('BASINAVGEVPFILEFLAG')
-                    BASINAVGEVPFILEFLAG = 0
-                    do j = 2, nargs
-                        select case (lowercase(args(j)))
-                            case ('daily')
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 1
-                            case ('monthly')
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 2
-                            case ('hourly')
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
-                            case ('ts')
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
-                            case ('all')
-                                BASINAVGEVPFILEFLAG = 1
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 2
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
-                                exit
-                            case ('default')
-                                BASINAVGEVPFILEFLAG = 1
-                                exit
-                            case ('none')
-                                BASINAVGEVPFILEFLAG = 0
-                                exit
-                        end select
-                    end do
+!-                case ('BASINAVGEVPFILEFLAG')
+!-                    BASINAVGEVPFILEFLAG = 0
+!-                    do j = 2, nargs
+!-                        select case (lowercase(args(j)))
+!-                            case ('daily')
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 1
+!-                            case ('monthly')
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 2
+!-                            case ('hourly')
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
+!-                            case ('ts')
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
+!-                            case ('all')
+!-                                BASINAVGEVPFILEFLAG = 1
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 2
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
+!-                                exit
+!-                            case ('default')
+!-                                BASINAVGEVPFILEFLAG = 1
+!-                                exit
+!-                            case ('none')
+!-                                BASINAVGEVPFILEFLAG = 0
+!-                                exit
+!-                        end select
+!-                    end do
 
                 case ('BASINSWEOUTFLAG')
                     call value(args(2), BASINSWEOUTFLAG, z)

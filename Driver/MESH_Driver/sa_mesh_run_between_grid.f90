@@ -10,7 +10,7 @@ module sa_mesh_run_between_grid
     use mpi_module
 
 !temp: Outputs.
-    use model_files_variabletypes, only: fl_ids
+!-    use model_files_variabletypes, only: fl_ids
 
     implicit none
 
@@ -26,14 +26,14 @@ module sa_mesh_run_between_grid
     !*  fout_acc: .true. to print accumulated (cumulative) observed and simulated values (optional).
     !*  fout_header: .true. to print header (default).
     !*  fls: Output file definitions.
-    type WF_RTE_fout_stfl
-        integer :: KDLY = 0, KTS = 1
-        integer :: kmin = 0, kmax = 1
-        integer :: freq = 1
-        logical :: fout_hyd = .true., fout_bal = .false., fout_acc = .false.
-        logical :: fout_header = .true.
-        type(fl_ids) :: fls
-    end type
+!-    type WF_RTE_fout_stfl
+!-        integer :: KDLY = 0, KTS = 1
+!-        integer :: kmin = 0, kmax = 1
+!-        integer :: freq = 1
+!-        logical :: fout_hyd = .true., fout_bal = .false., fout_acc = .false.
+!-        logical :: fout_header = .true.
+!-        type(fl_ids) :: fls
+!-    end type
 
     !> Variable type: WF_RTE_fout_rsvr
     !>  Description: Internal file keys used for output files for lakes and reservoirs.
@@ -43,24 +43,24 @@ module sa_mesh_run_between_grid
     !*  freq: Time intervals of the output (ts).
     !*  fout_header: .true. to print header (default).
     !*  fls: Output file definitions.
-    type WF_RTE_fout_rsvr
-        integer :: KDLY = 0, KTS = 1, KHLY = 2
-        integer :: kmin = 0, kmax = 2
-        integer :: freq = 0
-        logical :: fout_header = .true.
-        type(fl_ids) :: fls
-    end type
+!-    type WF_RTE_fout_rsvr
+!-        integer :: KDLY = 0, KTS = 1, KHLY = 2
+!-        integer :: kmin = 0, kmax = 2
+!-        integer :: freq = 0
+!-        logical :: fout_header = .true.
+!-        type(fl_ids) :: fls
+!-    end type
 
     !> Output files
-    type(WF_RTE_fout_stfl), save :: WF_RTE_fstflout
-    type(WF_RTE_fout_rsvr), save :: WF_RTE_frsvrout
+!-    type(WF_RTE_fout_stfl), save :: WF_RTE_fstflout
+!-    type(WF_RTE_fout_rsvr), save :: WF_RTE_frsvrout
 
-    real, dimension(:), allocatable :: WF_QHYD_CUM
+!-    real, dimension(:), allocatable :: WF_QHYD_CUM
 
 !todo: Move to ro%?
-    integer RTE_TS
+!-    integer RTE_TS
 
-    real, dimension(:), allocatable :: WF_QO2_ACC, WF_QO2_ACC_MM, WF_STORE2_ACC_MM
+!-    real, dimension(:), allocatable :: WF_QO2_ACC, WF_QO2_ACC_MM, WF_STORE2_ACC_MM
 
     contains
 
@@ -73,9 +73,9 @@ module sa_mesh_run_between_grid
         use cropland_irrigation_between_grid
 
 !temp: Outputs.
-        use save_basin_output, only: STREAMFLOWOUTFLAG, REACHOUTFLAG
-        use FLAGS
-        use strings
+!-        use save_basin_output, only: STREAMFLOWOUTFLAG, REACHOUTFLAG
+!-        use FLAGS
+!-        use strings
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -83,192 +83,192 @@ module sa_mesh_run_between_grid
         type(clim_info) cm
 
         !> Local variables.
-        integer, parameter :: MaxLenField = 20, MaxArgs = 20, MaxLenLine = 100
-        integer NA
-        integer NS, NR
-        character(len = 4) ffmti
-        character(len = 500) fn
-        integer iun, ierr, l, j, i
-        character(MaxLenField), dimension(MaxArgs) :: out_args
-        integer nargs
+!-        integer, parameter :: MaxLenField = 20, MaxArgs = 20, MaxLenLine = 100
+!-        integer NA
+!-        integer NS, NR
+!-        character(len = 4) ffmti
+!-        character(len = 500) fn
+!-        integer iun, ierr, l, j, i
+!-        character(MaxLenField), dimension(MaxArgs) :: out_args
+!-        integer nargs
 
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
-        if (BASINSWEOUTFLAG > 0) then
-            open(85, file = './' // trim(fls%GENDIR_OUT) // '/basin_SCA_alldays.csv')
-            open(86, file = './' // trim(fls%GENDIR_OUT) // '/basin_SWE_alldays.csv')
-        end if !(BASINSWEOUTFLAG > 0) then
+!-        if (BASINSWEOUTFLAG > 0) then
+!-            open(85, file = './' // trim(fls%GENDIR_OUT) // '/basin_SCA_alldays.csv')
+!-            open(86, file = './' // trim(fls%GENDIR_OUT) // '/basin_SWE_alldays.csv')
+!-        end if !(BASINSWEOUTFLAG > 0) then
 
-        RTE_TS = ic%dts
-        if (WF_RTE_flgs%PROCESS_ACTIVE) RTE_TS = WF_RTE_flgs%RTE_TS
-        if (rteflg%PROCESS_ACTIVE) RTE_TS = rteflg%RTE_TS
+!-        RTE_TS = ic%dts
+!-        if (WF_RTE_flgs%PROCESS_ACTIVE) RTE_TS = WF_RTE_flgs%RTE_TS
+!-        if (rteflg%PROCESS_ACTIVE) RTE_TS = rteflg%RTE_TS
 
-        NA = shd%NA
-        NR = fms%rsvr%n
-        NS = fms%stmg%n
+!-        NA = shd%NA
+!-        NR = fms%rsvr%n
+!-        NS = fms%stmg%n
 
         !> Allocate file object.
-        allocate( &
-            WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%kmin:WF_RTE_fstflout%kmax), &
-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%kmin:WF_RTE_frsvrout%kmax))
-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%fn = 'MESH_output_streamflow.csv'
-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun = 70
-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%fn = 'MESH_output_streamflow_ts.csv'
-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun = 71
+!-        allocate( &
+!-            WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%kmin:WF_RTE_fstflout%kmax), &
+!-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%kmin:WF_RTE_frsvrout%kmax))
+!-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%fn = 'MESH_output_streamflow.csv'
+!-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun = 70
+!-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%fn = 'MESH_output_streamflow_ts.csv'
+!-        WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun = 71
 
-        allocate(WF_QO2_ACC(NA), WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
-        WF_QO2_ACC = 0.0
-        WF_QO2_ACC_MM = 0.0
-        WF_STORE2_ACC_MM = 0.0
+!-        allocate(WF_QO2_ACC(NA), WF_QO2_ACC_MM(NA), WF_STORE2_ACC_MM(NA))
+!-        WF_QO2_ACC = 0.0
+!-        WF_QO2_ACC_MM = 0.0
+!-        WF_STORE2_ACC_MM = 0.0
 
-        if (NR > 0) then
+!-        if (NR > 0) then
 
-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%fn = 'MESH_output_reach.csv'
-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun = 708
-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%fn = 'MESH_output_reach_ts.csv'
-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun = 708+NR
-!            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%fn = 'MESH_output_reach_Hourly.csv'
-!            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%iun = 708+(NR*2)
+!-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%fn = 'MESH_output_reach.csv'
+!-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun = 708
+!-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%fn = 'MESH_output_reach_ts.csv'
+!-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun = 708+NR
+!-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%fn = 'MESH_output_reach_Hourly.csv'
+!-            WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KHLY)%iun = 708+(NR*2)
 
-            if (len_trim(REACHOUTFLAG) == 0) REACHOUTFLAG = 'REACHOUTFLAG default'
-            call parse(REACHOUTFLAG, ' ', out_args, nargs)
-            WF_RTE_frsvrout%freq = 0
-            do j = 2, nargs
-                select case (lowercase(out_args(j)))
-                    case ('daily')
-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KDLY)**WF_RTE_frsvrout%KDLY
-                    case ('ts')
-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
-                    case ('hourly')
-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KHLY)**WF_RTE_frsvrout%KHLY
-                    case ('default')
-                        WF_RTE_frsvrout%freq = 0
-                        exit
-                    case ('no_header')
-                        WF_RTE_frsvrout%fout_header = .false.
-                    case ('all')
-                        WF_RTE_frsvrout%freq = 0
-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KDLY)**WF_RTE_frsvrout%KDLY
-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KHLY)**WF_RTE_frsvrout%KHLY
-                        exit
-                    case ('none')
-                        WF_RTE_frsvrout%freq = 0
-                        exit
-                end select
-            end do
+!-            if (len_trim(REACHOUTFLAG) == 0) REACHOUTFLAG = 'REACHOUTFLAG default'
+!-            call parse(REACHOUTFLAG, ' ', out_args, nargs)
+!-            WF_RTE_frsvrout%freq = 0
+!-            do j = 2, nargs
+!-                select case (lowercase(out_args(j)))
+!-                    case ('daily')
+!-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KDLY)**WF_RTE_frsvrout%KDLY
+!-                    case ('ts')
+!-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
+!-                    case ('hourly')
+!-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KHLY)**WF_RTE_frsvrout%KHLY
+!-                    case ('default')
+!-                        WF_RTE_frsvrout%freq = 0
+!-                        exit
+!-                    case ('no_header')
+!-                        WF_RTE_frsvrout%fout_header = .false.
+!-                    case ('all')
+!-                        WF_RTE_frsvrout%freq = 0
+!-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KDLY)**WF_RTE_frsvrout%KDLY
+!-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KTS)**WF_RTE_frsvrout%KTS
+!-                        WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KHLY)**WF_RTE_frsvrout%KHLY
+!-                        exit
+!-                    case ('none')
+!-                        WF_RTE_frsvrout%freq = 0
+!-                        exit
+!-                end select
+!-            end do
 
             !> Open output files for reaches.
-            do j = WF_RTE_frsvrout%kmin, WF_RTE_frsvrout%kmax
+!-            do j = WF_RTE_frsvrout%kmin, WF_RTE_frsvrout%kmax
 !temp: Code missing to write hourly values
-                if (j == WF_RTE_frsvrout%KHLY) cycle
-                if (btest(WF_RTE_frsvrout%freq, j)) then
-                    do i = 1, fms%rsvr%n
-                        iun = WF_RTE_frsvrout%fls%fl(j)%iun + i
-                        write(ffmti, '(i3)') i
-                        fn = trim(adjustl(WF_RTE_frsvrout%fls%fl(j)%fn))
-                        call insertstr(fn, trim(adjustl(ffmti)), index(fn, 'reach') + len_trim('reach'))
-                        open(iun, &
-                             file = './' // trim(fls%GENDIR_OUT) // '/' // fn, &
-                             status = 'unknown', action = 'write', &
-                             iostat = ierr)
-                        if (WF_RTE_frsvrout%fout_header) then
-                            write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
-                            if (j == WF_RTE_frsvrout%KTS .or. j == WF_RTE_frsvrout%KHLY) write(iun, 1010, advance = 'no') VN_HOUR
-                            if (j == WF_RTE_frsvrout%KTS) write(iun, 1010, advance = 'no') VN_MINS
-                            write(iun, 1010, advance = 'no') VN_QI, VN_STGCH, VN_QO
-                            write(iun, *)
-                        end if
-                    end do
-                end if
-            end do
+!-                if (j == WF_RTE_frsvrout%KHLY) cycle
+!-                if (btest(WF_RTE_frsvrout%freq, j)) then
+!-                    do i = 1, fms%rsvr%n
+!-                        iun = WF_RTE_frsvrout%fls%fl(j)%iun + i
+!-                        write(ffmti, '(i3)') i
+!-                        fn = trim(adjustl(WF_RTE_frsvrout%fls%fl(j)%fn))
+!-                        call insertstr(fn, trim(adjustl(ffmti)), index(fn, 'reach') + len_trim('reach'))
+!-                        open(iun, &
+!-                             file = './' // trim(fls%GENDIR_OUT) // '/' // fn, &
+!-                             status = 'unknown', action = 'write', &
+!-                             iostat = ierr)
+!-                        if (WF_RTE_frsvrout%fout_header) then
+!-                            write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
+!-                            if (j == WF_RTE_frsvrout%KTS .or. j == WF_RTE_frsvrout%KHLY) write(iun, 1010, advance = 'no') VN_HOUR
+!-                            if (j == WF_RTE_frsvrout%KTS) write(iun, 1010, advance = 'no') VN_MINS
+!-                            write(iun, 1010, advance = 'no') VN_QI, VN_STGCH, VN_QO
+!-                            write(iun, *)
+!-                        end if
+!-                    end do
+!-                end if
+!-            end do
 
-            iun = 707
-            open(iun, file = './' // trim(fls%GENDIR_OUT) // '/' // 'MESH_output_lake_level.csv', &
-                 status = 'unknown', action = 'write')
-            write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
-            do l = 1, fms%rsvr%n
-                write(ffmti, '(i3)') l
-                write(iun, 1010, advance = 'no') VN_ZLVL // trim(adjustl(ffmti))
-            end do
-            write(iun, *)
-        end if
+!-            iun = 707
+!-            open(iun, file = './' // trim(fls%GENDIR_OUT) // '/' // 'MESH_output_lake_level.csv', &
+!-                 status = 'unknown', action = 'write')
+!-            write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
+!-            do l = 1, fms%rsvr%n
+!-                write(ffmti, '(i3)') l
+!-                write(iun, 1010, advance = 'no') VN_ZLVL // trim(adjustl(ffmti))
+!-            end do
+!-            write(iun, *)
+!-        end if
 
-        if (NS > 0) then
-            allocate(WF_QHYD_CUM(NS))
-            WF_QHYD_CUM = 0.0
+!-        if (NS > 0) then
+!-            allocate(WF_QHYD_CUM(NS))
+!-            WF_QHYD_CUM = 0.0
 
-            if (len_trim(STREAMFLOWOUTFLAG) == 0) STREAMFLOWOUTFLAG = 'STREAMFLOWOUTFLAG default'
-            call parse(STREAMFLOWOUTFLAG, ' ', out_args, nargs)
-            WF_RTE_fstflout%freq = 0
-            do j = 2, nargs
-                select case (lowercase(out_args(j)))
-                    case ('daily')
-                        WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
-                    case ('ts')
-                        WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
-                    case ('bal')
-                        WF_RTE_fstflout%fout_bal = .true.
-                    case ('acc')
-                        WF_RTE_fstflout%fout_acc = .true.
-                    case ('default')
-                        WF_RTE_fstflout%freq = radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
-                        WF_RTE_fstflout%fout_hyd = .true.
-                        WF_RTE_fstflout%fout_bal = .false.
-                        WF_RTE_fstflout%fout_acc = .false.
-                        WF_RTE_fstflout%fout_header = .true.
-                        exit
-                    case ('no_header')
-                        WF_RTE_fstflout%fout_header = .false.
-                    case ('all')
-                        WF_RTE_fstflout%freq = radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
-                        WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
-                        WF_RTE_fstflout%fout_hyd = .true.
-                        WF_RTE_fstflout%fout_bal = .true.
-                        WF_RTE_fstflout%fout_acc = .true.
-                        exit
-                    case ('none')
-                        WF_RTE_fstflout%freq = 0
-                        exit
-                end select
-            end do
+!-            if (len_trim(STREAMFLOWOUTFLAG) == 0) STREAMFLOWOUTFLAG = 'STREAMFLOWOUTFLAG default'
+!-            call parse(STREAMFLOWOUTFLAG, ' ', out_args, nargs)
+!-            WF_RTE_fstflout%freq = 0
+!-            do j = 2, nargs
+!-                select case (lowercase(out_args(j)))
+!-                    case ('daily')
+!-                        WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
+!-                    case ('ts')
+!-                        WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
+!-                    case ('bal')
+!-                        WF_RTE_fstflout%fout_bal = .true.
+!-                    case ('acc')
+!-                        WF_RTE_fstflout%fout_acc = .true.
+!-                    case ('default')
+!-                        WF_RTE_fstflout%freq = radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
+!-                        WF_RTE_fstflout%fout_hyd = .true.
+!-                        WF_RTE_fstflout%fout_bal = .false.
+!-                        WF_RTE_fstflout%fout_acc = .false.
+!-                        WF_RTE_fstflout%fout_header = .true.
+!-                        exit
+!-                    case ('no_header')
+!-                        WF_RTE_fstflout%fout_header = .false.
+!-                    case ('all')
+!-                        WF_RTE_fstflout%freq = radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
+!-                        WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KTS)**WF_RTE_fstflout%KTS
+!-                        WF_RTE_fstflout%fout_hyd = .true.
+!-                        WF_RTE_fstflout%fout_bal = .true.
+!-                        WF_RTE_fstflout%fout_acc = .true.
+!-                        exit
+!-                    case ('none')
+!-                        WF_RTE_fstflout%freq = 0
+!-                        exit
+!-                end select
+!-            end do
 
             !> Open output files for streamflow.
-            do j = WF_RTE_fstflout%kmin, WF_RTE_fstflout%kmax
-                if (btest(WF_RTE_fstflout%freq, j)) then
-                    iun = WF_RTE_fstflout%fls%fl(j)%iun
-                    open(iun, &
-                         file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(WF_RTE_fstflout%fls%fl(j)%fn)), &
-                         status = 'unknown', action = 'write', &
-                         iostat = ierr)
-                    if (WF_RTE_fstflout%fout_header) then
-                        write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
-                        if (j == WF_RTE_fstflout%KTS) write(iun, 1010, advance = 'no') VN_HOUR, VN_MINS
-                        do i = 1, fms%stmg%n
-                            write(ffmti, '(i3)') i
-                            if (WF_RTE_fstflout%fout_acc) then
-                                write(iun, 1010, advance = 'no') &
-                                    VN_QO // VN_MEAS // VN_ACC // trim(adjustl(ffmti)), &
-                                    VN_QO // VN_SIM // VN_ACC // trim(adjustl(ffmti))
-                            end if
-                            if (WF_RTE_fstflout%fout_hyd) then
-                                write(iun, 1010, advance = 'no') &
-                                    VN_QO // VN_MEAS // trim(adjustl(ffmti)), VN_QO // VN_SIM // trim(adjustl(ffmti))
-                            end if
-                            if (WF_RTE_fstflout%fout_bal) then
-                                write(iun, 1010, advance = 'no') &
-                                    'RSIM' // trim(adjustl(ffmti)), VN_STGCH // trim(adjustl(ffmti))
-                            end if
-                        end do
-                        write(iun, *)
-                    end if
-                end if
-            end do
-        end if
+!-            do j = WF_RTE_fstflout%kmin, WF_RTE_fstflout%kmax
+!-                if (btest(WF_RTE_fstflout%freq, j)) then
+!-                    iun = WF_RTE_fstflout%fls%fl(j)%iun
+!-                    open(iun, &
+!-                         file = './' // trim(fls%GENDIR_OUT) // '/' // trim(adjustl(WF_RTE_fstflout%fls%fl(j)%fn)), &
+!-                         status = 'unknown', action = 'write', &
+!-                         iostat = ierr)
+!-                    if (WF_RTE_fstflout%fout_header) then
+!-                        write(iun, 1010, advance = 'no') VN_YEAR, VN_JDAY
+!-                        if (j == WF_RTE_fstflout%KTS) write(iun, 1010, advance = 'no') VN_HOUR, VN_MINS
+!-                        do i = 1, fms%stmg%n
+!-                            write(ffmti, '(i3)') i
+!-                            if (WF_RTE_fstflout%fout_acc) then
+!-                                write(iun, 1010, advance = 'no') &
+!-                                    VN_QO // VN_MEAS // VN_ACC // trim(adjustl(ffmti)), &
+!-                                    VN_QO // VN_SIM // VN_ACC // trim(adjustl(ffmti))
+!-                            end if
+!-                            if (WF_RTE_fstflout%fout_hyd) then
+!-                                write(iun, 1010, advance = 'no') &
+!-                                    VN_QO // VN_MEAS // trim(adjustl(ffmti)), VN_QO // VN_SIM // trim(adjustl(ffmti))
+!-                            end if
+!-                            if (WF_RTE_fstflout%fout_bal) then
+!-                                write(iun, 1010, advance = 'no') &
+!-                                    'RSIM' // trim(adjustl(ffmti)), VN_STGCH // trim(adjustl(ffmti))
+!-                            end if
+!-                        end do
+!-                        write(iun, *)
+!-                    end if
+!-                end if
+!-            end do
+!-        end if
 
         !> Allocate output variables.
-        call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_QI, VN_STGCH, VN_QO, VN_ZLVL /))
+!-        call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_QI, VN_STGCH, VN_QO, VN_ZLVL /))
 
         !> Call processes.
         call SA_RTE_init(shd)
@@ -279,7 +279,7 @@ module sa_mesh_run_between_grid
         !> Update basin variables.
         call run_within_grid_stas_basin_update(fls, shd, cm)
 
-1010    format(9999(g15.7e2, ','))
+!-1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
@@ -292,7 +292,7 @@ module sa_mesh_run_between_grid
         use cropland_irrigation_between_grid
 
 !temp: Outputs.
-        use FLAGS
+!-        use FLAGS
         use txt_io
 
         !> Input/output variables.
@@ -301,13 +301,14 @@ module sa_mesh_run_between_grid
         type(clim_info) cm
 
         !> Local variables.
-        integer k, ki, ierr
+!-        integer k, ki
+        integer ierr
 
         !> Local variables.
-        integer l, i, iun
+!-        integer l, i, iun
 
         !> SCA variables
-        real TOTAL_AREA, FRAC, basin_SCA, basin_SWE
+!-        real TOTAL_AREA, FRAC, basin_SCA, basin_SWE
 
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
@@ -348,27 +349,27 @@ module sa_mesh_run_between_grid
         !> Same code than in wf_ensim.f subrutine of watclass3.0f8
         !> Especially for version MESH_Prototype 3.3.1.7b (not to be incorporated in future versions)
         !> calculate and write the basin avg SWE using the similar fudge factor!!!
-        if (BASINSWEOUTFLAG > 0) then
+!-        if (BASINSWEOUTFLAG > 0) then
 
-            if (ic%now%hour == 12 .and. ic%now%mins == 0) then
-                basin_SCA = 0.0
-                basin_SWE = 0.0
-                TOTAL_AREA = sum(shd%FRAC)
-                do k = 1, shd%lc%NML
-                    ki = shd%lc%ILMOS(k)
-                    FRAC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))
-                    basin_SCA = basin_SCA + vs%tile%fsno(k)*FRAC
-                    basin_SWE = basin_SWE + vs%tile%sno(k)*FRAC
-                end do
-                basin_SCA = basin_SCA/TOTAL_AREA
-                basin_SWE = basin_SWE/TOTAL_AREA
-                if (BASINSWEOUTFLAG > 0) then
-                    write(85, "(i5,',', f10.3)") ic%now%jday, basin_SCA
-                    write(86, "(i5,',', f10.3)") ic%now%jday, basin_SWE
-                end if
-            end if
+!-            if (ic%now%hour == 12 .and. ic%now%mins == 0) then
+!-                basin_SCA = 0.0
+!-                basin_SWE = 0.0
+!-                TOTAL_AREA = sum(shd%FRAC)
+!-                do k = 1, shd%lc%NML
+!-                    ki = shd%lc%ILMOS(k)
+!-                    FRAC = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%FRAC(shd%lc%ILMOS(k))
+!-                    basin_SCA = basin_SCA + vs%tile%fsno(k)*FRAC
+!-                    basin_SWE = basin_SWE + vs%tile%sno(k)*FRAC
+!-                end do
+!-                basin_SCA = basin_SCA/TOTAL_AREA
+!-                basin_SWE = basin_SWE/TOTAL_AREA
+!-                if (BASINSWEOUTFLAG > 0) then
+!-                    write(85, "(i5,',', f10.3)") ic%now%jday, basin_SCA
+!-                    write(86, "(i5,',', f10.3)") ic%now%jday, basin_SWE
+!-                end if
+!-            end if
 
-        end if !(ipid == 0) then
+!-        end if !(ipid == 0) then
 
         !> Update variables.
         if (ro%RUNLSS) then
@@ -389,104 +390,104 @@ module sa_mesh_run_between_grid
 !todo: remove this when code for output files has moved.
         call output_variables_update(shd)
 
-        if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0 .and. ro%RUNCHNL) then
+!-        if (mod(ic%ts_hourly*ic%dts, RTE_TS) == 0 .and. ro%RUNCHNL) then
 
-            where (shd%DA > 0.0)
-                WF_QO2_ACC_MM = WF_QO2_ACC_MM + vs%grid%qo/shd%DA/1000.0*RTE_TS
-                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + vs%grid%stgch/shd%DA/1000.0
-            elsewhere
-                WF_QO2_ACC_MM = out%NO_DATA
-                WF_STORE2_ACC_MM = out%NO_DATA
-            end where
+!-            where (shd%DA > 0.0)
+!-                WF_QO2_ACC_MM = WF_QO2_ACC_MM + vs%grid%qo/shd%DA/1000.0*RTE_TS
+!-                WF_STORE2_ACC_MM = WF_STORE2_ACC_MM + vs%grid%stgch/shd%DA/1000.0
+!-            elsewhere
+!-                WF_QO2_ACC_MM = out%NO_DATA
+!-                WF_STORE2_ACC_MM = out%NO_DATA
+!-            end where
 
             !> Write per time-step output for reaches.
             !> Divide by number of time-steps in routing time-step to resolve issues when RTE_TS > ic%dts.
-            if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KTS)) then
-                do l = 1, fms%rsvr%n
-                    iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun + l
-                    write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
-                    write(iun, 1010, advance = 'no') &
-                        out%ts%grid%qi(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
-                        out%ts%grid%stgch(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
-                        out%ts%grid%qo(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts)
-                    write(iun, *)
-                end do
-            end if
+!-            if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KTS)) then
+!-                do l = 1, fms%rsvr%n
+!-                    iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KTS)%iun + l
+!-                    write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
+!-                    write(iun, 1010, advance = 'no') &
+!-                        out%ts%grid%qi(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+!-                        out%ts%grid%stgch(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts), &
+!-                        out%ts%grid%qo(fms%rsvr%meta%rnk(l))/real(RTE_TS/ic%dts)
+!-                    write(iun, *)
+!-                end do
+!-            end if
 
             !> Write per time-step output for streamflow.
             !> Divide by number of time-steps in routing time-step to resolve issues when RTE_TS > ic%dts.
-            if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KTS)) then
-                iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun
-                write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
-                do i = 1, fms%stmg%n
+!-            if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KTS)) then
+!-                iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KTS)%iun
+!-                write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday, ic%now%hour, ic%now%mins
+!-                do i = 1, fms%stmg%n
 !todo
-                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
-                    if (WF_RTE_fstflout%fout_hyd) then
-                        write(iun, 1010, advance = 'no') &
-                            fms%stmg%qomeas%val(i), &
-                            out%ts%grid%qo(fms%stmg%meta%rnk(i))/real(RTE_TS/ic%dts)
-                    end if
+!-                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
+!-                    if (WF_RTE_fstflout%fout_hyd) then
+!-                        write(iun, 1010, advance = 'no') &
+!-                            fms%stmg%qomeas%val(i), &
+!-                            out%ts%grid%qo(fms%stmg%meta%rnk(i))/real(RTE_TS/ic%dts)
+!-                    end if
 !todo
-                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
-                end do
-                write(iun, *)
-            end if
+!-                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') out%NO_DATA, out%NO_DATA
+!-                end do
+!-                write(iun, *)
+!-            end if
 
-        end if
+!-        end if
 
         !> This occurs the last time-step of the day.
-        if (ic%now%day /= ic%next%day .and. ro%RUNCHNL) then
+!-        if (ic%now%day /= ic%next%day .and. ro%RUNCHNL) then
 
-            if (fms%rsvr%n > 0) then
-                where (out%d%grid%stgch(fms%rsvr%meta%rnk(:)) > 0.0 .and. fms%rsvr%rls%area > 0.0)
-                    out%d%grid%zlvl(fms%rsvr%meta%rnk(:)) = out%d%grid%stgch(fms%rsvr%meta%rnk(:))/fms%rsvr%rls%area
-                elsewhere
-                    out%d%grid%zlvl(fms%rsvr%meta%rnk(:)) = out%NO_DATA
-                end where
-                iun = 707
-                write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
-                write(iun, 1010, advance = 'no') (out%d%grid%zlvl(fms%rsvr%meta%rnk(l)), l = 1, fms%rsvr%n)
-                write(iun, *)
-                if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KDLY)) then
-                    do l = 1, fms%rsvr%n
-                        iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun + l
-                        write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
-                        write(iun, 1010, advance = 'no') &
-                            out%d%grid%qi(fms%rsvr%meta%rnk(l)), &
-                            out%d%grid%stgch(fms%rsvr%meta%rnk(l)), &
-                            out%d%grid%qo(fms%rsvr%meta%rnk(l))
-                        write(iun, *)
-                    end do
-                end if
-            end if
+!-            if (fms%rsvr%n > 0) then
+!-                where (out%d%grid%stgch(fms%rsvr%meta%rnk(:)) > 0.0 .and. fms%rsvr%rls%area > 0.0)
+!-                    out%d%grid%zlvl(fms%rsvr%meta%rnk(:)) = out%d%grid%stgch(fms%rsvr%meta%rnk(:))/fms%rsvr%rls%area
+!-                elsewhere
+!-                    out%d%grid%zlvl(fms%rsvr%meta%rnk(:)) = out%NO_DATA
+!-                end where
+!-                iun = 707
+!-                write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
+!-                write(iun, 1010, advance = 'no') (out%d%grid%zlvl(fms%rsvr%meta%rnk(l)), l = 1, fms%rsvr%n)
+!-                write(iun, *)
+!-                if (btest(WF_RTE_frsvrout%freq, WF_RTE_frsvrout%KDLY)) then
+!-                    do l = 1, fms%rsvr%n
+!-                        iun = WF_RTE_frsvrout%fls%fl(WF_RTE_frsvrout%KDLY)%iun + l
+!-                        write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
+!-                        write(iun, 1010, advance = 'no') &
+!-                            out%d%grid%qi(fms%rsvr%meta%rnk(l)), &
+!-                            out%d%grid%stgch(fms%rsvr%meta%rnk(l)), &
+!-                            out%d%grid%qo(fms%rsvr%meta%rnk(l))
+!-                        write(iun, *)
+!-                    end do
+!-                end if
+!-            end if
 
-            do i = 1, fms%stmg%n
-                if (fms%stmg%qomeas%val(i) /= fms%stmg%qomeas%val(i)) then
-                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + fms%stmg%qomeas%val(i)
-                else
-                    WF_QHYD_CUM(i) = out%NO_DATA
-                end if
-            end do
+!-            do i = 1, fms%stmg%n
+!-                if (fms%stmg%qomeas%val(i) /= fms%stmg%qomeas%val(i)) then
+!-                    WF_QHYD_CUM(i) = WF_QHYD_CUM(i) + fms%stmg%qomeas%val(i)
+!-                else
+!-                    WF_QHYD_CUM(i) = out%NO_DATA
+!-                end if
+!-            end do
 
             !> Write daily output for streamflow.
-            if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KDLY)) then
-                WF_QO2_ACC = WF_QO2_ACC + out%d%grid%qo
-                where (WF_STORE2_ACC_MM /= out%NO_DATA) WF_STORE2_ACC_MM = WF_STORE2_ACC_MM/ic%ts_count
-                iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun
-                write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
-                do i = 1, fms%stmg%n
-                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') &
-                        WF_QHYD_CUM(i), WF_QO2_ACC(fms%stmg%meta%rnk(i))
-                    if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') &
-                        fms%stmg%qomeas%val(i), out%d%grid%qo(fms%stmg%meta%rnk(i))
-                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') &
-                        WF_QO2_ACC_MM(fms%stmg%meta%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%meta%rnk(i))
-                end do
-                write(iun, *)
-            end if
-        end if
+!-            if (btest(WF_RTE_fstflout%freq, WF_RTE_fstflout%KDLY)) then
+!-                WF_QO2_ACC = WF_QO2_ACC + out%d%grid%qo
+!-                where (WF_STORE2_ACC_MM /= out%NO_DATA) WF_STORE2_ACC_MM = WF_STORE2_ACC_MM/ic%ts_count
+!-                iun = WF_RTE_fstflout%fls%fl(WF_RTE_fstflout%KDLY)%iun
+!-                write(iun, 1010, advance = 'no') ic%now%year, ic%now%jday
+!-                do i = 1, fms%stmg%n
+!-                    if (WF_RTE_fstflout%fout_acc) write(iun, 1010, advance = 'no') &
+!-                        WF_QHYD_CUM(i), WF_QO2_ACC(fms%stmg%meta%rnk(i))
+!-                    if (WF_RTE_fstflout%fout_hyd) write(iun, 1010, advance = 'no') &
+!-                        fms%stmg%qomeas%val(i), out%d%grid%qo(fms%stmg%meta%rnk(i))
+!-                    if (WF_RTE_fstflout%fout_bal) write(iun, 1010, advance = 'no') &
+!-                        WF_QO2_ACC_MM(fms%stmg%meta%rnk(i)), WF_STORE2_ACC_MM(fms%stmg%meta%rnk(i))
+!-                end do
+!-                write(iun, *)
+!-            end if
+!-        end if
 
-1010    format(9999(g15.7e2, ','))
+!-1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
