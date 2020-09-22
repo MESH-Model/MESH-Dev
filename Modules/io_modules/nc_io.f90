@@ -6501,8 +6501,8 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        character(len = 10) str10
-        character(len = 8) str8
+!-        character(len = 10) str10
+!-        character(len = 8) str8
         character(len = 20) line
 
         !> Initialize output variable.
@@ -6519,9 +6519,9 @@ module nc_io
 
         !> Assign global meta attributes.
         ierr = NF90_NOERR
-        call date_and_time(str8, str10)
-        write(line, "(a4, '-', a2, '-', a2, 1x, a2, ':', a2, ':', a2)") &
-            str8(1:4), str8(5:6), str8(7:8), str10(1:2), str10(3:4), '00'
+!-        call date_and_time(str8, str10)
+        write(line, "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2)") &
+            ic%run_start%year, ic%run_start%month, ic%run_start%day, ic%run_start%hour, ic%run_start%mins, 0
         if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'title', 'SA_MESH model outputs')
         if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'source', 'SA_MESH') !((version info, but somehow also configuration CLASS/SVS/etc..))
         if (ierr == NF90_NOERR) ierr = nf90_put_att(iun, NF90_GLOBAL, 'history', trim(adjustl(line)) // ' - Created.')

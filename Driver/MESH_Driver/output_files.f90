@@ -118,7 +118,7 @@ module output_files
     !*  print_date: Option to print the leading date stamp in supported formats (default: .false.).
     !*  tsi, tsk: Indices of the specific grids and tiles for output in supported formats (text format).
     !*  gru: Indices of GRUs to filter grid based outputs.
-    !*  tile, grid, basin: Output data at various scales.
+    !*  basin_acc: Print basin accumulated values for gridded outputs (default: .false.).
     !*  y, m, s, d, h: Output groups at various output frequencies.
     type output_field
         character(len = DEFAULT_FIELD_LENGTH) :: vname = ''
@@ -140,6 +140,7 @@ module output_files
         logical :: print_date = .true.
         integer, dimension(:), allocatable :: tsi, tsk
         integer, dimension(:), allocatable :: gru
+        logical :: basin_acc = .false.
         type(output_group) y, m, s, d, h, pts
     end type
 
@@ -291,7 +292,7 @@ module output_files
         integer, intent(out) :: ierr
 
         !> Local variables.
-        integer dat(8)
+!-        integer dat(8)
         character(len = DEFAULT_LINE_LENGTH) line
 
         !> Open the file (write access).
@@ -308,8 +309,9 @@ module output_files
         write(iun, FMT_CHR) ':Application SA_MESH'
         write(iun, FMT_CHR) ':Version 1.4'
         write(iun, FMT_CHR) '#'
-        call date_and_time(values = dat)
-        write(line, "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2)") dat(1), dat(2), dat(3), dat(5), dat(6), dat(7)
+!-        call date_and_time(values = dat)
+        write(line, "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2)") &
+            ic%run_start%year, ic%run_start%month, ic%run_start%day, ic%run_start%hour, ic%run_start%mins, 0
         write(iun, FMT_CHR) ':CreationDate ' // trim(adjustl(line))
         write(iun, FMT_CHR) '#'
         write(iun, FMT_CHR) '#' // repeat('-', 72)
@@ -330,7 +332,12 @@ module output_files
         write(line, FMT_GEN) shd%yOrigin
         write(iun, FMT_CHR) ':yOrigin ' // trim(adjustl(line))
         write(iun, FMT_CHR) '#'
-        write(iun, FMT_CHR) ':AttributeName 1 ' // trim(attname)
+        if (index(attname, '/', back = .true.) > 0) then
+            line = attname((index(attname, '/', back = .true.) + 1):)
+        else
+            line = attname
+        end if
+        write(iun, FMT_CHR) ':AttributeName 1 ' // trim(line)
         write(iun, FMT_CHR) '#'
         write(line, FMT_GEN) shd%xCount
         write(iun, FMT_CHR) ':xCount ' // trim(line)
@@ -711,7 +718,8 @@ module output_files
 
         !> Local variables.
         real(kind = 4) d
-        integer dat(8), r, z
+!-        integer dat(8)
+        integer r, z
         character(len = DEFAULT_LINE_LENGTH) line
 
         !> Initialize the return variable.
@@ -734,9 +742,9 @@ module output_files
         if (z == 0) call write_r2c_binary_line(iun, record, ':Version 1.4', z)
         if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
         if (z == 0) then
-            call date_and_time(values = dat)
+!-            call date_and_time(values = dat)
             write(line, "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2)") &
-                dat(1), dat(2), dat(3), dat(5), dat(6), dat(7)
+                ic%run_start%year, ic%run_start%month, ic%run_start%day, ic%run_start%hour, ic%run_start%mins, 0
             call write_r2c_binary_line(iun, record, ':CreationDate ' // trim(adjustl(line)), z)
         end if
         if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
@@ -762,7 +770,14 @@ module output_files
             call write_r2c_binary_line(iun, record, ':yOrigin ' // trim(adjustl(line)), z)
         end if
         if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
-        if (z == 0) call write_r2c_binary_line(iun, record, ':AttributeName 1 ' // trim(attname), z)
+        if (z == 0) then
+            if (index(attname, '/', back = .true.) > 0) then
+                line = attname((index(attname, '/', back = .true.) + 1):)
+            else
+                line = attname
+            end if
+            call write_r2c_binary_line(iun, record, ':AttributeName 1 ' // trim(line), z)
+        end if
         if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
         if (z == 0) then
             write(line, FMT_GEN) shd%xCount
@@ -968,10 +983,19 @@ module output_files
             !> Allocate 'dat' and assign 'src'.
             allocate(group%grid%dat(shd%NA, t))
             group%grid%dat = out%NO_DATA
-            if (field%ilvl > 0) then
-                call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src, field%ilvl)
+            if (field%basin_acc) then
+                if (field%ilvl > 0) then
+                    call output_variables_activate_pntr(out_group%basin, field%vname, group%grid%src, field%ilvl)
+                else
+                    call output_variables_activate_pntr(out_group%basin, field%vname, group%grid%src)
+                end if
+                fname = trim(fname) // '_basin_acc'
             else
-                call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src)
+                if (field%ilvl > 0) then
+                    call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src, field%ilvl)
+                else
+                    call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src)
+                end if
             end if
 
             !> File name.
@@ -1507,6 +1531,13 @@ module output_files
                     case ('frac', 'apply_frac')
                         field%apply_frac = .true.
 
+                    !> Option to use basin accumulated values for gridded outputs.
+                    case ('basin_acc')
+                        field%basin_acc = .true.
+
+                    !> Soil layer selection (dealt with elsewhere).
+                    case ('isol')
+
                     !> Print leading date-stamp.
                     case ('print_date', 'printdate')
                         field%print_date = .true.
@@ -1633,12 +1664,15 @@ module output_files
         integer, intent(out) :: ierr
 
         !> Local variables.
-        integer n, i
+        integer, dimension(:), allocatable :: isol
+        integer n, i, j, z
         type(output_field), dimension(:), allocatable :: tmp
         character(DEFAULT_FIELD_LENGTH) str
+        logical ltest
 
-        !> Count attributes that require separate files.
+        !> Count attributes that require separate files and parse special options.
         n = 0
+        z = 0
         do i = 2, nargs
 
             !> Skip numeric options for arguments.
@@ -1656,9 +1690,31 @@ module output_files
                 select case (lowercase(args(i)))
                     case ('y', 'm', 's', 'd', 'h')
                         n = 1
+
+                !> Soil layer selection (dealt with elsewhere).
+                case ('isol')
+                    if (present(ignd)) then
+                        call output_files_parse_indices(args, nargs, isol, i, z)
+                        if (z == 0) then
+
+                            !> Check if the current layer is active for soil-related output.
+                            ltest = .false.
+                            do j = 1, size(isol)
+                                if (isol(j) == ignd) ltest = .true.
+                            end do
+
+                            !> Return without activating the field if the current level is not active.
+                            if (.not. ltest) return
+                        end if
+                    end if
                 end select
             end if
         end do
+
+        !> Check for 'value' conversion error.
+        if (z /= 0) then
+            call print_warning("Errors occurred parsing options of '" // trim(vname) // "'.", PAD_3)
+        end if
 
         !> Exit if no files exist to create.
         if (n == 0) then

@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1723'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1727'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -173,7 +173,9 @@ program RUNMESH
     integer, allocatable, dimension(:) :: GRD, GAT, GRDGAT, GRD_R, GAT_R, GRDGAT_R, GRD_S, GAT_S, GRDGAT_S
     character(50), allocatable, dimension(:, :) :: R2C_ATTRIBUTES, R2C_ATTRIBUTES_R, R2C_ATTRIBUTES_S
 
+    !> Variables for program run times.
     real startprog, endprog
+    integer dat(8)
 
     !> For reading arguments from the command line.
     character(500) fl_listMesh
@@ -181,8 +183,14 @@ program RUNMESH
     logical ltest
 
     !> Set program start time.
-!todo: Also set date, which can be used for EnSim outputs.
     call cpu_time(startprog)
+    call date_and_time(values = dat)
+    ic%run_start%year = dat(1)
+    ic%run_start%month = dat(2)
+    ic%run_start%day = dat(3)
+    ic%run_start%jday = get_jday(ic%run_start%month, ic%run_start%day, ic%run_start%year)
+    ic%run_start%hour = dat(5)
+    ic%run_start%mins = dat(6)
 
     !> Reset spacing for screen output.
     call reset_tab()

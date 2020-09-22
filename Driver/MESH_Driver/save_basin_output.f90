@@ -1039,7 +1039,7 @@ module save_basin_output
 
         !> Reset and construct the flag for output frequency.
         flg%t = 0
-        do j = 2, nargs
+        do j = 1, nargs
             select case (lowercase(out_args(j)))
                 case ('daily')
                     flg%t = flg%t + 1
@@ -1065,7 +1065,7 @@ module save_basin_output
         end do
 
         !> Determine output forms.
-        do j = 2, nargs
+        do j = 1, nargs
             select case (lowercase(out_args(j)))
                 case ('ns')
                     if (allocated(flg%ns)) deallocate(flg%ns)
