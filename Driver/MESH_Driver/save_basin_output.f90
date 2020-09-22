@@ -469,7 +469,7 @@ module save_basin_output
             if (len_trim(REACHOUTFLAG) == 0) REACHOUTFLAG = 'REACHOUTFLAG default'
             call parse(REACHOUTFLAG, ' ', out_args, nargs)
             WF_RTE_frsvrout%freq = 0
-            do j = 2, nargs
+            do j = 1, nargs
                 select case (lowercase(out_args(j)))
                     case ('daily')
                         WF_RTE_frsvrout%freq = WF_RTE_frsvrout%freq + radix(WF_RTE_frsvrout%KDLY)**WF_RTE_frsvrout%KDLY
@@ -537,7 +537,7 @@ module save_basin_output
             if (len_trim(STREAMFLOWOUTFLAG) == 0) STREAMFLOWOUTFLAG = 'STREAMFLOWOUTFLAG default'
             call parse(STREAMFLOWOUTFLAG, ' ', out_args, nargs)
             WF_RTE_fstflout%freq = 0
-            do j = 2, nargs
+            do j = 1, nargs
                 select case (lowercase(out_args(j)))
                     case ('daily')
                         WF_RTE_fstflout%freq = WF_RTE_fstflout%freq + radix(WF_RTE_fstflout%KDLY)**WF_RTE_fstflout%KDLY
