@@ -154,7 +154,6 @@ module PBSM_module
             call print_message(line)
             write(line, FMT_GEN) 'Distrib', (pbsm%pm_gru%Distrib(m), m = 1, shd%lc%NTYPE)
             call print_message(line)
-            call print_message('')
         end if
 
     end subroutine

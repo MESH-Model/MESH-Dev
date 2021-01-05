@@ -345,7 +345,9 @@ module mountain_module
         if (allocated(mountain_mesh%pm%curvature)) deallocate(mountain_mesh%pm%curvature)
 
         !> Print summary and remark that the process is active.
+        call reset_tab()
         call print_message('MOUNTAINMESH is ACTIVE.')
+        call increase_tab()
 
         !> Print configuration information to file if 'DIAGNOSEMODE' is active.
         if (DIAGNOSEMODE) then
@@ -374,31 +376,30 @@ module mountain_module
             line = trim(line) // ' irsrd=' // trim(adjustl(val))
             write(val, FMT_GEN) mountain_mesh%pm%idecl
             line = trim(line) // ' idecl=' // trim(adjustl(val))
-            call print_message_detail(line)
+            call print_message(line)
         end if
 
         !> Check values, print error messages for invalid values.
         !> The check is of 'GAT'-based variables, for which all tiles should have valid values.
         if (mod(24*60, mountain_mesh%pm%CalcFreq) /= 0) then
             write(line, FMT_GEN) mountain_mesh%pm%CalcFreq
-            call print_message_detail( &
-                "ERROR: CalcFreq must evenly divide into minutes in the day. 1440 mod " // trim(adjustl(line)) // " /= 0.")
+            call print_error("'CalcFreq' must evenly divide into minutes in the day. 1440 mod " // trim(adjustl(line)) // " /= 0.")
             ierr = 1
         end if
         if (any(mountain_mesh%vs%elev < 0.0)) then
-            call print_message_detail("ERROR: Values of ELEVATION are less than zero.")
+            call print_error("Values of 'elevation' are less than zero.")
             ierr = 1
         end if
         if (any(mountain_mesh%vs%slope < 0.0)) then
-            call print_message_detail("ERROR: Values of SLOPE are less than zero.")
+            call print_error("Values of 'slope' are less than zero.")
             ierr = 1
         end if
         if (any(mountain_mesh%vs%aspect < 0.0)) then
-            call print_message_detail("ERROR: Values of ASPECT are less than zero.")
+            call print_error("Values of 'aspect' are less than zero.")
             ierr = 1
         end if
         if (mountain_mesh%pm%iwind == 1 .and. .not. cm%dat(ck%WD)%factive) then
-            call print_message_detail("ERROR: iwind option 1 requires wind direction, but the driving variable is not active.")
+            call print_error("'iwind' option 1 requires wind direction, but the driving variable is not active.")
             ierr = 1
         end if
 
@@ -442,34 +443,29 @@ module mountain_module
 
                 !> Check against 'iwind' (no 'wlapse').
                 if (mountain_mesh%pm%iwind == 2) then
-                    call print_message_detail( &
-                        "ERROR: iwind option 2 cannot be used with ilapse option 3, as the option does not provide 'wlapse'.")
+                    call print_error( &
+                        "'iwind' option 2 cannot be used with ilapse option 3, as the option does not provide 'wlapse'.")
                     ierr = 1
                 end if
             case default
                 if (mountain_mesh%pm%ipre /= 0) then
-                    call print_message_detail( &
-                        "ERROR: ipre is active but cannot be used without any ilapse option to define 'plapse'.")
+                    call print_error("'ipre' is active but cannot be used without any ilapse option to define 'plapse'.")
                     ierr = 1
                 end if
                 if (mountain_mesh%pm%itemp /= 0) then
-                    call print_message_detail( &
-                        "ERROR: itemp is active but cannot be used without any ilapse option to define 'tlapse'.")
+                    call print_error("'itemp' is active but cannot be used without any ilapse option to define 'tlapse'.")
                     ierr = 1
                 end if
                 if (mountain_mesh%pm%ihumd /= 0) then
-                    call print_message_detail( &
-                        "ERROR: ihumd is active but cannot be used without any ilapse option to define 'dtlapse'.")
+                    call print_error("'ihumd' is active but cannot be used without any ilapse option to define 'dtlapse'.")
                     ierr = 1
                 end if
                 if (mountain_mesh%pm%irlds /= 0) then
-                    call print_message_detail( &
-                        "ERROR: irlds is active but cannot be used without any ilapse option to define 'lwlapse'.")
+                    call print_error("'irlds' is active but cannot be used without any ilapse option to define 'lwlapse'.")
                     ierr = 1
                 end if
                 if (mountain_mesh%pm%iwind == 2) then
-                    call print_message_detail( &
-                        "ERROR: iwind option 2 cannot be used without any ilapse option to define 'wlapse'.")
+                    call print_error("'iwind' option 2 cannot be used without any ilapse option to define 'wlapse'.")
                     ierr = 1
                 end if
         end select
@@ -478,6 +474,8 @@ module mountain_module
         if (ierr /= 0) then
             call print_error("Errors occurred during the initialization of 'MOUNTAINMESH'.")
             call program_abort()
+        else
+            call reset_tab()
         end if
 
     end subroutine

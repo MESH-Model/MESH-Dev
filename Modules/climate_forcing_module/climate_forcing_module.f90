@@ -156,7 +156,9 @@ module climate_forcing
         end if
 
         !> Initialize climate variables.
+        call reset_tab()
         call print_message('READING: Climate forcing variables')
+        call increase_tab()
         do vid = 1, cm%nclim
 
             !> Cycle if the variable is not active.
@@ -190,24 +192,26 @@ module climate_forcing
             !> Check if the time-step is divisible by the model time-step.
             if (mod(cm%dat(vid)%hf, ic%dtmins) /= 0) then
                 call print_error('The forcing data time-step must be divisible by the model time-step.')
+                call increase_tab()
                 write(line, FMT_GEN) cm%dat(vid)%hf
-                call print_message_detail('Data time-step: ' // trim(adjustl(line)) // ' mins')
+                call print_message('Data time-step: ' // trim(adjustl(line)) // ' mins')
                 write(line, FMT_GEN) ic%dtmins
-                call print_message_detail('Model time-step: ' // trim(adjustl(line)) // ' mins')
+                call print_message('Model time-step: ' // trim(adjustl(line)) // ' mins')
+                call decrease_tab()
                 call program_abort()
             end if
 
             !> Warn of unsupprted interpolation flag option.
             if (cm%dat(vid)%ipflg > 1) then
                 write(line, FMT_GEN) cm%dat(vid)%ipflg
-                call print_warning('INTERPOLATIONFLAG ' // trim(adjustl(line)) // ' is not supported and has no effect.', PAD_3)
+                call print_warning('INTERPOLATIONFLAG ' // trim(adjustl(line)) // ' is not supported and has no effect.')
                 cm%dat(vid)%ipflg = 0
             end if
 
             !> Remark on INTERPOLATIONFLAG if the data and model use the same time-step.
             if (cm%dat(vid)%ipflg == 1 .and. cm%dat(vid)%hf == ic%dtmins) then
                 line = 'INTERPOLATIONFLAG is active but has no effect. The climate forcing data and model have the same time-step.'
-                call print_remark(line, PAD_3)
+                call print_remark(line)
                 cm%dat(vid)%ipflg = 0
             end if
 
@@ -244,39 +248,42 @@ module climate_forcing
                 call print_error('The first record occurs after the simulation start date.')
                 call print_message( &
                     'The record must start on or after the simulation start date.')
+                call increase_tab()
                 call Julian2MonthDay(cm%dat(vid)%start_date%jday, cm%dat(vid)%start_date%year, month, day)
                 write(line, "(i4, '/', i2.2, '/', i2.2, ' ', i2.2, ':', i2.2, ' (', 4i4, ')')") &
                     cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%month, cm%dat(vid)%start_date%day, &
                     cm%dat(vid)%start_date%hour, cm%dat(vid)%start_date%mins, &
                     cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday, &
                     cm%dat(vid)%start_date%hour, cm%dat(vid)%start_date%mins
-                call print_message_detail('First record occurs on: ' // trim(line))
+                call print_message('First record occurs on: ' // trim(line))
                 write(line, "(i4, '/', i2.2, '/', i2.2, ' ', i2.2, ':', i2.2, ' (', 4i4, ')')") &
                     ic%start%year, ic%start%month, ic%start%day, ic%start%hour, ic%start%mins, &
                     ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
-                call print_message_detail('Simulation start date: ' // trim(line))
+                call print_message('Simulation start date: ' // trim(line))
+                call decrease_tab()
                 call program_abort()
             end if
             cm%dat(vid)%iskip = (isteps2 - isteps1)
             if (cm%dat(vid)%iskip > 0) then
                 write(line, FMT_GEN) cm%dat(vid)%iskip
-                call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
+                call print_message('Skipping ' // trim(adjustl(line)) // ' records.')
                 if (update_data(shd, cm, vid, cm%dat(vid)%iskip)) goto 999
             end if
         end do
 
         !> Print summary of climate forcing variables.
         if (DIAGNOSEMODE) then
+            call increase_tab()
             write(line, FMT_GEN) 'Variable', 'Name', 'File format', 'Frame length', 'Blocks in-mem.', 'No. series'
-            call print_message_detail(line)
+            call print_message(line)
             do i = 1, cm%nclim
                 if (cm%dat(i)%factive) then
                     write(line, FMT_GEN) &
                         cm%dat(i)%id_var, cm%dat(i)%fname, cm%dat(i)%ffmt, cm%dat(i)%hf, cm%dat(i)%nblocks, cm%dat(i)%nseries
-                    call print_message_detail(line)
+                    call print_message(line)
                 end if
             end do
-            call print_message('')
+            call decrease_tab()
         end if
 
         !> Resume states from file.
@@ -296,10 +303,12 @@ module climate_forcing
             read(iun) i4
             if (int(i4) /= 7) then
                 call print_error('Incompatible ranking in climate state file.')
+                call increase_tab()
                 write(line, FMT_GEN) i4
-                call print_message_detail('Number of clim. variables read: ' // trim(adjustl(line)))
+                call print_message('Number of clim. variables read: ' // trim(adjustl(line)))
                 write(line, FMT_GEN) 7
-                call print_message_detail('Number of clim. variables expected: ' // trim(adjustl(line)))
+                call print_message('Number of clim. variables expected: ' // trim(adjustl(line)))
+                call decrease_tab()
                 call program_abort()
             end if
 

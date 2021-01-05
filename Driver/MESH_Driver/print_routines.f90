@@ -32,21 +32,25 @@ module print_routines
     integer, parameter :: ECHO_SCN_IUN = 6, ECHO_TXT_IUN = 58
 
     !> Padding constants.
+    !* PAD_LEAD: Padding of '1x'.
     !* PAD_1: Padding of '1x'.
     !* PAD_3: Padding of '3x'.
     !* PAD_NONE: No padding.
-    integer, parameter :: PAD_1 = 1
-    integer, parameter :: PAD_3 = 3
-    integer, parameter :: PAD_NONE = 0
+    integer, parameter, private :: PAD_LEAD = 1
+!-    integer, parameter :: PAD_1 = 1
+!-    integer, parameter :: PAD_3 = 3
+    integer, parameter, private :: PAD_NONE = 0
 
     !> Internal pad position.
-    integer, private :: PAD_NOW = PAD_1
+    integer, private :: PAD_NOW = PAD_LEAD
 
     !> Line and field length constants.
     !* DEFAULT_LINE_LENGTH: Default length of a single line.
     !* DEFAULT_FIELD_LENGTH: Default length of a field (e.g., in a line).
+    !* DEFAULT_FIELD_COUNT: Default number of fields to a line.
     integer, parameter :: DEFAULT_LINE_LENGTH = 10000
-    integer, parameter :: DEFAULT_FIELD_LENGTH = 100
+    integer, parameter :: DEFAULT_FIELD_LENGTH = 1000
+    integer, parameter :: DEFAULT_FIELD_COUNT = 100
 
     !> Format constants.
     character(len = *), parameter :: FMT_GEN = "(99999(g15.7e2, 1x))"
@@ -225,7 +229,7 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Print a leading line if the indent level is not present.
-        if (.not. present(level) .and. PAD_NOW == PAD_1) call print_message('')
+        if (.not. present(level) .and. PAD_NOW == PAD_LEAD) call print_message('')
 
         !> Flush the message.
         call print_message('ERROR: ' // trim(message))
@@ -239,15 +243,15 @@ module print_routines
     !> Variables:
     !>  message: Message to output.
 !todo: Remove; use 'increase_tab' and 'decrease_tab' instead.
-    subroutine print_message_detail(message)
+!-    subroutine print_message_detail(message)
 
         !> Input variables.
-        character(len = *), intent(in) :: message
+!-        character(len = *), intent(in) :: message
 
         !> Flush the message.
-        call print_message(message, PAD_3)
+!-        call print_message(message, PAD_3)
 
-    end subroutine
+!-    end subroutine
 
     !> Description:
     !>  Print the provided message to screen and to the summary file
@@ -283,7 +287,7 @@ module print_routines
     !> Description:
     !>  Reset the starting position of message output.
     subroutine reset_tab()
-        PAD_NOW = PAD_1
+        PAD_NOW = PAD_LEAD
     end subroutine
 
     !> Description:
@@ -295,7 +299,7 @@ module print_routines
     !> Description:
     !>  Decrease the starting position of message output.
     subroutine decrease_tab()
-        PAD_NOW = max(PAD_NOW - 2, PAD_1)
+        PAD_NOW = max(PAD_NOW - 2, PAD_LEAD)
     end subroutine
 
     !> Description:

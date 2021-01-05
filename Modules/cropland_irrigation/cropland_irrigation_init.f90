@@ -28,7 +28,9 @@ module cropland_irrigation_init
 
         if (.not. cifg%PROCESS_ACTIVE) return
 
+        call reset_tab()
         call print_message('CROPLANDIRRIGATION P-EVP component is ACTIVE.')
+        call increase_tab()
 
         !> Local variables.
         NML = shd%lc%NML
@@ -55,46 +57,46 @@ module cropland_irrigation_init
                 call print_message( &
                     'GRU ' // trim(adjustl(fmt1)) // ' has ' // trim(adjustl(fmt2)) // ' contributing fraction of crops.')
                 if (ciprot%jdsow(m) <= 0) then
-                    call print_remark("'jdsow' is zero. Sow date will be determined by the growth index 'GRO'.", PAD_3)
+                    call print_remark("'jdsow' is zero. Sow date will be determined by the growth index 'GRO'.")
                 end if
                 if (ciprot%ldini(m) <= 0) then
                     write(fmt2, FMT_GEN) ciprot%ldini(m)
-                    call print_message("ERROR: Parameter has bad value, 'ldini' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    call print_error("Parameter has bad value, 'ldini' = " // trim(adjustl(fmt2)) // '.')
                     ierr = ierr + 1
                 end if
                 if (ciprot%lddev(m) <= 0) then
                     write(fmt2, FMT_GEN) ciprot%lddev(m)
-                    call print_message("ERROR: Parameter has bad value, 'lddev' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    call print_error("Parameter has bad value, 'lddev' = " // trim(adjustl(fmt2)) // '.')
                     ierr = ierr + 1
                 end if
                 if (ciprot%ldmid(m) <= 0) then
                     write(fmt2, FMT_GEN) ciprot%ldmid(m)
-                    call print_message("ERROR: Parameter has bad value, 'ldmid' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    call print_error("Parameter has bad value, 'ldmid' = " // trim(adjustl(fmt2)) // '.')
                     ierr = ierr + 1
                 end if
                 if (ciprot%ldlate(m) <= 0) then
                     write(fmt2, FMT_GEN) ciprot%ldlate(m)
-                    call print_message("ERROR: Parameter has bad value, 'ldlate' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    call print_error("Parameter has bad value, 'ldlate' = " // trim(adjustl(fmt2)) // '.')
                     ierr = ierr + 1
                 end if
                 if (ciprot%Kcini(m) <= 0) then
                     write(fmt2, FMT_GEN) ciprot%Kcini(m)
-                    call print_message("ERROR: Parameter has bad value, 'Kcini' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    call print_error("Parameter has bad value, 'Kcini' = " // trim(adjustl(fmt2)) // '.')
                     ierr = ierr + 1
                 end if
                 if (ciprot%Kcdev(m) <= 0) then
                     write(fmt2, FMT_GEN) ciprot%Kcdev(m)
-                    call print_message("ERROR: Parameter has bad value, 'Kcdev' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    call print_error("Parameter has bad value, 'Kcdev' = " // trim(adjustl(fmt2)) // '.')
                     ierr = ierr + 1
                 end if
                 if (ciprot%Kcmid(m) <= 0) then
                     write(fmt2, FMT_GEN) ciprot%Kcmid(m)
-                    call print_message("ERROR: Parameter has bad value, 'Kcmid' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    call print_error("Parameter has bad value, 'Kcmid' = " // trim(adjustl(fmt2)) // '.')
                     ierr = ierr + 1
                 end if
                 if (ciprot%Kclate(m) <= 0) then
                     write(fmt2, FMT_GEN) ciprot%Kclate(m)
-                    call print_message("ERROR: Parameter has bad value, 'Kclate' = " // trim(adjustl(fmt2)) // '.', PAD_3)
+                    call print_error("Parameter has bad value, 'Kclate' = " // trim(adjustl(fmt2)) // '.')
                     ierr = ierr + 1
                 end if
             else
@@ -104,8 +106,6 @@ module cropland_irrigation_init
         if (ierr > 0) then
             call print_error('Errors exist in the configuration.')
             call program_abort()
-        else
-            call print_message('')
         end if
 
         !> Identify crop GRUs.

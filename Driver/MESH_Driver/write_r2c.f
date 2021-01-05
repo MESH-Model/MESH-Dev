@@ -90,7 +90,6 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
         call print_error('Programming error')
         call print_message('no_frames > 1 and no_classes > 1')
         call print_message('This is not allowed')
-        call print_message('')
         call program_abort()
 !       This can only be cause by misuse of this s/r
 !         in the calling program

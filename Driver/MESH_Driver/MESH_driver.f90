@@ -198,9 +198,8 @@ program RUNMESH
     !> Initialize MPI.
     call MPI_Init(ierr)
     if (ierr /= MPI_SUCCESS) then
-        call print_warning('Failed to initialize MPI.')
         write(line, FMT_GEN) ierr
-        call print_message_detail('Error status: ' // trim(adjustl(line)))
+        call print_error("Failed to initialize MPI (Code: " // trim(adjustl(line)) // ").")
         call program_abort()
     end if
 
@@ -249,8 +248,6 @@ program RUNMESH
     if (ierr /= 0) then
         call print_error('Errors occurred during initialization.')
         if (ISHEADNODE) call program_abort()
-    else
-        call print_message('')
     end if
 
     !> Assign shed values to local variables.
@@ -264,7 +261,6 @@ program RUNMESH
         ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
         if (ENDDATA) goto 97
     end if
-    call print_message('')
 
     !> Initialize output variables.
     call output_variables_init(shd)
@@ -290,7 +286,6 @@ program RUNMESH
         call run_within_grid_init(fls, shd, cm)
     end if
     if (ro%RUNGRID) call run_between_grid_init(fls, shd, cm)
-    call print_message('')
 
     !> Initialize basin totals for the run.
     if (ISHEADNODE) then

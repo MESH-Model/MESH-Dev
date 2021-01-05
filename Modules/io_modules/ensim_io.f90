@@ -162,14 +162,14 @@ module ensim_io
 
         !> Return if an error was encountered while reading lines.
         if (ierr /= 0) then
-            call print_warning('An error occurred reading the header in the file.', PAD_3)
+            call print_warning('An error occurred reading the header in the file.')
             goto 999
         end if
 
         !> Allocate the keywords; return on error.
         allocate(vkeyword(nkeyword), stat = ierr)
         if (ierr /= 0) then
-            call print_warning('An error occurred allocating keywords in the file.', PAD_3)
+            call print_warning('An error occurred allocating keywords in the file.')
             goto 999
         end if
 
@@ -211,7 +211,7 @@ module ensim_io
             end if
         end do
         if (ierr /= 0) then
-            call print_warning('An error occurred parsing the keyword and its values.', PAD_3)
+            call print_warning('An error occurred parsing the keyword and its values.')
             goto 999
         end if
 
@@ -257,13 +257,13 @@ module ensim_io
 
         !> Return if no attributes were found.
         if (nattr == 0) then
-            call print_warning('No attributes were found.', PAD_3)
+            call print_warning('No attributes were found.')
             goto 999
         end if
 
         allocate(vattr(nattr), stat = ierr)
         if (ierr /= 0) then
-            call print_warning('An error occurred allocating attributes in the file.', PAD_3)
+            call print_warning('An error occurred allocating attributes in the file.')
             goto 999
         end if
 
@@ -272,7 +272,7 @@ module ensim_io
             if (lowercase(vkeyword(n)%keyword(1:10)) /= ':attribute') cycle
             call value(vkeyword(n)%words(1), j, ierr)
             if (ierr /= 0) then
-                call print_warning("Bad attribute definition in '" // trim(vkeyword(n)%keyword) // "'.", PAD_3)
+                call print_warning("Bad attribute definition in '" // trim(vkeyword(n)%keyword) // "'.")
                 cycle
             end if
             select case (lowercase(vkeyword(n)%keyword))
@@ -328,7 +328,7 @@ module ensim_io
                     write(fmt2, FMT_GEN) ncol
                     call print_warning( &
                         "The number of fields in '" // trim(cname) // "' is " // trim(adjustl(fmt1)) // &
-                        ' but ' // trim(adjustl(fmt2)) // ' were expected.', PAD_3)
+                        ' but ' // trim(adjustl(fmt2)) // ' were expected.')
                 end if
                 exit
             end if
@@ -374,7 +374,7 @@ module ensim_io
                 write(fmt1, FMT_GEN) j
                 call print_warning( &
                     'An error occurred converting value ' // trim(adjustl(fmt1)) // ' (' // trim(cfield(j)) // ')' // &
-                    " to a number in '" // trim(cname) // ".", PAD_3)
+                    " to a number in '" // trim(cname) // ".")
                 ierr = z
             end if
         end do
@@ -654,12 +654,13 @@ module ensim_io
         !> Check against the existing definition.
         if (lowercase(p) /= lowercase(projection)) then
             ierr = 1
-            call print_warning('The projection in the file does not match the existing projection in the model.', PAD_3)
+            call print_warning('The projection in the file does not match the existing projection in the model.')
+            call increase_tab()
             write(line, FMT_GEN) 'Attribute', 'File', 'Expected'
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':Projection', trim(p), trim(projection)
-            call print_message_detail(line)
-            call print_message('')
+            call print_message(line)
+            call decrease_tab()
         end if
 
         return
@@ -721,31 +722,32 @@ module ensim_io
         end do
 
         !> Print warning if there were conversion errors.
-        if (ierr /= 0) call print_warning('Errors occurred extracting the grid dimensions from the file.', PAD_3)
+        if (ierr /= 0) call print_warning('Errors occurred extracting the grid dimensions from the file.')
         ierr = 0
 
         !> Check against the existing definition.
         if (lowercase(p) /= lowercase(projection) .or. &
             ix /= xcount .or. iy /= ycount .or. x /= xorigin .or. y /= yorigin .or. dx /= xdelta .or. dy /= ydelta) then
             ierr = 1
-            call print_warning('The grid definition in the file does not match the existing definition in the model.', PAD_3)
+            call print_warning('The grid definition in the file does not match the existing definition in the model.')
+            call increase_tab()
             write(line, FMT_GEN) 'Attribute', 'File', 'Expected'
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':Projection', trim(p), trim(projection)
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':xOrigin', x, xorigin
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':yOrigin', y, yorigin
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':xCount', ix, xcount
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':yCount', iy, ycount
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':xDelta', dx, xdelta
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':yDelta', dy, ydelta
-            call print_message_detail(line)
-            call print_message('')
+            call print_message(line)
+            call decrease_tab()
         end if
 
         return
@@ -789,7 +791,7 @@ module ensim_io
                     !> Take the smaller value in the case of a conflict between this and other entries in the table.
                     call print_warning( &
                         "The number of columns in '" // trim(vkeyword(n)%keyword) // "'" // &
-                        " is different from other table entries in the file.", PAD_3)
+                        " is different from other table entries in the file.")
                     ncol = min(ncol, size(vkeyword(n)%words))
                 else
                     ncol = size(vkeyword(n)%words)
@@ -799,7 +801,7 @@ module ensim_io
 
         !> Print a warning if no columns were found in the table.
         if (ncol == 0) then
-            call print_warning('No columns were found in the table in the file.', PAD_3)
+            call print_warning('No columns were found in the table in the file.')
         end if
 
         return
@@ -853,7 +855,7 @@ module ensim_io
                         ierr = z
                         call print_warning( &
                             "Invalid format or missing component in date '" // trim(ctmp) // "'," // &
-                            " expecting format 'YYYY/MM/DD'.", PAD_3)
+                            " expecting format 'YYYY/MM/DD'.")
                     end if
 
                     !> Scan for a time signature (e.g., 24:00:00.000; 24:00:00; 24:00).
@@ -874,7 +876,7 @@ module ensim_io
                         ierr = z
                         call print_warning( &
                             "Invalid format or missing component in time '" // trim(ctmp) // "'," // &
-                            " expecting format 'HH:MM', 'HH:MM:SS', or 'HH:MM:SS.000'.", PAD_3)
+                            " expecting format 'HH:MM', 'HH:MM:SS', or 'HH:MM:SS.000'.")
                     end if
             end select
         end do
@@ -908,7 +910,7 @@ module ensim_io
             if (is_header(line)) exit
         end do
         if (ierr /= 0) then
-            call print_warning('Reached end of file: ' // trim(fname), PAD_3)
+            call print_warning('Reached end of file: ' // trim(fname))
         end if
 
         return
@@ -1013,14 +1015,14 @@ module ensim_io
             write(fmt2, FMT_GEN) size(vattr)
             call print_warning( &
                 'The desired index ' // trim(adjustl(fmt1)) // &
-                ' is beyond the number of attributes in the list ' // trim(adjustl(fmt2)) // '.', PAD_3)
+                ' is beyond the number of attributes in the list ' // trim(adjustl(fmt2)) // '.')
             ierr = 1
             return
         end if
 
         !> Check if the attribute contains data.
         if (.not. allocated(vattr(iattr)%val)) then
-            call print_warning("The attribute '" // trim(vattr(iattr)%attr) // "' contains no data.", PAD_3)
+            call print_warning("The attribute '" // trim(vattr(iattr)%attr) // "' contains no data.")
             ierr = 1
             return
         end if

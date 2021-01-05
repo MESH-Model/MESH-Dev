@@ -1030,12 +1030,11 @@ module output_files
                 if (.not. lopen) then
                     call open_r2c_output(fls, shd, group%grid%iun + iun, trim(fname) // '.r2c', trim(fname), '', z)
                     if (z /= 0) then
-                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '.r2c')
+                        call print_error("Unable to open file for output: " // trim(fname) // ".r2c")
                         ierr = z
                     end if
                 else
-                    call print_message_detail( &
-                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '.r2c')
+                    call print_error("Another output variable has already opened the file: " // trim(fname) // ".r2c")
                     z = 1
                 end if
                 iun = iun + 1
@@ -1047,12 +1046,11 @@ module output_files
                 if (.not. lopen) then
                     call open_seq_output(fls, group%grid%iun + iun, trim(fname) // '.seq', z)
                     if (z /= 0) then
-                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '.seq')
+                        call print_error("Unable to open file for output: " // trim(fname) // ".seq")
                         ierr = z
                     end if
                 else
-                    call print_message_detail( &
-                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '.seq')
+                    call print_error("Another output variable has already opened the file: " // trim(fname) // ".seq")
                     z = 1
                 end if
                 iun = iun + 1
@@ -1064,12 +1062,11 @@ module output_files
                 if (.not. lopen) then
                     call open_txt_output(fls, group%grid%iun + iun, trim(fname) // '.txt', z)
                     if (z /= 0) then
-                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '.txt')
+                        call print_error("Unable to open file for output: " // trim(fname) // ".txt")
                         ierr = z
                     end if
                 else
-                    call print_message_detail( &
-                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '.txt')
+                    call print_error("Another output variable has already opened the file: " // trim(fname) // ".txt")
                     z = 1
                 end if
                 iun = iun + 1
@@ -1081,12 +1078,11 @@ module output_files
                 if (.not. lopen) then
                     call open_txt_output(fls, group%grid%iun + iun, trim(fname) // '.csv', z)
                     if (z /= 0) then
-                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '.csv')
+                        call print_error("Unable to open file for output: " // trim(fname) // ".csv")
                         ierr = z
                     end if
                 else
-                    call print_message_detail( &
-                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '.csv')
+                    call print_error("Another output variable has already opened the file: " // trim(fname) // ".csv")
                     z = 1
                 end if
                 iun = iun + 1
@@ -1098,14 +1094,12 @@ module output_files
                 if (.not. lopen) then
                     call open_txt_output(fls, group%grid%iun + iun, trim(fname) // '_' // VN_GRD // '.ts', z)
                     if (z /= 0) then
-                        call print_message_detail( &
-                            'ERROR: Unable to open file for output: ' // trim(fname) // '_' // VN_GRD // '.ts')
+                        call print_error("Unable to open file for output: '" // trim(fname) // "_" // VN_GRD // ".ts")
                         ierr = z
                     end if
                 else
-                    call print_message_detail( &
-                        'ERROR: Another output variable has already opened the file: ' // &
-                        trim(fname) // '_' // VN_GRD // '.ts')
+                    call print_error( &
+                        "Another output variable has already opened the file: " // trim(fname) // "_" // VN_GRD // ".ts")
                     z = 1
                 end if
                 iun = iun + 1
@@ -1121,13 +1115,13 @@ module output_files
                         group%grid%nid, group%grid%tid, group%grid%vid, &
                         ierr = z)
                     if (z /= 0) then
-                        call print_message_detail( &
-                            'ERROR: Unable to open file for output: ' // trim(fname) // '_' // VN_GRD // '.nc')
+                        call print_error( &
+                            "Unable to open file for output: " // trim(fname) // "_" // VN_GRD // ".nc")
                         ierr = z
                     end if
                 else
-                    call print_message_detail( &
-                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_' // VN_GRD // '.nc')
+                    call print_error( &
+                        "Another output variable has already opened the file: " // trim(fname) // "_" // VN_GRD // ".nc")
                     z = 1
                 end if
             end if
@@ -1140,12 +1134,11 @@ module output_files
                     call open_r2c_binary_output( &
                         fls, shd, group%grid%iun + iun, trim(fname) // '_binary.r2c', group%grid%record, trim(fname), '', z)
                     if (z /= 0) then
-                        call print_message_detail('ERROR: Unable to open file for output: ' // trim(fname) // '_binary.r2c')
+                        call print_error("Unable to open file for output: " // trim(fname) // "_binary.r2c")
                         ierr = z
                     end if
                 else
-                    call print_message_detail( &
-                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_binary.r2c')
+                    call print_error("Another output variable has already opened the file: " // trim(fname) // "_binary.r2c")
                     z = 1
                 end if
                 iun = iun + 1
@@ -1184,13 +1177,12 @@ module output_files
                 if (.not. lopen) then
                     call open_txt_output(fls, group%tile%iun + iun, trim(fname) // '_' // VN_NML // '.ts', z)
                     if (z /= 0) then
-                        call print_message_detail( &
-                            'ERROR: Unable to open file for output: ' // trim(fname) // '_' // VN_NML // '.ts')
+                        call print_error("Unable to open file for output: " // trim(fname) // "_" // VN_NML // ".ts")
                         ierr = z
                     end if
                 else
-                    call print_message_detail( &
-                        'ERROR: Another output variable has already opened the file: ' // trim(fname) // '_' // VN_NML // '.ts')
+                    call print_error( &
+                        "Another output variable has already opened the file: " // trim(fname) // "_" // VN_NML // ".ts")
                     z = 1
                 end if
                 iun = iun + 1
@@ -1561,49 +1553,49 @@ module output_files
                     case default
                         call print_remark( &
                             "The option '" // trim(adjustl(args(i))) // "' is not recognized for output" // &
-                            " (Variable '" // trim(field%vname) // "').", PAD_3)
+                            " (Variable '" // trim(field%vname) // "').")
                 end select
             end if
         end do
 
         !> Check for 'value' conversion error.
         if (z /= 0) then
-            call print_warning("Errors occurred parsing options of '" // trim(field%vname) // "'.", PAD_3)
+            call print_warning("Errors occurred parsing options of '" // trim(field%vname) // "'.")
         end if
 
         !> Validate the configuration.
         if (field%ffmt == 0) then
-            call print_warning("No supported output file formats are active for '" // trim(field%vname) // "'.", PAD_3)
+            call print_warning("No supported output file formats are active for '" // trim(field%vname) // "'.")
         end if
         if (field%ffreq == 0) then
-            call print_warning("No supported output file frequencies are active for '" // trim(field%vname) // "'.", PAD_3)
+            call print_warning("No supported output file frequencies are active for '" // trim(field%vname) // "'.")
         end if
         if (allocated(field%tsi)) then
             if (size(field%tsi) == 0) then
                 call print_warning( &
                     "The 'tsi' option (Variable '" // trim(field%vname) // "')" // &
-                    ' is active but no grids are listed or an error occurred parsing the values.', PAD_3)
+                    ' is active but no grids are listed or an error occurred parsing the values.')
                 deallocate(field%tsi)
                 field%order = ''
             else if (maxval(field%tsi) > shd%NA .or. minval(field%tsi) < 1) then
                 call print_warning( &
                     "The 'tsi' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but contains an invalid grid number' // &
-                    ' or exceeds the number of grids identified in the basin.', PAD_3)
+                    ' or exceeds the number of grids identified in the basin.')
             end if
         end if
         if (allocated(field%tsk)) then
             if (size(field%tsk) == 0) then
                 call print_warning( &
                     "The 'tsk' option (Variable '" // trim(field%vname) // "')" // &
-                    ' is active but no tiles are listed or an error occurred parsing the values.', PAD_3)
+                    ' is active but no tiles are listed or an error occurred parsing the values.')
                 deallocate(field%tsk)
                 field%order = ''
             else if (maxval(field%tsk) > shd%lc%NML .or. minval(field%tsk) < 1) then
                 call print_warning( &
                     "The 'tsk' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but contains an invalid tile number' // &
-                    ' or exceeds the number of tiles identified in the basin.', PAD_3)
+                    ' or exceeds the number of tiles identified in the basin.')
             end if
         end if
         if (allocated(field%gru)) then
@@ -1611,31 +1603,31 @@ module output_files
                 call print_warning( &
                     "The option '" // trim(field%gru_mask) // "' (Variable '" // trim(field%vname) // "')" // &
                     ' supports filtering grid output using 1 GRU at a time.' // &
-                    ' Multiple GRUs are listed. Only the first GRU in the list is used.', PAD_3)
+                    ' Multiple GRUs are listed. Only the first GRU in the list is used.')
             else if (size(field%gru) == 0) then
                 call print_warning( &
                     "The '" // trim(field%gru_mask) // "' option (Variable '" // trim(field%vname) // "')" // &
-                    ' is active but no GRUs are listed or an error occurred parsing the values.', PAD_3)
+                    ' is active but no GRUs are listed or an error occurred parsing the values.')
                 deallocate(field%gru)
                 field%order = ''
             else if (field%gru(1) > shd%lc%NTYPE .or. field%gru(1) < 1) then
                 call print_warning( &
                     "The '" // trim(field%gru_mask) // "' option (Variable '" // trim(field%vname) // "')" // &
                     ' is active but contains an invalid GRU number' // &
-                    ' or exceeds the number of GRUs identified in the basin.', PAD_3)
+                    ' or exceeds the number of GRUs identified in the basin.')
             end if
         end if
         if (len_trim(field%fn) > 0 .and. .not. btest(field%ffreq, IO_FREQ_PTS)) then
             call print_warning( &
                 "The option '" // trim(field%fn) // "' is only supported with the 'pts' option " // &
                 "but the frequency format is not active for this variable " //&
-                "and this modifier has no effect (Variable '" // trim(field%vname) // "').", PAD_3)
+                "and this modifier has no effect (Variable '" // trim(field%vname) // "').")
             field%fn = ''
         else if (btest(field%ffreq, IO_FREQ_PTS) .and. len_trim(field%fn) == 0) then
             call print_remark( &
                 "The 'pts' frequency format is active but no aggregation option is specified. " // &
                 "The default aggregation option of '" // VN_ACC // "' is assumed " // &
-                "(Variable '" // trim(field%vname) // "').", PAD_3)
+                "(Variable '" // trim(field%vname) // "').")
             field%fn = VN_AVG
         end if
 
@@ -1713,12 +1705,12 @@ module output_files
 
         !> Check for 'value' conversion error.
         if (z /= 0) then
-            call print_warning("Errors occurred parsing options of '" // trim(vname) // "'.", PAD_3)
+            call print_warning("Errors occurred parsing options of '" // trim(vname) // "'.")
         end if
 
         !> Exit if no files exist to create.
         if (n == 0) then
-            call print_warning("'" // trim(args(1)) // "' contains no options that will result in output files.", PAD_3)
+            call print_warning("'" // trim(args(1)) // "' contains no options that will result in output files.")
             return
         end if
 
@@ -1855,7 +1847,9 @@ module output_files
         fls_out%dates%iter_s = 0
 
         !> Open output fields configuration file.
+        call reset_tab()
         call print_message('READING: outputs_balance.txt')
+        call increase_tab()
         iun = 100
         call open_txt_input(iun, 'outputs_balance.txt', ierr)
         fls_out%fclose = .false.
@@ -1885,7 +1879,7 @@ module output_files
             call parse(line, ' ', args, nargs)
 
             !> Output field.
-            if (DIAGNOSEMODE) call print_message_detail('Reading output variable: ' // args(1))
+            if (DIAGNOSEMODE) call print_message("Reading output variable: " // args(1))
             z = 0
             select case (args(1))
 
@@ -2088,7 +2082,7 @@ module output_files
                         do j = 2, nargs
                             if (lowercase(args(j)) == 'ttol') then
                                 if (allocated(prmfst%pm%dzaa_ttol)) then
-                                    call print_message_detail("ERROR:" // &
+                                    call print_error( &
                                         " Multiple instances of the 'ttol' option exist in outputs_balance.txt" // &
                                         " or a previous entry of 'DZAA' without the 'ttol' option" // &
                                         " has activated the default value ('ttol 0.1')." // &
@@ -2117,7 +2111,7 @@ module output_files
 
                 case default
                     n = n - 1
-                    call print_warning("'" // trim(args(1)) // "' is not a recognized variable for output.", PAD_3)
+                    call print_warning("'" // trim(args(1)) // "' is not a recognized variable for output.")
             end select
             n = n + 1
 
@@ -2125,8 +2119,8 @@ module output_files
             if (z /= 0) then
                 ierr = z
                 write(line, FMT_GEN) i
-                call print_message_detail( &
-                    "ERROR: Errors occurred while applying the output configuration for '" // trim(args(1)) // &
+                call print_error( &
+                    "Errors occurred while applying the output configuration for '" // trim(args(1)) // &
                     "' (Line " // trim(adjustl(line)) // ').')
             end if
         end do
@@ -2140,7 +2134,8 @@ module output_files
 
         !> Echo the number of active fields read from file.
         write(line, FMT_GEN) n
-        call print_message_detail('Output variables: ' // trim(adjustl(line)))
+        call print_message('Output variables: ' // trim(adjustl(line)))
+        call reset_tab()
 
     end subroutine
 
@@ -2168,7 +2163,7 @@ module output_files
                 z = 0
                 call output_files_write_r2c(fls, shd, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.r2c')
+                    call print_error("Unable to write to output file: " // trim(group%grid%fname) // ".r2c")
                     call program_abort()
                 end if
                 iun = iun + 1
@@ -2177,7 +2172,7 @@ module output_files
                 z = 0
                 call output_files_write_seq(fls, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.seq')
+                    call print_error("Unable to write to output file: " // trim(group%grid%fname) // ".seq")
                     call program_abort()
                 end if
                 iun = iun + 1
@@ -2186,7 +2181,7 @@ module output_files
                 z = 0
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.txt')
+                    call print_error("Unable to write to output file: " // trim(group%grid%fname) // ".txt")
                     call program_abort()
                 end if
                 iun = iun + 1
@@ -2195,7 +2190,7 @@ module output_files
                 z = 0
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z, sep = ',')
                 if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '.csv')
+                    call print_error("Unable to write to output file: " // trim(group%grid%fname) // ".csv")
                     call program_abort()
                 end if
                 iun = iun + 1
@@ -2204,7 +2199,7 @@ module output_files
                 z = 0
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_GRD.ts')
+                    call print_error("Unable to write to output file: " // trim(group%grid%fname) // "_GRD.ts")
                     call program_abort()
                 end if
                 iun = iun + 1
@@ -2216,7 +2211,7 @@ module output_files
                     shd, group%grid%nid, ffreq, group%grid%tid, group%grid%vid, group%grid%dat, dates, &
                     z)
                 if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_GRD.nc')
+                    call print_error("Unable to write to output file: " // trim(group%grid%fname) // "_GRD.nc")
                     call program_abort()
                 end if
             end if
@@ -2225,7 +2220,7 @@ module output_files
                 z = 0
                 call output_files_write_r2c_binary(fls, shd, group%grid%iun + iun, group%grid%dat, group%grid%record, dates, z)
                 if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%grid%fname) // '_binary.r2c')
+                    call print_error("Unable to write to output file: " // trim(group%grid%fname) // "_binary.r2c")
                     call program_abort()
                 end if
                 iun = iun + 1
@@ -2244,7 +2239,7 @@ module output_files
                 z = 0
                 call output_files_write_txt(fls, shd, field, group%tile%iun + iun, group%tile%dat, dates, z)
                 if (z /= 0) then
-                    call print_message_detail('ERROR: Unable to write to output file: ' // trim(group%tile%fname) // '_NML.ts')
+                    call print_error("Unable to write to output file: " // trim(group%tile%fname) // "_NML.ts")
                     call program_abort()
                 end if
                 iun = iun + 1

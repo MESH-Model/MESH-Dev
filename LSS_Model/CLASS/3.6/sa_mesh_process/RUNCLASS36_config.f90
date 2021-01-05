@@ -500,11 +500,11 @@ module RUNCLASS36_config
                 call print_message('ICEBAL_FREEZE_THRESHOLD (FREZTH) override is ACTIVE.')
                 if (allocated(RUNCLASS36_flgs%pm%constant%FREZTH)) then
                     write(line, FMT_GEN) 'Uniform value: ', RUNCLASS36_flgs%pm%constant%FREZTH
-                    call print_message(line, PAD_3)
+                    call print_message(line)
                 end if
                 if (allocated(RUNCLASS36_flgs%pm%gru%FREZTH)) then
                     write(line, FMT_GEN) 'GRU value: ', (RUNCLASS36_flgs%pm%gru%FREZTH(j), j = 1, NTYPE)
-                    call print_message(line, PAD_3)
+                    call print_message(line)
                 end if
             end if
             cglv%FREZTH(il1:il2) = RUNCLASS36_flgs%pm%tile%FREZTH(il1:il2)
@@ -516,11 +516,11 @@ module RUNCLASS36_config
                 call print_message('ICEBAL_SNOW_DEPTH_LIMIT (SNDEPLIM) override is ACTIVE.')
                 if (allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
                     write(line, FMT_GEN) 'Uniform value: ', RUNCLASS36_flgs%pm%constant%SNDEPLIM
-                    call print_message(line, PAD_3)
+                    call print_message(line)
                 end if
                 if (allocated(RUNCLASS36_flgs%pm%gru%SNDEPLIM)) then
                     write(line, FMT_GEN) 'GRU value: ', (RUNCLASS36_flgs%pm%gru%SNDEPLIM(j), j = 1, NTYPE)
-                    call print_message(line, PAD_3)
+                    call print_message(line)
                 end if
             end if
             cglv%SNDEPLIM(il1:il2) = RUNCLASS36_flgs%pm%tile%SNDEPLIM(il1:il2)
@@ -532,11 +532,11 @@ module RUNCLASS36_config
                 call print_message('ICEBAL_SNOW_DENSITY_LIMIT (SNDENLIM) override is ACTIVE.')
                 if (allocated(RUNCLASS36_flgs%pm%constant%SNDENLIM)) then
                     write(line, FMT_GEN) 'Uniform value: ', RUNCLASS36_flgs%pm%constant%SNDENLIM
-                    call print_message(line, PAD_3)
+                    call print_message(line)
                 end if
                 if (allocated(RUNCLASS36_flgs%pm%gru%SNDENLIM)) then
                     write(line, FMT_GEN) 'GRU value: ', (RUNCLASS36_flgs%pm%gru%SNDENLIM(j), j = 1, NTYPE)
-                    call print_message(line, PAD_3)
+                    call print_message(line)
                 end if
             end if
             cglv%SNDENLIM(il1:il2) = RUNCLASS36_flgs%pm%tile%SNDENLIM(il1:il2)

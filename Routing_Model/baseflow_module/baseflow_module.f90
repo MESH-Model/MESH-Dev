@@ -91,6 +91,7 @@ module baseflow_module
                 call print_warning('BASEFLOWFLAG ' // trim(adjustl(line)) // ' not supported.')
         end select
         if (DIAGNOSEMODE) then
+            call increase_tab()
             write(line, '(i8)') bflm%dts/60
             line = 'hf=' // adjustl(line)
             select case (bflm%BUCKETFLAG)
@@ -102,39 +103,40 @@ module baseflow_module
             select case (bflm%BASEFLOWFLAG)
                 case (1)
                     line = 'BASEFLOWFLAG  luo_2012 ' // adjustl(line)
-                    call print_message_detail(line)
+                    call print_message(line)
                     write(line, FMT_GEN) 'WRCHRG_INI', bflm%vs%WrchrgIni
-                    call print_message_detail(line)
+                    call print_message(line)
                     write(line, FMT_GEN) 'QB_INI', bflm%vs%QbIni
-                    call print_message_detail(line)
+                    call print_message(line)
                     write(line, FMT_GEN) 'DGWSH', (bflm%pm_gru%dgw(i), i = 1, NTYPE)
-                    call print_message_detail(line)
+                    call print_message(line)
                     write(line, FMT_GEN) 'AGWSH', (bflm%pm_gru%agw(i), i = 1, NTYPE)
-                    call print_message_detail(line)
+                    call print_message(line)
                 case (2)
                     line = 'BASEFLOWFLAG  wf_lzs ' // adjustl(line)
-                    call print_message_detail(line)
+                    call print_message(line)
                     if (any(bflm%pm_gru%pwr /= 0.0)) then
                         write(line, FMT_GEN) 'pwr_gru', (bflm%pm_gru%pwr(i), i = 1, NTYPE)
-                        call print_message_detail(line)
+                        call print_message(line)
                     else if (any(bflm%pm_iak%pwr /= 0.0)) then
                         write(line, FMT_GEN) 'pwr_iak', (bflm%pm_iak%pwr(i), i = 1, NRVR)
-                        call print_message_detail(line)
+                        call print_message(line)
                     else if (any(bflm%pm_grid%pwr /= 0.0)) then
                         write(line, FMT_GEN) 'pwr_grid (min., max.)', minval(bflm%pm_grid%pwr), maxval(bflm%pm_grid%pwr)
-                        call print_message_detail(line)
+                        call print_message(line)
                     end if
                     if (any(bflm%pm_gru%pwr /= 0.0)) then
                         write(line, FMT_GEN) 'flz_gru', (bflm%pm_gru%flz(i), i = 1, NTYPE)
-                        call print_message_detail(line)
+                        call print_message(line)
                     else if (any(bflm%pm_iak%pwr /= 0.0)) then
                         write(line, FMT_GEN) 'flz_iak', (bflm%pm_iak%flz(i), i = 1, NRVR)
-                        call print_message_detail(line)
+                        call print_message(line)
                     else if (any(bflm%pm_grid%pwr /= 0.0)) then
                         write(line, FMT_GEN) 'flz_grid (min., max.)', minval(bflm%pm_grid%flz), maxval(bflm%pm_grid%flz)
-                        call print_message_detail(line)
+                        call print_message(line)
                     end if
             end select
+            call decrease_tab()
         end if
 
         !> Allocate and initialize local variables.

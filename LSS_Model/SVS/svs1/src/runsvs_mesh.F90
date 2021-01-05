@@ -485,8 +485,7 @@ module runsvs_mesh
         !> Summary.
         if (DIAGNOSEMODE) then
             call reset_tab()
-            call print_message('')
-            call print_message('--------------------------------')
+            call print_new_section('--------------------------------')
             call print_message('SVS DIAGNOSTICS')
             call print_message('--------------------------------')
             write(line, "('TILE:             ', i8)") 1
@@ -586,7 +585,6 @@ module runsvs_mesh
             write(line, "(' SNOW W/C:        ', 2f8.3)") bus(wsnv), bus(wsnv + NG)
             call print_message(line)
             call print_message('--------------------------------')
-            call print_message('')
         end if
 
         !> Initialize surface parameters.
@@ -633,14 +631,15 @@ module runsvs_mesh
 
             !> Print summary.
             call reset_tab()
-            call print_message('')
             call print_message('Found these locations for diagnostic outputs:')
+            call increase_tab()
             write(line, FMT_GEN) 'Folder', 'Grid No.', 'GRU'
-            call print_message_detail(line)
+            call print_message(line)
             do i = 1, WF_NUM_POINTS
                 write(line, FMT_GEN) op%DIR_OUT(i), op%N_OUT(i), op%II_OUT(i)
-                call print_message_detail(line)
+                call print_message(line)
             end do
+            call decrease_tab()
 
             !> Sanity checks.
             do i = 1, WF_NUM_POINTS
@@ -665,7 +664,9 @@ module runsvs_mesh
                     if (z /= 0) then
                         write(line, FMT_GEN) i
                         call print_error('The output folder for point ' // trim(adjustl(line)) // ' does not exist.')
-                        call print_message('Location: ' // trim(adjustl(op%DIR_OUT(i))), PAD_3)
+                        call increase_tab()
+                        call print_message('Location: ' // trim(adjustl(op%DIR_OUT(i))))
+                        call decrease_tab()
                         call program_abort()
                     else
                         close(100, status = 'delete')
@@ -676,8 +677,10 @@ module runsvs_mesh
                 if (op%N_OUT(i) > shd%NAA) then
                     write(line, FMT_GEN) i
                     call print_error('Output point ' // trim(adjustl(line)) // ' is outside the basin.')
+                    call increase_tab()
                     write(line, FMT_GEN) shd%NAA
-                    call print_message('Number of grids inside the basin: ' // trim(adjustl(line)), PAD_3)
+                    call print_message('Number of grids inside the basin: ' // trim(adjustl(line)))
+                    call decrease_tab()
                     call program_abort()
                 end if
             end do
