@@ -319,12 +319,25 @@ module output_files
         write(iun, FMT_CHR) ':Name ' // trim(attname)
         write(iun, FMT_CHR) '#'
         write(iun, FMT_CHR) ':Projection ' // trim(uppercase(shd%CoordSys%Proj))
-        select case (uppercase(shd%CoordSys%Proj))
-            case ('LATLONG')
-                write(iun, FMT_CHR) ':Ellipsoid ' // trim(uppercase(shd%CoordSys%Ellips))
-            case ('UTM')
-                write(iun, FMT_CHR) ':Ellipsoid ' // trim(uppercase(shd%CoordSys%Ellips))
+        write(iun, FMT_CHR) ':Ellipsoid ' // trim(uppercase(shd%CoordSys%Ellips))
+        select case (lowercase(shd%CoordSys%Proj))
+            case ('latlong')
+            case ('utm')
                 write(iun, FMT_CHR) ':Zone ' // trim(uppercase(shd%CoordSys%Zone))
+            case ('rotlatlong')
+                write(line, FMT_GEN) shd%CoordSys%CentreLatitude
+                write(iun, FMT_CHR) ':CentreLatitude ' // trim(adjustl(line))
+                write(line, FMT_GEN) shd%CoordSys%CentreLongitude
+                write(iun, FMT_CHR) ':CentreLongitude ' // trim(adjustl(line))
+                write(line, FMT_GEN) shd%CoordSys%RotationLatitude
+                write(iun, FMT_CHR) ':RotationLatitude ' // trim(adjustl(line))
+                write(line, FMT_GEN) shd%CoordSys%RotationLongitude
+                write(iun, FMT_CHR) ':RotationLongitude ' // trim(adjustl(line))
+            case default
+                call print_warning( &
+                    "Unknown or unsupported projection '" // trim(shd%CoordSys%Proj) // "' for file: " // trim(fname))
+                ierr = 1
+                return
         end select
         write(iun, FMT_CHR) '#'
         write(line, FMT_GEN) shd%xOrigin
@@ -753,12 +766,25 @@ module output_files
         if (z == 0) call write_r2c_binary_line(iun, record, ':Name ' // trim(attname), z)
         if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
         if (z == 0) call write_r2c_binary_line(iun, record, ':Projection ' // trim(uppercase(shd%CoordSys%Proj)), z)
-        select case (uppercase(shd%CoordSys%Proj))
-            case ('LATLONG')
-                if (z == 0) call write_r2c_binary_line(iun, record, ':Ellipsoid ' // trim(uppercase(shd%CoordSys%Ellips)), z)
-            case ('UTM')
-                if (z == 0) call write_r2c_binary_line(iun, record, ':Ellipsoid ' // trim(uppercase(shd%CoordSys%Ellips)), z)
+        if (z == 0) call write_r2c_binary_line(iun, record, ':Ellipsoid ' // trim(uppercase(shd%CoordSys%Ellips)), z)
+        select case (lowercase(shd%CoordSys%Proj))
+            case ('latlong')
+            case ('utm')
                 if (z == 0) call write_r2c_binary_line(iun, record, ':Zone ' // trim(uppercase(shd%CoordSys%Zone)), z)
+            case ('rotlatlong')
+                write(line, FMT_GEN) shd%CoordSys%CentreLatitude
+                if (z == 0) call write_r2c_binary_line(iun, record, ':CentreLatitude ' // trim(adjustl(line)), z)
+                write(line, FMT_GEN) shd%CoordSys%CentreLongitude
+                if (z == 0) call write_r2c_binary_line(iun, record, ':CentreLongitude ' // trim(adjustl(line)), z)
+                write(line, FMT_GEN) shd%CoordSys%RotationLatitude
+                if (z == 0) call write_r2c_binary_line(iun, record, ':RotationLatitude ' // trim(adjustl(line)), z)
+                write(line, FMT_GEN) shd%CoordSys%RotationLongitude
+                if (z == 0) call write_r2c_binary_line(iun, record, ':RotationLongitude ' // trim(adjustl(line)), z)
+            case default
+                call print_warning( &
+                    "Unknown or unsupported projection '" // trim(shd%CoordSys%Proj) // "' for file: " // trim(fname))
+                ierr = 1
+                return
         end select
         if (z == 0) call write_r2c_binary_line(iun, record, '#', z)
         if (z == 0) then
