@@ -13,17 +13,18 @@ module parse_utilities
     !>
     !> Input/output variables:
     !*  field: Field to check if allocated and assigned.
-    !*  size1: Expected size of field (if allocated, and if passing a vector).
+    !*  size1: Expected size of 'field' if passing a vector or an array (optional).
+    !*  size2: Expected size of 'field' if passing an array (optional).
     !*  istat: Return status (returns 'istat' as provided if the field is allocated and assigned).
     interface check_allocated
-        module procedure check_assigned_real
-        module procedure check_assigned_integer
         module procedure check_assigned_character
-        module procedure check_allocated_real1d
-        module procedure check_allocated_integer1d
+        module procedure check_assigned_integer
+        module procedure check_assigned_real
         module procedure check_allocated_character1d
-        module procedure check_allocated_real2d
+        module procedure check_allocated_integer1d
+        module procedure check_allocated_real1d
         module procedure check_allocated_integer2d
+        module procedure check_allocated_real2d
     end interface
 
     !> Description:
@@ -31,15 +32,28 @@ module parse_utilities
     !>
     !> Input/output variables:
     !*  field: Field to check if allocated and assigned.
-    !*  size1: Expected size of 'field' in the first dimension (if allocated, and if passing a vector or array).
-    !*  size2: Expected size of 'field' in the second dimension (if allocated, and if passing an array).
+    !*  size1: Size of 'field' in the first dimension (if passing a vector or array).
+    !*  size2: Size of 'field' in the second dimension (if passing an array).
     !*  istat: Return status (returns 'istat' as provided if allocation returns normal).
     interface allocate_variable
-        module procedure allocate_variable_real1d
-        module procedure allocate_variable_integer1d
         module procedure allocate_variable_character1d
-        module procedure allocate_variable_real2d
+        module procedure allocate_variable_integer1d
+        module procedure allocate_variable_real1d
         module procedure allocate_variable_integer2d
+        module procedure allocate_variable_real2d
+    end interface
+
+    !> Description:
+    !>  Parse the values in a line by space and in consideration of quotes.
+    !>
+    !> Input/output variables:
+    !*  line: Line containing values.
+    !*  values: List of values found in the line.
+    !*  istat: Return status.
+    interface parse_line_values
+        module procedure parse_line_values_character1d
+        module procedure parse_line_values_integer1d
+        module procedure parse_line_values_real1d
     end interface
 
     !> Description:
@@ -49,19 +63,61 @@ module parse_utilities
     !*  field: Variable to assign values to (returns a warning if already allocated).
     !*  size1: Size of 'field' in the first dimension (if passing a vector or array).
     !*  size2: Size of 'field' in the second dimension (if passing an array).
-    !*  args: Values to assign to 'field'.
-    !*  nargs: Size of 'args'.
-    !*  istat: Return status (0: normal).
+    !*  values: Values to assign to 'field'.
+    !*  istat: Return status.
     interface assign_line_args
-        module procedure assign_line_args_real
-        module procedure assign_line_args_integer
         module procedure assign_line_args_character
+        module procedure assign_line_args_integer
+        module procedure assign_line_args_real
         module procedure assign_line_args_logical
-        module procedure assign_line_args_real1d
-        module procedure assign_line_args_integer1d
         module procedure assign_line_args_character1d
-        module procedure assign_line_args_real2d
+        module procedure assign_line_args_integer1d
+        module procedure assign_line_args_real1d
         module procedure assign_line_args_integer2d
+        module procedure assign_line_args_real2d
+    end interface
+
+    !> Description:
+    !>  Assign values to the given field.
+    !>
+    !> Input/output variables:
+    !*  field: Variable to assign values to (returns a warning if already allocated).
+    !*  size1: Size of 'field' in the first dimension (if passing a vector or array).
+    !*  size2: Size of 'field' in the second dimension (if passing an array).
+    !*  values: Values to assign to 'field'.
+    !*  istat: Return status.
+    interface assign_field
+        module procedure assign_field_integer2d
+        module procedure assign_field_real2d
+    end interface
+
+    !> Description:
+    !>  Routine to map a mapped 2D array to a vector provided mapping indices.
+    !>
+    !> Input/output variables:
+    !*  values: Array of values to assign to 'field'.
+    !*  map1: Field index of dimension 1 from 'values'.
+    !*  map2: Field index of dimension 2 from 'values'.
+    !*  field: Variable to assign values to (returns a warning if already allocated).
+    !*  istat: Return status.
+    interface map_to_field
+        module procedure map_to_field_integer2d
+        module procedure map_to_field_real2d
+    end interface
+
+    !> Description:
+    !>  Routine to map a vector to a mapped 2D array provided mapping indices.
+    !>
+    !> Input/output variables:
+    !*  field: Vector of values to assign to 'mapped_values'.
+    !*  map1: Field index of dimension 1 from 'values'.
+    !*  map2: Field index of dimension 2 from 'values'.
+    !*  no_data: No data value (where 'field' does not intersect 'mapped_values').
+    !*  mapped_values: Array of values mapped from 'field'.
+    !*  istat: Return status.
+    interface field_to_mapped_values
+        module procedure field_to_mapped_values_integer2d
+        module procedure field_to_mapped_values_real2d
     end interface
 
     !> Description:
@@ -120,36 +176,8 @@ module parse_utilities
 
     contains
 
-    subroutine check_assigned_real(field, istat)
-
-        !> Input variables.
-        real, intent(in) :: field
-
-        !> Input/output variables.
-        integer istat
-
-        !> Check if the field is assigned.
-        if (field /= huge(field)) then
-            istat = istat + radix(istat)**pstat%ASSIGNED
-        end if
-
-    end subroutine
-
-    subroutine check_assigned_integer(field, istat)
-
-        !> Input variables.
-        integer, intent(in) :: field
-
-        !> Input/output variables.
-        integer istat
-
-        !> Check if the field is assigned.
-        if (field /= huge(field)) then
-            istat = istat + radix(istat)**pstat%ASSIGNED
-        end if
-
-    end subroutine
-
+    !> Description:
+    !>  'check_allocated' for type character.
     subroutine check_assigned_character(field, istat)
 
         !> Input variables.
@@ -165,65 +193,49 @@ module parse_utilities
 
     end subroutine
 
-    subroutine check_allocated_real1d(field, size1, istat)
+    !> Description:
+    !>  'check_allocated' for type integer.
+    subroutine check_assigned_integer(field, istat)
 
         !> Input variables.
-        real, dimension(:), allocatable, intent(in) :: field
-        integer, intent(in) :: size1
+        integer, intent(in) :: field
 
         !> Input/output variables.
         integer istat
 
-        !> Check if the field is allocated.
-        if (allocated(field)) then
-
-            !> Check if the field is assigned.
-            if (all(field /= huge(field))) then
-                istat = istat + radix(istat)**pstat%ASSIGNED
-            end if
-
-            !> Check for mismatched bounds.
-            if (size(field) /= size1) then
-                istat = istat + radix(istat)**pstat%MISMATCHED_BOUNDS
-            end if
-        else
-            istat = istat + radix(istat)**pstat%NOT_ALLOCATED
+        !> Check if the field is assigned.
+        if (field /= huge(field)) then
+            istat = istat + radix(istat)**pstat%ASSIGNED
         end if
 
     end subroutine
 
-    subroutine check_allocated_integer1d(field, size1, istat)
+    !> Description:
+    !>  'check_allocated' for type real.
+    subroutine check_assigned_real(field, istat)
 
         !> Input variables.
-        integer, dimension(:), allocatable, intent(in) :: field
-        integer, intent(in) :: size1
+        real, intent(in) :: field
 
         !> Input/output variables.
         integer istat
 
-        !> Check if the field is allocated.
-        if (allocated(field)) then
-
-            !> Check if the field is assigned.
-            if (all(field /= huge(field))) then
-                istat = istat + radix(istat)**pstat%ASSIGNED
-            end if
-
-            !> Check for mismatched bounds.
-            if (size(field) /= size1) then
-                istat = istat + radix(istat)**pstat%MISMATCHED_BOUNDS
-            end if
-        else
-            istat = istat + radix(istat)**pstat%NOT_ALLOCATED
+        !> Check if the field is assigned.
+        if (field /= huge(field)) then
+            istat = istat + radix(istat)**pstat%ASSIGNED
         end if
 
     end subroutine
 
+    !> Description:
+    !>  'check_allocated' for 1D vector of type character.
     subroutine check_allocated_character1d(field, size1, istat)
 
         !> Input variables.
         character(len = *), dimension(:), allocatable, intent(in) :: field
-        integer, intent(in) :: size1
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: size1
 
         !> Input/output variables.
         integer istat
@@ -237,8 +249,10 @@ module parse_utilities
             end if
 
             !> Check for mismatched bounds.
-            if (size(field) /= size1) then
-                istat = istat + radix(istat)**pstat%MISMATCHED_BOUNDS
+            if (present(size1)) then
+                if (size(field) /= size1) then
+                    istat = istat + radix(istat)**pstat%MISMATCHED_BOUNDS
+                end if
             end if
         else
             istat = istat + radix(istat)**pstat%NOT_ALLOCATED
@@ -246,11 +260,15 @@ module parse_utilities
 
     end subroutine
 
-    subroutine check_allocated_real2d(field, size1, size2, istat)
+    !> Description:
+    !>  'check_allocated' for 1D vector of type integer.
+    subroutine check_allocated_integer1d(field, size1, istat)
 
         !> Input variables.
-        real, dimension(:, :), allocatable, intent(in) :: field
-        integer, intent(in) :: size1, size2
+        integer, dimension(:), allocatable, intent(in) :: field
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: size1
 
         !> Input/output variables.
         integer istat
@@ -264,8 +282,10 @@ module parse_utilities
             end if
 
             !> Check for mismatched bounds.
-            if (size(field, 1) /= size1 .or. size(field, 2) /= size2) then
-                istat = istat + radix(istat)**pstat%MISMATCHED_BOUNDS
+            if (present(size1)) then
+                if (size(field) /= size1) then
+                    istat = istat + radix(istat)**pstat%MISMATCHED_BOUNDS
+                end if
             end if
         else
             istat = istat + radix(istat)**pstat%NOT_ALLOCATED
@@ -273,11 +293,48 @@ module parse_utilities
 
     end subroutine
 
+    !> Description:
+    !>  'check_allocated' for 1D vector of type real.
+    subroutine check_allocated_real1d(field, size1, istat)
+
+        !> Input variables.
+        real, dimension(:), allocatable, intent(in) :: field
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: size1
+
+        !> Input/output variables.
+        integer istat
+
+        !> Check if the field is allocated.
+        if (allocated(field)) then
+
+            !> Check if the field is assigned.
+            if (all(field /= huge(field))) then
+                istat = istat + radix(istat)**pstat%ASSIGNED
+            end if
+
+            !> Check for mismatched bounds.
+            if (present(size1)) then
+                if (size(field) /= size1) then
+                    istat = istat + radix(istat)**pstat%MISMATCHED_BOUNDS
+                end if
+            end if
+        else
+            istat = istat + radix(istat)**pstat%NOT_ALLOCATED
+        end if
+
+    end subroutine
+
+    !> Description.
+    !>  'check_allocated' for 2D array of type integer.
     subroutine check_allocated_integer2d(field, size1, size2, istat)
 
         !> Input variables.
         integer, dimension(:, :), allocatable, intent(in) :: field
-        integer, intent(in) :: size1, size2
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: size1, size2
 
         !> Input/output variables.
         integer istat
@@ -291,8 +348,10 @@ module parse_utilities
             end if
 
             !> Check for mismatched bounds.
-            if (size(field, 1) /= size1 .or. size(field, 2) /= size2) then
-                istat = istat + radix(istat)**pstat%MISMATCHED_BOUNDS
+            if (present(size1) .and. present(size2)) then
+                if (size(field, 1) /= size1 .or. size(field, 2) /= size2) then
+                    istat = istat + radix(istat)**pstat%MISMATCHED_BOUNDS
+                end if
             end if
         else
             istat = istat + radix(istat)**pstat%NOT_ALLOCATED
@@ -300,52 +359,41 @@ module parse_utilities
 
     end subroutine
 
-    subroutine allocate_variable_real1d(field, size1, istat)
+    !> Description:
+    !>  'check_allocated' for 2D array of type real.
+    subroutine check_allocated_real2d(field, size1, size2, istat)
 
         !> Input variables.
-        integer, intent(in) :: size1
+        real, dimension(:, :), allocatable, intent(in) :: field
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: size1, size2
 
         !> Input/output variables.
-        real, dimension(:), allocatable :: field
         integer istat
 
-        !> Local variables.
-        integer z
+        !> Check if the field is allocated.
+        if (allocated(field)) then
 
-        !> Allocate the variable.
-        z = 0
-        allocate(field(size1), stat = z)
-        if (z /= 0) then
-            istat = istat + radix(istat)**pstat%ALLOCATION_ERROR
+            !> Check if the field is assigned.
+            if (all(field /= huge(field))) then
+                istat = istat + radix(istat)**pstat%ASSIGNED
+            end if
+
+            !> Check for mismatched bounds.
+            if (present(size1) .and. present(size2)) then
+                if (size(field, 1) /= size1 .or. size(field, 2) /= size2) then
+                    istat = istat + radix(istat)**pstat%MISMATCHED_BOUNDS
+                end if
+            end if
         else
-            field = huge(field)
+            istat = istat + radix(istat)**pstat%NOT_ALLOCATED
         end if
 
     end subroutine
 
-    subroutine allocate_variable_integer1d(field, size1, istat)
-
-        !> Input variables.
-        integer, intent(in) :: size1
-
-        !> Input/output variables.
-        integer, dimension(:), allocatable :: field
-        integer istat
-
-        !> Local variables.
-        integer z
-
-        !> Allocate the variable.
-        z = 0
-        allocate(field(size1), stat = z)
-        if (z /= 0) then
-            istat = istat + radix(istat)**pstat%ALLOCATION_ERROR
-        else
-            field = huge(field)
-        end if
-
-    end subroutine
-
+    !> Description:
+    !>  'allocate_variable' for 1D vector of type character.
     subroutine allocate_variable_character1d(field, size1, istat)
 
         !> Input variables.
@@ -369,13 +417,15 @@ module parse_utilities
 
     end subroutine
 
-    subroutine allocate_variable_real2d(field, size1, size2, istat)
+    !> Description:
+    !>  'allocate_variable' for 1D vector of type integer.
+    subroutine allocate_variable_integer1d(field, size1, istat)
 
         !> Input variables.
-        integer, intent(in) :: size1, size2
+        integer, intent(in) :: size1
 
         !> Input/output variables.
-        real, dimension(:, :), allocatable :: field
+        integer, dimension(:), allocatable :: field
         integer istat
 
         !> Local variables.
@@ -383,7 +433,7 @@ module parse_utilities
 
         !> Allocate the variable.
         z = 0
-        allocate(field(size1, size2), stat = z)
+        allocate(field(size1), stat = z)
         if (z /= 0) then
             istat = istat + radix(istat)**pstat%ALLOCATION_ERROR
         else
@@ -392,6 +442,33 @@ module parse_utilities
 
     end subroutine
 
+    !> Description:
+    !>  'allocate_variable' for 1D vector of type real.
+    subroutine allocate_variable_real1d(field, size1, istat)
+
+        !> Input variables.
+        integer, intent(in) :: size1
+
+        !> Input/output variables.
+        real, dimension(:), allocatable :: field
+        integer istat
+
+        !> Local variables.
+        integer z
+
+        !> Allocate the variable.
+        z = 0
+        allocate(field(size1), stat = z)
+        if (z /= 0) then
+            istat = istat + radix(istat)**pstat%ALLOCATION_ERROR
+        else
+            field = huge(field)
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'allocate_variable' for 2D array of type integer.
     subroutine allocate_variable_integer2d(field, size1, size2, istat)
 
         !> Input variables.
@@ -415,85 +492,231 @@ module parse_utilities
 
     end subroutine
 
-    subroutine assign_line_args_real(field, args, nargs, istat)
+    !> Description:
+    !>  'allocate_variable' for 2D array of type real.
+    subroutine allocate_variable_real2d(field, size1, size2, istat)
+
+        !> Input variables.
+        integer, intent(in) :: size1, size2
+
+        !> Input/output variables.
+        real, dimension(:, :), allocatable :: field
+        integer istat
+
+        !> Local variables.
+        integer z
+
+        !> Allocate the variable.
+        z = 0
+        allocate(field(size1, size2), stat = z)
+        if (z /= 0) then
+            istat = istat + radix(istat)**pstat%ALLOCATION_ERROR
+        else
+            field = huge(field)
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'parse_line_values' for type character.
+    subroutine parse_line_values_character1d(line, values, max_vals, istat)
 
         !> strings: For 'value' function.
+        !> print_routines: For 'DEFAULT_FIELD_LENGTH' constant.
         use strings
+        use print_routines
 
         !> Input variables.
-        integer, intent(in) :: nargs
-        character(len = *), dimension(nargs), intent(in) :: args
+        character(len = *), intent(in) :: line
 
-        !> Input/output variables.
-        real field
+        !> Input variables (optional).
+        integer, intent(in), optional :: max_vals
 
         !> Output variables.
+        character(len = DEFAULT_FIELD_LENGTH), dimension(:), allocatable, intent(out) :: values
         integer, intent(out) :: istat
 
         !> Local variables.
-        integer z
+        integer n, m, j, i
+        logical in_quotes
 
         !> Initialize return variable.
-        istat = pstat%NORMAL_STATUS
+        istat = radix(istat)**pstat%NORMAL_STATUS
 
-        !> Check to see if variable allocate (issue warning if already allocated).
-        call check_allocated(field, istat)
-        if (btest(istat, pstat%ASSIGNED)) then
-            istat = istat + radix(istat)**pstat%OVERWRITING_FIELD
+        !> Check to see if the variable is allocated and de-allocate if necessary.
+        call check_allocated(values, istat = istat)
+        if (.not. btest(istat, pstat%NOT_ALLOCATED)) then
+            deallocate(values)
         end if
 
-        !> Check for consistency of values.
-        if (nargs /= 1) then
-            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
-        end if
+        !> Cycle through 'line' to count the values delimited by space in consideration of quotes.
+        in_quotes = .false.
+        n = 1
+        do i = 1, len_trim(line)
 
-        !> Extract the field.
-        if (nargs >= 1) then
-            z = 0
-            call value(args(1), field, z)
-            if (z /= 0) then
-                istat = istat + radix(istat)**pstat%CONVERSION_ERROR
+            !> Increment the number of values if a space and not currently in quotes.
+            if (line(i:i) == ' ' .and. .not. in_quotes) n = n + 1
+
+            !> Switch the status of 'in_quotes' if a quote character.
+            if (line(i:i) == '"' .or. line(i:i) == "'") in_quotes = (.not. in_quotes)
+        end do
+
+        !> Limit the maximum number of values (if provided 'max_vals').
+        if (present(max_vals)) n = min(n, max_vals)
+        m = n
+
+        !> Allocate and initialize 'values'.
+        allocate(values(n))
+        values = ''
+
+        !> Parse and assign values.
+        in_quotes = .false.
+        n = 1
+        j = 1
+        do i = 1, len_trim(line)
+
+            !> Increment 'n' and cycle if at the beginning of a new value.
+            if (line(i:i) == ' ' .and. .not. in_quotes .and. n < m) then
+                n = n + 1
+                j = 1
+                cycle
             end if
-        end if
 
-        return
+            !> Switch the status of 'in_quotes' and cycle if a quote character.
+            if (line(i:i) == '"' .or. line(i:i) == "'") then
+                in_quotes = (.not. in_quotes)
+                cycle
+            end if
+
+            !> Add the character to the current value.
+            values(n)(j:j) = line(i:i)
+
+            !> Increment the current position in the string.
+            j = j + 1
+        end do
 
     end subroutine
 
-    subroutine assign_line_args_integer(field, args, nargs, istat)
+    !> Description:
+    !>  'parse_line_values' for type integer.
+    subroutine parse_line_values_integer1d(line, values, max_vals, istat)
 
-        !> Input/output variables.
-        integer, intent(in) :: nargs
-        character(len = *), dimension(nargs), intent(in) :: args
-        integer field
+        !> strings: For 'value' function.
+        !> print_routines: For 'DEFAULT_FIELD_LENGTH' constant.
+        use strings
+        use print_routines
+
+        !> Input variables.
+        character(len = *), intent(in) :: line
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: max_vals
+
+        !> Output variables.
+        integer, dimension(:), allocatable, intent(out) :: values
         integer, intent(out) :: istat
 
         !> Local variables.
-        real fval
-        integer z
+        integer n, i, z
+        character(len = DEFAULT_FIELD_LENGTH), dimension(:), allocatable :: cvalues
 
-        !> Pass the value for internal checks.
-        fval = real(field)
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
 
-        !> Call subroutine for type real.
+        !> Check to see if the variable is allocated and de-allocate if necessary.
+        call check_allocated(values, istat = istat)
+        if (.not. btest(istat, pstat%NOT_ALLOCATED)) then
+            deallocate(values)
+        end if
+
+        !> Call base routine.
+        call parse_line_values(line, cvalues, max_vals, istat)
+        if (istat /= pstat%NORMAL_STATUS) return
+
+        !> Allocate the field.
+        if (present(max_vals)) then
+            n = max_vals
+        else
+            n = size(cvalues)
+        end if
+        call allocate_variable(values, n, istat)
+
+        !> Convert values.
         z = 0
-        call assign_line_args(fval, args, nargs, z)
+        do i = 1, n
+            if (z == 0) call value(cvalues(min(i, n)), values(i), z)
+        end do
 
-        !> Assign field.
-        field = int(fval)
-
-        !> Pass the status return.
-        istat = z
-
-        return
+        !> Check for errors.
+        if (z /= 0) then
+            istat = istat + radix(istat)**pstat%CONVERSION_ERROR
+        end if
 
     end subroutine
 
-    subroutine assign_line_args_character(field, args, nargs, istat)
+    !> Description:
+    !>  'parse_line_values' for type real.
+    subroutine parse_line_values_real1d(line, values, max_vals, istat)
+
+        !> strings: For 'value' function.
+        !> print_routines: For 'DEFAULT_FIELD_LENGTH' constant.
+        use strings
+        use print_routines
 
         !> Input variables.
-        integer, intent(in) :: nargs
-        character(len = *), dimension(nargs), intent(in) :: args
+        character(len = *), intent(in) :: line
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: max_vals
+
+        !> Output variables.
+        real, dimension(:), allocatable, intent(out) :: values
+        integer, intent(out) :: istat
+
+        !> Local variables.
+        integer n, i, z
+        character(len = DEFAULT_FIELD_LENGTH), dimension(:), allocatable :: cvalues
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check to see if the variable is allocated and de-allocate if necessary.
+        call check_allocated(values, istat = istat)
+        if (.not. btest(istat, pstat%NOT_ALLOCATED)) then
+            deallocate(values)
+        end if
+
+        !> Call base routine.
+        call parse_line_values(line, cvalues, max_vals, istat)
+        if (istat /= pstat%NORMAL_STATUS) return
+
+        !> Allocate the field.
+        if (present(max_vals)) then
+            n = max_vals
+        else
+            n = size(cvalues)
+        end if
+        call allocate_variable(values, n, istat)
+
+        !> Convert values.
+        z = 0
+        do i = 1, n
+            if (z == 0) call value(cvalues(min(i, n)), values(i), z)
+        end do
+
+        !> Check for errors.
+        if (z /= 0) then
+            istat = istat + radix(istat)**pstat%CONVERSION_ERROR
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'assign_line_args' for type character.
+    subroutine assign_line_args_character(field, values, istat)
+
+        !> Input variables.
+        character(len = *), intent(in) :: values
 
         !> Input/output variables.
         character(len = *) field
@@ -505,7 +728,7 @@ module parse_utilities
         integer z
 
         !> Initialize return variable.
-        istat = pstat%NORMAL_STATUS
+        istat = radix(istat)**pstat%NORMAL_STATUS
 
         !> Check to see if variable allocate (issue warning if already allocated).
         call check_allocated(field, istat)
@@ -513,33 +736,99 @@ module parse_utilities
             istat = istat + radix(istat)**pstat%OVERWRITING_FIELD
         end if
 
-        !> Check for consistency of values.
-        if (nargs /= 1) then
-            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
-        end if
-
         !> Check field length.
-        if (.not. len(field) >= len(args)) then
+        if (.not. len(field) >= len(values)) then
             istat = istat + radix(istat)**pstat%MISMATCHED_PRECISION
         end if
 
         !> Extract the fields.
-        if (nargs >= 1) then
-            field = adjustl(args(1))
-        end if
-
-        return
+        field = trim(adjustl(values))
 
     end subroutine
 
-    subroutine assign_line_args_logical(field, args, nargs, istat)
+    !> Description:
+    !>  'assign_line_args' for type integer.
+    subroutine assign_line_args_integer(field, values, istat)
+
+        !> strings: For 'value' function.
+        use strings
+
+        !> Input variables.
+        character(len = *), intent(in) :: values
+
+        !> Input/output variables.
+        integer field
+
+        !> Output variables.
+        integer, intent(out) :: istat
+
+        !> Local variables.
+        integer z
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check to see if variable allocate (issue warning if already allocated).
+        call check_allocated(field, istat)
+        if (btest(istat, pstat%ASSIGNED)) then
+            istat = istat + radix(istat)**pstat%OVERWRITING_FIELD
+        end if
+
+        !> Extract the field.
+        z = 0
+        call value(values, field, z)
+        if (z /= 0) then
+            istat = istat + radix(istat)**pstat%CONVERSION_ERROR
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'assign_line_args' for type real.
+    subroutine assign_line_args_real(field, values, istat)
+
+        !> strings: For 'value' function.
+        use strings
+
+        !> Input variables.
+        character(len = *), intent(in) :: values
+
+        !> Input/output variables.
+        real field
+
+        !> Output variables.
+        integer, intent(out) :: istat
+
+        !> Local variables.
+        integer z
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check to see if variable allocate (issue warning if already allocated).
+        call check_allocated(field, istat)
+        if (btest(istat, pstat%ASSIGNED)) then
+            istat = istat + radix(istat)**pstat%OVERWRITING_FIELD
+        end if
+
+        !> Extract the field.
+        z = 0
+        call value(values, field, z)
+        if (z /= 0) then
+            istat = istat + radix(istat)**pstat%CONVERSION_ERROR
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'assign_line_args' for type logical.
+    subroutine assign_line_args_logical(field, values, istat)
 
         !> strings: For 'lowercase' function.
         use strings
 
         !> Input variables.
-        integer, intent(in) :: nargs
-        character(len = *), dimension(nargs), intent(in) :: args
+        character(len = *), intent(in) :: values
 
         !> Input/output variables.
         logical field
@@ -551,138 +840,20 @@ module parse_utilities
         integer z
 
         !> Initialize return variable.
-        istat = pstat%NORMAL_STATUS
-
-        !> Check for consistency of values.
-        if (nargs /= 1) then
-            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
-        end if
+        istat = radix(istat)**pstat%NORMAL_STATUS
 
         !> Extract the fields.
-        if (nargs >= 1) then
-            field = ( &
-                args(1) == '1' .or. lowercase(args(1)) == 'on' .or. lowercase(args(1)) == '.true.' .or. &
-                lowercase(args(1)) == 'true')
-        end if
-
-        return
+        field = (values == '1' .or. lowercase(values) == 'on' .or. lowercase(values) == '.true.' .or. lowercase(values) == 'true')
 
     end subroutine
 
-    subroutine assign_line_args_real1d(field, size1, args, nargs, istat)
-
-        !> strings: For 'value' function.
-        use strings
+    !> Description:
+    !>  'assign_line_args' for 1D vector of type character.
+    subroutine assign_line_args_character1d(field, size1, values, istat)
 
         !> Input variables.
-        integer, intent(in) :: size1, nargs
-        character(len = *), dimension(nargs), intent(in) :: args
-
-        !> Input/output variables.
-        real, dimension(:), allocatable :: field
-
-        !> Output variables.
-        integer, intent(out) :: istat
-
-        !> Local variables.
-        integer i, z
-
-        !> Initialize return variable.
-        istat = pstat%NORMAL_STATUS
-
-        !> Check to see if the variable is allocated and assigned.
-        call check_allocated(field, size1, istat)
-        if (btest(istat, pstat%ASSIGNED)) then
-
-            !> Issue a warning if the variable is already allocated.
-            istat = istat + radix(istat)**pstat%OVERWRITING_FIELD
-        end if
-        if (btest(istat, pstat%NOT_ALLOCATED)) then
-
-            !> Allocate the variable.
-            call allocate_variable(field, size1, istat)
-        end if
-
-        !> Check for consistency of values.
-        if (nargs /= size1) then
-            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
-        end if
-
-        !> Extract the fields.
-        if (.not. btest(istat, pstat%ALLOCATION_ERROR) .and. nargs >= 1) then
-            do i = 1, min(size1, size(field))
-                z = 0
-                if (i > nargs) then
-                    call value(args(nargs), field(i), z)
-                else
-                    call value(args(i), field(i), z)
-                end if
-                if (.not. btest(istat, pstat%CONVERSION_ERROR) .and. z /= 0) then
-                    istat = istat + radix(istat)**pstat%CONVERSION_ERROR
-                end if
-            end do
-        end if
-
-        return
-
-    end subroutine
-
-    subroutine assign_line_args_integer1d(field, size1, args, nargs, istat)
-
-        !> Input/output variables.
-        integer, intent(in) :: size1, nargs
-        character(len = *), dimension(nargs), intent(in) :: args
-        integer, dimension(:), allocatable :: field
-        integer, intent(out) :: istat
-
-        !> Local variables.
-        integer i, z
-
-        !> Initialize return variable.
-        istat = pstat%NORMAL_STATUS
-
-        !> Check to see if the variable is allocated and assigned.
-        call check_allocated(field, size1, istat)
-        if (btest(istat, pstat%ASSIGNED)) then
-
-            !> Issue a warning if the variable is already allocated.
-            istat = istat + radix(istat)**pstat%OVERWRITING_FIELD
-        end if
-        if (btest(istat, pstat%NOT_ALLOCATED)) then
-
-            !> Allocate the variable.
-            call allocate_variable(field, size1, istat)
-        end if
-
-        !> Check for consistency of values.
-        if (nargs /= size1) then
-            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
-        end if
-
-        !> Extract the fields.
-        if (.not. btest(istat, pstat%ALLOCATION_ERROR) .and. nargs >= 1) then
-            do i = 1, min(size1, size(field))
-                z = 0
-                if (i > nargs) then
-                    call value(args(nargs), field(i), z)
-                else
-                    call value(args(i), field(i), z)
-                end if
-                if (.not. btest(istat, pstat%CONVERSION_ERROR) .and. z /= 0) then
-                    istat = istat + radix(istat)**pstat%CONVERSION_ERROR
-                end if
-            end do
-        end if
-
-        return
-
-    end subroutine
-
-    subroutine assign_line_args_character1d(field, size1, args, nargs, istat)
-
-        !> Input variables.
-        integer, intent(in) :: size1, nargs
-        character(len = *), dimension(nargs), intent(in) :: args
+        integer, intent(in) :: size1
+        character(len = *), dimension(:), intent(in) :: values
 
         !> Input/output variables.
         character(len = *), dimension(:), allocatable :: field
@@ -691,10 +862,10 @@ module parse_utilities
         integer, intent(out) :: istat
 
         !> Local variables.
-        integer i, z
+        integer n, i, z
 
         !> Initialize return variable.
-        istat = pstat%NORMAL_STATUS
+        istat = radix(istat)**pstat%NORMAL_STATUS
 
         !> Check to see if the variable is allocated and assigned.
         call check_allocated(field, size1, istat)
@@ -710,55 +881,47 @@ module parse_utilities
         end if
 
         !> Check for consistency of values.
-        if (nargs /= size1) then
+        n = size(values)
+        if (n /= size1) then
             istat = istat + radix(istat)**pstat%COUNT_MISMATCH
         end if
 
         !> Check field length.
-        if (.not. len(field) >= len(args)) then
+        if (.not. len(field) >= len(values)) then
             istat = istat + radix(istat)**pstat%MISMATCHED_PRECISION
         end if
 
         !> Extract the fields.
-        if (.not. btest(istat, pstat%ALLOCATION_ERROR) .and. nargs >= 1) then
+        if (.not. btest(istat, pstat%ALLOCATION_ERROR) .and. n >= 1) then
             do i = 1, min(size1, size(field))
-                if (i > nargs) then
-                    field(i) = adjustl(args(nargs))
+                if (i > n) then
+                    field(i) = adjustl(values(n))
                 else
-                    field(i) = adjustl(args(i))
+                    field(i) = adjustl(values(i))
                 end if
             end do
         end if
 
-        return
-
     end subroutine
 
-    subroutine assign_line_args_real2d(field, size1, size2, args, nargs, map_order, istat, element_id)
-
-        !> strings: For 'value' function.
-        use strings
-
-        !> Input variables.
-        integer, intent(in) :: size1, size2, nargs, map_order
-        character(len = *), dimension(nargs), intent(in) :: args
-        integer, intent(in), optional :: element_id
+    !> Description:
+    !>  'assign_line_args' for 1D vector of type integer.
+    subroutine assign_line_args_integer1d(field, size1, values, istat)
 
         !> Input/output variables.
-        real, dimension(:, :), allocatable :: field
-
-        !> Output variables.
+        integer, intent(in) :: size1
+        character(len = *), dimension(:), intent(in) :: values
+        integer, dimension(:), allocatable :: field
         integer, intent(out) :: istat
 
         !> Local variables.
-        real, dimension(:), allocatable :: fval
-        integer i, z
+        integer n, i, z
 
         !> Initialize return variable.
-        istat = pstat%NORMAL_STATUS
+        istat = radix(istat)**pstat%NORMAL_STATUS
 
         !> Check to see if the variable is allocated and assigned.
-        call check_allocated(field, size1, size2, istat)
+        call check_allocated(field, size1, istat)
         if (btest(istat, pstat%ASSIGNED)) then
 
             !> Issue a warning if the variable is already allocated.
@@ -767,72 +930,101 @@ module parse_utilities
         if (btest(istat, pstat%NOT_ALLOCATED)) then
 
             !> Allocate the variable.
-            call allocate_variable(field, size1, size2, istat)
+            call allocate_variable(field, size1, istat)
+        end if
+
+        !> Check for consistency of values.
+        n = size(values)
+        if (n /= size1) then
+            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
         end if
 
         !> Extract the fields.
-        z = 0
-        call allocate_variable(fval, nargs, z)
-        if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
-            do i = 1, nargs
+        if (.not. btest(istat, pstat%ALLOCATION_ERROR) .and. n >= 1) then
+            do i = 1, min(size1, size(field))
                 z = 0
-                call value(args(i), fval(i), z)
+                if (i > n) then
+                    call value(values(n), field(i), z)
+                else
+                    call value(values(i), field(i), z)
+                end if
                 if (.not. btest(istat, pstat%CONVERSION_ERROR) .and. z /= 0) then
                     istat = istat + radix(istat)**pstat%CONVERSION_ERROR
                 end if
             end do
-
-            !> Assign background field.
-            if (nargs >= 1) then
-                field(:, :) = fval(nargs)
-            end if
-
-            !> Check for mapping.
-            if (map_order == pkey%MAP_ASSIGN_ORDER1) then
-
-                !> Check for consistency of values.
-                if (nargs /= size1) then
-                    istat = istat + radix(istat)**pstat%COUNT_MISMATCH
-                end if
-
-                !> Assign the values.
-                do i = 1, nargs
-                    if (present(element_id)) then
-                        field(min(i, size1), min(max(element_id, 1), size2)) = fval(i)
-                    else
-                        field(min(i, size1), :) = fval(i)
-                    end if
-                end do
-            else
-
-                !> Check for consistency of values.
-                if (nargs /= size2) then
-                    istat = istat + radix(istat)**pstat%COUNT_MISMATCH
-                end if
-
-                !> Assign the values.
-                do i = 1, nargs
-                    if (present(element_id)) then
-                        field(min(max(element_id, 1), size1), min(i, size2)) = fval(i)
-                    else
-                        field(:, min(i, size2)) = fval(i)
-                    end if
-                end do
-            end if
         end if
-
-        return
 
     end subroutine
 
-    subroutine assign_line_args_integer2d(field, size1, size2, args, nargs, map_order, istat, element_id)
+    !> Description:
+    !>  'assign_line_args' for 1D vector of type real.
+    subroutine assign_line_args_real1d(field, size1, values, istat)
 
         !> strings: For 'value' function.
         use strings
 
         !> Input variables.
-        integer, intent(in) :: size1, size2, nargs, map_order
-        character(len = *), dimension(nargs), intent(in) :: args
+        integer, intent(in) :: size1
+        character(len = *), dimension(:), intent(in) :: values
+
+        !> Input/output variables.
+        real, dimension(:), allocatable :: field
+
+        !> Output variables.
+        integer, intent(out) :: istat
+
+        !> Local variables.
+        integer n, i, z
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check to see if the variable is allocated and assigned.
+        call check_allocated(field, size1, istat)
+        if (btest(istat, pstat%ASSIGNED)) then
+
+            !> Issue a warning if the variable is already allocated.
+            istat = istat + radix(istat)**pstat%OVERWRITING_FIELD
+        end if
+        if (btest(istat, pstat%NOT_ALLOCATED)) then
+
+            !> Allocate the variable.
+            call allocate_variable(field, size1, istat)
+        end if
+
+        !> Check for consistency of values.
+        n = size(values)
+        if (n /= size1) then
+            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
+        end if
+
+        !> Extract the fields.
+        if (.not. btest(istat, pstat%ALLOCATION_ERROR) .and. n >= 1) then
+            do i = 1, min(size1, size(field))
+                z = 0
+                if (i > n) then
+                    call value(values(n), field(i), z)
+                else
+                    call value(values(i), field(i), z)
+                end if
+                if (.not. btest(istat, pstat%CONVERSION_ERROR) .and. z /= 0) then
+                    istat = istat + radix(istat)**pstat%CONVERSION_ERROR
+                end if
+            end do
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'assign_line_args' for 2D array of type integer.
+    subroutine assign_line_args_integer2d(field, size1, size2, values, map_order, istat, element_id)
+
+        !> strings: For 'value' function.
+        use strings
+
+        !> Input variables.
+        integer, intent(in) :: size1, size2, map_order
+        character(len = *), dimension(:), intent(in) :: values
         integer, intent(in), optional :: element_id
 
         !> Input/output variables.
@@ -843,10 +1035,10 @@ module parse_utilities
 
         !> Local variables.
         integer, dimension(:), allocatable :: ival
-        integer i, z
+        integer n, i, z
 
         !> Initialize return variable.
-        istat = pstat%NORMAL_STATUS
+        istat = radix(istat)**pstat%NORMAL_STATUS
 
         !> Check to see if the variable is allocated and assigned.
         call check_allocated(field, size1, size2, istat)
@@ -862,32 +1054,33 @@ module parse_utilities
         end if
 
         !> Extract the fields.
+        n = size(values)
         z = 0
-        call allocate_variable(ival, nargs, z)
+        call allocate_variable(ival, n, z)
         if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
-            do i = 1, nargs
+            do i = 1, n
                 z = 0
-                call value(args(i), ival(i), z)
+                call value(values(i), ival(i), z)
                 if (.not. btest(istat, pstat%CONVERSION_ERROR) .and. z /= 0) then
                     istat = istat + radix(istat)**pstat%CONVERSION_ERROR
                 end if
             end do
 
             !> Assign background field.
-            if (nargs >= 1) then
-                field(:, :) = ival(nargs)
+            if (n >= 1) then
+                field(:, :) = ival(n)
             end if
 
             !> Check for mapping.
             if (map_order == pkey%MAP_ASSIGN_ORDER1) then
 
                 !> Check for consistency of values.
-                if (nargs /= size1) then
+                if (n /= size1) then
                     istat = istat + radix(istat)**pstat%COUNT_MISMATCH
                 end if
 
                 !> Assign the values.
-                do i = 1, nargs
+                do i = 1, n
                     if (present(element_id)) then
                         field(min(i, size1), min(max(element_id, 1), size2)) = ival(i)
                     else
@@ -897,12 +1090,12 @@ module parse_utilities
             else
 
                 !> Check for consistency of values.
-                if (nargs /= size2) then
+                if (n /= size2) then
                     istat = istat + radix(istat)**pstat%COUNT_MISMATCH
                 end if
 
                 !> Assign the values.
-                do i = 1, nargs
+                do i = 1, n
                     if (present(element_id)) then
                         field(min(max(element_id, 1), size1), min(i, size2)) = ival(i)
                     else
@@ -912,7 +1105,478 @@ module parse_utilities
             end if
         end if
 
-        return
+    end subroutine
+
+    !> Description:
+    !>  'assign_line_args' for 2D array of type real.
+    subroutine assign_line_args_real2d(field, size1, size2, values, map_order, istat, element_id)
+
+        !> strings: For 'value' function.
+        use strings
+
+        !> Input variables.
+        integer, intent(in) :: size1, size2, map_order
+        character(len = *), dimension(:), intent(in) :: values
+        integer, intent(in), optional :: element_id
+
+        !> Input/output variables.
+        real, dimension(:, :), allocatable :: field
+
+        !> Output variables.
+        integer, intent(out) :: istat
+
+        !> Local variables.
+        real, dimension(:), allocatable :: fval
+        integer n, i, z
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check to see if the variable is allocated and assigned.
+        call check_allocated(field, size1, size2, istat)
+        if (btest(istat, pstat%ASSIGNED)) then
+
+            !> Issue a warning if the variable is already allocated.
+            istat = istat + radix(istat)**pstat%OVERWRITING_FIELD
+        end if
+        if (btest(istat, pstat%NOT_ALLOCATED)) then
+
+            !> Allocate the variable.
+            call allocate_variable(field, size1, size2, istat)
+        end if
+
+        !> Extract the fields.
+        n = size(values)
+        z = 0
+        call allocate_variable(fval, n, z)
+        if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
+            do i = 1, n
+                z = 0
+                call value(values(i), fval(i), z)
+                if (.not. btest(istat, pstat%CONVERSION_ERROR) .and. z /= 0) then
+                    istat = istat + radix(istat)**pstat%CONVERSION_ERROR
+                end if
+            end do
+
+            !> Assign background field.
+            if (n >= 1) then
+                field(:, :) = fval(n)
+            end if
+
+            !> Check for mapping.
+            if (map_order == pkey%MAP_ASSIGN_ORDER1) then
+
+                !> Check for consistency of values.
+                if (n /= size1) then
+                    istat = istat + radix(istat)**pstat%COUNT_MISMATCH
+                end if
+
+                !> Assign the values.
+                do i = 1, n
+                    if (present(element_id)) then
+                        field(min(i, size1), min(max(element_id, 1), size2)) = fval(i)
+                    else
+                        field(min(i, size1), :) = fval(i)
+                    end if
+                end do
+            else
+
+                !> Check for consistency of values.
+                if (n /= size2) then
+                    istat = istat + radix(istat)**pstat%COUNT_MISMATCH
+                end if
+
+                !> Assign the values.
+                do i = 1, n
+                    if (present(element_id)) then
+                        field(min(max(element_id, 1), size1), min(i, size2)) = fval(i)
+                    else
+                        field(:, min(i, size2)) = fval(i)
+                    end if
+                end do
+            end if
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'assign_field' for 2D array of type integer.
+    subroutine assign_field_integer2d(field, size1, size2, values, istat)
+
+        !> Input variables.
+        integer, intent(in) :: size1, size2
+        integer, dimension(:, :), intent(in) :: values
+
+        !> Input/output variables.
+        integer, dimension(:, :), allocatable :: field
+
+        !> Output variables.
+        integer, intent(out) :: istat
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check for consistency in bounds.
+        if (size(values, 1) /= size1 .or. size(values, 2) /= size2) then
+            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
+        end if
+
+        !> Check to see if the variable is allocated and assigned.
+        call check_allocated(field, size1, size2, istat)
+        if (btest(istat, pstat%ASSIGNED)) then
+
+            !> Issue a warning if the variable is already allocated.
+            istat = istat + radix(istat)**pstat%OVERWRITING_FIELD
+        end if
+        if (btest(istat, pstat%NOT_ALLOCATED)) then
+
+            !> Allocate the variable.
+            call allocate_variable(field, size1, size2, istat)
+        end if
+
+        !> Assign the field.
+        if (.not. btest(istat, pstat%ALLOCATION_ERROR) .and. .not. btest(istat, pstat%COUNT_MISMATCH)) then
+            field = values
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'assign_field' for 2D array of type real.
+    subroutine assign_field_real2d(field, size1, size2, values, istat)
+
+        !> Input variables.
+        integer, intent(in) :: size1, size2
+        real, dimension(:, :), intent(in) :: values
+
+        !> Input/output variables.
+        real, dimension(:, :), allocatable :: field
+
+        !> Output variables.
+        integer, intent(out) :: istat
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check to see if the variable is allocated and assigned.
+        call check_allocated(field, size1, size2, istat)
+        if (btest(istat, pstat%ASSIGNED)) then
+
+            !> Issue a warning if the variable is already allocated.
+            istat = istat + radix(istat)**pstat%OVERWRITING_FIELD
+        end if
+        if (btest(istat, pstat%NOT_ALLOCATED)) then
+
+            !> Allocate the variable.
+            call allocate_variable(field, size1, size2, istat)
+        end if
+
+        !> Assign the field.
+        if (.not. btest(istat, pstat%ALLOCATION_ERROR) .and. .not. btest(istat, pstat%COUNT_MISMATCH)) then
+            field = values
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'map_to_field' for type integer.
+    subroutine map_to_field_integer2d(values, map1, map2, field, istat)
+
+        !> Input variables.
+        integer, dimension(:, :), intent(in) :: values
+        integer, dimension(:), intent(in) :: map1, map2
+
+        !> Input/output variables.
+        integer, dimension(:) :: field
+
+        !> Output variables.
+        integer, intent(out) :: istat
+
+        !> Local variables.
+        integer n
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check for consistency in bounds.
+        if ((maxval(map1) > size(values, 1) .or. maxval(map2) > size(values, 2)) .or. &
+            (size(map1) /= size(field) .or. size(map2) /= size(field))) then
+            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
+        end if
+
+        !> Assign the field.
+        if (.not. btest(istat, pstat%COUNT_MISMATCH)) then
+            do n = 1, size(field)
+                field(n) = values(map1(n), map2(n))
+            end do
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'map_to_field' for type real.
+    subroutine map_to_field_real2d(values, map1, map2, field, istat)
+
+        !> Input variables.
+        real, dimension(:, :), intent(in) :: values
+        integer, dimension(:), intent(in) :: map1, map2
+
+        !> Input/output variables.
+        real, dimension(:) :: field
+
+        !> Output variables.
+        integer, intent(out) :: istat
+
+        !> Local variables.
+        integer n
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check for consistency in bounds.
+        if ((maxval(map1) > size(values, 1) .or. maxval(map2) > size(values, 2)) .or. &
+            (size(map1) /= size(field) .or. size(map2) /= size(field))) then
+            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
+        end if
+
+        !> Assign the field.
+        if (.not. btest(istat, pstat%COUNT_MISMATCH)) then
+            do n = 1, size(field)
+                field(n) = values(map1(n), map2(n))
+            end do
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'field_to_mapped_values' for type integer.
+    subroutine field_to_mapped_values_integer2d(field, map1, map2, no_data, mapped_values, istat)
+
+        !> Input variables.
+        integer, dimension(:), intent(in) :: field
+        integer, dimension(:), intent(in) :: map1, map2
+        integer, intent(in), optional :: no_data
+
+        !> Input/output variables.
+        integer, dimension(:, :) :: mapped_values
+
+        !> Output variables.
+        integer, intent(out) :: istat
+
+        !> Local variables.
+        integer n
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check for consistency in bounds.
+        if ((maxval(map1) > size(mapped_values, 1) .or. maxval(map2) > size(mapped_values, 2)) .or. &
+            (size(map1) /= size(field) .or. size(map2) /= size(field))) then
+            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
+        end if
+
+        !> Assign the field.
+        if (.not. btest(istat, pstat%COUNT_MISMATCH)) then
+            if (present(no_data)) then
+                mapped_values = no_data
+            else
+                mapped_values = 0
+            end if
+            do n = 1, size(field)
+                mapped_values(map1(n), map2(n)) = field(n)
+            end do
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  'field_to_mapped_values' for type real.
+    subroutine field_to_mapped_values_real2d(field, map1, map2, no_data, mapped_values, istat)
+
+        !> Input variables.
+        real, dimension(:), intent(in) :: field
+        integer, dimension(:), intent(in) :: map1, map2
+        real, intent(in), optional :: no_data
+
+        !> Input/output variables.
+        real, dimension(:, :) :: mapped_values
+
+        !> Output variables.
+        integer, intent(out) :: istat
+
+        !> Local variables.
+        integer n
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check for consistency in bounds.
+        if ((maxval(map1) > size(mapped_values, 1) .or. maxval(map2) > size(mapped_values, 2)) .or. &
+            (size(map1) /= size(field) .or. size(map2) /= size(field))) then
+            istat = istat + radix(istat)**pstat%COUNT_MISMATCH
+        end if
+
+        !> Assign the field.
+        if (.not. btest(istat, pstat%COUNT_MISMATCH)) then
+            if (present(no_data)) then
+                mapped_values = no_data
+            else
+                mapped_values = 0.0
+            end if
+            do n = 1, size(field)
+                mapped_values(map1(n), map2(n)) = field(n)
+            end do
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  Split the provided time string into components of hours, minutes, and seconds.
+    !>
+    !> Input:
+    !*  time: Time string to parse.
+    !>
+    !> Output:
+    !*  hour: Hour in day component of date.
+    !*  minutes: Minutes in hour component of date.
+    !*  seconds: Seconds in minutes component of date.
+    !*  utc_offset: Offset from UTC provided a time zone (optional).
+    !*  istat: Return status.
+    subroutine parse_time(time, hour, minutes, seconds, utc_offset, istat)
+
+        !> strings: For 'compact', 'parse' and 'value' functions.
+        !> print_routines: For 'DEFAULT_FIELD_LENGTH' constant.
+        use strings
+        use print_routines
+
+        !> Input variables.
+        character(len = *), intent(in) :: time
+
+        !> Output variables (optional).
+        integer, intent(out), optional :: hour, minutes, seconds
+        real, intent(out), optional :: utc_offset
+
+        !> Output variables.
+        integer, intent(out) :: istat
+
+        !> Local variables.
+        integer h, m, s, i, z
+        real u
+        character(len = DEFAULT_FIELD_LENGTH) ctime, czone
+
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
+
+        !> Check dimensions of the variable.
+        if (len_trim(time) > len(ctime)) then
+            istat = radix(istat)**pstat%MISMATCHED_PRECISION
+        else
+
+            !> Assign to local variable.
+            ctime = adjustl(time)
+        end if
+
+        !> Compact and convert the line to uppercase.
+        call compact(ctime)
+        ctime = uppercase(ctime)
+
+        !> Check for a time zone signature.
+        u = 0.0
+        if (index(ctime, 'Z') > 0) then
+
+            !> Replace the 'Z' UTC symbol (offset is zero).
+            ctime = ctime(1:(index(ctime, 'Z') - 1))
+        else if (index(ctime, '-') /= 0 .or. index(ctime, '+') /= 0) then
+
+            !> '+02:00', '+02', '+2' format (+/-).
+            if (index(ctime, '-') /= 0) then
+                i = index(ctime, '-')
+            else
+                i = index(ctime, '+')
+            end if
+            czone = ctime(i:)
+
+            !> Parse the time zone.
+            z = 0
+            h = 0
+            m = 0
+            if (index(czone, ':') > 1) then
+
+                !> Format contains ':'.
+                if (z == 0) call value(czone(1:(index(czone, ':') - 1)), h, z)
+                if (z == 0) call value(czone((index(czone, ':') + 1):), m, z)
+            else
+
+                !> Format is '-530' or '-0530' (or format is '-6' or '-06' and value is used as-is).
+                if (z == 0) call value(czone, h, z)
+                if (z == 0) then
+                    if (abs(h) > 99) then
+                        m = h - floor(h/100.0)*100
+                        h = floor(h/100.0)
+                    end if
+                    u = h + real(m)/60.0
+                end if
+            end if
+
+            !> Check for conversion errors.
+            if (z /= 0) then
+                istat = istat + radix(istat)**pstat%CONVERSION_ERROR
+            else
+                ctime = ctime(1:(i - 1))
+            end if
+        end if
+
+        !> Parse time.
+        if (.not. btest(istat, pstat%CONVERSION_ERROR)) then
+
+            !> Assume an hourly value if no colon ':' exists (e.g., '24').
+            h = 0
+            m = 0
+            s = 0
+            if (index(ctime, ':') == 0) then
+
+                !> Try to convert the value.
+                z = 0
+                call value(ctime, h, z)
+
+                !> Check for errors.
+                if (z /= 0) then
+
+                    !> Conversion error.
+                    istat = istat + radix(istat)**pstat%CONVERSION_ERROR
+                else if (h < 0 .or. h > 24) then
+
+                    !> Invalid value.
+                    istat = istat + radix(istat)**pstat%BAD_TIME_FORMAT
+                end if
+            else
+
+                !> Split the time into its components where colon(s) ':' exist
+                !>  (e.g., '24:00:00.000', '24:00:00', '24:00').
+                z = 0
+                if (index(ctime, ':') > 1) then
+                    call value(ctime(1:(index(ctime, ':') - 1)), h, z)
+                    if (index(ctime, ':') /= index(ctime, ':', back = .true.)) then
+                        if (z == 0) call value(ctime((index(ctime, ':') + 1):(index(ctime, ':', back = .true.) - 1)), m, z)
+                        if (z == 0) call value(ctime((index(ctime, ':', back = .true.) + 1):), s, z)
+                    else
+                        if (z == 0) call value(ctime((index(ctime, ':') + 1):), m, z)
+                    end if
+                end if
+
+                !> Check for conversion errors.
+                if (z /= 0) istat = istat + radix(istat)**pstat%CONVERSION_ERROR
+            end if
+        end if
+
+        !> Update output variables (if no errors occurred).
+        if (.not. btest(istat, pstat%NORMAL_STATUS)) then
+            h = 0; m = 0; s = 0; u = 0.0
+        end if
+        if (present(hour)) hour = h
+        if (present(minutes)) minutes = m
+        if (present(seconds)) seconds = s
+        if (present(utc_offset)) utc_offset = u
 
     end subroutine
 
@@ -929,122 +1593,95 @@ module parse_utilities
     !*  hour: Hour in day component of date.
     !*  minutes: Minutes in hour component of date.
     !*  seconds: Seconds in minutes component of date.
-    !>
-    !> Error return:
-    !*  ierr: Return status (of 'parse_status_keys' type value).
-    subroutine parse_datetime(datetime, year, month, day, hour, minutes, seconds, ierr)
+    !*  utc_offset: Offset from UTC provided a time zone (optional).
+    !*  istat: Return status.
+    subroutine parse_datetime(datetime, year, month, day, hour, minutes, seconds, utc_offset, istat)
 
         !> strings: For 'compact', 'parse' and 'value' functions.
-        !> print_routines: For 'DEFAULT_LINE_LENGTH' and 'DEFAULT_FIELD_LENGTH' constants.
-        !> module_dates: For 'get_jday' and 'get_jdate' functions.
+        !> print_routines: For 'DEFAULT_FIELD_LENGTH' constant.
         use strings
         use print_routines
-        use model_dates
 
         !> Input variables.
         character(len = *), intent(in) :: datetime
 
+        !> Output variables (optional).
+        integer, intent(out), optional :: year, month, day, hour, minutes, seconds
+        real, intent(out), optional :: utc_offset
+
         !> Output variables.
-        integer, intent(out) :: year, month, day, hour, minutes, seconds, ierr
+        integer, intent(out) :: istat
 
         !> Local variables.
-        integer nargs, j, h, m, n, i, z
-        real(kind = 8) dt
-        character(len = DEFAULT_FIELD_LENGTH), dimension(DEFAULT_LINE_LENGTH/DEFAULT_FIELD_LENGTH) :: args
-        character(len = DEFAULT_LINE_LENGTH) line
-        character(len = DEFAULT_FIELD_LENGTH) ctmp
+        integer y, m, d, i, z
+        character(len = DEFAULT_FIELD_LENGTH) cdate, ctime
 
-        !> Initially set the values to zero.
-        year = 0; month = 0; day = 0; hour = 0; minutes = 0; seconds = 0
+        !> Initialize return variable.
+        istat = radix(istat)**pstat%NORMAL_STATUS
 
-        !> Initialize the return status.
-        ierr = 0
+        !> Check dimensions of the variable.
+        if (len_trim(datetime) > len(cdate)) then
+            istat = radix(istat)**pstat%MISMATCHED_PRECISION
+        else
 
-        !> Replace forward-slash with dash.
-        line = adjustl(datetime)
-        call compact(line)
-        do i = 1, len_trim(line)
-            if (line(i:i) == '/') line(i:i) = '-'
-        end do
-
-        !> Parse date/time text.
-        call parse(line, ' ', args, nargs)
-        if (.not. nargs > 0) then
-            ierr = pstat%BAD_FORMAT
-            return
+            !> Assign to local variable.
+            cdate = adjustl(datetime)
         end if
 
-        !> Find start time in the list of attributes.
-        do n = 1, nargs
+        !> Compact the line.
+        call compact(cdate)
 
-            !> Scan for a date signature (e.g., 2003-01-31).
-            ctmp = adjustl(args(n))
-            z = 0
-            if (index(ctmp, '-') > 1 .and. index(ctmp, '-') /= index(ctmp, '-', back = .true.)) then
-                call value(ctmp(1:(index(ctmp, '-') - 1)), year, z)
-                if (z == 0) call value(ctmp((index(ctmp, '-') + 1):(index(ctmp, '-', back = .true.) - 1)), month, z)
-                if (z == 0) call value(ctmp((index(ctmp, '-', back = .true.) + 1):len(ctmp)), day, z)
-            end if
-            if (z /= 0) then
-                ierr = pstat%BAD_DATE_FORMAT
-                return
-            end if
-
-            !> Scan for a time signature (e.g., 24:00:00.000; 24:00:00; 24:00).
-            ctmp = adjustl(args(n))
-            z = 0
-            if (index(ctmp, ':') > 1) then
-                call value(ctmp(1:(index(ctmp, ':') - 1)), hour, z)
-                if (index(ctmp, ':') /= index(ctmp, ':', back = .true.)) then
-                    if (z == 0) call value(ctmp((index(ctmp, ':') + 1):(index(ctmp, ':', back = .true.) - 1)), minutes, z)
-                    if (z == 0) call value(ctmp((index(ctmp, ':', back = .true.) + 1):len(ctmp)), seconds, z)
-                else
-                    if (z == 0) call value(ctmp((index(ctmp, ':') + 1):len(ctmp)), minutes, z)
-                end if
-
-                !> Check for time-zone signature (e.g., -6, -06, -530, -0530, -6:00, -06:00).
-                if ((n + 1) <= nargs) then
-                    ctmp = adjustl(args(n + 1))
-                    h = 0
-                    m = 0
-                    if (index(ctmp, ':') > 1) then
-
-                        !> Format contains ':'.
-                        if (z == 0) call value(ctmp(1:(index(ctmp, ':') - 1)), h, z)
-                        if (z == 0) call value(ctmp((index(ctmp, ':') + 1):len(ctmp)), m, z)
-                    else
-                        if (z == 0) call value(ctmp, h, z)
-                        if (z == 0) then
-
-                            !> Format is '-530' or '-0530' (or format is '-6' or '-06' and value is used as-is).
-                            if (abs(h) > 99) then
-                                m = h - floor(h/100.0)*100
-                                h = floor(h/100.0)
-                            end if
-                        end if
-                    end if
-
-                    !> Calculate the adjustment using 'h' and 'm' to convert to UTC+00.
-                    if (z == 0) then
-                        j = get_jday(month, day, year)
-                        dt = get_jdate(year, j)*24.0 + hour + minutes/60.0 + seconds/60.0/60.0
-                        dt = dt - (h + m/60.0)
-                        year = floor(dt/24.0/365.25) + 1601
-                        j = floor(dt/24.0) - floor((year - 1601)*365.25)
-                        call Julian2MonthDay(j, year, month, day)
-                        hour = floor(dt) - get_jdate(year, j)*24
-                        minutes = floor((dt - floor(dt))*60.0)
-                        seconds = floor((dt - floor(dt))*60.0*60.0 - minutes*60.0)
-                    end if
-                end if
-            end if
-            if (z /= 0) then
-                ierr = pstat%BAD_TIME_FORMAT
-                return
-            end if
+        !> Replace forward-slashes with dashes.
+        do i = 1, len_trim(cdate)
+            if (cdate(i:i) == '/') cdate(i:i) = '-'
         end do
 
-        return
+        !> Search for a time signature.
+        if (index(cdate, '-') == 0) then
+            ctime = cdate
+            cdate = ''
+        else if (index(trim(cdate), ' ') > 0) then
+            ctime = cdate((index(trim(cdate), ' ') + 1):)
+            cdate = cdate(1:(index(trim(cdate), ' ') - 1))
+        else
+            ctime = ''
+            cdate = cdate
+        end if
+
+        !> Call 'parse_time' to extract the time components.
+        if (len_trim(ctime) > 0) then
+            call parse_time(ctime, hour, minutes, seconds, utc_offset, istat)
+        end if
+
+        !> Parse the date.
+        if (len_trim(cdate) > 0 .and. btest(istat, pstat%NORMAL_STATUS)) then
+
+            !> Scan for a date signature (e.g., 2003-01-31).
+            z = 0
+            y = 0
+            m = 0
+            d = 0
+            if (index(cdate, '-') > 1 .and. index(cdate, '-') /= index(cdate, '-', back = .true.)) then
+                call value(cdate(1:(index(cdate, '-') - 1)), y, z)
+                if (z == 0) call value(cdate((index(cdate, '-') + 1):(index(cdate, '-', back = .true.) - 1)), m, z)
+                if (z == 0) call value(cdate((index(cdate, '-', back = .true.) + 1):), d, z)
+
+                !> Check for converion errors.
+                if (z /= 0) istat = istat + radix(istat)**pstat%CONVERSION_ERROR
+            else
+
+                !> Bad date format.
+                istat = istat + radix(istat)**pstat%BAD_DATE_FORMAT
+            end if
+        end if
+
+        !> Update output variables (if no errors occurred).
+        if (.not. btest(istat, pstat%NORMAL_STATUS)) then
+            y = 0; m = 0; d = 0
+        end if
+        if (present(year)) year = y
+        if (present(month)) month = m
+        if (present(day)) day = d
 
     end subroutine
 

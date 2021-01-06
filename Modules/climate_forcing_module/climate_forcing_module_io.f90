@@ -268,7 +268,8 @@ module climate_forcing_io
                         trim(cm%dat(vid)%fpath))
                     call program_abort()
                 end if
-                call parse_datetime(time_attribute, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, z)
+                call parse_datetime(time_attribute, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, istat = z)
+                if (.not. btest(z, pstat%CONVERSION_ERROR)) z = 0
                 ierr = nf90_get_att(cm%dat(vid)%fiun, cm%dat(vid)%tid, 'calendar', time_calendar)
                 if (ierr /= NF90_NOERR .or. lowercase(time_calendar) /= 'gregorian') then
                     call print_warning( &

@@ -1,15 +1,15 @@
-!>
 !> Description:
 !>  Subroutine to read parameters from file, in delimited format.
 !>  Parameter values are saved directly to the shared parameter object
 !>  at the GRU and NRVR levels, accessible by 'sa_mesh_variables'.
 !>
-!> Input:
-!*  shd: Basin shed object, containing information about the grid
-!*      definition read from MESH_drainage_database.r2c.
-!*  iun: Unit of the input file (default: 100).
-!*  fname: Full path to the file (default: './MESH_input_parameters.r2c').
-!>
+!> Input variables:
+!*  shd: Basin 'shed' object (properties).
+!*  iun: Unit of the input file.
+!*  fname: Full path to the file (default: './MESH_parameters.r2c').
+!*
+!> Output variables:
+!*  ierr: Return status.
 subroutine read_parameters_csv(shd, iun, fname, ierr)
 
     !> strings: For 'readline', 'compact', 'parse', 'uppercase' and 'lowercase' functions.
@@ -18,12 +18,12 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
     use strings
     use sa_mesh_common
     use parse_utilities
-    use FLAGS
 
     !> Process modules: Required for process variables, parameters.
     use baseflow_module
     use rte_module
     use runsvs_mesh
+    use FLAGS
 
     implicit none
 
@@ -38,7 +38,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
     !> Local variables.
     integer nargs, n, p, b, k, j, i, ignd, icondition, istat, z
     character(len = DEFAULT_LINE_LENGTH) line
-    character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
+    character(len = DEFAULT_FIELD_LENGTH), dimension(:), allocatable :: args
     character(len = DEFAULT_FIELD_LENGTH) field1, field2, field3
 
     !> Initialize the return status.
@@ -79,7 +79,8 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
         do i = 1, len_trim(line)
             if (line(i:i) == ',') line(i:i) = ' '
         end do
-        call parse(line, ' ', args, nargs)
+        call parse_line_values(line, args, istat = istat)
+        nargs = size(args)
 
         !> Cycle if no arguments exist.
         if (nargs < 1) cycle
@@ -89,7 +90,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
         field1 = ''
         field2 = ''
         field3 = ''
-        istat = pstat%NORMAL_STATUS
+        istat = radix(istat)**pstat%NORMAL_STATUS
         p = 0
         b = 0
 
@@ -110,7 +111,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%deglat, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%deglat, p, args(2:), istat)
                 end if
             case (VN_SVS_DEGLNG)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -121,7 +122,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%deglng, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%deglng, p, args(2:), istat)
                 end if
             case (VN_SVS_OBSERVED_FORCING)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -131,7 +132,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                         args(2) = '.true.'
                     end if
                     p = 1
-                    call assign_line_args(svs_mesh%vs%observed_forcing, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%observed_forcing, args(2), istat)
                 end if
             case (VN_SVS_ZUSL)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -142,7 +143,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%zusl, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%zusl, p, args(2:), istat)
                 end if
             case (VN_SVS_ZTSL)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -153,21 +154,21 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%ztsl, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%ztsl, p, args(2:), istat)
                 end if
             case (VN_SVS_SIGMA_U)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
                     p = 1
-                    call assign_line_args(svs_mesh%vs%sigma_u, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%sigma_u, args(2), istat)
                 end if
             case (VN_SVS_SIGMA_T)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
                     p = 1
-                    call assign_line_args(svs_mesh%vs%sigma_t, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%sigma_t, args(2), istat)
                 end if
             case (VN_SVS_SLOP)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -178,7 +179,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%slop, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%slop, p, args(2:), istat)
                 end if
             case (VN_SVS_DRAINDENS)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -189,21 +190,21 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%draindens, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%draindens, p, args(2:), istat)
                 end if
             case (VN_SVS_SOILTEXT)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
                     p = 1
-                    call assign_line_args(svs_mesh%vs%soiltext, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%soiltext, args(2), istat)
                 end if
             case (VN_SVS_KHYD)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
                     p = 1
-                    call assign_line_args(svs_mesh%vs%khyd, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%khyd, args(2), istat)
                 end if
             case (VN_SVS_SAND)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -227,15 +228,15 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                         p = shd%lc%NTYPE
                     end if
                     b = shd%lc%IGND
-                    call assign_line_args(svs_mesh%vs%sand, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    call assign_line_args(svs_mesh%vs%sand, p, b, args(2:), pkey%MAP_ASSIGN_ORDER2, istat)
                     b = ignd
                 end if
             case (VN_SVS_SAND_N)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
-                    call assign_line_args(k, args(2:2), 1, istat)
-                    istat = pstat%NORMAL_STATUS
+                    call assign_line_args(k, args(2), istat)
+                    istat = radix(istat)**pstat%NORMAL_STATUS
                     if (SHDFILEFMT == 2) then
                         p = shd%lc%NML
                     else
@@ -243,7 +244,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     end if
                     nargs = nargs - 1
                     b = shd%lc%IGND
-                    call assign_line_args(svs_mesh%vs%sand, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    call assign_line_args(svs_mesh%vs%sand, p, b, args(3:), pkey%MAP_ASSIGN_ORDER2, istat, k)
                     b = ignd
                 end if
             case (VN_SVS_CLAY)
@@ -268,15 +269,15 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                         p = shd%lc%NTYPE
                     end if
                     b = shd%lc%IGND
-                    call assign_line_args(svs_mesh%vs%clay, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    call assign_line_args(svs_mesh%vs%clay, p, b, args(2:), pkey%MAP_ASSIGN_ORDER2, istat)
                     b = ignd
                 end if
             case (VN_SVS_CLAY_N)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
-                    call assign_line_args(k, args(2:2), 1, istat)
-                    istat = pstat%NORMAL_STATUS
+                    call assign_line_args(k, args(2), istat)
+                    istat = radix(istat)**pstat%NORMAL_STATUS
                     if (SHDFILEFMT == 2) then
                         p = shd%lc%NML
                     else
@@ -284,7 +285,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     end if
                     nargs = nargs - 1
                     b = shd%lc%IGND
-                    call assign_line_args(svs_mesh%vs%clay, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    call assign_line_args(svs_mesh%vs%clay, p, b, args(3:), pkey%MAP_ASSIGN_ORDER2, istat, k)
                     b = ignd
                 end if
             case (VN_SVS_WSOIL)
@@ -309,15 +310,15 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                         p = shd%lc%NTYPE
                     end if
                     b = shd%lc%IGND
-                    call assign_line_args(svs_mesh%vs%wsoil, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    call assign_line_args(svs_mesh%vs%wsoil, p, b, args(2:), pkey%MAP_ASSIGN_ORDER2, istat)
                     b = ignd
                 end if
             case (VN_SVS_WSOIL_N)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
-                    call assign_line_args(k, args(2:2), 1, istat)
-                    istat = pstat%NORMAL_STATUS
+                    call assign_line_args(k, args(2), istat)
+                    istat = radix(istat)**pstat%NORMAL_STATUS
                     if (SHDFILEFMT == 2) then
                         p = shd%lc%NML
                     else
@@ -325,7 +326,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     end if
                     nargs = nargs - 1
                     b = shd%lc%IGND
-                    call assign_line_args(svs_mesh%vs%wsoil, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    call assign_line_args(svs_mesh%vs%wsoil, p, b, args(3:), pkey%MAP_ASSIGN_ORDER2, istat, k)
                     b = ignd
                 end if
             case (VN_SVS_ISOIL)
@@ -350,15 +351,15 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                         p = shd%lc%NTYPE
                     end if
                     b = shd%lc%IGND
-                    call assign_line_args(svs_mesh%vs%isoil, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    call assign_line_args(svs_mesh%vs%isoil, p, b, args(2:), pkey%MAP_ASSIGN_ORDER2, istat)
                     b = ignd
                 end if
             case (VN_SVS_ISOIL_N)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
-                    call assign_line_args(k, args(2:2), 1, istat)
-                    istat = pstat%NORMAL_STATUS
+                    call assign_line_args(k, args(2), istat)
+                    istat = radix(istat)**pstat%NORMAL_STATUS
                     if (SHDFILEFMT == 2) then
                         p = shd%lc%NML
                     else
@@ -366,7 +367,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     end if
                     nargs = nargs - 1
                     b = shd%lc%IGND
-                    call assign_line_args(svs_mesh%vs%isoil, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    call assign_line_args(svs_mesh%vs%isoil, p, b, args(3:), pkey%MAP_ASSIGN_ORDER2, istat, k)
                     b = ignd
                 end if
             case (VN_SVS_TGROUND)
@@ -391,14 +392,14 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                         p = shd%lc%NTYPE
                     end if
                     b = svs_mesh%vs%kthermal
-                    call assign_line_args(svs_mesh%vs%tground, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    call assign_line_args(svs_mesh%vs%tground, p, b, args(2:), pkey%MAP_ASSIGN_ORDER2, istat)
                 end if
             case (VN_SVS_TGROUND_N)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
-                    call assign_line_args(k, args(2:2), 1, istat)
-                    istat = pstat%NORMAL_STATUS
+                    call assign_line_args(k, args(2), istat)
+                    istat = radix(istat)**pstat%NORMAL_STATUS
                     if (SHDFILEFMT == 2) then
                         p = shd%lc%NML
                     else
@@ -406,7 +407,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     end if
                     nargs = nargs - 1
                     b = svs_mesh%vs%kthermal
-                    call assign_line_args(svs_mesh%vs%tground, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    call assign_line_args(svs_mesh%vs%tground, p, b, args(3:), pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_VF)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -430,14 +431,14 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                         p = shd%lc%NTYPE
                     end if
                     b = svs_mesh%c%NLANDCLASS
-                    call assign_line_args(svs_mesh%vs%vf, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    call assign_line_args(svs_mesh%vs%vf, p, b, args(2:), pkey%MAP_ASSIGN_ORDER2, istat)
                 end if
             case (VN_SVS_VF_N)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
-                    call assign_line_args(k, args(2:2), 1, istat)
-                    istat = pstat%NORMAL_STATUS
+                    call assign_line_args(k, args(2), istat)
+                    istat = radix(istat)**pstat%NORMAL_STATUS
                     if (SHDFILEFMT == 2) then
                         p = shd%lc%NML
                     else
@@ -445,7 +446,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     end if
                     nargs = nargs - 1
                     b = svs_mesh%c%NLANDCLASS
-                    call assign_line_args(svs_mesh%vs%vf, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    call assign_line_args(svs_mesh%vs%vf, p, b, args(3:), pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_Z0V, 'Z0')
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -469,14 +470,14 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                         p = shd%lc%NTYPE
                     end if
                     b = svs_mesh%c%NLANDCLASS
-                    call assign_line_args(svs_mesh%vs%z0v, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    call assign_line_args(svs_mesh%vs%z0v, p, b, args(2:), pkey%MAP_ASSIGN_ORDER2, istat)
                 end if
             case (VN_SVS_Z0V_N)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
-                    call assign_line_args(k, args(2:2), 1, istat)
-                    istat = pstat%NORMAL_STATUS
+                    call assign_line_args(k, args(2), istat)
+                    istat = radix(istat)**pstat%NORMAL_STATUS
                     if (SHDFILEFMT == 2) then
                         p = shd%lc%NML
                     else
@@ -484,7 +485,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     end if
                     nargs = nargs - 1
                     b = svs_mesh%c%NLANDCLASS
-                    call assign_line_args(svs_mesh%vs%z0v, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    call assign_line_args(svs_mesh%vs%z0v, p, b, args(3:), pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_TVEGE)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -508,14 +509,14 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                         p = shd%lc%NTYPE
                     end if
                     b = 2
-                    call assign_line_args(svs_mesh%vs%tvege, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    call assign_line_args(svs_mesh%vs%tvege, p, b, args(2:), pkey%MAP_ASSIGN_ORDER2, istat)
                 end if
             case (VN_SVS_TVEGE_N)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
-                    call assign_line_args(k, args(2:2), 1, istat)
-                    istat = pstat%NORMAL_STATUS
+                    call assign_line_args(k, args(2), istat)
+                    istat = radix(istat)**pstat%NORMAL_STATUS
                     if (SHDFILEFMT == 2) then
                         p = shd%lc%NML
                     else
@@ -523,7 +524,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     end if
                     nargs = nargs - 1
                     b = 2
-                    call assign_line_args(svs_mesh%vs%tvege, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    call assign_line_args(svs_mesh%vs%tvege, p, b, args(3:), pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_WVEG)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -534,7 +535,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%wveg, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%wveg, p, args(2:), istat)
                 end if
             case (VN_SVS_TSNOW)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -558,14 +559,14 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                         p = shd%lc%NTYPE
                     end if
                     b = 2
-                    call assign_line_args(svs_mesh%vs%tsnow, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    call assign_line_args(svs_mesh%vs%tsnow, p, b, args(2:), pkey%MAP_ASSIGN_ORDER2, istat)
                 end if
             case (VN_SVS_TSNOW_N)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
-                    call assign_line_args(k, args(2:2), 1, istat)
-                    istat = pstat%NORMAL_STATUS
+                    call assign_line_args(k, args(2), istat)
+                    istat = radix(istat)**pstat%NORMAL_STATUS
                     if (SHDFILEFMT == 2) then
                         p = shd%lc%NML
                     else
@@ -573,7 +574,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     end if
                     nargs = nargs - 1
                     b = 2
-                    call assign_line_args(svs_mesh%vs%tsnow, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    call assign_line_args(svs_mesh%vs%tsnow, p, b, args(3:), pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_SNODPL)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -584,7 +585,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%snodpl, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%snodpl, p, args(2:), istat)
                 end if
             case (VN_SVS_SNODEN)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -595,7 +596,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%snoden, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%snoden, p, args(2:), istat)
                 end if
             case (VN_SVS_SNOAL)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -606,7 +607,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%snoal, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%snoal, p, args(2:), istat)
                 end if
             case (VN_SVS_WSNOW)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -617,7 +618,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%wsnow, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%wsnow, p, args(2:), istat)
                 end if
             case (VN_SVS_TSNOWVEG)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -641,14 +642,14 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                         p = shd%lc%NTYPE
                     end if
                     b = 2
-                    call assign_line_args(svs_mesh%vs%tsnowveg, p, b, args(2:), nargs, pkey%MAP_ASSIGN_ORDER2, istat)
+                    call assign_line_args(svs_mesh%vs%tsnowveg, p, b, args(2:), pkey%MAP_ASSIGN_ORDER2, istat)
                 end if
             case (VN_SVS_TSNOWVEG_N)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
-                    call assign_line_args(k, args(2:2), 1, istat)
-                    istat = pstat%NORMAL_STATUS
+                    call assign_line_args(k, args(2), istat)
+                    istat = radix(istat)**pstat%NORMAL_STATUS
                     if (SHDFILEFMT == 2) then
                         p = shd%lc%NML
                     else
@@ -656,7 +657,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     end if
                     nargs = nargs - 1
                     b = 2
-                    call assign_line_args(svs_mesh%vs%tsnowveg, p, b, args(3:), nargs, pkey%MAP_ASSIGN_ORDER2, istat, k)
+                    call assign_line_args(svs_mesh%vs%tsnowveg, p, b, args(3:), pkey%MAP_ASSIGN_ORDER2, istat, k)
                 end if
             case (VN_SVS_SNVDP)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -667,7 +668,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%snvdp, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%snvdp, p, args(2:), istat)
                 end if
             case (VN_SVS_SNVDEN)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -678,7 +679,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%snvden, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%snvden, p, args(2:), istat)
                 end if
             case (VN_SVS_SNVAL)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -689,7 +690,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%snval, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%snval, p, args(2:), istat)
                 end if
             case (VN_SVS_WSNV)
                 if (.not. svs_mesh%PROCESS_ACTIVE) then
@@ -700,7 +701,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%lc%NTYPE
                     end if
-                    call assign_line_args(svs_mesh%vs%wsnv, p, args(2:), nargs, istat)
+                    call assign_line_args(svs_mesh%vs%wsnv, p, args(2:), istat)
                 end if
 
             !> BASEFLOWFLAG == 2 (lower zone storage).
@@ -713,7 +714,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%NRVR
                     end if
-                    call assign_line_args(bflm%pm_iak%pwr, p, args(2:), nargs, istat)
+                    call assign_line_args(bflm%pm_iak%pwr, p, args(2:), istat)
                 end if
             case ('FLZ')
                 if (bflm%BASEFLOWFLAG /= 2) then
@@ -724,7 +725,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%NRVR
                     end if
-                    call assign_line_args(bflm%pm_iak%flz, p, args(2:), nargs, istat)
+                    call assign_line_args(bflm%pm_iak%flz, p, args(2:), istat)
                 end if
 
             !> RPN RTE (Watflood, 2007).
@@ -737,7 +738,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%NRVR
                     end if
-                    call assign_line_args(rtepm_iak%r2n, p, args(2:), nargs, istat)
+                    call assign_line_args(rtepm_iak%r2n, p, args(2:), istat)
                 end if
             case ('R1N')
                 if (.not. rteflg%PROCESS_ACTIVE) then
@@ -748,7 +749,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%NRVR
                     end if
-                    call assign_line_args(rtepm_iak%r1n, p, args(2:), nargs, istat)
+                    call assign_line_args(rtepm_iak%r1n, p, args(2:), istat)
                 end if
             case ('MNDR')
                 if (.not. rteflg%PROCESS_ACTIVE) then
@@ -759,7 +760,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%NRVR
                     end if
-                    call assign_line_args(rtepm_iak%mndr, p, args(2:), nargs, istat)
+                    call assign_line_args(rtepm_iak%mndr, p, args(2:), istat)
                 end if
             case ('AA2')
                 if (.not. rteflg%PROCESS_ACTIVE) then
@@ -770,7 +771,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%NRVR
                     end if
-                    call assign_line_args(rtepm_iak%aa2, p, args(2:), nargs, istat)
+                    call assign_line_args(rtepm_iak%aa2, p, args(2:), istat)
                 end if
             case ('AA3')
                 if (.not. rteflg%PROCESS_ACTIVE) then
@@ -781,7 +782,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%NRVR
                     end if
-                    call assign_line_args(rtepm_iak%aa3, p, args(2:), nargs, istat)
+                    call assign_line_args(rtepm_iak%aa3, p, args(2:), istat)
                 end if
             case ('AA4')
                 if (.not. rteflg%PROCESS_ACTIVE) then
@@ -792,7 +793,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%NRVR
                     end if
-                    call assign_line_args(rtepm_iak%aa4, p, args(2:), nargs, istat)
+                    call assign_line_args(rtepm_iak%aa4, p, args(2:), istat)
                 end if
             case ('WIDEP')
                 if (.not. rteflg%PROCESS_ACTIVE) then
@@ -803,42 +804,42 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
                     else
                         p = shd%NRVR
                     end if
-                    call assign_line_args(rtepm_iak%widep, p, args(2:), nargs, istat)
+                    call assign_line_args(rtepm_iak%widep, p, args(2:), istat)
                 end if
             case ('DTMINUSR')
                 if (.not. rteflg%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
                     p = 1
-                    call assign_line_args(rteflg%dtminusr, args(2:), nargs, istat)
+                    call assign_line_args(rteflg%dtminusr, args(2), istat)
                 end if
             case ('MINDTMIN')
                 if (.not. rteflg%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
                     p = 1
-                    call assign_line_args(rteflg%mindtmin, args(2:), nargs, istat)
+                    call assign_line_args(rteflg%mindtmin, args(2), istat)
                 end if
             case ('MAXINDEX')
                 if (.not. rteflg%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
                     p = 1
-                    call assign_line_args(rteflg%maxindex, args(2:), nargs, istat)
+                    call assign_line_args(rteflg%maxindex, args(2), istat)
                 end if
             case ('DTMINFRAC')
                 if (.not. rteflg%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
                     p = 1
-                    call assign_line_args(rteflg%dtminfrac, args(2:), nargs, istat)
+                    call assign_line_args(rteflg%dtminfrac, args(2), istat)
                 end if
             case ('CONVTHRESHUSR')
                 if (.not. rteflg%PROCESS_ACTIVE) then
                     istat = istat + radix(istat)**pstat%INACTIVE
                 else
                     p = 1
-                    call assign_line_args(rteflg%convthreshusr, args(2:), nargs, istat)
+                    call assign_line_args(rteflg%convthreshusr, args(2), istat)
                 end if
 
             !> Unrecognized.

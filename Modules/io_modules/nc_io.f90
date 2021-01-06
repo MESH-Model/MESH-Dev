@@ -334,7 +334,8 @@ module nc_io
 
         !> Check the units of the time dimension.
         !> Only dates of the Gregorian calendar type are supported.
-        call parse_datetime(units_attribute, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, z)
+        call parse_datetime(units_attribute, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, istat = z)
+        if (.not. btest(z, pstat%CONVERSION_ERROR)) z = 0
         ierr = nf90_get_att(iun, vid, 'calendar', time_calendar)
         if (ierr /= NF90_NOERR .or. lowercase(time_calendar) /= 'gregorian' .or. lowercase(time_calendar) /= 'standard') then
             call print_warning( &
