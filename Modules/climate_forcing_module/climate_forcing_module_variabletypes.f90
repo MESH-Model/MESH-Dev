@@ -45,6 +45,8 @@ module climate_forcing_variabletypes
         !* name_lon: Name of the longitude (x) dimension when seeking the attribute from file (default: lon).
         !* name_lat: Name of the latitude (y) dimension when seeking the attribute from file (default: lat).
         !* name_time: Name of the time (t) dimension when seeking the attribute from file (default: time).
+        !* ncol_lon: Position of the longitude (x) dimension in variable matrix (default: none).
+        !* ncol_lat: Position of the latitude (y) dimension in variable matrix (default: none).
         !* ncol_time: Position of the time dimension in variable matrix (default: none).
         !* ndims: Number of dimensions (default: none).
         !* dim_order_case: Order of the dimensions in variable matrix,
@@ -57,9 +59,11 @@ module climate_forcing_variabletypes
         character(200) :: name_lon = 'lon'
         character(200) :: name_lat = 'lat'
         character(200) :: name_time = 'time'
+        integer :: ncol_lon = 0
+        integer :: ncol_lat = 0
         integer :: ncol_time = 0
-        integer :: ndims = -1
-        integer :: dim_order_case = 0
+!-        integer :: ndims = -1
+!-        integer :: dim_order_case = 0
         integer, dimension(:), allocatable :: dim_length
         real :: time_shift = 0.0
         integer :: vid = -1

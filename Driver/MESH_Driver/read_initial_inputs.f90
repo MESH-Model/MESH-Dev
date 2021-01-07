@@ -513,6 +513,18 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
             shd%jxMax = int((shd%xOrigin + shd%xCount*shd%xDelta)*60.0)
             shd%GRDE = shd%xDelta*60.0
             shd%GRDN = shd%yDelta*60.0
+            if (.not. allocated(shd%CoordSys%lat)) then
+                allocate(shd%CoordSys%lat(shd%yCount))
+                do i = 1, shd%yCount
+                    shd%CoordSys%lat(i) = (shd%yOrigin + shd%yDelta*i) - shd%yDelta/2.0
+                end do
+            end if
+            if (.not. allocated(shd%CoordSys%lon)) then
+                allocate(shd%CoordSys%lon(shd%xCount))
+                do i = 1, shd%xCount
+                    shd%CoordSys%lon(i) = (shd%xOrigin + shd%xDelta*i) - shd%xDelta/2.0
+                end do
+            end if
 !?        case ('utm')
 !?            shd%GRDE = shd%xDelta/1000.0
 !?            shd%GRDN = shd%yDelta/1000.0

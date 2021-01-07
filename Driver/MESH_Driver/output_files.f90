@@ -1136,15 +1136,14 @@ module output_files
                 lopen = .false.
                 inquire(file = trim(fname) // '_' // VN_GRD // '.nc', opened = lopen)
                 if (.not. lopen) then
-                    call nc4_add_vname( &
-                        shd, field%vname, '', '', ffreq, ic%start%year, out%NO_DATA, trim(fname) // '_' // VN_GRD // '.nc', &
-                        group%grid%nid, group%grid%tid, group%grid%vid, &
-                        ierr = z)
-                    if (z /= 0) then
-                        call print_error( &
-                            "Unable to open file for output: " // trim(fname) // "_" // VN_GRD // ".nc")
-                        ierr = z
-                    end if
+                    call nc4_define_output_variable_xyt( &
+                        trim(fname) // '_' // VN_GRD // '.nc', field%vname, shd%CoordSys%Proj, ffreq, &
+                        shd%CoordSys%lat, shd%CoordSys%lon, shd%CoordSys%rlat, shd%CoordSys%rlon, &
+                        shd%CoordSys%xylat, shd%CoordSys%xylon, &
+                        shd%CoordSys%Ellips, shd%CoordSys%Zone, shd%CoordSys%earth_radius, shd%CoordSys%grid_north_pole_latitude, &
+                        shd%CoordSys%grid_north_pole_longitude, &
+                        quiet = .true., fill = out%NO_DATA, &
+                        vid = group%grid%vid, vtime = group%grid%tid, iun = group%grid%nid, ierr = ierr)
                 else
                     call print_error( &
                         "Another output variable has already opened the file: " // trim(fname) // "_" // VN_GRD // ".nc")
@@ -2233,11 +2232,10 @@ module output_files
 #ifdef NETCDF
             if (btest(field%ffmt, IO_TYPE_NC4)) then
                 z = 0
-                call nc4_write_field( &
-                    shd, group%grid%nid, ffreq, group%grid%tid, group%grid%vid, group%grid%dat, dates, &
-                    z)
+                call nc4_add_data_xyt( &
+                    group%grid%nid, field%vname, ffreq, group%grid%tid, group%grid%vid, shd%xxx, shd%yyy, &
+                    shd%xCount, shd%yCount, out%NO_DATA, group%grid%dat, dates, z)
                 if (z /= 0) then
-                    call print_error("Unable to write to output file: " // trim(group%grid%fname) // "_GRD.nc")
                     call program_abort()
                 end if
             end if

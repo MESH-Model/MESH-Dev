@@ -8,13 +8,17 @@ module shd_variables
     type CoordSysParams
 
         !* Proj: Projection (formerly CoordSys). [-]
-        character(10) :: Proj = ''
+        character(100) :: Proj = ''
 
         !* Ellips: Ellipsoid (formerly Datum). [-]
         character(10) :: Ellips = ''
 
         !* Zone: Zone if the projection is UTM. [-]
         character(10) :: Zone = ''
+
+        !> Attributes for 'LATLONG', and 'latitude_longitude' projection.
+        real, dimension(:), allocatable :: lat
+        real, dimension(:), allocatable :: lon
 
         !> Attributes for 'ROTLATLONG' projection (definitions from the 'rpnpy' code).
         !> Pole coordinate: Where (rlat, rlon) = (0.0, 180.0) on the rotated equator.
@@ -27,6 +31,15 @@ module shd_variables
         !*  RotationLongitude: Standard file (fstd) format 'xlon2' (longitue of the reference point on the rotated equator). [degrees].
         real :: RotationLatitude = 0.0
         real :: RotationLongitude = 0.0
+
+        !> Attributes for 'rotated_latitude_longitude' (not compatible with 'ROTLATLONG').
+        real :: earth_radius = 0.0
+        real :: grid_north_pole_latitude = 0.0
+        real :: grid_north_pole_longitude = 0.0
+        real, dimension(:), allocatable :: rlat
+        real, dimension(:), allocatable :: rlon
+        real, dimension(:, :), allocatable :: xylat
+        real, dimension(:, :), allocatable :: xylon
 
     end type
 

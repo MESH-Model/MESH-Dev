@@ -52,10 +52,20 @@ module print_routines
     integer, parameter :: DEFAULT_FIELD_LENGTH = 1000
     integer, parameter :: DEFAULT_FIELD_COUNT = 100
 
-    !> Format constants.
+    !> Format constants (general).
     character(len = *), parameter :: FMT_GEN = "(99999(g15.7e2, 1x))"
     character(len = *), parameter :: FMT_CSV = "(99999(g15.7e2, ','))"
     character(len = *), parameter :: FMT_CHR = "(a)"
+
+    !> Format constants (dates).
+    character(len = *), parameter :: FMT_TIME_HMS = "(i2.2, ':', i2.2, ':', i2.2, '.000000')"
+    character(len = *), parameter :: FMT_DATE_DASHES_YMD = "(i4.4, '-', i2.2, '-', i2.2)"
+    character(len = *), parameter :: FMT_DATETIME_DASHES_YMD = &
+        "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2, '.000000')"
+    character(len = *), parameter :: FMT_DATE_SLASHES_YMD = "(i4.4, '/', i2.2, '/', i2.2)"
+    character(len = *), parameter :: FMT_DATETIME_SLASHES_YMD = &
+        "(i4.4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2, '.000000')"
+    character(len = *), parameter :: FMT_DATE_SLASHES_YJD = "(i4.4, '/', i3.3)"
 
     contains
 

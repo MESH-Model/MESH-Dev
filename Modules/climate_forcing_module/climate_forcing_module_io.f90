@@ -27,12 +27,12 @@ module climate_forcing_io
         !> 'shd_variables': For 'shd' variable.
         !> 'parse_utilities': For 'parse_datetime' and 'precision' (via 'strings').
 #ifdef NETCDF
-        !> 'netcdf': For netCDF library.
+        !> 'nc_io': For netCDF utilities.
 #endif
         use shd_variables
         use parse_utilities
 #ifdef NETCDF
-        use netcdf
+        use nc_io
 #endif
 
         !> 'strings': For 'lowercase' function.
@@ -46,15 +46,18 @@ module climate_forcing_io
         type(clim_info) cm
 
         !> Local variables.
-        integer z, ierr
         character(len = DEFAULT_LINE_LENGTH) line
+        integer ierr
 #ifdef NETCDF
-        character(len = DEFAULT_LINE_LENGTH) time_attribute, time_units, time_calendar
-        integer, dimension(:), allocatable :: dimids
-        integer d, dtype, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, jday, ncol_lon, ncol_lat
-        integer(kind = ki4) tt_i4(2)
-        real(kind = kr4) tt_r4(2)
-        real(kind = kr8) tt_r8(2), t0_r8, t1_r8, t2_r8, dt_r8
+!-        character(len = DEFAULT_LINE_LENGTH) time_attribute, time_units, time_calendar
+!-        integer, dimension(:), allocatable :: dimids
+!-        integer d, dtype, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, jday, ncol_lon, ncol_lat
+!-        integer(kind = ki4) tt_i4(2)
+!-        real(kind = kr4) tt_r4(2)
+!-        real(kind = kr8) tt_r8(2), t0_r8, t1_r8, t2_r8, dt_r8
+        character(len = DEFAULT_LINE_LENGTH) time_units
+        integer dtype
+        real(kind = EightByteReal) reference_time
 #endif
 
         !> Initialize the return variable.
@@ -142,253 +145,282 @@ module climate_forcing_io
 #ifdef NETCDF
 
                 !> Open the file.
-                ierr = nf90_open(cm%dat(vid)%fpath, NF90_NOWRITE, cm%dat(vid)%fiun)
-                if (ierr /= NF90_NOERR) then
-                    call print_error('Unable to open file: ' // trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
+!-                ierr = nf90_open(cm%dat(vid)%fpath, NF90_NOWRITE, cm%dat(vid)%fiun)
+!-                if (ierr /= NF90_NOERR) then
+!-                    call print_error('Unable to open file: ' // trim(cm%dat(vid)%fpath))
+!-                    call program_abort()
+!-                end if
+                call nc4_open_input(cm%dat(vid)%fpath, quiet = .true., iun = cm%dat(vid)%fiun, ierr = ierr)
+                if (ierr /= 0) goto 999
 
                 !> Check that the variable 'id_var' exists in the file.
-                ierr = nf90_inq_varid(cm%dat(vid)%fiun, cm%dat(vid)%id_var, cm%dat(vid)%vid)
-                if (ierr /= NF90_NOERR) then
-                    call print_error( &
-                        "The variable '" // trim(cm%dat(vid)%id_var) // "' cound not be found in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
+!-                ierr = nf90_inq_varid(cm%dat(vid)%fiun, cm%dat(vid)%id_var, cm%dat(vid)%vid)
+!-                if (ierr /= NF90_NOERR) then
+!-                    call print_error( &
+!-                        "The variable '" // trim(cm%dat(vid)%id_var) // "' cound not be found in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                    call program_abort()
+!-                end if
+                call nc4_check_variable( &
+                    cm%dat(vid)%fiun, cm%dat(vid)%id_var, &
+                    size_dat = (/shd%xCount, shd%yCount, 0/), &
+                    dim1_name = cm%dat(vid)%name_lon, dim2_name = cm%dat(vid)%name_lat, dim3_name = cm%dat(vid)%name_time, &
+                    vid = cm%dat(vid)%vid, &
+                    dim1_order = cm%dat(vid)%ncol_lon, dim2_order = cm%dat(vid)%ncol_lat, dim3_order = cm%dat(vid)%ncol_time, &
+                    dim_lengths = cm%dat(vid)%dim_length, &
+                    ierr = ierr)
+                if (ierr /= 0) then
+                    goto 998
+                else
 
                 !> Get the dimensions of the variable.
-                ierr = nf90_inquire_variable(cm%dat(vid)%fiun, cm%dat(vid)%vid, ndims = cm%dat(vid)%ndims)
-                if (ierr == NF90_NOERR) then
-                    allocate(dimids(cm%dat(vid)%ndims), cm%dat(vid)%dim_length(cm%dat(vid)%ndims), stat = z)
-                    if (z == 0) ierr = nf90_inquire_variable(cm%dat(vid)%fiun, cm%dat(vid)%vid, dimids = dimids)
-                end if
-                if (ierr /= NF90_NOERR) then
-                    call print_error( &
-                        "Unable to read dimensions of '" // trim(cm%dat(vid)%id_var) // "' in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
+!-                ierr = nf90_inquire_variable(cm%dat(vid)%fiun, cm%dat(vid)%vid, ndims = cm%dat(vid)%ndims)
+!-                if (ierr == NF90_NOERR) then
+!-                    allocate(dimids(cm%dat(vid)%ndims), cm%dat(vid)%dim_length(cm%dat(vid)%ndims), stat = z)
+!-                    if (z == 0) ierr = nf90_inquire_variable(cm%dat(vid)%fiun, cm%dat(vid)%vid, dimids = dimids)
+!-                end if
+!-                if (ierr /= NF90_NOERR) then
+!-                    call print_error( &
+!-                        "Unable to read dimensions of '" // trim(cm%dat(vid)%id_var) // "' in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                    call program_abort()
+!-                end if
 
                 !> Check the dimensions.
                 !> Only variables with three dimensions are supported (combination of lat, lon, time).
                 !> Of the respective dimensions, compare to the expected length.
-                z = 0
-                do d = 1, cm%dat(vid)%ndims
-                    ierr = nf90_inquire_dimension(cm%dat(vid)%fiun, dimids(d), len = cm%dat(vid)%dim_length(d))
-                    if (ierr /= NF90_NOERR) exit
-                    ierr = nf90_inquire_dimension(cm%dat(vid)%fiun, dimids(d), name = line)
-                    if (ierr /= NF90_NOERR) exit
-                    if (line == cm%dat(vid)%name_lon) then
+!-                z = 0
+!-                do d = 1, cm%dat(vid)%ndims
+!-                    ierr = nf90_inquire_dimension(cm%dat(vid)%fiun, dimids(d), len = cm%dat(vid)%dim_length(d))
+!-                    if (ierr /= NF90_NOERR) exit
+!-                    ierr = nf90_inquire_dimension(cm%dat(vid)%fiun, dimids(d), name = line)
+!-                    if (ierr /= NF90_NOERR) exit
+!-                    if (line == cm%dat(vid)%name_lon) then
 
                         !> Longitude.
-                        if (cm%dat(vid)%dim_length(d) /= shd%xCount) then
-                            call print_error( &
-                                "The model configuration contains a different number of '" // trim(cm%dat(vid)%name_lon) // &
-                                "' elements than in file: " // trim(cm%dat(vid)%fpath))
-                            call program_abort()
-                        end if
-                        ncol_lon = d
-                        z = z + radix(1)**1
-                    else if (line == cm%dat(vid)%name_lat) then
+!-                        if (cm%dat(vid)%dim_length(d) /= shd%xCount) then
+!-                            call print_error( &
+!-                                "The model configuration contains a different number of '" // trim(cm%dat(vid)%name_lon) // &
+!-                                "' elements than in file: " // trim(cm%dat(vid)%fpath))
+!-                            call program_abort()
+!-                        end if
+!-                        ncol_lon = d
+!-                        z = z + radix(1)**1
+!-                    else if (line == cm%dat(vid)%name_lat) then
 
                         !> Latitude.
-                        if (cm%dat(vid)%dim_length(d) /= shd%yCount) then
-                            call print_error( &
-                                "The model configuration contains a different number of '" // trim(cm%dat(vid)%name_lat) // &
-                                "' elements than in file: " // trim(cm%dat(vid)%fpath))
-                            call program_abort()
-                        end if
-                        ncol_lat = d
-                        z = z + radix(1)**2
-                    else if (line == cm%dat(vid)%name_time) then
+!-                        if (cm%dat(vid)%dim_length(d) /= shd%yCount) then
+!-                            call print_error( &
+!-                                "The model configuration contains a different number of '" // trim(cm%dat(vid)%name_lat) // &
+!-                                "' elements than in file: " // trim(cm%dat(vid)%fpath))
+!-                            call program_abort()
+!-                        end if
+!-                        ncol_lat = d
+!-                        z = z + radix(1)**2
+!-                    else if (line == cm%dat(vid)%name_time) then
 
                         !> Time.
                         !> Store the column order (used to update start position when reading).
-                        cm%dat(vid)%ncol_time = d
-                        z = z + radix(1)**3
+!-                        cm%dat(vid)%ncol_time = d
+!-                        z = z + radix(1)**3
 
                         !> Override the length to 'nblocks' (to control the number of time-steps read).
-                        cm%dat(vid)%dim_length(d) = cm%dat(vid)%nblocks
-                    end if
-                end do
-                if (ierr /= NF90_NOERR) then
-                    call print_error( &
-                        "Unable to read dimensions of '" // trim(cm%dat(vid)%id_var) // "' in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                    call program_abort()
+!-                        cm%dat(vid)%dim_length(d) = cm%dat(vid)%nblocks
+                    cm%dat(vid)%dim_length(cm%dat(vid)%ncol_time) = cm%dat(vid)%nblocks
                 end if
-                if (.not. btest(z, 1)) then
-                    call print_warning( &
-                        "A required attribute '" // trim(cm%dat(vid)%name_lon) // "' cound not be found in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                else
-                    z = z - radix(1)**1
-                end if
-                if (.not. btest(z, 2)) then
-                    call print_warning( &
-                        "A required attribute '" // trim(cm%dat(vid)%name_lat) // "' cound not be found in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                else
-                    z = z - radix(1)**2
-                end if
-                if (.not. btest(z, 3)) then
-                    call print_warning( &
-                        "A required attribute '" // trim(cm%dat(vid)%name_time) // "' cound not be found in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                else
-                    z = z - radix(1)**3
-                end if
-                if (z /= 0 .or. cm%dat(vid)%ndims /= 3) then
-                    call print_error( &
-                        "The variable '" // trim(cm%dat(vid)%name_time) // "' must contain only three dimensions for" // &
-                        ' longitude, latitude, and time (in any order). The file must be pre-processed to remove' // &
-                        ' dimensions in excess of this number.')
-                    call print_message( &
-                        'If the file is compatible with this structure, the dimensions must be mapped' // &
-                        " using the 'name_lon', 'name_lat', and 'name_time' options where the names of these dimensions" // &
-                        " are different from the default names of 'lon', 'lat', and 'time', respectively" // &
-                        ' (via the input configuration files).')
-                    call program_abort()
-                end if
+!-                    end if
+!-                end do
+!-                if (ierr /= NF90_NOERR) then
+!-                    call print_error( &
+!-                        "Unable to read dimensions of '" // trim(cm%dat(vid)%id_var) // "' in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                    call program_abort()
+!-                end if
+!-                if (.not. btest(z, 1)) then
+!-                    call print_warning( &
+!-                        "A required attribute '" // trim(cm%dat(vid)%name_lon) // "' cound not be found in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                else
+!-                    z = z - radix(1)**1
+!-                end if
+!-                if (.not. btest(z, 2)) then
+!-                    call print_warning( &
+!-                        "A required attribute '" // trim(cm%dat(vid)%name_lat) // "' cound not be found in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                else
+!-                    z = z - radix(1)**2
+!-                end if
+!-                if (.not. btest(z, 3)) then
+!-                    call print_warning( &
+!-                        "A required attribute '" // trim(cm%dat(vid)%name_time) // "' cound not be found in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                else
+!-                    z = z - radix(1)**3
+!-                end if
+!-                if (z /= 0 .or. cm%dat(vid)%ndims /= 3) then
+!-                    call print_error( &
+!-                        "The variable '" // trim(cm%dat(vid)%name_time) // "' must contain only three dimensions for" // &
+!-                        ' longitude, latitude, and time (in any order). The file must be pre-processed to remove' // &
+!-                        ' dimensions in excess of this number.')
+!-                    call print_message( &
+!-                        'If the file is compatible with this structure, the dimensions must be mapped' // &
+!-                        " using the 'name_lon', 'name_lat', and 'name_time' options where the names of these dimensions" // &
+!-                        " are different from the default names of 'lon', 'lat', and 'time', respectively" // &
+!-                        ' (via the input configuration files).')
+!-                    call program_abort()
+!-                end if
 
                 !> Check the units of the time dimension.
                 !> Only dates of the Gregorian calendar type are supported.
-                ierr = nf90_inq_varid(cm%dat(vid)%fiun, cm%dat(vid)%name_time, cm%dat(vid)%tid)
-                if (ierr /= NF90_NOERR) then
-                    call print_error( &
-                        "The variable '" // trim(cm%dat(vid)%name_time) // "' cound not be found in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
-                ierr = nf90_get_att(cm%dat(vid)%fiun, cm%dat(vid)%tid, 'units', time_attribute)
-                if (ierr /= NF90_NOERR) then
-                    call print_error( &
-                        "The units are missing for the '" // trim(cm%dat(vid)%name_time) // "' attribute in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
-                call parse_datetime(time_attribute, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, istat = z)
-                if (.not. btest(z, pstat%CONVERSION_ERROR)) z = 0
-                ierr = nf90_get_att(cm%dat(vid)%fiun, cm%dat(vid)%tid, 'calendar', time_calendar)
-                if (ierr /= NF90_NOERR .or. lowercase(time_calendar) /= 'gregorian') then
-                    call print_warning( &
-                        "The reference calendar for '" // trim(cm%dat(vid)%name_time) // "' is not set or not equal to '" // &
-                        'Gregorian' // "' in file: " // trim(cm%dat(vid)%fpath))
-                end if
-                if (z /= 0) then
-                    call print_error( &
-                        "The format of the units of '" // trim(cm%dat(vid)%name_time) // "' is unsupported in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                    call print_message('Expected format: [seconds/minutes/hours/days] since yyyy/MM/dd HH:mm:ss[.SSS]')
-                    call program_abort()
-                else if (t0_year < 1601) then
-                    write(line, FMT_GEN) t0_year
-                    call print_error( &
-                        'The reference year (' // trim(adjustl(line)) // ') is less than 1601.' // &
-                        ' The reference calendar does not correpond to the Gregorian calendar.')
-                    call print_message( &
-                        " The time-series of '" // trim(cm%dat(vid)%name_time) // "' cannot be processed in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
+!-                ierr = nf90_inq_varid(cm%dat(vid)%fiun, cm%dat(vid)%name_time, cm%dat(vid)%tid)
+!-                if (ierr /= NF90_NOERR) then
+!-                    call print_error( &
+!-                        "The variable '" // trim(cm%dat(vid)%name_time) // "' cound not be found in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                    call program_abort()
+!-                end if
+!-                ierr = nf90_get_att(cm%dat(vid)%fiun, cm%dat(vid)%tid, 'units', time_attribute)
+!-                if (ierr /= NF90_NOERR) then
+!-                    call print_error( &
+!-                        "The units are missing for the '" // trim(cm%dat(vid)%name_time) // "' attribute in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                    call program_abort()
+!-                end if
+!-                call parse_datetime(time_attribute, t0_year, t0_month, t0_day, t0_hour, t0_mins, t0_seconds, z)
+!-                if (.not. btest(z, pstat%CONVERSION_ERROR)) z = 0
+!-                ierr = nf90_get_att(cm%dat(vid)%fiun, cm%dat(vid)%tid, 'calendar', time_calendar)
+!-                if (ierr /= NF90_NOERR .or. lowercase(time_calendar) /= 'gregorian') then
+!-                    call print_warning( &
+!-                        "The reference calendar for '" // trim(cm%dat(vid)%name_time) // "' is not set or not equal to '" // &
+!-                        'Gregorian' // "' in file: " // trim(cm%dat(vid)%fpath))
+!-                end if
+!-                if (z /= 0) then
+!-                    call print_error( &
+!-                        "The format of the units of '" // trim(cm%dat(vid)%name_time) // "' is unsupported in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                    call print_message('Expected format: [seconds/minutes/hours/days] since yyyy/MM/dd HH:mm:ss[.SSS]')
+!-                    call program_abort()
+!-                else if (t0_year < 1601) then
+!-                    write(line, FMT_GEN) t0_year
+!-                    call print_error( &
+!-                        'The reference year (' // trim(adjustl(line)) // ') is less than 1601.' // &
+!-                        ' The reference calendar does not correpond to the Gregorian calendar.')
+!-                    call print_message( &
+!-                        " The time-series of '" // trim(cm%dat(vid)%name_time) // "' cannot be processed in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                    call program_abort()
+!-                end if
+                call nc4_get_reference_time( &
+                    cm%dat(vid)%fiun, &
+                    cm%dat(vid)%name_time, cm%dat(vid)%time_shift, &
+                    tid = cm%dat(vid)%tid, dtype = dtype, units = time_units, reference_time = reference_time, &
+                    ierr = ierr)
+                if (ierr /= 0) goto 998
 
                 !> Get the data type of the variable.
                 !> Only integer, float, and double types are supported.
-                ierr = nf90_inquire_variable(cm%dat(vid)%fiun, cm%dat(vid)%tid, xtype = dtype)
-                if (ierr == NF90_NOERR) then
-                    select case (dtype)
-                        case (NF90_INT)
-                            ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%tid, tt_i4, start = (/1/), count = (/2/))
-                            if (ierr == NF90_NOERR) then
-                                t1_r8 = real(tt_i4(1), kind = 8)
-                                t2_r8 = real(tt_i4(2), kind = 8)
-                            end if
-                        case (NF90_FLOAT)
-                            ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%tid, tt_r4, start = (/1/), count = (/2/))
-                            if (ierr == NF90_NOERR) then
-                                t1_r8 = real(tt_r4(1), kind = 8)
-                                t2_r8 = real(tt_r4(2), kind = 8)
-                            end if
-                        case (NF90_DOUBLE)
-                            ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%tid, tt_r8, start = (/1/), count = (/2/))
-                            if (ierr == NF90_NOERR) then
-                                t1_r8 = tt_r8(1)
-                                t2_r8 = tt_r8(2)
-                            end if
-                        case default
-                            ierr = NF90_EBADTYPE
-                    end select
-                end if
-                if (ierr /= NF90_NOERR) then
-                    call print_error( &
-                        "Unsupported data type for the '" // trim(cm%dat(vid)%name_time) // "' attribute in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
+!-                ierr = nf90_inquire_variable(cm%dat(vid)%fiun, cm%dat(vid)%tid, xtype = dtype)
+!-                if (ierr == NF90_NOERR) then
+!-                    select case (dtype)
+!-                        case (NF90_INT)
+!-                            ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%tid, tt_i4, start = (/1/), count = (/2/))
+!-                            if (ierr == NF90_NOERR) then
+!-                                t1_r8 = real(tt_i4(1), kind = 8)
+!-                                t2_r8 = real(tt_i4(2), kind = 8)
+!-                            end if
+!-                        case (NF90_FLOAT)
+!-                            ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%tid, tt_r4, start = (/1/), count = (/2/))
+!-                            if (ierr == NF90_NOERR) then
+!-                                t1_r8 = real(tt_r4(1), kind = 8)
+!-                                t2_r8 = real(tt_r4(2), kind = 8)
+!-                            end if
+!-                        case (NF90_DOUBLE)
+!-                            ierr = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%tid, tt_r8, start = (/1/), count = (/2/))
+!-                            if (ierr == NF90_NOERR) then
+!-                                t1_r8 = tt_r8(1)
+!-                                t2_r8 = tt_r8(2)
+!-                            end if
+!-                        case default
+!-                            ierr = NF90_EBADTYPE
+!-                    end select
+!-                end if
+!-                if (ierr /= NF90_NOERR) then
+!-                    call print_error( &
+!-                        "Unsupported data type for the '" // trim(cm%dat(vid)%name_time) // "' attribute in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                    call program_abort()
+!-                end if
+                call nc4_get_time( &
+                    cm%dat(vid)%fiun, cm%dat(vid)%tid, reference_time, time_units, dtype, &
+                    cm%dat(vid)%name_time, &
+                    year = cm%dat(vid)%start_date%year, month = cm%dat(vid)%start_date%month, &
+                    day = cm%dat(vid)%start_date%day, jday = cm%dat(vid)%start_date%jday, &
+                    hour = cm%dat(vid)%start_date%hour, minutes = cm%dat(vid)%start_date%mins, &
+                    ierr = ierr)
+                if (ierr /= 0) goto 998
 
                 !> Calculate the reference date from the units of the time dimension.
                 !> Only units of seconds, minutes, hours, and days are supported.
-                jday = get_jday(t0_month, t0_day, t0_year)
-                t0_r8 = get_jdate(t0_year, jday)*24.0 + t0_hour + t0_mins/60.0 + t0_seconds/60.0/60.0
-                dt_r8 = t0_r8 + cm%dat(vid)%time_shift
-                read(time_attribute, *) time_units
-                select case (time_units)
-                    case ('seconds')
-                        dt_r8 = dt_r8 + t1_r8/60.0/60.0
-                        cm%dat(vid)%hf = int((t2_r8 - t1_r8)/60.0 + 0.5)        ! 0.5 takes care of correct rounding
-                    case ('minutes')
-                        dt_r8 = dt_r8 + t1_r8/60.0
-                        cm%dat(vid)%hf = int(t2_r8 - t1_r8 + 0.5)               ! 0.5 takes care of correct rounding
-                    case ('hours')
-                        dt_r8 = dt_r8 + t1_r8
-                        cm%dat(vid)%hf = int((t2_r8 - t1_r8)*60.0 + 0.5)        ! 0.5 takes care of correct rounding
-                    case ('days')
-                        dt_r8 = dt_r8 + t1_r8*24.0
-                        cm%dat(vid)%hf = int((t2_r8 - t1_r8)*24.0*60.0 + 0.5)   ! 0.5 takes care of correct rounding
-                    case default
-                        ierr = NF90_EINVAL
-                end select
-                if (ierr /= NF90_NOERR) then
-                    call print_error( &
-                        "The units of '" // trim(adjustl(time_units)) // "' are unsupported for '" // &
-                        trim(cm%dat(vid)%name_time) // "' in file: " // trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
+!-                jday = get_jday(t0_month, t0_day, t0_year)
+!-                t0_r8 = get_jdate(t0_year, jday)*24.0 + t0_hour + t0_mins/60.0 + t0_seconds/60.0/60.0
+!-                dt_r8 = t0_r8 + cm%dat(vid)%time_shift
+!-                read(time_attribute, *) time_units
+!-                select case (time_units)
+!-                    case ('seconds')
+!-                        dt_r8 = dt_r8 + t1_r8/60.0/60.0
+!-                        cm%dat(vid)%hf = int((t2_r8 - t1_r8)/60.0 + 0.5)        ! 0.5 takes care of correct rounding
+!-                    case ('minutes')
+!-                        dt_r8 = dt_r8 + t1_r8/60.0
+!-                        cm%dat(vid)%hf = int(t2_r8 - t1_r8 + 0.5)               ! 0.5 takes care of correct rounding
+!-                    case ('hours')
+!-                        dt_r8 = dt_r8 + t1_r8
+!-                        cm%dat(vid)%hf = int((t2_r8 - t1_r8)*60.0 + 0.5)        ! 0.5 takes care of correct rounding
+!-                    case ('days')
+!-                        dt_r8 = dt_r8 + t1_r8*24.0
+!-                        cm%dat(vid)%hf = int((t2_r8 - t1_r8)*24.0*60.0 + 0.5)   ! 0.5 takes care of correct rounding
+!-                    case default
+!-                        ierr = NF90_EINVAL
+!-                end select
+!-                if (ierr /= NF90_NOERR) then
+!-                    call print_error( &
+!-                        "The units of '" // trim(adjustl(time_units)) // "' are unsupported for '" // &
+!-                        trim(cm%dat(vid)%name_time) // "' in file: " // trim(cm%dat(vid)%fpath))
+!-                    call program_abort()
+!-                end if
 
                 !> Calculate the date of the first record in the file.
                 !> Assumes dates increase along the time dimension.
-                cm%dat(vid)%start_date%year = floor(dt_r8/24.0/365.25) + 1601
-                cm%dat(vid)%start_date%jday = floor(dt_r8/24.0) - floor((cm%dat(vid)%start_date%year - 1601)*365.25)
-                cm%dat(vid)%start_date%hour = &
-                    floor(dt_r8) - get_jdate(cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday)*24
-                cm%dat(vid)%start_date%mins = floor((dt_r8 - floor(dt_r8))*60.0)
+!-                cm%dat(vid)%start_date%year = floor(dt_r8/24.0/365.25) + 1601
+!-                cm%dat(vid)%start_date%jday = floor(dt_r8/24.0) - floor((cm%dat(vid)%start_date%year - 1601)*365.25)
+!-                cm%dat(vid)%start_date%hour = &
+!-                    floor(dt_r8) - get_jdate(cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday)*24
+!-                cm%dat(vid)%start_date%mins = floor((dt_r8 - floor(dt_r8))*60.0)
 
                 !> Assign an ID based on the order (for mapping when reading from the file).
-                if (ncol_lon == 1 .and. ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 3) then
-                    if (DIAGNOSEMODE) call print_message('   dim order case #1 --> (lon,lat,time)')
-                    cm%dat(vid)%dim_order_case = 1
-                else if (ncol_lon == 2 .and. ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 3) then
-                    if (DIAGNOSEMODE) call print_message('   dim order case #2 --> (lat,lon,time)')
-                    cm%dat(vid)%dim_order_case = 2
-                else if (ncol_lon == 1 .and. ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 2) then
-                    if (DIAGNOSEMODE) call print_message('   dim order case #3 --> (lon,time,lat)')
-                    cm%dat(vid)%dim_order_case = 3
-                else if (ncol_lon == 3 .and. ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 2) then
-                    if (DIAGNOSEMODE) call print_message('   dim order case #4 --> (lat,time,lon)')
-                    cm%dat(vid)%dim_order_case = 4
-                else if (ncol_lon == 2 .and. ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 1) then
-                    if (DIAGNOSEMODE) call print_message('   dim order case #5 --> (time,lon,lat)')
-                    cm%dat(vid)%dim_order_case = 5
-                else if (ncol_lon == 3 .and. ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 1) then
-                    if (DIAGNOSEMODE) call print_message('   dim order case #6 --> (time,lat,lon)')
-                    cm%dat(vid)%dim_order_case = 6
-                else
-                    call print_error( &
-                        "Unable to determine the order of dimensions of '" // trim(cm%dat(vid)%id_var) // "' in file: " // &
-                        trim(cm%dat(vid)%fpath))
-                    call program_abort()
-                end if
+!-                if (ncol_lon == 1 .and. ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 3) then
+!-                    if (DIAGNOSEMODE) call print_message('   dim order case #1 --> (lon,lat,time)')
+!-                    cm%dat(vid)%dim_order_case = 1
+!-                else if (ncol_lon == 2 .and. ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 3) then
+!-                    if (DIAGNOSEMODE) call print_message('   dim order case #2 --> (lat,lon,time)')
+!-                    cm%dat(vid)%dim_order_case = 2
+!-                else if (ncol_lon == 1 .and. ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 2) then
+!-                    if (DIAGNOSEMODE) call print_message('   dim order case #3 --> (lon,time,lat)')
+!-                    cm%dat(vid)%dim_order_case = 3
+!-                else if (ncol_lon == 3 .and. ncol_lat == 1 .and. cm%dat(vid)%ncol_time == 2) then
+!-                    if (DIAGNOSEMODE) call print_message('   dim order case #4 --> (lat,time,lon)')
+!-                    cm%dat(vid)%dim_order_case = 4
+!-                else if (ncol_lon == 2 .and. ncol_lat == 3 .and. cm%dat(vid)%ncol_time == 1) then
+!-                    if (DIAGNOSEMODE) call print_message('   dim order case #5 --> (time,lon,lat)')
+!-                    cm%dat(vid)%dim_order_case = 5
+!-                else if (ncol_lon == 3 .and. ncol_lat == 2 .and. cm%dat(vid)%ncol_time == 1) then
+!-                    if (DIAGNOSEMODE) call print_message('   dim order case #6 --> (time,lat,lon)')
+!-                    cm%dat(vid)%dim_order_case = 6
+!-                else
+!-                    call print_error( &
+!-                        "Unable to determine the order of dimensions of '" // trim(cm%dat(vid)%id_var) // "' in file: " // &
+!-                        trim(cm%dat(vid)%fpath))
+!-                    call program_abort()
+!-                end if
 
                 !> Set the block type.
                 cm%dat(vid)%blocktype = cbk%GRD
@@ -456,11 +488,11 @@ module climate_forcing_io
 
         !> 'shd_variables': For 'shd' variable.
 #ifdef NETCDF
-        !> 'netcdf': For netCDF library.
+        !> 'nc_io': For netCDF utilities.
 #endif
         use shd_variables
 #ifdef NETCDF
-        use netcdf
+        use nc_io
 #endif
 
         !> Input variables.
@@ -471,13 +503,14 @@ module climate_forcing_io
         type(clim_info) cm
 
         !> Local variables.
-        integer t, n, j, i, z
+        integer t, n, j, i
         real(kind = 4), allocatable :: blocks_r4(:, :)
         real GRD(shd%yCount, shd%xCount), MET(9)
         character(len = DEFAULT_LINE_LENGTH) line
 #ifdef NETCDF
         real, allocatable :: dat3(:, :, :)
         integer, dimension(3) :: start
+        integer ierr
 #endif
 
         !> Initialize the return variable.
@@ -605,63 +638,68 @@ module climate_forcing_io
 
                     !> Allocate the temporary array considering the order of the dimensions in the variable.
                     !> Case default handled with exit when opening the file.
-                    allocate(dat3(cm%dat(vid)%dim_length(1), cm%dat(vid)%dim_length(2), cm%dat(vid)%dim_length(3)))
+!-                    allocate(dat3(cm%dat(vid)%dim_length(1), cm%dat(vid)%dim_length(2), cm%dat(vid)%dim_length(3)))
+                    allocate(dat3(shd%xCount, shd%yCount, cm%dat(vid)%nblocks))
 
                     !> Set the starting position in each dimension (all at '1' except time).
                     start = 1
                     start(cm%dat(vid)%ncol_time) = cm%dat(vid)%iskip + 1
 
                     !> Read data.
-                    z = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%vid, dat3, start = start)
-                    if (z == NF90_EINVALCOORDS) then
-                        goto 999
-                    else if (z /= NF90_NOERR) then
-                        write(line, FMT_GEN) z
-                        call print_error( &
-                            'Error reading from file (code ' // trim(adjustl(line)) // '): ' // trim(cm%dat(vid)%fpath))
-                        call program_abort()
-                    end if
+!-                    z = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%vid, dat3, start = start)
+!-                    if (z == NF90_EINVALCOORDS) then
+!-                        goto 999
+!-                    else if (z /= NF90_NOERR) then
+!-                        write(line, FMT_GEN) z
+!-                        call print_error( &
+!-                            'Error reading from file (code ' // trim(adjustl(line)) // '): ' // trim(cm%dat(vid)%fpath))
+!-                        call program_abort()
+!-                    end if
+                    call nc4_get_data( &
+                        cm%dat(vid)%fiun, cm%dat(vid)%id_var, cm%dat(vid)%vid, dat3, cm%dat(vid)%dim_length, &
+                        cm%dat(vid)%ncol_lon, cm%dat(vid)%ncol_lat, cm%dat(vid)%ncol_time, start, ierr = ierr)
+                    if (ierr /= 0) goto 999
 
                     !> Map and save values from the temporary array.
                     !> Case default handled with exit when opening the file.
-                    select case(cm%dat(vid)%dim_order_case)
+!-                    select case(cm%dat(vid)%dim_order_case)
 
                         !> GRD = transpose(dat3(y:y, x:x, t)).
-                        case(1)
+!-                        case(1)
                             do i = 1, shd%NA
                                 cm%dat(vid)%blocks(i, :) = dat3(shd%xxx(i), shd%yyy(i), :)
                             end do
 
                         !> GRD = dat3(y, x, t).
-                        case(2)
-                            do i = 1, shd%NA
-                                cm%dat(vid)%blocks(i, :) = dat3(shd%yyy(i), shd%xxx(i), :)
-                            end do
+!-                        case(2)
+!-                            do i = 1, shd%NA
+!-                                cm%dat(vid)%blocks(i, :) = dat3(shd%yyy(i), shd%xxx(i), :)
+!-                            end do
 
                         !> GRD = transpose(dat3(y:y, t, x:x)).
-                        case(3)
-                            do i = 1, shd%NA
-                                cm%dat(vid)%blocks(i, :) = dat3(shd%xxx(i), :, shd%yyy(i))
-                            end do
+!-                        case(3)
+!-                            do i = 1, shd%NA
+!-                                cm%dat(vid)%blocks(i, :) = dat3(shd%xxx(i), :, shd%yyy(i))
+!-                            end do
 
                         !> GRD = dat3(y:y, t, x:x).
-                        case(4)
-                            do i = 1, shd%NA
-                                cm%dat(vid)%blocks(i, :) = dat3(shd%yyy(i), :, shd%xxx(i))
-                            end do
+!-                        case(4)
+!-                            do i = 1, shd%NA
+!-                                cm%dat(vid)%blocks(i, :) = dat3(shd%yyy(i), :, shd%xxx(i))
+!-                            end do
 
                         !> GRD = transpose(dat3(t, y:y, x:x)).
-                        case(5)
-                            do i = 1, shd%NA
-                                cm%dat(vid)%blocks(i, :) = dat3(:, shd%xxx(i), shd%yyy(i))
-                            end do
+!-                        case(5)
+!-                            do i = 1, shd%NA
+!-                                cm%dat(vid)%blocks(i, :) = dat3(:, shd%xxx(i), shd%yyy(i))
+!-                            end do
 
                         !> GRD = dat3(t, y:y, x:x).
-                        case(6)
-                            do i = 1, shd%NA
-                                cm%dat(vid)%blocks(i, :) = dat3(:, shd%yyy(i), shd%xxx(i))
-                            end do
-                    end select
+!-                        case(6)
+!-                            do i = 1, shd%NA
+!-                                cm%dat(vid)%blocks(i, :) = dat3(:, shd%yyy(i), shd%xxx(i))
+!-                            end do
+!-                    end select
                 end if
 
                 !> Save the number of records read to save for the next update.
