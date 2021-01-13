@@ -39,6 +39,7 @@ OBJECTS+=	precmod.o stringmod.o
 # Common.
 OBJECTS+=	print_routines.o program_end.o program_abort.o \
 			module_files_variabletypes.o module_files_variables.o \
+			mesh_io_options.o \
 			module_dates.o \
 			EF_Module.o EF_ParseUtilities.o FLAGS.o \
 			parse_utilities.o \
@@ -51,7 +52,6 @@ OBJECTS+=	print_routines.o program_end.o program_abort.o \
 			txt_io.o ensim_io.o nc_io.o \
 			climate_forcing_module_config.o \
 			climate_forcing_module_io.o climate_forcing_module.o \
-			read_init_prog_variables_class.o save_init_prog_variables_class.o \
 			tile_connector.o
 # Process modules.
 OBJECTS+=	baseFlow_luo2012.o baseflow_wfqlz.o baseflow_module.o
@@ -95,7 +95,8 @@ OBJECTS+=	CLASSBD.o CLASSD.o CLASSBG.o CLASSI.o \
 			XIT.o CLASSZ.o
 # SA_MESH modules.
 OBJECTS+=	RUNCLASS36_variables.o RUNCLASS36_save_output.o \
-			RUNCLASS36_config.o RUNCLASS36_module.o
+			RUNCLASS36_config.o RUNCLASS36_module.o \
+			read_init_prog_variables_class.o save_init_prog_variables_class.o
 
 # ======================================================================
 # SVS 1.
@@ -160,7 +161,6 @@ OBJECTS+=	read_initial_inputs.o \
 			read_streamflow_txt.o read_streamflow_tb0.o read_reservoir_txt.o read_reservoir_tb0.o \
 			read_soil_ini.o \
 			read_initial_values_r2c.o \
-			read_initial_states.o \
 			module_files.o
 # Output routines.
 OBJECTS+=	WRITE_R2C_HEADER.o write_r2c.o \
@@ -168,4 +168,5 @@ OBJECTS+=	WRITE_R2C_HEADER.o write_r2c.o \
 # MESH driver.
 OBJECTS+=	read_run_options.o \
 			sa_mesh_run_within_tile.o sa_mesh_run_within_grid.o sa_mesh_run_between_grid.o \
+			resumerun_config.o resumerun_read.o resumerun_save.o \
 			MESH_driver.o

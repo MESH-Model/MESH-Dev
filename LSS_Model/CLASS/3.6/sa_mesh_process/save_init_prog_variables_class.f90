@@ -30,6 +30,7 @@
 
         use model_files_variables
         use sa_mesh_common
+        use RUNCLASS36_variables
 
         implicit none
 
@@ -39,6 +40,9 @@
 
         !> Local variables.
         integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
 
         !> Open the resume state file.
         iun = fls%fl(mfk%f883)%iun

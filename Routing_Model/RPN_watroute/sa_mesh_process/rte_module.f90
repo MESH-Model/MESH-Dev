@@ -93,7 +93,7 @@ module rte_module
         !> sa_mesh_variables: Variables, parameters, and types from SA_MESH.
         use model_files_variables
         use sa_mesh_common
-        use FLAGS
+!-        use FLAGS
 
         type(fl_ids) :: fls
 
@@ -102,7 +102,6 @@ module rte_module
 
         !> Local variables.
         integer n, l, ierr, iun
-        integer(kind = 4) fhr_i4
 
 !temp: for overrides
 !        integer, dimension(4) :: jstrdiv, istrdiv, jenddiv, ienddiv
@@ -112,7 +111,7 @@ module rte_module
 !        integer j, i
 
         !> Return if not the head node or if the process is not active.
-        if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
+        if (.not. ISHEADNODE .or. .not. rteflg%PROCESS_ACTIVE) return
 
         !> Suppress diagnostic output throughout RTE.
         iopt = 0
@@ -399,7 +398,7 @@ module rte_module
         end if
 
         !> Channel and reservoir initialization.
-        if ((fms%rsvr%n > 0 .or. fms%stmg%n > 0) .and. RESUMEFLAG == 0) then
+        if ((fms%rsvr%n > 0 .or. fms%stmg%n > 0) .and. vs%flgs%resume%state == FLAG_OFF) then
             allocate(nbasin(ycount, xcount), r(na, ntype + 1), p(ycount,xcount), inbsnflg(no + noresv))
             nbasin = 0; p = 0.0; inbsnflg = 1
             if (fms%stmg%n > 0) then
@@ -535,35 +534,121 @@ module rte_module
 !            end do
 !        end if
 
-        !> Read the state of these variables.
-        if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
+        !> Update SA_MESH output variables.
+        if (associated(out%ts%grid%qi)) out%ts%grid%qi = qi2
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = store2
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = qo2
+        if (fms%rsvr%n > 0) then
+            reach_last = lake_elv(:, 1)
+        end if
 
-            !> Open the resume file.
-            iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.rte', status = 'old', action = 'read', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
+        !> Update SA_MESH variables.
+        !> Used by other processes and/or for resume file.
+        vs%grid%qi = qi2
+        vs%grid%stgch = store2
+        vs%grid%qo = qo2
+
+    end subroutine
+
+    subroutine run_rte_resume_read(fls, shd)
+
+        !> area_watflood: Shared variables used throughout rte code.
+        !> mpi_module: Required for 'ipid'.
+        !> sa_mesh_common: Variables, parameters, and types from SA_MESH.
+        use area_watflood
+        use mpi_module
+        use model_files_variables
+        use sa_mesh_common
+
+        type(fl_ids) :: fls
+
+        !> Basin properties from SA_MESH.
+        type(ShedGridParams) :: shd
+
+        !> Local variables.
+        integer(kind = 4) fhr_i4
+        integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. rteflg%PROCESS_ACTIVE) return
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.rte', status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
 !todo: condition for ierr.
 
-            !> Read inital values from the file.
-            if (RESUMEFLAG == 4) then
-                read(iun) fhr_i4
-                fhr = int(fhr_i4)
-            else
-                read(iun)
-            end if
-            read(iun) qo2
-            read(iun) store2
-            read(iun) qi2
-            if (fms%rsvr%n > 0) then
-                read(iun) lake_elv(:, fhr)
-            else
-                read(iun)
-            end if
-
-            !> Close the file to free the unit.
-            close(iun)
-
+        !> Read inital values from the file.
+        read(iun) fhr_i4
+        fhr = int(fhr_i4)
+        read(iun) qo2
+        read(iun) store2
+        read(iun) qi2
+        if (fms%rsvr%n > 0) then
+            read(iun) lake_elv(:, fhr)
+        else
+            read(iun)
         end if
+
+        !> Close the file to free the unit.
+        close(iun)
+
+        !> Update SA_MESH output variables.
+        if (associated(out%ts%grid%qi)) out%ts%grid%qi = qi2
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = store2
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = qo2
+        if (fms%rsvr%n > 0) then
+            reach_last = lake_elv(:, 1)
+        end if
+
+        !> Update SA_MESH variables.
+        !> Used by other processes and/or for resume file.
+        vs%grid%qi = qi2
+        vs%grid%stgch = store2
+        vs%grid%qo = qo2
+
+    end subroutine
+
+    subroutine run_rte_resume_read_nots(fls, shd)
+
+        !> area_watflood: Shared variables used throughout rte code.
+        !> mpi_module: Required for 'ipid'.
+        !> sa_mesh_common: Variables, parameters, and types from SA_MESH.
+        use area_watflood
+        use mpi_module
+        use model_files_variables
+        use sa_mesh_common
+
+        type(fl_ids) :: fls
+
+        !> Basin properties from SA_MESH.
+        type(ShedGridParams) :: shd
+
+        !> Local variables.
+        integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. rteflg%PROCESS_ACTIVE) return
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.rte', status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+        !> Read inital values from the file.
+        read(iun)
+        read(iun) qo2
+        read(iun) store2
+        read(iun) qi2
+        if (fms%rsvr%n > 0) then
+            read(iun) lake_elv(:, fhr)
+        else
+            read(iun)
+        end if
+
+        !> Close the file to free the unit.
+        close(iun)
 
         !> Update SA_MESH output variables.
         if (associated(out%ts%grid%qi)) out%ts%grid%qi = qi2
@@ -625,7 +710,7 @@ module rte_module
         character(len = 14) :: date = ''
 
         !> Return if not the head node or if the process is not active.
-        if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
+        if (.not. ISHEADNODE .or. .not. rteflg%PROCESS_ACTIVE) return
 
         !> Accumulate runoff to the routing time-step.
         if (ic%ts_hourly == 1) then
@@ -883,6 +968,49 @@ module rte_module
 
     end subroutine
 
+    subroutine run_rte_resume_save(fls, shd)
+
+        !> area_watflood: Shared variables used throughout rte code.
+        !> mpi_module: Required for 'ipid'.
+        !> sa_mesh_common: Variables, parameters, and types from SA_MESH.
+        use area_watflood
+        use mpi_module
+        use model_files_variables
+        use sa_mesh_common
+
+        type(fl_ids) fls
+
+        !> Basin properties from SA_MESH.
+        type(ShedGridParams) shd
+
+        !> Local variables.
+        integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. rteflg%PROCESS_ACTIVE) return
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.rte', status = 'replace', action = 'write', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+        !> Write the current state of these variables to the file.
+        write(iun) int(fhr, kind = 4)
+        write(iun) qo2
+        write(iun) store2
+        write(iun) qi2
+        if (fms%rsvr%n > 0) then
+            write(iun) lake_elv(:, fhr)
+        else
+            write(iun)
+        end if
+
+        !> Close the file to free the unit.
+        close(iun)
+
+    end subroutine
+
     subroutine run_rte_finalize(fls, shd)
 
         !> area_watflood: Shared variables used throughout rte code.
@@ -894,43 +1022,15 @@ module rte_module
         !> sa_mesh_variables: Variables, parameters, and types from SA_MESH.
         use model_files_variables
         use sa_mesh_common
-        use FLAGS
+!-        use FLAGS
 
         type(fl_ids) :: fls
 
         !> Basin properties from SA_MESH.
         type(ShedGridParams) :: shd
 
-        !> Local variables.
-        integer ierr, iun
-
         !> Return if not the head node or if the process is not active.
-        if (ipid /= 0 .or. .not. rteflg%PROCESS_ACTIVE) return
-
-        !> Save the state of these variables.
-        if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
-
-            !> Open the resume file.
-            iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.rte', status = 'replace', action = 'write', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
-
-            !> Write the current state of these variables to the file.
-            write(iun) int(fhr, kind = 4)
-            write(iun) qo2
-            write(iun) store2
-            write(iun) qi2
-            if (fms%rsvr%n > 0) then
-                write(iun) lake_elv(:, fhr)
-            else
-                write(iun)
-            end if
-
-            !> Close the file to free the unit.
-            close(iun)
-
-        end if
+        if (.not. ISHEADNODE .or. .not. rteflg%PROCESS_ACTIVE) return
 
     end subroutine
 

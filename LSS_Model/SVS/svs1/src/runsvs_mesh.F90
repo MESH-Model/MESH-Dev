@@ -167,7 +167,8 @@ module runsvs_mesh
 
     private
 
-    public runsvs_mesh_init, runsvs_mesh_within_tile, runsvs_mesh_finalize
+    public &
+        runsvs_mesh_init, runsvs_mesh_resume_states_seq, runsvs_mesh_within_tile, runsvs_mesh_save_states_seq, runsvs_mesh_finalize
 
     contains
 
@@ -175,7 +176,7 @@ module runsvs_mesh
 
         !> MESH modules.
         !*  FLAGS: Required for 'RESUMEFLAG'.
-        use FLAGS, only: RESUMEFLAG
+!-        use FLAGS, only: RESUMEFLAG
 
         !> SVS modules.
 !        use runsvs_mod
@@ -753,23 +754,20 @@ module runsvs_mesh
         end if
 !<<<svs_output
 
-        !> Resume states.
-        select case (RESUMEFLAG)
-            case (3, 4, 5)
-                call runsvs_mesh_resume_states_seq(shd, fls)
-        end select
-
     end subroutine
 
-    subroutine runsvs_mesh_resume_states_seq(shd, fls)
+    subroutine runsvs_mesh_resume_states_seq(fls, shd, resume_ts)
 
         !> MESH modules.
         !*  FLAGS: Required for 'RESUMEFLAG'.
-        use FLAGS, only: RESUMEFLAG
+!-        use FLAGS, only: RESUMEFLAG
 
         !> Input variables.
-        type(ShedGridParams) shd
         type(fl_ids) fls
+        type(ShedGridParams) shd
+
+        !> Input variables (optional).
+        logical, intent(in), optional :: resume_ts
 
         !> Local variables.
         integer(kind = 4) datecmc_o_i4
@@ -780,6 +778,7 @@ module runsvs_mesh
             snoma_r4, snvma_r4, wsnow_r4, wsnv_r4, snoal_r4, snval_r4, snoden_r4, snvden_r4, snodpl_r4, snvdp_r4, wveg_r4
         integer iun, j, k, z, ierr
         character(len = DEFAULT_FIELD_LENGTH) code
+        logical t
 
         !> Return if the process is not marked active.
         if (.not. svs_mesh%PROCESS_ACTIVE) return
@@ -804,7 +803,9 @@ module runsvs_mesh
         !> The MESH resume date and counters are read after reading this
         !>  file, so this date must be resumed separately.
         !> Only resume the date if model dates are also resumed.
-        if (RESUMEFLAG == 4) then
+        t = .true.
+        if (present(resume_ts)) t = resume_ts
+        if (t) then
             read(iun, iostat = z) datecmc_o_i4
             datecmc_o = int(datecmc_o_i4)
         else
@@ -1142,7 +1143,7 @@ module runsvs_mesh
 
         !> MESH modules.
         !*  FLAGS: Required for 'SAVERESUMEFLAG'.
-        use FLAGS, only: SAVERESUMEFLAG
+!-        use FLAGS, only: SAVERESUMEFLAG
 
         !> Input variables.
         type(ShedGridParams) shd
@@ -1151,23 +1152,17 @@ module runsvs_mesh
         !> Return if the process is not marked active.
         if (.not. svs_mesh%PROCESS_ACTIVE) return
 
-        !> Save states.
-        select case (SAVERESUMEFLAG)
-            case (3, 4, 5)
-                call runsvs_mesh_save_states_seq(shd, fls)
-        end select
-
     end subroutine
 
-    subroutine runsvs_mesh_save_states_seq(shd, fls)
+    subroutine runsvs_mesh_save_states_seq(fls, shd)
 
         !> MESH modules.
         !*  FLAGS: Required for 'SAVERESUMEFLAG'.
-        use FLAGS, only: SAVERESUMEFLAG
+!-        use FLAGS, only: SAVERESUMEFLAG
 
         !> Input variables.
-        type(ShedGridParams) shd
         type(fl_ids) fls
+        type(ShedGridParams) shd
 
         !> Local variables.
         integer iun, j, k, z, ierr

@@ -118,7 +118,7 @@ module WF_ROUTE_config
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use FLAGS
+!-        use FLAGS
 
         type(fl_ids) :: fls
         type(ShedGridParams), intent(in) :: shd
@@ -132,12 +132,10 @@ module WF_ROUTE_config
         !> Local variables.
         !* iun: Unit number.
         !* ierr: Error return from external calls.
-        integer(kind = 4) JAN_i4, WF_TIMECOUNT_i4
-        real(kind = 4), dimension(:), allocatable :: qo_r4, stgch_r4, qi_r4
         integer iun, ierr, i
 
-        !> Return if the process is inactive.
-        if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
         NA = shd%NA
         WF_NAA = NA - shd%NAA
@@ -202,63 +200,158 @@ module WF_ROUTE_config
         !* JAN: The first time throught he loop, jan = 1. Jan will equal 2 after that.
         JAN = 1
 
-        !> Read the state of these variables.
-        if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
+    end subroutine
 
-            !> Open the resume file.
-            iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'old', action = 'read', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
+    subroutine WF_ROUTE_resume_read(fls, shd)
+
+        use model_files_variables
+        use sa_mesh_common
+
+        type(fl_ids) :: fls
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Local variables.
+        integer(kind = 4) JAN_i4, WF_TIMECOUNT_i4
+        real(kind = 4), dimension(:), allocatable :: qo_r4, stgch_r4, qi_r4
+        integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. WF_RTE_flgs%PROCESS_ACTIVE) return
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
 !todo: condition for ierr.
 
-            !> Allocate and initialize local variables.
-            allocate(qo_r4(NA), stgch_r4(NA), qi_r4(NA))
-            qo_r4 = 0.0
-            stgch_r4 = 0.0
-            qi_r4 = 0.0
+        !> Allocate and initialize local variables.
+        allocate(qo_r4(shd%NA), stgch_r4(shd%NA), qi_r4(shd%NA))
+        qo_r4 = 0.0
+        stgch_r4 = 0.0
+        qi_r4 = 0.0
 
-            !> Read inital values from the file.
-            if (RESUMEFLAG == 4) then
-                read(iun) JAN_i4
-                read(iun) WF_TIMECOUNT_i4
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun) qo_r4
-                read(iun) stgch_r4
-                read(iun) qi_r4
-                read(iun)
-                read(iun)
-            else
-                read(iun) JAN_i4
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun)
-                read(iun) qo_r4
-                read(iun) stgch_r4
-                read(iun) qi_r4
-                read(iun)
-                read(iun)
-            end if
+        !> Read inital values from the file.
+        read(iun) JAN_i4
+        read(iun) WF_TIMECOUNT_i4
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun) qo_r4
+        read(iun) stgch_r4
+        read(iun) qi_r4
+        read(iun)
+        read(iun)
 
-            !> Transfer variables.
-            JAN = int(JAN_i4, kind(JAN))
-            WF_TIMECOUNT = int(WF_TIMECOUNT_i4, kind(WF_TIMECOUNT))
-            vs%grid%qo = real(qo_r4, kind(vs%grid%qo))
-            vs%grid%stgch = real(stgch_r4, kind(vs%grid%stgch))
-            vs%grid%qi = real(qi_r4, kind(vs%grid%qi))
+        !> Transfer variables.
+        JAN = int(JAN_i4, kind(JAN))
+        WF_TIMECOUNT = int(WF_TIMECOUNT_i4, kind(WF_TIMECOUNT))
+        vs%grid%qo = real(qo_r4, kind(vs%grid%qo))
+        vs%grid%stgch = real(stgch_r4, kind(vs%grid%stgch))
+        vs%grid%qi = real(qi_r4, kind(vs%grid%qi))
 
-            !> Close the file to free the unit.
-            close(iun)
+        !> Close the file to free the unit.
+        close(iun)
 
-        end if
+    end subroutine
+
+    subroutine WF_ROUTE_resume_read_nots(fls, shd)
+
+        use model_files_variables
+        use sa_mesh_common
+
+        type(fl_ids) :: fls
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Local variables.
+        integer(kind = 4) JAN_i4
+        real(kind = 4), dimension(:), allocatable :: qo_r4, stgch_r4, qi_r4
+        integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. WF_RTE_flgs%PROCESS_ACTIVE) return
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'old', action = 'read', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+        !> Allocate and initialize local variables.
+        allocate(qo_r4(shd%NA), stgch_r4(shd%NA), qi_r4(shd%NA))
+        qo_r4 = 0.0
+        stgch_r4 = 0.0
+        qi_r4 = 0.0
+
+        !> Read inital values from the file.
+        read(iun) JAN_i4
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun)
+        read(iun) qo_r4
+        read(iun) stgch_r4
+        read(iun) qi_r4
+        read(iun)
+        read(iun)
+
+        !> Transfer variables.
+        JAN = int(JAN_i4, kind(JAN))
+        vs%grid%qo = real(qo_r4, kind(vs%grid%qo))
+        vs%grid%stgch = real(stgch_r4, kind(vs%grid%stgch))
+        vs%grid%qi = real(qi_r4, kind(vs%grid%qi))
+
+        !> Close the file to free the unit.
+        close(iun)
+
+    end subroutine
+
+    subroutine WF_ROUTE_resume_save(fls, shd)
+
+        use mpi_module
+        use model_files_variables
+        use sa_mesh_common
+
+        type(fl_ids) :: fls
+        type(ShedGridParams) :: shd
+
+        !> Local variables.
+        integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. WF_RTE_flgs%PROCESS_ACTIVE) return
+
+        !> Return if not the head node.
+        if (ipid /= 0) return
+
+        !> Open the resume file.
+        iun = fls%fl(mfk%f883)%iun
+        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'replace', action = 'write', &
+             form = 'unformatted', access = 'sequential', iostat = ierr)
+!todo: condition for ierr.
+
+        !> Write the current state of these variables to the file.
+        write(iun) int(JAN, kind = 4)
+        write(iun) int(WF_TIMECOUNT, kind = 4)
+        write(iun)
+        write(iun)
+        write(iun)
+        write(iun)
+        write(iun)
+        write(iun)
+        write(iun) real(vs%grid%qo, kind = 4)
+        write(iun) real(vs%grid%stgch, kind = 4)
+        write(iun) real(vs%grid%qi, kind = 4)
+        write(iun)
+        write(iun)
+
+        !> Close the file to free the unit.
+        close(iun)
 
     end subroutine
 
@@ -267,48 +360,12 @@ module WF_ROUTE_config
         use mpi_module
         use model_files_variables
         use sa_mesh_common
-        use FLAGS
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
 
-        !> Local variables.
-        integer ierr, iun
-
-        !> Return in the process is inactive.
-        if (.not. WF_RTE_flgs%PROCESS_ACTIVE) return
-
-        !> Return if not the head node.
-        if (ipid /= 0) return
-
-        !> Save the state of these variables.
-        if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
-
-            !> Open the resume file.
-            iun = fls%fl(mfk%f883)%iun
-            open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.wf_route', status = 'replace', action = 'write', &
-                 form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
-
-            !> Write the current state of these variables to the file.
-            write(iun) int(JAN, kind = 4)
-            write(iun) int(WF_TIMECOUNT, kind = 4)
-            write(iun)
-            write(iun)
-            write(iun)
-            write(iun)
-            write(iun)
-            write(iun)
-            write(iun) real(vs%grid%qo, kind = 4)
-            write(iun) real(vs%grid%stgch, kind = 4)
-            write(iun) real(vs%grid%qi, kind = 4)
-            write(iun)
-            write(iun)
-
-            !> Close the file to free the unit.
-            close(iun)
-
-        end if
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. WF_RTE_flgs%PROCESS_ACTIVE) return
 
     end subroutine
 

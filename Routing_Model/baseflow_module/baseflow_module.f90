@@ -61,16 +61,12 @@ module baseflow_module
         use model_dates
         use climate_forcing
 
-        !> For: RESUMEFLAG
-        use FLAGS
-
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
         type(clim_info), intent(in) :: cm
 
         !> Local variables.
-        real(kind = 4), dimension(:), allocatable :: lzs_r4, Qb_r4
         integer NA, NML, NTYPE, NRVR, iun, n, i, ierr
         character(len = DEFAULT_LINE_LENGTH) line
 
@@ -157,44 +153,60 @@ module baseflow_module
                 end if
         end select
 
+    end subroutine
+
+    subroutine bflm_resume_read(fls, shd)
+
+        use model_files_variables
+        use sa_mesh_common
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Local variables.
+        real(kind = 4), dimension(:), allocatable :: lzs_r4, Qb_r4
+        integer iun, ierr
+
+        !> Return if BASEFLOWFLAG is not active.
+        if (bflm%BASEFLOWFLAG == 0) return
+
         !> Resume states from file.
-        if (RESUMEFLAG == 4 .or. RESUMEFLAG == 5) then
-            select case (bflm%BASEFLOWFLAG)
-                case (1)
-                    iun = fls%fl(mfk%f883)%iun
-                    open( &
-                        iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', action = 'read', status = 'old', &
-                        form = 'unformatted', access = 'sequential', iostat = ierr)
-                    if (ierr /= 0) then
-                        call print_error( &
-                            'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to resume states.')
-                        call program_abort()
-                    end if
-                    allocate(lzs_r4(NML), Qb_r4(NML))
-                    lzs_r4 = 0.0
-                    Qb_r4 = 0.0
-                    read(iun) lzs_r4
-                    read(iun) Qb_r4
-                    close(iun)
-                    vs%tile%stggw = lzs_r4
-                    Qb = Qb_r4
-                case (2)
-                    iun = fls%fl(mfk%f883)%iun
-                    open( &
-                        iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', action = 'read', status = 'old', &
-                        form = 'unformatted', access = 'sequential', iostat = ierr)
-                    if (ierr /= 0) then
-                        call print_error( &
-                            'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to resume states.')
-                        call program_abort()
-                    end if
-                    allocate(lzs_r4(NML))
-                    lzs_r4 = 0.0
-                    read(iun) lzs_r4
-                    close(iun)
-                    vs%tile%stggw = lzs_r4
-            end select
-        end if
+        select case (bflm%BASEFLOWFLAG)
+            case (1)
+                iun = fls%fl(mfk%f883)%iun
+                open( &
+                    iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', action = 'read', status = 'old', &
+                    form = 'unformatted', access = 'sequential', iostat = ierr)
+                if (ierr /= 0) then
+                    call print_error( &
+                        'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to resume states.')
+                    call program_abort()
+                end if
+                allocate(lzs_r4(shd%lc%NML), Qb_r4(shd%lc%NML))
+                lzs_r4 = 0.0
+                Qb_r4 = 0.0
+                read(iun) lzs_r4
+                read(iun) Qb_r4
+                close(iun)
+                vs%tile%stggw = lzs_r4
+                Qb = Qb_r4
+            case (2)
+                iun = fls%fl(mfk%f883)%iun
+                open( &
+                    iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', action = 'read', status = 'old', &
+                    form = 'unformatted', access = 'sequential', iostat = ierr)
+                if (ierr /= 0) then
+                    call print_error( &
+                        'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to resume states.')
+                    call program_abort()
+                end if
+                allocate(lzs_r4(shd%lc%NML))
+                lzs_r4 = 0.0
+                read(iun) lzs_r4
+                close(iun)
+                vs%tile%stggw = lzs_r4
+        end select
 
     end subroutine
 
@@ -271,6 +283,53 @@ module baseflow_module
 
     end subroutine
 
+    subroutine bflm_resume_save(fls, shd)
+
+        use mpi_module
+        use model_files_variables
+        use sa_mesh_common
+
+        !> Input variables.
+        type(fl_ids), intent(in) :: fls
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Local variables.
+        integer ierr, iun
+
+        !> Return if not the head node or if BASEFLOWFLAG is not active.
+        if (.not. ISHEADNODE .or. bflm%BASEFLOWFLAG == 0) return
+
+        !> Save states to file.
+        select case (bflm%BASEFLOWFLAG)
+            case (1)
+                iun = fls%fl(mfk%f883)%iun
+                open( &
+                    iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', action = 'write', status = 'replace', &
+                    form = 'unformatted', access = 'sequential', iostat = ierr)
+                if (ierr /= 0) then
+                    call print_error( &
+                        'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to save states.')
+                    call program_abort()
+                end if
+                write(iun) real(vs%tile%stggw, kind = 4)
+                write(iun) real(Qb, kind = 4)
+                close(iun)
+            case (2)
+                iun = fls%fl(mfk%f883)%iun
+                open( &
+                    iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', action = 'write', status = 'replace', &
+                    form = 'unformatted', access = 'sequential', iostat = ierr)
+                if (ierr /= 0) then
+                    call print_error( &
+                        'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to save states.')
+                    call program_abort()
+                end if
+                write(iun) real(vs%tile%stggw, kind = 4)
+                close(iun)
+        end select
+
+    end subroutine
+
     subroutine bflm_finalize(fls, shd, cm)
 
         use mpi_module
@@ -279,50 +338,13 @@ module baseflow_module
         use model_dates
         use climate_forcing
 
-        !> For: SAVERESUMEFLAG
-        use FLAGS
-
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
         type(clim_info), intent(in) :: cm
 
-        !> Local variables.
-        integer ierr, iun
-
-        !> Return if not the head node or if BASEFLOWFLAG is not active.
-        if (ipid /= 0 .or. bflm%BASEFLOWFLAG == 0) return
-
-        !> Save states to file.
-        if (SAVERESUMEFLAG == 4 .or. SAVERESUMEFLAG == 5) then
-            select case (bflm%BASEFLOWFLAG)
-                case (1)
-                    iun = fls%fl(mfk%f883)%iun
-                    open( &
-                        iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012', action = 'write', status = 'replace', &
-                        form = 'unformatted', access = 'sequential', iostat = ierr)
-                    if (ierr /= 0) then
-                        call print_error( &
-                            'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.luo_2012' // ' to save states.')
-                        call program_abort()
-                    end if
-                    write(iun) real(vs%tile%stggw, kind = 4)
-                    write(iun) real(Qb, kind = 4)
-                    close(iun)
-                case (2)
-                    iun = fls%fl(mfk%f883)%iun
-                    open( &
-                        iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz', action = 'write', status = 'replace', &
-                        form = 'unformatted', access = 'sequential', iostat = ierr)
-                    if (ierr /= 0) then
-                        call print_error( &
-                            'Unable to open ' // trim(adjustl(fls%fl(mfk%f883)%fn)) // '.lzsp.wfqlz' // ' to save states.')
-                        call program_abort()
-                    end if
-                    write(iun) real(vs%tile%stggw, kind = 4)
-                    close(iun)
-            end select
-        end if
+        !> Return if BASEFLOWFLAG is not active.
+        if (bflm%BASEFLOWFLAG == 0) return
 
     end subroutine
 

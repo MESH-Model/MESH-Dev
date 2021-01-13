@@ -694,6 +694,12 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         return
     end if
 
+    !> Read resume configuration.
+    call resumerun_config(fls, shd, cm, ierr)
+    if (ierr /= 0) then
+        call program_abort()
+    end if
+
     !> Call 'CLASSD' to initialize constants.
 !todo: replace this with a non-CLASS/generic version.
     call CLASSD
@@ -806,9 +812,5 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
             end if
         end if
     end if
-
-    !> Read variable states from file.
-    call read_initial_states(fls, shd, ierr)
-    if (ierr /= 0) return
 
 end subroutine

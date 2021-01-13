@@ -19,6 +19,8 @@ module SIMSTATS
 
     private
     public mtsflg, stats_init, stats_update_stfl_daily, stats_write, fbest, ftest
+    public stats_state_resume, stats_state_save
+    public qobs, qsim, ncal, ns
 
 !    integer, parameter :: dp=kind(0.d0)
 
@@ -203,7 +205,8 @@ module SIMSTATS
 
         if (fms%stmg%n == 0) mtsflg%AUTOCALIBRATIONFLAG = 0
 
-        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
+        !> Return if not the head node of if AUTOCALIBRATIONFLAG is not active.
+        if (.not. ISHEADNODE .or. mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
         if (mtsflg%PREEMPTIONFLAG == 1) then
             call print_message('=================================================')
@@ -236,9 +239,9 @@ module SIMSTATS
         qobs = 0.0
         qsim = 0.0
 
-        if (RESUMEFLAG == 4) then
-            call stats_state_resume(fls)
-        end if
+!-        if (RESUMEFLAG == 4) then
+!-            call stats_state_resume(fls)
+!-        end if
 
     end subroutine
 
@@ -256,7 +259,8 @@ module SIMSTATS
         !> Local variables.
         real, dimension(:, :), allocatable :: tmp
 
-        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
+        !> Return if not the head node of if AUTOCALIBRATIONFLAG is not active.
+        if (.not. ISHEADNODE .or. mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
         !> Increment number of simulated days run.
         ncal = ncal + 1
@@ -314,7 +318,7 @@ module SIMSTATS
 
     subroutine stats_state_save(fls)
 
-        use mpi_module
+        use sa_mesh_common
         use model_files_variables
 
         !> Input variables.
@@ -323,11 +327,8 @@ module SIMSTATS
         !> Local variables.
         integer j, iun, ierr
 
-        !> Return if AUTOCALIBRATIONFLAG has not been enabled.
-        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
-
-        !> Only the serial or head node should write this file.
-        if (ipid /= 0) return
+        !> Return if not the head node of if AUTOCALIBRATIONFLAG is not active.
+        if (.not. ISHEADNODE .or. mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
         !> Open the file.
         iun = fls%fl(mfk%f883)%iun
@@ -351,7 +352,7 @@ module SIMSTATS
 
     subroutine stats_state_resume(fls)
 
-        use mpi_module
+        use sa_mesh_common
         use model_files_variables
 
         !> Input variables.
@@ -363,11 +364,8 @@ module SIMSTATS
         real(kind = 4), dimension(:, :), allocatable :: qobs_r4, qsim_r4
         integer j, iun, ierr
 
-        !> Return if AUTOCALIBRATIONFLAG has not been enabled.
-        if (mtsflg%AUTOCALIBRATIONFLAG == 0) return
-
-        !> Only the serial or head node should write this file.
-        if (ipid /= 0) return
+        !> Return if not the head node of if AUTOCALIBRATIONFLAG is not active.
+        if (.not. ISHEADNODE .or. mtsflg%AUTOCALIBRATIONFLAG == 0) return
 
         !> Open the file.
         iun = fls%fl(mfk%f883)%iun
@@ -403,6 +401,7 @@ module SIMSTATS
     !>
     subroutine stats_write(fls)
 
+        use sa_mesh_common
         use model_files_variables
 
         !> External functions.
@@ -416,13 +415,13 @@ module SIMSTATS
         real, dimension(:), allocatable :: fkge
         integer j, iun
 
-        if (SAVERESUMEFLAG == 4) then
-            call stats_state_save(fls)
-            return
-        end if
+!-        if (SAVERESUMEFLAG == 4) then
+!-            call stats_state_save(fls)
+!-            return
+!-        end if
 
-        !> Return if autocalibration and metrics are not enabled.
-        if (mtsflg%AUTOCALIBRATIONFLAG == 0 .or. ncal == 0) return
+        !> Return if not the head node of if AUTOCALIBRATIONFLAG is not active, or the number of calibration points is zero.
+        if (.not. ISHEADNODE .or. mtsflg%AUTOCALIBRATIONFLAG == 0 .or. ncal == 0) return
 
         !> Check if the array to keep file information for the metrics is allocated.
         if (.not. allocated(mtsfl%fl)) call init_metricsout_files()

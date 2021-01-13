@@ -30,6 +30,7 @@
 
         use model_files_variables
         use sa_mesh_common
+        use RUNCLASS36_variables
 
         implicit none
 
@@ -44,6 +45,9 @@
         real(kind = 4), dimension(:, :), allocatable :: &
             TBAR, THIC, THLQ, TSFS
         integer NML, NSL, ierr, iun
+
+        !> Return if the process is not active.
+        if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
 
         !> Open the resume state file.
         iun = fls%fl(mfk%f883)%iun
