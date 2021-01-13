@@ -813,29 +813,29 @@ module runsvs_mesh
         end if
 
         !> Resume temperatures.
-        if (z == 0) read(iun, iostat = z) tground_r4
-        if (z == 0) read(iun, iostat = z) tvege_r4
-        if (z == 0) read(iun, iostat = z) tsnow_r4
-        if (z == 0) read(iun, iostat = z) tsnowveg_r4
+        if (z == 0) read(iun, iostat = z) ((tground_r4(1 + (j - 1)*NG + k), j = 1, svs_mesh%vs%kthermal), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((tvege_r4(1 + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((tsnow_r4(1 + j*NG + k), j = 0, 1), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((tsnowveg_r4(1 + j*NG + k), j = 0, 1), k = 0, NG - 1)
 
         !> Resume moisture.
-        if (z == 0) read(iun, iostat = z) wsoil_r4
-        if (z == 0) read(iun, iostat = z) isoil_r4
+        if (z == 0) read(iun, iostat = z) ((wsoil_r4(1 + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) ((isoil_r4(1 + (j - 1)*NG + k), j = 1, nl_svs), k = 0, NG - 1)
 
         !> Resume snow variables.
-        if (z == 0) read(iun, iostat = z) snoma_r4
-        if (z == 0) read(iun, iostat = z) snvma_r4
-        if (z == 0) read(iun, iostat = z) wsnow_r4
-        if (z == 0) read(iun, iostat = z) wsnv_r4
-        if (z == 0) read(iun, iostat = z) snoal_r4
-        if (z == 0) read(iun, iostat = z) snval_r4
-        if (z == 0) read(iun, iostat = z) snoden_r4
-        if (z == 0) read(iun, iostat = z) snvden_r4
-        if (z == 0) read(iun, iostat = z) snodpl_r4
-        if (z == 0) read(iun, iostat = z) snvdp_r4
+        if (z == 0) read(iun, iostat = z) (snoma_r4(1 + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (snvma_r4(1 + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (wsnow_r4(1 + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (wsnv_r4(1 + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (snoal_r4(1 + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (snval_r4(1 + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (snoden_r4(1 + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (snvden_r4(1 + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (snodpl_r4(1 + k), k = 0, NG - 1)
+        if (z == 0) read(iun, iostat = z) (snvdp_r4(1 + k), k = 0, NG - 1)
 
         !> Resume 'other'.
-        if (z == 0) read(iun, iostat = z) wveg_r4
+        if (z == 0) read(iun, iostat = z) (wveg_r4(1 + k), k = 0, NG - 1)
 
         !> Assign variables.
         if (z == 0) then
