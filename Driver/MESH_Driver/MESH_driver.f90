@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1735'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1738'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -883,8 +883,8 @@ program RUNMESH
 
         !> Close the file to free the unit.
         close(iun)
-    else
-        call run_save_basin_update_stg_ini(fls, shd, cm)
+!-    else
+!-        call run_save_basin_update_stg_ini(fls, shd, cm)
     end if
 
     !> Update 'next' counter.

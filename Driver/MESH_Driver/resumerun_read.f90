@@ -7,7 +7,7 @@ subroutine resumerun_read(fls, shd, cm, ierr)
     use climate_forcing
     use sa_mesh_run_within_tile
     use sa_mesh_run_within_grid
-!+    use sa_mesh_run_between_grid
+    use sa_mesh_run_between_grid
 
     !> Process modules.
     use FLAGS, only: NRSOILAYEREADFLAG
@@ -186,5 +186,6 @@ subroutine resumerun_read(fls, shd, cm, ierr)
     !> Update derived values.
     call run_within_tile_stas_update(fls, shd, cm)
     call run_within_grid_stas_update(fls, shd, cm)
+    call run_within_grid_stas_basin_update(fls, shd, cm)
 
 end subroutine
