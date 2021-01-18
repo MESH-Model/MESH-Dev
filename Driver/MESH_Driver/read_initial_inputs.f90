@@ -75,6 +75,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
                     SHDFILEFMT = 1
                 case ('2', 'class_ini')
                     SHDFILEFMT = 2
+                case ('netcdf', 'nc')
+                    SHDFILEFMT = 3
                 case ('to_map')
                     SHDTOMAPFLAG = .true.
             end select
@@ -325,6 +327,19 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 !-            ro%RUNCHNL = .false.
 !-            ro%RUNGRID = .false.
 
+        !> 'nc' format shed file.
+        case (3)
+#ifdef NETCDF
+            call read_shed_nc(shd, 'MESH_drainage_database.nc', '', '', '', '', ierr)
+            if (ierr /= 0) return
+#else
+            call print_error( &
+                "The format of the drainage database input file is specified as NetCDF but the module is not active. " // &
+                "A version of MESH compiled with the NetCDF library must be used to read files in this format.")
+            ierr = 1
+            return
+#endif
+
         case default
 
             !> Unknown or unsupported format.
@@ -532,7 +547,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 !?            shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
 !?            shd%iyMin = int(shd%yOrigin/1000.0)
 !?            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
-        case ('rotlatlong')
+        case ('rotlatlong', 'rotated_latitude_longitude')
             z = 0
             call check_allocated(shd%ylat, shd%NA, z)
             if (.not. btest(z, pstat%ASSIGNED)) then

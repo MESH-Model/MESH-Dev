@@ -189,6 +189,8 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**2
             case ('txt')
                 INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**3
+            case ('netcdf', 'nc')
+                INPUTPARAMSFORMFLAG = INPUTPARAMSFORMFLAG + radix(INPUTPARAMSFORMFLAG)**4
         end select
     end do
 
@@ -236,6 +238,20 @@ subroutine read_parameters(fls, shd, cm, ierr)
     if (btest(INPUTPARAMSFORMFLAG, 1)) then
         call read_parameters_r2c(shd, 100, 'MESH_parameters.r2c', ierr)
         if (ierr /= 0) return
+    end if
+
+    !> Read from the 'nc' file.
+    if (btest(INPUTPARAMSFORMFLAG, 4)) then
+#ifdef NETCDF
+        call read_parameters_nc(shd, 'MESH_parameters.nc', '', '', '', '', '', '', ierr)
+        if (ierr /= 0) return
+#else
+        call print_error( &
+            "The format of a parameter input file is specified as NetCDF but the module is not active. " // &
+            "A version of MESH compiled with the NetCDF library must be used to read files in this format.")
+        ierr = 1
+        return
+#endif
     end if
 
     !>
@@ -416,7 +432,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     end if
 
     !> From grid.
-    if (btest(INPUTPARAMSFORMFLAG, 1)) then
+    if (btest(INPUTPARAMSFORMFLAG, 1) .or. btest(INPUTPARAMSFORMFLAG, 4)) then
         do k = 1, shd%lc%NML
 
             !> Omit GRU's with mosaic ID >= 100 from being assigned grid-based values (special condition).
@@ -427,8 +443,12 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
             !> RUNCLASS36 and RUNSVS113.
             if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-                if (shd%SLOPE_INT(i) /= 0.0) pm%tile%xslp(k) = shd%SLOPE_INT(i)
-                if (shd%DRDN(i) /= 0.0) pm%tile%dd(k) = shd%DRDN(i)
+                if (allocated(shd%SLOPE_INT)) then
+                    if (shd%SLOPE_INT(i) /= 0.0) pm%tile%xslp(k) = shd%SLOPE_INT(i)
+                end if
+                if (allocated(shd%DRDN)) then
+                    if (shd%DRDN(i) /= 0.0) pm%tile%dd(k) = shd%DRDN(i)
+                end if
                 if (any(pm%grid%fcan(i, :) /= 0.0)) pm%tile%fcan(k, :) = pm%grid%fcan(i, :)
                 if (any(pm%grid%lnz0(i, :) /= 0.0)) pm%tile%lnz0(k, :) = pm%grid%lnz0(i, :)
                 if (pm%grid%sdep(i) /= 0.0) pm%tile%sdep(k) = pm%grid%sdep(i)
