@@ -7,7 +7,7 @@
 !*  shd: Basin 'shed' object (properties).
 !*  iun: Unit of the input file.
 !*  fname: Full path to the file (default: './MESH_parameters.r2c').
-!*
+!>
 !> Output variables:
 !*  ierr: Return status.
 subroutine read_parameters_csv(shd, iun, fname, ierr)
@@ -889,7 +889,7 @@ subroutine read_parameters_csv(shd, iun, fname, ierr)
             end if
             if (btest(istat, pstat%MISMATCHED_PRECISION)) then
                 call print_warning( &
-                    "The precision or length of '" // trim(adjustl(args(1))) // "' values exceeds the precision or length " // &
+                    "The precision or length of the '" // trim(adjustl(args(1))) // "' values exceeds the precision or length " // &
                     "of the assigned field. Truncation may have occurred.")
             end if
             if (btest(istat, pstat%CONVERSION_ERROR)) then

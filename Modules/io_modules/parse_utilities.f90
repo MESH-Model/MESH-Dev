@@ -737,7 +737,7 @@ module parse_utilities
         end if
 
         !> Check field length.
-        if (.not. len(field) >= len(values)) then
+        if (len_trim(values) > len(field)) then
             istat = istat + radix(istat)**pstat%MISMATCHED_PRECISION
         end if
 
@@ -886,13 +886,15 @@ module parse_utilities
             istat = istat + radix(istat)**pstat%COUNT_MISMATCH
         end if
 
-        !> Check field length.
-        if (.not. len(field) >= len(values)) then
-            istat = istat + radix(istat)**pstat%MISMATCHED_PRECISION
-        end if
-
         !> Extract the fields.
         if (.not. btest(istat, pstat%ALLOCATION_ERROR) .and. n >= 1) then
+
+            !> Check field length.
+            if (len_trim(values(i)) > len(field) .and. .not. btest(istat, pstat%MISMATCHED_PRECISION)) then
+                istat = istat + radix(istat)**pstat%MISMATCHED_PRECISION
+            end if
+
+            !> Assign value.
             do i = 1, min(size1, size(field))
                 if (i > n) then
                     field(i) = adjustl(values(n))
@@ -1057,7 +1059,7 @@ module parse_utilities
         n = size(values)
         z = 0
         call allocate_variable(ival, n, z)
-        if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
+        if (.not. btest(z, pstat%ALLOCATION_ERROR) .and. n >= 1) then
             do i = 1, n
                 z = 0
                 call value(values(i), ival(i), z)
@@ -1065,11 +1067,6 @@ module parse_utilities
                     istat = istat + radix(istat)**pstat%CONVERSION_ERROR
                 end if
             end do
-
-            !> Assign background field.
-            if (n >= 1) then
-                field(:, :) = ival(n)
-            end if
 
             !> Check for mapping.
             if (map_order == pkey%MAP_ASSIGN_ORDER1) then
@@ -1080,11 +1077,11 @@ module parse_utilities
                 end if
 
                 !> Assign the values.
-                do i = 1, n
+                do i = 1, min(size1, size(field, 1))
                     if (present(element_id)) then
-                        field(min(i, size1), min(max(element_id, 1), size2)) = ival(i)
+                        field(min(i, size1), min(max(element_id, 1), size2)) = ival(min(i, n))
                     else
-                        field(min(i, size1), :) = ival(i)
+                        field(min(i, size1), :) = ival(min(i, n))
                     end if
                 end do
             else
@@ -1095,11 +1092,11 @@ module parse_utilities
                 end if
 
                 !> Assign the values.
-                do i = 1, n
+                do i = 1, min(size2, size(field, 2))
                     if (present(element_id)) then
-                        field(min(max(element_id, 1), size1), min(i, size2)) = ival(i)
+                        field(min(max(element_id, 1), size1), min(i, size2)) = ival(min(i, n))
                     else
-                        field(:, min(i, size2)) = ival(i)
+                        field(:, min(i, size2)) = ival(min(i, n))
                     end if
                 end do
             end if
@@ -1149,7 +1146,7 @@ module parse_utilities
         n = size(values)
         z = 0
         call allocate_variable(fval, n, z)
-        if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
+        if (.not. btest(z, pstat%ALLOCATION_ERROR) .and. n >= 1) then
             do i = 1, n
                 z = 0
                 call value(values(i), fval(i), z)
@@ -1157,11 +1154,6 @@ module parse_utilities
                     istat = istat + radix(istat)**pstat%CONVERSION_ERROR
                 end if
             end do
-
-            !> Assign background field.
-            if (n >= 1) then
-                field(:, :) = fval(n)
-            end if
 
             !> Check for mapping.
             if (map_order == pkey%MAP_ASSIGN_ORDER1) then
@@ -1172,11 +1164,11 @@ module parse_utilities
                 end if
 
                 !> Assign the values.
-                do i = 1, n
+                do i = 1, min(size1, size(field, 1))
                     if (present(element_id)) then
-                        field(min(i, size1), min(max(element_id, 1), size2)) = fval(i)
+                        field(min(i, size1), min(max(element_id, 1), size2)) = fval(min(i, n))
                     else
-                        field(min(i, size1), :) = fval(i)
+                        field(min(i, size1), :) = fval(min(i, n))
                     end if
                 end do
             else
@@ -1187,11 +1179,11 @@ module parse_utilities
                 end if
 
                 !> Assign the values.
-                do i = 1, n
+                do i = 1, min(size2, size(field, 2))
                     if (present(element_id)) then
-                        field(min(max(element_id, 1), size1), min(i, size2)) = fval(i)
+                        field(min(max(element_id, 1), size1), min(i, size2)) = fval(min(i, n))
                     else
-                        field(:, min(i, size2)) = fval(i)
+                        field(:, min(i, size2)) = fval(min(i, n))
                     end if
                 end do
             end if
