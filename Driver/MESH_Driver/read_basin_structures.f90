@@ -1,14 +1,15 @@
-!>
 !> Description:
 !>  Subroutine to read structure locations and configurations from
 !>  file. Structures shared by SA_MESH are accessible by
 !>  'sa_mesh_variables'. Other structures are accessible by their
 !>  respecitve process module(s).
 !>
-!> Input:
+!> Input variables:
 !*  shd: Basin shed object, containing information about the grid
 !*      definition read from MESH_drainage_database.r2c.
 !>
+!> Output variables:
+!*  ierr: Error return status.
 subroutine read_basin_structures(shd, ierr)
 
     use strings
@@ -19,13 +20,15 @@ subroutine read_basin_structures(shd, ierr)
     implicit none
 
     !> Input variables.
-    type(ShedGridParams) :: shd
+    type(ShedGridParams), intent(in) :: shd
 
     !> Output variables.
     integer, intent(out) :: ierr
 
     !> Local variables.
+    real, dimension(:), allocatable :: dist
     integer iun, iskip, isteps1, isteps2, n, i, z
+    real d
     character(len = DEFAULT_LINE_LENGTH) fname, line
 
     !> Initialize the return status.
@@ -62,40 +65,48 @@ subroutine read_basin_structures(shd, ierr)
     if (fms%stmg%n > 0) then
 
         !> Find the x-y cell coordinate of the location.
-        fms%stmg%meta%iy = int((fms%stmg%meta%y - shd%yOrigin)/shd%yDelta) + 1
-        fms%stmg%meta%jx = int((fms%stmg%meta%x - shd%xOrigin)/shd%xDelta) + 1
+!-        fms%stmg%meta%iy = int((fms%stmg%meta%y - shd%yOrigin)/shd%yDelta) + 1
+!-        fms%stmg%meta%jx = int((fms%stmg%meta%x - shd%xOrigin)/shd%xDelta) + 1
 
         !> Find the RANK of the location and create friendly name (if one does not exist).
         fms%stmg%meta%rnk = 0
+        allocate(dist(fms%stmg%n))
+        dist = huge(dist)
         do i = 1, fms%stmg%n
             if (len_trim(fms%stmg%meta%name(i)) == 0) then
                 write(line, FMT_GEN) i
                 fms%stmg%meta%name(i) = 'Gauge' // trim(adjustl(line))
             end if
             do n = 1, shd%NA
-                if (fms%stmg%meta%jx(i) == shd%xxx(n) .and. fms%stmg%meta%iy(i) == shd%yyy(n)) then
+                d = (shd%ylat(n) - fms%stmg%meta%y(i))**2 + (shd%xlng(n) - fms%stmg%meta%x(i))**2
+                if (d < dist(i)) then
+!-                if (fms%stmg%meta%jx(i) == shd%xxx(n) .and. fms%stmg%meta%iy(i) == shd%yyy(n)) then
+                    dist(i) = d
                     fms%stmg%meta%rnk(i) = n
-                    if (shd%DA(n) == 0.0) then
-                        call print_warning('Drainage area (DA) is zero at ' // trim(fms%stmg%meta%name(i)) // '.')
-                    end if
+                    fms%stmg%meta%iy(i) = shd%yyy(n)
+                    fms%stmg%meta%jx(i) = shd%xxx(n)
+!-                    if (shd%DA(n) == 0.0) then
+!-                        call print_warning('Drainage area (DA) is zero at ' // trim(fms%stmg%meta%name(i)) // '.')
+!-                    end if
                 end if
             end do
         end do
+        deallocate(dist)
 
         !> Print a message if any location is missing RANK (outside the basin).
-        if (minval(fms%stmg%meta%rnk) == 0) then
-            call print_error('Streamflow gauge(s) are outside the basin.')
-            write(line, FMT_GEN) 'GAUGE', 'Y', 'IY', 'X', 'JX'
-            call print_message(line)
-            do i = 1, fms%stmg%n
-                if (fms%stmg%meta%rnk(i) == 0) then
-                    write(line, FMT_GEN) i, fms%stmg%meta%y(i), fms%stmg%meta%iy(i), fms%stmg%meta%x(i), fms%stmg%meta%jx(i)
-                    call print_message(line)
-                end if
-            end do
-            ierr = 1
-            return
-        end if
+!-        if (minval(fms%stmg%meta%rnk) == 0) then
+!-            call print_error('Streamflow gauge(s) are outside the basin.')
+!-            write(line, FMT_GEN) 'GAUGE', 'Y', 'IY', 'X', 'JX'
+!-            call print_message(line)
+!-            do i = 1, fms%stmg%n
+!-                if (fms%stmg%meta%rnk(i) == 0) then
+!-                    write(line, FMT_GEN) i, fms%stmg%meta%y(i), fms%stmg%meta%iy(i), fms%stmg%meta%x(i), fms%stmg%meta%jx(i)
+!-                    call print_message(line)
+!-                end if
+!-            end do
+!-            ierr = 1
+!-            return
+!-        end if
 
         !> Skip records in the file to the simulation start date.
         !> Units of the records interval is hours.
@@ -190,35 +201,45 @@ subroutine read_basin_structures(shd, ierr)
     if (fms%rsvr%n > 0) then
 
         !> Find the x-y cell coordinate of the location.
-        fms%rsvr%meta%iy = int((fms%rsvr%meta%y - shd%yOrigin)/shd%yDelta) + 1
-        fms%rsvr%meta%jx = int((fms%rsvr%meta%x - shd%xOrigin)/shd%xDelta) + 1
+!-        fms%rsvr%meta%iy = int((fms%rsvr%meta%y - shd%yOrigin)/shd%yDelta) + 1
+!-        fms%rsvr%meta%jx = int((fms%rsvr%meta%x - shd%xOrigin)/shd%xDelta) + 1
 
         !> Find the RANK of the location and create friendly name (if one does not exist).
         fms%rsvr%meta%rnk = 0
+        allocate(dist(fms%rsvr%n))
+        dist = huge(dist)
         do i = 1, fms%rsvr%n
             if (len_trim(fms%rsvr%meta%name(i)) == 0) then
                 write(line, FMT_GEN) i
                 fms%rsvr%meta%name(i) = 'Reach' // trim(adjustl(line))
             end if
-            do n = 1, shd%NAA
-                if (fms%rsvr%meta%jx(i) == shd%xxx(n) .and. fms%rsvr%meta%iy(i) == shd%yyy(n)) fms%rsvr%meta%rnk(i) = n
-            end do
-        end do
-
-        !> Print an error if any location has no RANK (is outside the basin).
-        if (minval(fms%rsvr%meta%rnk) == 0) then
-            call print_error('Reservoir outlet(s) are outside the basin.')
-            write(line, FMT_GEN) 'OUTLET', 'Y', 'IY', 'X', 'JX'
-            call print_message(line)
-            do i = 1, fms%rsvr%n
-                if (fms%rsvr%meta%rnk(i) == 0) then
-                    write(line, FMT_GEN) i, fms%rsvr%meta%y(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%x(i), fms%rsvr%meta%jx(i)
-                    call print_message(line)
+            do n = 1, shd%NA
+                d = (shd%ylat(n) - fms%rsvr%meta%y(i))**2 + (shd%xlng(n) - fms%rsvr%meta%x(i))**2
+                if (d < dist(i)) then
+!-                if (fms%rsvr%meta%jx(i) == shd%xxx(n) .and. fms%rsvr%meta%iy(i) == shd%yyy(n)) fms%rsvr%meta%rnk(i) = n
+                    dist(i) = d
+                    fms%rsvr%meta%rnk(i) = n
+                    fms%rsvr%meta%iy(i) = shd%yyy(n)
+                    fms%rsvr%meta%jx(i) = shd%xxx(n)
                 end if
             end do
-            ierr = 1
-            return
-        end if
+        end do
+        deallocate(dist)
+
+        !> Print an error if any location has no RANK (is outside the basin).
+!-        if (minval(fms%rsvr%meta%rnk) == 0) then
+!-            call print_error('Reservoir outlet(s) are outside the basin.')
+!-            write(line, FMT_GEN) 'OUTLET', 'Y', 'IY', 'X', 'JX'
+!-            call print_message(line)
+!-            do i = 1, fms%rsvr%n
+!-                if (fms%rsvr%meta%rnk(i) == 0) then
+!-                    write(line, FMT_GEN) i, fms%rsvr%meta%y(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%x(i), fms%rsvr%meta%jx(i)
+!-                    call print_message(line)
+!-                end if
+!-            end do
+!-            ierr = 1
+!-            return
+!-        end if
 
         !> Print an error if any outlet location has no REACH.
         ierr = 0
