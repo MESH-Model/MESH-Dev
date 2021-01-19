@@ -97,9 +97,11 @@ module climate_forcing_variabletypes
         real :: ca = 0.0
 
         !* start_date: Starting date of the data in the file.
+        !* n_skip_cols: Number of columns to skip (list-directed formats only).
         !* hf: Increment of minutes passed in each frame of data [mins].
         !* itimestep: Current time-step [mins].
         type(counter_date) :: start_date
+        integer :: n_skip_cols = 0
         integer :: hf = 30
         integer :: itimestep = 0
 

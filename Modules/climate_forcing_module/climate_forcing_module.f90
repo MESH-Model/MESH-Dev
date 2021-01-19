@@ -330,6 +330,10 @@ module climate_forcing
             case ('3')
                 climate_variable%ffmt = 3
 
+            !> Rank-ordered text (ASCII) format.
+            case ('4')
+                climate_variable%ffmt = 4
+
             !> Old-format frames to read in to memory.
             case ('5')
                 if (n >= 4) then
@@ -364,6 +368,10 @@ module climate_forcing
                 !> Binary sequential format.
                 case ('seq')
                     climate_variable%ffmt = 3
+
+                !> Rank-ordered text (ASCII) format.
+                case ('asc')
+                    climate_variable%ffmt = 4
 
                 !> netCDF format.
                 case ('nc')
@@ -454,6 +462,11 @@ module climate_forcing
 
                 !> Data additive factor.
                 call value(args(j)(4:), climate_variable%ca, z)
+                if (z /= 0) ierr = z
+            else if (args(j)(1:12) == 'n_skip_cols=') then
+
+                !> Number of leading columns (to skip).
+                call value(args(j)(13:), climate_variable%n_skip_cols, z)
                 if (z /= 0) ierr = z
             else if (args(j)(1:11) == 'time_shift=') then
 

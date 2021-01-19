@@ -112,7 +112,7 @@ module climate_forcing_io
                 if (ierr /= 0) goto 999
                 cm%dat(vid)%blocktype = cbk%GRD
 
-            !> ASCII format.
+            !> Rank-ordered text (ASCII) format.
             case (4)
                 if (len_trim(cm%dat(vid)%fpath) == 0) then
                     cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname)) // '.asc'
@@ -551,7 +551,8 @@ module climate_forcing_io
             case (2)
                 do t = 1, n
                     if (iskip == 0) then
-                        read(cm%dat(vid)%fiun, *, end = 999) (cm%dat(vid)%blocks(j, t), j = 1, shd%lc%NTYPE)
+                        read(cm%dat(vid)%fiun, *, end = 999) &
+                            (line, j = 1, cm%dat(vid)%n_skip_cols), (cm%dat(vid)%blocks(j, t), j = 1, shd%lc%NTYPE)
                     else
                         read(cm%dat(vid)%fiun, *, end = 999)
                     end if
@@ -575,11 +576,12 @@ module climate_forcing_io
                 end if
                 deallocate(blocks_r4)
 
-            !> ASCII format.
+            !> Rank-ordered text (ASCII) format.
             case (4)
                 do t = 1, n
                     if (iskip == 0) then
-                        read(cm%dat(vid)%fiun, *, end = 999) (cm%dat(vid)%blocks(i, t), i = 1, shd%NA)
+                        read(cm%dat(vid)%fiun, *, end = 999) &
+                            (line, j = 1, cm%dat(vid)%n_skip_cols), (cm%dat(vid)%blocks(i, t), i = 1, shd%NA)
                     else
                         read(cm%dat(vid)%fiun, *, end = 999)
                     end if
