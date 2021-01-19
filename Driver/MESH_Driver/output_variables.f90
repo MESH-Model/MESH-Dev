@@ -1,83 +1,113 @@
 module output_variables
 
     use variable_names
+    use model_variables
 
     implicit none
 
     !> Description:
     !>  Container for output variables.
     type output_fields
-        real, dimension(:), pointer :: pre => null()
-        real, dimension(:), pointer :: fsin => null()
+
+        !> Meteorology/climatology variables.
         real, dimension(:), pointer :: ifsin => null()
-        real, dimension(:), pointer :: fsvh => null()
-        real, dimension(:), pointer :: fsih => null()
+        real, dimension(:), pointer :: fsin => null()
         real, dimension(:), pointer :: fsdr => null()
-        real, dimension(:), pointer :: fsdf => null()
+        real, dimension(:), pointer :: fsdff => null()
+        real, dimension(:), pointer :: fsout => null()
         real, dimension(:), pointer :: flin => null()
+        real, dimension(:), pointer :: flout => null()
         real, dimension(:), pointer :: ta => null()
         real, dimension(:), pointer :: qa => null()
         real, dimension(:), pointer :: pres => null()
-        real, dimension(:), pointer :: uu => null()
-        real, dimension(:), pointer :: vv => null()
         real, dimension(:), pointer :: uv => null()
         real, dimension(:), pointer :: wdir => null()
+        real, dimension(:), pointer :: uu => null()
+        real, dimension(:), pointer :: vv => null()
+        real, dimension(:), pointer :: pre => null()
+        real, dimension(:), pointer :: prern => null()
+        real, dimension(:), pointer :: presno => null()
         real, dimension(:), pointer :: prec => null()
-        real, dimension(:), pointer :: evap => null()
-        real, dimension(:), pointer :: pevp => null()
-        real, dimension(:), pointer :: evpb => null()
-        real, dimension(:), pointer :: arrd => null()
-        real, dimension(:), pointer :: gro => null()
-        real, dimension(:), pointer :: rof => null()
-        real, dimension(:), pointer :: rofo => null()
-        real, dimension(:), pointer :: rofs => null()
-        real, dimension(:), pointer :: rofb => null()
-        real, dimension(:), pointer :: rcan => null()
-        real, dimension(:), pointer :: sncan => null()
-        real, dimension(:), pointer :: zsno => null()
-        real, dimension(:), pointer :: rhosno => null()
-        real, dimension(:), pointer :: sno => null()
-        real, dimension(:), pointer :: fsno => null()
-        real, dimension(:), pointer :: isno => null()
-        real, dimension(:), pointer :: wsno => null()
-        real, dimension(:), pointer :: zpnd => null()
-        real, dimension(:), pointer :: ipnd => null()
-        real, dimension(:), pointer :: pndw => null()
-        real, dimension(:), pointer :: lzs => null()
-        real, dimension(:), pointer :: dzs => null()
-        real, dimension(:, :), pointer :: thlq => null()
-        real, dimension(:, :), pointer :: lqws => null()
-        real, dimension(:, :), pointer :: thic => null()
-        real, dimension(:, :), pointer :: fzws => null()
-        real, dimension(:, :), pointer :: alws => null()
-        real, dimension(:), pointer :: stg0w => null()
-        real, dimension(:), pointer :: stgw => null()
-        real, dimension(:), pointer :: dstgw => null()
+        real, dimension(:), pointer :: precrn => null()
+        real, dimension(:), pointer :: precsno => null()
+
+        !> Canopy variables.
+        real, dimension(:), pointer :: ican => null()
+        real, dimension(:), pointer :: lqwscan => null()
+        real, dimension(:), pointer :: fzwscan => null()
         real, dimension(:), pointer :: cmas => null()
         real, dimension(:), pointer :: tcan => null()
-        real, dimension(:), pointer :: ican => null()
+        real, dimension(:), pointer :: gro => null()
+
+        !> Snow variables.
+        real, dimension(:), pointer :: isno => null()
+        real, dimension(:), pointer :: sno => null()
+        real, dimension(:), pointer :: rhosno => null()
+        real, dimension(:), pointer :: zsno => null()
+        real, dimension(:), pointer :: fsno => null()
+        real, dimension(:), pointer :: lqwssno => null()
         real, dimension(:), pointer :: tsno => null()
-        real, dimension(:), pointer :: tpnd => null()
+        real, dimension(:), pointer :: drainsno => null()
+
+        !> Surface variables.
+        real, dimension(:), pointer :: albt => null()
         real, dimension(:), pointer :: alvs => null()
         real, dimension(:), pointer :: alir => null()
-        real, dimension(:), pointer :: albt => null()
-        real, dimension(:), pointer :: fsout => null()
-        real, dimension(:), pointer :: flout => null()
         real, dimension(:), pointer :: gte => null()
-        real, dimension(:), pointer :: qh => null()
-        real, dimension(:), pointer :: qe => null()
+        real, dimension(:), pointer :: ipnd => null()
+        real, dimension(:), pointer :: zpnd => null()
+        real, dimension(:), pointer :: lqwspnd => null()
+        real, dimension(:), pointer :: tpnd => null()
+        real, dimension(:), pointer :: potevp => null()
+        real, dimension(:), pointer :: et => null()
+        real, dimension(:), pointer :: evpb => null()
+        real, dimension(:), pointer :: arrd => null()
+        real, dimension(:), pointer :: ovrflw => null()
+        real, dimension(:), pointer :: qevp => null()
+        real, dimension(:), pointer :: qsens => null()
         real, dimension(:), pointer :: gzero => null()
+
+        !> Subsurface/soil variables.
+        real, dimension(:, :), pointer :: thlqsol => null()
+        real, dimension(:, :), pointer :: thicsol => null()
+        real, dimension(:, :), pointer :: lqwssol => null()
+        real, dimension(:, :), pointer :: fzwssol => null()
+        real, dimension(:, :), pointer :: alwssol => null()
+        real, dimension(:, :), pointer :: tsol => null()
         real, dimension(:, :), pointer :: gflx => null()
-        real, dimension(:, :), pointer :: tbar => null()
+        real, dimension(:, :), pointer :: latflw => null()
+        real, dimension(:), pointer :: drainsol => null()
+
+        !> Groundwater/lower zone storage variables.
+        real, dimension(:), pointer :: rchg => null()
+        real, dimension(:), pointer :: stggw => null()
+        real, dimension(:), pointer :: dzs => null()
+
+        !> Diagnostic variables.
         real, dimension(:), pointer :: stg0e => null()
         real, dimension(:), pointer :: stge => null()
         real, dimension(:), pointer :: dstge => null()
+        real, dimension(:), pointer :: stg0w => null()
+        real, dimension(:), pointer :: stgw => null()
+        real, dimension(:), pointer :: dstgw => null()
+
+        !> Routing variables.
         real, dimension(:), pointer :: rff => null()
-        real, dimension(:), pointer :: rchg => null()
+        real, dimension(:), pointer :: rof => null()
         real, dimension(:), pointer :: qi => null()
-        real, dimension(:), pointer :: stgch => null()
         real, dimension(:), pointer :: qo => null()
+        real, dimension(:), pointer :: stgch => null()
         real, dimension(:), pointer :: zlvl => null()
+
+        !> Indices.
+        integer :: n1 = 0
+        integer :: n2 = 0
+
+        !> Association to model variable group.
+        type(model_variables_fields), pointer :: vs => null()
+
+        !> Association to 'ts' base group.
+        type(output_fields), pointer :: ts => null()
     end type
 
     !> Description:
@@ -88,7 +118,7 @@ module output_variables
     !*  grid: Grid combined from contributing GRUs (by ACLASS) 1:NA.
     !*  basin: Same as grid but accumulated according to drainage direction 1:NA.
     type output_series
-        type(output_fields) tile, grid, basin
+        type(output_fields), pointer :: tile, grid, basin
     end type
 
     !> Description:
@@ -111,8 +141,8 @@ module output_variables
     !>  Type for process modules to integrate with output fields.
     type output_fields_surrogate
         real, dimension(:), pointer :: &
-            y_tile => null(), m_tile => null(), d_tile => null(), h_tile => null(), &
-            y_grid => null(), m_grid => null(), d_grid => null(), h_grid => null()
+            y_tile => null(), m_tile => null(), d_tile => null(), h_tile => null(), ts_tile => null(), &
+            y_grid => null(), m_grid => null(), d_grid => null(), h_grid => null(), ts_grid => null()
     end type
 
     !> Description:
@@ -122,37 +152,41 @@ module output_variables
         module procedure output_variables_allocate_2d_pntr
     end interface
 
+    interface output_variables_activate
+        module procedure output_variables_activate_pntr
+        module procedure output_variables_activate_vnames
+    end interface
+
     contains
 
     !> Description:
     !>  Allocate and initialize data variable. 'field' is allocated to
-    !>  dimension 'n' and set to the 'NO_DATA' value. Associate 'pntr'.
-    subroutine output_variables_allocate_1d_pntr(field, n, pntr)
+    !>  dimension 'n1'.
+    subroutine output_variables_allocate_1d_pntr(field, n1, pntr)
 
         !> Input/output variables.
-        integer, intent(in) :: n
+        integer, intent(in) :: n1
         real, dimension(:), pointer :: field
         real, dimension(:), optional, pointer :: pntr
 
         !> Allocate and initialize variable
         if (.not. associated(field)) then
-            allocate(field(n))
-            field = out%NO_DATA
+            allocate(field(n1))
+            field = 0.0
         end if
 
-        !> Associate pointer.
+        !> Associate the pointer.
         if (present(pntr)) pntr => field
 
     end subroutine
 
     !> Description:
     !>  Allocate and initialize data variable. 'field' is allocated to
-    !>  dimension 'n' and 'j', and set to the 'NO_DATA' value.
-    !>  Associate 'pntr' provided 'ig'.
-    subroutine output_variables_allocate_2d_pntr(field, n, j, pntr, ig)
+    !>  dimension 'n1' and 'n2'.
+    subroutine output_variables_allocate_2d_pntr(field, n1, n2, pntr, ig)
 
         !> Input variables.
-        integer, intent(in) :: n, j
+        integer, intent(in) :: n1, n2
         integer, intent(in), optional :: ig
 
         !> Input/output variables.
@@ -161,19 +195,18 @@ module output_variables
 
         !> Allocate and initialize variable
         if (.not. associated(field)) then
-            allocate(field(n, j))
-            field = out%NO_DATA
+            allocate(field(n1, n2))
+            field = 0.0
         end if
 
-        !> Associate pointer.
+        !> Associate the pointer.
         if (present(pntr) .and. present(ig)) pntr => field(:, ig)
 
     end subroutine
 
     !> Description:
-    !>  Allocate the output variable to 'n' and optionally 'nsl'.
-    !>  The value is set to the 'NO_DATA' value.
-    subroutine output_variables_allocate_field_pntr(pntr, fields, vname, n, nsl, ig)
+    !>  Allocate the output variable and associate it to 'pntr'.
+    recursive subroutine output_variables_activate_pntr(fields, vname, pntr, ig)
 
         !> 'control_variables' required to check for active modelling components.
         use control_variables
@@ -181,573 +214,1094 @@ module output_variables
         !> Input variables.
         type(output_fields), intent(in) :: fields
         character(len = *), intent(in) :: vname
-        integer, intent(in) :: n
-        integer, intent(in), optional :: nsl, ig
+        integer, intent(in), optional :: ig
 
         !> Input/output variables.
-        real, dimension(:), pointer :: pntr
+        real, dimension(:), optional, pointer :: pntr
+
+        !> Local variables.
+        logical t
+        integer n1, n2, z
+
+        !> Indices.
+        n1 = fields%n1
+        n2 = fields%n2
 
         !> Copy the variable.
+        z = 0
         select case (vname)
 
             !> Meteorological forcing.
             case (VN_FSIN, VN_FSVH, VN_FSIH)
-                if (ro%RUNCLIM) then
-                    call output_variables_allocate(fields%fsin, n, pntr)
-                    call output_variables_allocate(fields%ifsin, n)
+                if (associated(fields%vs%fsin)) then
+                    call output_variables_allocate(fields%fsin, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsin, n1)
+                    call output_variables_allocate(fields%ifsin, n1)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%ifsin, n1)
+                else
+                    z = 1
                 end if
-            case (VN_FLIN)
-                if (ro%RUNCLIM) call output_variables_allocate(fields%flin, n, pntr)
-            case (VN_TA)
-                if (ro%RUNCLIM) call output_variables_allocate(fields%ta, n, pntr)
-            case (VN_QA)
-                if (ro%RUNCLIM) call output_variables_allocate(fields%qa, n, pntr)
-            case (VN_PRES)
-                if (ro%RUNCLIM) call output_variables_allocate(fields%pres, n, pntr)
-            case (VN_UV)
-                if (ro%RUNCLIM) call output_variables_allocate(fields%uv, n, pntr)
-            case (VN_PRE)
-                if (ro%RUNCLIM) call output_variables_allocate(fields%pre, n, pntr)
-
-            !> Water balance.
-            case (VN_PREC)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%prec, n, pntr)
-            case (VN_EVAP)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%evap, n, pntr)
-            case (VN_PEVP)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%pevp, n, pntr)
-            case (VN_EVPB)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%evpb, n, pntr)
-            case (VN_ARRD)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%arrd, n, pntr)
-            case (VN_GRO)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%gro, n, pntr)
-            case (VN_ROF)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%rof, n, pntr)
-            case (VN_ROFO)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%rofo, n, pntr)
-            case (VN_ROFS)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%rofs, n, pntr)
-            case (VN_ROFB)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%rofb, n, pntr)
-            case (VN_RCAN)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%rcan, n, pntr)
-            case (VN_SNCAN)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%sncan, n, pntr)
-            case (VN_ZSNO)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%zsno, n, pntr)
-            case (VN_RHOSNO)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%rhosno, n, pntr)
-            case (VN_SNO)
-                if (ro%RUNBALWB) then
-                    call output_variables_allocate(fields%sno, n, pntr)
-                    call output_variables_allocate(fields%isno, n)
+            case (VN_FSDIR)
+                if (associated(fields%vs%fsdr)) then
+                    call output_variables_allocate(fields%fsdr, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsdr, n1)
+                else
+                    z = 1
                 end if
-            case (VN_FSNO)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%fsno, n, pntr)
-            case (VN_WSNO)
-                if (ro%RUNBALWB) then
-                    call output_variables_allocate(fields%wsno, n, pntr)
-                    call output_variables_allocate(fields%isno, n)
-                end if
-            case (VN_ZPND)
-                if (ro%RUNBALWB) then
-                    call output_variables_allocate(fields%zpnd, n, pntr)
-                    call output_variables_allocate(fields%ipnd, n)
-                end if
-            case (VN_PNDW)
-                if (ro%RUNBALWB) then
-                    call output_variables_allocate(fields%pndw, n, pntr)
-                    call output_variables_allocate(fields%ipnd, n)
-                end if
-            case (VN_LZS)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%lzs, n, pntr)
-            case (VN_DZS)
-                if (ro%RUNBALWB) call output_variables_allocate(fields%dzs, n, pntr)
-            case (VN_THLQ)
-                if (ro%RUNBALWB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%thlq, n, nsl, pntr, ig)
-            case (VN_LQWS)
-                if (ro%RUNBALWB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%lqws, n, nsl, pntr, ig)
-            case (VN_THIC)
-                if (ro%RUNBALWB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%thic, n, nsl, pntr, ig)
-            case (VN_FZWS)
-                if (ro%RUNBALWB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%fzws, n, nsl, pntr, ig)
-            case (VN_ALWS)
-                if (ro%RUNBALWB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%alws, n, nsl, pntr, ig)
-            case (VN_STGW)
-                if (ro%RUNBALWB) then
-                    call output_variables_allocate(fields%stgw, n, pntr)
-                    call output_variables_allocate(fields%stg0w, n)
-                    call output_variables_allocate(fields%dstgw, n)
-                end if
-            case (VN_DSTGW)
-                if (ro%RUNBALWB) then
-                    call output_variables_allocate(fields%stgw, n)
-                    call output_variables_allocate(fields%stg0w, n)
-                    call output_variables_allocate(fields%dstgw, n, pntr)
-                end if
-
-            !> Energy balance.
-            case (VN_CMAS)
-                if (ro%RUNBALEB) call output_variables_allocate(fields%cmas, n, pntr)
-            case (VN_TCAN)
-                if (ro%RUNBALEB) then
-                    call output_variables_allocate(fields%tcan, n, pntr)
-                    call output_variables_allocate(fields%ican, n)
-                end if
-            case (VN_TSNO)
-                if (ro%RUNBALEB) then
-                    call output_variables_allocate(fields%tsno, n, pntr)
-                    call output_variables_allocate(fields%isno, n)
-                end if
-            case (VN_TPND)
-                if (ro%RUNBALEB) then
-                    call output_variables_allocate(fields%tpnd, n, pntr)
-                    call output_variables_allocate(fields%ipnd, n)
-                end if
-            case (VN_ALBT)
-                if (ro%RUNBALEB) then
-                    call output_variables_allocate(fields%albt, n, pntr)
-                    call output_variables_allocate(fields%ifsin, n)
-                end if
-            case (VN_ALVS)
-                if (ro%RUNBALEB) then
-                    call output_variables_allocate(fields%alvs, n, pntr)
-                    call output_variables_allocate(fields%ifsin, n)
-                end if
-            case (VN_ALIR)
-                if (ro%RUNBALEB) then
-                    call output_variables_allocate(fields%alir, n, pntr)
-                    call output_variables_allocate(fields%ifsin, n)
+            case (VN_FSDFF)
+                if (associated(fields%vs%fsdff)) then
+                    call output_variables_allocate(fields%fsdff, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsdff, n1)
+                else
+                    z = 1
                 end if
             case (VN_FSOUT)
-                if (ro%RUNBALEB) then
-                    call output_variables_allocate(fields%fsout, n, pntr)
-                    call output_variables_allocate(fields%ifsin, n)
+                if (associated(fields%vs%fsin) .and. associated(fields%vs%albt)) then
+                    call output_variables_allocate(fields%fsout, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsout, n1)
+                    call output_variables_allocate(fields%ifsin, n1)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%ifsin, n1)
+                else
+                    z = 1
+                end if
+            case (VN_FLIN)
+                if (associated(fields%vs%flin)) then
+                    call output_variables_allocate(fields%flin, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%flin, n1)
+                else
+                    z = 1
+                end if
+            case (VN_FLOUT)
+                if (associated(fields%vs%gte)) then
+                    call output_variables_allocate(fields%flout, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%flout, n1)
+                else
+                    z = 1
+                end if
+            case (VN_TA)
+                if (associated(fields%vs%ta)) then
+                    call output_variables_allocate(fields%ta, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%ta, n1)
+                else
+                    z = 1
+                end if
+            case (VN_QA)
+                if (associated(fields%vs%qa)) then
+                    call output_variables_allocate(fields%qa, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%qa, n1)
+                else
+                    z = 1
+                end if
+            case (VN_PRES)
+                if (associated(fields%vs%pres)) then
+                    call output_variables_allocate(fields%pres, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%pres, n1)
+                else
+                    z = 1
+                end if
+            case (VN_UV)
+                if (associated(fields%vs%uv)) then
+                    call output_variables_allocate(fields%uv, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%uv, n1)
+                else
+                    z = 1
+                end if
+            case (VN_WDIR)
+                if (associated(fields%vs%wdir)) then
+                    call output_variables_allocate(fields%wdir, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%wdir, n1)
+                else
+                    z = 1
+                end if
+            case (VN_UU)
+                if (associated(fields%vs%uu)) then
+                    call output_variables_allocate(fields%uu, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%uu, n1)
+                else
+                    z = 1
+                end if
+            case (VN_VV)
+                if (associated(fields%vs%vv)) then
+                    call output_variables_allocate(fields%vv, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%vv, n1)
+                else
+                    z = 1
+                end if
+            case (VN_PRE)
+                if (associated(fields%vs%pre)) then
+                    call output_variables_allocate(fields%pre, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%pre, n1)
+                else
+                    z = 1
+                end if
+            case (VN_PRERN)
+                if (associated(fields%vs%prern)) then
+                    call output_variables_allocate(fields%prern, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%prern, n1)
+                else
+                    z = 1
+                end if
+            case (VN_PRESNO)
+                if (associated(fields%vs%presno)) then
+                    call output_variables_allocate(fields%presno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%presno, n1)
+                else
+                    z = 1
+                end if
+            case (VN_PREC)
+                if (associated(fields%vs%pre)) then
+                    call output_variables_allocate(fields%prec, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%prec, n1)
+                else
+                    z = 1
+                end if
+            case (VN_PRECRN)
+                if (associated(fields%vs%prern)) then
+                    call output_variables_allocate(fields%precrn, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%precrn, n1)
+                else
+                    z = 1
+                end if
+            case (VN_PRECSNO)
+                if (associated(fields%vs%presno)) then
+                    call output_variables_allocate(fields%precsno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%precsno, n1)
+                else
+                    z = 1
+                end if
+            case (VN_LQWSCAN)
+                if (associated(fields%vs%lqwscan)) then
+                    call output_variables_allocate(fields%lqwscan, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%lqwscan, n1)
+                else
+                    z = 1
+                end if
+            case (VN_FZWSCAN)
+                if (associated(fields%vs%fzwscan)) then
+                    call output_variables_allocate(fields%fzwscan, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%fzwscan, n1)
+                else
+                    z = 1
+                end if
+            case (VN_CMAS)
+                call output_variables_activate_pntr(fields, VN_TCAN)
+                if (associated(fields%tcan) .and. associated(fields%vs%cmas)) then
+                    call output_variables_allocate(fields%cmas, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%cmas, n1)
+                else
+                    z = 1
+                end if
+            case (VN_TCAN)
+                if (associated(fields%vs%tcan)) then
+                    call output_variables_allocate(fields%tcan, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%tcan, n1)
+                    call output_variables_allocate(fields%ican, n1)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
+                else
+                    z = 1
+                end if
+            case (VN_GRO)
+                if (associated(fields%vs%gro)) then
+                    call output_variables_allocate(fields%gro, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%gro, n1)
+                else
+                    z = 1
+                end if
+            case (VN_SNO)
+                if (associated(fields%vs%sno)) then
+                    call output_variables_allocate(fields%sno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%sno, n1)
+                else
+                    z = 1
+                end if
+            case (VN_RHOSNO)
+                if (associated(fields%vs%rhosno)) then
+                    call output_variables_allocate(fields%rhosno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%rhosno, n1)
+                else
+                    z = 1
+                end if
+            case (VN_ZSNO)
+                if (associated(fields%vs%zsno)) then
+                    call output_variables_allocate(fields%zsno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%zsno, n1)
+                else
+                    z = 1
+                end if
+            case (VN_FSNO)
+                if (associated(fields%vs%fsno)) then
+                    call output_variables_allocate(fields%fsno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsno, n1)
+                else
+                    z = 1
+                end if
+            case (VN_LQWSSNO)
+                if (associated(fields%vs%lqwssno)) then
+                    call output_variables_allocate(fields%lqwssno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%lqwssno, n1)
+                else
+                    z = 1
+                end if
+            case (VN_TSNO)
+                if (associated(fields%vs%tsno)) then
+                    call output_variables_allocate(fields%tsno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%tsno, n1)
+                    call output_variables_allocate(fields%isno, n1)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%isno, n1)
+                else
+                    z = 1
+                end if
+            case (VN_DRAINSNO)
+                if (associated(fields%vs%drainsno)) then
+                    call output_variables_allocate(fields%drainsno, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%drainsno, n1)
+                else
+                    z = 1
+                end if
+            case (VN_ALBT)
+                call output_variables_activate_pntr(fields, VN_FSIN)
+                if (associated(fields%fsin) .and. associated(fields%vs%albt)) then
+                    call output_variables_allocate(fields%albt, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%albt, n1)
+                else
+                    z = 1
+                end if
+            case (VN_ALVS)
+                call output_variables_activate_pntr(fields, VN_FSIN)
+                if (associated(fields%fsin) .and. associated(fields%vs%alvs)) then
+                    call output_variables_allocate(fields%alvs, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%alvs, n1)
+                else
+                    z = 1
+                end if
+            case (VN_ALIR)
+                call output_variables_activate_pntr(fields, VN_FSIN)
+                if (associated(fields%fsin) .and. associated(fields%vs%alir)) then
+                    call output_variables_allocate(fields%alir, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%alir, n1)
+                else
+                    z = 1
                 end if
             case (VN_GTE)
-                if (ro%RUNBALEB) call output_variables_allocate(fields%gte, n, pntr)
-            case (VN_FLOUT)
-                if (ro%RUNBALEB) call output_variables_allocate(fields%flout, n, pntr)
-            case (VN_QH)
-                if (ro%RUNBALEB) call output_variables_allocate(fields%qh, n, pntr)
-            case (VN_QE)
-                if (ro%RUNBALEB) call output_variables_allocate(fields%qe, n, pntr)
+                if (associated(fields%vs%gte)) then
+                    call output_variables_allocate(fields%gte, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%gte, n1)
+                else
+                    z = 1
+                end if
+            case (VN_ZPND)
+                if (associated(fields%vs%zpnd)) then
+                    call output_variables_allocate(fields%zpnd, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%zpnd, n1)
+                else
+                    z = 1
+                end if
+            case (VN_LQWSPND)
+                if (associated(fields%vs%lqwspnd)) then
+                    call output_variables_allocate(fields%lqwspnd, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%lqwspnd, n1)
+                else
+                    z = 1
+                end if
+            case (VN_TPND)
+                if (associated(fields%vs%tpnd)) then
+                    call output_variables_allocate(fields%tpnd, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%tpnd, n1)
+                    call output_variables_allocate(fields%ipnd, n1)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%ipnd, n1)
+                else
+                    z = 1
+                end if
+            case (VN_POTEVP)
+                if (associated(fields%vs%potevp)) then
+                    call output_variables_allocate(fields%potevp, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%potevp, n1)
+                else
+                    z = 1
+                end if
+            case (VN_ET)
+                if (associated(fields%vs%et)) then
+                    call output_variables_allocate(fields%et, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%et, n1)
+                else
+                    z = 1
+                end if
+            case (VN_EVPB)
+                if (associated(fields%vs%evpb)) then
+                    call output_variables_allocate(fields%evpb, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%evpb, n1)
+                else
+                    z = 1
+                end if
+            case (VN_ARRD)
+                if (associated(fields%vs%arrd)) then
+                    call output_variables_allocate(fields%arrd, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%arrd, n1)
+                else
+                    z = 1
+                end if
+            case (VN_OVRFLW)
+                if (associated(fields%vs%ovrflw)) then
+                    call output_variables_allocate(fields%ovrflw, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%ovrflw, n1)
+                else
+                    z = 1
+                end if
+            case (VN_QEVP)
+                if (associated(fields%vs%qevp)) then
+                    call output_variables_allocate(fields%qevp, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%qevp, n1)
+                else
+                    z = 1
+                end if
+            case (VN_QSENS)
+                if (associated(fields%vs%qsens)) then
+                    call output_variables_allocate(fields%qsens, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%qsens, n1)
+                else
+                    z = 1
+                end if
             case (VN_GZERO)
-                if (ro%RUNBALEB) call output_variables_allocate(fields%gzero, n, pntr)
+                if (associated(fields%vs%gzero)) then
+                    call output_variables_allocate(fields%gzero, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%gzero, n1)
+                else
+                    z = 1
+                end if
+            case (VN_THLQSOL)
+                if (associated(fields%vs%thlqsol)) then
+                    call output_variables_allocate(fields%thlqsol, n1, n2, pntr, ig)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%thlqsol, n1, n2)
+                else
+                    z = 1
+                end if
+            case (VN_THICSOL)
+                if (associated(fields%vs%thicsol)) then
+                    call output_variables_allocate(fields%thicsol, n1, n2, pntr, ig)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%thicsol, n1, n2)
+                else
+                    z = 1
+                end if
+            case (VN_LQWSSOL)
+                if (associated(fields%vs%lqwssol)) then
+                    call output_variables_activate_pntr(fields, VN_THLQSOL)
+                    if (associated(fields%thlqsol)) then
+                        call output_variables_allocate(fields%lqwssol, n1, n2, pntr, ig)
+                        if (associated(fields%ts)) call output_variables_allocate(fields%ts%lqwssol, n1, n2)
+                    end if
+                else
+                    z = 1
+                end if
+            case (VN_FZWSSOL)
+                if (associated(fields%vs%fzwssol)) then
+                    call output_variables_activate_pntr(fields, VN_THICSOL)
+                    if (associated(fields%thicsol)) then
+                        call output_variables_allocate(fields%fzwssol, n1, n2, pntr, ig)
+                        if (associated(fields%ts)) call output_variables_allocate(fields%ts%fzwssol, n1, n2)
+                    end if
+                else
+                    z = 1
+                end if
+            case (VN_ALWSSOL)
+                call output_variables_activate_pntr(fields, VN_LQWSSOL)
+                call output_variables_activate_pntr(fields, VN_FZWSSOL)
+                if (associated(fields%lqwssol) .or. associated(fields%fzwssol)) then
+                    call output_variables_allocate(fields%alwssol, n1, n2, pntr, ig)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%alwssol, n1, n2)
+                else
+                    z = 1
+                end if
+            case (VN_TSOL)
+                if (associated(fields%vs%tsol)) then
+                    call output_variables_allocate(fields%tsol, n1, n2, pntr, ig)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%tsol, n1, n2)
+                else
+                    z = 1
+                end if
             case (VN_GFLX)
-                if (ro%RUNBALEB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%gflx, n, nsl, pntr, ig)
-            case (VN_TBAR)
-                if (ro%RUNBALEB .and. present(nsl) .and. present(ig)) call output_variables_allocate(fields%tbar, n, nsl, pntr, ig)
-            case (VN_STGE)
-                if (ro%RUNBALEB) then
-                    call output_variables_allocate(fields%stge, n, pntr)
-                    call output_variables_allocate(fields%stg0e, n)
-                    call output_variables_allocate(fields%dstge, n)
+                if (associated(fields%vs%gflx)) then
+                    call output_variables_allocate(fields%gflx, n1, n2, pntr, ig)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%gflx, n1, n2)
+                else
+                    z = 1
                 end if
-            case (VN_DSTGE)
-                if (ro%RUNBALEB) then
-                    call output_variables_allocate(fields%stge, n)
-                    call output_variables_allocate(fields%stg0e, n)
-                    call output_variables_allocate(fields%dstge, n, pntr)
+            case (VN_LATFLW)
+                if (associated(fields%vs%latflw)) then
+                    call output_variables_allocate(fields%latflw, n1, n2, pntr, ig)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%latflw, n1, n2)
+                else
+                    z = 1
                 end if
-
-            !> Channels and routing.
-            case (VN_RFF)
-                if (ro%RUNCHNL) call output_variables_allocate(fields%rff, n, pntr)
+            case (VN_DRAINSOL)
+                if (associated(fields%vs%drainsol)) then
+                    call output_variables_allocate(fields%drainsol, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%drainsol, n1)
+                else
+                    z = 1
+                end if
             case (VN_RCHG)
-                if (ro%RUNCHNL) call output_variables_allocate(fields%rchg, n, pntr)
+                if (associated(fields%vs%rchg)) then
+                    call output_variables_allocate(fields%rchg, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%rchg, n1)
+                else
+                    z = 1
+                end if
+            case (VN_STGGW)
+                if (associated(fields%vs%stggw)) then
+                    call output_variables_allocate(fields%stggw, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%stggw, n1)
+                else
+                    z = 1
+                end if
+            case (VN_DZS)
+                if (associated(fields%vs%dzs)) then
+                    call output_variables_allocate(fields%dzs, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%dzs, n1)
+                else
+                    z = 1
+                end if
+            case (VN_STGE)
+                call output_variables_allocate(fields%stge, n1, pntr)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%stge, n1)
+                call output_variables_allocate(fields%stg0e, n1)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%stg0e, n1)
+                call output_variables_allocate(fields%dstge, n1)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%dstge, n1)
+            case (VN_DSTGE)
+                call output_variables_activate_pntr(fields, VN_STGE)
+                if (associated(fields%stge) .and. associated(fields%stg0e) .and. associated(fields%dstge)) then
+                    call output_variables_allocate(fields%dstge, n1, pntr)
+                end if
+            case (VN_STGW)
+                t = .true.
+                call output_variables_activate_pntr(fields, VN_LQWSCAN); t = (t .and. associated(fields%lqwscan))
+                call output_variables_activate_pntr(fields, VN_FZWSCAN); t = (t .and. associated(fields%fzwscan))
+                call output_variables_activate_pntr(fields, VN_SNO); t = (t .and. associated(fields%sno))
+                call output_variables_activate_pntr(fields, VN_LQWSSNO); t = (t .and. associated(fields%lqwssno))
+                call output_variables_activate_pntr(fields, VN_LQWSPND); t = (t .and. associated(fields%lqwspnd))
+                call output_variables_activate_pntr(fields, VN_LQWSSOL); t = (t .and. associated(fields%lqwssol))
+                call output_variables_activate_pntr(fields, VN_FZWSSOL); t = (t .and. associated(fields%fzwssol))
+                call output_variables_activate_pntr(fields, VN_STGGW); t = (t .and. associated(fields%stggw))
+                call output_variables_activate_pntr(fields, VN_DZS); t = (t .and. associated(fields%dzs))
+                if (t) then
+                    call output_variables_allocate(fields%stgw, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%stgw, n1)
+                    call output_variables_allocate(fields%stg0w, n1)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%stg0w, n1)
+                    call output_variables_allocate(fields%dstgw, n1)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%dstgw, n1)
+                end if
+            case (VN_DSTGW)
+                call output_variables_activate_pntr(fields, VN_STGW)
+                if (associated(fields%stgw) .and. associated(fields%stg0w) .and. associated(fields%dstgw)) then
+                    call output_variables_allocate(fields%dstgw, n1, pntr)
+                end if
+            case (VN_RFF)
+                if (associated(fields%vs%rff)) then
+                    call output_variables_allocate(fields%rff, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%rff, n1)
+                else
+                    z = 1
+                end if
+            case (VN_ROF)
+                call output_variables_activate_pntr(fields, VN_OVRFLW)
+                call output_variables_activate_pntr(fields, VN_LATFLW)
+                call output_variables_activate_pntr(fields, VN_DRAINSOL)
+                if (associated(fields%ovrflw) .and. associated(fields%latflw) .and. associated(fields%drainsol)) then
+                    call output_variables_allocate(fields%rof, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%rof, n1)
+                else
+                    z = 1
+                end if
             case (VN_QI)
-                if (ro%RUNCHNL) call output_variables_allocate(fields%qi, n, pntr)
-            case (VN_STGCH)
-                if (ro%RUNCHNL) call output_variables_allocate(fields%stgch, n, pntr)
+                if (associated(fields%vs%qi)) then
+                    call output_variables_allocate(fields%qi, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%qi, n1)
+                else
+                    z = 1
+                end if
             case (VN_QO)
-                if (ro%RUNCHNL) call output_variables_allocate(fields%qo, n, pntr)
+                if (associated(fields%vs%qo)) then
+                    call output_variables_allocate(fields%qo, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%qo, n1)
+                else
+                    z = 1
+                end if
+            case (VN_STGCH)
+                if (associated(fields%vs%stgch)) then
+                    call output_variables_allocate(fields%stgch, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%stgch, n1)
+                else
+                    z = 1
+                end if
             case (VN_ZLVL)
-                if (ro%RUNCHNL) call output_variables_allocate(fields%zlvl, n, pntr)
+                if (associated(fields%vs%zlvl)) then
+                    call output_variables_allocate(fields%zlvl, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%zlvl, n1)
+                else
+                    z = 1
+                end if
         end select
+
+        !> Assign 'NO_DATA' value if the pointer has not been assigned because a necessary variable is not active.
+        if (present(pntr) .and. z == 1) then
+            if (.not. associated(pntr)) allocate(pntr(n1))
+            pntr = out%NO_DATA
+        end if
 
     end subroutine
 
     !> Description:
-    !>  Allocate output variables if the model states and variables,
-    !>  used in the update routine, are allocated.
-    subroutine output_variables_init_fields(shd, cm, series)
-
-        !> 'shd_variables' required for 'shd'.
-        !> 'control_variables' required to check for active modelling components.
-        !> 'climate_forcing' required for 'cm'.
-        !> 'state_variables' required for 'stas'.
-        use shd_variables
-        use control_variables
-        use climate_forcing
-        use state_variables
+    !>  Allocate the specified output variables.
+    subroutine output_variables_activate_vnames(fields, vnames)
 
         !> Input variables.
-        type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
+        type(output_fields), intent(in) :: fields
+        character(len = *), dimension(:), intent(in) :: vnames
+
+        !> Local variables.
+        integer i
+
+        !> Allocate.
+        do i = 1, size(vnames)
+            call output_variables_activate_pntr(fields, vnames(i))
+        end do
+
+    end subroutine
+
+    !> Description:
+    !>  Initialize and associate the attributes of the output
+    !>  variables group.
+    subroutine output_variables_group_init(group_vs, group, n1, n2)
+
+        !> Input variables.
+        type(model_variables_fields), intent(in), pointer :: group_vs
+        integer, intent(in) :: n1, n2
+
+        !> Input/output variables.
+        type(output_fields), pointer :: group
+
+        !> Allocate.
+        if (.not. associated(group)) allocate(group)
+
+        !> Assign indices.
+        group%n1 = n1
+        group%n2 = n2
+
+        !> Associate to model variable group.
+        group%vs => group_vs
+
+    end subroutine
+
+    !> Description:
+    !>  Associate the output variable 'ts' group.
+    subroutine output_variables_group_associate_ts(series)
+
+        !> 'control_variables' required to check for active modelling components.
+        use control_variables
 
         !> Input/output variables.
         type(output_series) series
 
-        !> Local variables.
-        integer nsl, n
-        nsl = shd%lc%IGND
-
-        !> Tile-based.
+        !> Associate to the 'ts' group.
         if (ro%RUNTILE) then
-            n = shd%lc%NML
-
-            !> Meteorological forcing.
-            if (ro%RUNCLIM) then
-                if (allocated(cm%dat(ck%FB)%GAT)) then
-                    call output_variables_allocate(series%tile%fsin, n)
-                    call output_variables_allocate(series%tile%ifsin, n)
-                end if
-                if (allocated(cm%dat(ck%FI)%GAT)) call output_variables_allocate(series%tile%flin, n)
-                if (allocated(cm%dat(ck%TT)%GAT)) call output_variables_allocate(series%tile%ta, n)
-                if (allocated(cm%dat(ck%HU)%GAT)) call output_variables_allocate(series%tile%qa, n)
-                if (allocated(cm%dat(ck%P0)%GAT)) call output_variables_allocate(series%tile%pres, n)
-                if (allocated(cm%dat(ck%UV)%GAT)) call output_variables_allocate(series%tile%uv, n)
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%tile%pre, n)
-            end if
-
-            !> Water balance.
-            if (ro%RUNBALWB) then
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%tile%prec, n)
-                if (allocated(stas%sfc%evap)) call output_variables_allocate(series%tile%evap, n)
-                if (allocated(stas%sfc%pevp)) call output_variables_allocate(series%tile%pevp, n)
-                if (allocated(stas%sfc%evpb)) call output_variables_allocate(series%tile%evpb, n)
-                if (allocated(stas%sfc%arrd)) call output_variables_allocate(series%tile%arrd, n)
-                if (allocated(stas%cnpy%gro)) call output_variables_allocate(series%tile%gro, n)
-                if (allocated(stas%sfc%rofo) .or. allocated(stas%sl%rofs) .or. allocated(stas%lzs%rofb) .or. &
-                    allocated(stas%dzs%rofb)) then
-                    call output_variables_allocate(series%tile%rof, n)
-                end if
-                if (allocated(stas%sfc%rofo)) call output_variables_allocate(series%tile%rofo, n)
-                if (allocated(stas%sl%rofs)) call output_variables_allocate(series%tile%rofs, n)
-                if (allocated(stas%lzs%rofb) .and. allocated(stas%dzs%rofb)) call output_variables_allocate(series%tile%rofb, n)
-                if (allocated(stas%cnpy%rcan)) call output_variables_allocate(series%tile%rcan, n)
-                if (allocated(stas%cnpy%sncan)) call output_variables_allocate(series%tile%sncan, n)
-                if (allocated(stas%sno%zsno)) call output_variables_allocate(series%tile%zsno, n)
-                if (allocated(stas%sno%rhos)) call output_variables_allocate(series%tile%rhosno, n)
-                if (allocated(stas%sno%sno)) then
-                    call output_variables_allocate(series%tile%sno, n)
-                    call output_variables_allocate(series%tile%isno, n)
-                end if
-                if (allocated(stas%sno%fsno)) call output_variables_allocate(series%tile%fsno, n)
-                if (allocated(stas%sno%wsno)) then
-                    call output_variables_allocate(series%tile%wsno, n)
-                    call output_variables_allocate(series%tile%isno, n)
-                end if
-                if (allocated(stas%sfc%zpnd)) then
-                    call output_variables_allocate(series%tile%zpnd, n)
-                    call output_variables_allocate(series%tile%ipnd, n)
-                end if
-                if (allocated(stas%sfc%pndw)) then
-                    call output_variables_allocate(series%tile%pndw, n)
-                    call output_variables_allocate(series%tile%ipnd, n)
-                end if
-                if (allocated(stas%lzs%ws)) call output_variables_allocate(series%tile%lzs, n)
-                if (allocated(stas%dzs%ws)) call output_variables_allocate(series%tile%dzs, n)
-                if (allocated(stas%sl%thlq)) call output_variables_allocate(series%tile%thlq, n, nsl)
-                if (allocated(stas%sl%lqws)) call output_variables_allocate(series%tile%lqws, n, nsl)
-                if (allocated(stas%sl%thic)) call output_variables_allocate(series%tile%thic, n, nsl)
-                if (allocated(stas%sl%fzws)) call output_variables_allocate(series%tile%fzws, n, nsl)
-                if (allocated(stas%sl%lqws) .or. allocated(stas%sl%fzws)) call output_variables_allocate(series%tile%alws, n, nsl)
-                call output_variables_allocate(series%tile%stgw, n)
-                call output_variables_allocate(series%tile%stg0w, n)
-                call output_variables_allocate(series%tile%dstgw, n)
-            end if
-
-            !> Energy balance.
-            if (ro%RUNBALEB) then
-                if (allocated(stas%cnpy%cmas)) call output_variables_allocate(series%tile%cmas, n)
-                if (allocated(stas%cnpy%tcan)) then
-                    call output_variables_allocate(series%tile%tcan, n)
-                    call output_variables_allocate(series%tile%ican, n)
-                end if
-                if (allocated(stas%sno%tsno)) then
-                    call output_variables_allocate(series%tile%tsno, n)
-                    call output_variables_allocate(series%tile%isno, n)
-                end if
-                if (allocated(stas%sfc%tpnd)) then
-                    call output_variables_allocate(series%tile%tpnd, n)
-                    call output_variables_allocate(series%tile%ipnd, n)
-                end if
-                if (allocated(stas%sfc%alvs)) then
-                    call output_variables_allocate(series%tile%alvs, n)
-                end if
-                if (allocated(stas%sfc%alir)) then
-                    call output_variables_allocate(series%tile%alir, n)
-                    call output_variables_allocate(series%tile%ifsin, n)
-                end if
-                if (allocated(stas%sfc%albt)) then
-                    call output_variables_allocate(series%tile%albt, n)
-                    call output_variables_allocate(series%tile%ifsin, n)
-                end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%tile%gte, n)
-                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(stas%sfc%albt)) then
-                    call output_variables_allocate(series%tile%fsout, n)
-                    call output_variables_allocate(series%tile%ifsin, n)
-                end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%tile%flout, n)
-                if (allocated(stas%sfc%hfs)) call output_variables_allocate(series%tile%qh, n)
-                if (allocated(stas%sfc%qevp)) call output_variables_allocate(series%tile%qe, n)
-                if (allocated(stas%sfc%gzero)) call output_variables_allocate(series%tile%gzero, n)
-                if (allocated(stas%sl%gflx)) call output_variables_allocate(series%tile%gflx, n, nsl)
-                if (allocated(stas%sl%tbar)) call output_variables_allocate(series%tile%tbar, n, nsl)
-                call output_variables_allocate(series%tile%stge, n)
-                call output_variables_allocate(series%tile%stg0e, n)
-                call output_variables_allocate(series%tile%dstge, n)
-            end if
+            series%tile%ts => out%ts%tile
+        end if
+        if (ro%RUNGRID) then
+            series%grid%ts => out%ts%grid
+            series%basin%ts => out%ts%basin
         end if
 
-        !> Grid-based.
+    end subroutine
+
+    !> Description:
+    !>  Set output variables to the 'NO_DATA' value.
+    subroutine output_variables_group_reset(group)
+
+        !> 'control_variables' required to check for active modelling components.
+        use control_variables
+
+        !> Input/output variables.
+        type(output_fields) group
+
+        !> Initialize variables.
+        if (associated(group%ifsin)) group%ifsin = 0.0
+        if (associated(group%fsin)) group%fsin = out%NO_DATA
+        if (associated(group%fsdr)) group%fsdr = out%NO_DATA
+        if (associated(group%fsdff)) group%fsdff = out%NO_DATA
+        if (associated(group%fsout)) group%fsout = out%NO_DATA
+        if (associated(group%flin)) group%flin = out%NO_DATA
+        if (associated(group%flout)) group%flout = out%NO_DATA
+        if (associated(group%ta)) group%ta = out%NO_DATA
+        if (associated(group%qa)) group%qa = out%NO_DATA
+        if (associated(group%pres)) group%pres = out%NO_DATA
+        if (associated(group%uv)) group%uv = out%NO_DATA
+        if (associated(group%wdir)) group%wdir = out%NO_DATA
+        if (associated(group%uu)) group%uu = out%NO_DATA
+        if (associated(group%vv)) group%vv = out%NO_DATA
+        if (associated(group%pre)) group%pre = out%NO_DATA
+        if (associated(group%prern)) group%prern = out%NO_DATA
+        if (associated(group%presno)) group%presno = out%NO_DATA
+        if (associated(group%prec)) group%prec = out%NO_DATA
+        if (associated(group%precrn)) group%precrn = out%NO_DATA
+        if (associated(group%precsno)) group%precsno = out%NO_DATA
+        if (associated(group%ican)) group%ican = 0.0
+        if (associated(group%lqwscan)) group%lqwscan = out%NO_DATA
+        if (associated(group%fzwscan)) group%fzwscan = out%NO_DATA
+        if (associated(group%cmas)) group%cmas = out%NO_DATA
+        if (associated(group%tcan)) group%tcan = out%NO_DATA
+        if (associated(group%gro)) group%gro = out%NO_DATA
+        if (associated(group%isno)) group%isno = 0.0
+        if (associated(group%sno)) group%sno = out%NO_DATA
+        if (associated(group%rhosno)) group%rhosno = out%NO_DATA
+        if (associated(group%zsno)) group%zsno = out%NO_DATA
+        if (associated(group%fsno)) group%fsno = out%NO_DATA
+        if (associated(group%lqwssno)) group%lqwssno = out%NO_DATA
+        if (associated(group%tsno)) group%tsno = out%NO_DATA
+        if (associated(group%drainsno)) group%drainsno = out%NO_DATA
+        if (associated(group%albt)) group%albt = out%NO_DATA
+        if (associated(group%alvs)) group%alvs = out%NO_DATA
+        if (associated(group%alir)) group%alir = out%NO_DATA
+        if (associated(group%gte)) group%gte = out%NO_DATA
+        if (associated(group%ipnd)) group%ipnd = 0.0
+        if (associated(group%zpnd)) group%zpnd = out%NO_DATA
+        if (associated(group%lqwspnd)) group%lqwspnd = out%NO_DATA
+        if (associated(group%tpnd)) group%tpnd = out%NO_DATA
+        if (associated(group%potevp)) group%potevp = out%NO_DATA
+        if (associated(group%et)) group%et = out%NO_DATA
+        if (associated(group%evpb)) group%evpb = out%NO_DATA
+        if (associated(group%arrd)) group%arrd = out%NO_DATA
+        if (associated(group%ovrflw)) group%ovrflw = out%NO_DATA
+        if (associated(group%qevp)) group%qevp = out%NO_DATA
+        if (associated(group%qsens)) group%qsens = out%NO_DATA
+        if (associated(group%gzero)) group%gzero = out%NO_DATA
+        if (associated(group%thlqsol)) group%thlqsol = out%NO_DATA
+        if (associated(group%thicsol)) group%thicsol = out%NO_DATA
+        if (associated(group%lqwssol)) group%lqwssol = out%NO_DATA
+        if (associated(group%fzwssol)) group%fzwssol = out%NO_DATA
+        if (associated(group%alwssol)) group%alwssol = out%NO_DATA
+        if (associated(group%tsol)) group%tsol = out%NO_DATA
+        if (associated(group%gflx)) group%gflx = out%NO_DATA
+        if (associated(group%latflw)) group%latflw = out%NO_DATA
+        if (associated(group%drainsol)) group%drainsol = out%NO_DATA
+        if (associated(group%rchg)) group%rchg = out%NO_DATA
+        if (associated(group%stggw)) group%stggw = out%NO_DATA
+        if (associated(group%dzs)) group%dzs = out%NO_DATA
+        if (associated(group%stge)) then
+            group%stg0e = group%stge
+            group%stge = 0.0
+            group%dstge = 0.0
+        end if
+        if (associated(group%stgw)) then
+            group%stg0w = group%stgw
+            group%stgw = 0.0
+            group%dstgw = 0.0
+        end if
+        if (associated(group%rff)) group%rff = out%NO_DATA
+        if (associated(group%rof)) group%rof = out%NO_DATA
+        if (associated(group%qi)) group%qi = out%NO_DATA
+        if (associated(group%qo)) group%qo = out%NO_DATA
+        if (associated(group%stgch)) group%stgch = out%NO_DATA
+        if (associated(group%zlvl)) group%zlvl = out%NO_DATA
+
+    end subroutine
+
+    !> Description:
+    !>  Reset output variables to the 'NO_DATA' value.
+    subroutine output_variables_reset(shd)
+
+        !> 'shd_variables' required for 'shd'.
+        !> 'control_variables' required to check for active modelling components.
+        use shd_variables
+        use control_variables
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Set variables to the 'NO_DATA' value.
+        if (ro%RUNTILE) then
+            call output_variables_group_reset(out%ts%tile)
+        end if
         if (ro%RUNGRID) then
-            n = shd%NA
-
-            !> Meteorological forcing.
-            if (ro%RUNCLIM) then
-                if (allocated(cm%dat(ck%FB)%GAT)) then
-                    call output_variables_allocate(series%grid%fsin, n)
-                    call output_variables_allocate(series%grid%ifsin, n)
-                end if
-                if (allocated(cm%dat(ck%FI)%GAT)) call output_variables_allocate(series%grid%flin, n)
-                if (allocated(cm%dat(ck%TT)%GAT)) call output_variables_allocate(series%grid%ta, n)
-                if (allocated(cm%dat(ck%HU)%GAT)) call output_variables_allocate(series%grid%qa, n)
-                if (allocated(cm%dat(ck%P0)%GAT)) call output_variables_allocate(series%grid%pres, n)
-                if (allocated(cm%dat(ck%UV)%GAT)) call output_variables_allocate(series%grid%uv, n)
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%grid%pre, n)
-            end if
-
-            !> Water balance.
-            if (ro%RUNBALWB) then
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%grid%prec, n)
-                if (allocated(stas%sfc%evap)) call output_variables_allocate(series%grid%evap, n)
-                if (allocated(stas%sfc%pevp)) call output_variables_allocate(series%grid%pevp, n)
-                if (allocated(stas%sfc%evpb)) call output_variables_allocate(series%grid%evpb, n)
-                if (allocated(stas%sfc%arrd)) call output_variables_allocate(series%grid%arrd, n)
-                if (allocated(stas%cnpy%gro)) call output_variables_allocate(series%grid%gro, n)
-                if (allocated(stas%sfc%rofo) .or. allocated(stas%sl%rofs) .or. allocated(stas%lzs%rofb) .or. &
-                    allocated(stas%dzs%rofb)) then
-                    call output_variables_allocate(series%grid%rof, n)
-                end if
-                if (allocated(stas%sfc%rofo)) call output_variables_allocate(series%grid%rofo, n)
-                if (allocated(stas%sl%rofs)) call output_variables_allocate(series%grid%rofs, n)
-                if (allocated(stas%lzs%rofb) .and. allocated(stas%dzs%rofb)) call output_variables_allocate(series%grid%rofb, n)
-                if (allocated(stas%cnpy%rcan)) call output_variables_allocate(series%grid%rcan, n)
-                if (allocated(stas%cnpy%sncan)) call output_variables_allocate(series%grid%sncan, n)
-                if (allocated(stas_grid%sno%zsno)) call output_variables_allocate(series%grid%zsno, n)
-                if (allocated(stas_grid%sno%rhos)) call output_variables_allocate(series%grid%rhosno, n)
-                if (allocated(stas%sno%sno)) then
-                    call output_variables_allocate(series%grid%sno, n)
-                    call output_variables_allocate(series%grid%isno, n)
-                end if
-                if (allocated(stas%sno%fsno)) call output_variables_allocate(series%grid%fsno, n)
-                if (allocated(stas%sno%wsno)) then
-                    call output_variables_allocate(series%grid%wsno, n)
-                    call output_variables_allocate(series%grid%isno, n)
-                end if
-                if (allocated(stas%sfc%zpnd)) then
-                    call output_variables_allocate(series%grid%zpnd, n)
-                    call output_variables_allocate(series%grid%ipnd, n)
-                end if
-                if (allocated(stas%sfc%pndw)) then
-                    call output_variables_allocate(series%grid%pndw, n)
-                    call output_variables_allocate(series%grid%ipnd, n)
-                end if
-                if (allocated(stas%lzs%ws)) call output_variables_allocate(series%grid%lzs, n)
-                if (allocated(stas%dzs%ws)) call output_variables_allocate(series%grid%dzs, n)
-                if (allocated(stas%sl%thlq)) call output_variables_allocate(series%grid%thlq, n, nsl)
-                if (allocated(stas%sl%lqws)) call output_variables_allocate(series%grid%lqws, n, nsl)
-                if (allocated(stas%sl%thic)) call output_variables_allocate(series%grid%thic, n, nsl)
-                if (allocated(stas%sl%fzws)) call output_variables_allocate(series%grid%fzws, n, nsl)
-                if (allocated(stas%sl%lqws) .or. allocated(stas%sl%fzws)) call output_variables_allocate(series%grid%alws, n, nsl)
-                call output_variables_allocate(series%grid%stgw, n)
-                call output_variables_allocate(series%grid%stg0w, n)
-                call output_variables_allocate(series%grid%dstgw, n)
-            end if
-
-            !> Energy balance.
-            if (ro%RUNBALEB) then
-                if (allocated(stas%cnpy%cmas)) call output_variables_allocate(series%grid%cmas, n)
-                if (allocated(stas%cnpy%tcan)) then
-                    call output_variables_allocate(series%grid%tcan, n)
-                    call output_variables_allocate(series%grid%ican, n)
-                end if
-                if (allocated(stas%sno%tsno)) then
-                    call output_variables_allocate(series%grid%tsno, n)
-                    call output_variables_allocate(series%grid%isno, n)
-                end if
-                if (allocated(stas%sfc%tpnd)) then
-                    call output_variables_allocate(series%grid%tpnd, n)
-                    call output_variables_allocate(series%grid%ipnd, n)
-                end if
-                if (allocated(stas%sfc%alvs)) then
-                    call output_variables_allocate(series%grid%alvs, n)
-                end if
-                if (allocated(stas%sfc%alir)) then
-                    call output_variables_allocate(series%grid%alir, n)
-                    call output_variables_allocate(series%grid%ifsin, n)
-                end if
-                if (allocated(stas%sfc%albt)) then
-                    call output_variables_allocate(series%grid%albt, n)
-                    call output_variables_allocate(series%grid%ifsin, n)
-                end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%grid%gte, n)
-                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(stas%sfc%albt)) then
-                    call output_variables_allocate(series%grid%fsout, n)
-                    call output_variables_allocate(series%grid%ifsin, n)
-                end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%grid%flout, n)
-                if (allocated(stas%sfc%hfs)) call output_variables_allocate(series%grid%qh, n)
-                if (allocated(stas%sfc%qevp)) call output_variables_allocate(series%grid%qe, n)
-                if (allocated(stas%sfc%gzero)) call output_variables_allocate(series%grid%gzero, n)
-                if (allocated(stas%sl%gflx)) call output_variables_allocate(series%grid%gflx, n, nsl)
-                if (allocated(stas%sl%tbar)) call output_variables_allocate(series%grid%tbar, n, nsl)
-                call output_variables_allocate(series%grid%stge, n)
-                call output_variables_allocate(series%grid%stg0e, n)
-                call output_variables_allocate(series%grid%dstge, n)
-            end if
-
-            !> Channels and routing.
-            if (ro%RUNCHNL) then
-                if (allocated(stas_grid%chnl%rff)) call output_variables_allocate(series%grid%rff, n)
-                if (allocated(stas_grid%chnl%rchg)) call output_variables_allocate(series%grid%rchg, n)
-                if (allocated(stas_grid%chnl%qi)) call output_variables_allocate(series%grid%qi, n)
-                if (allocated(stas_grid%chnl%stg)) call output_variables_allocate(series%grid%stgch, n)
-                if (allocated(stas_grid%chnl%qo)) call output_variables_allocate(series%grid%qo, n)
-                if (allocated(stas_grid%chnl%zlvl)) call output_variables_allocate(series%grid%zlvl, n)
-            end if
-
-            !> DA averaged.
-            if (ro%RUNCLIM) then
-                if (allocated(cm%dat(ck%FB)%GAT)) then
-                    call output_variables_allocate(series%basin%fsin, n)
-                    call output_variables_allocate(series%basin%ifsin, n)
-                end if
-                if (allocated(cm%dat(ck%FI)%GAT)) call output_variables_allocate(series%basin%flin, n)
-                if (allocated(cm%dat(ck%TT)%GAT)) call output_variables_allocate(series%basin%ta, n)
-                if (allocated(cm%dat(ck%HU)%GAT)) call output_variables_allocate(series%basin%qa, n)
-                if (allocated(cm%dat(ck%P0)%GAT)) call output_variables_allocate(series%basin%pres, n)
-                if (allocated(cm%dat(ck%UV)%GAT)) call output_variables_allocate(series%basin%uv, n)
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%basin%pre, n)
-            end if
-            if (ro%RUNBALWB) then
-                if (allocated(cm%dat(ck%RT)%GAT)) call output_variables_allocate(series%basin%prec, n)
-                if (allocated(stas%sfc%evap)) call output_variables_allocate(series%basin%evap, n)
-                if (allocated(stas%sfc%pevp)) call output_variables_allocate(series%basin%pevp, n)
-                if (allocated(stas%sfc%evpb)) call output_variables_allocate(series%basin%evpb, n)
-                if (allocated(stas%sfc%arrd)) call output_variables_allocate(series%basin%arrd, n)
-                if (allocated(stas%cnpy%gro)) call output_variables_allocate(series%basin%gro, n)
-                if (allocated(stas%sfc%rofo) .or. allocated(stas%sl%rofs) .or. allocated(stas%lzs%rofb) .or. &
-                    allocated(stas%dzs%rofb)) then
-                    call output_variables_allocate(series%basin%rof, n)
-                end if
-                if (allocated(stas%sfc%rofo)) call output_variables_allocate(series%basin%rofo, n)
-                if (allocated(stas%sl%rofs)) call output_variables_allocate(series%basin%rofs, n)
-                if (allocated(stas%lzs%rofb) .and. allocated(stas%dzs%rofb)) call output_variables_allocate(series%basin%rofb, n)
-                if (allocated(stas%cnpy%rcan)) call output_variables_allocate(series%basin%rcan, n)
-                if (allocated(stas%cnpy%sncan)) call output_variables_allocate(series%basin%sncan, n)
-                if (allocated(stas%sno%sno)) then
-                    call output_variables_allocate(series%basin%sno, n)
-                    call output_variables_allocate(series%basin%isno, n)
-                end if
-                if (allocated(stas%sno%fsno)) call output_variables_allocate(series%basin%fsno, n)
-                if (allocated(stas%sno%wsno)) then
-                    call output_variables_allocate(series%basin%wsno, n)
-                    call output_variables_allocate(series%basin%isno, n)
-                end if
-                if (allocated(stas%sfc%zpnd)) then
-                    call output_variables_allocate(series%basin%zpnd, n)
-                    call output_variables_allocate(series%basin%ipnd, n)
-                end if
-                if (allocated(stas%sfc%pndw)) then
-                    call output_variables_allocate(series%basin%pndw, n)
-                    call output_variables_allocate(series%basin%ipnd, n)
-                end if
-                if (allocated(stas%lzs%ws)) call output_variables_allocate(series%basin%lzs, n)
-                if (allocated(stas%dzs%ws)) call output_variables_allocate(series%basin%dzs, n)
-                if (allocated(stas%sl%thlq)) call output_variables_allocate(series%basin%thlq, n, nsl)
-                if (allocated(stas%sl%lqws)) call output_variables_allocate(series%basin%lqws, n, nsl)
-                if (allocated(stas%sl%thic)) call output_variables_allocate(series%basin%thic, n, nsl)
-                if (allocated(stas%sl%fzws)) call output_variables_allocate(series%basin%fzws, n, nsl)
-                if (allocated(stas%sl%lqws) .or. allocated(stas%sl%fzws)) call output_variables_allocate(series%basin%alws, n, nsl)
-                call output_variables_allocate(series%basin%stgw, n)
-                call output_variables_allocate(series%basin%stg0w, n)
-                call output_variables_allocate(series%basin%dstgw, n)
-            end if
-            if (ro%RUNBALEB) then
-                if (allocated(stas%cnpy%cmas)) call output_variables_allocate(series%basin%cmas, n)
-                if (allocated(stas%cnpy%tcan)) then
-                    call output_variables_allocate(series%basin%tcan, n)
-                    call output_variables_allocate(series%basin%ican, n)
-                end if
-                if (allocated(stas%sno%tsno)) then
-                    call output_variables_allocate(series%basin%tsno, n)
-                    call output_variables_allocate(series%basin%isno, n)
-                end if
-                if (allocated(stas%sfc%tpnd)) then
-                    call output_variables_allocate(series%basin%tpnd, n)
-                    call output_variables_allocate(series%basin%ipnd, n)
-                end if
-                if (allocated(stas%sfc%alvs)) then
-                    call output_variables_allocate(series%basin%alvs, n)
-                end if
-                if (allocated(stas%sfc%alir)) then
-                    call output_variables_allocate(series%basin%alir, n)
-                    call output_variables_allocate(series%basin%ifsin, n)
-                end if
-                if (allocated(stas%sfc%albt)) then
-                    call output_variables_allocate(series%basin%albt, n)
-                    call output_variables_allocate(series%basin%ifsin, n)
-                end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%basin%gte, n)
-                if (allocated(cm%dat(ck%FB)%GAT) .and. allocated(stas%sfc%albt)) then
-                    call output_variables_allocate(series%basin%fsout, n)
-                    call output_variables_allocate(series%basin%ifsin, n)
-                end if
-                if (allocated(stas%sfc%gte)) call output_variables_allocate(series%basin%flout, n)
-                if (allocated(stas%sfc%hfs)) call output_variables_allocate(series%basin%qh, n)
-                if (allocated(stas%sfc%qevp)) call output_variables_allocate(series%basin%qe, n)
-                if (allocated(stas%sfc%gzero)) call output_variables_allocate(series%basin%gzero, n)
-                if (allocated(stas%sl%gflx)) call output_variables_allocate(series%basin%gflx, n, nsl)
-                if (allocated(stas%sl%tbar)) call output_variables_allocate(series%basin%tbar, n, nsl)
-                call output_variables_allocate(series%basin%stge, n)
-                call output_variables_allocate(series%basin%stg0e, n)
-                call output_variables_allocate(series%basin%dstge, n)
-            end if
-            if (ro%RUNCHNL) then
-                if (allocated(stas_grid%chnl%rff)) call output_variables_allocate(series%basin%rff, n)
-                if (allocated(stas_grid%chnl%rchg)) call output_variables_allocate(series%basin%rchg, n)
-                if (allocated(stas_grid%chnl%qi)) call output_variables_allocate(series%basin%qi, n)
-                if (allocated(stas_grid%chnl%stg)) call output_variables_allocate(series%basin%stgch, n)
-                if (allocated(stas_grid%chnl%qo)) call output_variables_allocate(series%basin%qo, n)
-                if (allocated(stas_grid%chnl%zlvl)) call output_variables_allocate(series%basin%zlvl, n)
-            end if
+            call output_variables_group_reset(out%ts%grid)
+            call output_variables_group_reset(out%ts%basin)
         end if
 
     end subroutine
 
     !> Description:
     !>  Allocate and initialize output variables.
-    subroutine output_variables_init(shd, cm)
+    subroutine output_variables_series_init(shd, series)
 
         !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
-        !> 'climate_forcing' required for 'cm'.
         use shd_variables
         use control_variables
-        use climate_forcing
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
-        !> Allocate and initialize model time-step variables.
-        call output_variables_init_fields(shd, cm, out%ts)
-        call output_variables_reset_fields(shd, out%ts)
+        !> Input/output variables.
+        type(output_series) series
+
+        !> Allocate and initialize the variables.
+        if (ro%RUNTILE) then
+            call output_variables_group_init(vs%tile, series%tile, shd%lc%NML, shd%lc%IGND)
+        end if
+        if (ro%RUNGRID) then
+            call output_variables_group_init(vs%grid, series%grid, shd%NA, shd%lc%IGND)
+            call output_variables_group_init(vs%basin, series%basin, shd%NA, shd%lc%IGND)
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  Allocate and initialize output variables.
+    subroutine output_variables_init(shd)
+
+        !> 'shd_variables' required for 'shd'.
+        use shd_variables
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+
+        !> Initialize 'ts' values.
+        call output_variables_series_init(shd, out%ts)
+
+        !> Totals (e.g., accumulated).
+        call output_variables_series_init(shd, out%tot)
+        call output_variables_group_associate_ts(out%tot)
+
+        !> Yearly.
+        call output_variables_series_init(shd, out%y)
+        call output_variables_group_associate_ts(out%y)
+
+        !> Monthly.
+        call output_variables_series_init(shd, out%m)
+        call output_variables_group_associate_ts(out%m)
+
+        !> Daily.
+        call output_variables_series_init(shd, out%d)
+        call output_variables_group_associate_ts(out%d)
+
+        !> Hourly.
+        call output_variables_series_init(shd, out%h)
+        call output_variables_group_associate_ts(out%h)
+
+    end subroutine
+
+    !> Description:
+    !>  Update output variables from current model states and variables.
+    !>  Variables are updated if all elements of the group are equal to
+    !>  the 'NO_DATA' value; if not the case, updates are assumed to
+    !>  have occured in the model (e.g., by process modules), and those
+    !>  values are preserved.
+    subroutine output_variables_group_update_ts(shd, group, group_vs)
+
+        !> 'shd_variables' required for 'shd'.
+        !> 'control_variables' required to check for active modelling components.
+        !> 'model_dates' required for 'ic' (counter and time-stepping).
+        use shd_variables
+        use control_variables
+        use model_dates
+
+        !> Input variables.
+        type(ShedGridParams), intent(in) :: shd
+        type(model_variables_fields), intent(in) :: group_vs
+
+        !> Input/output variables.
+        type(output_fields) group
+
+        !> Local variables.
+        integer j
+
+        !> Update variables.
+        if (associated(group%ifsin)) then
+            where (group_vs%fsin > 0.0)
+                group%ifsin = 1.0
+            elsewhere
+                group%ifsin = 0.0
+            end where
+        end if
+        if (associated(group%fsin)) then
+            if (all(group%fsin == out%NO_DATA)) group%fsin = group_vs%fsin
+        end if
+        if (associated(group%fsdr)) then
+            if (all(group%fsdr == out%NO_DATA)) group%fsdr = group_vs%fsdr
+        end if
+        if (associated(group%fsdff)) then
+            if (all(group%fsdff == out%NO_DATA)) group%fsdff = group_vs%fsdff
+        end if
+        if (associated(group%fsout)) then
+            if (all(group%fsout == out%NO_DATA)) group%fsout = group_vs%fsin*(1.0 - group_vs%albt)
+        end if
+        if (associated(group%flin)) then
+            if (all(group%flin == out%NO_DATA)) group%flin = group_vs%flin
+        end if
+        if (associated(group%flout)) then
+            if (all(group%flout == out%NO_DATA)) group%flout = 5.66796E-8*group_vs%gte**4
+        end if
+        if (associated(group%ta)) then
+            if (all(group%ta == out%NO_DATA)) group%ta = group_vs%ta
+        end if
+        if (associated(group%qa)) then
+            if (all(group%qa == out%NO_DATA)) group%qa = group_vs%qa
+        end if
+        if (associated(group%pres)) then
+            if (all(group%pres == out%NO_DATA)) group%pres = group_vs%pres
+        end if
+        if (associated(group%uv)) then
+            if (all(group%uv == out%NO_DATA)) group%uv = group_vs%uv
+        end if
+        if (associated(group%wdir)) then
+            if (all(group%wdir == out%NO_DATA)) group%wdir = group_vs%wdir
+        end if
+        if (associated(group%uu)) then
+            if (all(group%uu == out%NO_DATA)) group%uu = group_vs%uu
+        end if
+        if (associated(group%vv)) then
+            if (all(group%vv == out%NO_DATA)) group%vv = group_vs%vv
+        end if
+        if (associated(group%pre)) then
+            if (all(group%pre == out%NO_DATA)) group%pre = group_vs%pre
+        end if
+        if (associated(group%prern)) then
+            if (all(group%prern == out%NO_DATA)) group%prern = group_vs%prern
+        end if
+        if (associated(group%presno)) then
+            if (all(group%presno == out%NO_DATA)) group%presno = group_vs%presno
+        end if
+        if (associated(group%prec)) then
+            if (all(group%prec == out%NO_DATA)) group%prec = group_vs%pre*ic%dts
+        end if
+        if (associated(group%precrn)) then
+            if (all(group%precrn == out%NO_DATA)) group%precrn = group_vs%prern*ic%dts
+        end if
+        if (associated(group%precsno)) then
+            if (all(group%precsno == out%NO_DATA)) group%precsno = group_vs%presno*ic%dts
+        end if
+        if (associated(group%ican)) then
+            where (group_vs%tcan > 0.0)
+                group%ican = 1.0
+            elsewhere
+                group%ican = 0.0
+            end where
+        end if
+        if (associated(group%lqwscan)) then
+            if (all(group%lqwscan == out%NO_DATA)) group%lqwscan = group_vs%lqwscan
+        end if
+        if (associated(group%fzwscan)) then
+            if (all(group%fzwscan == out%NO_DATA)) group%fzwscan = group_vs%fzwscan
+        end if
+        if (associated(group%cmas)) then
+            if (all(group%cmas == out%NO_DATA)) then
+                where (group%ican == 1.0)
+                    group%cmas = group_vs%cmas
+                elsewhere
+                    group%cmas = 0.0
+                end where
+            end if
+        end if
+        if (associated(group%tcan)) then
+            if (all(group%tcan == out%NO_DATA)) then
+                where (group%ican == 1.0)
+                    group%tcan = group_vs%tcan
+                elsewhere
+                    group%tcan = 0.0
+                endwhere
+            end if
+        end if
+        if (associated(group%gro)) then
+            if (all(group%gro == out%NO_DATA)) group%gro = group_vs%gro
+        end if
+        if (associated(group%isno)) then
+            where (group_vs%tsno > 0.0)
+                group%isno = 1.0
+            elsewhere
+                group%isno = 0.0
+            end where
+        end if
+        if (associated(group%sno)) then
+            if (all(group%sno == out%NO_DATA)) group%sno = group_vs%sno
+        end if
+        if (associated(group%rhosno)) then
+            if (all(group%rhosno == out%NO_DATA)) group%rhosno = group_vs%rhosno
+        end if
+        if (associated(group%zsno)) then
+            if (all(group%zsno == out%NO_DATA)) group%zsno = group_vs%zsno
+        end if
+        if (associated(group%fsno)) then
+            if (all(group%fsno == out%NO_DATA)) group%fsno = group_vs%fsno
+        end if
+        if (associated(group%lqwssno)) then
+            if (all(group%lqwssno == out%NO_DATA)) group%lqwssno = group_vs%lqwssno
+        end if
+        if (associated(group%tsno)) then
+            if (all(group%tsno == out%NO_DATA)) then
+                where (group%isno == 1.0)
+                    group%tsno = group_vs%tsno
+                elsewhere
+                    group%tsno = 0.0
+                end where
+            end if
+        end if
+        if (associated(group%drainsno)) then
+            if (all(group%drainsno == out%NO_DATA)) group%drainsno = group_vs%drainsno
+        end if
+        if (associated(group%albt)) then
+            if (all(group%albt == out%NO_DATA)) group%albt = group_vs%albt
+        end if
+        if (associated(group%alvs)) then
+            if (all(group%alvs == out%NO_DATA)) group%alvs = group_vs%alvs
+        end if
+        if (associated(group%alir)) then
+            if (all(group%alir == out%NO_DATA)) group%alir = group_vs%alir
+        end if
+        if (associated(group%gte)) then
+            if (all(group%gte == out%NO_DATA)) group%gte = group_vs%gte
+        end if
+        if (associated(group%ipnd)) then
+            where (group_vs%tpnd > 0.0)
+                group%ipnd = 1.0
+            elsewhere
+                group%ipnd = 0.0
+            end where
+        end if
+        if (associated(group%zpnd)) then
+            if (all(group%zpnd == out%NO_DATA)) group%zpnd = group_vs%zpnd
+        end if
+        if (associated(group%lqwspnd)) then
+            if (all(group%lqwspnd == out%NO_DATA)) group%lqwspnd = group_vs%lqwspnd
+        end if
+        if (associated(group%tpnd)) then
+            if (all(group%tpnd == out%NO_DATA)) then
+                where (group%ipnd == 1.0)
+                    group%tpnd = group_vs%tpnd
+                elsewhere
+                    group%tpnd = 0.0
+                end where
+            end if
+        end if
+        if (associated(group%potevp)) then
+            if (all(group%potevp == out%NO_DATA)) group%potevp = group_vs%potevp
+        end if
+        if (associated(group%et)) then
+            if (all(group%et == out%NO_DATA)) group%et = group_vs%et
+        end if
+        if (associated(group%evpb)) then
+            if (all(group%evpb == out%NO_DATA)) group%evpb = group_vs%evpb
+        end if
+        if (associated(group%arrd)) then
+            if (all(group%arrd == out%NO_DATA)) group%arrd = group_vs%arrd
+        end if
+        if (associated(group%ovrflw)) then
+            if (all(group%ovrflw == out%NO_DATA)) group%ovrflw = group_vs%ovrflw
+        end if
+        if (associated(group%qevp)) then
+            if (all(group%qevp == out%NO_DATA)) group%qevp = group_vs%qevp
+        end if
+        if (associated(group%qsens)) then
+            if (all(group%qsens == out%NO_DATA)) group%qsens = group_vs%qsens
+        end if
+        if (associated(group%gzero)) then
+            if (all(group%gzero == out%NO_DATA)) group%gzero = group_vs%gzero
+        end if
+        if (associated(group%thlqsol)) then
+            if (all(group%thlqsol == out%NO_DATA)) group%thlqsol = group_vs%thlqsol
+        end if
+        if (associated(group%thicsol)) then
+            if (all(group%thicsol == out%NO_DATA)) group%thicsol = group_vs%thicsol
+        end if
+        if (associated(group%lqwssol)) then
+            if (all(group%lqwssol == out%NO_DATA)) group%lqwssol = group_vs%lqwssol
+        end if
+        if (associated(group%fzwssol)) then
+            if (all(group%fzwssol == out%NO_DATA)) group%fzwssol = group_vs%fzwssol
+        end if
+        if (associated(group%alwssol)) then
+            if (all(group%alwssol == out%NO_DATA)) then
+                group%alwssol = 0.0
+                where (group%lqwssol /= out%NO_DATA) group%alwssol = group%alwssol + group%lqwssol
+                where (group%fzwssol /= out%NO_DATA) group%alwssol = group%alwssol + group%fzwssol
+            end if
+        end if
+        if (associated(group%tsol)) then
+            if (all(group%tsol == out%NO_DATA)) group%tsol = group_vs%tsol
+        end if
+        if (associated(group%gflx)) then
+            if (all(group%gflx == out%NO_DATA)) group%gflx = group_vs%gflx
+        end if
+        if (associated(group%latflw)) then
+            if (all(group%latflw == out%NO_DATA)) group%latflw = group_vs%latflw
+        end if
+        if (associated(group%drainsol)) then
+            if (all(group%drainsol == out%NO_DATA)) group%drainsol = group_vs%drainsol
+        end if
+        if (associated(group%rchg)) then
+            if (all(group%rchg == out%NO_DATA)) group%rchg = group_vs%rchg
+        end if
+        if (associated(group%stggw)) then
+            if (all(group%stggw == out%NO_DATA)) group%stggw = group_vs%stggw
+        end if
+        if (associated(group%dzs)) then
+            if (all(group%dzs == out%NO_DATA)) group%dzs = group_vs%dzs
+        end if
+        if (associated(group%stge)) then
+            if (all(group%stge == 0.0)) then
+                group%stg0e = out%NO_DATA
+                group%stge = out%NO_DATA
+                group%dstge = out%NO_DATA
+            else
+                group%dstge = group%stge - group%stg0e
+            end if
+        end if
+        if (associated(group%stgw)) then
+            if (all(group%stgw == 0.0)) then
+                where (group%lqwscan /= out%NO_DATA) group%stgw = group%stgw + group%lqwscan
+                where (group%fzwscan /= out%NO_DATA) group%stgw = group%stgw + group%fzwscan
+                where (group%sno /= out%NO_DATA) group%stgw = group%stgw + group%sno
+                where (group%lqwssno /= out%NO_DATA) group%stgw = group%stgw + group%lqwssno
+                where (group%lqwspnd /= out%NO_DATA) group%stgw = group%stgw + group%lqwspnd
+                do j = 1, shd%lc%IGND
+                    where (group%lqwssol(:, j) /= out%NO_DATA) group%stgw = group%stgw + group%lqwssol(:, j)
+                    where (group%fzwssol(:, j) /= out%NO_DATA) group%stgw = group%stgw + group%fzwssol(:, j)
+                end do
+                where (group%stggw /= out%NO_DATA) group%stgw = group%stgw + group%stggw
+                where (group%dzs /= out%NO_DATA) group%stgw = group%stgw + group%dzs
+            end if
+            if (all(group%stgw == 0.0)) then
+                group%stg0w = out%NO_DATA
+                group%stgw = out%NO_DATA
+                group%dstgw = out%NO_DATA
+            else
+                group%dstgw = group%stgw - group%stg0w
+            end if
+        end if
+        if (associated(group%rff)) then
+            if (all(group%rff == out%NO_DATA)) group%rff = group_vs%rff
+        end if
+        if (associated(group%rof)) then
+            if (all(group%rof == out%NO_DATA)) then
+                group%rof = 0.0
+                where (group%ovrflw /= out%NO_DATA) group%rof = group%rof + group%ovrflw
+                do j = 1, shd%lc%IGND
+                    where (group%latflw(:, j) /= out%NO_DATA) group%rof = group%rof + group%latflw(:, j)
+                end do
+                where (group%drainsol /= out%NO_DATA) group%rof = group%rof + group%drainsol
+            end if
+        end if
+        if (associated(group%qi)) then
+            if (all(group%qi == out%NO_DATA)) group%qi = group_vs%qi
+        end if
+        if (associated(group%qo)) then
+            if (all(group%qo == out%NO_DATA)) group%qo = group_vs%qo
+        end if
+        if (associated(group%stgch)) then
+            if (all(group%stgch == out%NO_DATA)) group%stgch = group_vs%stgch
+        end if
+        if (associated(group%zlvl)) then
+            if (all(group%zlvl == out%NO_DATA)) group%zlvl = group_vs%zlvl
+        end if
 
     end subroutine
 
@@ -761,870 +1315,23 @@ module output_variables
     !>  to the allocation status of the model states and variables;
     !>  checks are made against the model time-step output variable
     !>  to see if it has been associated.
-    subroutine output_variables_update_ts(shd, cm)
+    subroutine output_variables_update_ts(shd)
 
         !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
-        !> 'climate_forcing' required for 'cm'.
-        !> 'state_variables' required for 'stas'.
         use shd_variables
         use control_variables
-        use climate_forcing
-        use state_variables
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
-        !> Local variables.
-        integer ii, i, j
-        real, dimension(size(shd%DA)) :: DA
-        logical lcheck
-
-        !> Tile-based.
+        !> Update the variables.
         if (ro%RUNTILE) then
-
-            !> Meteorological forcing.
-            if (ro%RUNCLIM) then
-                if (associated(out%ts%tile%fsin)) then
-                    if (all(out%ts%tile%fsin == out%NO_DATA)) out%ts%tile%fsin = cm%dat(ck%FB)%GAT
-                end if
-                if (associated(out%ts%tile%flin)) then
-                    if (all(out%ts%tile%flin == out%NO_DATA)) out%ts%tile%flin = cm%dat(ck%FI)%GAT
-                end if
-                if (associated(out%ts%tile%ta)) then
-                    if (all(out%ts%tile%ta == out%NO_DATA)) out%ts%tile%ta = cm%dat(ck%TT)%GAT
-                end if
-                if (associated(out%ts%tile%qa)) then
-                    if (all(out%ts%tile%qa == out%NO_DATA)) out%ts%tile%qa = cm%dat(ck%HU)%GAT
-                end if
-                if (associated(out%ts%tile%pres)) then
-                    if (all(out%ts%tile%pres == out%NO_DATA)) out%ts%tile%pres = cm%dat(ck%P0)%GAT
-                end if
-                if (associated(out%ts%tile%uv)) then
-                    if (all(out%ts%tile%uv == out%NO_DATA)) out%ts%tile%uv = cm%dat(ck%UV)%GAT
-                end if
-                if (associated(out%ts%tile%pre)) then
-                    if (all(out%ts%tile%pre == out%NO_DATA)) out%ts%tile%pre = cm%dat(ck%RT)%GAT
-                end if
-            end if
-
-            !> Water balance.
-            if (ro%RUNBALWB) then
-                if (associated(out%ts%tile%prec)) then
-                    if (all(out%ts%tile%prec == out%NO_DATA)) out%ts%tile%prec = cm%dat(ck%RT)%GAT
-                end if
-                if (associated(out%ts%tile%evap)) then
-                    if (all(out%ts%tile%evap == out%NO_DATA)) out%ts%tile%evap = stas%sfc%evap
-                end if
-                if (associated(out%ts%tile%pevp)) then
-                    if (all(out%ts%tile%pevp == out%NO_DATA)) out%ts%tile%pevp = stas%sfc%pevp
-                end if
-                if (associated(out%ts%tile%evpb)) then
-                    if (all(out%ts%tile%evpb == out%NO_DATA)) out%ts%tile%evpb = stas%sfc%evpb
-                end if
-                if (associated(out%ts%tile%arrd)) then
-                    if (all(out%ts%tile%arrd == out%NO_DATA)) out%ts%tile%arrd = stas%sfc%arrd
-                end if
-                if (associated(out%ts%tile%gro)) then
-                    if (all(out%ts%tile%gro == out%NO_DATA)) out%ts%tile%gro = stas%cnpy%gro
-                end if
-                if (associated(out%ts%tile%rof)) then
-                    if (all(out%ts%tile%rof == out%NO_DATA)) then
-                        out%ts%tile%rof = 0.0
-                        lcheck = .true.
-                    else
-                        lcheck = .false.
-                    end if
-                    if (associated(out%ts%tile%rofo)) then
-                        if (all(out%ts%tile%rofo == out%NO_DATA)) out%ts%tile%rofo = stas%sfc%rofo
-                        if (lcheck) out%ts%tile%rof = out%ts%tile%rof + stas%sfc%rofo
-                    end if
-                    if (associated(out%ts%tile%rofs)) then
-                        if (all(out%ts%tile%rofs == out%NO_DATA)) out%ts%tile%rofs = stas%sl%rofs
-                        if (lcheck) out%ts%tile%rof = out%ts%tile%rof + stas%sl%rofs
-                    end if
-                    if (associated(out%ts%tile%rofb)) then
-                        if (all(out%ts%tile%rofb == out%NO_DATA)) out%ts%tile%rofb = stas%lzs%rofb + stas%dzs%rofb
-                        if (lcheck) out%ts%tile%rof = out%ts%tile%rof + stas%lzs%rofb + stas%dzs%rofb
-                    end if
-                end if
-                if (associated(out%ts%tile%rcan)) then
-                    if (all(out%ts%tile%rcan == out%NO_DATA)) then
-                        out%ts%tile%rcan = stas%cnpy%rcan
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%cnpy%rcan
-                    end if
-                end if
-                if (associated(out%ts%tile%sncan)) then
-                    if (all(out%ts%tile%sncan == out%NO_DATA)) then
-                        out%ts%tile%sncan = stas%cnpy%sncan
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%cnpy%sncan
-                    end if
-                end if
-                if (associated(out%ts%tile%zsno)) then
-                    if (all(out%ts%tile%zsno == out%NO_DATA)) out%ts%tile%zsno = stas%sno%zsno
-                end if
-                if (associated(out%ts%tile%rhosno)) then
-                    if (all(out%ts%tile%rhosno == out%NO_DATA)) out%ts%tile%rhosno = stas%sno%rhos
-                end if
-                if (associated(out%ts%tile%sno)) then
-                    if (all(out%ts%tile%sno == out%NO_DATA)) then
-                        out%ts%tile%sno = stas%sno%sno
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%sno%sno
-                    end if
-                end if
-                if (associated(out%ts%tile%fsno)) then
-                    if (all(out%ts%tile%fsno == out%NO_DATA)) out%ts%tile%fsno = stas%sno%fsno
-                end if
-                if (associated(out%ts%tile%wsno)) then
-                    if (all(out%ts%tile%wsno == out%NO_DATA)) then
-                        out%ts%tile%wsno = stas%sno%wsno
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%sno%wsno
-                    end if
-                end if
-                if (associated(out%ts%tile%zpnd)) then
-                    if (all(out%ts%tile%zpnd == out%NO_DATA)) out%ts%tile%zpnd = stas%sfc%zpnd
-                end if
-                if (associated(out%ts%tile%pndw)) then
-                    if (all(out%ts%tile%pndw == out%NO_DATA)) then
-                        out%ts%tile%pndw = stas%sfc%pndw
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%sfc%pndw
-                    end if
-                end if
-                if (associated(out%ts%tile%lzs)) then
-                    if (all(out%ts%tile%lzs == out%NO_DATA)) then
-                        out%ts%tile%lzs = stas%lzs%ws
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%lzs%ws
-                    end if
-                end if
-                if (associated(out%ts%tile%dzs)) then
-                    if (all(out%ts%tile%dzs == out%NO_DATA)) then
-                        out%ts%tile%dzs = stas%dzs%ws
-                        out%ts%tile%stgw = out%ts%tile%stgw + stas%dzs%ws
-                    end if
-                end if
-                if (associated(out%ts%tile%thlq)) then
-                    if (all(out%ts%tile%thlq == out%NO_DATA)) out%ts%tile%thlq = stas%sl%thlq
-                end if
-                if (associated(out%ts%tile%thic)) then
-                    if (all(out%ts%tile%thic == out%NO_DATA)) out%ts%tile%thic = stas%sl%thic
-                end if
-                if (associated(out%ts%tile%alws)) then
-                    if (all(out%ts%tile%alws == out%NO_DATA)) then
-                        out%ts%tile%alws = 0.0
-                        lcheck = .true.
-                    else
-                        lcheck = .false.
-                    end if
-                    if (associated(out%ts%tile%lqws)) then
-                        if (all(out%ts%tile%lqws == out%NO_DATA)) out%ts%tile%lqws = stas%sl%lqws
-                        out%ts%tile%stgw = out%ts%tile%stgw + sum(stas%sl%lqws, 2)
-                        if (lcheck) out%ts%tile%alws = out%ts%tile%alws + stas%sl%lqws
-                    end if
-                    if (associated(out%ts%tile%fzws)) then
-                        if (all(out%ts%tile%fzws == out%NO_DATA)) out%ts%tile%fzws = stas%sl%fzws
-                        out%ts%tile%stgw = out%ts%tile%stgw + sum(stas%sl%fzws, 2)
-                        if (lcheck) out%ts%tile%alws = out%ts%tile%alws + stas%sl%fzws
-                    end if
-                end if
-                if (all(out%ts%tile%stgw == 0.0)) then
-                    out%ts%tile%stg0w = out%NO_DATA
-                    out%ts%tile%stgw = out%NO_DATA
-                    out%ts%tile%dstgw = out%NO_DATA
-                else
-                    out%ts%tile%dstgw = out%ts%tile%stgw - out%ts%tile%stg0w
-                end if
-            end if
-
-            !> Energy balance.
-            if (ro%RUNBALEB) then
-                if (associated(out%ts%tile%cmas)) then
-                    if (all(out%ts%tile%cmas == out%NO_DATA)) out%ts%tile%cmas = stas%cnpy%cmas
-                end if
-                if (associated(out%ts%tile%tcan)) then
-                    if (all(out%ts%tile%tcan == out%NO_DATA)) out%ts%tile%tcan = stas%cnpy%tcan
-                end if
-                if (associated(out%ts%tile%tsno)) then
-                    if (all(out%ts%tile%tsno == out%NO_DATA)) out%ts%tile%tsno = stas%sno%tsno
-                end if
-                if (associated(out%ts%tile%tpnd)) then
-                    if (all(out%ts%tile%tpnd == out%NO_DATA)) out%ts%tile%tpnd = stas%sfc%tpnd
-                end if
-                if (associated(out%ts%tile%alvs)) then
-                    if (all(out%ts%tile%alvs == out%NO_DATA)) out%ts%tile%alvs = stas%sfc%alvs
-                end if
-                if (associated(out%ts%tile%alir)) then
-                    if (all(out%ts%tile%alir == out%NO_DATA)) out%ts%tile%alir = stas%sfc%alir
-                end if
-                if (associated(out%ts%tile%albt)) then
-                    if (all(out%ts%tile%albt == out%NO_DATA)) out%ts%tile%albt = stas%sfc%albt
-                end if
-                if (associated(out%ts%tile%gte)) then
-                    if (all(out%ts%tile%gte == out%NO_DATA)) out%ts%tile%gte = stas%sfc%gte
-                end if
-                if (associated(out%ts%tile%fsout)) then
-                    if (all(out%ts%tile%fsout == out%NO_DATA)) out%ts%tile%fsout = cm%dat(ck%FB)%GAT*(1.0 - stas%sfc%albt)
-                end if
-                if (associated(out%ts%tile%flout)) then
-                    if (all(out%ts%tile%flout == out%NO_DATA)) out%ts%tile%flout = 5.66796E-8*stas%sfc%gte**4
-                end if
-                if (associated(out%ts%tile%qh)) then
-                    if (all(out%ts%tile%qh == out%NO_DATA)) out%ts%tile%qh = stas%sfc%hfs
-                end if
-                if (associated(out%ts%tile%qe)) then
-                    if (all(out%ts%tile%qe == out%NO_DATA)) out%ts%tile%qe = stas%sfc%qevp
-                end if
-                if (associated(out%ts%tile%gzero)) then
-                    if (all(out%ts%tile%gzero == out%NO_DATA)) out%ts%tile%gzero = stas%sfc%gzero
-                end if
-                if (associated(out%ts%tile%gflx)) then
-                    if (all(out%ts%tile%gflx == out%NO_DATA)) out%ts%tile%gflx = stas%sl%gflx
-                end if
-                if (associated(out%ts%tile%tbar)) then
-                    if (all(out%ts%tile%tbar == out%NO_DATA)) out%ts%tile%tbar = stas%sl%tbar
-                end if
-                if (all(out%ts%tile%stge == 0.0)) then
-                    out%ts%tile%stg0e = out%NO_DATA
-                    out%ts%tile%stge = out%NO_DATA
-                    out%ts%tile%dstge = out%NO_DATA
-                else
-                    out%ts%tile%dstge = out%ts%tile%stge - out%ts%tile%stg0e
-                end if
-            end if
+            call output_variables_group_update_ts(shd, out%ts%tile, vs%tile)
         end if
-
-        !> Grid-based.
         if (ro%RUNGRID) then
-
-            !> Meteorological forcing.
-            if (ro%RUNCLIM) then
-                if (associated(out%ts%grid%fsin)) then
-                    if (all(out%ts%grid%fsin == out%NO_DATA)) out%ts%grid%fsin = cm%dat(ck%FB)%GRD
-                end if
-                if (associated(out%ts%grid%flin)) then
-                    if (all(out%ts%grid%flin == out%NO_DATA)) out%ts%grid%flin = cm%dat(ck%FI)%GRD
-                end if
-                if (associated(out%ts%grid%ta)) then
-                    if (all(out%ts%grid%ta == out%NO_DATA)) out%ts%grid%ta = cm%dat(ck%TT)%GRD
-                end if
-                if (associated(out%ts%grid%qa)) then
-                    if (all(out%ts%grid%qa == out%NO_DATA)) out%ts%grid%qa = cm%dat(ck%HU)%GRD
-                end if
-                if (associated(out%ts%grid%pres)) then
-                    if (all(out%ts%grid%pres == out%NO_DATA)) out%ts%grid%pres = cm%dat(ck%P0)%GRD
-                end if
-                if (associated(out%ts%grid%uv)) then
-                    if (all(out%ts%grid%uv == out%NO_DATA)) out%ts%grid%uv = cm%dat(ck%UV)%GRD
-                end if
-                if (associated(out%ts%grid%pre)) then
-                    if (all(out%ts%grid%pre == out%NO_DATA)) out%ts%grid%pre = cm%dat(ck%RT)%GRD
-                end if
-            end if
-
-            !> Water balance.
-            if (ro%RUNBALWB) then
-                if (associated(out%ts%grid%prec)) then
-                    if (all(out%ts%grid%prec == out%NO_DATA)) out%ts%grid%prec = cm%dat(ck%RT)%GRD
-                end if
-                if (associated(out%ts%grid%evap)) then
-                    if (all(out%ts%grid%evap == out%NO_DATA)) out%ts%grid%evap = stas_grid%sfc%evap
-                end if
-                if (associated(out%ts%grid%pevp)) then
-                    if (all(out%ts%grid%pevp == out%NO_DATA)) out%ts%grid%pevp = stas_grid%sfc%pevp
-                end if
-                if (associated(out%ts%grid%evpb)) then
-                    if (all(out%ts%grid%evpb == out%NO_DATA)) out%ts%grid%evpb = stas_grid%sfc%evpb
-                end if
-                if (associated(out%ts%grid%arrd)) then
-                    if (all(out%ts%grid%arrd == out%NO_DATA)) out%ts%grid%arrd = stas_grid%sfc%arrd
-                end if
-                if (associated(out%ts%grid%gro)) then
-                    if (all(out%ts%grid%gro == out%NO_DATA)) out%ts%grid%gro = stas_grid%cnpy%gro
-                end if
-                if (associated(out%ts%grid%rof)) then
-                    if (all(out%ts%grid%rof == out%NO_DATA)) then
-                        out%ts%grid%rof = 0.0
-                        lcheck = .true.
-                    else
-                        lcheck = .false.
-                    end if
-                    if (associated(out%ts%grid%rofo)) then
-                        if (all(out%ts%grid%rofo == out%NO_DATA)) out%ts%grid%rofo = stas_grid%sfc%rofo
-                        if (lcheck) out%ts%grid%rof = out%ts%grid%rof + stas_grid%sfc%rofo
-                    end if
-                    if (associated(out%ts%grid%rofs)) then
-                        if (all(out%ts%grid%rofs == out%NO_DATA)) out%ts%grid%rofs = stas_grid%sl%rofs
-                        if (lcheck) out%ts%grid%rof = out%ts%grid%rof + stas_grid%sl%rofs
-                    end if
-                    if (associated(out%ts%grid%rofb)) then
-                        if (all(out%ts%grid%rofb == out%NO_DATA)) out%ts%grid%rofb = stas_grid%lzs%rofb + stas_grid%dzs%rofb
-                        if (lcheck) out%ts%grid%rof = out%ts%grid%rof + stas_grid%lzs%rofb + stas_grid%dzs%rofb
-                    end if
-                end if
-                if (associated(out%ts%grid%rcan)) then
-                    if (all(out%ts%grid%rcan == out%NO_DATA)) then
-                        out%ts%grid%rcan = stas_grid%cnpy%rcan
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%cnpy%rcan
-                    end if
-                end if
-                if (associated(out%ts%grid%sncan)) then
-                    if (all(out%ts%grid%sncan == out%NO_DATA)) then
-                        out%ts%grid%sncan = stas_grid%cnpy%sncan
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%cnpy%sncan
-                    end if
-                end if
-                if (associated(out%ts%grid%zsno)) then
-                    if (all(out%ts%grid%zsno == out%NO_DATA)) out%ts%grid%zsno = stas_grid%sno%zsno
-                end if
-                if (associated(out%ts%grid%rhosno)) then
-                    if (all(out%ts%grid%rhosno == out%NO_DATA)) out%ts%grid%rhosno = stas_grid%sno%rhos
-                end if
-                if (associated(out%ts%grid%sno)) then
-                    if (all(out%ts%grid%sno == out%NO_DATA)) then
-                        out%ts%grid%sno = stas_grid%sno%sno
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%sno%sno
-                    end if
-                end if
-                if (associated(out%ts%grid%fsno)) then
-                    if (all(out%ts%grid%fsno == out%NO_DATA)) out%ts%grid%fsno = stas_grid%sno%fsno
-                end if
-                if (associated(out%ts%grid%wsno)) then
-                    if (all(out%ts%grid%wsno == out%NO_DATA)) then
-                        out%ts%grid%wsno = stas_grid%sno%wsno
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%sno%wsno
-                    end if
-                end if
-                if (associated(out%ts%grid%zpnd)) then
-                    if (all(out%ts%grid%zpnd == out%NO_DATA)) then
-                        out%ts%grid%zpnd = stas_grid%sfc%zpnd
-                    end if
-                end if
-                if (associated(out%ts%grid%pndw)) then
-                    if (all(out%ts%grid%pndw == out%NO_DATA)) then
-                        out%ts%grid%pndw = stas_grid%sfc%pndw
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%sfc%pndw
-                    end if
-                end if
-                if (associated(out%ts%grid%lzs)) then
-                    if (all(out%ts%grid%lzs == out%NO_DATA)) then
-                        out%ts%grid%lzs = stas_grid%lzs%ws
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%lzs%ws
-                    end if
-                end if
-                if (associated(out%ts%grid%dzs)) then
-                    if (all(out%ts%grid%dzs == out%NO_DATA)) then
-                        out%ts%grid%dzs = stas_grid%dzs%ws
-                        out%ts%grid%stgw = out%ts%grid%stgw + stas_grid%dzs%ws
-                    end if
-                end if
-                if (associated(out%ts%grid%thlq)) then
-                    if (all(out%ts%grid%thlq == out%NO_DATA)) out%ts%grid%thlq = stas_grid%sl%thlq
-                end if
-                if (associated(out%ts%grid%thic)) then
-                    if (all(out%ts%grid%thic == out%NO_DATA)) out%ts%grid%thic = stas_grid%sl%thic
-                end if
-                if (associated(out%ts%grid%alws)) then
-                    if (all(out%ts%grid%alws == out%NO_DATA)) then
-                        out%ts%grid%alws = 0.0
-                        lcheck = .true.
-                    else
-                        lcheck = .false.
-                    end if
-                    if (associated(out%ts%grid%lqws)) then
-                        if (all(out%ts%grid%lqws == out%NO_DATA)) out%ts%grid%lqws = stas_grid%sl%lqws
-                        out%ts%grid%stgw = out%ts%grid%stgw + sum(stas_grid%sl%lqws, 2)
-                        if (lcheck) out%ts%grid%alws = out%ts%grid%alws + stas_grid%sl%lqws
-                    end if
-                    if (associated(out%ts%grid%fzws)) then
-                        if (all(out%ts%grid%fzws == out%NO_DATA)) out%ts%grid%fzws = stas_grid%sl%fzws
-                        out%ts%grid%stgw = out%ts%grid%stgw + sum(stas_grid%sl%fzws, 2)
-                        if (lcheck) out%ts%grid%alws = out%ts%grid%alws + stas_grid%sl%fzws
-                    end if
-                end if
-                if (all(out%ts%grid%stgw == 0.0)) then
-                    out%ts%grid%stg0w = out%NO_DATA
-                    out%ts%grid%stgw = out%NO_DATA
-                    out%ts%grid%dstgw = out%NO_DATA
-                else
-                    out%ts%grid%dstgw = out%ts%grid%stgw - out%ts%grid%stg0w
-                end if
-            end if
-
-            !> Energy balance.
-            if (ro%RUNBALEB) then
-                if (associated(out%ts%grid%cmas)) then
-                    if (all(out%ts%grid%cmas == out%NO_DATA)) out%ts%grid%cmas = stas_grid%cnpy%cmas
-                end if
-                if (associated(out%ts%grid%tcan)) then
-                    if (all(out%ts%grid%tcan == out%NO_DATA)) out%ts%grid%tcan = stas_grid%cnpy%tcan
-                end if
-                if (associated(out%ts%grid%tsno)) then
-                    if (all(out%ts%grid%tsno == out%NO_DATA)) out%ts%grid%tsno = stas_grid%sno%tsno
-                end if
-                if (associated(out%ts%grid%tpnd)) then
-                    if (all(out%ts%grid%tpnd == out%NO_DATA)) out%ts%grid%tpnd = stas_grid%sfc%tpnd
-                end if
-                if (associated(out%ts%grid%alvs)) then
-                    if (all(out%ts%grid%alvs == out%NO_DATA)) out%ts%grid%alvs = stas_grid%sfc%alvs
-                end if
-                if (associated(out%ts%grid%alir)) then
-                    if (all(out%ts%grid%alir == out%NO_DATA)) out%ts%grid%alir = stas_grid%sfc%alir
-                end if
-                if (associated(out%ts%grid%albt)) then
-                    if (all(out%ts%grid%albt == out%NO_DATA)) out%ts%grid%albt = stas_grid%sfc%albt
-                end if
-                if (associated(out%ts%grid%gte)) then
-                    if (all(out%ts%grid%gte == out%NO_DATA)) out%ts%grid%gte = stas_grid%sfc%gte
-                end if
-                if (associated(out%ts%grid%fsout)) then
-                    if (all(out%ts%grid%fsout == out%NO_DATA)) out%ts%grid%fsout = cm%dat(ck%FB)%GRD*(1.0 - stas_grid%sfc%albt)
-                end if
-                if (associated(out%ts%grid%flout)) then
-                    if (all(out%ts%grid%flout == out%NO_DATA)) out%ts%grid%flout = 5.66796E-8*stas_grid%sfc%gte**4
-                end if
-                if (associated(out%ts%grid%qh)) then
-                    if (all(out%ts%grid%qh == out%NO_DATA)) out%ts%grid%qh = stas_grid%sfc%hfs
-                end if
-                if (associated(out%ts%grid%qe)) then
-                    if (all(out%ts%grid%qe == out%NO_DATA)) out%ts%grid%qe = stas_grid%sfc%qevp
-                end if
-                if (associated(out%ts%grid%gzero)) then
-                    if (all(out%ts%grid%gzero == out%NO_DATA)) out%ts%grid%gzero = stas_grid%sfc%gzero
-                end if
-                if (associated(out%ts%grid%gflx)) then
-                    if (all(out%ts%grid%gflx == out%NO_DATA)) out%ts%grid%gflx = stas_grid%sl%gflx
-                end if
-                if (associated(out%ts%grid%tbar)) then
-                    if (all(out%ts%grid%tbar == out%NO_DATA)) out%ts%grid%tbar = stas_grid%sl%tbar
-                end if
-                if (all(out%ts%grid%stge == 0.0)) then
-                    out%ts%grid%stg0e = out%NO_DATA
-                    out%ts%grid%stge = out%NO_DATA
-                    out%ts%grid%dstge = out%NO_DATA
-                else
-                    out%ts%grid%dstge = out%ts%grid%stge - out%ts%grid%stg0e
-                end if
-            end if
-
-            !> Channels and routing.
-            if (ro%RUNCHNL) then
-                if (associated(out%ts%grid%rff)) then
-                    if (all(out%ts%grid%rff == out%NO_DATA)) out%ts%grid%rff = stas_grid%chnl%rff
-                end if
-                if (associated(out%ts%grid%rchg)) then
-                    if (all(out%ts%grid%rchg == out%NO_DATA)) out%ts%grid%rchg = stas_grid%chnl%rchg
-                end if
-                if (associated(out%ts%grid%qi)) then
-                    if (all(out%ts%grid%qi == out%NO_DATA)) out%ts%grid%qi = stas_grid%chnl%qi
-                end if
-                if (associated(out%ts%grid%stgch)) then
-                    if (all(out%ts%grid%stgch == out%NO_DATA)) out%ts%grid%stgch = stas_grid%chnl%stg
-                end if
-                if (associated(out%ts%grid%qo)) then
-                    if (all(out%ts%grid%qo == out%NO_DATA)) out%ts%grid%qo = stas_grid%chnl%qo
-                end if
-                if (associated(out%ts%grid%zlvl)) then
-                    if (all(out%ts%grid%zlvl == out%NO_DATA)) out%ts%grid%zlvl = stas_grid%chnl%zlvl
-                end if
-            end if
-
-            !> Initialize variables for DA averaged.
-            if (ro%RUNCLIM) then
-                where (shd%DA > 0.0)
-                    out%ts%basin%fsin = out%ts%grid%fsin*shd%FRAC
-                    out%ts%basin%flin = out%ts%grid%flin*shd%FRAC
-                    out%ts%basin%ta = out%ts%grid%ta*shd%FRAC
-                    out%ts%basin%qa = out%ts%grid%qa*shd%FRAC
-                    out%ts%basin%pres = out%ts%grid%pres*shd%FRAC
-                    out%ts%basin%uv = out%ts%grid%uv*shd%FRAC
-                    out%ts%basin%pre = out%ts%grid%pre*shd%FRAC
-                end where
-            end if
-            if (ro%RUNBALWB) then
-                where (shd%DA > 0.0)
-                    out%ts%basin%prec = out%ts%grid%prec*shd%FRAC
-                    out%ts%basin%evap = out%ts%grid%evap*shd%FRAC
-                    out%ts%basin%pevp = out%ts%grid%pevp*shd%FRAC
-                    out%ts%basin%evpb = out%ts%grid%evpb*shd%FRAC
-                    out%ts%basin%arrd = out%ts%grid%arrd*shd%FRAC
-                    out%ts%basin%gro = out%ts%grid%gro*shd%FRAC
-                    out%ts%basin%rof = out%ts%grid%rof*shd%FRAC
-                    out%ts%basin%rofo = out%ts%grid%rofo*shd%FRAC
-                    out%ts%basin%rofs = out%ts%grid%rofs*shd%FRAC
-                    out%ts%basin%rofb = out%ts%grid%rofb*shd%FRAC
-                    out%ts%basin%rcan = out%ts%grid%rcan*shd%FRAC
-                    out%ts%basin%sncan = out%ts%grid%sncan*shd%FRAC
-                    out%ts%basin%sno = out%ts%grid%sno*shd%FRAC
-                    out%ts%basin%fsno = out%ts%grid%fsno*shd%FRAC
-                    out%ts%basin%wsno = out%ts%grid%wsno*shd%FRAC
-                    out%ts%basin%zpnd = out%ts%grid%zpnd*shd%FRAC
-                    out%ts%basin%pndw = out%ts%grid%pndw*shd%FRAC
-                    out%ts%basin%lzs = out%ts%grid%lzs*shd%FRAC
-                    out%ts%basin%dzs = out%ts%grid%dzs*shd%FRAC
-                end where
-                do j = 1, shd%lc%IGND
-                    where (shd%DA > 0.0)
-                        out%ts%basin%thlq(:, j) = out%ts%grid%thlq(:, j)*shd%FRAC
-                        out%ts%basin%lqws(:, j) = out%ts%grid%lqws(:, j)*shd%FRAC
-                        out%ts%basin%thic(:, j) = out%ts%grid%thic(:, j)*shd%FRAC
-                        out%ts%basin%fzws(:, j) = out%ts%grid%fzws(:, j)*shd%FRAC
-                        out%ts%basin%alws(:, j) = out%ts%grid%alws(:, j)*shd%FRAC
-                    end where
-                end do
-                where (shd%DA > 0.0)
-                    out%ts%basin%stg0w = out%ts%grid%stg0w*shd%FRAC
-                    out%ts%basin%stgw = out%ts%grid%stgw*shd%FRAC
-                    out%ts%basin%dstgw = out%ts%grid%dstgw*shd%FRAC
-                end where
-            end if
-            if (ro%RUNBALEB) then
-                where (shd%DA > 0.0)
-                    out%ts%basin%cmas = out%ts%grid%cmas*shd%FRAC
-                    out%ts%basin%tcan = out%ts%grid%tcan*shd%FRAC
-                    out%ts%basin%tsno = out%ts%grid%tsno*shd%FRAC
-                    out%ts%basin%tpnd = out%ts%grid%tpnd*shd%FRAC
-                    out%ts%basin%alvs = out%ts%grid%alvs*shd%FRAC
-                    out%ts%basin%alir = out%ts%grid%alir*shd%FRAC
-                    out%ts%basin%albt = out%ts%grid%albt*shd%FRAC
-                    out%ts%basin%gte = out%ts%grid%gte*shd%FRAC
-                    out%ts%basin%fsout = out%ts%grid%fsout*shd%FRAC
-                    out%ts%basin%flout = out%ts%grid%flout*shd%FRAC
-                    out%ts%basin%qh = out%ts%grid%qh*shd%FRAC
-                    out%ts%basin%qe = out%ts%grid%qe*shd%FRAC
-                    out%ts%basin%gzero = out%ts%grid%gzero*shd%FRAC
-                end where
-                do j = 1, shd%lc%IGND
-                    where (shd%DA > 0.0)
-                        out%ts%basin%gflx(:, j) = out%ts%grid%gflx(:, j)*shd%FRAC
-                        out%ts%basin%tbar(:, j) = out%ts%grid%tbar(:, j)*shd%FRAC
-                    end where
-                end do
-                where (shd%DA > 0.0)
-                    out%ts%basin%stg0e = out%ts%grid%stg0e*shd%FRAC
-                    out%ts%basin%stge = out%ts%grid%stge*shd%FRAC
-                    out%ts%basin%dstge = out%ts%grid%dstge*shd%FRAC
-                end where
-            end if
-            if (ro%RUNCHNL) then
-                where (shd%DA > 0.0)
-                    out%ts%basin%rff = out%ts%grid%rff*shd%FRAC
-                    out%ts%basin%rchg = out%ts%grid%rchg*shd%FRAC
-                    out%ts%basin%qi = out%ts%grid%qi
-                    out%ts%basin%stgch = out%ts%grid%stgch*shd%FRAC
-                    out%ts%basin%qo = out%ts%grid%qo
-                    out%ts%basin%zlvl = out%ts%grid%zlvl
-                end where
-            end if
-
-            !> Counters.
-            where (out%ts%basin%fsin > 0.0)
-                out%ts%basin%ifsin = 1
-            elsewhere
-                out%ts%basin%ifsin = 0
-            end where
-            where (out%ts%basin%sno > 0.0)
-                out%ts%basin%isno = 1
-            elsewhere
-                out%ts%basin%isno = 0
-            end where
-            where (out%ts%basin%zpnd > 0.0)
-                out%ts%basin%ipnd = 1
-            elsewhere
-                out%ts%basin%ipnd = 0
-            end where
-            where (out%ts%basin%tcan > 0.0)
-                out%ts%basin%ican = 1
-            elsewhere
-                out%ts%basin%ican = 0
-            end where
-
-            !> DA averaged.
-            do i = 1, shd%NAA
-                ii = shd%NEXT(i)
-                if (ii > 0) then
-
-                    !> Counter for time-averaging is either on (1) if any cell has contributed or off (0).
-                    out%ts%basin%ifsin(ii) = max(out%ts%basin%ifsin(ii), out%ts%basin%ifsin(i))
-                    out%ts%basin%ican(ii) = max(out%ts%basin%ican(ii), out%ts%basin%ican(i))
-                    out%ts%basin%isno(ii) = max(out%ts%basin%isno(ii), out%ts%basin%isno(i))
-                    out%ts%basin%ipnd(ii) = max(out%ts%basin%ipnd(ii), out%ts%basin%ipnd(i))
-
-                    !> Update variables.
-                    if (ro%RUNCLIM) then
-                        if (out%ts%basin%fsin(i) /= out%NO_DATA) then
-                            out%ts%basin%fsin(ii) = out%ts%basin%fsin(ii) + out%ts%basin%fsin(i)
-                        end if
-                        if (out%ts%basin%flin(i) /= out%NO_DATA) then
-                            out%ts%basin%flin(ii) = out%ts%basin%flin(ii) + out%ts%basin%flin(i)
-                        end if
-                        if (out%ts%basin%ta(i) /= out%NO_DATA) then
-                            out%ts%basin%ta(ii) = out%ts%basin%ta(ii) + out%ts%basin%ta(i)
-                        end if
-                        if (out%ts%basin%qa(i) /= out%NO_DATA) then
-                            out%ts%basin%qa(ii) = out%ts%basin%qa(ii) + out%ts%basin%qa(i)
-                        end if
-                        if (out%ts%basin%pres(i) /= out%NO_DATA) then
-                            out%ts%basin%pres(ii) = out%ts%basin%pres(ii) + out%ts%basin%pres(i)
-                        end if
-                        if (out%ts%basin%uv(i) /= out%NO_DATA) then
-                            out%ts%basin%uv(ii) = out%ts%basin%uv(ii) + out%ts%basin%uv(i)
-                        end if
-                        if (out%ts%basin%pre(i) /= out%NO_DATA) then
-                            out%ts%basin%pre(ii) = out%ts%basin%pre(ii) + out%ts%basin%pre(i)
-                        end if
-                    end if
-                    if (ro%RUNBALWB) then
-                        if (out%ts%basin%prec(i) /= out%NO_DATA) then
-                            out%ts%basin%prec(ii) = out%ts%basin%prec(ii) + out%ts%basin%prec(i)
-                        end if
-                        if (out%ts%basin%evap(i) /= out%NO_DATA) then
-                            out%ts%basin%evap(ii) = out%ts%basin%evap(ii) + out%ts%basin%evap(i)
-                        end if
-                        if (out%ts%basin%pevp(i) /= out%NO_DATA) then
-                            out%ts%basin%pevp(ii) = out%ts%basin%pevp(ii) + out%ts%basin%pevp(i)
-                        end if
-                        if (out%ts%basin%evpb(i) /= out%NO_DATA) then
-                            out%ts%basin%evpb(ii) = out%ts%basin%evpb(ii) + out%ts%basin%evpb(i)
-                        end if
-                        if (out%ts%basin%arrd(i) /= out%NO_DATA) then
-                            out%ts%basin%arrd(ii) = out%ts%basin%arrd(ii) + out%ts%basin%arrd(i)
-                        end if
-                        if (out%ts%basin%gro(i) /= out%NO_DATA) then
-                            out%ts%basin%gro(ii) = out%ts%basin%gro(ii) + out%ts%basin%gro(i)
-                        end if
-                        if (out%ts%basin%rof(i) /= out%NO_DATA) then
-                            out%ts%basin%rof(ii) = out%ts%basin%rof(ii) + out%ts%basin%rof(i)
-                        end if
-                        if (out%ts%basin%rofo(i) /= out%NO_DATA) then
-                            out%ts%basin%rofo(ii) = out%ts%basin%rofo(ii) + out%ts%basin%rofo(i)
-                        end if
-                        if (out%ts%basin%rofs(i) /= out%NO_DATA) then
-                            out%ts%basin%rofs(ii) = out%ts%basin%rofs(ii) + out%ts%basin%rofs(i)
-                        end if
-                        if (out%ts%basin%rofb(i) /= out%NO_DATA) then
-                            out%ts%basin%rofb(ii) = out%ts%basin%rofb(ii) + out%ts%basin%rofb(i)
-                        end if
-                        if (out%ts%basin%rcan(i) /= out%NO_DATA) then
-                            out%ts%basin%rcan(ii) = out%ts%basin%rcan(ii) + out%ts%basin%rcan(i)
-                        end if
-                        if (out%ts%basin%sncan(i) /= out%NO_DATA) then
-                            out%ts%basin%sncan(ii) = out%ts%basin%sncan(ii) + out%ts%basin%sncan(i)
-                        end if
-                        if (out%ts%basin%sno(i) /= out%NO_DATA) then
-                            out%ts%basin%sno(ii) = out%ts%basin%sno(ii) + out%ts%basin%sno(i)
-                        end if
-                        if (out%ts%basin%fsno(i) /= out%NO_DATA) then
-                            out%ts%basin%fsno(ii) = out%ts%basin%fsno(ii) + out%ts%basin%fsno(i)
-                        end if
-                        if (out%ts%basin%wsno(i) /= out%NO_DATA) then
-                            out%ts%basin%wsno(ii) = out%ts%basin%wsno(ii) + out%ts%basin%wsno(i)
-                        end if
-                        if (out%ts%basin%zpnd(i) /= out%NO_DATA) then
-                            out%ts%basin%zpnd(ii) = out%ts%basin%zpnd(ii) + out%ts%basin%zpnd(i)
-                        end if
-                        if (out%ts%basin%pndw(i) /= out%NO_DATA) then
-                            out%ts%basin%pndw(ii) = out%ts%basin%pndw(ii) + out%ts%basin%pndw(i)
-                        end if
-                        if (out%ts%basin%lzs(i) /= out%NO_DATA) then
-                            out%ts%basin%lzs(ii) = out%ts%basin%lzs(ii) + out%ts%basin%lzs(i)
-                        end if
-                        if (out%ts%basin%dzs(i) /= out%NO_DATA) then
-                            out%ts%basin%dzs(ii) = out%ts%basin%dzs(ii) + out%ts%basin%dzs(i)
-                        end if
-                        where (out%ts%basin%thlq(i, :) /= out%NO_DATA)
-                            out%ts%basin%thlq(ii, :) = out%ts%basin%thlq(ii, :) + out%ts%basin%thlq(i, :)
-                        end where
-                        where (out%ts%basin%lqws(i, :) /= out%NO_DATA)
-                            out%ts%basin%lqws(ii, :) = out%ts%basin%lqws(ii, :) + out%ts%basin%lqws(i, :)
-                        end where
-                        where (out%ts%basin%thic(i, :) /= out%NO_DATA)
-                            out%ts%basin%thic(ii, :) = out%ts%basin%thic(ii, :) + out%ts%basin%thic(i, :)
-                        end where
-                        where (out%ts%basin%fzws(i, :) /= out%NO_DATA)
-                            out%ts%basin%fzws(ii, :) = out%ts%basin%fzws(ii, :) + out%ts%basin%fzws(i, :)
-                        end where
-                        where (out%ts%basin%alws(i, :) /= out%NO_DATA)
-                            out%ts%basin%alws(ii, :) = out%ts%basin%alws(ii, :) + out%ts%basin%alws(i, :)
-                        end where
-                        if (out%ts%basin%stg0w(i) /= out%NO_DATA) then
-                            out%ts%basin%stg0w(ii) = out%ts%basin%stg0w(ii) + out%ts%basin%stg0w(i)
-                        end if
-                        if (out%ts%basin%stgw(i) /= out%NO_DATA) then
-                            out%ts%basin%stgw(ii) = out%ts%basin%stgw(ii) + out%ts%basin%stgw(i)
-                        end if
-                        if (out%ts%basin%dstgw(i) /= out%NO_DATA) then
-                            out%ts%basin%dstgw(ii) = out%ts%basin%dstgw(ii) + out%ts%basin%dstgw(i)
-                        end if
-                    end if
-                    if (ro%RUNBALEB) then
-                        if (out%ts%basin%cmas(i) /= out%NO_DATA) then
-                            out%ts%basin%cmas(ii) = out%ts%basin%cmas(ii) + out%ts%basin%cmas(i)
-                        end if
-                        if (out%ts%basin%tcan(i) /= out%NO_DATA) then
-                            out%ts%basin%tcan(ii) = out%ts%basin%tcan(ii) + out%ts%basin%tcan(i)
-                        end if
-                        if (out%ts%basin%tsno(i) /= out%NO_DATA) then
-                            out%ts%basin%tsno(ii) = out%ts%basin%tsno(ii) + out%ts%basin%tsno(i)
-                        end if
-                        if (out%ts%basin%tpnd(i) /= out%NO_DATA) then
-                            out%ts%basin%tpnd(ii) = out%ts%basin%tpnd(ii) + out%ts%basin%tpnd(i)
-                        end if
-                        if (out%ts%basin%alvs(i) /= out%NO_DATA) then
-                            out%ts%basin%alvs(ii) = out%ts%basin%alvs(ii) + out%ts%basin%alvs(i)
-                        end if
-                        if (out%ts%basin%alir(i) /= out%NO_DATA) then
-                            out%ts%basin%alir(ii) = out%ts%basin%alir(ii) + out%ts%basin%alir(i)
-                        end if
-                        if (out%ts%basin%albt(i) /= out%NO_DATA) then
-                            out%ts%basin%albt(ii) = out%ts%basin%albt(ii) + out%ts%basin%albt(i)
-                        end if
-                        if (out%ts%basin%gte(i) /= out%NO_DATA) then
-                            out%ts%basin%gte(ii) = out%ts%basin%gte(ii) + out%ts%basin%gte(i)
-                        end if
-                        if (out%ts%basin%fsout(i) /= out%NO_DATA) then
-                            out%ts%basin%fsout(ii) = out%ts%basin%fsout(ii) + out%ts%basin%fsout(i)
-                        end if
-                        if (out%ts%basin%flout(i) /= out%NO_DATA) then
-                            out%ts%basin%flout(ii) = out%ts%basin%flout(ii) + out%ts%basin%flout(i)
-                        end if
-                        if (out%ts%basin%qh(i) /= out%NO_DATA) then
-                            out%ts%basin%qh(ii) = out%ts%basin%qh(ii) + out%ts%basin%qh(i)
-                        end if
-                        if (out%ts%basin%qe(i) /= out%NO_DATA) then
-                            out%ts%basin%qe(ii) = out%ts%basin%qe(ii) + out%ts%basin%qe(i)
-                        end if
-                        if (out%ts%basin%gzero(i) /= out%NO_DATA) then
-                            out%ts%basin%gzero(ii) = out%ts%basin%gzero(ii) + out%ts%basin%gzero(i)
-                        end if
-                        where (out%ts%basin%gflx(i, :) /= out%NO_DATA)
-                            out%ts%basin%gflx(ii, :) = out%ts%basin%gflx(ii, :) + out%ts%basin%gflx(i, :)
-                        end where
-                        where (out%ts%basin%tbar(i, :) /= out%NO_DATA)
-                            out%ts%basin%tbar(ii, :) = out%ts%basin%tbar(ii, :) + out%ts%basin%tbar(i, :)
-                        end where
-                        if (out%ts%basin%stg0e(i) /= out%NO_DATA) then
-                            out%ts%basin%stg0e(ii) = out%ts%basin%stg0e(ii) + out%ts%basin%stg0e(i)
-                        end if
-                        if (out%ts%basin%stge(i) /= out%NO_DATA) then
-                            out%ts%basin%stge(ii) = out%ts%basin%stge(ii) + out%ts%basin%stge(i)
-                        end if
-                        if (out%ts%basin%dstge(i) /= out%NO_DATA) then
-                            out%ts%basin%dstge(ii) = out%ts%basin%dstge(ii) + out%ts%basin%dstge(i)
-                        end if
-                    end if
-                    if (ro%RUNCHNL) then
-                        if (out%ts%basin%rff(i) /= out%NO_DATA) then
-                            out%ts%basin%rff(ii) = out%ts%basin%rff(ii) + out%ts%basin%rff(i)
-                        end if
-                        if (out%ts%basin%rchg(i) /= out%NO_DATA) then
-                            out%ts%basin%rchg(ii) = out%ts%basin%rchg(ii) + out%ts%basin%rff(i)
-                        end if
-                        if (out%ts%basin%stgch(i) /= out%NO_DATA) then
-                            out%ts%basin%stgch(ii) = out%ts%basin%stgch(ii) + out%ts%basin%rff(i)
-                        end if
-                    end if
-                end if
-            end do
-
-            !> Normalize.
-            DA = shd%DA/((shd%AL/1000.0)**2)
-            if (ro%RUNCLIM) then
-                where (DA > 0.0)
-                    where (out%ts%basin%fsin /= out%NO_DATA) out%ts%basin%fsin = out%ts%basin%fsin/DA
-                    where (out%ts%basin%flin /= out%NO_DATA) out%ts%basin%flin = out%ts%basin%flin/DA
-                    where (out%ts%basin%ta /= out%NO_DATA) out%ts%basin%ta = out%ts%basin%ta/DA
-                    where (out%ts%basin%qa /= out%NO_DATA) out%ts%basin%qa = out%ts%basin%qa/DA
-                    where (out%ts%basin%pres /= out%NO_DATA) out%ts%basin%pres = out%ts%basin%pres/DA
-                    where (out%ts%basin%uv /= out%NO_DATA) out%ts%basin%uv = out%ts%basin%uv/DA
-                    where (out%ts%basin%pre /= out%NO_DATA) out%ts%basin%pre = out%ts%basin%pre/DA
-                end where
-            end if
-            if (ro%RUNBALWB) then
-                where (DA > 0.0)
-                    where (out%ts%basin%prec /= out%NO_DATA) out%ts%basin%prec = out%ts%basin%prec/DA
-                    where (out%ts%basin%evap /= out%NO_DATA) out%ts%basin%evap = out%ts%basin%evap/DA
-                    where (out%ts%basin%pevp /= out%NO_DATA) out%ts%basin%pevp = out%ts%basin%pevp/DA
-                    where (out%ts%basin%evpb /= out%NO_DATA) out%ts%basin%evpb = out%ts%basin%evpb/DA
-                    where (out%ts%basin%arrd /= out%NO_DATA) out%ts%basin%arrd = out%ts%basin%arrd/DA
-                    where (out%ts%basin%gro /= out%NO_DATA) out%ts%basin%gro = out%ts%basin%gro/DA
-                    where (out%ts%basin%rof /= out%NO_DATA) out%ts%basin%rof = out%ts%basin%rof/DA
-                    where (out%ts%basin%rofo /= out%NO_DATA) out%ts%basin%rofo = out%ts%basin%rofo/DA
-                    where (out%ts%basin%rofs /= out%NO_DATA) out%ts%basin%rofs = out%ts%basin%rofs/DA
-                    where (out%ts%basin%rofb /= out%NO_DATA) out%ts%basin%rofb = out%ts%basin%rofb/DA
-                    where (out%ts%basin%rcan /= out%NO_DATA) out%ts%basin%rcan = out%ts%basin%rcan/DA
-                    where (out%ts%basin%sncan /= out%NO_DATA) out%ts%basin%sncan = out%ts%basin%sncan/DA
-                    where (out%ts%basin%sno /= out%NO_DATA) out%ts%basin%sno = out%ts%basin%sno/DA
-                    where (out%ts%basin%fsno /= out%NO_DATA) out%ts%basin%fsno = out%ts%basin%fsno/DA
-                    where (out%ts%basin%wsno /= out%NO_DATA) out%ts%basin%wsno = out%ts%basin%wsno/DA
-                    where (out%ts%basin%zpnd /= out%NO_DATA) out%ts%basin%zpnd = out%ts%basin%zpnd/DA
-                    where (out%ts%basin%pndw /= out%NO_DATA) out%ts%basin%pndw = out%ts%basin%pndw/DA
-                    where (out%ts%basin%lzs /= out%NO_DATA) out%ts%basin%lzs = out%ts%basin%lzs/DA
-                    where (out%ts%basin%dzs /= out%NO_DATA) out%ts%basin%dzs = out%ts%basin%dzs/DA
-                end where
-                do j = 1, shd%lc%IGND
-                    where (DA > 0.0)
-                        where (out%ts%basin%thlq(:, j) /= out%NO_DATA)
-                            out%ts%basin%thlq(:, j) = out%ts%basin%thlq(:, j)/DA
-                        end where
-                        where (out%ts%basin%lqws(:, j) /= out%NO_DATA)
-                            out%ts%basin%lqws(:, j) = out%ts%basin%lqws(:, j)/DA
-                        end where
-                        where (out%ts%basin%thic(:, j) /= out%NO_DATA)
-                            out%ts%basin%thic(:, j) = out%ts%basin%thic(:, j)/DA
-                        end where
-                        where (out%ts%basin%fzws(:, j) /= out%NO_DATA)
-                            out%ts%basin%fzws(:, j) = out%ts%basin%fzws(:, j)/DA
-                        end where
-                        where (out%ts%basin%alws(:, j) /= out%NO_DATA)
-                            out%ts%basin%alws(:, j) = out%ts%basin%alws(:, j)/DA
-                        end where
-                    end where
-                end do
-                where (DA > 0.0)
-                    where (out%ts%basin%stg0w /= out%NO_DATA) out%ts%basin%stg0w = out%ts%basin%stg0w/DA
-                    where (out%ts%basin%stgw /= out%NO_DATA) out%ts%basin%stgw = out%ts%basin%stgw/DA
-                    where (out%ts%basin%dstgw /= out%NO_DATA) out%ts%basin%dstgw = out%ts%basin%dstgw/DA
-                end where
-            end if
-            if (ro%RUNBALEB) then
-                where (DA > 0.0)
-                    where (out%ts%basin%cmas /= out%NO_DATA) out%ts%basin%cmas = out%ts%basin%cmas/DA
-                    where (out%ts%basin%tcan /= out%NO_DATA) out%ts%basin%tcan = out%ts%basin%tcan/DA
-                    where (out%ts%basin%tsno /= out%NO_DATA) out%ts%basin%tsno = out%ts%basin%tsno/DA
-                    where (out%ts%basin%tpnd /= out%NO_DATA) out%ts%basin%tpnd = out%ts%basin%tpnd/DA
-                    where (out%ts%basin%alvs /= out%NO_DATA) out%ts%basin%alvs = out%ts%basin%alvs/DA
-                    where (out%ts%basin%alir /= out%NO_DATA) out%ts%basin%alir = out%ts%basin%alir/DA
-                    where (out%ts%basin%albt /= out%NO_DATA) out%ts%basin%albt = out%ts%basin%albt/DA
-                    where (out%ts%basin%gte /= out%NO_DATA) out%ts%basin%gte = out%ts%basin%gte/DA
-                    where (out%ts%basin%fsout /= out%NO_DATA) out%ts%basin%fsout = out%ts%basin%fsout/DA
-                    where (out%ts%basin%flout /= out%NO_DATA) out%ts%basin%flout = out%ts%basin%flout/DA
-                    where (out%ts%basin%qh /= out%NO_DATA) out%ts%basin%qh = out%ts%basin%qh/DA
-                    where (out%ts%basin%qe /= out%NO_DATA) out%ts%basin%qe = out%ts%basin%qe/DA
-                    where (out%ts%basin%gzero /= out%NO_DATA) out%ts%basin%gzero = out%ts%basin%gzero/DA
-                end where
-                do j = 1, shd%lc%IGND
-                    where (DA > 0.0)
-                        where (out%ts%basin%gflx(:, j) /= out%NO_DATA)
-                            out%ts%basin%gflx(:, j) = out%ts%basin%gflx(:, j)/DA
-                        end where
-                        where (out%ts%basin%tbar(:, j) /= out%NO_DATA)
-                            out%ts%basin%tbar(:, j) = out%ts%basin%tbar(:, j)/DA
-                        end where
-                    end where
-                end do
-                where (DA > 0.0)
-                    where (out%ts%basin%stg0e /= out%NO_DATA) out%ts%basin%stg0e = out%ts%basin%stg0e/DA
-                    where (out%ts%basin%stge /= out%NO_DATA) out%ts%basin%stge = out%ts%basin%stge/DA
-                    where (out%ts%basin%dstge /= out%NO_DATA) out%ts%basin%dstge = out%ts%basin%dstge/DA
-                end where
-            end if
-            if (ro%RUNCHNL) then
-                where (DA > 0.0)
-                    where (out%ts%basin%rff /= out%NO_DATA) out%ts%basin%rff = out%ts%basin%rff/DA
-                    where (out%ts%basin%rchg /= out%NO_DATA) out%ts%basin%rchg = out%ts%basin%rchg/DA
-                    where (out%ts%basin%stgch /= out%NO_DATA) out%ts%basin%stgch = out%ts%basin%stgch/DA
-                end where
-            end if
+            call output_variables_group_update_ts(shd, out%ts%grid, vs%grid)
+            call output_variables_group_update_ts(shd, out%ts%basin, vs%basin)
         end if
 
     end subroutine
@@ -1636,52 +1343,330 @@ module output_variables
     !>  number of time-steps elapsed "its".
     !>  Override calculations where 'val' was originally equal to the
     !>  'NO_DATA' value.
-    subroutine output_variables_update_values(dat, val, its, fn, cfactorm, cfactora)
+    subroutine output_variables_field_update(dat, val, its, fn)
 
         !> Input variables.
         integer, intent(in) :: its
         real, dimension(:), intent(in) :: val
         character(len = *), intent(in) :: fn
-        real, intent(in), optional :: cfactorm, cfactora
 
         !> Input/output variables.
         real, dimension(:) :: dat
 
-        !> Local variables.
-        real, dimension(size(val)) :: v
-
         !> Reset the variable if this is the first time-step in the series.
-        if (its == 1) dat = 0.0
-
-        !> Apply transforms to local variable.
-        v = val
-        if (present(cfactorm)) v = v*cfactorm
-        if (present(cfactora)) v = v + cfactora
+        if (its == 1) then
+            where (val /= out%NO_DATA) dat = 0.0
+        end if
 
         !> Apply the 'fn' function.
-        !> The default case is to set 'dat' to 'v'.
+        !> The default case is to set 'dat' to 'val'.
         select case (fn)
             case ('sum')
-                dat = dat + v
+                where (dat /= out%NO_DATA .and. val /= out%NO_DATA) dat = dat + val
             case ('avg')
-                dat = (dat*(its - 1) + v)/its
+                where (dat /= out%NO_DATA .and. val /= out%NO_DATA) dat = (dat*(its - 1) + val)/its
             case ('max')
-                dat = max(dat, v)
+                where (dat /= out%NO_DATA .and. val /= out%NO_DATA) dat = max(dat, val)
             case ('min')
-                dat = min(dat, v)
+                where (dat /= out%NO_DATA .and. val /= out%NO_DATA) dat = min(dat, val)
             case default
-                dat = v
+                dat = val
         end select
 
-        !> Assign the 'NO_DATA' value where 'NO_DATA' existed in 'val'.
-        where (val == out%NO_DATA) dat = out%NO_DATA
+    end subroutine
+
+    !> Description:
+    !>  Calculate an average of 'dat' from 'val' for fields that do not
+    !>  necessarily update at every time-step. 'ival' communicates if
+    !>  the value should be updated. 'idat' is the counter of the number
+    !>  of times the variable has been updated for the moving average.
+    subroutine output_variables_field_icount_average(dat, val, idat, ival)
+
+        !> Input variables.
+        real, dimension(:), intent(in) :: val, ival
+
+        !> Input/output variables.
+        real, dimension(:) :: dat, idat
+
+        !> Apply the function.
+        where (val /= out%NO_DATA)
+            where (idat == 0.0) dat = 0.0
+            where (ival /= 0.0) dat = (dat*(idat - 1.0) + val)/idat
+        end where
+
+    end subroutine
+
+    !> Description:
+    !>  Apply a transform to 'dat' using 'cfactorm' and 'cfactora'.
+    !>  Override calculations where 'val' was originally equal to the
+    !>  'NO_DATA' value.
+    subroutine output_variables_field_transform(dat, cfactorm, cfactora)
+
+        !> Input variables.
+        real, dimension(:), intent(in), optional :: cfactorm, cfactora
+
+        !> Input/output variables.
+        real, dimension(:) :: dat
+
+        !> Apply transforms to the variable.
+        if (present(cfactorm)) then
+            where (dat /= out%NO_DATA) dat = dat*cfactorm
+        end if
+        if (present(cfactora)) then
+            where (dat /= out%NO_DATA) dat = dat + cfactora
+        end if
 
     end subroutine
 
     !> Description:
     !>  Update output variables of larger time intervals from the 'ts'
     !>  values.
-    subroutine output_variables_update_series(shd, series, its)
+    subroutine output_variables_group_update(shd, group, group_ts, its)
+
+        !> 'shd_variables' required for 'shd'.
+        !> 'control_variables' required to check for active modelling components.
+        use shd_variables
+        use control_variables
+
+        !> Input variables.
+        integer, intent(in) :: its
+        type(ShedGridParams), intent(in) :: shd
+        type(output_fields), intent(in) :: group_ts
+
+        !> Input/output variables.
+        type(output_fields) group
+
+        !> Local variables.
+        integer j
+
+        !> Update variables.
+        if (associated(group%ifsin)) then
+            call output_variables_field_update(group%ifsin, group_ts%ifsin, its, 'sum')
+        end if
+        if (associated(group%fsin)) then
+            call output_variables_field_update(group%fsin, group_ts%fsin, its, 'avg')
+        end if
+        if (associated(group%fsdr)) then
+            call output_variables_field_update(group%fsdr, group_ts%fsdr, its, 'avg')
+        end if
+        if (associated(group%fsdff)) then
+            call output_variables_field_update(group%fsdff, group_ts%fsdff, its, 'avg')
+        end if
+        if (associated(group%fsout)) then
+            call output_variables_field_update(group%fsout, group_ts%fsout, its, 'avg')
+        end if
+        if (associated(group%flin)) then
+            call output_variables_field_update(group%flin, group_ts%flin, its, 'avg')
+        end if
+        if (associated(group%flout)) then
+            call output_variables_field_update(group%flout, group_ts%flout, its, 'avg')
+        end if
+        if (associated(group%ta)) then
+            call output_variables_field_update(group%ta, group_ts%ta, its, 'avg')
+        end if
+        if (associated(group%qa)) then
+            call output_variables_field_update(group%qa, group_ts%qa, its, 'avg')
+        end if
+        if (associated(group%pres)) then
+            call output_variables_field_update(group%pres, group_ts%pres, its, 'avg')
+        end if
+        if (associated(group%uv)) then
+            call output_variables_field_update(group%uv, group_ts%uv, its, 'avg')
+        end if
+        if (associated(group%wdir)) then
+            call output_variables_field_update(group%wdir, group_ts%wdir, its, 'avg')
+        end if
+        if (associated(group%uu)) then
+            call output_variables_field_update(group%uu, group_ts%uu, its, 'avg')
+        end if
+        if (associated(group%vv)) then
+            call output_variables_field_update(group%vv, group_ts%vv, its, 'avg')
+        end if
+        if (associated(group%pre)) then
+            call output_variables_field_update(group%pre, group_ts%pre, its, 'avg')
+        end if
+        if (associated(group%prern)) then
+            call output_variables_field_update(group%prern, group_ts%prern, its, 'avg')
+        end if
+        if (associated(group%presno)) then
+            call output_variables_field_update(group%presno, group_ts%presno, its, 'avg')
+        end if
+        if (associated(group%prec)) then
+            call output_variables_field_update(group%prec, group_ts%prec, its, 'sum')
+        end if
+        if (associated(group%precrn)) then
+            call output_variables_field_update(group%precrn, group_ts%precrn, its, 'sum')
+        end if
+        if (associated(group%precsno)) then
+            call output_variables_field_update(group%precsno, group_ts%precsno, its, 'sum')
+        end if
+        if (associated(group%ican)) then
+            call output_variables_field_update(group%ican, group_ts%ican, its, 'sum')
+        end if
+        if (associated(group%lqwscan)) then
+            call output_variables_field_update(group%lqwscan, group_ts%lqwscan, its, 'avg')
+        end if
+        if (associated(group%fzwscan)) then
+            call output_variables_field_update(group%fzwscan, group_ts%fzwscan, its, 'avg')
+        end if
+        if (associated(group%cmas)) then
+            call output_variables_field_icount_average(group%cmas, group_ts%cmas, group%ican, group_ts%ican)
+        end if
+        if (associated(group%tcan)) then
+            call output_variables_field_icount_average(group%tcan, group_ts%tcan, group%ican, group_ts%ican)
+        end if
+        if (associated(group%gro)) then
+            call output_variables_field_update(group%gro, group_ts%gro, its, 'avg')
+        end if
+        if (associated(group%isno)) then
+            call output_variables_field_update(group%isno, group_ts%isno, its, 'sum')
+        end if
+        if (associated(group%sno)) then
+            call output_variables_field_update(group%sno, group_ts%sno, its, 'avg')
+        end if
+        if (associated(group%rhosno)) then
+            call output_variables_field_update(group%rhosno, group_ts%rhosno, its, 'avg')
+        end if
+        if (associated(group%zsno)) then
+            call output_variables_field_update(group%zsno, group_ts%zsno, its, 'avg')
+        end if
+        if (associated(group%fsno)) then
+            call output_variables_field_update(group%fsno, group_ts%fsno, its, 'avg')
+        end if
+        if (associated(group%lqwssno)) then
+            call output_variables_field_update(group%lqwssno, group_ts%lqwssno, its, 'avg')
+        end if
+        if (associated(group%tsno)) then
+            call output_variables_field_icount_average(group%tsno, group_ts%tsno, group%isno, group_ts%isno)
+        end if
+        if (associated(group%drainsno)) then
+            call output_variables_field_update(group%drainsno, group_ts%drainsno, its, 'sum')
+        end if
+        if (associated(group%albt)) then
+            call output_variables_field_icount_average(group%albt, group_ts%albt, group%ifsin, group_ts%ifsin)
+        end if
+        if (associated(group%alvs)) then
+            call output_variables_field_icount_average(group%alvs, group_ts%alvs, group%ifsin, group_ts%ifsin)
+        end if
+        if (associated(group%alir)) then
+            call output_variables_field_icount_average(group%alir, group_ts%alir, group%ifsin, group_ts%ifsin)
+        end if
+        if (associated(group%gte)) then
+            call output_variables_field_update(group%gte, group_ts%gte, its, 'avg')
+        end if
+        if (associated(group%ipnd)) then
+            call output_variables_field_update(group%ipnd, group_ts%ipnd, its, 'sum')
+        end if
+        if (associated(group%zpnd)) then
+            call output_variables_field_update(group%zpnd, group_ts%zpnd, its, 'avg')
+        end if
+        if (associated(group%lqwspnd)) then
+            call output_variables_field_update(group%lqwspnd, group_ts%lqwspnd, its, 'avg')
+        end if
+        if (associated(group%tpnd)) then
+            call output_variables_field_icount_average(group%tpnd, group_ts%tpnd, group%ipnd, group_ts%ipnd)
+        end if
+        if (associated(group%potevp)) then
+            call output_variables_field_update(group%potevp, group_ts%potevp, its, 'sum')
+        end if
+        if (associated(group%et)) then
+            call output_variables_field_update(group%et, group_ts%et, its, 'sum')
+        end if
+        if (associated(group%evpb)) then
+            call output_variables_field_update(group%evpb, group_ts%evpb, its, 'avg')
+        end if
+        if (associated(group%arrd)) then
+            call output_variables_field_update(group%arrd, group_ts%arrd, its, 'avg')
+        end if
+        if (associated(group%ovrflw)) then
+            call output_variables_field_update(group%ovrflw, group_ts%ovrflw, its, 'sum')
+        end if
+        if (associated(group%qevp)) then
+            call output_variables_field_update(group%qevp, group_ts%qevp, its, 'avg')
+        end if
+        if (associated(group%qsens)) then
+            call output_variables_field_update(group%qsens, group_ts%qsens, its, 'avg')
+        end if
+        if (associated(group%gzero)) then
+            call output_variables_field_update(group%gzero, group_ts%gzero, its, 'avg')
+        end if
+        do j = 1, shd%lc%IGND
+            if (associated(group%thlqsol)) then
+                call output_variables_field_update(group%thlqsol(:, j), group_ts%thlqsol(:, j), its, 'avg')
+            end if
+            if (associated(group%thicsol)) then
+                call output_variables_field_update(group%thicsol(:, j), group_ts%thicsol(:, j), its, 'avg')
+            end if
+            if (associated(group%lqwssol)) then
+                call output_variables_field_update(group%lqwssol(:, j), group_ts%lqwssol(:, j), its, 'avg')
+            end if
+            if (associated(group%fzwssol)) then
+                call output_variables_field_update(group%fzwssol(:, j), group_ts%fzwssol(:, j), its, 'avg')
+            end if
+            if (associated(group%alwssol)) then
+                call output_variables_field_update(group%alwssol(:, j), group_ts%alwssol(:, j), its, 'avg')
+            end if
+            if (associated(group%tsol)) then
+                call output_variables_field_update(group%tsol(:, j), group_ts%tsol(:, j), its, 'avg')
+            end if
+            if (associated(group%gflx)) then
+                call output_variables_field_update(group%gflx(:, j), group_ts%gflx(:, j), its, 'avg')
+            end if
+            if (associated(group%latflw)) then
+                call output_variables_field_update(group%latflw(:, j), group_ts%latflw(:, j), its, 'sum')
+            end if
+        end do
+        if (associated(group%drainsol)) then
+            call output_variables_field_update(group%drainsol, group_ts%drainsol, its, 'sum')
+        end if
+        if (associated(group%rchg)) then
+            call output_variables_field_update(group%rchg, group_ts%rchg, its, 'sum')
+        end if
+        if (associated(group%stggw)) then
+            call output_variables_field_update(group%stggw, group_ts%stggw, its, 'avg')
+        end if
+        if (associated(group%dzs)) then
+            call output_variables_field_update(group%dzs, group_ts%dzs, its, 'avg')
+        end if
+        if (associated(group%stge)) then
+            if (its == 1) then
+                call output_variables_field_update(group%stg0e, group%stge, its, 'val')
+            end if
+            call output_variables_field_update(group%stge, group_ts%stge, its, 'avg')
+            where (group%stge /= out%NO_DATA) group%dstge = group%stge - group%stg0e
+        end if
+        if (associated(group%stgw)) then
+            if (its == 1) then
+                call output_variables_field_update(group%stg0w, group%stgw, its, 'val')
+            end if
+            call output_variables_field_update(group%stgw, group_ts%stgw, its, 'avg')
+            where (group%stgw /= out%NO_DATA) group%dstgw = group%stgw - group%stg0w
+        end if
+        if (associated(group%rff)) then
+            call output_variables_field_update(group%rff, group_ts%rff, its, 'sum')
+        end if
+        if (associated(group%rof)) then
+            call output_variables_field_update(group%rof, group_ts%rof, its, 'sum')
+        end if
+        if (associated(group%qi)) then
+            call output_variables_field_update(group%qi, group_ts%qi, its, 'avg')
+        end if
+        if (associated(group%qo)) then
+            call output_variables_field_update(group%qo, group_ts%qo, its, 'avg')
+        end if
+        if (associated(group%stgch)) then
+            call output_variables_field_update(group%stgch, group_ts%stgch, its, 'avg')
+        end if
+        if (associated(group%zlvl)) then
+            call output_variables_field_update(group%zlvl, group_ts%zlvl, its, 'avg')
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  Update output variables of larger time intervals from the 'ts'
+    !>  values.
+    subroutine output_variables_series_update(shd, series, its)
 
         !> 'shd_variables' required for 'shd'.
         !> 'control_variables' required to check for active modelling components.
@@ -1695,888 +1680,46 @@ module output_variables
         !> Input/output variables.
         type(output_series) series
 
-        !> Local variables.
-        integer j
-
-        !> Tile-based.
+        !> Update groups.
         if (ro%RUNTILE) then
-
-            !> Meteorological forcing.
-            if (ro%RUNCLIM) then
-                if (associated(series%tile%fsin)) then
-                    call output_variables_update_values(series%tile%fsin, out%ts%tile%fsin, its, 'avg')
-                end if
-                if (associated(series%tile%flin)) then
-                    call output_variables_update_values(series%tile%flin, out%ts%tile%flin, its, 'avg')
-                end if
-                if (associated(series%tile%ta)) then
-                    call output_variables_update_values(series%tile%ta, out%ts%tile%ta, its, 'avg')
-                end if
-                if (associated(series%tile%qa)) then
-                    call output_variables_update_values(series%tile%qa, out%ts%tile%qa, its, 'avg')
-                end if
-                if (associated(series%tile%pres)) then
-                    call output_variables_update_values(series%tile%pres, out%ts%tile%pres, its, 'avg')
-                end if
-                if (associated(series%tile%uv)) then
-                    call output_variables_update_values(series%tile%uv, out%ts%tile%uv, its, 'avg')
-                end if
-                if (associated(series%tile%pre)) then
-                    call output_variables_update_values(series%tile%pre, out%ts%tile%pre, its, 'avg')
-                end if
-            end if
-
-            !> Water balance.
-            if (ro%RUNBALWB) then
-                if (associated(series%tile%prec)) then
-                    call output_variables_update_values(series%tile%prec, out%ts%tile%prec, its, 'sum')
-                end if
-                if (associated(series%tile%evap)) then
-                    call output_variables_update_values(series%tile%evap, out%ts%tile%evap, its, 'sum')
-                end if
-                if (associated(series%tile%pevp)) then
-                    call output_variables_update_values(series%tile%pevp, out%ts%tile%pevp, its, 'sum')
-                end if
-                if (associated(series%tile%evpb)) then
-                    call output_variables_update_values(series%tile%evpb, out%ts%tile%evpb, its, 'avg')
-                end if
-                if (associated(series%tile%arrd)) then
-                    call output_variables_update_values(series%tile%arrd, out%ts%tile%arrd, its, 'avg')
-                end if
-                if (associated(series%tile%gro)) then
-                    call output_variables_update_values(series%tile%gro, out%ts%tile%gro, its, 'avg')
-                end if
-                if (associated(series%tile%rof)) then
-                    call output_variables_update_values(series%tile%rof, out%ts%tile%rof, its, 'sum')
-                end if
-                if (associated(series%tile%rofo)) then
-                    call output_variables_update_values(series%tile%rofo, out%ts%tile%rofo, its, 'sum')
-                end if
-                if (associated(series%tile%rofs)) then
-                    call output_variables_update_values(series%tile%rofs, out%ts%tile%rofs, its, 'sum')
-                end if
-                if (associated(series%tile%rofb)) then
-                    call output_variables_update_values(series%tile%rofb, out%ts%tile%rofb, its, 'sum')
-                end if
-                if (associated(series%tile%rcan)) then
-                    call output_variables_update_values(series%tile%rcan, out%ts%tile%rcan, its, 'avg')
-                end if
-                if (associated(series%tile%sncan)) then
-                    call output_variables_update_values(series%tile%sncan, out%ts%tile%sncan, its, 'avg')
-                end if
-                if (associated(series%tile%zsno)) then
-                    call output_variables_update_values(series%tile%zsno, out%ts%tile%zsno, its, 'avg')
-                end if
-                if (associated(series%tile%rhosno)) then
-                    call output_variables_update_values(series%tile%rhosno, out%ts%tile%rhosno, its, 'avg')
-                end if
-                if (associated(series%tile%sno)) then
-                    call output_variables_update_values(series%tile%sno, out%ts%tile%sno, its, 'avg')
-                end if
-                if (associated(series%tile%fsno)) then
-                    call output_variables_update_values(series%tile%fsno, out%ts%tile%fsno, its, 'avg')
-                end if
-                if (associated(series%tile%wsno)) then
-                    call output_variables_update_values(series%tile%wsno, out%ts%tile%wsno, its, 'avg')
-                end if
-                if (associated(series%tile%zpnd)) then
-                    call output_variables_update_values(series%tile%zpnd, out%ts%tile%zpnd, its, 'avg')
-                end if
-                if (associated(series%tile%pndw)) then
-                    call output_variables_update_values(series%tile%pndw, out%ts%tile%pndw, its, 'avg')
-                end if
-                if (associated(series%tile%lzs)) then
-                    call output_variables_update_values(series%tile%lzs, out%ts%tile%lzs, its, 'avg')
-                end if
-                if (associated(series%tile%dzs)) then
-                    call output_variables_update_values(series%tile%dzs, out%ts%tile%dzs, its, 'avg')
-                end if
-                do j = 1, shd%lc%IGND
-                    if (associated(series%tile%thlq)) then
-                        call output_variables_update_values(series%tile%thlq(:, j), out%ts%tile%thlq(:, j), its, 'avg')
-                    end if
-                    if (associated(series%tile%lqws)) then
-                        call output_variables_update_values(series%tile%lqws(:, j), out%ts%tile%lqws(:, j), its, 'avg')
-                    end if
-                    if (associated(series%tile%thic)) then
-                        call output_variables_update_values(series%tile%thic(:, j), out%ts%tile%thic(:, j), its, 'avg')
-                    end if
-                    if (associated(series%tile%fzws)) then
-                        call output_variables_update_values(series%tile%fzws(:, j), out%ts%tile%fzws(:, j), its, 'avg')
-                    end if
-                    if (associated(series%tile%alws)) then
-                        call output_variables_update_values(series%tile%alws(:, j), out%ts%tile%alws(:, j), its, 'avg')
-                    end if
-                end do
-                if (associated(series%tile%stgw)) then
-                    if (associated(series%tile%stg0w) .and. its == 1) then
-                        call output_variables_update_values(series%tile%stg0w, series%tile%stgw, its, 'val')
-                    end if
-                    call output_variables_update_values(series%tile%stgw, out%ts%tile%stgw, its, 'avg')
-                    if (associated(series%tile%dstgw) .and. associated(series%tile%stg0w)) then
-                        where (series%tile%stgw /= out%NO_DATA) series%tile%dstgw = series%tile%stgw - series%tile%stg0w
-                    end if
-                end if
-            end if
-
-            !> Energy balance.
-            if (ro%RUNBALEB) then
-                if (associated(series%tile%cmas)) then
-                    call output_variables_update_values(series%tile%cmas, out%ts%tile%cmas, its, 'sum')
-                end if
-                if (associated(series%tile%tcan)) then
-                    call output_variables_update_values(series%tile%tcan, out%ts%tile%tcan, its, 'avg')
-                end if
-                if (associated(series%tile%tsno)) then
-                    call output_variables_update_values(series%tile%tsno, out%ts%tile%tsno, its, 'avg')
-                end if
-                if (associated(series%tile%tpnd)) then
-                    call output_variables_update_values(series%tile%tpnd, out%ts%tile%tpnd, its, 'avg')
-                end if
-                if (associated(series%tile%albt)) then
-                    call output_variables_update_values(series%tile%albt, out%ts%tile%albt, its, 'avg')
-                end if
-                if (associated(series%tile%alvs)) then
-                    call output_variables_update_values(series%tile%alvs, out%ts%tile%alvs, its, 'avg')
-                end if
-                if (associated(series%tile%alir)) then
-                    call output_variables_update_values(series%tile%alir, out%ts%tile%alir, its, 'avg')
-                end if
-                if (associated(series%tile%fsout)) then
-                    call output_variables_update_values(series%tile%fsout, out%ts%tile%fsout, its, 'avg')
-                end if
-                if (associated(series%tile%gte)) then
-                    call output_variables_update_values(series%tile%gte, out%ts%tile%gte, its, 'avg')
-                end if
-                if (associated(series%tile%flout)) then
-                    call output_variables_update_values(series%tile%flout, out%ts%tile%flout, its, 'avg')
-                end if
-                if (associated(series%tile%qh)) then
-                    call output_variables_update_values(series%tile%qh, out%ts%tile%qh, its, 'avg')
-                end if
-                if (associated(series%tile%qe)) then
-                    call output_variables_update_values(series%tile%qe, out%ts%tile%qe, its, 'avg')
-                end if
-                if (associated(series%tile%gzero)) then
-                    call output_variables_update_values(series%tile%gzero, out%ts%tile%gzero, its, 'avg')
-                end if
-                do j = 1, shd%lc%IGND
-                    if (associated(series%tile%gflx)) then
-                        call output_variables_update_values(series%tile%gflx(:, j), out%ts%tile%gflx(:, j), its, 'avg')
-                    end if
-                    if (associated(series%tile%tbar)) then
-                        call output_variables_update_values(series%tile%tbar(:, j), out%ts%tile%tbar(:, j), its, 'avg')
-                    end if
-                end do
-                if (associated(series%tile%stge)) then
-                    if (associated(series%tile%stg0e) .and. its == 1) then
-                        call output_variables_update_values(series%tile%stg0e, series%tile%stge, its, 'val')
-                    end if
-                    call output_variables_update_values(series%tile%stge, out%ts%tile%stge, its, 'avg')
-                    if (associated(series%tile%dstge) .and. associated(series%tile%stg0e)) then
-                        where (series%tile%stge /= out%NO_DATA) series%tile%dstge = series%tile%stge - series%tile%stg0e
-                    end if
-                end if
-            end if
+            call output_variables_group_update(shd, series%tile, out%ts%tile, its)
         end if
-
-        !> Grid-based.
         if (ro%RUNGRID) then
-
-            !> Meteorological forcing.
-            if (ro%RUNCLIM) then
-                if (associated(series%grid%fsin)) then
-                    call output_variables_update_values(series%grid%fsin, out%ts%grid%fsin, its, 'avg')
-                end if
-                if (associated(series%grid%flin)) then
-                    call output_variables_update_values(series%grid%flin, out%ts%grid%flin, its, 'avg')
-                end if
-                if (associated(series%grid%ta)) then
-                    call output_variables_update_values(series%grid%ta, out%ts%grid%ta, its, 'avg')
-                end if
-                if (associated(series%grid%qa)) then
-                    call output_variables_update_values(series%grid%qa, out%ts%grid%qa, its, 'avg')
-                end if
-                if (associated(series%grid%pres)) then
-                    call output_variables_update_values(series%grid%pres, out%ts%grid%pres, its, 'avg')
-                end if
-                if (associated(series%grid%uv)) then
-                    call output_variables_update_values(series%grid%uv, out%ts%grid%uv, its, 'avg')
-                end if
-                if (associated(series%grid%pre)) then
-                    call output_variables_update_values(series%grid%pre, out%ts%grid%pre, its, 'avg')
-                end if
-            end if
-
-            !> Water balance.
-            if (ro%RUNBALWB) then
-                if (associated(series%grid%prec)) then
-                    call output_variables_update_values(series%grid%prec, out%ts%grid%prec, its, 'sum')
-                end if
-                if (associated(series%grid%evap)) then
-                    call output_variables_update_values(series%grid%evap, out%ts%grid%evap, its, 'sum')
-                end if
-                if (associated(series%grid%pevp)) then
-                    call output_variables_update_values(series%grid%pevp, out%ts%grid%pevp, its, 'sum')
-                end if
-                if (associated(series%grid%evpb)) then
-                    call output_variables_update_values(series%grid%evpb, out%ts%grid%evpb, its, 'avg')
-                end if
-                if (associated(series%grid%arrd)) then
-                    call output_variables_update_values(series%grid%arrd, out%ts%grid%arrd, its, 'avg')
-                end if
-                if (associated(series%grid%gro)) then
-                    call output_variables_update_values(series%grid%gro, out%ts%grid%gro, its, 'avg')
-                end if
-                if (associated(series%grid%rof)) then
-                    call output_variables_update_values(series%grid%rof, out%ts%grid%rof, its, 'sum')
-                end if
-                if (associated(series%grid%rofo)) then
-                    call output_variables_update_values(series%grid%rofo, out%ts%grid%rofo, its, 'sum')
-                end if
-                if (associated(series%grid%rofs)) then
-                    call output_variables_update_values(series%grid%rofs, out%ts%grid%rofs, its, 'sum')
-                end if
-                if (associated(series%grid%rofb)) then
-                    call output_variables_update_values(series%grid%rofb, out%ts%grid%rofb, its, 'sum')
-                end if
-                if (associated(series%grid%rcan)) then
-                    call output_variables_update_values(series%grid%rcan, out%ts%grid%rcan, its, 'avg')
-                end if
-                if (associated(series%grid%sncan)) then
-                    call output_variables_update_values(series%grid%sncan, out%ts%grid%sncan, its, 'avg')
-                end if
-                if (associated(series%grid%zsno)) then
-                    call output_variables_update_values(series%grid%zsno, out%ts%grid%zsno, its, 'avg')
-                end if
-                if (associated(series%grid%rhosno)) then
-                    call output_variables_update_values(series%grid%rhosno, out%ts%grid%rhosno, its, 'avg')
-                end if
-                if (associated(series%grid%sno)) then
-                    call output_variables_update_values(series%grid%sno, out%ts%grid%sno, its, 'avg')
-                end if
-                if (associated(series%grid%fsno)) then
-                    call output_variables_update_values(series%grid%fsno, out%ts%grid%fsno, its, 'avg')
-                end if
-                if (associated(series%grid%wsno)) then
-                    call output_variables_update_values(series%grid%wsno, out%ts%grid%wsno, its, 'avg')
-                end if
-                if (associated(series%grid%zpnd)) then
-                    call output_variables_update_values(series%grid%zpnd, out%ts%grid%zpnd, its, 'avg')
-                end if
-                if (associated(series%grid%pndw)) then
-                    call output_variables_update_values(series%grid%pndw, out%ts%grid%pndw, its, 'avg')
-                end if
-                if (associated(series%grid%lzs)) then
-                    call output_variables_update_values(series%grid%lzs, out%ts%grid%lzs, its, 'avg')
-                end if
-                if (associated(series%grid%dzs)) then
-                    call output_variables_update_values(series%grid%dzs, out%ts%grid%dzs, its, 'avg')
-                end if
-                do j = 1, shd%lc%IGND
-                    if (associated(series%grid%thlq)) then
-                        call output_variables_update_values(series%grid%thlq(:, j), out%ts%grid%thlq(:, j), its, 'avg')
-                    end if
-                    if (associated(series%grid%lqws)) then
-                        call output_variables_update_values(series%grid%lqws(:, j), out%ts%grid%lqws(:, j), its, 'avg')
-                    end if
-                    if (associated(series%grid%thic)) then
-                        call output_variables_update_values(series%grid%thic(:, j), out%ts%grid%thic(:, j), its, 'avg')
-                    end if
-                    if (associated(series%grid%fzws)) then
-                        call output_variables_update_values(series%grid%fzws(:, j), out%ts%grid%fzws(:, j), its, 'avg')
-                    end if
-                    if (associated(series%grid%alws)) then
-                        call output_variables_update_values(series%grid%alws(:, j), out%ts%grid%alws(:, j), its, 'avg')
-                    end if
-                end do
-                if (associated(series%grid%stgw)) then
-                    if (associated(series%grid%stg0w) .and. its == 1) then
-                        call output_variables_update_values(series%grid%stg0w, series%grid%stgw, its, 'val')
-                    end if
-                    call output_variables_update_values(series%grid%stgw, out%ts%grid%stgw, its, 'avg')
-                    if (associated(series%grid%dstgw) .and. associated(series%grid%stg0w)) then
-                        where (series%grid%stgw /= out%NO_DATA) series%grid%dstgw = series%grid%stgw - series%grid%stg0w
-                    end if
-                end if
-            end if
-
-            !> Energy balance.
-            if (ro%RUNBALEB) then
-                if (associated(series%grid%cmas)) then
-                    call output_variables_update_values(series%grid%cmas, out%ts%grid%cmas, its, 'sum')
-                end if
-                if (associated(series%grid%tcan)) then
-                    call output_variables_update_values(series%grid%tcan, out%ts%grid%tcan, its, 'avg')
-                end if
-                if (associated(series%grid%tsno)) then
-                    call output_variables_update_values(series%grid%tsno, out%ts%grid%tsno, its, 'avg')
-                end if
-                if (associated(series%grid%tpnd)) then
-                    call output_variables_update_values(series%grid%tpnd, out%ts%grid%tpnd, its, 'avg')
-                end if
-                if (associated(series%grid%albt)) then
-                    call output_variables_update_values(series%grid%albt, out%ts%grid%albt, its, 'avg')
-                end if
-                if (associated(series%grid%alvs)) then
-                    call output_variables_update_values(series%grid%alvs, out%ts%grid%alvs, its, 'avg')
-                end if
-                if (associated(series%grid%alir)) then
-                    call output_variables_update_values(series%grid%alir, out%ts%grid%alir, its, 'avg')
-                end if
-                if (associated(series%grid%fsout)) then
-                    call output_variables_update_values(series%grid%fsout, out%ts%grid%fsout, its, 'avg')
-                end if
-                if (associated(series%grid%gte)) then
-                    call output_variables_update_values(series%grid%gte, out%ts%grid%gte, its, 'avg')
-                end if
-                if (associated(series%grid%flout)) then
-                    call output_variables_update_values(series%grid%flout, out%ts%grid%flout, its, 'avg')
-                end if
-                if (associated(series%grid%qh)) then
-                    call output_variables_update_values(series%grid%qh, out%ts%grid%qh, its, 'avg')
-                end if
-                if (associated(series%grid%qe)) then
-                    call output_variables_update_values(series%grid%qe, out%ts%grid%qe, its, 'avg')
-                end if
-                if (associated(series%grid%gzero)) then
-                    call output_variables_update_values(series%grid%gzero, out%ts%grid%gzero, its, 'avg')
-                end if
-                do j = 1, shd%lc%IGND
-                    if (associated(series%grid%gflx)) then
-                        call output_variables_update_values(series%grid%gflx(:, j), out%ts%grid%gflx(:, j), its, 'avg')
-                    end if
-                    if (associated(series%grid%tbar)) then
-                        call output_variables_update_values(series%grid%tbar(:, j), out%ts%grid%tbar(:, j), its, 'avg')
-                    end if
-                end do
-                if (associated(series%grid%stge)) then
-                    if (associated(series%grid%stg0e) .and. its == 1) then
-                        call output_variables_update_values(series%grid%stg0e, series%grid%stge, its, 'val')
-                    end if
-                    call output_variables_update_values(series%grid%stge, out%ts%grid%stge, its, 'avg')
-                    if (associated(series%grid%dstge) .and. associated(series%grid%stg0e)) then
-                        where (series%grid%stge /= out%NO_DATA) series%grid%dstge = series%grid%stge - series%grid%stg0e
-                    end if
-                end if
-            end if
-
-            !> Channels and routing.
-            if (ro%RUNCHNL) then
-                if (associated(series%grid%rff)) then
-                    call output_variables_update_values(series%grid%rff, out%ts%grid%rff, its, 'sum')
-                end if
-                if (associated(series%grid%rchg)) then
-                    call output_variables_update_values(series%grid%rchg, out%ts%grid%rchg, its, 'sum')
-                end if
-                if (associated(series%grid%qi)) then
-                    call output_variables_update_values(series%grid%qi, out%ts%grid%qi, its, 'avg')
-                end if
-                if (associated(series%grid%stgch)) then
-                    call output_variables_update_values(series%grid%stgch, out%ts%grid%stgch, its, 'avg')
-                end if
-                if (associated(series%grid%qo)) then
-                    call output_variables_update_values(series%grid%qo, out%ts%grid%qo, its, 'avg')
-                end if
-                if (associated(series%grid%zlvl)) then
-                    call output_variables_update_values(series%grid%zlvl, out%ts%grid%zlvl, its, 'avg')
-                end if
-            end if
-
-            !> DA averaged.
-            if (ro%RUNCLIM) then
-                if (associated(series%basin%fsin)) then
-                    call output_variables_update_values(series%basin%fsin, out%ts%basin%fsin, its, 'avg')
-                end if
-                if (associated(series%basin%flin)) then
-                    call output_variables_update_values(series%basin%flin, out%ts%basin%flin, its, 'avg')
-                end if
-                if (associated(series%basin%ta)) then
-                    call output_variables_update_values(series%basin%ta, out%ts%basin%ta, its, 'avg')
-                end if
-                if (associated(series%basin%qa)) then
-                    call output_variables_update_values(series%basin%qa, out%ts%basin%qa, its, 'avg')
-                end if
-                if (associated(series%basin%pres)) then
-                    call output_variables_update_values(series%basin%pres, out%ts%basin%pres, its, 'avg')
-                end if
-                if (associated(series%basin%uv)) then
-                    call output_variables_update_values(series%basin%uv, out%ts%basin%uv, its, 'avg')
-                end if
-                if (associated(series%basin%pre)) then
-                    call output_variables_update_values(series%basin%pre, out%ts%basin%pre, its, 'avg')
-                end if
-            end if
-            if (ro%RUNBALWB) then
-                if (associated(series%basin%prec)) then
-                    call output_variables_update_values(series%basin%prec, out%ts%basin%prec, its, 'sum')
-                end if
-                if (associated(series%basin%evap)) then
-                    call output_variables_update_values(series%basin%evap, out%ts%basin%evap, its, 'sum')
-                end if
-                if (associated(series%basin%pevp)) then
-                    call output_variables_update_values(series%basin%pevp, out%ts%basin%pevp, its, 'sum')
-                end if
-                if (associated(series%basin%evpb)) then
-                    call output_variables_update_values(series%basin%evpb, out%ts%basin%evpb, its, 'avg')
-                end if
-                if (associated(series%basin%arrd)) then
-                    call output_variables_update_values(series%basin%arrd, out%ts%basin%arrd, its, 'avg')
-                end if
-                if (associated(series%basin%gro)) then
-                    call output_variables_update_values(series%basin%gro, out%ts%basin%gro, its, 'avg')
-                end if
-                if (associated(series%basin%rof)) then
-                    call output_variables_update_values(series%basin%rof, out%ts%basin%rof, its, 'sum')
-                end if
-                if (associated(series%basin%rofo)) then
-                    call output_variables_update_values(series%basin%rofo, out%ts%basin%rofo, its, 'sum')
-                end if
-                if (associated(series%basin%rofs)) then
-                    call output_variables_update_values(series%basin%rofs, out%ts%basin%rofs, its, 'sum')
-                end if
-                if (associated(series%basin%rofb)) then
-                    call output_variables_update_values(series%basin%rofb, out%ts%basin%rofb, its, 'sum')
-                end if
-                if (associated(series%basin%rcan)) then
-                    call output_variables_update_values(series%basin%rcan, out%ts%basin%rcan, its, 'avg')
-                end if
-                if (associated(series%basin%sncan)) then
-                    call output_variables_update_values(series%basin%sncan, out%ts%basin%sncan, its, 'avg')
-                end if
-                if (associated(series%basin%sno)) then
-                    call output_variables_update_values(series%basin%sno, out%ts%basin%sno, its, 'avg')
-                end if
-                if (associated(series%basin%fsno)) then
-                    call output_variables_update_values(series%basin%fsno, out%ts%basin%fsno, its, 'avg')
-                end if
-                if (associated(series%basin%wsno)) then
-                    call output_variables_update_values(series%basin%wsno, out%ts%basin%wsno, its, 'avg')
-                end if
-                if (associated(series%basin%zpnd)) then
-                    call output_variables_update_values(series%basin%zpnd, out%ts%basin%zpnd, its, 'avg')
-                end if
-                if (associated(series%basin%pndw)) then
-                    call output_variables_update_values(series%basin%pndw, out%ts%basin%pndw, its, 'avg')
-                end if
-                if (associated(series%basin%lzs)) then
-                    call output_variables_update_values(series%basin%lzs, out%ts%basin%lzs, its, 'avg')
-                end if
-                if (associated(series%basin%dzs)) then
-                    call output_variables_update_values(series%basin%dzs, out%ts%basin%dzs, its, 'avg')
-                end if
-                do j = 1, shd%lc%IGND
-                    if (associated(series%basin%thlq)) then
-                        call output_variables_update_values(series%basin%thlq(:, j), out%ts%basin%thlq(:, j), its, 'avg')
-                    end if
-                    if (associated(series%basin%lqws)) then
-                        call output_variables_update_values(series%basin%lqws(:, j), out%ts%basin%lqws(:, j), its, 'avg')
-                    end if
-                    if (associated(series%basin%thic)) then
-                        call output_variables_update_values(series%basin%thic(:, j), out%ts%basin%thic(:, j), its, 'avg')
-                    end if
-                    if (associated(series%basin%fzws)) then
-                        call output_variables_update_values(series%basin%fzws(:, j), out%ts%basin%fzws(:, j), its, 'avg')
-                    end if
-                    if (associated(series%basin%alws)) then
-                        call output_variables_update_values(series%basin%alws(:, j), out%ts%basin%alws(:, j), its, 'avg')
-                    end if
-                end do
-                if (associated(series%basin%stgw)) then
-                    if (associated(series%basin%stg0w) .and. its == 1) then
-                        call output_variables_update_values(series%basin%stg0w, series%basin%stgw, its, 'val')
-                    end if
-                    call output_variables_update_values(series%basin%stgw, out%ts%basin%stgw, its, 'avg')
-                    if (associated(series%basin%dstgw) .and. associated(series%basin%stg0w)) then
-                        where (series%basin%stgw /= out%NO_DATA) series%basin%dstgw = series%basin%stgw - series%basin%stg0w
-                    end if
-                end if
-            end if
-            if (ro%RUNBALEB) then
-                if (associated(series%basin%cmas)) then
-                    call output_variables_update_values(series%basin%cmas, out%ts%basin%cmas, its, 'sum')
-                end if
-                if (associated(series%basin%tcan)) then
-                    call output_variables_update_values(series%basin%tcan, out%ts%basin%tcan, its, 'avg')
-                end if
-                if (associated(series%basin%tsno)) then
-                    call output_variables_update_values(series%basin%tsno, out%ts%basin%tsno, its, 'avg')
-                end if
-                if (associated(series%basin%tpnd)) then
-                    call output_variables_update_values(series%basin%tpnd, out%ts%basin%tpnd, its, 'avg')
-                end if
-                if (associated(series%basin%albt)) then
-                    call output_variables_update_values(series%basin%albt, out%ts%basin%albt, its, 'avg')
-                end if
-                if (associated(series%basin%alvs)) then
-                    call output_variables_update_values(series%basin%alvs, out%ts%basin%alvs, its, 'avg')
-                end if
-                if (associated(series%basin%alir)) then
-                    call output_variables_update_values(series%basin%alir, out%ts%basin%alir, its, 'avg')
-                end if
-                if (associated(series%basin%fsout)) then
-                    call output_variables_update_values(series%basin%fsout, out%ts%basin%fsout, its, 'avg')
-                end if
-                if (associated(series%basin%gte)) then
-                    call output_variables_update_values(series%basin%gte, out%ts%basin%gte, its, 'avg')
-                end if
-                if (associated(series%basin%flout)) then
-                    call output_variables_update_values(series%basin%flout, out%ts%basin%flout, its, 'avg')
-                end if
-                if (associated(series%basin%qh)) then
-                    call output_variables_update_values(series%basin%qh, out%ts%basin%qh, its, 'avg')
-                end if
-                if (associated(series%basin%qe)) then
-                    call output_variables_update_values(series%basin%qe, out%ts%basin%qe, its, 'avg')
-                end if
-                if (associated(series%basin%gzero)) then
-                    call output_variables_update_values(series%basin%gzero, out%ts%basin%gzero, its, 'avg')
-                end if
-                do j = 1, shd%lc%IGND
-                    if (associated(series%basin%gflx)) then
-                        call output_variables_update_values(series%basin%gflx(:, j), out%ts%basin%gflx(:, j), its, 'avg')
-                    end if
-                    if (associated(series%basin%tbar)) then
-                        call output_variables_update_values(series%basin%tbar(:, j), out%ts%basin%tbar(:, j), its, 'avg')
-                    end if
-                end do
-                if (associated(series%basin%stge)) then
-                    if (associated(series%basin%stg0e) .and. its == 1) then
-                        call output_variables_update_values(series%basin%stg0e, series%basin%stge, its, 'val')
-                    end if
-                    call output_variables_update_values(series%basin%stge, out%ts%basin%stge, its, 'avg')
-                    if (associated(series%basin%dstge) .and. associated(series%basin%stg0e)) then
-                        where (series%basin%stge /= out%NO_DATA) series%basin%dstge = series%basin%stge - series%basin%stg0e
-                    end if
-                end if
-            end if
-            if (ro%RUNCHNL) then
-                if (associated(series%basin%rff)) then
-                    call output_variables_update_values(series%basin%rff, out%ts%basin%rff, its, 'sum')
-                end if
-                if (associated(series%basin%rchg)) then
-                    call output_variables_update_values(series%basin%rchg, out%ts%basin%rchg, its, 'sum')
-                end if
-                if (associated(series%basin%qi)) then
-                    call output_variables_update_values(series%basin%qi, out%ts%basin%qi, its, 'avg')
-                end if
-                if (associated(series%basin%stgch)) then
-                    call output_variables_update_values(series%basin%stgch, out%ts%basin%stgch, its, 'avg')
-                end if
-                if (associated(series%basin%qo)) then
-                    call output_variables_update_values(series%basin%qo, out%ts%basin%qo, its, 'avg')
-                end if
-                if (associated(series%basin%zlvl)) then
-                    call output_variables_update_values(series%basin%zlvl, out%ts%basin%zlvl, its, 'avg')
-                end if
-            end if
+            call output_variables_group_update(shd, series%grid, out%ts%grid, its)
+            call output_variables_group_update(shd, series%basin, out%ts%basin, its)
         end if
 
     end subroutine
 
     !> Description:
     !>  Update output variables from current model states and variables.
-    subroutine output_variables_update(shd, cm)
+    subroutine output_variables_update(shd)
 
         !> 'shd_variables' required for 'shd'.
-        !> 'climate_forcing' required for 'cm'.
         !> 'model_dates' required for 'ic' (counter and time-stepping).
         use shd_variables
-        use climate_forcing
         use model_dates
 
         !> Input variables.
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
         !> Update 'ts' values.
-        call output_variables_update_ts(shd, cm)
+        call output_variables_update_ts(shd)
 
         !> Totals (e.g., accumulated).
-        call output_variables_update_series(shd, out%tot, ic%ts_count)
+        call output_variables_series_update(shd, out%tot, ic%ts_count)
 
         !> Yearly.
-        call output_variables_update_series(shd, out%y, ic%ts_yearly)
+        call output_variables_series_update(shd, out%y, ic%ts_yearly)
 
         !> Monthly.
-        call output_variables_update_series(shd, out%m, ic%ts_monthly)
+        call output_variables_series_update(shd, out%m, ic%ts_monthly)
 
         !> Daily.
-        call output_variables_update_series(shd, out%d, ic%ts_daily)
+        call output_variables_series_update(shd, out%d, ic%ts_daily)
 
         !> Hourly.
-        call output_variables_update_series(shd, out%h, ic%ts_hourly)
-
-    end subroutine
-
-    !> Description:
-    !>  Set output variables to the 'NO_DATA' value.
-    subroutine output_variables_reset_fields(shd, series)
-
-        !> 'shd_variables' required for 'shd'.
-        !> 'control_variables' required to check for active modelling components.
-        use shd_variables
-        use control_variables
-
-        !> Input variables.
-        type(ShedGridParams), intent(in) :: shd
-
-        !> Input/output variables.
-        type(output_series) series
-
-        !> Tile-based.
-        if (ro%RUNTILE) then
-
-            !> Meteorological forcing.
-            if (ro%RUNCLIM) then
-                series%tile%fsin = out%NO_DATA
-                series%tile%ifsin = 0.0
-                series%tile%flin = out%NO_DATA
-                series%tile%ta = out%NO_DATA
-                series%tile%qa = out%NO_DATA
-                series%tile%pres = out%NO_DATA
-                series%tile%uv = out%NO_DATA
-                series%tile%pre = out%NO_DATA
-            end if
-
-            !> Water balance.
-            if (ro%RUNBALWB) then
-                series%tile%prec = out%NO_DATA
-                series%tile%evap = out%NO_DATA
-                series%tile%pevp = out%NO_DATA
-                series%tile%evpb = out%NO_DATA
-                series%tile%arrd = out%NO_DATA
-                series%tile%gro = out%NO_DATA
-                series%tile%rof = out%NO_DATA
-                series%tile%rofo = out%NO_DATA
-                series%tile%rofs = out%NO_DATA
-                series%tile%rofb = out%NO_DATA
-                series%tile%rcan = out%NO_DATA
-                series%tile%sncan = out%NO_DATA
-                series%tile%zsno = out%NO_DATA
-                series%tile%rhosno = out%NO_DATA
-                series%tile%sno = out%NO_DATA
-                series%tile%isno = 0.0
-                series%tile%fsno = out%NO_DATA
-                series%tile%wsno = out%NO_DATA
-                series%tile%zpnd = out%NO_DATA
-                series%tile%ipnd = 0.0
-                series%tile%pndw = out%NO_DATA
-                series%tile%lzs = out%NO_DATA
-                series%tile%dzs = out%NO_DATA
-                series%tile%thlq = out%NO_DATA
-                series%tile%lqws = out%NO_DATA
-                series%tile%thic = out%NO_DATA
-                series%tile%fzws = out%NO_DATA
-                series%tile%alws = out%NO_DATA
-                series%tile%stg0w = series%tile%stgw
-                series%tile%stgw = 0.0
-                series%tile%dstgw = 0.0
-            end if
-
-            !> Energy balance.
-            if (ro%RUNBALEB) then
-                series%tile%cmas = out%NO_DATA
-                series%tile%tcan = out%NO_DATA
-                series%tile%ican = 0.0
-                series%tile%tsno = out%NO_DATA
-                series%tile%tpnd = out%NO_DATA
-                series%tile%albt = out%NO_DATA
-                series%tile%alvs = out%NO_DATA
-                series%tile%alir = out%NO_DATA
-                series%tile%fsout = out%NO_DATA
-                series%tile%gte = out%NO_DATA
-                series%tile%flout = out%NO_DATA
-                series%tile%qh = out%NO_DATA
-                series%tile%qe = out%NO_DATA
-                series%tile%gzero = out%NO_DATA
-                series%tile%gflx = out%NO_DATA
-                series%tile%tbar = out%NO_DATA
-                series%tile%stg0e = series%tile%stge
-                series%tile%stge = 0.0
-                series%tile%dstge = 0.0
-            end if
-        end if
-
-        !> Grid-based.
-        if (ro%RUNGRID) then
-
-            !> Meteorological forcing.
-            if (ro%RUNCLIM) then
-                series%grid%pre = out%NO_DATA
-                series%grid%fsin = out%NO_DATA
-                series%grid%ifsin = 0.0
-                series%grid%flin = out%NO_DATA
-                series%grid%ta = out%NO_DATA
-                series%grid%qa = out%NO_DATA
-                series%grid%pres = out%NO_DATA
-                series%grid%uv = out%NO_DATA
-            end if
-
-            !> Water balance.
-            if (ro%RUNBALWB) then
-                series%grid%prec = out%NO_DATA
-                series%grid%evap = out%NO_DATA
-                series%grid%pevp = out%NO_DATA
-                series%grid%evpb = out%NO_DATA
-                series%grid%arrd = out%NO_DATA
-                series%grid%gro = out%NO_DATA
-                series%grid%rof = out%NO_DATA
-                series%grid%rofo = out%NO_DATA
-                series%grid%rofs = out%NO_DATA
-                series%grid%rofb = out%NO_DATA
-                series%grid%rcan = out%NO_DATA
-                series%grid%sncan = out%NO_DATA
-                series%grid%zsno = out%NO_DATA
-                series%grid%rhosno = out%NO_DATA
-                series%grid%sno = out%NO_DATA
-                series%grid%isno = 0.0
-                series%grid%fsno = out%NO_DATA
-                series%grid%wsno = out%NO_DATA
-                series%grid%zpnd = out%NO_DATA
-                series%grid%ipnd = 0.0
-                series%grid%pndw = out%NO_DATA
-                series%grid%lzs = out%NO_DATA
-                series%grid%dzs = out%NO_DATA
-                series%grid%thlq = out%NO_DATA
-                series%grid%lqws = out%NO_DATA
-                series%grid%thic = out%NO_DATA
-                series%grid%fzws = out%NO_DATA
-                series%grid%alws = out%NO_DATA
-                series%grid%stg0w = series%grid%stgw
-                series%grid%stgw = 0.0
-                series%grid%dstgw = 0.0
-            end if
-
-            !> Energy balance.
-            if (ro%RUNBALEB) then
-                series%grid%cmas = out%NO_DATA
-                series%grid%tcan = out%NO_DATA
-                series%grid%ican = 0.0
-                series%grid%tsno = out%NO_DATA
-                series%grid%tpnd = out%NO_DATA
-                series%grid%albt = out%NO_DATA
-                series%grid%alvs = out%NO_DATA
-                series%grid%alir = out%NO_DATA
-                series%grid%fsout = out%NO_DATA
-                series%grid%gte = out%NO_DATA
-                series%grid%flout = out%NO_DATA
-                series%grid%qh = out%NO_DATA
-                series%grid%qe = out%NO_DATA
-                series%grid%gzero = out%NO_DATA
-                series%grid%gflx = out%NO_DATA
-                series%grid%tbar = out%NO_DATA
-                series%grid%stg0e = series%grid%stge
-                series%grid%stge = 0.0
-                series%grid%dstge = 0.0
-            end if
-
-            !> Channels and routing.
-            if (ro%RUNCHNL) then
-                series%grid%rff = out%NO_DATA
-                series%grid%rchg = out%NO_DATA
-                series%grid%qi = out%NO_DATA
-                series%grid%stgch = out%NO_DATA
-                series%grid%qo = out%NO_DATA
-                series%grid%zlvl = out%NO_DATA
-            end if
-
-            !> Meteorological forcing.
-            if (ro%RUNCLIM) then
-                series%basin%pre = out%NO_DATA
-                series%basin%fsin = out%NO_DATA
-                series%basin%ifsin = 0.0
-                series%basin%flin = out%NO_DATA
-                series%basin%ta = out%NO_DATA
-                series%basin%qa = out%NO_DATA
-                series%basin%pres = out%NO_DATA
-                series%basin%uv = out%NO_DATA
-            end if
-
-            !> Water balance.
-            if (ro%RUNBALWB) then
-                series%basin%prec = out%NO_DATA
-                series%basin%evap = out%NO_DATA
-                series%basin%pevp = out%NO_DATA
-                series%basin%evpb = out%NO_DATA
-                series%basin%arrd = out%NO_DATA
-                series%basin%gro = out%NO_DATA
-                series%basin%rof = out%NO_DATA
-                series%basin%rofo = out%NO_DATA
-                series%basin%rofs = out%NO_DATA
-                series%basin%rofb = out%NO_DATA
-                series%basin%rcan = out%NO_DATA
-                series%basin%sncan = out%NO_DATA
-                series%basin%sno = out%NO_DATA
-                series%basin%isno = 0.0
-                series%basin%fsno = out%NO_DATA
-                series%basin%wsno = out%NO_DATA
-                series%basin%zpnd = out%NO_DATA
-                series%basin%ipnd = 0.0
-                series%basin%pndw = out%NO_DATA
-                series%basin%lzs = out%NO_DATA
-                series%basin%dzs = out%NO_DATA
-                series%basin%thlq = out%NO_DATA
-                series%basin%lqws = out%NO_DATA
-                series%basin%thic = out%NO_DATA
-                series%basin%fzws = out%NO_DATA
-                series%basin%alws = out%NO_DATA
-                series%basin%stg0w = series%basin%stgw
-                series%basin%stgw = 0.0
-                series%basin%dstgw = 0.0
-            end if
-
-            !> Energy balance.
-            if (ro%RUNBALEB) then
-                series%basin%cmas = out%NO_DATA
-                series%basin%tcan = out%NO_DATA
-                series%basin%ican = 0.0
-                series%basin%tsno = out%NO_DATA
-                series%basin%tpnd = out%NO_DATA
-                series%basin%albt = out%NO_DATA
-                series%basin%alvs = out%NO_DATA
-                series%basin%alir = out%NO_DATA
-                series%basin%fsout = out%NO_DATA
-                series%basin%gte = out%NO_DATA
-                series%basin%flout = out%NO_DATA
-                series%basin%qh = out%NO_DATA
-                series%basin%qe = out%NO_DATA
-                series%basin%gzero = out%NO_DATA
-                series%basin%gflx = out%NO_DATA
-                series%basin%tbar = out%NO_DATA
-                series%basin%stg0e = series%basin%stge
-                series%basin%stge = 0.0
-                series%basin%dstge = 0.0
-            end if
-
-            !> Channels and routing.
-            if (ro%RUNCHNL) then
-                series%basin%rff = out%NO_DATA
-                series%basin%rchg = out%NO_DATA
-                series%basin%qi = out%NO_DATA
-                series%basin%stgch = out%NO_DATA
-                series%basin%qo = out%NO_DATA
-                series%basin%zlvl = out%NO_DATA
-            end if
-        end if
-
-    end subroutine
-
-    !> Description:
-    !>  Reset output variables to the 'NO_DATA' value.
-    subroutine output_variables_reset(shd, cm)
-
-        !> 'shd_variables' required for 'shd'.
-        !> 'climate_forcing' required for 'cm'.
-        use shd_variables
-        use climate_forcing
-
-        !> Input variables.
-        type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
-
-        !> Set variables to the 'NO_DATA' value.
-        call output_variables_reset_fields(shd, out%ts)
+        call output_variables_series_update(shd, out%h, ic%ts_hourly)
 
     end subroutine
 

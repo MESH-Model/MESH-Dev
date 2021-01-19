@@ -5,15 +5,19 @@ module ensim_io
 
     implicit none
 
-    integer, parameter :: MAX_WORDS = 500, MAX_WORD_LENGTH = 50, MAX_LINE_LENGTH = 5000
+    integer, parameter :: MAX_WORDS = 500, MAX_WORD_LENGTH = 200, MAX_LINE_LENGTH = 5000
 
     interface get_keyword_value
-        module procedure get_keyword_value_cfield
-        module procedure get_keyword_value_ffield
-        module procedure get_keyword_value_ifield
-        module procedure get_keyword_value_cvalue
-        module procedure get_keyword_value_fvalue
-        module procedure get_keyword_value_ivalue
+        module procedure get_keyword_field_char
+        module procedure get_keyword_field_double
+        module procedure get_keyword_field_float
+        module procedure get_keyword_field_long
+        module procedure get_keyword_field_int
+        module procedure get_keyword_value_char
+        module procedure get_keyword_value_double
+        module procedure get_keyword_value_float
+        module procedure get_keyword_value_long
+        module procedure get_keyword_value_int
     end interface
 
     interface validate_header_spatial
@@ -22,8 +26,10 @@ module ensim_io
     end interface
 
     interface r2c_to_rank
-        module procedure r2c_to_rank_ffield
-        module procedure r2c_to_rank_ifield
+        module procedure r2c_to_rank_field_double
+        module procedure r2c_to_rank_field_float
+        module procedure r2c_to_rank_field_long
+        module procedure r2c_to_rank_field_int
     end interface
 
     type ensim_keyword
@@ -62,7 +68,9 @@ module ensim_io
         open(iun, file = fpath, status = 'old', action = 'read', iostat = ierr)
 
         !> Print error if unable to open file.
-        if (ierr /= 0) call print_error('Unable to open the file: ' // trim(fpath))
+        if (ierr /= 0) then
+            call print_error('Unable to open the file: ' // trim(fpath))
+        end if
 
         return
 
@@ -135,8 +143,8 @@ module ensim_io
 
         !> Local variables.
         character(len = MAX_LINE_LENGTH) line
-        character(len = MAX_WORD_LENGTH), dimension(MAX_WORDS) :: args
-        integer n, nargs
+        character(len = MAX_WORD_LENGTH), dimension(MAX_WORDS) :: args, temp
+        integer n, j, i, nargs
 
         !> Initialize keyword count and return status.
         nkeyword = 0
@@ -154,14 +162,14 @@ module ensim_io
 
         !> Return if an error was encountered while reading lines.
         if (ierr /= 0) then
-            call print_warning('An error occurred reading the header in the file.', PAD_3)
+            call print_warning('An error occurred reading the header in the file.')
             goto 999
         end if
 
         !> Allocate the keywords; return on error.
         allocate(vkeyword(nkeyword), stat = ierr)
         if (ierr /= 0) then
-            call print_warning('An error occurred allocating keywords in the file.', PAD_3)
+            call print_warning('An error occurred allocating keywords in the file.')
             goto 999
         end if
 
@@ -177,14 +185,33 @@ module ensim_io
                 call parse(line, ' ', args, nargs)
                 vkeyword(n)%keyword = args(1)
                 if (nargs > 1) then
-                    allocate(vkeyword(n)%words(nargs - 1), stat = ierr)
+                    temp(:) = ''
+                    i = 1
+                    j = 1
+                    do while (j < nargs)
+                        if (index(args(j + 1), '"') == 1) then
+                            temp(i) = trim(args(j + 1)(2:))
+                            j = j + 1
+                            do while (j < nargs .and. index(args(j + 1), '"') == 0)
+                                temp(i) = trim(temp(i)) // ' ' // trim(args(j + 1))
+                                j = j + 1
+                            end do
+                            temp(i) = trim(temp(i)) // ' ' // trim(args(j + 1)(:index(args(j + 1), '"') - 1))
+                        else
+                            temp(i) = trim(args(j + 1))
+                        end if
+                        j = j + 1
+                        i = i + 1
+                    end do
+                    i = i - 1
+                    allocate(vkeyword(n)%words(i), stat = ierr)
                     if (ierr /= 0) exit
-                    vkeyword(n)%words = args(2:nargs)
+                    vkeyword(n)%words = temp(1:i)
                 end if
             end if
         end do
         if (ierr /= 0) then
-            call print_warning('An error occurred parsing the keyword and its values.', PAD_3)
+            call print_warning('An error occurred parsing the keyword and its values.')
             goto 999
         end if
 
@@ -230,13 +257,13 @@ module ensim_io
 
         !> Return if no attributes were found.
         if (nattr == 0) then
-            call print_warning('No attributes were found.', PAD_3)
+            call print_warning('No attributes were found.')
             goto 999
         end if
 
         allocate(vattr(nattr), stat = ierr)
         if (ierr /= 0) then
-            call print_warning('An error occurred allocating attributes in the file.', PAD_3)
+            call print_warning('An error occurred allocating attributes in the file.')
             goto 999
         end if
 
@@ -245,7 +272,7 @@ module ensim_io
             if (lowercase(vkeyword(n)%keyword(1:10)) /= ':attribute') cycle
             call value(vkeyword(n)%words(1), j, ierr)
             if (ierr /= 0) then
-                call print_warning("Bad attribute definition in '" // trim(vkeyword(n)%keyword) // "'.", PAD_3)
+                call print_warning("Bad attribute definition in '" // trim(vkeyword(n)%keyword) // "'.")
                 cycle
             end if
             select case (lowercase(vkeyword(n)%keyword))
@@ -272,7 +299,7 @@ module ensim_io
     end subroutine
 
     !> Description: 'get_keyword_value' for a vector of type character.
-    subroutine get_keyword_value_cfield(iun, vkeyword, nkeyword, cname, cfield, ncol, ierr)
+    subroutine get_keyword_field_char(iun, vkeyword, nkeyword, cname, cfield, ncol, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -301,7 +328,7 @@ module ensim_io
                     write(fmt2, FMT_GEN) ncol
                     call print_warning( &
                         "The number of fields in '" // trim(cname) // "' is " // trim(adjustl(fmt1)) // &
-                        ' but ' // trim(adjustl(fmt2)) // ' were expected.', PAD_3)
+                        ' but ' // trim(adjustl(fmt2)) // ' were expected.')
                 end if
                 exit
             end if
@@ -311,8 +338,8 @@ module ensim_io
 
     end subroutine
 
-    !> Description: 'get_keyword_value' for a vector of type real.
-    subroutine get_keyword_value_ffield(iun, vkeyword, nkeyword, cname, ffield, ncol, ierr)
+    !> Description: 'get_keyword_value' for a vector of type 8-byte real.
+    subroutine get_keyword_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -321,7 +348,7 @@ module ensim_io
 
         !> Output variables.
         integer, intent(out) :: ierr
-        real, dimension(ncol), intent(out) :: ffield
+        real(kind = 8), dimension(ncol), intent(out) :: dfield
 
         !> Local variables.
         integer j, z
@@ -330,10 +357,10 @@ module ensim_io
 
         !> Initialize the return status.
         ierr = 0
-        ffield = 0.0
+        dfield = 0.0
 
         !> Call base routine.
-        call get_keyword_value_cfield(iun, vkeyword, nkeyword, cname, cfield, ncol, ierr)
+        call get_keyword_field_char(iun, vkeyword, nkeyword, cname, cfield, ncol, ierr)
         if (ierr /= 0) return
 
         !> Check for blank fields (if the field was not found).
@@ -342,12 +369,12 @@ module ensim_io
         !> Convert values.
         do j = 1, ncol
             z = 0
-            call value(cfield(j), ffield(j), z)
+            call value(cfield(j), dfield(j), z)
             if (z /= 0) then
                 write(fmt1, FMT_GEN) j
                 call print_warning( &
                     'An error occurred converting value ' // trim(adjustl(fmt1)) // ' (' // trim(cfield(j)) // ')' // &
-                    " to a number in '" // trim(cname) // ".", PAD_3)
+                    " to a number in '" // trim(cname) // ".")
                 ierr = z
             end if
         end do
@@ -356,8 +383,8 @@ module ensim_io
 
     end subroutine
 
-    !> Description: 'get_keyword_value' for a vector of type integer.
-    subroutine get_keyword_value_ifield(iun, vkeyword, nkeyword, cname, ifield, ncol, ierr)
+    !> Description: 'get_keyword_value' for a vector of type 4-byte real.
+    subroutine get_keyword_field_float(iun, vkeyword, nkeyword, cname, ffield, ncol, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -366,28 +393,88 @@ module ensim_io
 
         !> Output variables.
         integer, intent(out) :: ierr
-        integer, dimension(ncol), intent(out) :: ifield
+        real(kind = 4), dimension(ncol), intent(out) :: ffield
 
         !> Local variables.
-        real, dimension(ncol) :: ffield
+        real(kind = 8), dimension(ncol) :: dfield
+
+        !> Initialize the return status.
+        ierr = 0
+        ffield = 0
+
+        !> Call base routine.
+        call get_keyword_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
+        if (ierr /= 0) return
+
+        !> Convert values.
+        ffield = real(dfield, kind = 4)
+
+        return
+
+    end subroutine
+
+    !> Description: 'get_keyword_value' for a vector of type 8-byte integer.
+    subroutine get_keyword_field_long(iun, vkeyword, nkeyword, cname, ifield, ncol, ierr)
+
+        !> Input variables.
+        character(len = *), intent(in) :: cname
+        integer, intent(in) :: iun, nkeyword, ncol
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+        integer(kind = 8), dimension(ncol), intent(out) :: ifield
+
+        !> Local variables.
+        real(kind = 8), dimension(ncol) :: dfield
 
         !> Initialize the return status.
         ierr = 0
         ifield = 0
 
         !> Call base routine.
-        call get_keyword_value_ffield(iun, vkeyword, nkeyword, cname, ffield, ncol, ierr)
+        call get_keyword_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
         if (ierr /= 0) return
 
         !> Convert values.
-        ifield = int(ffield)
+        ifield = int(dfield, kind = 8)
+
+        return
+
+    end subroutine
+
+    !> Description: 'get_keyword_value' for a vector of type 4-byte integer.
+    subroutine get_keyword_field_int(iun, vkeyword, nkeyword, cname, ifield, ncol, ierr)
+
+        !> Input variables.
+        character(len = *), intent(in) :: cname
+        integer, intent(in) :: iun, nkeyword, ncol
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+        integer(kind = 4), dimension(ncol), intent(out) :: ifield
+
+        !> Local variables.
+        real(kind = 8), dimension(ncol) :: dfield
+
+        !> Initialize the return status.
+        ierr = 0
+        ifield = 0
+
+        !> Call base routine.
+        call get_keyword_field_double(iun, vkeyword, nkeyword, cname, dfield, ncol, ierr)
+        if (ierr /= 0) return
+
+        !> Convert values.
+        ifield = int(dfield, kind = 4)
 
         return
 
     end subroutine
 
     !> Description: 'get_keyword_value' for type character.
-    subroutine get_keyword_value_cvalue(iun, vkeyword, nkeyword, cname, cvalue, ierr)
+    subroutine get_keyword_value_char(iun, vkeyword, nkeyword, cname, cvalue, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -405,7 +492,8 @@ module ensim_io
         ierr = 0
 
         !> Call base routine.
-        call get_keyword_value_cfield(iun, vkeyword, nkeyword, cname, cfield, 1, ierr)
+        call get_keyword_field_char(iun, vkeyword, nkeyword, cname, cfield, 1, ierr)
+        if (ierr /= 0) return
 
         !> Transfer value.
         cvalue = cfield(1)
@@ -414,8 +502,8 @@ module ensim_io
 
     end subroutine
 
-    !> Description: 'get_keyword_value' for type real.
-    subroutine get_keyword_value_fvalue(iun, vkeyword, nkeyword, cname, fvalue, ierr)
+    !> Description: 'get_keyword_value' for type 8-byte real.
+    subroutine get_keyword_value_double(iun, vkeyword, nkeyword, cname, dvalue, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -424,16 +512,46 @@ module ensim_io
 
         !> Output variables.
         integer, intent(out) :: ierr
-        real, intent(out) :: fvalue
+        real(kind = 8), intent(out) :: dvalue
 
         !> Local variables.
-        real, dimension(1) :: ffield
+        real(kind = 8), dimension(1) :: dfield
 
         !> Initialize the return status.
         ierr = 0
 
         !> Call base routine.
-        call get_keyword_value_ffield(iun, vkeyword, nkeyword, cname, ffield, 1, ierr)
+        call get_keyword_field_double(iun, vkeyword, nkeyword, cname, dfield, 1, ierr)
+        if (ierr /= 0) return
+
+        !> Transfer value.
+        dvalue = dfield(1)
+
+        return
+
+    end subroutine
+
+    !> Description: 'get_keyword_value' for type 4-byte real.
+    subroutine get_keyword_value_float(iun, vkeyword, nkeyword, cname, fvalue, ierr)
+
+        !> Input variables.
+        character(len = *), intent(in) :: cname
+        integer, intent(in) :: iun, nkeyword
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+        real(kind = 4), intent(out) :: fvalue
+
+        !> Local variables.
+        real(kind = 4), dimension(1) :: ffield
+
+        !> Initialize the return status.
+        ierr = 0
+
+        !> Call base routine.
+        call get_keyword_field_float(iun, vkeyword, nkeyword, cname, ffield, 1, ierr)
+        if (ierr /= 0) return
 
         !> Transfer value.
         fvalue = ffield(1)
@@ -442,8 +560,8 @@ module ensim_io
 
     end subroutine
 
-    !> Description: 'get_keyword_value' for type integer.
-    subroutine get_keyword_value_ivalue(iun, vkeyword, nkeyword, cname, ivalue, ierr)
+    !> Description: 'get_keyword_value' for type 8-byte integer.
+    subroutine get_keyword_value_long(iun, vkeyword, nkeyword, cname, ivalue, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: cname
@@ -452,16 +570,46 @@ module ensim_io
 
         !> Output variables.
         integer, intent(out) :: ierr
-        integer, intent(out) :: ivalue
+        integer(kind = 8), intent(out) :: ivalue
 
         !> Local variables.
-        integer, dimension(1) :: ifield
+        integer(kind = 8), dimension(1) :: ifield
 
         !> Initialize the return status.
         ierr = 0
 
         !> Call base routine.
-        call get_keyword_value_ifield(iun, vkeyword, nkeyword, cname, ifield, 1, ierr)
+        call get_keyword_field_long(iun, vkeyword, nkeyword, cname, ifield, 1, ierr)
+        if (ierr /= 0) return
+
+        !> Transfer value.
+        ivalue = ifield(1)
+
+        return
+
+    end subroutine
+
+    !> Description: 'get_keyword_value' for type 4-byte integer.
+    subroutine get_keyword_value_int(iun, vkeyword, nkeyword, cname, ivalue, ierr)
+
+        !> Input variables.
+        character(len = *), intent(in) :: cname
+        integer, intent(in) :: iun, nkeyword
+        type(ensim_keyword), dimension(nkeyword), intent(in) :: vkeyword
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+        integer(kind = 4), intent(out) :: ivalue
+
+        !> Local variables.
+        integer(kind = 4), dimension(1) :: ifield
+
+        !> Initialize the return status.
+        ierr = 0
+
+        !> Call base routine.
+        call get_keyword_field_int(iun, vkeyword, nkeyword, cname, ifield, 1, ierr)
+        if (ierr /= 0) return
 
         !> Transfer value.
         ivalue = ifield(1)
@@ -506,12 +654,13 @@ module ensim_io
         !> Check against the existing definition.
         if (lowercase(p) /= lowercase(projection)) then
             ierr = 1
-            call print_warning('The projection in the file does not match the existing projection in the model.', PAD_3)
+            call print_warning('The projection in the file does not match the existing projection in the model.')
+            call increase_tab()
             write(line, FMT_GEN) 'Attribute', 'File', 'Expected'
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':Projection', trim(p), trim(projection)
-            call print_message_detail(line)
-            call print_message('')
+            call print_message(line)
+            call decrease_tab()
         end if
 
         return
@@ -573,31 +722,32 @@ module ensim_io
         end do
 
         !> Print warning if there were conversion errors.
-        if (ierr /= 0) call print_warning('Errors occurred extracting the grid dimensions from the file.', PAD_3)
+        if (ierr /= 0) call print_warning('Errors occurred extracting the grid dimensions from the file.')
         ierr = 0
 
         !> Check against the existing definition.
         if (lowercase(p) /= lowercase(projection) .or. &
             ix /= xcount .or. iy /= ycount .or. x /= xorigin .or. y /= yorigin .or. dx /= xdelta .or. dy /= ydelta) then
             ierr = 1
-            call print_warning('The grid definition in the file does not match the existing definition in the model.', PAD_3)
+            call print_warning('The grid definition in the file does not match the existing definition in the model.')
+            call increase_tab()
             write(line, FMT_GEN) 'Attribute', 'File', 'Expected'
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':Projection', trim(p), trim(projection)
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':xOrigin', x, xorigin
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':yOrigin', y, yorigin
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':xCount', ix, xcount
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':yCount', iy, ycount
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':xDelta', dx, xdelta
-            call print_message_detail(line)
+            call print_message(line)
             write(line, FMT_GEN) ':yDelta', dy, ydelta
-            call print_message_detail(line)
-            call print_message('')
+            call print_message(line)
+            call decrease_tab()
         end if
 
         return
@@ -641,7 +791,7 @@ module ensim_io
                     !> Take the smaller value in the case of a conflict between this and other entries in the table.
                     call print_warning( &
                         "The number of columns in '" // trim(vkeyword(n)%keyword) // "'" // &
-                        " is different from other table entries in the file.", PAD_3)
+                        " is different from other table entries in the file.")
                     ncol = min(ncol, size(vkeyword(n)%words))
                 else
                     ncol = size(vkeyword(n)%words)
@@ -650,7 +800,9 @@ module ensim_io
         end do
 
         !> Print a warning if no columns were found in the table.
-        if (ncol == 0) call print_warning('No columns were found in the table in the file.', PAD_3)
+        if (ncol == 0) then
+            call print_warning('No columns were found in the table in the file.')
+        end if
 
         return
 
@@ -703,7 +855,7 @@ module ensim_io
                         ierr = z
                         call print_warning( &
                             "Invalid format or missing component in date '" // trim(ctmp) // "'," // &
-                            " expecting format 'YYYY/MM/DD'.", PAD_3)
+                            " expecting format 'YYYY/MM/DD'.")
                     end if
 
                     !> Scan for a time signature (e.g., 24:00:00.000; 24:00:00; 24:00).
@@ -724,7 +876,7 @@ module ensim_io
                         ierr = z
                         call print_warning( &
                             "Invalid format or missing component in time '" // trim(ctmp) // "'," // &
-                            " expecting format 'HH:MM', 'HH:MM:SS', or 'HH:MM:SS.000'.", PAD_3)
+                            " expecting format 'HH:MM', 'HH:MM:SS', or 'HH:MM:SS.000'.")
                     end if
             end select
         end do
@@ -757,7 +909,9 @@ module ensim_io
             if (ierr /= 0) exit
             if (is_header(line)) exit
         end do
-        if (ierr /= 0) call print_warning('Reached end of file: ' // trim(fname), PAD_3)
+        if (ierr /= 0) then
+            call print_warning('Reached end of file: ' // trim(fname))
+        end if
 
         return
 
@@ -816,7 +970,9 @@ module ensim_io
         end do
 
         !> Check for errors.
-        if (ierr /= 0) call print_error('An error occurred reading data from the file: ' // trim(fname))
+        if (ierr /= 0) then
+            call print_error('An error occurred reading data from the file: ' // trim(fname))
+        end if
 
         return
 
@@ -834,8 +990,8 @@ module ensim_io
     !*  nfield: Size of the output vector.
     !*  ierr: Return status.
 
-    !> Description: 'r2c_to_rank' for type real.
-    subroutine r2c_to_rank_ffield(iun, vattr, nattr, iattr, xxx, yyy, na, ffield, nfield, ierr)
+    !> Description: 'r2c_to_rank' for type 8-byte real.
+    subroutine r2c_to_rank_field_double(iun, vattr, nattr, iattr, xxx, yyy, na, dfield, nfield, ierr)
 
         !> Input variables.
         integer, intent(in) :: iun, nattr, iattr, na, nfield
@@ -843,7 +999,7 @@ module ensim_io
         integer, dimension(na), intent(in) :: xxx, yyy
 
         !> Output variables.
-        real, dimension(:), allocatable, intent(out) :: ffield
+        real(kind = 8), dimension(:), allocatable, intent(out) :: dfield
         integer, intent(out) :: ierr
 
         !> Local variables
@@ -859,31 +1015,31 @@ module ensim_io
             write(fmt2, FMT_GEN) size(vattr)
             call print_warning( &
                 'The desired index ' // trim(adjustl(fmt1)) // &
-                ' is beyond the number of attributes in the list ' // trim(adjustl(fmt2)) // '.', PAD_3)
+                ' is beyond the number of attributes in the list ' // trim(adjustl(fmt2)) // '.')
             ierr = 1
             return
         end if
 
         !> Check if the attribute contains data.
         if (.not. allocated(vattr(iattr)%val)) then
-            call print_warning("The attribute '" // trim(vattr(iattr)%attr) // "' contains no data.", PAD_3)
+            call print_warning("The attribute '" // trim(vattr(iattr)%attr) // "' contains no data.")
             ierr = 1
             return
         end if
 
         !> Transfer data.
-        if (.not. allocated(ffield)) allocate(ffield(nfield))
-        ffield = 0.0
+        if (.not. allocated(dfield)) allocate(dfield(nfield))
+        dfield = 0.0
         do n = 1, nfield
-            ffield(n) = vattr(iattr)%val(xxx(n), yyy(n))
+            dfield(n) = real(vattr(iattr)%val(xxx(n), yyy(n)), kind = 8)
         end do
 
         return
 
     end subroutine
 
-    !> Description: 'r2c_to_rank' for type integer.
-    subroutine r2c_to_rank_ifield(iun, vattr, nattr, iattr, xxx, yyy, na, ifield, nfield, ierr)
+    !> Description: 'r2c_to_rank' for type 4-byte real.
+    subroutine r2c_to_rank_field_float(iun, vattr, nattr, iattr, xxx, yyy, na, ffield, nfield, ierr)
 
         !> Input variables.
         integer, intent(in) :: iun, nattr, iattr, na, nfield
@@ -891,20 +1047,85 @@ module ensim_io
         integer, dimension(na), intent(in) :: xxx, yyy
 
         !> Output variables.
-        integer, dimension(:), allocatable, intent(out) :: ifield
+        real(kind = 4), dimension(:), allocatable, intent(out) :: ffield
         integer, intent(out) :: ierr
 
         !> Local variables
-        real, dimension(:), allocatable :: ffield
+        real(kind = 8), dimension(:), allocatable :: dfield
 
         !> Initialize the return status.
         ierr = 0
 
         !> Call base routine.
-        call r2c_to_rank_ffield(iun, vattr, nattr, iattr, xxx, yyy, na, ffield, nfield, ierr)
+        call r2c_to_rank_field_double(iun, vattr, nattr, iattr, xxx, yyy, na, dfield, nfield, ierr)
+        if (ierr /= 0) return
 
         !> Transfer data.
-        ifield = int(ffield)
+        if (.not. allocated(ffield)) allocate(ffield(nfield))
+        ffield = 0.0
+        ffield = real(dfield, kind = 4)
+
+        return
+
+    end subroutine
+
+    !> Description: 'r2c_to_rank' for type 8-byte integer.
+    subroutine r2c_to_rank_field_long(iun, vattr, nattr, iattr, xxx, yyy, na, ifield, nfield, ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, nattr, iattr, na, nfield
+        type(ensim_attr), dimension(nattr) :: vattr
+        integer, dimension(na), intent(in) :: xxx, yyy
+
+        !> Output variables.
+        integer(kind = 8), dimension(:), allocatable, intent(out) :: ifield
+        integer, intent(out) :: ierr
+
+        !> Local variables
+        real(kind = 8), dimension(:), allocatable :: dfield
+
+        !> Initialize the return status.
+        ierr = 0
+
+        !> Call base routine.
+        call r2c_to_rank_field_double(iun, vattr, nattr, iattr, xxx, yyy, na, dfield, nfield, ierr)
+        if (ierr /= 0) return
+
+        !> Transfer data.
+        if (.not. allocated(ifield)) allocate(ifield(nfield))
+        ifield = 0
+        ifield = int(dfield, kind = 8)
+
+        return
+
+    end subroutine
+
+    !> Description: 'r2c_to_rank' for type 4-byte integer.
+    subroutine r2c_to_rank_field_int(iun, vattr, nattr, iattr, xxx, yyy, na, ifield, nfield, ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, nattr, iattr, na, nfield
+        type(ensim_attr), dimension(nattr) :: vattr
+        integer, dimension(na), intent(in) :: xxx, yyy
+
+        !> Output variables.
+        integer(kind = 4), dimension(:), allocatable, intent(out) :: ifield
+        integer, intent(out) :: ierr
+
+        !> Local variables
+        real(kind = 8), dimension(:), allocatable :: dfield
+
+        !> Initialize the return status.
+        ierr = 0
+
+        !> Call base routine.
+        call r2c_to_rank_field_double(iun, vattr, nattr, iattr, xxx, yyy, na, dfield, nfield, ierr)
+        if (ierr /= 0) return
+
+        !> Transfer data.
+        if (.not. allocated(ifield)) allocate(ifield(nfield))
+        ifield = 0
+        ifield = int(dfield, kind = 4)
 
         return
 

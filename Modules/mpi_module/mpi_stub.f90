@@ -7,7 +7,7 @@ module mpi
 
     integer :: &
         MPI_COMM_WORLD = 0, MPI_SUCCESS = 0, MPI_REQUEST_NULL = 0, MPI_STATUS_SIZE = 0, MPI_STATUS_IGNORE = 0, &
-        MPI_REAL = 0, MPI_INT = 0
+        MPI_REAL = 0, MPI_REAL8 = 0, MPI_INT = 0
 
     interface MPI_Send
         module procedure MPI_Send_Real_Arr, MPI_Send_Real, MPI_Send_Int_Arr, MPI_Send_Int

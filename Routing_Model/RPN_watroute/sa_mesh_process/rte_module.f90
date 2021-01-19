@@ -3,17 +3,25 @@ module rte_module
     implicit none
 
     !> Input variables for dynamic time-stepping.
-    !*  dtminusr: Maximum time step [s].
-    !*  mindtmin: Minimum time step [s].
-    !*  maxindex: Maximum number of interations in reducing the time step [--].
+    !*  dtminusr: Maximum time-step for dynamic time-stepping [s].
+    !*  mindtmin: Minimum time-step for dynamic time-stepping [s].
     !*  dtminfrac: Time-step reducing factor [--].
-    real(kind = 4) :: dtminusr = 1800.0, mindtmin = 10.0, maxindex = 50, dtminfrac = 0.75
+    !*  maxindex: Maximum number of interations allowed in for dynamic time-stepping [--].
+    real(kind = 4) :: dtminusr = 1800.0, mindtmin = 10.0, dtminfrac = 0.75
+    integer :: maxindex = 50
 
     !> Convergence threshold.
-    !*  convthreshusr: convergence level for channel routing.
-    real(kind = 4) :: convthreshusr = 0.01
+    !*  convthreshusr: Convergence threshold for channel routing.
+    real(kind = 4) :: convthreshusr = 0.01_4
 
     !> Input parameters.
+    !*  r1n: Manning coefficient for floodplain routing.
+    !*  r2n: Manning coefficient for channel routing.
+    !*  mndr: Meander factor.
+    !*  aa2: Coefficient used in deriving channel geometry using drainage area.
+    !*  aa3: Coefficient used in deriving channel geometry using drainage area.
+    !*  aa4: Coefficient used in deriving channel geometry using drainage area.
+    !*  widep: Channel width.
     type rte_params
         real, dimension(:), allocatable :: r1n, r2n, mndr, aa2, aa3, aa4, widep
     end type
@@ -24,9 +32,19 @@ module rte_module
     type(rte_params), save :: rtepm, rtepm_iak
 
     !> Configuration flags.
+    !*  RTE_TS: Routing time-step for exchange with MESH (independent of internal time-stepping) [s] (default: 3600).
+    !*  cap_shd: Set to '1' to use the bankfull capacity read from file (default: '0').
+    !*  dtminusr: Maximum time-step for dynamic time-stepping [s] (default: 1800.0).
+    !*  mindtmin: Minimum time-step for dynamic time-stepping [s] (default: 10.0).
+    !*  dtminfrac: Time-step reducing factor [--] (default: 0.75).
+    !*  maxindex: Maximum number of interations allowed in for dynamic time-stepping [--] (default: 50).
+    !*  convthreshusr: Convergence threshold for channel routing (default: 0.01).
     type rte_flags
         logical :: PROCESS_ACTIVE = .false.
         integer :: RTE_TS = 3600, cap_shd = 0
+        real :: dtminusr = 1800.0, mindtmin = 10.0, dtminfrac = 0.75
+        integer :: maxindex = 50
+        real :: convthreshusr = 0.01
     end type
 
     !> Instance of control flags.
@@ -41,7 +59,7 @@ module rte_module
     type(rte_options), save :: rteops
 
 !temp: Override for diversions.
-    real, dimension(:), allocatable, save :: qdiv2
+    real(kind = 4), dimension(:), allocatable, save :: qdiv2
 !    character*12, dimension(4), save :: &
 !        tdivname = ['06EC002', 'irrigat', '05LL019', '05QB005']
 !    real*4, dimension(4), save :: &
@@ -101,14 +119,14 @@ module rte_module
         !> Transfer grid properties.
         ycount = shd%yCount
         imax = shd%yCount !> ycount and imax are used interchangeably in the code
-        ydelta = shd%yDelta
-        yorigin = shd%yOrigin
+        ydelta = real(shd%yDelta, kind(ydelta))
+        yorigin = real(shd%yOrigin, kind(yorigin))
         xcount = shd%xCount
         jmax = shd%xCount !> jmax and xcount are used interghangeably in the code
-        xdelta = shd%xDelta
-        xorigin = shd%xOrigin
-        al = shd%AL
-        astep = al/1000.0
+        xdelta = real(shd%xDelta, kind(xdelta))
+        xorigin = real(shd%xOrigin, kind(xorigin))
+        al = real(shd%AL, kind(al))
+        astep = real(shd%AL/1000.0, kind(astep))
         istep = int(astep)
         step2 = astep*astep
         na = shd%NA
@@ -123,31 +141,34 @@ module rte_module
 !                 sl1(na), sl2(na)
                  ichnl(na), ireach(na), &
                  grid_area(na), frac(na), aclass(na, ntype + 1), &
+                 nhyd(ycount, xcount), &
                  glacier_flag(na))
         xxx = shd%xxx
         yyy = shd%yyy
         s = shd%RNKGRD
         next = shd%NEXT
-        da = shd%DA
-        bnkfll = shd%BNKFLL
-        slope = sqrt(shd%SLOPE_CHNL)
+        da = real(shd%DA, kind(da))
+        bnkfll = real(shd%BNKFLL, kind(bnkfll))
+        slope = sqrt(real(shd%SLOPE_CHNL, kind(slope)))
 !+        elev = shd%ELEV
-        rl = shd%CHNL_LEN
+        rl = real(shd%CHNL_LEN, kind(rl))
         ibn = shd%IAK
 !+        sl1 = shd%SLOPE_INT
         ichnl = shd%ICHNL
         ireach = shd%IREACH
         Nreaches = maxval(shd%IREACH)
-        grid_area = shd%AREA
-        frac = shd%FRAC
-        aclass = 0.0; aclass(:, 1:ntype) = shd%lc%ACLASS
+        grid_area = real(shd%AREA, kind(grid_area))
+        frac = real(shd%FRAC, kind(frac))
+        aclass = 0.0; aclass(:, 1:ntype) = real(shd%lc%ACLASS, kind(aclass))
+        nhyd = 0
         glacier_flag = 'n'
 
         !> Allocate and assign parameter values.
         allocate(r1n(na), r2n(na), rlake(na), &
                  mndr(na), aa2(na), aa3(na), aa4(na), theta(na), widep(na), kcond(na))
-        r1n = rtepm%r1n; r2n = rtepm%r2n
-        mndr = rtepm%mndr; aa2 = rtepm%aa2; aa3 = rtepm%aa3; aa4 = rtepm%aa4; widep = rtepm%widep
+        r1n = real(rtepm%r1n, kind(r1n)); r2n = real(rtepm%r2n, kind(r2n))
+        mndr = real(rtepm%mndr, kind(mndr)); aa2 = real(rtepm%aa2, kind(aa2)); aa3 = real(rtepm%aa3, kind(aa3))
+        aa4 = real(rtepm%aa4, kind(aa4)); widep = real(rtepm%widep, kind(widep))
         rlake = 0.0; theta = 0.0; kcond = 0.0
 
         !> Force use of Manning's coefficients (e.g., r2n, r1n).
@@ -155,6 +176,13 @@ module rte_module
 
         !> Adjust the calculated channel length by the degree of meandering.
         rl = rl*mndr
+
+        !> Transfer time-stepping and convergence variables.
+        dtminusr = real(rteflg%dtminusr, kind = kind(dtminusr))
+        mindtmin = real(rteflg%mindtmin, kind = kind(mindtmin))
+        dtminfrac = real(rteflg%dtminfrac, kind = kind(dtminfrac))
+        maxindex = rteflg%maxindex
+        convthreshusr = real(rteflg%convthreshusr, kind = kind(convthreshusr))
 
         !> Allocate many of the arrays used by the routing code. This block
         !> is deliberately skipping arrays that reference land use types,
@@ -238,12 +266,12 @@ module rte_module
                 !> rev. 9.2.12  Sep.  15/05  - NK: added EXCEL eqn to flowinit
                 !> EXCEL compatible equation. aa4 must be -ve in the par file
                 else
-                    chaxa(n) = 10.0**(aa2(n)*alog10(da(n)) + aa3(n))
+                    chaxa(n) = 10.0_4**(aa2(n)*log10(da(n)) + aa3(n))
                 end if
 
                 !> had to put a lower bound on channel area to avoid NaN in resume file
                 !> NK  Oct. 5/05
-                chaxa(n) = amax1(1.0, chaxa(n))
+                chaxa(n) = max(1.0_4, chaxa(n))
 
             end if
 
@@ -321,13 +349,13 @@ module rte_module
             !> Routing coefficients.
             allocate(b1(noresv), b2(noresv), b3(noresv), b4(noresv), b5(noresv), b6(noresv), b7(noresv))
 !                poliflg(noresv)
-            b1 = fms%rsvr%rls%b1
-            b2 = fms%rsvr%rls%b2
-            b3 = fms%rsvr%rls%b3
-            b4 = fms%rsvr%rls%b4
-            b5 = fms%rsvr%rls%b5
-            b6 = fms%rsvr%rls%b6
-            b7 = fms%rsvr%rls%b7
+            b1 = real(fms%rsvr%rls%b1, kind(b1))
+            b2 = real(fms%rsvr%rls%b2, kind(b2))
+            b3 = real(fms%rsvr%rls%b3, kind(b3))
+            b4 = real(fms%rsvr%rls%b4, kind(b4))
+            b5 = real(fms%rsvr%rls%b5, kind(b5))
+            b6 = real(fms%rsvr%rls%b6, kind(b6))
+            b7 = real(fms%rsvr%rls%b7, kind(b7))
 !            where (b3 == 0.0)
 !                poliflg = 'n'
 !            elsewhere
@@ -343,9 +371,9 @@ module rte_module
             allocate(qdwpr(noresv, 999999), qrel(noresv, 999999))
             qdwpr = 0.0
             if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
+                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0)), kind(qrel))
             else
-                qrel(:, 1) = fms%rsvr%rlsmeas%val
+                qrel(:, 1) = real(fms%rsvr%rlsmeas%val, kind(qrel))
             end if
 
             !> Initial lake level (from file).
@@ -353,8 +381,8 @@ module rte_module
             !*  lake_area: Used to convert reservoir storage to level (for diagnostic output). [m2].
             !*  lake_elv: Lake elevation (for diagnostic output). [m].
             allocate(reach_last(noresv), lake_area(noresv), lake_elv(noresv, 999999))
-            lake_area = fms%rsvr%rls%area
-            lake_elv(:, 1) = fms%rsvr%rls%zlvl0
+            lake_area = real(fms%rsvr%rls%area, kind(lake_area))
+            lake_elv(:, 1) = real(fms%rsvr%rls%zlvl0, kind(lake_elv))
         end if
 
         !> Streamflow gauge locations.
@@ -366,15 +394,15 @@ module rte_module
                 qhyd(no, 999999))
             iflowgrid = fms%stmg%meta%rnk
             nopt = -1
-            qhyd(:, 1) = fms%stmg%qomeas%val
+            qhyd(:, 1) = real(fms%stmg%qomeas%val, kind(qhyd))
         end if
 
         !> Channel and reservoir initialization.
-        if (fms%rsvr%n > 0 .or. fms%stmg%n > 0) then
+        if ((fms%rsvr%n > 0 .or. fms%stmg%n > 0) .and. vs%flgs%resume%state == FLAG_OFF) then
             allocate(nbasin(ycount, xcount), r(na, ntype + 1), p(ycount,xcount), inbsnflg(no + noresv))
             nbasin = 0; p = 0.0; inbsnflg = 1
             if (fms%stmg%n > 0) then
-                allocate(iy(no), jx(no), nhyd(ycount, xcount), nlow(no), nxtbasin(no), area(no))
+                allocate(iy(no), jx(no), nlow(no), nxtbasin(no), area(no))
                 iy = fms%stmg%meta%iy
                 jx = fms%stmg%meta%jx
                 nxtbasin = 0
@@ -507,18 +535,18 @@ module rte_module
 !        end if
 
         !> Update SA_MESH output variables.
-        out%ts%grid%qi = qi2
-        out%ts%grid%stgch = store2
-        out%ts%grid%qo = qo2
+        if (associated(out%ts%grid%qi)) out%ts%grid%qi = qi2
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = store2
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = qo2
         if (fms%rsvr%n > 0) then
             reach_last = lake_elv(:, 1)
         end if
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.
-        stas_grid%chnl%qi = qi2
-        stas_grid%chnl%stg = store2
-        stas_grid%chnl%qo = qo2
+        vs%grid%qi = qi2
+        vs%grid%stgch = store2
+        vs%grid%qo = qo2
 
     end subroutine
 
@@ -538,6 +566,7 @@ module rte_module
         type(ShedGridParams) :: shd
 
         !> Local variables.
+        integer(kind = 4) fhr_i4
         integer ierr, iun
 
         !> Return if not the head node or if the process is not active.
@@ -550,7 +579,8 @@ module rte_module
 !todo: condition for ierr.
 
         !> Read inital values from the file.
-        read(iun) fhr
+        read(iun) fhr_i4
+        fhr = int(fhr_i4)
         read(iun) qo2
         read(iun) store2
         read(iun) qi2
@@ -564,18 +594,18 @@ module rte_module
         close(iun)
 
         !> Update SA_MESH output variables.
-        out%ts%grid%qi = qi2
-        out%ts%grid%stgch = store2
-        out%ts%grid%qo = qo2
+        if (associated(out%ts%grid%qi)) out%ts%grid%qi = qi2
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = store2
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = qo2
         if (fms%rsvr%n > 0) then
             reach_last = lake_elv(:, 1)
         end if
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.
-        stas_grid%chnl%qi = qi2
-        stas_grid%chnl%stg = store2
-        stas_grid%chnl%qo = qo2
+        vs%grid%qi = qi2
+        vs%grid%stgch = store2
+        vs%grid%qo = qo2
 
     end subroutine
 
@@ -611,24 +641,28 @@ module rte_module
         read(iun) qo2
         read(iun) store2
         read(iun) qi2
-        read(iun)
+        if (fms%rsvr%n > 0) then
+            read(iun) lake_elv(:, fhr)
+        else
+            read(iun)
+        end if
 
         !> Close the file to free the unit.
         close(iun)
 
         !> Update SA_MESH output variables.
-        out%ts%grid%qi = qi2
-        out%ts%grid%stgch = store2
-        out%ts%grid%qo = qo2
+        if (associated(out%ts%grid%qi)) out%ts%grid%qi = qi2
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = store2
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = qo2
         if (fms%rsvr%n > 0) then
             reach_last = lake_elv(:, 1)
         end if
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.
-        stas_grid%chnl%qi = qi2
-        stas_grid%chnl%stg = store2
-        stas_grid%chnl%qo = qo2
+        vs%grid%qi = qi2
+        vs%grid%stgch = store2
+        vs%grid%qo = qo2
 
     end subroutine
 
@@ -658,8 +692,11 @@ module rte_module
 
         !> Local variables for dynamic time-stepping.
         real(kind = 4) qi2_strt(naa), qo2_strt(naa), route_dt, hr_div, sec_div, dtmin
-        real tqi1, tqo1, tax, tqo2, tstore2, tstore1
+        real(kind = 4) tqi1, tqo1, tax, tqo2, tstore2, tstore1
         integer indexi, no_dtold
+
+        !> Local variables for output averaging.
+        real, dimension(:), allocatable :: inline_qi, inline_stgch, inline_qo
 
         !> Local diagnostic variables.
 !        integer year_last, month_last, day_last, hour_last
@@ -679,14 +716,14 @@ module rte_module
         if (ic%ts_hourly == 1) then
             qr(1:naa) = 0.0
         end if
-        qr(1:naa) = qr(1:naa) + stas_grid%chnl%rff(1:naa)*shd%FRAC(1:naa)
-        qr(1:naa) = qr(1:naa) + stas_grid%chnl%rchg(1:naa)*shd%FRAC(1:naa)
+        qr(1:naa) = qr(1:naa) + real(vs%grid%rff(1:naa)*shd%FRAC(1:naa), kind(qr))
+        qr(1:naa) = qr(1:naa) + real(vs%grid%rchg(1:naa)*shd%FRAC(1:naa), kind(qr))
 
         !> Reset SA_MESH output variables (for averaging).
         !> Setting these to zero also prevents updating from the state variables upon return.
-        out%ts%grid%qi = 0.0
-        out%ts%grid%stgch = 0.0
-        out%ts%grid%qo = 0.0
+        if (associated(out%ts%grid%qi)) out%ts%grid%qi = 0.0
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = 0.0
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = 0.0
 
         !> Return if not the last time-step of the hour.
         if (ic%now%hour == ic%next%hour) return
@@ -709,7 +746,7 @@ module rte_module
                 irindex = 0
                 if (divname(l)(1:5) == 'irrig' .or. divname(l)(1:5) == 'Irrig') then
                     irindex = irindex + 1
-                    qdivirrig(irindex, 1) = qdiv(l, 1)/totirrigpts(irindex)
+                    qdivirrig(irindex, 1) = qdiv(l, 1)/real(totirrigpts(irindex), 4)
                 end if
             end do
             qdiv(:, fhr) = qdiv2
@@ -722,23 +759,23 @@ module rte_module
 !        hour_now = ic%now%hour + 1
 
         !> Convert surface runoff from [kg/m^2] to [cms].
-        qr(1:naa) = qr(1:naa)*1000.0*step2/3600.0
+        qr(1:naa) = qr(1:naa)*1000.0_4*step2/3600.0_4
 
         !> Update from SA_MESH variables.
-        qi2 = stas_grid%chnl%qi
-        store2 = stas_grid%chnl%stg
-        qo2 = stas_grid%chnl%qo
+        qi2 = real(vs%grid%qi, kind(qi2))
+        store2 = real(vs%grid%stgch, kind(store2))
+        qo2 = real(vs%grid%qo, kind(qo2))
 
         !> Remember the input values from the start of the time step.
         qi2_strt(1:naa) = qi2(1:naa)
         qo2_strt(1:naa) = qo2(1:naa)
         store2_strt(1:naa) = store2(1:naa)
-        if (fms%stmg%n > 0) qhyd(:, fhr) = fms%stmg%qomeas%val
+        if (fms%stmg%n > 0) qhyd(:, fhr) = real(fms%stmg%qomeas%val, kind(qhyd))
         if (fms%rsvr%n > 0) then
             if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0))
+                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0)), kind(qrel))
             else
-                qrel(:, 1) = fms%rsvr%rlsmeas%val
+                qrel(:, 1) = real(fms%rsvr%rlsmeas%val, kind(qrel))
             end if
         end if
 
@@ -780,17 +817,17 @@ module rte_module
 15          indexi = 0
             if (dtmin <= mindtmin) exit
             no_dt = max(int(3599.0/dtmin) + 1, 1)
-            route_dt = 3600.0/float(no_dt)
-            sec_div = route_dt/2.0
+            route_dt = 3600.0_4/real(no_dt, 4)
+            sec_div = route_dt/2.0_4
             tax = store1(n)/rl(n)
 !            tqo2 = 0.0
-            tqo2 = max(tax, 0.0)**1.67*slope(n)/chawid(n)**0.667/r2n(n)
+            tqo2 = max(tax, 0.0_4)**1.67_4*slope(n)/chawid(n)**0.667_4/r2n(n)
 
             !> Use qi2 = 0.0 below to really constrain dtmin by keeping store2 low
             !> We don't want to set qi2 to zero though because it is used in route
             !> so we just use a hard-coded 0.0 in this equation
 !16          tstore2 = store1(n)
-16          tstore2 = store1(n) + (tqi1 + 0.0 - tqo1 - tqo2)*sec_div
+16          tstore2 = store1(n) + (tqi1 + 0.0_4 - tqo1 - tqo2)*sec_div
 
             !> Now check to see if this qo2 is large enough that it will cause problems
             !> in the next time step when it is put into qo1.
@@ -808,7 +845,7 @@ module rte_module
             if (tstore2 < 0.0 .or. tstore1 < 0.0) then
 
                 !> Keep making qo2 smaller untill store2 becomes positive.
-                tqo2 = tqo2/2.0
+                tqo2 = tqo2/2.0_4
                 indexi = indexi + 1
 
                 !> Reduce the time step by a factor of dtminfrac (default = 0.75, set above).
@@ -827,14 +864,20 @@ module rte_module
         !> However, if the iteration loop in route is unstable, dtmin still decreases.
         dtmin = dtminusr
 
+        !> Allocate the local variables for output averaging.
+        allocate(inline_qi(na), inline_stgch(na), inline_qo(na))
+
         !> Let the time step be as small as mindtmin.
 17      dtmin = max(mindtmin, dtmin)
         no_dt = max(int(3599.0/dtmin) + 1, 1)
-        dtmin = 3600.0/real(no_dt)
-        route_dt = 3600.0/float(no_dt)
-        sec_div = route_dt/2.0
-        hr_div = sec_div/3600.0
+        dtmin = 3600.0_4/real(no_dt, 4)
+        route_dt = 3600.0_4/real(no_dt, 4)
+        sec_div = route_dt/2.0_4
+        hr_div = sec_div/3600.0_4
         exitstatus = 0
+
+        !> Initialize the local variables for output averaging.
+        inline_qi = 0.0; inline_stgch = 0.0; inline_qo = 0.0
 
         !> Override the value declared above (fixed for all hours).
         a6 = dtmin
@@ -842,6 +885,9 @@ module rte_module
         !> The value of dtmin has been used to determine how many
         !> times route is called. Route will determine a new dtmin
         !> for the next time step.
+
+        !> 'mo1' variable for hard-coded routing in rerout.f.
+        mo1 = ic%now%month
 
         !> Prepare arrays for storing output (averaged over the routing time-step).
         if (.not. allocated(avr_qo)) allocate(avr_qo(na))
@@ -852,7 +898,7 @@ module rte_module
         !> rev. 9.3.12  Feb.  20/07  - NK: changed dtmin & call to route
         do n = 1, no_dt
 
-            call route(sec_div, hr_div, dtmin, mindtmin, convthreshusr, (ic%iter%hour + 1), n, real(ic%ts_count - 1), &
+            call route(sec_div, hr_div, dtmin, mindtmin, convthreshusr, (ic%iter%hour + 1), n, real(ic%ts_count - 1, kind = 4), &
                        date, exitstatus)
 
             if (exitstatus /= 0) then
@@ -877,7 +923,7 @@ module rte_module
                         no_dtold = no_dt
                         no_dt = max(int(3599.0/dtmin) + 1, 1)
                     end do
-                    dtmin = 3600.0/real(no_dt)
+                    dtmin = 3600.0_4/real(no_dt, 4)
 
                     !> Restore the input values from the start of the time step.
                     qi2(1:naa) = qi2_strt(1:naa)
@@ -888,10 +934,10 @@ module rte_module
                 end if
             end if
 
-            !> Update MESH output variables (for averaging).
-            out%ts%grid%qi = out%ts%grid%qi + qi2
-            out%ts%grid%stgch = out%ts%grid%stgch + store2
-            out%ts%grid%qo = out%ts%grid%qo + qo2
+            !> Update the local variables for output averaging.
+            if (associated(out%ts%grid%qi)) inline_qi = inline_qi + qi2
+            if (associated(out%ts%grid%stgch)) inline_stgch = inline_stgch + store2
+            if (associated(out%ts%grid%qo)) inline_qo = inline_qo + qo2
 
         end do !n = 1, no_dt
 
@@ -904,15 +950,18 @@ module rte_module
         !> Update SA_MESH output variables.
         !> Output variables are updated at every model time-step; multiply averages
         !> by the number of model time-steps in the routing time-step
-        out%ts%grid%qi = out%ts%grid%qi/no_dt*(3600/ic%dts)
-        out%ts%grid%stgch = out%ts%grid%stgch/no_dt*(3600/ic%dts)
-        out%ts%grid%qo = out%ts%grid%qo/no_dt*(3600/ic%dts) !same as avr_qo
+        if (associated(out%ts%grid%qi)) out%ts%grid%qi = inline_qi/no_dt*(3600/ic%dts)
+        if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = inline_stgch/no_dt*(3600/ic%dts)
+        if (associated(out%ts%grid%qo)) out%ts%grid%qo = inline_qo/no_dt*(3600/ic%dts) !same as avr_qo
+
+        !> Deallocate the local variables for output averaging.
+        deallocate(inline_qi, inline_stgch, inline_qo)
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.
-        stas_grid%chnl%qi = qi2
-        stas_grid%chnl%stg = store2
-        stas_grid%chnl%qo = qo2
+        vs%grid%qi = qi2
+        vs%grid%stgch = store2
+        vs%grid%qo = qo2
         if (fms%rsvr%n > 0) then
             reach_last = lake_elv(:, fhr)
         end if
@@ -947,7 +996,7 @@ module rte_module
 !todo: condition for ierr.
 
         !> Write the current state of these variables to the file.
-        write(iun) fhr
+        write(iun) int(fhr, kind = 4)
         write(iun) qo2
         write(iun) store2
         write(iun) qi2

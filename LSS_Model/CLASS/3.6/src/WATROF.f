@@ -5,6 +5,10 @@
      4                  ISAND,IWF,IG,ILG,IL1,IL2,BULK_FC)
 
 
+C     * AUG 26/20 - D.PRINCZ.   CHANGED THE DIMENSIONS OF SUBFLW/TSUBFL
+C                               TO PRESERVE THE PER-LAYER VALUES FOR
+C                               INTERFLOW. THE TILE TOTALS ARE THE SUMS
+C                               OF THE VALUES ALONG THE 2ND DIMENSION.
 C     * MAR 03/10 - M.A.MEKONNEN/B.DAVISON/M.MACDONALD
 C     *             RE-WRITTEN FOR TWO REASONS:
 C     *             -TO USE VINCENT'S VERSION OF WATDRN;
@@ -77,7 +81,7 @@ C
       REAL  THLIQ (ILG,IG),  THICE (ILG,IG)
 C
       REAL  ZPOND (ILG),     TPOND (ILG),     OVRFLW(ILG),
-     1      TOVRFL(ILG),     SUBFLW(ILG),
+     1      TOVRFL(ILG),  SUBFLW(ILG,IG),
      2      RUNOFF(ILG),     TRUNOF(ILG)
 C
 C     * INPUT ARRAYS.
@@ -107,7 +111,7 @@ C     * INTERNAL SCALARS AND VECTORS
       REAL VEL_T0(ILG),NUC_DOVER(ILG),MANNING_N(ILG),DD(ILG),
      1     GRKEFF(ILG),ASAT_T0(ILG),ASAT_T1(ILG),DELZWJ(ILG),
      2     BIJ(ILG),THPORJ(ILG),ASAT0(ILG),ASAT1(ILG),SATFC(ILG),
-     3     DAVAIL,DTOT,SUBFLWJ(ILG),TSUBFL(ILG),THLIQ_AVAIL(ILG),
+     3     DAVAIL,DTOT,SUBFLWJ(ILG),TSUBFL(ILG,IG),THLIQ_AVAIL(ILG),
      4     THPOR_AVAIL(ilg),BASFLWJ(ILG),XLAMBDA,ktop,kl,h0,c1,c2,
      +     ztop(ilg,ig)
 
@@ -294,7 +298,7 @@ C              -----------------------------------------------------------------
                   trunof(i)  = (trunof(i)*runoff(i)+tbarw(i,j)*
      1                         didrn(i,j))/(runoff(i)+didrn(i,j))
                   runoff(i)  = runoff(i)+didrn(i,j)
-                  subflw(i)  = subflw(i)+fi(i)*didrn(i,j)
+                  subflw(i,j)= subflw(i,j)+fi(i)*didrn(i,j)
 
 C                 ------------------------------------------------------------------------
 C                 remove the lateral flow from the layer

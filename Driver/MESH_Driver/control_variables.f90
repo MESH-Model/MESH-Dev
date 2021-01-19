@@ -13,12 +13,14 @@ module control_variables
         !*  RUNCHNL: Run channel flow balance and output.
         !*  RUNBALWB: Run water balance and output.
         !*  RUNBALEB: Run energy balance and output.
+        !*  RUNLSS: Run land surface scheme and output.
         !*  RUNTILE: Run tile processes (e.g., LSS).
         !*  RUNGRID: Run grid processes (e.g., multi-point run).
         logical :: RUNCLIM = .true.
         logical :: RUNCHNL = .true.
         logical :: RUNBALWB = .true.
         logical :: RUNBALEB = .true.
+        logical :: RUNLSS = .true.
         logical :: RUNTILE = .true.
         logical :: RUNGRID = .true.
 

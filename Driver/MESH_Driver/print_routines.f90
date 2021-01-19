@@ -32,25 +32,40 @@ module print_routines
     integer, parameter :: ECHO_SCN_IUN = 6, ECHO_TXT_IUN = 58
 
     !> Padding constants.
+    !* PAD_LEAD: Padding of '1x'.
     !* PAD_1: Padding of '1x'.
     !* PAD_3: Padding of '3x'.
     !* PAD_NONE: No padding.
-    integer, parameter :: PAD_1 = 1
-    integer, parameter :: PAD_3 = 3
-    integer, parameter :: PAD_NONE = 0
+    integer, parameter, private :: PAD_LEAD = 1
+!-    integer, parameter :: PAD_1 = 1
+!-    integer, parameter :: PAD_3 = 3
+    integer, parameter, private :: PAD_NONE = 0
 
     !> Internal pad position.
-    integer, private :: PAD_NOW = PAD_1
+    integer, private :: PAD_NOW = PAD_LEAD
 
     !> Line and field length constants.
     !* DEFAULT_LINE_LENGTH: Default length of a single line.
     !* DEFAULT_FIELD_LENGTH: Default length of a field (e.g., in a line).
-    integer, parameter :: DEFAULT_LINE_LENGTH = 1000
-    integer, parameter :: DEFAULT_FIELD_LENGTH = 20
+    !* DEFAULT_FIELD_COUNT: Default number of fields to a line.
+    integer, parameter :: DEFAULT_LINE_LENGTH = 10000
+    integer, parameter :: DEFAULT_FIELD_LENGTH = 1000
+    integer, parameter :: DEFAULT_FIELD_COUNT = 100
 
-    !> Format constants.
-    character(len = *), parameter :: FMT_GEN = '(99999(g15.6, 1x))'
-    character(len = *), parameter :: FMT_CSV = "(99999(g15.6, ','))"
+    !> Format constants (general).
+    character(len = *), parameter :: FMT_GEN = "(99999(g15.7e2, 1x))"
+    character(len = *), parameter :: FMT_CSV = "(99999(g15.7e2, ','))"
+    character(len = *), parameter :: FMT_CHR = "(a)"
+
+    !> Format constants (dates).
+    character(len = *), parameter :: FMT_TIME_HMS = "(i2.2, ':', i2.2, ':', i2.2, '.000000')"
+    character(len = *), parameter :: FMT_DATE_DASHES_YMD = "(i4.4, '-', i2.2, '-', i2.2)"
+    character(len = *), parameter :: FMT_DATETIME_DASHES_YMD = &
+        "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2, '.000000')"
+    character(len = *), parameter :: FMT_DATE_SLASHES_YMD = "(i4.4, '/', i2.2, '/', i2.2)"
+    character(len = *), parameter :: FMT_DATETIME_SLASHES_YMD = &
+        "(i4.4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2, '.000000')"
+    character(len = *), parameter :: FMT_DATE_SLASHES_YJD = "(i4.4, '/', i3.3)"
 
     contains
 
@@ -90,15 +105,29 @@ module print_routines
     !>
     !> Variables:
     !>  message: Message to output.
-    !>  level: Offset from the leading edge of the line.
-    subroutine print_screen(message, level)
+    !>  level: Offset from the leading edge of the line (optional).
+    !>  no_advance: .true. not to advance to the next line (optional; default: .false.).
+    subroutine print_screen(message, level, no_advance)
 
         !> Input variables.
         character(len = *), intent(in) :: message
         integer, intent(in), optional :: level
+        logical, intent(in), optional :: no_advance
+
+        !> Local variables.
+        character(len = 3) :: advance_modifier = 'yes'
 
         !> Print to screen.
-        if (ISHEADNODE) write(ECHO_SCN_IUN, get_format(level)) trim(message)
+        if (ISHEADNODE) then
+            if (present(no_advance)) then
+                if (no_advance) advance_modifier = 'no'
+            end if
+            if (advance_modifier == 'no') then
+                write(ECHO_SCN_IUN, get_format(PAD_NONE), advance = advance_modifier) message
+            else
+                write(ECHO_SCN_IUN, get_format(level)) message
+            end if
+        end if
 
     end subroutine
 
@@ -107,26 +136,40 @@ module print_routines
     !>
     !> Variables:
     !>  message: Message to output.
-    !>  level: Offset from the leading edge of the line.
-    subroutine print_echo_txt(message, level)
+    !>  level: Offset from the leading edge of the line (optional).
+    !>  no_advance: .true. not to advance to the next line (optional; default: .false.).
+    subroutine print_echo_txt(message, level, no_advance)
 
         !> Input variables.
         character(len = *), intent(in) :: message
         integer, intent(in), optional :: level
+        logical, intent(in), optional :: no_advance
+
+        !> Local variables.
+        character(len = 3) :: advance_modifier = 'yes'
 
         !> Print to the summary file.
-        if (ISHEADNODE .and. ECHOTXTMODE) write(ECHO_TXT_IUN, get_format(level)) trim(message)
+        if (ISHEADNODE .and. ECHOTXTMODE) then
+            if (present(no_advance)) then
+                if (no_advance) advance_modifier = 'no'
+            end if
+            if (advance_modifier == 'no') then
+                write(ECHO_TXT_IUN, get_format(PAD_NONE), advance = advance_modifier) message
+            else
+                write(ECHO_TXT_IUN, get_format(level)) message
+            end if
+        end if
 
     end subroutine
 
     !> Description:
-    !>  Print the provided message to screen and to the summary file.
-    !>  Level specifies an offset in spacing relative to the leading
-    !>  edge of the line.
+    !>  Print the provided message to screen and to the summary file
+    !>  padded by the specified number of spaces or using the current
+    !>  tab if not explicitly provided.
     !>
     !> Variables:
     !>  message: Message to output.
-    !>  level: Offset from the leading edge of the line.
+    !>  level: Offset from the leading edge of the line (optional).
     subroutine print_message(message, level)
 
         !> Input variables.
@@ -134,20 +177,21 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Print to screen.
-        call print_screen(message, level)
+        call print_screen(trim(message), level)
 
         !> Print to the summary file.
-        call print_echo_txt(message, level)
+        call print_echo_txt(trim(message), level)
 
     end subroutine
 
     !> Description:
-    !>  Print the provided message to screen and to the summary file.
-    !>  Lead the message with "WARNING:".
+    !>  Print the provided message to screen and to the summary file
+    !>  with leading "WARNING:", padded by the specified number of
+    !>  spaces or using the current tab if not explicitly provided.
     !>
     !> Variables:
     !>  message: Message to output.
-    !>  level: Offset from the leading edge of the line.
+    !>  level: Offset from the leading edge of the line (optional).
     subroutine print_warning(message, level)
 
         !> Input variables.
@@ -155,17 +199,18 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Flush the message.
-        call print_message('WARNING: ' // trim(adjustl(message)), level)
+        call print_message('WARNING: ' // trim(message), level)
 
     end subroutine
 
     !> Description:
-    !>  Print the provided message to screen and to the summary file.
-    !>  Lead the message with "REMARK:".
+    !>  Print the provided message to screen and to the summary file
+    !>  with leading "REMARK:", padded by the specified number of spaces
+    !>  or using the current tab if not explicitly provided.
     !>
     !> Variables:
     !>  message: Message to output.
-    !>  level: Offset from the leading edge of the line.
+    !>  level: Offset from the leading edge of the line (optional).
     subroutine print_remark(message, level)
 
         !> Input variables.
@@ -173,18 +218,20 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Flush the message.
-        call print_message('REMARK: ' // trim(adjustl(message)), level)
+        call print_message('REMARK: ' // trim(message), level)
 
     end subroutine
 
     !> Description:
-    !>  Print the provided message to screen and to the summary file.
-    !>  Lead the message with "ERROR: ".
-    !>  Write an extra line before the message.
+    !>  Print the provided message to screen and to the summary file
+    !>  with leading "ERROR:", padded by the specified number of spaces
+    !>  or using the current tab if not explicitly provided. If the
+    !>  current tab is not indented, then the message is preceeded with
+    !>  a blank line.
     !>
     !> Variables:
     !>  message: Message to output.
-    !>  level: Offset from the leading edge of the line.
+    !>  level: Offset from the leading edge of the line (optional).
     subroutine print_error(message, level)
 
         !> Input variables.
@@ -192,43 +239,112 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Print a leading line if the indent level is not present.
-        if (.not. present(level) .and. PAD_NOW == PAD_1) call print_message('')
+        if (.not. present(level) .and. PAD_NOW == PAD_LEAD) call print_message('')
 
         !> Flush the message.
-        call print_message('ERROR: ' // trim(adjustl(message)))
+        call print_message('ERROR: ' // trim(message))
 
     end subroutine
 
     !> Description:
     !>  Print the provided message to screen and to the summary file
-    !>  with an extra indentation.
-    subroutine print_message_detail(message)
+    !>  with padding added to the beginning of the line.
+    !>
+    !> Variables:
+    !>  message: Message to output.
+!todo: Remove; use 'increase_tab' and 'decrease_tab' instead.
+!-    subroutine print_message_detail(message)
+
+        !> Input variables.
+!-        character(len = *), intent(in) :: message
+
+        !> Flush the message.
+!-        call print_message(message, PAD_3)
+
+!-    end subroutine
+
+    !> Description:
+    !>  Print the provided message to screen and to the summary file
+    !>  preceeded with an empty line and with reset padding.
+    !>
+    !> Variables:
+    !>  message: Message to output.
+    !>  leading_lines: Number of lines to precede the section (optional; default: 1).
+    subroutine print_new_section(message, leading_lines)
 
         !> Input variables.
         character(len = *), intent(in) :: message
+        integer, intent(in), optional :: leading_lines
 
-        !> Flush the message.
-        call print_message(message, PAD_3)
+        !> Local variables.
+        integer :: i, n = 1
+
+        !> Reset padding and print empty line.
+        call reset_tab()
+        if (present(leading_lines)) n = max(leading_lines, 0)
+        do i = 1, n
+            call print_message('')
+        end do
+
+        !> Print to screen.
+        call print_screen(message)
+
+        !> Print to the summary file.
+        call print_echo_txt(message)
 
     end subroutine
 
     !> Description:
     !>  Reset the starting position of message output.
     subroutine reset_tab()
-        PAD_NOW = PAD_1
+        PAD_NOW = PAD_LEAD
     end subroutine
 
     !> Description:
     !>  Increase the starting position of message output.
     subroutine increase_tab()
-        PAD_NOW = PAD_3
+        PAD_NOW = PAD_NOW + 2
     end subroutine
 
     !> Description:
     !>  Decrease the starting position of message output.
     subroutine decrease_tab()
-        PAD_NOW = PAD_1
+        PAD_NOW = max(PAD_NOW - 2, PAD_LEAD)
     end subroutine
+
+    !> Description:
+    !>  Convert the provided time in seconds to a string noting the
+    !>  equivalent number of hours, minutes, or seconds.
+    !>
+    !> Variables:
+    !*  time: Time in seconds.
+    !>
+    !> Returns:
+    !*  friendly_time_length: String of denominated units of time.
+    function friendly_time_length(time)
+
+        !> Input variables.
+        real, intent(in) :: time
+
+        !> Output variables.
+        character(len = DEFAULT_FIELD_LENGTH) friendly_time_length
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) line
+
+        !> Format time.
+        if (time > 3600.0) then
+            write(line, FMT_GEN) time/3600.0
+            friendly_time_length = trim(adjustl(line)) // ' hours'
+        else if (time > 60.0) then
+            write(line, FMT_GEN) time/60.0
+            friendly_time_length = trim(adjustl(line)) // ' minutes'
+        else
+            write(line, FMT_GEN) time
+            friendly_time_length = trim(adjustl(line)) // ' seconds'
+        end if
+
+    end function
 
     !> Description:
     !>  Open the summary file.
@@ -259,7 +375,7 @@ module print_routines
             ECHOTXTMODE = .false.
 
             !> Print an error (to screen).
-            call print_error('Unable to open file: ' // trim(adjustl(path)))
+            call print_error('Unable to open file: ' // trim(path))
             call print_message('Check that the path exists, that the file it is not read-protected or open in another application.')
             return
         end if

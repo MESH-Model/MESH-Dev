@@ -1,6 +1,6 @@
 !> Description:
 !>  Subroutine to save the run state to file.
-subroutine resumerun_save(fls, shd, cm, ierr)
+subroutine resumerun_save(fls, shd, cm)
 
     use mpi_module
     use model_files_variables
@@ -12,7 +12,7 @@ subroutine resumerun_save(fls, shd, cm, ierr)
     use RUNCLASS36_constants
     use RUNCLASS36_variables
     use RUNCLASS36_config
-    use RUNSVS113_variables
+    use runsvs_mesh
     use WF_ROUTE_config
     use area_watflood, only: fhr
     use rte_module
@@ -31,9 +31,6 @@ subroutine resumerun_save(fls, shd, cm, ierr)
     type(ShedGridParams) shd
     type(clim_info) cm
 
-    !> Output variables.
-    integer, intent(out) :: ierr
-
     !> Local variables.
     integer iun, j, z
 !>>>>>zone-based storage
@@ -42,14 +39,8 @@ subroutine resumerun_save(fls, shd, cm, ierr)
     character(len = DEFAULT_LINE_LENGTH) args(100), line, fname
     logical now
 
-    !> Initialize the return status.
-    ierr = 0
-
     !> Return if not the head node.
     if (.not. ISHEADNODE .or. vs%flgs%save%state == FLAG_OFF) return
-
-    !> Reset spacing for screen output.
-    call reset_tab()
 
     !> Check if now is the time for the I/O operation.
     now = .false.
@@ -74,9 +65,9 @@ subroutine resumerun_save(fls, shd, cm, ierr)
     !> txt: In text format.
     if (btest(vs%flgs%save%flo%ffmt, FFMT_TXT)) then
         fname = 'MESH_variables.txt'
-        call reset_tab()
+!+        call reset_tab()
         call print_message('SAVING: ' // trim(fname))
-        call increase_tab()
+!+        call increase_tab()
         iun = 100
         open(iun, file = fname, action = 'write', iostat = z)
         if (z /= 0) then
@@ -187,33 +178,33 @@ subroutine resumerun_save(fls, shd, cm, ierr)
         write(iun, FMT_GEN) 'QOSIMD', out%d%grid%qo(fms%stmg%meta%rnk(:))
         if (ro%RUNTILE) then
             write(iun, '(a)') '!< MESHTILE'
-            write(iun, FMT_GEN) 'CMAS', 'GAT', stas%cnpy%cmas
-            write(iun, FMT_GEN) 'GRO', 'GAT', stas%cnpy%gro
-            write(iun, FMT_GEN) 'QAC', 'GAT', stas%cnpy%qac
-            write(iun, FMT_GEN) 'RCAN', 'GAT', stas%cnpy%rcan
-            write(iun, FMT_GEN) 'SNCAN', 'GAT', stas%cnpy%sncan
-            write(iun, FMT_GEN) 'SNO', 'GAT', stas%sno%sno
-            write(iun, FMT_GEN) 'ALBS', 'GAT', stas%sno%albs
-            write(iun, FMT_GEN) 'RHOS', 'GAT', stas%sno%rhos
-            write(iun, FMT_GEN) 'WSNO', 'GAT', stas%sno%wsno
-            write(iun, FMT_GEN) 'TAC', 'GAT', stas%cnpy%tac
-            write(iun, FMT_GEN) 'TBAR', 'GAT', stas%sl%tbar
-            write(iun, FMT_GEN) 'TBAS', 'GAT', stas%sl%tbas
-            write(iun, FMT_GEN) 'TCAN', 'GAT', stas%cnpy%tcan
-            write(iun, FMT_GEN) 'THIC', 'GAT', stas%sl%thic
-            write(iun, FMT_GEN) 'THLQ', 'GAT', stas%sl%thlq
-            write(iun, FMT_GEN) 'TPND', 'GAT', stas%sfc%tpnd
-            write(iun, FMT_GEN) 'TSFS', 'GAT', stas%sfc%tsfs
-            write(iun, FMT_GEN) 'TSNO', 'GAT', stas%sno%tsno
-            write(iun, FMT_GEN) 'ZPND', 'GAT', stas%sfc%zpnd
-            write(iun, FMT_GEN) 'LZS', 'GAT', stas%lzs%ws
-            write(iun, FMT_GEN) 'DZS', 'GAT', stas%dzs%ws
+            write(iun, FMT_GEN) 'CMAS', 'GAT', vs%tile%cmas
+            write(iun, FMT_GEN) 'GRO', 'GAT', vs%tile%gro
+            write(iun, FMT_GEN) 'QAC', 'GAT', vs%tile%qacan
+            write(iun, FMT_GEN) 'RCAN', 'GAT', vs%tile%lqwscan
+            write(iun, FMT_GEN) 'SNCAN', 'GAT', vs%tile%fzwscan
+            write(iun, FMT_GEN) 'SNO', 'GAT', vs%tile%sno
+            write(iun, FMT_GEN) 'ALBS', 'GAT', vs%tile%albsno
+            write(iun, FMT_GEN) 'RHOS', 'GAT', vs%tile%rhosno
+            write(iun, FMT_GEN) 'WSNO', 'GAT', vs%tile%lqwssno
+            write(iun, FMT_GEN) 'TAC', 'GAT', vs%tile%tacan
+            write(iun, FMT_GEN) 'TBAR', 'GAT', vs%tile%tsol
+            write(iun, FMT_GEN) 'TBAS', 'GAT', vs%tile%tbas
+            write(iun, FMT_GEN) 'TCAN', 'GAT', vs%tile%tcan
+            write(iun, FMT_GEN) 'THIC', 'GAT', vs%tile%thicsol
+            write(iun, FMT_GEN) 'THLQ', 'GAT', vs%tile%thlqsol
+            write(iun, FMT_GEN) 'TPND', 'GAT', vs%tile%tpnd
+            write(iun, FMT_GEN) 'TSFS', 'GAT', vs%tile%tsfs
+            write(iun, FMT_GEN) 'TSNO', 'GAT', vs%tile%tsno
+            write(iun, FMT_GEN) 'ZPND', 'GAT', vs%tile%zpnd
+            write(iun, FMT_GEN) 'LZS', 'GAT', vs%tile%stggw
+!-            write(iun, FMT_GEN) 'DZS', 'GAT', vs%tile%dzs
         end if
         if (ro%RUNGRID) then
             write(iun, '(a)') '!< MESHCELL'
-            write(iun, FMT_GEN) 'QI', 'GRD', stas_grid%chnl%qi
-            write(iun, FMT_GEN) 'STGCH', 'GRD', stas_grid%chnl%stg
-            write(iun, FMT_GEN) 'QO', 'GRD', stas_grid%chnl%qo
+            write(iun, FMT_GEN) 'QI', 'GRD', vs%grid%qi
+            write(iun, FMT_GEN) 'STGCH', 'GRD', vs%grid%stgch
+            write(iun, FMT_GEN) 'QO', 'GRD', vs%grid%qo
         end if
         close(iun)
     end if
@@ -231,7 +222,8 @@ subroutine resumerun_save(fls, shd, cm, ierr)
         !> Save files.
         if (index(vs%flgs%save%bin, '+STASONLY') == 0 .and. index(vs%flgs%save%bin, '+CLASSPROG') == 0) then
             call climate_module_resume_save(fls, shd, cm)
-            call save_init_prog_variables_class(fls)
+            call save_init_prog_variables_class(fls, shd)
+            call runsvs_mesh_save_states_seq(fls, shd)
             call bflm_resume_save(fls, shd)
             call WF_ROUTE_resume_save(fls, shd)
             call run_rte_resume_save(fls, shd)
@@ -251,7 +243,8 @@ subroutine resumerun_save(fls, shd, cm, ierr)
             end if
 !<<<<<zone-based storage
         else if (index(vs%flgs%save%bin, '+CLASSPROG') == 0) then
-            call save_init_prog_variables_class(fls)
+            call save_init_prog_variables_class(fls, shd)
+            call runsvs_mesh_save_states_seq(fls, shd)
             call bflm_resume_save(fls, shd)
             call WF_ROUTE_resume_save(fls, shd)
             call run_rte_resume_save(fls, shd)
@@ -270,6 +263,7 @@ subroutine resumerun_save(fls, shd, cm, ierr)
 !<<<<<zone-based storage
         else
             call save_init_prog_variables_class_row(fls, shd)
+            call runsvs_mesh_save_states_seq(fls, shd)
         end if
         if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
             fls%fl(mfk%f883)%fn = fname
@@ -283,7 +277,9 @@ subroutine resumerun_save(fls, shd, cm, ierr)
     !> Save the resume date ('next') to the auto resume file.
     if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
         fname = 'auto_resume.ini'
+!+        call reset_tab()
         call print_message('SAVING: ' // trim(fname))
+!+        call increase_tab()
         iun = 100
         open(iun, file = fname, action = 'write', iostat = z)
         if (z /= 0) then

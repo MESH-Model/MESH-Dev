@@ -8,13 +8,38 @@ module shd_variables
     type CoordSysParams
 
         !* Proj: Projection (formerly CoordSys). [-]
-        character(10) :: Proj = ''
+        character(100) :: Proj = ''
 
         !* Ellips: Ellipsoid (formerly Datum). [-]
         character(10) :: Ellips = ''
 
         !* Zone: Zone if the projection is UTM. [-]
         character(10) :: Zone = ''
+
+        !> Attributes for 'LATLONG', and 'latitude_longitude' projection.
+        real, dimension(:), allocatable :: lat
+        real, dimension(:), allocatable :: lon
+
+        !> Attributes for 'ROTLATLONG' projection (definitions from the 'rpnpy' code).
+        !> Pole coordinate: Where (rlat, rlon) = (0.0, 180.0) on the rotated equator.
+        !*  CentreLatitude: Standard file (fstd) format 'xlat1' (latitude of the pole coordinate). [degrees].
+        !*  CentreLongitude: Standard file (fstd) format 'xlon1' (longitude of of the pole coordinate). [degrees].
+        real :: CentreLatitude = 0.0
+        real :: CentreLongitude = 0.0
+        !> Rotation: Reference point on the rotated equator east of (xlat1, xlon1), which defines the rotation.
+        !*  RotationLatitude: Standard file (fstd) format 'xlat2' (latitude of the reference point on the rotated equator). [degrees].
+        !*  RotationLongitude: Standard file (fstd) format 'xlon2' (longitue of the reference point on the rotated equator). [degrees].
+        real :: RotationLatitude = 0.0
+        real :: RotationLongitude = 0.0
+
+        !> Attributes for 'rotated_latitude_longitude' (not compatible with 'ROTLATLONG').
+        real :: earth_radius = 0.0
+        real :: grid_north_pole_latitude = 0.0
+        real :: grid_north_pole_longitude = 0.0
+        real, dimension(:), allocatable :: rlat
+        real, dimension(:), allocatable :: rlon
+        real, dimension(:, :), allocatable :: xylat
+        real, dimension(:, :), allocatable :: xylon
 
     end type
 
@@ -72,6 +97,9 @@ module shd_variables
 
         !* NAA: Total number of contributing grids in the basin. [-]
         integer :: NAA = 0
+
+        !> DebugGridNo: The ID of a cell (i.e., 'RANK') to use for specific diagnostic outputs. [--].
+        integer :: DebugGridNo = 0
 
         real :: &
             xOrigin = 0.0, &

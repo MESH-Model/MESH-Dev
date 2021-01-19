@@ -21,13 +21,13 @@ module cropland_irrigation_within_tile
         real, external :: calc_ET0
 
         !> For MPI exchange.
-        integer ipid_recv, itag, ierrcode, istop, u, invars, iiln, ii1, ii2, ierr
+        integer ipid_recv, ierrcode, istop, u, invars, iiln, ii1, ii2, ierr
         integer, dimension(:), allocatable :: irqst
         integer, dimension(:, :), allocatable :: imstat
         logical lstat
 
         !> Local variables.
-        integer k, ki, i, ikey
+        integer k, ki, t, c, i, ikey
         real Kc
 
         !> Return if the cropland irrigation module is not active.
@@ -41,19 +41,19 @@ module cropland_irrigation_within_tile
                 !> Grab the grid index (for ylat, xlng)
                 ki = shd%lc%ILMOS(k)
 
-                !> Calc 'calc_ET0' (PEVP).
-                stas%sfc%pevp(k) = calc_ET0( &
-                    cm%dat(ck%TT)%GAT(k), cm%dat(ck%UV)%GAT(k), cm%dat(ck%HU)%GAT(k), cm%dat(ck%P0)%GAT(k), cm%dat(ck%FB)%GAT(k), &
+                !> Calc 'calc_ET0' (POTEVP).
+                vs%tile%potevp(k) = calc_ET0( &
+                    vs%tile%ta(k), vs%tile%uv(k), vs%tile%qa(k), vs%tile%pres(k), vs%tile%fsin(k), &
                     shd%ylat(ki), shd%xlng(ki), shd%ELEV(ki), &
-                    pm%sfp%zrfm(k), &
-                    pm%cp%fcan(k, 1), pm%cp%fcan(k, 2), pm%cp%fcan(k, 3), pm%cp%fcan(k, 4), &
+                    pm%tile%zrfm(k), &
+                    pm%tile%fcan(k, 1), pm%tile%fcan(k, 2), pm%tile%fcan(k, 3), pm%tile%fcan(k, 4), &
                     ic%now%jday, ic%now%hour)
 
                 !> Activate the new growing season.
                 if (civ%jdini(k) == 0) then
 
                     !> Starting day of the growing season.
-                    if (cip%jdsow(k) == 0 .and. stas%cnpy%gro(k) > 0.0) then
+                    if (cip%jdsow(k) == 0 .and. vs%tile%gro(k) > 0.0) then
                         civ%jdini(k) = ic%now%jday
                     else
                         civ%jdini(k) = cip%jdsow(k)
@@ -86,18 +86,18 @@ module cropland_irrigation_within_tile
                         !> Daily.
                         if (btest(cifg%ts_flag, 0)) then
                             civ%vars(civ%fk%KDLY)%lqws2_mm(k) = civ%vars(civ%fk%KDLY)%lqws2_mm(k) + &
-                                (sum(stas%sl%lqws(k, :))*pm%cp%fcan(k, 3))/((3600.0/ic%dts)*24.0)
+                                (sum(vs%tile%lqwssol(k, :))*pm%tile%fcan(k, 3))/((3600.0/ic%dts)*24.0)
                         end if
 
                         !> Hourly.
                         if (btest(cifg%ts_flag, 2) .and. ic%ts_daily > (3600.0/ic%dts)*23.0) then
                             civ%vars(civ%fk%KHLY)%lqws2_mm(k) = civ%vars(civ%fk%KHLY)%lqws2_mm(k) + &
-                                (sum(stas%sl%lqws(k, :))*pm%cp%fcan(k, 3))/(3600.0/ic%dts)
+                                (sum(vs%tile%lqwssol(k, :))*pm%tile%fcan(k, 3))/(3600.0/ic%dts)
                         end if
 
                         !> Per time-step.
                         if (btest(cifg%ts_flag, 3) .and. ic%ts_daily == (3600.0/ic%dts)*24.0) then
-                            civ%vars(civ%fk%KTS)%lqws2_mm(k) = sum(stas%sl%lqws(k, :))*pm%cp%fcan(k, 3)
+                            civ%vars(civ%fk%KTS)%lqws2_mm(k) = sum(vs%tile%lqwssol(k, :))*pm%tile%fcan(k, 3)
                         end if
 
                     end if
@@ -116,9 +116,9 @@ module cropland_irrigation_within_tile
 
                         !> Accumulate states for the present period.
                         do ikey = civ%fk%kmin, civ%fk%kmax
-                            civ%vars(ikey)%pre_mm(k) = civ%vars(ikey)%pre_mm(k) + cm%dat(ck%RT)%GAT(k)*pm%cp%fcan(k, 3)*ic%dts
-                            civ%vars(ikey)%pevp_mm(k) = civ%vars(ikey)%pevp_mm(k) + stas%sfc%pevp(k)*pm%cp%fcan(k, 3)*ic%dts
-                            civ%vars(ikey)%lqws1_mm(k) = civ%vars(ikey)%lqws1_mm(k) + sum(stas%sl%lqws(k, :))*pm%cp%fcan(k, 3)
+                            civ%vars(ikey)%pre_mm(k) = civ%vars(ikey)%pre_mm(k) + vs%tile%pre(k)*pm%tile%fcan(k, 3)*ic%dts
+                            civ%vars(ikey)%pevp_mm(k) = civ%vars(ikey)%pevp_mm(k) + vs%tile%potevp(k)*pm%tile%fcan(k, 3)*ic%dts
+                            civ%vars(ikey)%lqws1_mm(k) = civ%vars(ikey)%lqws1_mm(k) + sum(vs%tile%lqwssol(k, :))*pm%tile%fcan(k, 3)
                         end do
 
                         !> Determine Kc.
@@ -175,8 +175,14 @@ module cropland_irrigation_within_tile
 
         !> Gather variables from parallel nodes.
 
+        !> Check active kind of 'real'.
+        if (kind(2.0) == 8) then
+            c = MPI_REAL8
+        else
+            c = MPI_REAL
+        end if
+
         !> Send/receive process.
-        itag = ic%ts_count*1000
         invars = 3*(civ%fk%kmax - civ%fk%kmin + 1)
 
         if (inp > 1 .and. ipid /= 0) then
@@ -186,14 +192,15 @@ module cropland_irrigation_within_tile
             if (allocated(imstat)) deallocate(imstat)
             allocate(irqst(invars), imstat(mpi_status_size, invars))
             irqst = mpi_request_null
+            t = itag
             i = 1
             do ikey = civ%fk%kmin, civ%fk%kmax
-                call mpi_isend(civ%vars(ikey)%icu_mm(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
+                call mpi_isend(civ%vars(ikey)%icu_mm(il1:il2), iln, c, 0, itag + i, mpi_comm_world, irqst(i), ierr)
                 i = i + 1
-                call mpi_isend(civ%vars(ikey)%lqws2_mm(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr)
+                call mpi_isend(civ%vars(ikey)%lqws2_mm(il1:il2), iln, c, 0, itag + i, mpi_comm_world, irqst(i), ierr)
                 i = i + 1
-!todo: remove pevp (global var)
-                call mpi_isend(stas%sfc%pevp(il1:il2), iln, mpi_real, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!todo: remove potevp (global var)
+                call mpi_isend(vs%tile%potevp(il1:il2), iln, c, 0, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
             end do
             lstat = .false.
             do while (.not. lstat)
@@ -212,14 +219,15 @@ module cropland_irrigation_within_tile
                 irqst = mpi_request_null
                 imstat = 0
                 call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iiln)
+                t = itag
                 i = 1
                 do ikey = civ%fk%kmin, civ%fk%kmax
-                    call mpi_irecv(civ%vars(ikey)%icu_mm(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    call mpi_irecv(civ%vars(ikey)%icu_mm(ii1:ii2), iiln, c, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
-                    call mpi_irecv(civ%vars(ikey)%lqws2_mm(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr)
+                    call mpi_irecv(civ%vars(ikey)%lqws2_mm(ii1:ii2), iiln, c, u, itag + i, mpi_comm_world, irqst(i), ierr)
                     i = i + 1
-!todo: remove pevp (global var)
-                    call mpi_irecv(stas%sfc%pevp(ii1:ii2), iiln, mpi_real, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
+!todo: remove potevp (global var)
+                    call mpi_irecv(vs%tile%potevp(ii1:ii2), iiln, c, u, itag + i, mpi_comm_world, irqst(i), ierr); i = i + 1
                 end do
                 lstat = .false.
                 do while (.not. lstat)
@@ -229,7 +237,12 @@ module cropland_irrigation_within_tile
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, ierr)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, ierr)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 

@@ -31,9 +31,11 @@ module climate_forcing
         !> model_files_variables: 'fls' variable.
         !> shd_variables: 'shd' variable.
         !> model_dates: 'ic' counter variable.
+        !> model_variables: 'vs' variable.
         use model_files_variables
         use shd_variables
         use model_dates
+        use model_variables
 !-        use FLAGS
 
         !> Input variables.
@@ -48,7 +50,7 @@ module climate_forcing
         logical ENDDATA
 
         !> Local variables.
-        integer vid, iun, iskip, isteps1, isteps2, t, s, k, j, i, ierr
+        integer vid, iun, isteps1, isteps2, month, day, t, s, k, j, i, ierr
         character(len = DEFAULT_LINE_LENGTH) line
 
         ENDDATA = .false.
@@ -58,54 +60,102 @@ module climate_forcing
 !?        if (allocated(cm%dat)) deallocate(cm%dat)
 !?        allocate(cm%dat(cm%nclim))
 
-        !> Set the default file name.
-        cm%dat(ck%FB)%fname = 'basin_shortwave'
-        cm%dat(ck%FI)%fname = 'basin_longwave'
-        cm%dat(ck%RT)%fname = 'basin_rain'
-        cm%dat(ck%TT)%fname = 'basin_temperature'
-        cm%dat(ck%UV)%fname = 'basin_wind'
-        cm%dat(ck%P0)%fname = 'basin_pres'
-        cm%dat(ck%HU)%fname = 'basin_humidity'
-        cm%dat(ck%N0)%fname = 'WR_runoff'
-        cm%dat(ck%O1)%fname = 'WR_recharge'
+        !> Set the default file name and map the climate GRD/GAT/GRU variables to 'vs'.
+        if (len_trim(cm%dat(ck%FB)%fname) == 0) then
+            cm%dat(ck%FB)%fname = 'basin_shortwave'
+        end if
+        cm%dat(ck%FB)%GRD => vs%grid%fsin(1:shd%NA)
+        cm%dat(ck%FB)%GAT => vs%tile%fsin(1:shd%lc%NML)
+        cm%dat(ck%FB)%GRU => vs%gru%fsin(1:shd%lc%NTYPE)
+        if (len_trim(cm%dat(ck%FI)%fname) == 0) then
+            cm%dat(ck%FI)%fname = 'basin_longwave'
+        end if
+        cm%dat(ck%FI)%GRD => vs%grid%flin(1:shd%NA)
+        cm%dat(ck%FI)%GAT => vs%tile%flin(1:shd%lc%NML)
+        cm%dat(ck%FI)%GRU => vs%gru%flin(1:shd%lc%NTYPE)
+        if (len_trim(cm%dat(ck%RT)%fname) == 0) then
+            cm%dat(ck%RT)%fname = 'basin_rain'
+        end if
+        cm%dat(ck%RT)%GRD => vs%grid%pre(1:shd%NA)
+        cm%dat(ck%RT)%GAT => vs%tile%pre(1:shd%lc%NML)
+        cm%dat(ck%RT)%GRU => vs%gru%pre(1:shd%lc%NTYPE)
+        if (cm%dat(ck%RR)%factive) then
+            if (len_trim(cm%dat(ck%RR)%fname) == 0) then
+                cm%dat(ck%RR)%fname = 'basin_liquid_precip'
+            end if
+            cm%dat(ck%RR)%GRD => vs%grid%prern(1:shd%NA)
+            cm%dat(ck%RR)%GAT => vs%tile%prern(1:shd%lc%NML)
+            cm%dat(ck%RR)%GRU => vs%gru%prern(1:shd%lc%NTYPE)
+        end if
+        if (cm%dat(ck%SR)%factive) then
+            if (len_trim(cm%dat(ck%SR)%fname) == 0) then
+                cm%dat(ck%SR)%fname = 'basin_solid_precip'
+            end if
+            cm%dat(ck%SR)%GRD => vs%grid%presno(1:shd%NA)
+            cm%dat(ck%SR)%GAT => vs%tile%presno(1:shd%lc%NML)
+            cm%dat(ck%SR)%GRU => vs%gru%presno(1:shd%lc%NTYPE)
+        end if
+        if (len_trim(cm%dat(ck%TT)%fname) == 0) then
+            cm%dat(ck%TT)%fname = 'basin_temperature'
+        end if
+        cm%dat(ck%TT)%GRD => vs%grid%ta(1:shd%NA)
+        cm%dat(ck%TT)%GAT => vs%tile%ta(1:shd%lc%NML)
+        cm%dat(ck%TT)%GRU => vs%gru%ta(1:shd%lc%NTYPE)
+        if (len_trim(cm%dat(ck%UV)%fname) == 0) then
+            cm%dat(ck%UV)%fname = 'basin_wind'
+        end if
+        cm%dat(ck%UV)%GRD => vs%grid%uv(1:shd%NA)
+        cm%dat(ck%UV)%GAT => vs%tile%uv(1:shd%lc%NML)
+        cm%dat(ck%UV)%GRU => vs%gru%uv(1:shd%lc%NTYPE)
+        if (cm%dat(ck%WD)%factive) then
+            if (len_trim(cm%dat(ck%WD)%fname) == 0) then
+                cm%dat(ck%WD)%fname = 'basin_winddir'
+            end if
+            cm%dat(ck%WD)%GRD => vs%grid%wdir(1:shd%NA)
+            cm%dat(ck%WD)%GAT => vs%tile%wdir(1:shd%lc%NML)
+            cm%dat(ck%WD)%GRU => vs%gru%wdir(1:shd%lc%NTYPE)
+        end if
+        if (len_trim(cm%dat(ck%P0)%fname) == 0) then
+            cm%dat(ck%P0)%fname = 'basin_pres'
+        end if
+        cm%dat(ck%P0)%GRD => vs%grid%pres(1:shd%NA)
+        cm%dat(ck%P0)%GAT => vs%tile%pres(1:shd%lc%NML)
+        cm%dat(ck%P0)%GRU => vs%gru%pres(1:shd%lc%NTYPE)
+        if (len_trim(cm%dat(ck%HU)%fname) == 0) then
+            cm%dat(ck%HU)%fname = 'basin_humidity'
+        end if
+        cm%dat(ck%HU)%GRD => vs%grid%qa(1:shd%NA)
+        cm%dat(ck%HU)%GAT => vs%tile%qa(1:shd%lc%NML)
+        cm%dat(ck%HU)%GRU => vs%gru%qa(1:shd%lc%NTYPE)
+        if (cm%dat(ck%N0)%factive) then
+            if (len_trim(cm%dat(ck%N0)%fname) == 0) then
+                cm%dat(ck%N0)%fname = 'WR_runoff'
+            end if
+            cm%dat(ck%N0)%GRD => vs%grid%rff(1:shd%NA)
+            cm%dat(ck%N0)%GAT => vs%tile%rff(1:shd%lc%NML)
+            cm%dat(ck%N0)%GRU => vs%gru%rff(1:shd%lc%NTYPE)
+        end if
+        if (cm%dat(ck%O1)%factive) then
+            if (len_trim(cm%dat(ck%O1)%fname) == 0) then
+                cm%dat(ck%O1)%fname = 'WR_recharge'
+            end if
+            cm%dat(ck%O1)%GRD => vs%grid%rchg(1:shd%NA)
+            cm%dat(ck%O1)%GAT => vs%tile%rchg(1:shd%lc%NML)
+            cm%dat(ck%O1)%GRU => vs%gru%rchg(1:shd%lc%NTYPE)
+        end if
 
         !> Read from file to override default configuration.
         call open_config(cm)
 
-        !> Preparation for CLASS format MET file.
+        !> Allocate GRD/GAT/GRU variables because no equivalent 'vs' variables exist for 'MET'.
         if (cm%dat(ck%MET)%factive) then
-            if (.not. cm%dat(ck%FB)%factive) then
-                allocate(cm%dat(ck%FB)%GRD(shd%NA), cm%dat(ck%FB)%GAT(shd%lc%NML), cm%dat(ck%FB)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%FB)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%FI)%factive) then
-                allocate(cm%dat(ck%FI)%GRD(shd%NA), cm%dat(ck%FI)%GAT(shd%lc%NML), cm%dat(ck%FI)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%FI)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%RT)%factive) then
-                allocate(cm%dat(ck%RT)%GRD(shd%NA), cm%dat(ck%RT)%GAT(shd%lc%NML), cm%dat(ck%RT)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%RT)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%TT)%factive) then
-                allocate(cm%dat(ck%TT)%GRD(shd%NA), cm%dat(ck%TT)%GAT(shd%lc%NML), cm%dat(ck%TT)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%TT)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%UV)%factive) then
-                allocate(cm%dat(ck%UV)%GRD(shd%NA), cm%dat(ck%UV)%GAT(shd%lc%NML), cm%dat(ck%UV)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%UV)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%P0)%factive) then
-                allocate(cm%dat(ck%P0)%GRD(shd%NA), cm%dat(ck%P0)%GAT(shd%lc%NML), cm%dat(ck%P0)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%P0)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
-            if (.not. cm%dat(ck%HU)%factive) then
-                allocate(cm%dat(ck%HU)%GRD(shd%NA), cm%dat(ck%HU)%GAT(shd%lc%NML), cm%dat(ck%HU)%GRU(shd%lc%NTYPE))
-                allocate(cm%dat(ck%HU)%blocks(shd%NA, cm%dat(ck%MET)%nblocks), stat = ierr)
-            end if
+            allocate(cm%dat(ck%MET)%GRD(shd%NA), cm%dat(ck%MET)%GAT(shd%lc%NML), cm%dat(ck%MET)%GRU(shd%lc%NTYPE))
         end if
 
         !> Initialize climate variables.
+        call reset_tab()
         call print_message('READING: Climate forcing variables')
+        call increase_tab()
         do vid = 1, cm%nclim
 
             !> Cycle if the variable is not active.
@@ -139,24 +189,26 @@ module climate_forcing
             !> Check if the time-step is divisible by the model time-step.
             if (mod(cm%dat(vid)%hf, ic%dtmins) /= 0) then
                 call print_error('The forcing data time-step must be divisible by the model time-step.')
+                call increase_tab()
                 write(line, FMT_GEN) cm%dat(vid)%hf
-                call print_message_detail('Data time-step: ' // trim(adjustl(line)) // ' mins')
+                call print_message('Data time-step: ' // trim(adjustl(line)) // ' mins')
                 write(line, FMT_GEN) ic%dtmins
-                call print_message_detail('Model time-step: ' // trim(adjustl(line)) // ' mins')
+                call print_message('Model time-step: ' // trim(adjustl(line)) // ' mins')
+                call decrease_tab()
                 call program_abort()
             end if
 
             !> Warn of unsupprted interpolation flag option.
             if (cm%dat(vid)%ipflg > 1) then
                 write(line, FMT_GEN) cm%dat(vid)%ipflg
-                call print_warning('INTERPOLATIONFLAG ' // trim(adjustl(line)) // ' is not supported and has no effect.', PAD_3)
+                call print_warning('INTERPOLATIONFLAG ' // trim(adjustl(line)) // ' is not supported and has no effect.')
                 cm%dat(vid)%ipflg = 0
             end if
 
             !> Remark on INTERPOLATIONFLAG if the data and model use the same time-step.
             if (cm%dat(vid)%ipflg == 1 .and. cm%dat(vid)%hf == ic%dtmins) then
                 line = 'INTERPOLATIONFLAG is active but has no effect. The climate forcing data and model have the same time-step.'
-                call print_remark(line, PAD_3)
+                call print_remark(line)
                 cm%dat(vid)%ipflg = 0
             end if
 
@@ -182,7 +234,7 @@ module climate_forcing
 !?            end if
 
             !> Allocate the data series.
-            allocate(cm%dat(vid)%GRD(shd%NA), cm%dat(vid)%GAT(shd%lc%NML), cm%dat(vid)%GRU(shd%lc%NTYPE))
+!-            allocate(cm%dat(vid)%GRD(shd%NA), cm%dat(vid)%GAT(shd%lc%NML), cm%dat(vid)%GRU(shd%lc%NTYPE))
 
             !> Skip records in the file to the simulation start date.
             isteps1 = jday_to_tsteps( &
@@ -193,34 +245,42 @@ module climate_forcing
                 call print_error('The first record occurs after the simulation start date.')
                 call print_message( &
                     'The record must start on or after the simulation start date.')
-                write(line, "(i5, i4)") cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday
-                call print_message_detail('First record occurs on: ' // trim(line))
-                write(line, "(i5, i4)") ic%start%year, ic%start%jday
-                call print_message_detail('Simulation start date: ' // trim(line))
+                call increase_tab()
+                call Julian2MonthDay(cm%dat(vid)%start_date%jday, cm%dat(vid)%start_date%year, month, day)
+                write(line, "(i4, '/', i2.2, '/', i2.2, ' ', i2.2, ':', i2.2, ' (', 4i4, ')')") &
+                    cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%month, cm%dat(vid)%start_date%day, &
+                    cm%dat(vid)%start_date%hour, cm%dat(vid)%start_date%mins, &
+                    cm%dat(vid)%start_date%year, cm%dat(vid)%start_date%jday, &
+                    cm%dat(vid)%start_date%hour, cm%dat(vid)%start_date%mins
+                call print_message('First record occurs on: ' // trim(line))
+                write(line, "(i4, '/', i2.2, '/', i2.2, ' ', i2.2, ':', i2.2, ' (', 4i4, ')')") &
+                    ic%start%year, ic%start%month, ic%start%day, ic%start%hour, ic%start%mins, &
+                    ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
+                call print_message('Simulation start date: ' // trim(line))
+                call decrease_tab()
                 call program_abort()
             end if
-            iskip = (isteps2 - isteps1)
-            if (iskip > 0) then
-                write(line, FMT_GEN) iskip
-                call print_message_detail('Skipping ' // trim(adjustl(line)) // ' records.')
-                do i = 1, iskip
-                    if (update_data(shd, cm, vid, .true.)) goto 999
-                end do
+            cm%dat(vid)%iskip = (isteps2 - isteps1)
+            if (cm%dat(vid)%iskip > 0) then
+                write(line, FMT_GEN) cm%dat(vid)%iskip
+                call print_message('Skipping ' // trim(adjustl(line)) // ' records.')
+                if (update_data(shd, cm, vid, cm%dat(vid)%iskip)) goto 999
             end if
         end do
 
         !> Print summary of climate forcing variables.
         if (DIAGNOSEMODE) then
+            call increase_tab()
             write(line, FMT_GEN) 'Variable', 'Name', 'File format', 'Frame length', 'Blocks in-mem.', 'No. series'
-            call print_message_detail(line)
+            call print_message(line)
             do i = 1, cm%nclim
                 if (cm%dat(i)%factive) then
                     write(line, FMT_GEN) &
                         cm%dat(i)%id_var, cm%dat(i)%fname, cm%dat(i)%ffmt, cm%dat(i)%hf, cm%dat(i)%nblocks, cm%dat(i)%nseries
-                    call print_message_detail(line)
+                    call print_message(line)
                 end if
             end do
-            call print_message('')
+            call decrease_tab()
         end if
 
         return
@@ -228,6 +288,188 @@ module climate_forcing
 999     ENDDATA = .true.
 
     end function
+
+    subroutine climate_module_parse_flag(climate_variable, input_flag, ierr)
+
+        use strings
+
+        !> Input variables.
+        character(len = *), intent(in) :: input_flag
+
+        !> Input/output variables.
+        type(clim_series) climate_variable
+
+        !> Output variables.
+        integer ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code, args(50)
+        integer n, j, z
+
+        !> Set the return variable.
+        ierr = 0
+
+        !> Split the string.
+        call parse(input_flag, ' ', args, n)
+
+        !> Return if no arguments exist.
+        if (.not. n >= 2) return
+
+        !> Legacy numeric options.
+        select case (args(2))
+
+            !> ASCII R2C format.
+            case ('1')
+                climate_variable%ffmt = 1
+
+            !> CSV format.
+            case ('2')
+                climate_variable%ffmt = 2
+
+            !> Binary sequential format.
+            case ('3')
+                climate_variable%ffmt = 3
+
+            !> Old-format frames to read in to memory.
+            case ('5')
+                if (n >= 4) then
+                    call value(args(3), climate_variable%ffmt, z)
+                    if (z /= 0) ierr = z
+                    call value(args(4), climate_variable%nblocks, z)
+                    if (z /= 0) ierr = z
+                end if
+
+            !> netCDF format.
+            case ('7')
+                climate_variable%ffmt = 7
+        end select
+
+        !> Assign the options of the flag.
+        do j = 2, n
+
+            !> Reset the local error.
+            z = 0
+
+            !> Single-word options.
+            select case (lowercase(args(j)))
+
+                !> ASCII R2C format.
+                case ('r2c')
+                    climate_variable%ffmt = 1
+
+                !> CSV format.
+                case ('csv')
+                    climate_variable%ffmt = 2
+
+                !> Binary sequential format.
+                case ('seq')
+                    climate_variable%ffmt = 3
+
+                !> netCDF format.
+                case ('nc')
+                    climate_variable%ffmt = 7
+            end select
+
+            !> Multi-word options.
+            if (args(j)(1:3) == 'hf=') then
+
+                !> Frame length/file time-stepping.
+                call value(args(j)(4:), climate_variable%hf, z)
+                if (z /= 0) ierr = z
+            else if (args(j)(1:11) == 'start_date=') then
+
+                !> First date of record.
+                if (len_trim(args(j)) >= 15) then
+                    call value(args(j)(12:15), climate_variable%start_date%year, z)
+                    if (z == 0) then
+                        if (len_trim(args(j)) >= 17) then
+                            call value(args(j)(16:17), climate_variable%start_date%month, z)
+                            if (z == 0) then
+                                if (len_trim(args(j)) >= 19) then
+                                    call value(args(j)(18:19), climate_variable%start_date%day, z)
+                                    if (z == 0) then
+                                        if (len_trim(args(j)) >= 21) then
+                                            call value(args(j)(20:21), climate_variable%start_date%hour, z)
+                                            if (z == 0) then
+                                                if (len_trim(args(j)) >= 23) then
+                                                    call value(args(j)(22:23), climate_variable%start_date%mins, z)
+                                                else
+                                                    climate_variable%start_date%mins = 0
+                                                end if
+                                            end if
+                                        else
+                                            climate_variable%start_date%hour = 0
+                                        end if
+                                    end if
+                                else
+                                    climate_variable%start_date%day = 1
+                                end if
+                                climate_variable%start_date%jday = &
+                                    get_jday( &
+                                        climate_variable%start_date%month, climate_variable%start_date%day, &
+                                        climate_variable%start_date%year)
+                            end if
+                        else
+                            climate_variable%start_date%month = 1
+                        end if
+                    else
+                        ierr = z
+                    end if
+                end if
+            else if (args(j)(1:4) == 'nts=') then
+
+                !> Number of frames to read in to memory.
+                call value(args(j)(5:), climate_variable%nblocks, z)
+                if (z /= 0) ierr = z
+            else if (args(j)(1:6) == 'fname=') then
+
+                !> Base file name (without extension).
+                climate_variable%fname = adjustl(args(j)(7:))
+            else if (args(j)(1:6) == 'fpath=') then
+
+                !> Full path including file name and extension.
+                climate_variable%fpath = adjustl(args(j)(7:))
+            else if (args(j)(1:9) == 'name_var=') then
+
+                !> Variable name.
+                climate_variable%id_var = adjustl(args(j)(10:))
+            else if (args(j)(1:9) == 'name_lat=') then
+
+                !> Name of latitude dimension (for specific formats).
+                climate_variable%name_lat = adjustl(args(j)(10:))
+            else if (args(j)(1:9) == 'name_lon=') then
+
+                !> Name of longitude dimension (for specific formats).
+                climate_variable%name_lon = adjustl(args(j)(10:))
+            else if (args(j)(1:10) == 'name_time=') then
+
+                !> Name of time dimension (for specific formats).
+                climate_variable%name_time = adjustl(args(j)(11:))
+            else if (args(j)(1:3) == 'cm=') then
+
+                !> Data multiplier.
+                call value(args(j)(4:), climate_variable%cm, z)
+                if (z /= 0) ierr = z
+            else if (args(j)(1:3) == 'ca=') then
+
+                !> Data additive factor.
+                call value(args(j)(4:), climate_variable%ca, z)
+                if (z /= 0) ierr = z
+            else if (args(j)(1:11) == 'time_shift=') then
+
+                !> Time shift to apply to time-stamps (for specific formats).
+                call value(args(j)(12:), climate_variable%time_shift, z)
+                if (z /= 0) ierr = z
+            end if
+
+            !> Check for errors.
+            if (z /= 0) then
+                write(code, FMT_GEN) j
+                call print_warning('An error occurred parsing argument ' // trim(adjustl(code)) // ' of ' // trim(args(1)) // '.')
+            end if
+        end do
+
+    end subroutine
 
     !> Description:
     !>  Resume states to the climate forcing state file.
@@ -257,6 +499,8 @@ module climate_forcing
         logical ENDDATA
 
         !> Local variables.
+        integer(kind = 4) i4, iblock_i4, itimestep_i4, ipflg_i4
+        real(kind = 4), dimension(:, :), allocatable :: blocks_r4, ipdat_r4
         integer vid, ierr, iun
         character(len = DEFAULT_LINE_LENGTH) line
 
@@ -273,13 +517,15 @@ module climate_forcing
         end if
 
         !> Stop if the state file does not contain the expected number of climate variables.
-        read(iun) ierr
-        if (ierr /= 7) then
+        read(iun) i4
+        if (int(i4) /= 7) then
             call print_error('Incompatible ranking in climate state file.')
-            write(line, FMT_GEN) ierr
-            call print_message_detail('Number of clim. variables read: ' // trim(adjustl(line)))
+            call increase_tab()
+            write(line, FMT_GEN) i4
+            call print_message('Number of clim. variables read: ' // trim(adjustl(line)))
             write(line, FMT_GEN) 7
-            call print_message_detail('Number of clim. variables expected: ' // trim(adjustl(line)))
+            call print_message('Number of clim. variables expected: ' // trim(adjustl(line)))
+            call decrease_tab()
             call program_abort()
         end if
 
@@ -287,20 +533,31 @@ module climate_forcing
         do vid = 1, 7
 
             !> Read the state of the climate variable (in case reading into memory).
-            read(iun) cm%dat(vid)%blocks
-            read(iun) cm%dat(vid)%iblock
+            allocate(blocks_r4(size(cm%dat(vid)%blocks, 1), size(cm%dat(vid)%blocks, 2)))
+            blocks_r4 = 0.0
+            read(iun) blocks_r4
+            cm%dat(vid)%blocks = real(blocks_r4, kind(cm%dat(vid)%blocks))
+            read(iun) iblock_i4
+            cm%dat(vid)%iblock = int(iblock_i4, kind(cm%dat(vid)%iblock))
+            deallocate(blocks_r4)
 
             !> Read the last time-step read from file.
-            read(iun) cm%dat(vid)%itimestep
+            read(iun) itimestep_i4
+            cm%dat(vid)%itimestep = int(itimestep_i4, kind(cm%dat(vid)%itimestep))
 
             !> Read the interpolation state (if active).
-            read(iun) cm%dat(vid)%ipflg
+            read(iun) ipflg_i4
+            cm%dat(vid)%ipflg = int(ipflg_i4, kind(cm%dat(vid)%ipflg))
             if (cm%dat(vid)%ipflg == 1) then
-                read(iun) cm%dat(vid)%ipdat
+                allocate(ipdat_r4(size(cm%dat(vid)%ipdat, 1), size(cm%dat(vid)%ipdat, 2)))
+                ipdat_r4 = 0.0
+                read(iun) ipdat_r4
+                cm%dat(vid)%ipdat = real(ipdat_r4, kind(cm%dat(vid)%ipdat))
+                deallocate(ipdat_r4)
 
                 !> INTERPOLATIONFLAG 1 requires an additional frame be read from the next time-step.
                 if (cm%dat(vid)%itimestep == 0) then
-                    if (update_data(shd, cm, vid, .false.)) goto 999
+                    if (update_data(shd, cm, vid, 0)) goto 999
                     cm%dat(vid)%ipdat(:, 2) = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
                 end if
             end if
@@ -365,7 +622,7 @@ module climate_forcing
 
                 !> INTERPOLATIONFLAG 1 requires an additional frame be read in the first time-step.
                 if (ic%ts_count == 1 .and. cm%dat(vid)%ipflg == 1) then
-                    if (update_data(shd, cm, vid, .false.)) goto 999
+                    if (update_data(shd, cm, vid, 0)) goto 999
                     cm%dat(vid)%ipdat(:, 2) = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
                 end if
 
@@ -373,7 +630,7 @@ module climate_forcing
                 if (cm%dat(vid)%itimestep == 0) then
 
                     !> Update the input forcing data.
-                    if (update_data(shd, cm, vid, .false.)) goto 999
+                    if (update_data(shd, cm, vid, 0)) goto 999
 
                     !> Apply conditions to the series of data is such conditions exist.
                     if (cm%dat(vid)%nseries > 0) then
@@ -452,52 +709,20 @@ module climate_forcing
                 if (cm%dat(vid)%itimestep >= cm%dat(vid)%hf) then
                     cm%dat(vid)%itimestep = 0
                 end if
+
+                !> Update the count of the current block.
+                if (cm%dat(vid)%nblocks > 1 .and. cm%dat(vid)%itimestep == 0) then
+                    cm%dat(vid)%iblock = cm%dat(vid)%iblock + 1
+                    if (cm%dat(vid)%iblock > cm%dat(vid)%nblocks) then
+                        cm%dat(vid)%iblock = 1
+                    end if
+                end if
             end if
         end do
 
-        !> Distribute data from CLASS format MET file for variables not already active.
-        if (cm%dat(ck%MET)%factive) then
-            do vid = 1, 7
-
-                !> Cycle if variable active (e.g., read from different file).
-                if (cm%dat(vid)%factive) cycle
-
-                !> Extract data from the climate variable.
-                select case (cm%dat(vid)%blocktype)
-
-                    !> Block type: GRD (Grid).
-                    case (1)
-                        cm%dat(vid)%GRD = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
-                        do k = ii1, ii2
-                            cm%dat(vid)%GAT(k) = cm%dat(vid)%GRD(shd%lc%ILMOS(k))
-                        end do
-                        do k = ii1, ii2
-                            cm%dat(vid)%GRU(shd%lc%JLMOS(k)) = cm%dat(vid)%GAT(k)
-                        end do
-
-                    !> Block type: GRU.
-                    case (2)
-                        cm%dat(vid)%GRU = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
-                        cm%dat(vid)%GRD = 0.0
-                        do k = ii1, ii2
-                            j = shd%lc%JLMOS(k)
-                            i = shd%lc%ILMOS(k)
-                            cm%dat(vid)%GAT(k) = cm%dat(vid)%GRU(j)
-                            cm%dat(vid)%GRD(i) = cm%dat(vid)%GRD(i) + shd%lc%ACLASS(i, j)*cm%dat(vid)%GRU(j)
-                        end do
-
-                    !> Block type: GAT (Land element).
-                    case (3)
-                        cm%dat(vid)%GAT = cm%dat(vid)%blocks(:, cm%dat(vid)%iblock)
-                        cm%dat(vid)%GRD = 0.0
-                        do k = ii1, ii2
-                            j = shd%lc%JLMOS(k)
-                            i = shd%lc%ILMOS(k)
-                            cm%dat(vid)%GRD(i) = cm%dat(vid)%GRD(i) + shd%lc%ACLASS(i, j)*cm%dat(vid)%GAT(k)
-                            cm%dat(vid)%GRU(j) = cm%dat(vid)%GAT(k)
-                        end do
-                end select
-            end do
+        !> Advance line if 'MET' format file is active (special condition).
+        if (cm%dat(ck%MET)%factive .and. cm%dat(ck%MET)%itimestep == 0) then
+            if (update_data(shd, cm, ck%MET, 1)) goto 999
         end if
 
         return
@@ -547,22 +772,22 @@ module climate_forcing
         end if
 
         !> Write the number of climate variables.
-        write(iun) 7
+        write(iun) int(7, kind = 4)
 
         !> Loop through variables in the climate forcing object and write the states to file.
         do vid = 1, 7
 
             !> Save the state of the climate variable (in case reading into memory).
-            write(iun) cm%dat(vid)%blocks
-            write(iun) cm%dat(vid)%iblock
+            write(iun) real(cm%dat(vid)%blocks, kind = 4)
+            write(iun) int(cm%dat(vid)%iblock, kind = 4)
 
             !> Save the current time-step read from file.
-            write(iun) cm%dat(vid)%itimestep
+            write(iun) int(cm%dat(vid)%itimestep, kind = 4)
 
             !> Save the interpolation state (if active).
-            write(iun) cm%dat(vid)%ipflg
+            write(iun) int(cm%dat(vid)%ipflg, kind = 4)
             if (cm%dat(vid)%ipflg == 1) then
-                write(iun) cm%dat(vid)%ipdat
+                write(iun) real(cm%dat(vid)%ipdat, kind = 4)
             end if
         end do
 

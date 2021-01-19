@@ -7,14 +7,14 @@ subroutine resumerun_read(fls, shd, cm, ierr)
     use climate_forcing
     use sa_mesh_run_within_tile
     use sa_mesh_run_within_grid
-!+    use sa_mesh_run_between_grid
+    use sa_mesh_run_between_grid
 
     !> Process modules.
     use FLAGS, only: NRSOILAYEREADFLAG
     use RUNCLASS36_constants
-    use RUNCLASS36_variables
     use RUNCLASS36_config
-    use RUNSVS113_variables
+    use RUNCLASS36_variables
+    use runsvs_mesh
     use WF_ROUTE_config
     use area_watflood, only: fhr
     use rte_module
@@ -55,36 +55,37 @@ subroutine resumerun_read(fls, shd, cm, ierr)
         m = shd%lc%JLMOS(k)
 
         !> RUNCLASS36 and RUNSVS113.
-        if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. RUNSVS113_flgs%PROCESS_ACTIVE) then
-            stas%cnpy%tcan(k) = stas_gru%cnpy%tcan(m) + TFREZ
-            stas%sno%tsno(k) = stas_gru%sno%tsno(m) + TFREZ
-            stas%sno%rhos(k) = stas_gru%sno%rhos(m)
-            stas%sno%albs(k) = stas_gru%sno%albs(m)
-            stas%sl%tbar(k, :) = stas_gru%sl%tbar(m, :) + TFREZ
-            stas%sl%thlq(k, :) = stas_gru%sl%thlq(m, :)
+        if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
+            vs%tile%tcan(k) = vs%gru%tcan(m) + TFREZ
+            vs%tile%tsno(k) = vs%gru%tsno(m) + TFREZ
+            vs%tile%rhosno(k) = vs%gru%rhosno(m)
+            vs%tile%albsno(k) = vs%gru%albsno(m)
+            vs%tile%tsol(k, :) = vs%gru%tsol(m, :) + TFREZ
+            vs%tile%thlqsol(k, :) = vs%gru%thlqsol(m, :)
+            vs%tile%thicsol(k, :) = vs%gru%thicsol(m, :)
         end if
 
         !> RUNCLASS36.
         if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-            stas%cnpy%tac(k) = stas_gru%cnpy%tcan(m) + TFREZ
-            stas%cnpy%qac = 0.5e-2
-            stas%sfc%tpnd(k) = stas_gru%sfc%tpnd(m) + TFREZ
-            stas%sfc%zpnd(k) = stas_gru%sfc%zpnd(m)
-            stas%cnpy%rcan(k) = stas_gru%cnpy%rcan(m)
-            stas%cnpy%sncan(k) = stas_gru%cnpy%sncan(m)
-            stas%sno%sno(k) = stas_gru%sno%sno(m)
-            stas%cnpy%gro(k) = stas_gru%cnpy%gro(m)
-            stas%sfc%tsfs(k, 1) = TFREZ
-            stas%sfc%tsfs(k, 2) = TFREZ
-            stas%sfc%tsfs(k, 3) = stas_gru%sl%tbar(m, 1) + TFREZ
-            stas%sfc%tsfs(k, 4) = stas_gru%sl%tbar(m, 1) + TFREZ
-            stas%sl%tbas(k) = stas_gru%sl%tbar(m, shd%lc%IGND) + TFREZ
-            stas%sl%thic(k, :) = stas_gru%sl%thic(m, :)
+            vs%tile%tacan(k) = vs%gru%tcan(m) + TFREZ
+            vs%tile%qacan(k) = 0.5e-2
+            vs%tile%tpnd(k) = vs%gru%tpnd(m) + TFREZ
+            vs%tile%zpnd(k) = vs%gru%zpnd(m)
+            vs%tile%lqwscan(k) = vs%gru%lqwscan(m)
+            vs%tile%fzwscan(k) = vs%gru%fzwscan(m)
+            vs%tile%sno(k) = vs%gru%sno(m)
+            vs%tile%gro(k) = vs%gru%gro(m)
+            vs%tile%tsfs(k, 1) = TFREZ
+            vs%tile%tsfs(k, 2) = TFREZ
+            vs%tile%tsfs(k, 3) = vs%gru%tsol(m, 1) + TFREZ
+            vs%tile%tsfs(k, 4) = vs%gru%tsol(m, 1) + TFREZ
+            vs%tile%tbas(k) = vs%gru%tsol(m, shd%lc%IGND) + TFREZ
         end if
-    end do !k = il1, il2
+
+    end do !k = 1, shd%lc%NML
 
     !> Distribute soil states to layers lower than the "last configured layer".
-    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
 
         !> Determine the "last configured layer" read from file (CLASS default: 3).
         if (NRSOILAYEREADFLAG > 3) then
@@ -98,9 +99,9 @@ subroutine resumerun_read(fls, shd, cm, ierr)
         !> Assign states to layers lower than the "last configured layer" read from file.
         if (ignd > 0) then
             do j = (ignd + 1), shd%lc%IGND
-                stas%sl%tbar(:, j) = stas%sl%tbar(:, ignd)
-                stas%sl%thlq(:, j) = stas%sl%thlq(:, ignd)
-                stas%sl%thic(:, j) = stas%sl%thic(:, ignd)
+                vs%tile%tsol(:, j) = vs%tile%tsol(:, ignd)
+                vs%tile%thlqsol(:, j) = vs%tile%thlqsol(:, ignd)
+                vs%tile%thicsol(:, j) = vs%tile%thicsol(:, ignd)
             end do
         end if
     end if
@@ -108,9 +109,9 @@ subroutine resumerun_read(fls, shd, cm, ierr)
 !?    !> Check for auto resume file.
 !?    if (vs%flgs%resume%state == FLAG_AUTO) then
 !?        fname = 'auto_resume.ini'
-!?        call reset_tab()
+!?!+        call reset_tab()
 !?        call print_message('READING: ' // trim(fname))
-!?        call increase_tab()
+!?!+        call increase_tab()
 !?        inquire(file = fname, exist = lstate)
 !?        if (lstate) then
 !?
@@ -159,7 +160,8 @@ subroutine resumerun_read(fls, shd, cm, ierr)
             end if
             if (index(vs%flgs%resume%bin, '+STASONLY') == 0 .and. index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
                 lstate = climate_module_resume_read(fls, shd, cm)
-                call read_init_prog_variables_class(fls)
+                call read_init_prog_variables_class(fls, shd)
+                call runsvs_mesh_resume_states_seq(fls, shd, resume_ts = .true.)
                 call bflm_resume_read(fls, shd)
                 call WF_ROUTE_resume_read(fls, shd)
                 call run_rte_resume_read(fls, shd)
@@ -179,7 +181,8 @@ subroutine resumerun_read(fls, shd, cm, ierr)
                 end if
 !<<<<<zone-based storage
             else if (index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
-                call read_init_prog_variables_class(fls)
+                call read_init_prog_variables_class(fls, shd)
+                call runsvs_mesh_resume_states_seq(fls, shd, resume_ts = .false.)
                 call bflm_resume_read(fls, shd)
                 call WF_ROUTE_resume_read_nots(fls, shd)
                 call run_rte_resume_read_nots(fls, shd)
@@ -198,6 +201,7 @@ subroutine resumerun_read(fls, shd, cm, ierr)
 !<<<<<zone-based storage
             else
                 call read_init_prog_variables_class_row(fls, shd)
+                call runsvs_mesh_resume_states_seq(fls, shd, resume_ts = .false.)
             end if
             if (vs%flgs%resume%state == FLAG_AUTO) then
                 fls%fl(mfk%f883)%fn = fname
@@ -212,5 +216,6 @@ subroutine resumerun_read(fls, shd, cm, ierr)
     !> Update derived values.
     call run_within_tile_stas_update(fls, shd, cm)
     call run_within_grid_stas_update(fls, shd, cm)
+    call run_within_grid_stas_basin_update(fls, shd, cm)
 
 end subroutine

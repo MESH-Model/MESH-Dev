@@ -49,7 +49,8 @@ module model_dates
         !*  now: Current date in the simulation.
         !*  stop: Simulation stop date.
         !*  next: Next date to be simulated.
-        type(counter_date) iter, start, stop, now, next
+        !*  run_start: Computer time at the beginning of the run.
+        type(counter_date) iter, start, stop, now, next, run_start
 
         !> Time-step counts (no reset).
         !*  count_year: Number of simulation years run.

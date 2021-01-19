@@ -80,7 +80,7 @@ cc        use areamelt
 
       real*4,     dimension(:),    allocatable :: qinit,datemp
       real*4,     dimension(:,:),  allocatable :: qdagrd
-      integer*4,  dimension(:),    allocatable :: iset
+      integer,  dimension(:),    allocatable :: iset
 !mesh_io      character(12), dimension(:), allocatable :: sta_id
 !mesh_io      character(20), dimension(:), allocatable :: sta_name
 !mesh_io      real*4,        dimension(:), allocatable :: sta_lat
@@ -148,7 +148,7 @@ cc        use areamelt
 !mesh_io      write(53,*)'In flowinit.for'
 !mesh_io      write(53,*)'~~~~~~~~~~~~~~~'
 
-      convert=al*al*1000.0      ! converts vol in m^3 to mm on the unit grid
+      convert=al*al*1000.0_4      ! converts vol in m^3 to mm on the unit grid
       flow_max=0.0
 
 
@@ -157,7 +157,7 @@ cc        use areamelt
       maxr=0
       do n=1,naa
          if(ireach(n).gt.0)then
-            maxr=max0(maxr,ireach(n))
+            maxr=max(maxr,ireach(n))
          endif
       end do
 !     print*,'no of reaches found       =',maxr
@@ -446,7 +446,7 @@ c          ktt=min(nr,nl,mhtot)
 !           DONE JAN. 14/00 IN ZURICH: LET INIT FLOW = DA/1000
 !           FOR LACK OF ANYTHING BETTER <<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-               qda(n)=0.001*da(n)
+               qda(n)=0.001_4*da(n)
                nlow(l)=kt
                ktt=kt
 
@@ -543,7 +543,7 @@ c      stop 'program aborted in flowinit @ 164'
             i=yyy(n)
             j=xxx(n)
             qdagrd(i,j)=qda(n)
-            flow_max=amax1(flow_max,qda(n))
+            flow_max=max(flow_max,qda(n))
          end do
          if(flow_max.gt.99.9)then
             do i=imax,1,-1
@@ -618,7 +618,7 @@ c      stop 'program aborted in flowinit @ 164'
 !              WE'RE AT A GAUGE AND WE'LL SUBTRACT OUT THE RELEASE
 !              RELEASE CAN'T BE GREATER THAN THE GAUGE FLOW
 !              nothing is taken out if flow = natural
-                     qda(n)=max1(qda(n)-qinit(k),0.0)
+                     qda(n)=max(qda(n)-qinit(k),0.0_4)
 !              CHECK TO SEE IF WE'VE RUN INTO ANOTHER RESERVOIR
 !              WE HAVE TO CHECK THEM ALL
                      do mm=1,noread
@@ -629,6 +629,8 @@ c      stop 'program aborted in flowinit @ 164'
                    end do
                 endif
                 n=next(n)
+!              CHECK IN CASE (NAA == NA).
+                if(n.eq.next(n)) exit
              end do
           endif                 !inbsnflg
        end do
@@ -664,7 +666,7 @@ c      stop 'program aborted in flowinit @ 164'
             i=yyy(n)
             j=xxx(n)
             qdagrd(i,j)=qda(n)
-            flow_max=amax1(flow_max,qda(n))
+            flow_max=max(flow_max,qda(n))
          end do
          if(flow_max.gt.99.9)then
             do i=imax,1,-1
@@ -833,7 +835,7 @@ c      stop 'program aborted in flowinit @ 164'
             i=yyy(n)
             j=xxx(n)
             qdagrd(i,j)=qda(n)
-            flow_max=amax1(flow_max,qda(n))
+            flow_max=max(flow_max,qda(n))
          end do
          if(flow_max.gt.99.9)then
             do i=imax,1,-1
@@ -922,6 +924,8 @@ c      stop 'program aborted in flowinit @ 164'
      *                 datemp(n),qda(n),datemp(nnx),qda(nnx)
                endif
                n=next(n)
+!             CHECK IN CASE (NAA == NA).
+               if(n.eq.next(n)) exit
             end do
          endif                  ! inbsn
       end do
@@ -1052,6 +1056,8 @@ c      stop 'program aborted in flowinit @ 164'
             do while(.not.resflag.and.n.le.naa)
                qda(n)=qda(n)+qinit(k)
                n=next(n)
+!           CHECK IN CASE (NAA == NA).
+               if(n.eq.next(n)) exit
 !           CHECK TO SEE IF WE'VE RUN INTO ANOTHER RESERVOIR
 !           WE HAVE TO CHECK THEM ALL
                do mm=1,noresv
@@ -1168,12 +1174,12 @@ c      stop 'program aborted in flowinit @ 164'
 
 ! stuff commented out     nk 28/01/03
          if(manningflg.eq.'y')then
-            qch=(cap(n)/rl(n))**1.67*slope(n)/
-     *           chawid(n)**0.667/r2n(n)
+            qch=(cap(n)/rl(n))**1.67_4*slope(n)/
+     *           chawid(n)**0.667_4/r2n(n)
 c     *                             chawid(n)**0.667/r2n(ii)
          else
 c     qch=(cap(n)/rl(n))**1.33*slope(n)/r2(ii)
-            qch=(cap(n)/rl(n))**1.33*slope(n)/r2(n)
+            qch=(cap(n)/rl(n))**1.33_4*slope(n)/r2(n)
          endif
 
 !         endif
@@ -1190,11 +1196,11 @@ c     qch=(cap(n)/rl(n))**1.33*slope(n)/r2(ii)
                   over(n)=0.0
                   if(manningflg.eq.'y')then
                      store1(n)=rl(n)*
-     *                 (qo2(n)*chawid(n)**0.667*r2n(n)/slope(n))**.60
+     *                (qo2(n)*chawid(n)**0.667_4*r2n(n)/slope(n))**.60_4
 c     *              (qo2(n)*chawid(n)**0.667*r2n(ii)/slope(n))**.60
                   else
 c                   store1(n)=rl(n)*(qo2(n)*r2(ii)/slope(n))**.75
-                     store1(n)=rl(n)*(qo2(n)*r2(n)/slope(n))**.75
+                     store1(n)=rl(n)*(qo2(n)*r2(n)/slope(n))**.75_4
                   endif
                   store2(n)=store1(n)
                   flowxa(n)=store1(n)/rl(n)
@@ -1217,11 +1223,11 @@ c                 satxa(n)=wstore1(n)/rl(n)/abs(theta(ii))
 
                   if(manningflg.eq.'y')then
                      store1(n)=rl(n)*
-     *                 (qo2(n)*chawid(n)**0.667*r2n(n)/slope(n))**.60
+     *                (qo2(n)*chawid(n)**0.667_4*r2n(n)/slope(n))**.60_4
 c     *              (qo2(n)*chawid(n)**0.667*r2n(ii)/slope(n))**.60
                   else
 c                   store1(n)=rl(n)*(qo2(n)*r2(ii)/slope(n))**.75
-                     store1(n)=rl(n)*(qo2(n)*r2(n)/slope(n))**.75
+                     store1(n)=rl(n)*(qo2(n)*r2(n)/slope(n))**.75_4
                   endif
                   store2(n)=store1(n)
 
@@ -1232,11 +1238,11 @@ c                   store1(n)=rl(n)*(qo2(n)*r2(ii)/slope(n))**.75
 
                   if(manningflg.eq.'y')then
 c                   over(n)=((qo2(n)-qch)*r1n(ii)*6.0/slope(n))**.75
-                     over(n)=((qo2(n)-qch)*r1n(n)*6.0/slope(n))**.75
+                     over(n)=((qo2(n)-qch)*r1n(n)*6.0_4/slope(n))**.75_4
 !                  the factor of 6.0 is incorportated in r1
                   else
 c                   over(n)=((qo2(n)-qch)*r1(ii)/slope(n))**.75
-                     over(n)=((qo2(n)-qch)*r1(n)/slope(n))**.75
+                     over(n)=((qo2(n)-qch)*r1(n)/slope(n))**.75_4
                   endif
 
                   store1(n)=rl(n)*(cap(n)/rl(n)+over(n))
@@ -1251,7 +1257,7 @@ c                   over(n)=((qo2(n)-qch)*r1(ii)/slope(n))**.75
                   hcha1(n)=chadep(n)+obdepth
                   hcha2(n)=hcha1(n)
 
-                  hwet1(n)=0.80*chadep(n)
+                  hwet1(n)=0.80_4*chadep(n)
 
 !                 hwet1(n)=hcha1(n)
                   hwet2(n)=hwet1(n)
@@ -1268,11 +1274,11 @@ c                 satxa(n)=wstore1(n)/rl(n)/abs(theta(ii))
 
                   if(manningflg.eq.'y')then
 c                   over(n)=((qo2(n)-qch)*r1n(ii)*6.0/slope(n))**.75
-                     over(n)=((qo2(n)-qch)*r1n(n)*6.0/slope(n))**.75
+                     over(n)=((qo2(n)-qch)*r1n(n)*6.0_4/slope(n))**.75_4
 !                  the factor of 6.0 is incorportated in r1
                   else
 c                   over(n)=((qo2(n)-qch)*r1(ii)/slope(n))**.75
-                     over(n)=((qo2(n)-qch)*r1(n)/slope(n))**.75
+                     over(n)=((qo2(n)-qch)*r1(n)/slope(n))**.75_4
                   endif
 
                   store1(n)=rl(n)*(cap(n)/rl(n)+over(n))
@@ -1311,7 +1317,7 @@ c         endif
 !           RIVERS.  NOTE: IT IS MULTIPLIED BY FRACT LATER SO THIS IS
 !           FOR FULL ELEMENTS
 
-      tdum=1000.*step2/3600.
+      tdum=1000._4*step2/3600._4
 !     This section moved from soilinit   June 13/03
 !     Why was it there anyway???????
       do n=1,naa
@@ -1369,7 +1375,7 @@ c         Copied over from runof6.for (thr=1):  AKB July 11, 2002
 !      m=1
 !      jan=1
 !      tot1=0.
-      qi2(n)=0.0
+      qi2(na)=0.0
 
       if(iopt.ge.2)then
          write(53,6010)
@@ -1398,14 +1404,14 @@ c         Copied over from runof6.for (thr=1):  AKB July 11, 2002
             if(lake_area(k).gt.0.0.and.lake_elv(k,kt).gt.0.0)then
                store1(n)=lake_elv(k,kt)*lake_area(k)
             elseif(b6(k).gt.0.0.and.lake_elv(k,kt).gt.0.0)then
-               store1(n)=max(0.0,lake_elv(k,kt)-b7(k))*b6(k)
+               store1(n)=max(0.0_4,lake_elv(k,kt)-b7(k))*b6(k)
             elseif(b3(k).eq.0.0)then
-               store1(n)=(qo2(n)/b1(k))**(1.0/b2(k))
+               store1(n)=(qo2(n)/b1(k))**(1.0_4/b2(k))
             elseif(b3(k).gt.0.0)then
                store1(n)=10.0
                trialq=0.0
                do while(trialq.lt.qo2(n))
-                  store1(n)=2.0*store1(n)
+                  store1(n)=2.0_4*store1(n)
                   trialq=store1(n)*(b1(k)+store1(n)*(b2(k)+store1(n)*
      *               (b3(k)+store1(n)*(b4(k)+b5(k)*store1(n)))))
                enddo

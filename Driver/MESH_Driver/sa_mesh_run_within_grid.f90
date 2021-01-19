@@ -72,7 +72,6 @@ module sa_mesh_run_within_grid
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
-        t = ic%ts_count*1000 + 200
 
         if (inp > 1 .and. ipid /= 0) then
 
@@ -83,8 +82,9 @@ module sa_mesh_run_within_grid
             iin = (ii2 - ii1) + 1
 
             !> Reset the exchange variables.
-            i = 1
             irqst = MPI_REQUEST_NULL
+            t = itag
+            i = 1
 
             !> Wait until the exchange completes.
             lstat = .false.
@@ -104,9 +104,10 @@ module sa_mesh_run_within_grid
                 iin = (ii2 - ii1) + 1
 
                 !> Reset the exchange variables.
-                i = 1
                 irqst = MPI_REQUEST_NULL
                 imstat = 0
+                t = itag
+                i = 1
 
                 !> Wait until the exchange completes.
                 lstat = .false.
@@ -118,7 +119,12 @@ module sa_mesh_run_within_grid
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, z)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 
@@ -130,7 +136,7 @@ module sa_mesh_run_within_grid
         type(clim_info) cm
 
         !> Local variables.
-        integer nvars, t, i, j, u, ii1, ii2, iin, z
+        integer nvars, t, c, i, j, u, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
         real, dimension(:), allocatable :: chnl
@@ -146,12 +152,18 @@ module sa_mesh_run_within_grid
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
-        t = ic%ts_count*1000 + 400
 
         !> Assign the indices.
         ii1 = 1
         ii2 = shd%NA
         iin = (ii2 - ii1) + 1
+
+        !> Check active kind of 'real'.
+        if (kind(2.0) == 8) then
+            c = MPI_REAL8
+        else
+            c = MPI_REAL
+        end if
 
         !> Allocate temporary arrays.
         allocate(chnl(iin)) !3*iin if diversion/abstraction
@@ -162,15 +174,16 @@ module sa_mesh_run_within_grid
             do u = 1, (inp - 1)
 
                 !> Reset exchange variables.
-                i = 1
                 irqst = MPI_REQUEST_NULL
                 imstat = 0
+                t = itag
+                i = 1
 
                 !> Channel routing.
-!                chnl((1 + iin*0):(iin*1)) = stas_grid%chnl%s(ii1:ii2)
-!                chnl((1 + iin*1):(iin*2)) = stas_grid%chnl%div(ii1:ii2)
-!                chnl((1 + iin*2):(iin*3)) = stas_grid%chnl%ab(ii1:ii2)
-!                call MPI_Isend(chnl, size(chnl), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z)
+!                chnl((1 + iin*0):(iin*1)) = vs%grid%stgch(ii1:ii2)
+!                chnl((1 + iin*1):(iin*2)) = vs%grid%div(ii1:ii2)
+!                chnl((1 + iin*2):(iin*3)) = vs%grid%abstr(ii1:ii2)
+!                call MPI_Isend(chnl, size(chnl), c, u, t + i, MPI_COMM_WORLD, irqst(i), z)
 !                i = i + 1
 
                 !> Wait until the exchange completes.
@@ -185,11 +198,12 @@ module sa_mesh_run_within_grid
 
             !> Receive data from head-node.
             !> Reset exchange variables.
-            i = 1
             irqst = MPI_REQUEST_NULL
+            t = itag
+            i = 1
 
             !> Receive variables.
-!            call MPI_Irecv(chnl, size(chnl), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+!            call MPI_Irecv(chnl, size(chnl), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
 
             !> Wait until the exchange completes.
             lstat = .false.
@@ -200,16 +214,21 @@ module sa_mesh_run_within_grid
             !> Assign variables.
 
             !> Channel routing.
-!            stas_grid%chnl%s(ii1:ii2) = chnl((1 + iin*0):(iin*1))
-!            stas_grid%chnl%div(ii1:ii2) = chnl((1 + iin*1):(iin*2))
-!            stas_grid%chnl%ab(ii1:ii2) = chnl((1 + iin*2):(iin*3))
+!            vs%grid%stgch(ii1:ii2) = chnl((1 + iin*0):(iin*1))
+!            vs%grid%div(ii1:ii2) = chnl((1 + iin*1):(iin*2))
+!            vs%grid%abstr(ii1:ii2) = chnl((1 + iin*2):(iin*3))
 
         end if !(inp > 1 .and. ipid /= 0) then
 
         !> Deallocate temporary arrays.
         deallocate(chnl)
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, z)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 
@@ -222,115 +241,297 @@ module sa_mesh_run_within_grid
 
         !> Local variables.
         integer k, ki, kj
-        real fcan(i1:i2), fsno(i1:i2), fpnd(i1:i2), frac
+        real tpndfrac(i1:i2), tsnofrac(i1:i2), tcanfrac(i1:i2), frac
 
         !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Initialize variables.
-        stas_grid%cnpy%rcan(i1:i2) = 0.0
-        stas_grid%cnpy%sncan(i1:i2) = 0.0
-        stas_grid%cnpy%cmas(i1:i2) = 0.0
-        stas_grid%cnpy%tcan(i1:i2) = 0.0
-        stas_grid%cnpy%gro(i1:i2) = 0.0
-        stas_grid%sno%zsno(i1:i2) = 0.0
-        stas_grid%sno%rhos(i1:i2) = 0.0
-        stas_grid%sno%sno(i1:i2) = 0.0
-        stas_grid%sno%wsno(i1:i2) = 0.0
-        stas_grid%sno%tsno(i1:i2)  = 0.0
-        stas_grid%sfc%albt(i1:i2) = 0.0
-        stas_grid%sfc%alvs(i1:i2) = 0.0
-        stas_grid%sfc%alir(i1:i2) = 0.0
-        stas_grid%sfc%gte(i1:i2) = 0.0
-        stas_grid%sfc%zpnd(i1:i2) = 0.0
-        stas_grid%sfc%pndw(i1:i2) = 0.0
-        stas_grid%sfc%tpnd(i1:i2) = 0.0
-        stas_grid%sfc%pevp(i1:i2) = 0.0
-        stas_grid%sfc%evap(i1:i2) = 0.0
-        stas_grid%sfc%evpb(i1:i2) = 0.0
-        stas_grid%sfc%arrd(i1:i2) = 0.0
-        stas_grid%sfc%rofo(i1:i2) = 0.0
-        stas_grid%sfc%qevp(i1:i2) = 0.0
-        stas_grid%sfc%hfs(i1:i2) = 0.0
-        stas_grid%sfc%gzero(i1:i2) = 0.0
-        stas_grid%sl%rofs(i1:i2) = 0.0
-        stas_grid%sl%thic(i1:i2, :) = 0.0
-        stas_grid%sl%fzws(i1:i2, :) = 0.0
-        stas_grid%sl%thlq(i1:i2, :) = 0.0
-        stas_grid%sl%lqws(i1:i2, :) = 0.0
-        stas_grid%sl%tbar(i1:i2, :) = 0.0
-        stas_grid%sl%gflx(i1:i2, :) = 0.0
-        stas_grid%lzs%ws(i1:i2) = 0.0
-        stas_grid%lzs%rofb(i1:i2) = 0.0
-        stas_grid%dzs%ws(i1:i2) = 0.0
-        stas_grid%dzs%rofb(i1:i2) = 0.0
+!        if (associated(vs%grid%fsin)) vs%grid%fsin(i1:i2) = 0.0
+!        if (associated(vs%grid%fsdr)) vs%grid%fsdr(i1:i2) = 0.0
+!        if (associated(vs%grid%fsdff)) vs%grid%fsdff(i1:i2) = 0.0
+!        if (associated(vs%grid%flin)) vs%grid%flin(i1:i2) = 0.0
+!        if (associated(vs%grid%ta)) vs%grid%ta(i1:i2) = 0.0
+!        if (associated(vs%grid%qa)) vs%grid%qa(i1:i2) = 0.0
+!        if (associated(vs%grid%pres)) vs%grid%pres(i1:i2) = 0.0
+!        if (associated(vs%grid%uv)) vs%grid%uv(i1:i2) = 0.0
+!        if (associated(vs%grid%wdir)) vs%grid%wdir(i1:i2) = 0.0
+!        if (associated(vs%grid%uu)) vs%grid%uu(i1:i2) = 0.0
+!        if (associated(vs%grid%vv)) vs%grid%vv(i1:i2) = 0.0
+!        if (associated(vs%grid%pre)) vs%grid%pre(i1:i2) = 0.0
+        if (associated(vs%grid%prern)) vs%grid%prern(i1:i2) = 0.0
+        if (associated(vs%grid%presno)) vs%grid%presno(i1:i2) = 0.0
+        if (associated(vs%grid%lqwscan)) vs%grid%lqwscan(i1:i2) = 0.0
+        if (associated(vs%grid%fzwscan)) vs%grid%fzwscan(i1:i2) = 0.0
+        if (associated(vs%grid%cmas)) vs%grid%cmas(i1:i2) = 0.0
+        if (associated(vs%grid%tacan)) vs%grid%tacan(i1:i2) = 0.0
+        if (associated(vs%grid%qacan)) vs%grid%qacan(i1:i2) = 0.0
+        if (associated(vs%grid%tcan)) vs%grid%tcan(i1:i2) = 0.0
+        if (associated(vs%grid%gro)) vs%grid%gro(i1:i2) = 0.0
+        if (associated(vs%grid%sno)) vs%grid%sno(i1:i2) = 0.0
+        if (associated(vs%grid%rhosno)) vs%grid%rhosno(i1:i2) = 0.0
+        if (associated(vs%grid%zsno)) vs%grid%zsno(i1:i2) = 0.0
+        if (associated(vs%grid%fsno)) vs%grid%fsno(i1:i2) = 0.0
+        if (associated(vs%grid%albsno)) vs%grid%albsno(i1:i2) = 0.0
+        if (associated(vs%grid%lqwssno)) vs%grid%lqwssno(i1:i2) = 0.0
+        if (associated(vs%grid%tsno)) vs%grid%tsno(i1:i2) = 0.0
+        if (associated(vs%grid%drainsno)) vs%grid%drainsno(i1:i2) = 0.0
+        if (associated(vs%grid%albt)) vs%grid%albt(i1:i2) = 0.0
+        if (associated(vs%grid%alvs)) vs%grid%alvs(i1:i2) = 0.0
+        if (associated(vs%grid%alir)) vs%grid%alir(i1:i2) = 0.0
+        if (associated(vs%grid%gte)) vs%grid%gte(i1:i2) = 0.0
+        if (associated(vs%grid%zpnd)) vs%grid%zpnd(i1:i2) = 0.0
+        if (associated(vs%grid%lqwspnd)) vs%grid%lqwspnd(i1:i2) = 0.0
+        if (associated(vs%grid%tpnd)) vs%grid%tpnd(i1:i2) = 0.0
+        if (associated(vs%grid%fstr)) vs%grid%fstr(i1:i2) = 0.0
+        if (associated(vs%grid%potevp)) vs%grid%potevp(i1:i2) = 0.0
+        if (associated(vs%grid%et)) vs%grid%et(i1:i2) = 0.0
+        if (associated(vs%grid%evpb)) vs%grid%evpb(i1:i2) = 0.0
+        if (associated(vs%grid%arrd)) vs%grid%arrd(i1:i2) = 0.0
+        if (associated(vs%grid%ovrflw)) vs%grid%ovrflw(i1:i2) = 0.0
+        if (associated(vs%grid%qevp)) vs%grid%qevp(i1:i2) = 0.0
+        if (associated(vs%grid%qsens)) vs%grid%qsens(i1:i2) = 0.0
+        if (associated(vs%grid%gzero)) vs%grid%gzero(i1:i2) = 0.0
+        if (associated(vs%grid%tsfs)) vs%grid%tsfs(i1:i2, :) = 0.0
+        if (associated(vs%grid%ggeo)) vs%grid%ggeo(i1:i2) = 0.0
+        if (associated(vs%grid%tbas)) vs%grid%tbas(i1:i2) = 0.0
+        if (associated(vs%grid%thlqsol)) vs%grid%thlqsol(i1:i2, :) = 0.0
+        if (associated(vs%grid%thicsol)) vs%grid%thicsol(i1:i2, :) = 0.0
+        if (associated(vs%grid%lqwssol)) vs%grid%lqwssol(i1:i2, :) = 0.0
+        if (associated(vs%grid%fzwssol)) vs%grid%fzwssol(i1:i2, :) = 0.0
+        if (associated(vs%grid%tsol)) vs%grid%tsol(i1:i2, :) = 0.0
+        if (associated(vs%grid%gflx)) vs%grid%gflx(i1:i2, :) = 0.0
+        if (associated(vs%grid%latflw)) vs%grid%latflw(i1:i2, :) = 0.0
+        if (associated(vs%grid%dzwat)) vs%grid%dzwat(i1:i2, :) = 0.0
+        if (associated(vs%grid%zbotwat)) vs%grid%zbotwat(i1:i2, :) = 0.0
+        if (associated(vs%grid%drainsol)) vs%grid%drainsol(i1:i2) = 0.0
+!+        if (associated(vs%grid%rchg)) vs%grid%rchg(i1:i2) = 0.0
+        if (associated(vs%grid%stggw)) vs%grid%stggw(i1:i2) = 0.0
+        if (associated(vs%grid%dzs)) vs%grid%dzs(i1:i2) = 0.0
+        if (associated(vs%grid%stge)) vs%grid%stge(i1:i2) = 0.0
+        if (associated(vs%grid%stgw)) vs%grid%stgw(i1:i2) = 0.0
 
         !> Update variables.
-        fcan(i1:i2) = 0.0
-        fsno(i1:i2) = 0.0
-        fpnd(i1:i2) = 0.0
+        tcanfrac(i1:i2) = 0.0
+        tsnofrac(i1:i2) = 0.0
+        tpndfrac(i1:i2) = 0.0
         do k = il1, il2
             ki = shd%lc%ILMOS(k)
             kj = shd%lc%JLMOS(k)
             frac = shd%lc%ACLASS(ki, kj)
-            stas_grid%cnpy%rcan(ki) = stas_grid%cnpy%rcan(ki) + stas%cnpy%rcan(k)*frac
-            stas_grid%cnpy%sncan(ki) = stas_grid%cnpy%sncan(ki) + stas%cnpy%sncan(k)*frac
-            if (stas%cnpy%tcan(k) > 0.0) then
-                stas_grid%cnpy%cmas(ki) = stas_grid%cnpy%cmas(ki) + stas%cnpy%cmas(k)*frac
-                stas_grid%cnpy%tcan(ki) = stas_grid%cnpy%tcan(ki) + stas%cnpy%tcan(k)*frac
-                stas_grid%cnpy%gro(ki) = stas_grid%cnpy%gro(ki) + stas%cnpy%gro(k)*frac
-                fcan(ki) = fcan(ki) + frac
+!            if (associated(vs%grid%fsin) .and. associated(vs%tile%fsin)) then
+!                vs%grid%fsin(ki) = vs%grid%fsin(ki) + vs%tile%fsin(k)*frac
+!            end if
+!            if (associated(vs%grid%fsdr) .and. associated(vs%tile%fsdr)) then
+!                vs%grid%fsdr(ki) = vs%grid%fsdr(ki) + vs%tile%fsdr(k)*frac
+!            end if
+!            if (associated(vs%grid%fsdff) .and. associated(vs%tile%fsdff)) then
+!                vs%grid%fsdff(ki) = vs%grid%fsdff(ki) + vs%tile%fsdff(k)*frac
+!            end if
+!            if (associated(vs%grid%flin) .and. associated(vs%tile%flin)) then
+!                vs%grid%flin(ki) = vs%grid%flin(ki) + vs%tile%flin(k)*frac
+!            end if
+!            if (associated(vs%grid%ta) .and. associated(vs%tile%ta)) then
+!                vs%grid%ta(ki) = vs%grid%ta(ki) + vs%tile%ta(k)*frac
+!            end if
+!            if (associated(vs%grid%qa) .and. associated(vs%tile%qa)) then
+!                vs%grid%qa(ki) = vs%grid%qa(ki) + vs%tile%qa(k)*frac
+!            end if
+!            if (associated(vs%grid%pres) .and. associated(vs%tile%pres)) then
+!                vs%grid%pres(ki) = vs%grid%pres(ki) + vs%tile%pres(k)*frac
+!            end if
+!            if (associated(vs%grid%uv) .and. associated(vs%tile%uv)) then
+!                vs%grid%uv(ki) = vs%grid%uv(ki) + vs%tile%uv(k)*frac
+!            end if
+!            if (associated(vs%grid%wdir) .and. associated(vs%tile%wdir)) then
+!                vs%grid%wdir(ki) = vs%grid%wdir(ki) + vs%tile%wdir(k)*frac
+!            end if
+!            if (associated(vs%grid%uu) .and. associated(vs%tile%uu)) then
+!                vs%grid%uu(ki) = vs%grid%uu(ki) + vs%tile%uu(k)*frac
+!            end if
+!            if (associated(vs%grid%vv) .and. associated(vs%tile%vv)) then
+!                vs%grid%vv(ki) = vs%grid%vv(ki) + vs%tile%vv(k)*frac
+!            end if
+!            if (associated(vs%grid%pre) .and. associated(vs%tile%pre)) then
+!                vs%grid%pre(ki) = vs%grid%pre(ki) + vs%tile%pre(k)*frac
+!            end if
+            if (associated(vs%grid%prern) .and. associated(vs%tile%prern)) then
+                vs%grid%prern(ki) = vs%grid%prern(ki) + vs%tile%prern(k)*frac
             end if
-            stas_grid%sno%sno(ki) = stas_grid%sno%sno(ki) + stas%sno%sno(k)*frac
-            if (stas%sno%sno(k) > 0.0) then
-                stas_grid%sno%wsno(ki) = stas_grid%sno%wsno(ki) + stas%sno%wsno(k)*frac
-                stas_grid%sno%tsno(ki) = stas_grid%sno%tsno(ki) + stas%sno%tsno(k)*frac
-                stas_grid%sno%rhos(ki) = stas_grid%sno%rhos(ki) + stas%sno%rhos(k)*frac
-                fsno(ki) = fsno(ki) + frac
+            if (associated(vs%grid%presno) .and. associated(vs%tile%presno)) then
+                vs%grid%presno(ki) = vs%grid%presno(ki) + vs%tile%presno(k)*frac
             end if
-            stas_grid%sfc%albt(ki) = stas_grid%sfc%albt(ki) + stas%sfc%albt(k)*frac
-            stas_grid%sfc%alvs(ki) = stas_grid%sfc%alvs(ki) + stas%sfc%alvs(k)*frac
-            stas_grid%sfc%alir(ki) = stas_grid%sfc%alir(ki) + stas%sfc%alir(k)*frac
-            stas_grid%sfc%gte(ki) = stas_grid%sfc%gte(ki) + stas%sfc%gte(k)*frac
-            stas_grid%sfc%zpnd(ki) = stas_grid%sfc%zpnd(ki) + stas%sfc%zpnd(k)*frac
-            if (stas%sfc%zpnd(k) > 0.0) then
-                stas_grid%sfc%pndw(ki) = stas_grid%sfc%pndw(ki) + stas%sfc%pndw(k)*frac
-                stas_grid%sfc%tpnd(ki) = stas_grid%sfc%tpnd(ki) + stas%sfc%tpnd(k)*frac
-                fpnd(ki) = fpnd(ki) + frac
+            if (associated(vs%grid%lqwscan) .and. associated(vs%tile%lqwscan)) then
+                vs%grid%lqwscan(ki) = vs%grid%lqwscan(ki) + vs%tile%lqwscan(k)*frac
             end if
-            stas_grid%sfc%pevp(ki) = stas_grid%sfc%pevp(ki) + stas%sfc%pevp(k)*frac
-            stas_grid%sfc%evap(ki) = stas_grid%sfc%evap(ki) + stas%sfc%evap(k)*frac
-            stas_grid%sfc%evpb(ki) = stas_grid%sfc%evpb(ki) + stas%sfc%evpb(k)*frac
-            stas_grid%sfc%arrd(ki) = stas_grid%sfc%arrd(ki) + stas%sfc%arrd(k)*frac
-            stas_grid%sfc%rofo(ki) = stas_grid%sfc%rofo(ki) + stas%sfc%rofo(k)*frac
-            stas_grid%sfc%qevp(ki) = stas_grid%sfc%qevp(ki) + stas%sfc%qevp(k)*frac
-            stas_grid%sfc%hfs(ki) = stas_grid%sfc%hfs(ki) + stas%sfc%hfs(k)*frac
-            stas_grid%sfc%gzero(ki) = stas_grid%sfc%gzero(ki) + stas%sfc%gzero(k)*frac
-            stas_grid%sl%rofs(ki) = stas_grid%sl%rofs(ki) + stas%sl%rofs(k)*frac
-            stas_grid%sl%thic(ki, :) = stas_grid%sl%thic(ki, :) + stas%sl%thic(k, :)*frac
-            stas_grid%sl%fzws(ki, :) = stas_grid%sl%fzws(ki, :) + stas%sl%fzws(k, :)*frac
-            stas_grid%sl%thlq(ki, :) = stas_grid%sl%thlq(ki, :) + stas%sl%thlq(k, :)*frac
-            stas_grid%sl%lqws(ki, :) = stas_grid%sl%lqws(ki, :) + stas%sl%lqws(k, :)*frac
-            stas_grid%sl%tbar(ki, :) = stas_grid%sl%tbar(ki, :) + stas%sl%tbar(k, :)*frac
-            stas_grid%sl%gflx(ki, :) = stas_grid%sl%gflx(ki, :) + stas%sl%gflx(k, :)*frac
-            stas_grid%lzs%ws(ki) = stas_grid%lzs%ws(ki) + stas%lzs%ws(k)*frac
-            stas_grid%lzs%rofb(ki) = stas_grid%lzs%rofb(ki) + stas%lzs%rofb(k)*frac
-            stas_grid%dzs%ws(ki) = stas_grid%dzs%ws(ki) + stas%dzs%ws(k)*frac
-            stas_grid%dzs%rofb(ki) = stas_grid%dzs%rofb(ki) + stas%dzs%rofb(k)*frac
+            if (associated(vs%grid%fzwscan) .and. associated(vs%tile%fzwscan)) then
+                vs%grid%fzwscan(ki) = vs%grid%fzwscan(ki) + vs%tile%fzwscan(k)*frac
+            end if
+            if (associated(vs%grid%cmas) .and. associated(vs%tile%cmas)) then
+                vs%grid%cmas(ki) = vs%grid%cmas(ki) + vs%tile%cmas(k)*frac
+            end if
+            if (associated(vs%grid%tacan) .and. associated(vs%tile%tacan)) then
+                vs%grid%tacan(ki) = vs%grid%tacan(ki) + vs%tile%tacan(k)*frac
+            end if
+            if (associated(vs%grid%qacan) .and. associated(vs%tile%qacan)) then
+                vs%grid%qacan(ki) = vs%grid%qacan(ki) + vs%tile%qacan(k)*frac
+            end if
+            if (associated(vs%tile%tcan)) then
+                if (vs%tile%tcan(k) > 0.0) then
+                    if (associated(vs%grid%tcan) .and. associated(vs%tile%tcan)) then
+                        vs%grid%tcan(ki) = vs%grid%tcan(ki) + vs%tile%tcan(k)*frac
+                    end if
+                    tcanfrac(ki) = tcanfrac(ki) + frac
+                end if
+            end if
+            if (associated(vs%grid%gro) .and. associated(vs%tile%gro)) then
+                vs%grid%gro(ki) = vs%grid%gro(ki) + vs%tile%gro(k)*frac
+            end if
+            if (associated(vs%grid%sno) .and. associated(vs%tile%sno)) then
+                vs%grid%sno(ki) = vs%grid%sno(ki) + vs%tile%sno(k)*frac
+            end if
+            if (associated(vs%grid%rhosno) .and. associated(vs%tile%rhosno)) then
+                vs%grid%rhosno(ki) = vs%grid%rhosno(ki) + vs%tile%rhosno(k)*frac
+            end if
+            if (associated(vs%grid%zsno) .and. associated(vs%tile%zsno)) then
+                vs%grid%zsno(ki) = vs%grid%zsno(ki) + vs%tile%zsno(k)*frac
+            end if
+            if (associated(vs%grid%fsno) .and. associated(vs%tile%fsno)) then
+                vs%grid%fsno(ki) = vs%grid%fsno(ki) + vs%tile%fsno(k)*frac
+            end if
+            if (associated(vs%grid%albsno) .and. associated(vs%tile%albsno)) then
+                vs%grid%albsno(ki) = vs%grid%albsno(ki) + vs%tile%albsno(k)*frac
+            end if
+            if (associated(vs%grid%lqwssno) .and. associated(vs%tile%lqwssno)) then
+                vs%grid%lqwssno(ki) = vs%grid%lqwssno(ki) + vs%tile%lqwssno(k)*frac
+            end if
+            if (associated(vs%tile%tsno)) then
+                if (vs%tile%tsno(k) > 0.0) then
+                    if (associated(vs%grid%tsno) .and. associated(vs%tile%tsno)) then
+                        vs%grid%tsno(ki) = vs%grid%tsno(ki) + vs%tile%tsno(k)*frac
+                    end if
+                    tsnofrac(ki) = tsnofrac(ki) + frac
+                end if
+            end if
+            if (associated(vs%grid%drainsno) .and. associated(vs%tile%drainsno)) then
+                vs%grid%drainsno(ki) = vs%grid%drainsno(ki) + vs%tile%drainsno(k)*frac
+            end if
+            if (associated(vs%grid%albt) .and. associated(vs%tile%albt)) then
+                vs%grid%albt(ki) = vs%grid%albt(ki) + vs%tile%albt(k)*frac
+            end if
+            if (associated(vs%grid%alvs) .and. associated(vs%tile%alvs)) then
+                vs%grid%alvs(ki) = vs%grid%alvs(ki) + vs%tile%alvs(k)*frac
+            end if
+            if (associated(vs%grid%alir) .and. associated(vs%tile%alir)) then
+                vs%grid%alir(ki) = vs%grid%alir(ki) + vs%tile%alir(k)*frac
+            end if
+            if (associated(vs%grid%gte) .and. associated(vs%tile%gte)) then
+                vs%grid%gte(ki) = vs%grid%gte(ki) + vs%tile%gte(k)*frac
+            end if
+            if (associated(vs%grid%zpnd) .and. associated(vs%tile%zpnd)) then
+                vs%grid%zpnd(ki) = vs%grid%zpnd(ki) + vs%tile%zpnd(k)*frac
+            end if
+            if (associated(vs%grid%lqwspnd) .and. associated(vs%tile%lqwspnd)) then
+                vs%grid%lqwspnd(ki) = vs%grid%lqwspnd(ki) + vs%tile%lqwspnd(k)*frac
+            end if
+            if (associated(vs%tile%tpnd)) then
+                if (vs%tile%tpnd(k) > 0.0) then
+                    if (associated(vs%grid%tpnd) .and. associated(vs%tile%tpnd)) then
+                        vs%grid%tpnd(ki) = vs%grid%tpnd(ki) + vs%tile%tpnd(k)*frac
+                    end if
+                    tpndfrac(ki) = tpndfrac(ki) + frac
+                end if
+            end if
+            if (associated(vs%grid%fstr) .and. associated(vs%tile%fstr)) then
+                vs%grid%fstr(ki) = vs%grid%fstr(ki) + vs%tile%fstr(k)*frac
+            end if
+            if (associated(vs%grid%potevp) .and. associated(vs%tile%potevp)) then
+                vs%grid%potevp(ki) = vs%grid%potevp(ki) + vs%tile%potevp(k)*frac
+            end if
+            if (associated(vs%grid%et) .and. associated(vs%tile%et)) then
+                vs%grid%et(ki) = vs%grid%et(ki) + vs%tile%et(k)*frac
+            end if
+            if (associated(vs%grid%evpb) .and. associated(vs%tile%evpb)) then
+                vs%grid%evpb(ki) = vs%grid%evpb(ki) + vs%tile%evpb(k)*frac
+            end if
+            if (associated(vs%grid%arrd) .and. associated(vs%tile%arrd)) then
+                vs%grid%arrd(ki) = vs%grid%arrd(ki) + vs%tile%arrd(k)*frac
+            end if
+            if (associated(vs%grid%ovrflw) .and. associated(vs%tile%ovrflw)) then
+                vs%grid%ovrflw(ki) = vs%grid%ovrflw(ki) + vs%tile%ovrflw(k)*frac
+            end if
+            if (associated(vs%grid%qevp) .and. associated(vs%tile%qevp)) then
+                vs%grid%qevp(ki) = vs%grid%qevp(ki) + vs%tile%qevp(k)*frac
+            end if
+            if (associated(vs%grid%qsens) .and. associated(vs%tile%qsens)) then
+                vs%grid%qsens(ki) = vs%grid%qsens(ki) + vs%tile%qsens(k)*frac
+            end if
+            if (associated(vs%grid%gzero) .and. associated(vs%tile%gzero)) then
+                vs%grid%gzero(ki) = vs%grid%gzero(ki) + vs%tile%gzero(k)*frac
+            end if
+            if (associated(vs%grid%tsfs) .and. associated(vs%tile%tsfs)) then
+                vs%grid%tsfs(ki, :) = vs%grid%tsfs(ki, :) + vs%tile%tsfs(k, :)*frac
+            end if
+            if (associated(vs%grid%ggeo) .and. associated(vs%tile%ggeo)) then
+                vs%grid%ggeo(ki) = vs%grid%ggeo(ki) + vs%tile%ggeo(k)*frac
+            end if
+            if (associated(vs%grid%tbas) .and. associated(vs%tile%tbas)) then
+                vs%grid%tbas(ki) = vs%grid%tbas(ki) + vs%tile%tbas(k)*frac
+            end if
+            if (associated(vs%grid%thlqsol) .and. associated(vs%tile%thlqsol)) then
+                vs%grid%thlqsol(ki, :) = vs%grid%thlqsol(ki, :) + vs%tile%thlqsol(k, :)*frac
+            end if
+            if (associated(vs%grid%thicsol) .and. associated(vs%tile%thicsol)) then
+                vs%grid%thicsol(ki, :) = vs%grid%thicsol(ki, :) + vs%tile%thicsol(k, :)*frac
+            end if
+            if (associated(vs%grid%lqwssol) .and. associated(vs%tile%lqwssol)) then
+                vs%grid%lqwssol(ki, :) = vs%grid%lqwssol(ki, :) + vs%tile%lqwssol(k, :)*frac
+            end if
+            if (associated(vs%grid%fzwssol) .and. associated(vs%tile%fzwssol)) then
+                vs%grid%fzwssol(ki, :) = vs%grid%fzwssol(ki, :) + vs%tile%fzwssol(k, :)*frac
+            end if
+            if (associated(vs%grid%tsol) .and. associated(vs%tile%tsol)) then
+                vs%grid%tsol(ki, :) = vs%grid%tsol(ki, :) + vs%tile%tsol(k, :)*frac
+            end if
+            if (associated(vs%grid%gflx) .and. associated(vs%tile%gflx)) then
+                vs%grid%gflx(ki, :) = vs%grid%gflx(ki, :) + vs%tile%gflx(k, :)*frac
+            end if
+            if (associated(vs%grid%latflw) .and. associated(vs%tile%latflw)) then
+                vs%grid%latflw(ki, :) = vs%grid%latflw(ki, :) + vs%tile%latflw(k, :)*frac
+            end if
+            if (associated(vs%grid%dzwat) .and. associated(vs%tile%dzwat)) then
+                vs%grid%dzwat(ki, :) = vs%grid%dzwat(ki, :) + vs%tile%dzwat(k, :)*frac
+            end if
+            if (associated(vs%grid%zbotwat) .and. associated(vs%tile%zbotwat)) then
+                vs%grid%zbotwat(ki, :) = vs%grid%zbotwat(ki, :) + vs%tile%zbotwat(k, :)*frac
+            end if
+            if (associated(vs%grid%drainsol) .and. associated(vs%tile%drainsol)) then
+                vs%grid%drainsol(ki) = vs%grid%drainsol(ki) + vs%tile%drainsol(k)*frac
+            end if
+!+            if (associated(vs%grid%rchg) .and. associated(vs%tile%rchg)) then
+!+                vs%grid%rchg(ki) = vs%grid%rchg(ki) + vs%tile%rchg(k)*frac
+!+            end if
+            if (associated(vs%grid%stggw) .and. associated(vs%tile%stggw)) then
+                vs%grid%stggw(ki) = vs%grid%stggw(ki) + vs%tile%stggw(k)*frac
+            end if
+            if (associated(vs%grid%dzs) .and. associated(vs%tile%dzs)) then
+                vs%grid%dzs(ki) = vs%grid%dzs(ki) + vs%tile%dzs(k)*frac
+            end if
         end do
-        where (fcan(i1:i2) > 0.0)
-            stas_grid%cnpy%cmas(i1:i2) = stas_grid%cnpy%cmas(i1:i2)/fcan(i1:i2)
-            stas_grid%cnpy%tcan(i1:i2) = stas_grid%cnpy%tcan(i1:i2)/fcan(i1:i2)
-            stas_grid%cnpy%gro(i1:i2) = stas_grid%cnpy%gro(i1:i2)/fcan(i1:i2)
-        end where
-        where (fsno(i1:i2) > 0.0)
-            stas_grid%sno%tsno(i1:i2) = stas_grid%sno%tsno(i1:i2)/fsno(i1:i2)
-            stas_grid%sno%rhos(i1:i2) = stas_grid%sno%rhos(i1:i2)/fsno(i1:i2)
-        end where
-        where (stas_grid%sno%rhos(i1:i2) > 0.0)
-            stas_grid%sno%zsno(i1:i2) = stas_grid%sno%sno(i1:i2)/stas_grid%sno%rhos(i1:i2)
-        end where
-        where (fpnd(i1:i2) > 0.0) stas_grid%sfc%tpnd(i1:i2) = stas_grid%sfc%tpnd(i1:i2)/fpnd(i1:i2)
+
+        !> Fractional averages.
+        if (associated(vs%grid%cmas)) then
+            where (tcanfrac(i1:i2) > 0.0) vs%grid%cmas(i1:i2) = vs%grid%cmas(i1:i2)/tcanfrac(i1:i2)
+        end if
+        where (tcanfrac(i1:i2) > 0.0) vs%grid%tcan(i1:i2) = vs%grid%tcan(i1:i2)/tcanfrac(i1:i2)
+        if (associated(vs%grid%gro)) then
+            where (tcanfrac(i1:i2) > 0.0) vs%grid%gro(i1:i2) = vs%grid%gro(i1:i2)/tcanfrac(i1:i2)
+        end if
+        where (tsnofrac(i1:i2) > 0.0) vs%grid%tsno(i1:i2) = vs%grid%tsno(i1:i2)/tsnofrac(i1:i2)
+        if (associated(vs%grid%rhosno)) then
+            where (tsnofrac(i1:i2) > 0.0) vs%grid%rhosno(i1:i2) = vs%grid%rhosno(i1:i2)/tsnofrac(i1:i2)
+        end if
+        where (tpndfrac(i1:i2) > 0.0) vs%grid%tpnd(i1:i2) = vs%grid%tpnd(i1:i2)/tpndfrac(i1:i2)
 
     end subroutine
 

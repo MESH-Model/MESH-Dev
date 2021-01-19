@@ -7,12 +7,14 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use model_dates
     use climate_forcing
     use output_files
+    use variable_names
 
     use FLAGS
-    use save_basin_output, only: BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
+    use save_basin_output, only: &
+        BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, BASINAVGEVPFILEFLAG, BASINSWEOUTFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
     use RUNCLASS36_variables
     use RUNCLASS36_save_output
-    use RUNSVS113_variables
+    use runsvs_mesh
     use baseflow_module
     use cropland_irrigation_variables
     use WF_ROUTE_config
@@ -20,6 +22,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use SA_RTE_module, only: SA_RTE_flgs
     use SIMSTATS_config, only: mtsflg
     use PBSM_module
+    use mountain_module
 
     implicit none
 
@@ -33,6 +36,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 
     !> Local variables.
     integer CONFLAGS, IROVAL, iun, nargs, n, j, i, z
+    real IROVALR
     character(len = DEFAULT_LINE_LENGTH) line
     character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
 
@@ -210,7 +214,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     !> If enabled, saves the SCA and SWE output files.
     !>     0 = Create no output.
     !>     1 = Save the SCA and SWE output files.
-    BASINSWEOUTFLAG = 0
+!-    BASINSWEOUTFLAG = 0
 
     !> RESERVOIR FLAG TO HANDLED WICH KIND OF RESERVOIR DO WE APPLY
     !>  0 = Non Reservoir is present
@@ -263,6 +267,8 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
             !> Determine the control flag and parse additional arguments.
             z = 0
             select case (trim(adjustl(args(1))))
+
+                !> CLASS flags.
                 case ('IDISP')
                     call value(args(2), IDISP, z)
                 case ('IZREF')
@@ -289,6 +295,32 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     call value(args(2), IALS, z)
                 case ('IALG')
                     call value(args(2), IALG, z)
+                case ('FREZTH', 'ICEBAL_FREEZE_THRESHOLD')
+                    call value(args(2), IROVALR, z)
+                    if (z == 0) then
+                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%FREZTH)) then
+                            allocate(RUNCLASS36_flgs%pm%constant%FREZTH(1))
+                        end if
+                        RUNCLASS36_flgs%pm%constant%FREZTH(:) = IROVALR
+                    end if
+                case ('SNDEPLIM', 'ICEBAL_SNOW_DEPTH_LIMIT')
+                    call value(args(2), IROVALR, z)
+                    if (z == 0) then
+                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
+                            allocate(RUNCLASS36_flgs%pm%constant%SNDEPLIM(1))
+                        end if
+                        RUNCLASS36_flgs%pm%constant%SNDEPLIM(:) = IROVALR
+                    end if
+                case ('SNDENLIM', 'ICEBAL_SNOW_DENSITY_LIMIT')
+                    call value(args(2), IROVALR, z)
+                    if (z == 0) then
+                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%SNDENLIM)) then
+                            allocate(RUNCLASS36_flgs%pm%constant%SNDENLIM(1))
+                        end if
+                        RUNCLASS36_flgs%pm%constant%SNDENLIM(:) = IROVALR
+                    end if
+
+                !> SAVE/RESUME flags.
                 case ('RESUMEFLAG')
                     RESUMEFLAG = adjustl(line)
                 case ('SAVERESUMEFLAG')
@@ -326,163 +358,141 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                 !> BASIN FORCING DATA OPTIONS
                 !> Basin forcing data.
                 case ('BASINFORCINGFLAG')
+
+                    !> Assign options to all forcing flags.
+                    do n = 1, cm%nclim
+                        call climate_module_parse_flag(cm%dat(n), line, z)
+                    end do
+
+                    !> Special options.
                     do j = 2, nargs
                         select case (lowercase(args(j)))
+
+                            !> CLASS 'MET' file.
                             case ('met')
-                                cm%dat(ck%FB)%factive = .false.
-                                cm%dat(ck%FI)%factive = .false.
-                                cm%dat(ck%RT)%factive = .false.
-                                cm%dat(ck%TT)%factive = .false.
-                                cm%dat(ck%UV)%factive = .false.
-                                cm%dat(ck%P0)%factive = .false.
-                                cm%dat(ck%HU)%factive = .false.
-                                cm%dat(ck%MET)%ffmt = 6
+
+                                !> Activate the 'MET' format file.
+                                cm%dat(ck%MET)%id_var = 'CLASSMET'
                                 cm%dat(ck%MET)%factive = .true.
-                                exit
+
+                                !> Assign the format to all variables.
+                                do n = 1, cm%nclim
+                                    cm%dat(n)%ffmt = 6
+                                end do
+
+                            !> Separate liquid/solid precipitation fields.
+                            case ('rr_sr')
+                                cm%dat(ck%RR)%factive = .true.
+                                cm%dat(ck%RR)%id_var = VN_PRERN
+                                cm%dat(ck%SR)%factive = .true.
+                                cm%dat(ck%SR)%id_var = VN_PRESNO
+
+                            !> Deactivate climate variables.
+                            case ('no_clim')
+                                if (.not. cm%dat(ck%MET)%factive) then
+                                    cm%dat(ck%FB)%ffmt = -1
+                                    cm%dat(ck%FI)%ffmt = -1
+                                    cm%dat(ck%RT)%ffmt = -1
+                                    cm%dat(ck%TT)%ffmt = -1
+                                    cm%dat(ck%UV)%ffmt = -1
+                                    cm%dat(ck%P0)%ffmt = -1
+                                    cm%dat(ck%HU)%ffmt = -1
+                                end if
                         end select
                     end do
+
+                    !> Activate climate variables if a file format has been specified.
+                    !> Deactivate climate variables if a file format was nullified via the 'no_clim' option.
+                    !> To override this behaviour, respective 'BASIN' flags should list after 'BASINFORCINGFLAG'.
+                    n = ck%FB
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_FSIN
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%FI
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_FLIN
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%RT
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_PRE
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%TT
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_TA
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%UV
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_UV
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%P0
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_PRES
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
+                    n = ck%HU
+                    if (cm%dat(n)%ffmt /= -1) then
+                        cm%dat(n)%factive = .true.
+                        cm%dat(n)%id_var = VN_QA
+                    else
+                        cm%dat(n)%factive = .false.
+                    end if
                 case ('BASINSHORTWAVEFLAG')
-                    call value(args(2), cm%dat(ck%FB)%ffmt, z)
-                    if (z == 0) cm%dat(ck%FB)%factive = .true.
-                    cm%dat(ck%FB)%id_var = 'FB'
-                    if (cm%dat(ck%FB)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%FB)%ffmt, z)
-                        call value(args(4), cm%dat(ck%FB)%nblocks, z)
-                    end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%FB)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%FB)%nblocks, z)
-                            end if
-                        end if
-                    end do
+                    cm%dat(ck%FB)%id_var = VN_FSIN
+                    call climate_module_parse_flag(cm%dat(ck%FB), line, z)
+                    cm%dat(ck%FB)%factive = (z == 0)
                 case ('BASINLONGWAVEFLAG')
-                    call value(args(2), cm%dat(ck%FI)%ffmt, z)
-                    if (z == 0) cm%dat(ck%FI)%factive = .true.
-                    cm%dat(ck%FI)%id_var = 'FI'
-                    if (cm%dat(ck%FI)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%FI)%ffmt, z)
-                        call value(args(4), cm%dat(ck%FI)%nblocks, z)
-                    end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%FI)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%FI)%nblocks, z)
-                            end if
-                        end if
-                    end do
+                    cm%dat(ck%FI)%id_var = VN_FLIN
+                    call climate_module_parse_flag(cm%dat(ck%FI), line, z)
+                    cm%dat(ck%FI)%factive = (z == 0)
                 case ('BASINRAINFLAG')
-                    call value(args(2), cm%dat(ck%RT)%ffmt, z)
-                    if (z == 0) cm%dat(ck%RT)%factive = .true.
-                    cm%dat(ck%RT)%id_var = 'RT'
-                    if (cm%dat(ck%RT)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%RT)%ffmt, z)
-                        call value(args(4), cm%dat(ck%RT)%nblocks, z)
-                    end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%RT)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%RT)%nblocks, z)
-                            end if
-                        end if
-                    end do
+                    cm%dat(ck%RT)%id_var = VN_PRE
+                    call climate_module_parse_flag(cm%dat(ck%RT), line, z)
+                    cm%dat(ck%RT)%factive = (z == 0)
                 case ('BASINTEMPERATUREFLAG')
-                    call value(args(2), cm%dat(ck%TT)%ffmt, z)
-                    if (z == 0) cm%dat(ck%TT)%factive = .true.
-                    cm%dat(ck%TT)%id_var = 'TT'
-                    if (cm%dat(ck%TT)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%TT)%ffmt, z)
-                        call value(args(4), cm%dat(ck%TT)%nblocks, z)
-                    end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%TT)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%TT)%nblocks, z)
-                            end if
-                        end if
-                    end do
+                    cm%dat(ck%TT)%id_var = VN_TA
+                    call climate_module_parse_flag(cm%dat(ck%TT), line, z)
+                    cm%dat(ck%TT)%factive = (z == 0)
                 case ('BASINWINDFLAG')
-                    call value(args(2), cm%dat(ck%UV)%ffmt, z)
-                    if (z == 0) cm%dat(ck%UV)%factive = .true.
-                    cm%dat(ck%UV)%id_var = 'UV'
-                    if (cm%dat(ck%UV)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%UV)%ffmt, z)
-                        call value(args(4), cm%dat(ck%UV)%nblocks, z)
-                    end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%UV)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%UV)%nblocks, z)
-                            end if
-                        end if
-                    end do
+                    cm%dat(ck%UV)%id_var = VN_UV
+                    call climate_module_parse_flag(cm%dat(ck%UV), line, z)
+                    cm%dat(ck%UV)%factive = (z == 0)
+                case ('BASINWINDDIRFLAG')
+                    cm%dat(ck%WD)%id_var = VN_WDIR
+                    call climate_module_parse_flag(cm%dat(ck%WD), line, z)
+                    cm%dat(ck%WD)%factive = (z == 0)
                 case ('BASINPRESFLAG')
-                    call value(args(2), cm%dat(ck%P0)%ffmt, z)
-                    if (z == 0) cm%dat(ck%P0)%factive = .true.
-                    cm%dat(ck%P0)%id_var = 'P0'
-                    if (cm%dat(ck%P0)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%P0)%ffmt, z)
-                        call value(args(4), cm%dat(ck%P0)%nblocks, z)
-                    end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%P0)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%P0)%nblocks, z)
-                            end if
-                        end if
-                    end do
+                    cm%dat(ck%P0)%id_var = VN_PRES
+                    call climate_module_parse_flag(cm%dat(ck%P0), line, z)
+                    cm%dat(ck%P0)%factive = (z == 0)
                 case ('BASINHUMIDITYFLAG')
-                    call value(args(2), cm%dat(ck%HU)%ffmt, z)
-                    if (z == 0) cm%dat(ck%HU)%factive = .true.
-                    cm%dat(ck%HU)%id_var = 'HU'
-                    if (cm%dat(ck%HU)%ffmt == 5) then
-                        call value(args(3), cm%dat(ck%HU)%ffmt, z)
-                        call value(args(4), cm%dat(ck%HU)%nblocks, z)
-                    end if
-                    do j = 3, nargs
-                        if (len_trim(args(j)) > 3) then
-                            if (args(j)(1:3) == 'hf=') then
-                                call value(args(j)(4:), cm%dat(ck%HU)%hf, z)
-                            end if
-                        end if
-                        if (len_trim(args(j)) > 4) then
-                            if (args(j)(1:4) == 'nts=') then
-                                call value(args(j)(5:), cm%dat(ck%HU)%nblocks, z)
-                            end if
-                        end if
-                    end do
+                    cm%dat(ck%HU)%id_var = VN_QA
+                    call climate_module_parse_flag(cm%dat(ck%HU), line, z)
+                    cm%dat(ck%HU)%factive = (z == 0)
                 case ('BASINRUNOFFFLAG')
+                    cm%dat(ck%N0)%id_var = VN_RFF
+                    call climate_module_parse_flag(cm%dat(ck%N0), line, z)
+                    cm%dat(ck%N0)%factive = (z == 0)
                 case ('BASINRECHARGEFLAG')
+                    cm%dat(ck%O1)%id_var = VN_RCHG
+                    call climate_module_parse_flag(cm%dat(ck%O1), line, z)
+                    cm%dat(ck%O1)%factive = (z == 0)
 
                 case ('STREAMFLOWFILEFLAG')
                     fms%stmg%qomeas%fls%ffmt = adjustl(args(2))
@@ -565,49 +575,52 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 
                 !> Basin output files.
                 case ('BASINBALANCEOUTFLAG')
-                    if (args(2) == '0' .or. lowercase(args(2)) == 'off' .or. lowercase(args(2)) == 'none') then
-                        BASINAVGEBFILEFLAG = 'none'
-                        BASINAVGWBFILEFLAG = 'none'
-                    end if
-                case ('BASINAVGEBFILEFLAG')
+                    BASINAVGWBFILEFLAG = adjustl(line)
                     BASINAVGEBFILEFLAG = adjustl(line)
+                    BASINAVGEVPFILEFLAG = adjustl(line)
                 case ('BASINAVGWBFILEFLAG')
                     BASINAVGWBFILEFLAG = adjustl(line)
+                case ('BASINAVGEBFILEFLAG')
+                    BASINAVGEBFILEFLAG = adjustl(line)
+                case ('BASINAVGEVPFILEFLAG')
+                    BASINAVGEVPFILEFLAG = adjustl(line)
+                case ('BASINSWEOUTFLAG')
+                    BASINSWEOUTFLAG = adjustl(line)
                 case ('STREAMFLOWOUTFLAG')
                     STREAMFLOWOUTFLAG = adjustl(line)
                 case ('REACHOUTFLAG')
                     REACHOUTFLAG = adjustl(line)
 
                 !> Time-averaged basin PEVP-EVAP and EVPB output.
-                case ('BASINAVGEVPFILEFLAG')
-                    BASINAVGEVPFILEFLAG = 0
-                    do j = 2, nargs
-                        select case (lowercase(args(j)))
-                            case ('daily')
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 1
-                            case ('monthly')
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 2
-                            case ('hourly')
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
-                            case ('ts')
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
-                            case ('all')
-                                BASINAVGEVPFILEFLAG = 1
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 2
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
-                                exit
-                            case ('default')
-                                BASINAVGEVPFILEFLAG = 1
-                                exit
-                            case ('none')
-                                BASINAVGEVPFILEFLAG = 0
-                                exit
-                        end select
-                    end do
+!-                case ('BASINAVGEVPFILEFLAG')
+!-                    BASINAVGEVPFILEFLAG = 0
+!-                    do j = 2, nargs
+!-                        select case (lowercase(args(j)))
+!-                            case ('daily')
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 1
+!-                            case ('monthly')
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 2
+!-                            case ('hourly')
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
+!-                            case ('ts')
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
+!-                            case ('all')
+!-                                BASINAVGEVPFILEFLAG = 1
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 2
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 4
+!-                                BASINAVGEVPFILEFLAG = BASINAVGEVPFILEFLAG + 8
+!-                                exit
+!-                            case ('default')
+!-                                BASINAVGEVPFILEFLAG = 1
+!-                                exit
+!-                            case ('none')
+!-                                BASINAVGEVPFILEFLAG = 0
+!-                                exit
+!-                        end select
+!-                    end do
 
-                case ('BASINSWEOUTFLAG')
-                    call value(args(2), BASINSWEOUTFLAG, z)
+!-                case ('BASINSWEOUTFLAG')
+!-                    call value(args(2), BASINSWEOUTFLAG, z)
 
                 !> BASEFLOW routing.
                 case ('BASEFLOWFLAG')
@@ -650,14 +663,15 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     do j = 2, nargs
                         select case (lowercase(args(j)))
                             case ('runsvs')
-                                RUNSVS113_flgs%PROCESS_ACTIVE = .true.
+                                svs_mesh%PROCESS_ACTIVE = .true.
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
                             case ('runclass')
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
-                                RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                svs_mesh%PROCESS_ACTIVE = .false.
                             case ('nolss')
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
-                                RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                svs_mesh%PROCESS_ACTIVE = .false.
+                                ro%RUNLSS = .false.
                             case ('runrte')
                                 WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                 rteflg%PROCESS_ACTIVE = .true.
@@ -667,13 +681,13 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                                 ro%RUNCHNL = .false.
                             case ('default')
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .true.
-                                RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                svs_mesh%PROCESS_ACTIVE = .false.
                                 WF_RTE_flgs%PROCESS_ACTIVE = .true.
                                 rteflg%PROCESS_ACTIVE = .false.
                                 exit
                             case ('diagnostic')
                                 RUNCLASS36_flgs%PROCESS_ACTIVE = .false.
-                                RUNSVS113_flgs%PROCESS_ACTIVE = .false.
+                                svs_mesh%PROCESS_ACTIVE = .false.
                                 WF_RTE_flgs%PROCESS_ACTIVE = .false.
                                 rteflg%PROCESS_ACTIVE = .false.
                                 exit
@@ -683,6 +697,10 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                 !> INPUTPARAMSFORMFLAG
                 case ('INPUTPARAMSFORMFLAG')
                     INPUTPARAMSFORM = adjustl(lowercase(line))
+
+                !> MOUNTAINMESH (formerly: SOLARADJUSTFLAG).
+                case('MOUNTAINMESH', 'SOLARADJUSTFLAG')
+                    mountain_mesh%RUNOPTIONSFLAG = adjustl(lowercase(line))
 
                 !> Unrecognized flag.
                 case default
@@ -707,7 +725,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
         call print_screen('REMARK: The number of folders for CLASS output is greater than ten and will impact performance.')
     end if
     read (iun, *, err = 98)
-    if (WF_NUM_POINTS > 0 .and. RUNCLASS36_flgs%PROCESS_ACTIVE) then
+    if (WF_NUM_POINTS > 0) then
         allocate(op%DIR_OUT(WF_NUM_POINTS), op%N_OUT(WF_NUM_POINTS), &
                  op%II_OUT(WF_NUM_POINTS), op%K_OUT(WF_NUM_POINTS), stat = ierr)
 

@@ -26,18 +26,23 @@
 !> 18)  WSNO        - Liquid water content of snow pack [kg m-2]
 !> 19)  ZPND        - Depth of ponded water on surface [m]
 !>
-    subroutine save_init_prog_variables_class(fls)
+    subroutine save_init_prog_variables_class(fls, shd)
 
         use model_files_variables
         use sa_mesh_common
+        use RUNCLASS36_variables
 
         implicit none
 
         !> Input variables.
         type(fl_ids) :: fls
+        type(ShedGridParams) :: shd
 
         !> Local variables.
         integer ierr, iun
+
+        !> Return if not the head node or if the process is not active.
+        if (.not. ISHEADNODE .or. .not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
 
         !> Open the resume state file.
         iun = fls%fl(mfk%f883)%iun
@@ -54,25 +59,25 @@
 !>    end type
 
         !> Write the current state of these variables to the file.
-        write(iun) stas%sno%albs    !1 (NML)
-        write(iun) stas%cnpy%cmas   !2 (NML)
-        write(iun) stas%cnpy%gro    !3 (NML)
-        write(iun) stas%cnpy%qac    !4 (NML)
-        write(iun) stas%cnpy%rcan   !5 (NML)
-        write(iun) stas%sno%rhos    !6 (NML)
-        write(iun) stas%cnpy%sncan  !7 (NML)
-        write(iun) stas%sno%sno     !8 (NML)
-        write(iun) stas%cnpy%tac    !9 (NML)
-        write(iun) stas%sl%tbar     !10 (NML, NSL)
-        write(iun) stas%sl%tbas     !11 (NML)
-        write(iun) stas%cnpy%tcan   !12 (NML)
-        write(iun) stas%sl%thic     !13 (NML, NSL)
-        write(iun) stas%sl%thlq     !14 (NML, NSL)
-        write(iun) stas%sfc%tpnd    !15 (NML)
-        write(iun) stas%sfc%tsfs    !16 (NML, 4)
-        write(iun) stas%sno%tsno    !17 (NML)
-        write(iun) stas%sno%wsno    !18 (NML)
-        write(iun) stas%sfc%zpnd    !19 (NML)
+        write(iun) real(vs%tile%albsno, kind = 4)   !1 (NML)
+        write(iun) real(vs%tile%cmas, kind = 4)     !2 (NML)
+        write(iun) real(vs%tile%gro, kind = 4)      !3 (NML)
+        write(iun) real(vs%tile%qacan, kind = 4)    !4 (NML)
+        write(iun) real(vs%tile%lqwscan, kind = 4)  !5 (NML)
+        write(iun) real(vs%tile%rhosno, kind = 4)   !6 (NML)
+        write(iun) real(vs%tile%fzwscan, kind = 4)  !7 (NML)
+        write(iun) real(vs%tile%sno, kind = 4)      !8 (NML)
+        write(iun) real(vs%tile%tacan, kind = 4)    !9 (NML)
+        write(iun) real(vs%tile%tsol, kind = 4)     !10 (NML, NSL)
+        write(iun) real(vs%tile%tbas, kind = 4)     !11 (NML)
+        write(iun) real(vs%tile%tcan, kind = 4)     !12 (NML)
+        write(iun) real(vs%tile%thicsol, kind = 4)  !13 (NML, NSL)
+        write(iun) real(vs%tile%thlqsol, kind = 4)  !14 (NML, NSL)
+        write(iun) real(vs%tile%tpnd, kind = 4)     !15 (NML)
+        write(iun) real(vs%tile%tsfs, kind = 4)     !16 (NML, 4)
+        write(iun) real(vs%tile%tsno, kind = 4)     !17 (NML)
+        write(iun) real(vs%tile%lqwssno, kind = 4)  !18 (NML)
+        write(iun) real(vs%tile%zpnd, kind = 4)     !19 (NML)
 
         !> Close the file to free the unit.
         close(iun)

@@ -121,16 +121,16 @@ module irrigation_module
 
             !> Calculate demand for tile.
             IRDMND_TILE(k) = 0.0   !initialization for each time step
-            if (irrm%pm%irflg(k) == 1 .and. sum(stas%sl%thic(k, :)) == 0.0 .and. &
+            if (irrm%pm%irflg(k) == 1 .and. sum(vs%tile%thicsol(k, :)) == 0.0 .and. &
                 (ic%now%jday >= irrm%pm%ijday1(k) .and. ic%now%jday <= irrm%pm%ijday2(k))) then
                 iractive = (ic%now%hour >= irrm%pm%t1(k) .and. ic%now%hour < irrm%pm%t2(k))
                 if (iractive) then
                     if (irrm%pm%t1(k) == 0 .or. (ic%now%hour == irrm%pm%t1(k) .and. ic%ts_hourly == 1)) then ! calculate at beginning of irrigation period
                         do j = 1, irrm%pm%ignd(k) ! loop for each Soil layers
-                            check = irrm%pm%thlmin(k)*pm%slp%thfc(k, j) ! calculate 50% of field capacity
-                            lqsum =  stas%sl%thlq(k, j)
+                            check = irrm%pm%thlmin(k)*pm%tile%thfc(k, j) ! calculate 50% of field capacity
+                            lqsum =  vs%tile%thlqsol(k, j)
                             if (lqsum < check)then ! check if sum of soil moisture is less than 50% of FC
-                                ir = (pm%slp%thfc(k, j) - lqsum)*stas%sl%delzw(k, j) ! calculate irrigation water to field capacity for each permeable soil depth
+                                ir = (pm%tile%thfc(k, j) - lqsum)*vs%tile%dzwat(k, j) ! calculate irrigation water to field capacity for each permeable soil depth
                             else
                                 ir = 0.0
                             end if
@@ -139,7 +139,7 @@ module irrigation_module
                         IRDMND_TILE(k) = IRDMND_TILE(k)*(1000.0/ic%dts) ! convert into mm/sec
                         irrm%va%dmnd(k) = IRDMND_TILE(k)
                     end if
-                    irrm%va%dmnd(k) = max(irrm%va%dmnd(k) - cm%dat(ck%RT)%GAT(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
+                    irrm%va%dmnd(k) = max(irrm%va%dmnd(k) - vs%tile%pre(k), 0.0) ! subtract current precipitation to calculate actual requirement if there is rain
                 else
                     irrm%va%dmnd(k) = 0.0
                 end if
@@ -151,10 +151,10 @@ module irrigation_module
             if (ro%RUNGRID .and. irrm%va%dmnd(k) > 0.0) then
 
                 !> Determine abstraction point source.
-                if (pm%tp%iabsp(k) > 0 .and. pm%tp%iabsp(k) <= fms%absp%n) then
+                if (pm%tile%iabsp(k) > 0 .and. pm%tile%iabsp(k) <= fms%absp%n) then
 
                     !> Discrict, pulls from an abstraction point.
-                    n = fms%absp%meta%rnk(pm%tp%iabsp(k))
+                    n = fms%absp%meta%rnk(pm%tile%iabsp(k))
                 else
 
                     !> Grid, tile pulls from its own cell.
@@ -177,16 +177,16 @@ module irrigation_module
                         !> Apply minimum storage conditions at abstraction points.
                         l = maxloc(fms%absp%meta%rnk, 1, fms%absp%meta%rnk <= n)
                         AVAIL_GRID(n) = &
-                            min(max(stas_grid%chnl%stg(n) - fms%absp%smin(l), 0.0)*(1.0 - fms%absp%fsmin(l)), IRDMND_GRID(n))
-                    else if (pm_grid%tp%iabsp(n) == 0) then
+                            min(max(vs%grid%stgch(n) - fms%absp%smin(l), 0.0)*(1.0 - fms%absp%fsmin(l)), IRDMND_GRID(n))
+                    else if (pm%grid%iabsp(n) == 0) then
 
                         !> Minimum of available water and demand, with absolute minimum %5 storage preserved in channel.
-                        AVAIL_GRID(n) = min(stas_grid%chnl%stg(n)*(1.0 - 0.05), IRDMND_GRID(n)) ! m3
+                        AVAIL_GRID(n) = min(vs%grid%stgch(n)*(1.0 - 0.05), IRDMND_GRID(n)) ! m3
                     end if
 
                     !> Update storage.
                     if (AVAIL_GRID(n) > 0.0) then
-                        stas_grid%chnl%stg(n) = stas_grid%chnl%stg(n) - AVAIL_GRID(n)
+                        vs%grid%stgch(n) = vs%grid%stgch(n) - AVAIL_GRID(n)
                     end if
                 end if
             end do
@@ -204,10 +204,10 @@ module irrigation_module
                 if (ro%RUNGRID) then
 
                     !> Determine abstraction point source.
-                    if (pm%tp%iabsp(k) > 0 .and. pm%tp%iabsp(k) <= fms%absp%n) then
+                    if (pm%tile%iabsp(k) > 0 .and. pm%tile%iabsp(k) <= fms%absp%n) then
 
                         !> Discrict, pulls from an abstraction point.
-                        n = fms%absp%meta%rnk(pm%tp%iabsp(k))
+                        n = fms%absp%meta%rnk(pm%tile%iabsp(k))
                     else
 
                         !> Grid, tile pulls from its own cell.
@@ -219,9 +219,9 @@ module irrigation_module
                 end if
 
                 !> Apply the abstraction to precipitation.
-                cm%dat(ck%RT)%GAT(k) = cm%dat(ck%RT)%GAT(k) + irrm%va%avail(k)
-                cm%dat(ck%RT)%GRD(shd%lc%ILMOS(k)) = &
-                    cm%dat(ck%RT)%GRD(shd%lc%ILMOS(k)) + irrm%va%avail(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+                vs%tile%pre(k) = vs%tile%pre(k) + irrm%va%avail(k)
+                vs%grid%pre(shd%lc%ILMOS(k)) = &
+                    vs%grid%pre(shd%lc%ILMOS(k)) + irrm%va%avail(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
 
                 !> Preserve demand gone unsatisfied.
                 irrm%va%dmnd(k) = irrm%va%dmnd(k) - irrm%va%avail(k)
@@ -293,17 +293,17 @@ module irrigation_module
         do k = 1, shd%lc%NML
             frac = shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%AREA(shd%lc%ILMOS(k))
             if (irrm%va%avail(k) > 0.0) then
-                if (pm%tp%iabsp(k) > 0 .and. pm%tp%iabsp(k) <= fms%absp%n) then
-                    SUMIRDMND(pm%tp%iabsp(k)) = SUMIRDMND(pm%tp%iabsp(k)) + (irrm%va%dmnd(k) + irrm%va%avail(k))*ic%dts*frac
-                    SUMIRAVAI(pm%tp%iabsp(k)) = SUMIRAVAI(pm%tp%iabsp(k)) + irrm%va%avail(k)*ic%dts*frac
-                    SUMOLDPRE(pm%tp%iabsp(k)) = SUMOLDPRE(pm%tp%iabsp(k)) + (cm%dat(ck%RT)%GAT(k) - irrm%va%avail(k))*ic%dts*frac
-                    SUMNEWPRE(pm%tp%iabsp(k)) = SUMNEWPRE(pm%tp%iabsp(k)) + cm%dat(ck%RT)%GAT(k)*ic%dts*frac
-                    SUMDSCTAR(pm%tp%iabsp(k)) = SUMDSCTAR(pm%tp%iabsp(k)) + frac
+                if (pm%tile%iabsp(k) > 0 .and. pm%tile%iabsp(k) <= fms%absp%n) then
+                    SUMIRDMND(pm%tile%iabsp(k)) = SUMIRDMND(pm%tile%iabsp(k)) + (irrm%va%dmnd(k) + irrm%va%avail(k))*ic%dts*frac
+                    SUMIRAVAI(pm%tile%iabsp(k)) = SUMIRAVAI(pm%tile%iabsp(k)) + irrm%va%avail(k)*ic%dts*frac
+                    SUMOLDPRE(pm%tile%iabsp(k)) = SUMOLDPRE(pm%tile%iabsp(k)) + (vs%tile%pre(k) - irrm%va%avail(k))*ic%dts*frac
+                    SUMNEWPRE(pm%tile%iabsp(k)) = SUMNEWPRE(pm%tile%iabsp(k)) + vs%tile%pre(k)*ic%dts*frac
+                    SUMDSCTAR(pm%tile%iabsp(k)) = SUMDSCTAR(pm%tile%iabsp(k)) + frac
                 end if
                 SUMIRDMND(0) = SUMIRDMND(0) + (irrm%va%dmnd(k) + irrm%va%avail(k))*ic%dts*frac
                 SUMIRAVAI(0) = SUMIRAVAI(0) + irrm%va%avail(k)*ic%dts*frac
-                SUMOLDPRE(0) = SUMOLDPRE(0) + (cm%dat(ck%RT)%GAT(k) - irrm%va%avail(k))*ic%dts*frac
-                SUMNEWPRE(0) = SUMNEWPRE(0) + cm%dat(ck%RT)%GAT(k)*ic%dts*frac
+                SUMOLDPRE(0) = SUMOLDPRE(0) + (vs%tile%pre(k) - irrm%va%avail(k))*ic%dts*frac
+                SUMNEWPRE(0) = SUMNEWPRE(0) + vs%tile%pre(k)*ic%dts*frac
                 SUMDSCTAR(0) = SUMDSCTAR(0) + frac
             end if
         end do

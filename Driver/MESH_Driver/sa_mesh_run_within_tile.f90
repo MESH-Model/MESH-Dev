@@ -17,10 +17,11 @@ module sa_mesh_run_within_tile
 
         !> Process modules.
         use RUNCLASS36_config
-        use RUNSVS113_config
+        use runsvs_mesh
         use irrigation_module
         use baseflow_module
         use cropland_irrigation_init
+        use mountain_module
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -32,8 +33,9 @@ module sa_mesh_run_within_tile
 
         !> Call processes.
         call irrigation_init(fls, shd, cm)
+        call mountain_init(fls, shd, cm)
         call RUNCLASS36_init(shd, fls, cm)
-        call RUNSVS113_init(shd, fls, cm)
+        call runsvs_mesh_init(shd, fls, cm)
         call bflm_init(fls, shd, cm)
         call runci_init(shd, fls)
 
@@ -49,10 +51,11 @@ module sa_mesh_run_within_tile
 
         !> Process modules.
         use RUNCLASS36_module
-        use RUNSVS113_module
+        use runsvs_mesh
         use irrigation_module
         use baseflow_module
         use cropland_irrigation_within_tile
+        use mountain_module
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -72,8 +75,9 @@ module sa_mesh_run_within_tile
         call run_within_tile_mpi_irecv(fls, shd, cm)
 
         !> Call processes.
+        call mountain_within_tile(fls, shd, cm)
         call RUNCLASS36_within_tile(shd, fls, cm)
-        call RUNSVS113(shd, fls, cm)
+        call runsvs_mesh_within_tile(shd, fls, cm)
         call bflm_within_tile(fls, shd, cm)
         call runci_within_tile(shd, fls, cm)
 
@@ -100,10 +104,10 @@ module sa_mesh_run_within_tile
         type(clim_info) cm
 
         !> Local variables.
-        integer nvars, t, i, j, u, s, ii1, ii2, iin, z
+        integer nvars, t, c, i, j, u, s, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
-        real, dimension(:), allocatable :: cnpy, sno, sfc, sl, lz, dz
+        real, dimension(:), allocatable :: met, cnpy, sno, sfc, sl, lz, dz
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
@@ -117,7 +121,13 @@ module sa_mesh_run_within_tile
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
-        t = ic%ts_count*1000
+
+        !> Check active kind of 'real'.
+        if (kind(2.0) == 8) then
+            c = MPI_REAL8
+        else
+            c = MPI_REAL
+        end if
 
         !> Other variables
         s = shd%lc%IGND
@@ -129,82 +139,89 @@ module sa_mesh_run_within_tile
             ii1 = il1; ii2 = il2; iin = iln
 
             !> Reset the exchange variables.
-            i = 1
             irqst = MPI_REQUEST_NULL
+            t = itag
+            i = 1
 
-            !> Canopy.
+            !> Meteorology/climatology variables.
+            allocate(met(2*iin))
+            met((1 + iin*0):(iin*1)) = vs%tile%prern(ii1:ii2)
+            met((1 + iin*1):(iin*2)) = vs%tile%presno(ii1:ii2)
+            call MPI_Isend(met, size(met), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            i = i + 1
+
+            !> Canopy variables.
             allocate(cnpy(7*iin))
-            cnpy((1 + iin*0):(iin*1)) = stas%cnpy%rcan(ii1:ii2)
-            cnpy((1 + iin*1):(iin*2)) = stas%cnpy%sncan(ii1:ii2)
-            cnpy((1 + iin*2):(iin*3)) = stas%cnpy%cmas(ii1:ii2)
-            cnpy((1 + iin*3):(iin*4)) = stas%cnpy%tac(ii1:ii2)
-            cnpy((1 + iin*4):(iin*5)) = stas%cnpy%tcan(ii1:ii2)
-            cnpy((1 + iin*5):(iin*6)) = stas%cnpy%qac(ii1:ii2)
-            cnpy((1 + iin*6):(iin*7)) = stas%cnpy%gro(ii1:ii2)
-            call MPI_Isend(cnpy, size(cnpy), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            cnpy((1 + iin*0):(iin*1)) = vs%tile%lqwscan(ii1:ii2)
+            cnpy((1 + iin*1):(iin*2)) = vs%tile%fzwscan(ii1:ii2)
+            cnpy((1 + iin*2):(iin*3)) = vs%tile%cmas(ii1:ii2)
+            cnpy((1 + iin*3):(iin*4)) = vs%tile%tacan(ii1:ii2)
+            cnpy((1 + iin*4):(iin*5)) = vs%tile%qacan(ii1:ii2)
+            cnpy((1 + iin*5):(iin*6)) = vs%tile%tcan(ii1:ii2)
+            cnpy((1 + iin*6):(iin*7)) = vs%tile%gro(ii1:ii2)
+            call MPI_Isend(cnpy, size(cnpy), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
-            !> Snow.
-            allocate(sno(6*iin))
-            sno((1 + iin*0):(iin*1)) = stas%sno%sno(ii1:ii2)
-            sno((1 + iin*1):(iin*2)) = stas%sno%albs(ii1:ii2)
-            sno((1 + iin*2):(iin*3)) = stas%sno%fsno(ii1:ii2)
-            sno((1 + iin*3):(iin*4)) = stas%sno%rhos(ii1:ii2)
-            sno((1 + iin*4):(iin*5)) = stas%sno%wsno(ii1:ii2)
-            sno((1 + iin*5):(iin*6)) = stas%sno%tsno(ii1:ii2)
-            call MPI_Isend(sno, size(sno), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            !> Snow variables.
+            allocate(sno(8*iin))
+            sno((1 + iin*0):(iin*1)) = vs%tile%sno(ii1:ii2)
+            sno((1 + iin*1):(iin*2)) = vs%tile%rhosno(ii1:ii2)
+            sno((1 + iin*2):(iin*3)) = vs%tile%zsno(ii1:ii2)
+            sno((1 + iin*3):(iin*4)) = vs%tile%fsno(ii1:ii2)
+            sno((1 + iin*4):(iin*5)) = vs%tile%albsno(ii1:ii2)
+            sno((1 + iin*5):(iin*6)) = vs%tile%lqwssno(ii1:ii2)
+            sno((1 + iin*6):(iin*7)) = vs%tile%tsno(ii1:ii2)
+            sno((1 + iin*7):(iin*8)) = vs%tile%drainsno(ii1:ii2)
+            call MPI_Isend(sno, size(sno), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
-            !> Surface or at near surface.
-            allocate(sfc((12 + 4)*iin))
-            sfc((1 + iin*0):(iin*1)) = stas%sfc%albt(ii1:ii2)
-            sfc((1 + iin*1):(iin*2)) = stas%sfc%alvs(ii1:ii2)
-            sfc((1 + iin*2):(iin*3)) = stas%sfc%alir(ii1:ii2)
-            sfc((1 + iin*3):(iin*4)) = stas%sfc%gte(ii1:ii2)
-            sfc((1 + iin*4):(iin*5)) = stas%sfc%zpnd(ii1:ii2)
-            sfc((1 + iin*5):(iin*6)) = stas%sfc%tpnd(ii1:ii2)
-            sfc((1 + iin*6):(iin*7)) = stas%sfc%pevp(ii1:ii2)
-            sfc((1 + iin*7):(iin*8)) = stas%sfc%evap(ii1:ii2)
-            sfc((1 + iin*8):(iin*9)) = stas%sfc%rofo(ii1:ii2)
-            sfc((1 + iin*9):(iin*10)) = stas%sfc%qevp(ii1:ii2)
-            sfc((1 + iin*10):(iin*11)) = stas%sfc%hfs(ii1:ii2)
-            sfc((1 + iin*11):(iin*12)) = stas%sfc%gzero(ii1:ii2)
+            !> Surface variables.
+            allocate(sfc((13 + 1*4)*iin))
+            sfc((1 + iin*0):(iin*1)) = vs%tile%albt(ii1:ii2)
+            sfc((1 + iin*1):(iin*2)) = vs%tile%alvs(ii1:ii2)
+            sfc((1 + iin*2):(iin*3)) = vs%tile%alir(ii1:ii2)
+            sfc((1 + iin*3):(iin*4)) = vs%tile%gte(ii1:ii2)
+            sfc((1 + iin*4):(iin*5)) = vs%tile%zpnd(ii1:ii2)
+            sfc((1 + iin*5):(iin*6)) = vs%tile%tpnd(ii1:ii2)
+            sfc((1 + iin*6):(iin*7)) = vs%tile%fstr(ii1:ii2)
+            sfc((1 + iin*7):(iin*8)) = vs%tile%potevp(ii1:ii2)
+            sfc((1 + iin*8):(iin*9)) = vs%tile%et(ii1:ii2)
+            sfc((1 + iin*9):(iin*10)) = vs%tile%ovrflw(ii1:ii2)
+            sfc((1 + iin*10):(iin*11)) = vs%tile%qevp(ii1:ii2)
+            sfc((1 + iin*11):(iin*12)) = vs%tile%qsens(ii1:ii2)
+            sfc((1 + iin*12):(iin*13)) = vs%tile%gzero(ii1:ii2)
             do j = 0, 3
-                sfc((1 + iin*(12 + j)):(iin*(13 + j))) = stas%sfc%tsfs(ii1:ii2, j + 1)
+                sfc((1 + iin*(13 + j)):(iin*(14 + j))) = vs%tile%tsfs(ii1:ii2, j + 1)
             end do
-            call MPI_Isend(sfc, size(sfc), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            call MPI_Isend(sfc, size(sfc), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
-            !> Soil layers.
-            allocate(sl((2 + 4*s)*iin))
-            sl((1 + iin*0):(iin*1)) = stas%sl%tbas(ii1:ii2)
-            sl((1 + iin*1):(iin*2)) = stas%sl%rofs(ii1:ii2)
+            !> Subsurface/soil variables.
+            allocate(sl((3 + 5*s)*iin))
+            sl((1 + iin*0):(iin*1)) = vs%tile%ggeo(ii1:ii2)
+            sl((1 + iin*1):(iin*2)) = vs%tile%tbas(ii1:ii2)
+            sl((1 + iin*2):(iin*3)) = vs%tile%drainsol(ii1:ii2)
             do j = 0, s - 1
-                sl((1 + iin*(2 + j*4)):(iin*(3 + j*4))) = stas%sl%thic(ii1:ii2, j + 1)
-                sl((1 + iin*(3 + j*4)):(iin*(4 + j*4))) = stas%sl%thlq(ii1:ii2, j + 1)
-                sl((1 + iin*(4 + j*4)):(iin*(5 + j*4))) = stas%sl%tbar(ii1:ii2, j + 1)
-                sl((1 + iin*(5 + j*4)):(iin*(6 + j*4))) = stas%sl%gflx(ii1:ii2, j + 1)
+                sl((1 + iin*(3 + j*5)):(iin*(4 + j*5))) = vs%tile%thlqsol(ii1:ii2, j + 1)
+                sl((1 + iin*(4 + j*5)):(iin*(5 + j*5))) = vs%tile%thicsol(ii1:ii2, j + 1)
+                sl((1 + iin*(5 + j*5)):(iin*(6 + j*5))) = vs%tile%tsol(ii1:ii2, j + 1)
+                sl((1 + iin*(6 + j*5)):(iin*(7 + j*5))) = vs%tile%gflx(ii1:ii2, j + 1)
+                sl((1 + iin*(7 + j*5)):(iin*(8 + j*5))) = vs%tile%latflw(ii1:ii2, j + 1)
             end do
-            call MPI_Isend(sl, size(sl), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            call MPI_Isend(sl, size(sl), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
-            !> Lower zone storage.
-            allocate(lz(2*iin))
-            lz((1 + iin*0):(iin*1)) = stas%lzs%ws(ii1:ii2)
-            lz((1 + iin*1):(iin*2)) = stas%lzs%rofb(ii1:ii2)
-            call MPI_Isend(lz, size(lz), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
-            i = i + 1
-
-            !> Deep zone storage.
-            allocate(dz(2*iin))
-            dz((1 + iin*0):(iin*1)) = stas%dzs%ws(ii1:ii2)
-            dz((1 + iin*1):(iin*2)) = stas%dzs%rofb(ii1:ii2)
-            call MPI_Isend(dz, size(dz), MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+            !> Groundwater/lower zone storage variables.
+            allocate(lz(3*iin))
+            lz((1 + iin*0):(iin*1)) = vs%tile%rchg(ii1:ii2)
+            lz((1 + iin*1):(iin*2)) = vs%tile%stggw(ii1:ii2)
+            lz((1 + iin*2):(iin*3)) = vs%tile%dzs(ii1:ii2)
+            call MPI_Isend(lz, size(lz), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
             !> BASEFLOWFLAG.
             if (bflm%BASEFLOWFLAG == 1) then
-                call MPI_Isend(Qb(ii1:ii2), iin, MPI_REAL, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
+                call MPI_Isend(Qb(ii1:ii2), iin, c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
                 i = i + 1
             end if
 
@@ -215,7 +232,7 @@ module sa_mesh_run_within_tile
             end do
 
             !> Deallocate temporary arrays.
-            deallocate(cnpy, sno, sfc, sl, lz, dz)
+            deallocate(met, cnpy, sno, sfc, sl, lz)
 
         else if (inp > 1) then
 
@@ -226,29 +243,30 @@ module sa_mesh_run_within_tile
                 call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iin)
 
                 !> Allocate temporary arrays.
+                allocate(met(2*iin))
                 allocate(cnpy(7*iin))
-                allocate(sno(6*iin))
-                allocate(sfc((12 + 4)*iin))
-                allocate(sl((2 + 4*s)*iin))
-                allocate(lz(2*iin))
-                allocate(dz(2*iin))
+                allocate(sno(8*iin))
+                allocate(sfc((13 + 1*4)*iin))
+                allocate(sl((3 + 5*s)*iin))
+                allocate(lz(3*iin))
 
                 !> Reset the exchange variables.
-                i = 1
                 irqst = MPI_REQUEST_NULL
                 imstat = 0
+                t = itag
+                i = 1
 
                 !> Receive variables.
-                call MPI_Irecv(cnpy, size(cnpy), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
-                call MPI_Irecv(sno, size(sno), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
-                call MPI_Irecv(sfc, size(sfc), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
-                call MPI_Irecv(sl, size(sl), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
-                call MPI_Irecv(lz, size(lz), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
-                call MPI_Irecv(dz, size(dz), MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(met, size(met), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(cnpy, size(cnpy), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(sno, size(sno), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(sfc, size(sfc), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(sl, size(sl), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                call MPI_Irecv(lz, size(lz), c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
 
                 !> BASEFLOWFLAG.
                 if (bflm%BASEFLOWFLAG == 1) then
-                    call MPI_Irecv(Qb(ii1:ii2), iin, MPI_REAL, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+                    call MPI_Irecv(Qb(ii1:ii2), iin, c, u, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
                 end if
 
                 !> Wait until the exchange completes.
@@ -257,68 +275,77 @@ module sa_mesh_run_within_tile
                     call MPI_Testall(nvars, irqst, lstat, imstat, z)
                 end do
 
-                !> Assign variables.
+                !> Meteorology/climatology variables.
+                vs%tile%prern(ii1:ii2) = met((1 + iin*0):(iin*1))
+                vs%tile%presno(ii1:ii2) = met((1 + iin*1):(iin*2))
 
-                !> Canopy.
-                stas%cnpy%rcan(ii1:ii2) = cnpy((1 + iin*0):(iin*1))
-                stas%cnpy%sncan(ii1:ii2) = cnpy((1 + iin*1):(iin*2))
-                stas%cnpy%cmas(ii1:ii2) = cnpy((1 + iin*2):(iin*3))
-                stas%cnpy%tac(ii1:ii2) = cnpy((1 + iin*3):(iin*4))
-                stas%cnpy%tcan(ii1:ii2) = cnpy((1 + iin*4):(iin*5))
-                stas%cnpy%qac(ii1:ii2) = cnpy((1 + iin*5):(iin*6))
-                stas%cnpy%gro(ii1:ii2) = cnpy((1 + iin*6):(iin*7))
+                !> Canopy variables.
+                vs%tile%lqwscan(ii1:ii2) = cnpy((1 + iin*0):(iin*1))
+                vs%tile%fzwscan(ii1:ii2) = cnpy((1 + iin*1):(iin*2))
+                vs%tile%cmas(ii1:ii2) = cnpy((1 + iin*2):(iin*3))
+                vs%tile%tacan(ii1:ii2) = cnpy((1 + iin*3):(iin*4))
+                vs%tile%qacan(ii1:ii2) = cnpy((1 + iin*4):(iin*5))
+                vs%tile%tcan(ii1:ii2) = cnpy((1 + iin*5):(iin*6))
+                vs%tile%gro(ii1:ii2) = cnpy((1 + iin*6):(iin*7))
 
-                !> Snow.
-                stas%sno%sno(ii1:ii2) = sno((1 + iin*0):(iin*1))
-                stas%sno%albs(ii1:ii2) = sno((1 + iin*1):(iin*2))
-                stas%sno%fsno(ii1:ii2) = sno((1 + iin*2):(iin*3))
-                stas%sno%rhos(ii1:ii2) = sno((1 + iin*3):(iin*4))
-                stas%sno%wsno(ii1:ii2) = sno((1 + iin*4):(iin*5))
-                stas%sno%tsno(ii1:ii2) = sno((1 + iin*5):(iin*6))
+                !> Snow variables.
+                vs%tile%sno(ii1:ii2) = sno((1 + iin*0):(iin*1))
+                vs%tile%rhosno(ii1:ii2) = sno((1 + iin*1):(iin*2))
+                vs%tile%zsno(ii1:ii2) = sno((1 + iin*2):(iin*3))
+                vs%tile%fsno(ii1:ii2) = sno((1 + iin*3):(iin*4))
+                vs%tile%albsno(ii1:ii2) = sno((1 + iin*4):(iin*5))
+                vs%tile%lqwssno(ii1:ii2) = sno((1 + iin*5):(iin*6))
+                vs%tile%tsno(ii1:ii2) = sno((1 + iin*6):(iin*7))
+                vs%tile%drainsno(ii1:ii2) = sno((1 + iin*7):(iin*8))
 
-                !> Surface or at near surface.
-                stas%sfc%albt(ii1:ii2) = sfc((1 + iin*0):(iin*1))
-                stas%sfc%alvs(ii1:ii2) = sfc((1 + iin*1):(iin*2))
-                stas%sfc%alir(ii1:ii2) = sfc((1 + iin*2):(iin*3))
-                stas%sfc%gte(ii1:ii2) = sfc((1 + iin*3):(iin*4))
-                stas%sfc%zpnd(ii1:ii2) = sfc((1 + iin*4):(iin*5))
-                stas%sfc%tpnd(ii1:ii2) = sfc((1 + iin*5):(iin*6))
-                stas%sfc%pevp(ii1:ii2) = sfc((1 + iin*6):(iin*7))
-                stas%sfc%evap(ii1:ii2) = sfc((1 + iin*7):(iin*8))
-                stas%sfc%rofo(ii1:ii2) = sfc((1 + iin*8):(iin*9))
-                stas%sfc%qevp(ii1:ii2) = sfc((1 + iin*9):(iin*10))
-                stas%sfc%hfs(ii1:ii2) = sfc((1 + iin*10):(iin*11))
-                stas%sfc%gzero(ii1:ii2) = sfc((1 + iin*11):(iin*12))
+                !> Surface variables.
+                vs%tile%albt(ii1:ii2) = sfc((1 + iin*0):(iin*1))
+                vs%tile%alvs(ii1:ii2) = sfc((1 + iin*1):(iin*2))
+                vs%tile%alir(ii1:ii2) = sfc((1 + iin*2):(iin*3))
+                vs%tile%gte(ii1:ii2) = sfc((1 + iin*3):(iin*4))
+                vs%tile%zpnd(ii1:ii2) = sfc((1 + iin*4):(iin*5))
+                vs%tile%tpnd(ii1:ii2) = sfc((1 + iin*5):(iin*6))
+                vs%tile%fstr(ii1:ii2) = sfc((1 + iin*6):(iin*7))
+                vs%tile%potevp(ii1:ii2) = sfc((1 + iin*7):(iin*8))
+                vs%tile%et(ii1:ii2) = sfc((1 + iin*8):(iin*9))
+                vs%tile%ovrflw(ii1:ii2) = sfc((1 + iin*9):(iin*10))
+                vs%tile%qevp(ii1:ii2) = sfc((1 + iin*10):(iin*11))
+                vs%tile%qsens(ii1:ii2) = sfc((1 + iin*11):(iin*12))
+                vs%tile%gzero(ii1:ii2) = sfc((1 + iin*12):(iin*13))
                 do j = 0, 3
-                    stas%sfc%tsfs(ii1:ii2, j + 1) = sfc((1 + iin*(12 + j)):(iin*(13 + j)))
+                    vs%tile%tsfs(ii1:ii2, j + 1) = sfc((1 + iin*(13 + j)):(iin*(14 + j)))
                 end do
 
-                !> Soil layers.
-                stas%sl%tbas(ii1:ii2) = sl((1 + iin*0):(iin*1))
-                stas%sl%rofs(ii1:ii2) = sl((1 + iin*1):(iin*2))
+                !> Subsurface/soil variables.
+                vs%tile%ggeo(ii1:ii2) = sl((1 + iin*0):(iin*1))
+                vs%tile%tbas(ii1:ii2) = sl((1 + iin*1):(iin*2))
+                vs%tile%drainsol(ii1:ii2) = sl((1 + iin*2):(iin*3))
                 do j = 0, s - 1
-                    stas%sl%thic(ii1:ii2, j + 1) = sl((1 + iin*(2 + j*4)):(iin*(3 + j*4)))
-                    stas%sl%thlq(ii1:ii2, j + 1) = sl((1 + iin*(3 + j*4)):(iin*(4 + j*4)))
-                    stas%sl%tbar(ii1:ii2, j + 1) = sl((1 + iin*(4 + j*4)):(iin*(5 + j*4)))
-                    stas%sl%gflx(ii1:ii2, j + 1) = sl((1 + iin*(5 + j*4)):(iin*(6 + j*4)))
+                    vs%tile%thlqsol(ii1:ii2, j + 1) = sl((1 + iin*(3 + j*5)):(iin*(4 + j*5)))
+                    vs%tile%thicsol(ii1:ii2, j + 1) = sl((1 + iin*(4 + j*5)):(iin*(5 + j*5)))
+                    vs%tile%tsol(ii1:ii2, j + 1) = sl((1 + iin*(5 + j*5)):(iin*(6 + j*5)))
+                    vs%tile%gflx(ii1:ii2, j + 1) = sl((1 + iin*(6 + j*5)):(iin*(7 + j*5)))
+                    vs%tile%latflw(ii1:ii2, j + 1) = sl((1 + iin*(7 + j*5)):(iin*(8 + j*5)))
                 end do
 
-                !> Lower zone storage.
-                stas%lzs%ws(ii1:ii2) = lz((1 + iin*0):(iin*1))
-                stas%lzs%rofb(ii1:ii2) = lz((1 + iin*1):(iin*2))
-
-                !> Deep zone storage.
-                stas%dzs%ws(ii1:ii2) = dz((1 + iin*0):(iin*1))
-                stas%dzs%rofb(ii1:ii2) = dz((1 + iin*1):(iin*2))
+                !> Groundwater/lower zone storage variables.
+                vs%tile%rchg(ii1:ii2) = lz((1 + iin*0):(iin*1))
+                vs%tile%stggw(ii1:ii2) = lz((1 + iin*1):(iin*2))
+                vs%tile%dzs(ii1:ii2) = lz((1 + iin*2):(iin*3))
 
                 !> Deallocate temporary arrays.
-                deallocate(cnpy, sno, sfc, sl, lz, dz)
+                deallocate(met, cnpy, sno, sfc, sl, lz)
 
             end do !u = 1, (inp - 1)
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, z)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 
@@ -333,7 +360,7 @@ module sa_mesh_run_within_tile
         type(clim_info) cm
 
         !> Local variables.
-        integer nvars, t, i, j, u, ii1, ii2, iin, z
+        integer nvars, t, c, i, j, u, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
 
@@ -349,7 +376,13 @@ module sa_mesh_run_within_tile
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
-        t = ic%ts_count*1000 + 400
+
+        !> Check active kind of 'real'.
+        if (kind(2.0) == 8) then
+            c = MPI_REAL8
+        else
+            c = MPI_REAL
+        end if
 
         !> Assign the indices.
         ii1 = 1
@@ -362,12 +395,13 @@ module sa_mesh_run_within_tile
             do u = 1, (inp - 1)
 
                 !> Reset the exchange variables.
-                i = 1
                 irqst = MPI_REQUEST_NULL
                 imstat = 0
+                t = itag
+                i = 1
 
                 if (irrm%PROCESS_ACTIVE) then
-                    call mpi_isend(cm%dat(ck%RT)%GAT(ii1:ii2), iin, mpi_real, u, t + i, mpi_comm_world, irqst(i), z)
+                    call mpi_isend(vs%tile%pre(ii1:ii2), iin, c, u, t + i, MPI_COMM_WORLD, irqst(i), z)
                     i = i + 1
                 end if
 
@@ -383,11 +417,12 @@ module sa_mesh_run_within_tile
 
             !> Receive data from head-node.
             !> Reset the exchange variables.
-            i = 1
             irqst = MPI_REQUEST_NULL
+            t = itag
+            i = 1
 
             if (irrm%PROCESS_ACTIVE) then
-                call mpi_irecv(cm%dat(ck%RT)%GAT(ii1:ii2), iin, mpi_real, 0, t + i, mpi_comm_world, irqst(i), z); i = i + 1
+                call mpi_irecv(vs%tile%pre(ii1:ii2), iin, c, 0, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
             end if
 
             !> Wait until the exchange completes.
@@ -398,7 +433,12 @@ module sa_mesh_run_within_tile
 
         end if !(inp > 1 .and. ipid /= 0) then
 
-        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (inp > 1 .and. ic%ts_daily == MPIUSEBARRIER) then
+            call MPI_Barrier(MPI_COMM_WORLD, z)
+            itag = 0
+        else
+            itag = t + i
+        end if
 
     end subroutine
 
@@ -412,23 +452,77 @@ module sa_mesh_run_within_tile
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
-        !> Reset variables non-prognostic variables.
-        stas%sno%zsno(il1:il2) = 0.0
-        stas%sno%fsno(il1:il2) = 0.0
-        stas%sfc%albt(il1:il2) = 0.0
-        stas%sfc%alvs(il1:il2) = 0.0
-        stas%sfc%alir(il1:il2) = 0.0
-        stas%sfc%gte(il1:il2) = 0.0
-        stas%sfc%pevp(il1:il2) = 0.0
-        stas%sfc%evap(il1:il2) = 0.0
-        stas%sfc%rofo(il1:il2) = 0.0
-        stas%sfc%qevp(il1:il2) = 0.0
-        stas%sfc%hfs(il1:il2) = 0.0
-        stas%sfc%gzero(il1:il2) = 0.0
-        stas%sl%rofs(il1:il2) = 0.0
-        stas%sl%gflx(il1:il2, :) = 0.0
-        stas%lzs%rofb(il1:il2) = 0.0
-        stas%dzs%rofb(il1:il2) = 0.0
+        !> Reset diagnostic (i.e., output) variables.
+!        if (associated(vs%tile%fsin)) vs%tile%fsin(il1:il2) = 0.0
+!        if (associated(vs%tile%fsdr)) vs%tile%fsdr(il1:il2) = 0.0
+!        if (associated(vs%tile%fsdff)) vs%tile%fsdff(il1:il2) = 0.0
+!        if (associated(vs%tile%flin)) vs%tile%flin(il1:il2) = 0.0
+!        if (associated(vs%tile%ta)) vs%tile%ta(il1:il2) = 0.0
+!        if (associated(vs%tile%qa)) vs%tile%qa(il1:il2) = 0.0
+!        if (associated(vs%tile%pres)) vs%tile%pres(il1:il2) = 0.0
+!        if (associated(vs%tile%uv)) vs%tile%uv(il1:il2) = 0.0
+!        if (associated(vs%tile%wdir)) vs%tile%wdir(il1:il2) = 0.0
+!        if (associated(vs%tile%uu)) vs%tile%uu(il1:il2) = 0.0
+!        if (associated(vs%tile%vv)) vs%tile%vv(il1:il2) = 0.0
+!        if (associated(vs%tile%pre)) vs%tile%pre(il1:il2) = 0.0
+!        if (associated(vs%tile%prern)) vs%tile%prern(il1:il2) = 0.0
+!        if (associated(vs%tile%presno)) vs%tile%presno(il1:il2) = 0.0
+!        if (associated(vs%tile%lqwscan)) vs%tile%lqwscan(il1:il2) = 0.0
+!        if (associated(vs%tile%fzwscan)) vs%tile%fzwscan(il1:il2) = 0.0
+!        if (associated(vs%tile%cmas)) vs%tile%cmas(il1:il2) = 0.0
+!        if (associated(vs%tile%tacan)) vs%tile%tacan(il1:il2) = 0.0
+!        if (associated(vs%tile%qacan)) vs%tile%qacan(il1:il2) = 0.0
+!        if (associated(vs%tile%tcan)) vs%tile%tcan(il1:il2) = 0.0
+!        if (associated(vs%tile%gro)) vs%tile%gro(il1:il2) = 0.0
+!        if (associated(vs%tile%sno)) vs%tile%sno(il1:il2) = 0.0
+!        if (associated(vs%tile%rhosno)) vs%tile%rhosno(il1:il2) = 0.0
+        if (associated(vs%tile%zsno)) vs%tile%zsno(il1:il2) = 0.0
+        if (associated(vs%tile%fsno)) vs%tile%fsno(il1:il2) = 0.0
+!        if (associated(vs%tile%albsno)) vs%tile%albsno(il1:il2) = 0.0
+!        if (associated(vs%tile%lqwssno)) vs%tile%lqwssno(il1:il2) = 0.0
+!        if (associated(vs%tile%tsno)) vs%tile%tsno(il1:il2) = 0.0
+        if (associated(vs%tile%drainsno)) vs%tile%drainsno(il1:il2) = 0.0
+        if (associated(vs%tile%albt)) vs%tile%albt(il1:il2) = 0.0
+        if (associated(vs%tile%alvs)) vs%tile%alvs(il1:il2) = 0.0
+        if (associated(vs%tile%alir)) vs%tile%alir(il1:il2) = 0.0
+        if (associated(vs%tile%gte)) vs%tile%gte(il1:il2) = 0.0
+!        if (associated(vs%tile%zpnd)) vs%tile%zpnd(il1:il2) = 0.0
+        if (associated(vs%tile%lqwspnd)) vs%tile%lqwspnd(il1:il2) = 0.0
+!        if (associated(vs%tile%tpnd)) vs%tile%tpnd(il1:il2) = 0.0
+        if (associated(vs%tile%fstr)) vs%tile%fstr(il1:il2) = 0.0
+        if (associated(vs%tile%potevp)) vs%tile%potevp(il1:il2) = 0.0
+        if (associated(vs%tile%et)) vs%tile%et(il1:il2) = 0.0
+        if (associated(vs%tile%evpb)) vs%tile%evpb(il1:il2) = 0.0
+        if (associated(vs%tile%arrd)) vs%tile%arrd(il1:il2) = 0.0
+        if (associated(vs%tile%ovrflw)) vs%tile%ovrflw(il1:il2) = 0.0
+        if (associated(vs%tile%qevp)) vs%tile%qevp(il1:il2) = 0.0
+        if (associated(vs%tile%qsens)) vs%tile%qsens(il1:il2) = 0.0
+        if (associated(vs%tile%gzero)) vs%tile%gzero(il1:il2) = 0.0
+!        if (associated(vs%tile%tsfs)) vs%tile%tsfs(il1:il2, :) = 0.0
+!        if (associated(vs%tile%ggeo)) vs%tile%ggeo(il1:il2) = 0.0
+!        if (associated(vs%tile%tbas)) vs%tile%tbas(il1:il2) = 0.0
+!        if (associated(vs%tile%thlqsol)) vs%tile%thlqsol(il1:il2, :) = 0.0
+!        if (associated(vs%tile%thicsol)) vs%tile%thicsol(il1:il2, :) = 0.0
+        if (associated(vs%tile%lqwssol)) vs%tile%lqwssol(il1:il2, :) = 0.0
+        if (associated(vs%tile%fzwssol)) vs%tile%fzwssol(il1:il2, :) = 0.0
+!        if (associated(vs%tile%tsol)) vs%tile%tsol(il1:il2, :) = 0.0
+        if (associated(vs%tile%gflx)) vs%tile%gflx(il1:il2, :) = 0.0
+        if (associated(vs%tile%latflw)) vs%tile%latflw(il1:il2, :) = 0.0
+!        if (associated(vs%tile%dzwat)) vs%tile%dzwat(il1:il2, :) = 0.0
+        if (associated(vs%tile%zbotwat)) vs%tile%zbotwat(il1:il2, :) = 0.0
+        if (associated(vs%tile%drainsol)) vs%tile%drainsol(il1:il2) = 0.0
+        if (associated(vs%tile%rchg)) vs%tile%rchg(il1:il2) = 0.0
+!        if (associated(vs%tile%stggw)) vs%tile%stggw(il1:il2) = 0.0
+!        if (associated(vs%tile%dzs)) vs%tile%dzs(il1:il2) = 0.0
+        if (associated(vs%tile%stge)) vs%tile%stge(il1:il2) = 0.0
+        if (associated(vs%tile%stgw)) vs%tile%stgw(il1:il2) = 0.0
+        if (associated(vs%tile%rff)) vs%tile%rff(il1:il2) = 0.0
+        if (associated(vs%tile%qi)) vs%tile%qi(il1:il2) = 0.0
+        if (associated(vs%tile%qo)) vs%tile%qo(il1:il2) = 0.0
+!        if (associated(vs%tile%stgch)) vs%tile%stgch(il1:il2) = 0.0
+        if (associated(vs%tile%zlvl)) vs%tile%zlvl(il1:il2) = 0.0
+        if (associated(vs%tile%div)) vs%tile%div(il1:il2) = 0.0
+        if (associated(vs%tile%abstr)) vs%tile%abstr(il1:il2) = 0.0
 
     end subroutine
 
@@ -446,38 +540,58 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
         !> Update variables.
-        where (stas%sno%sno(il1:il2) == 0.0)
-            stas%sno%wsno(il1:il2) = 0.0
-            stas%sno%tsno(il1:il2) = 0.0
-        end where
-        if (all(stas%sno%zsno(il1:il2) == 0.0)) then
-            where (stas%sno%rhos(il1:il2) > 0.0)
-                stas%sno%zsno(il1:il2) = stas%sno%sno(il1:il2)/stas%sno%rhos(il1:il2)
-            end where
+        if (associated(vs%tile%sno)) then
+            if (associated(vs%tile%lqwssno)) then
+                where (vs%tile%sno(il1:il2) == 0.0) vs%tile%lqwssno(il1:il2) = 0.0
+            end if
+            if (associated(vs%tile%tsno)) then
+                where (vs%tile%sno(il1:il2) == 0.0) vs%tile%tsno(il1:il2) = 0.0
+            end if
+            if (associated(vs%tile%zsno) .and. associated(vs%tile%rhosno)) then
+                if (all(vs%tile%zsno(il1:il2) == 0.0)) then
+                    where (vs%tile%rhosno(il1:il2) > 0.0) vs%tile%zsno(il1:il2) = vs%tile%sno(il1:il2)/vs%tile%rhosno(il1:il2)
+                end if
+            end if
         end if
-        if (all(stas%sfc%albt(il1:il2) == 0.0)) then
-            where (stas%sfc%alvs(il1:il2) > 0.0 .and. stas%sfc%alir(il1:il2) > 0.0)
-                stas%sfc%albt(il1:il2) = (stas%sfc%alvs(il1:il2) + stas%sfc%alir(il1:il2))/2.0
-            elsewhere
-                stas%sfc%albt(il1:il2) = 0.0
-            end where
+        if (associated(vs%tile%albt) .and. associated(vs%tile%alvs) .and. associated(vs%tile%alir)) then
+            if (all(vs%tile%albt(il1:il2) == 0.0)) then
+                where (vs%tile%alvs(il1:il2) > 0.0 .and. vs%tile%alir(il1:il2) > 0.0)
+                    vs%tile%albt(il1:il2) = (vs%tile%alvs(il1:il2) + vs%tile%alir(il1:il2))/2.0
+                elsewhere
+                    vs%tile%albt(il1:il2) = 0.0
+                end where
+            end if
         end if
-        stas%sfc%pndw(il1:il2) = stas%sfc%zpnd(il1:il2)*RHOW
-        where (stas%sfc%zpnd(il1:il2) == 0.0) stas%sfc%tpnd(il1:il2) = 0.0
-        where (stas%sfc%evap(il1:il2) > 0.0 .and. stas%sfc%pevp(il1:il2) /= 0.0)
-            stas%sfc%evpb(il1:il2) = stas%sfc%evap(il1:il2)/stas%sfc%pevp(il1:il2)
-        elsewhere
-            stas%sfc%evpb(il1:il2) = 0.0
-        end where
-        if (allocated(cm%dat(ck%RT)%GAT)) then
-            where (stas%sfc%pevp(il1:il2) /= 0.0)
-                stas%sfc%arrd(il1:il2) = cm%dat(ck%RT)%GAT(il1:il2)/stas%sfc%pevp(il1:il2)
-            elsewhere
-                stas%sfc%arrd(il1:il2) = 0.0
-            end where
+        if (associated(vs%tile%zpnd)) then
+            if (associated(vs%tile%lqwspnd)) vs%tile%lqwspnd(il1:il2) = vs%tile%zpnd(il1:il2)*RHOW
+            if (associated(vs%tile%tpnd)) then
+                where (vs%tile%zpnd(il1:il2) == 0.0) vs%tile%tpnd(il1:il2) = 0.0
+            end if
         end if
-        stas%sl%fzws(il1:il2, :) = stas%sl%thic(il1:il2, :)*stas%sl%delzw(il1:il2, :)*RHOICE
-        stas%sl%lqws(il1:il2, :) = stas%sl%thlq(il1:il2, :)*stas%sl%delzw(il1:il2, :)*RHOW
+        if (associated(vs%tile%et)) then
+            if (associated(vs%tile%evpb) .and. associated(vs%tile%potevp)) then
+                where (vs%tile%et(il1:il2) > 0.0 .and. vs%tile%potevp(il1:il2) /= 0.0)
+                    vs%tile%evpb(il1:il2) = vs%tile%et(il1:il2)/vs%tile%potevp(il1:il2)
+                elsewhere
+                    vs%tile%evpb(il1:il2) = 0.0
+                end where
+            end if
+            if (associated(vs%tile%arrd) .and. associated(vs%tile%pre)) then
+                where (vs%tile%potevp(il1:il2) /= 0.0)
+                    vs%tile%arrd(il1:il2) = vs%tile%pre(il1:il2)/vs%tile%potevp(il1:il2)
+                elsewhere
+                    vs%tile%arrd(il1:il2) = 0.0
+                end where
+            end if
+        end if
+        if (associated(vs%tile%dzwat)) then
+            if (associated(vs%tile%lqwssol) .and. associated(vs%tile%thlqsol)) then
+                vs%tile%lqwssol(il1:il2, :) = vs%tile%thlqsol(il1:il2, :)*vs%tile%dzwat(il1:il2, :)*RHOW
+            end if
+            if (associated(vs%tile%fzwssol) .and. associated(vs%tile%thicsol)) then
+                vs%tile%fzwssol(il1:il2, :) = vs%tile%thicsol(il1:il2, :)*vs%tile%dzwat(il1:il2, :)*RHOICE
+            end if
+        end if
 
     end subroutine
 
@@ -485,7 +599,7 @@ module sa_mesh_run_within_tile
 
         !> Process modules.
         use RUNCLASS36_config
-        use RUNSVS113_config
+        use runsvs_mesh
         use baseflow_module
 
         !> Input/output variables.
@@ -498,8 +612,8 @@ module sa_mesh_run_within_tile
 
         !> Call processes.
         call RUNCLASS36_finalize(fls, shd, cm)
-        call RUNSVS113_finalize(shd, fls, cm)
         call bflm_finalize(fls, shd, cm)
+        call runsvs_mesh_finalize(shd, fls)
 
     end subroutine
 

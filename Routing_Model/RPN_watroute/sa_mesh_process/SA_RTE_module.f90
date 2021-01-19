@@ -98,7 +98,7 @@ module SA_RTE_module
 
         !> For: Runoff (RFF).
         if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
-            call tile_connector(shd, (stas_grid%sfc%rofo + stas_grid%sl%rofs)*shd%FRAC*ic%dts, RFF, .true.)
+            call tile_connector(shd, (vs%grid%ovrflw + sum(vs%grid%latflw, 2))*shd%FRAC*ic%dts, RFF, .true.)
             if (writeout) then
                 call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RFF, shd, (frame_now + 1), 0, frame_now, 0, 6, RFF)
                 RFF = 0.0
@@ -107,7 +107,7 @@ module SA_RTE_module
 
         !> For: Recharge (RCH).
         if (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1) then
-            call tile_connector(shd, (stas_grid%lzs%rofb + stas_grid%dzs%rofb)*shd%FRAC*ic%dts, RCH, .true.)
+            call tile_connector(shd, vs%grid%drainsol*shd%FRAC*ic%dts, RCH, .true.)
             if (writeout) then
                 call write_r2c(SA_RTE_fls, SA_RTE_flkeys%RCH, shd, (frame_now + 1), 0, frame_now, 0, 6, RCH)
                 RCH = 0.0
@@ -145,7 +145,9 @@ module SA_RTE_module
         if (.not. SA_RTE_flgs%PROCESS_ACTIVE) return
 
         !> Print that the module is active.
+        call reset_tab()
         call print_message('SA_RTE component is ACTIVE.')
+        call increase_tab()
 
         !> Allocate and initialize the appropriate variables.
         if (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1) then
@@ -184,7 +186,7 @@ module SA_RTE_module
                            RFF, &
 !todo: replace source with LSS flag
                            'channel_inflow', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-            call print_message_detail('Writing RFF output to: ' // trim(adjustl(SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn)))
+            call print_message('Writing RFF output to: ' // trim(adjustl(SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn)))
         end if
 
         !> For: Recharge (MODELFLG = r).
@@ -194,7 +196,7 @@ module SA_RTE_module
                            RCH, &
 !todo: replace source with LSS flag
                            'recharge', 'mm', 'flow', 'CLASS', 'SA_MESH_DRIVER')
-            call print_message_detail('Writing RCH output to: ' // trim(adjustl(SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn)))
+            call print_message('Writing RCH output to: ' // trim(adjustl(SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn)))
         end if
 
     end subroutine

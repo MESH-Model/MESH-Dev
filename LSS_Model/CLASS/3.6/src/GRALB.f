@@ -86,6 +86,10 @@ C
                 ALIRG(I)=(1.0-FURB)*ALIRG(I)+FURB*ALIRU(I)
                 IF(ALVSG(I).GT.1.0.OR.ALVSG(I).LT.0.0) IPTBAD=I
                 IF(ALIRG(I).GT.1.0.OR.ALIRG(I).LT.0.0) IPTBAD=I
+            ELSE IF(ISAND(I,1).EQ.-4 .AND.
+     &              ALVSU(I).GT.0.0 .AND. ALIRU(I).GT.0.0)THEN
+                ALVSG(I)=ALVSU(I)
+                ALIRG(I)=ALIRU(I)
             ELSE IF(ISAND(I,1).EQ.-4)                    THEN
                 ALVSG(I)=ALVSI
                 ALIRG(I)=ALIRI

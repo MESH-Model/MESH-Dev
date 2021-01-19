@@ -227,7 +227,7 @@ REAL  Q(ILG)
 !              --------------------------------------------------------
                SMXMCMN = SMAX - CMIN(I)
                CSTR    = CMIN(I) + CMXMCMN * (1.0 -                   &
-                         ((SMAX - SPRE(I)) / SMXMCMN) ** IBP1)
+                         max((SMAX - SPRE(I)) / SMXMCMN, 0.0) ** IBP1)
 
 !              --------------------------------------------------------
 !              CONTRIBUTING AREA FRACTION - DIAGNOSTIC ARRAY

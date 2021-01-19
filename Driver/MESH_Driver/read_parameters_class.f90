@@ -11,6 +11,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
 
     use RUNCLASS36_constants
     use RUNCLASS36_variables
+    use RUNCLASS36_save_output
 
     !> Used for starting date of climate forcing data.
     use climate_forcing
@@ -26,12 +27,12 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
     integer, intent(out) :: ierr
 
     !> Local variables.
-    integer NA, NTYPE, NSL, iun, k, ignd, i, m, j
+    integer NA, NTYPE, NSL, iun, n, k, ignd, i, m, j
     character(len = DEFAULT_LINE_LENGTH) line
 
     !> Local variables (read from file).
     real DEGLAT, DEGLON
-    integer JOUT1, JOUT2, JAV1, JAV2, KOUT1, KOUT2, KAV1, KAV2
+    integer IHOUR, IMINS, IJDAY, IYEAR
 
     !> Initialize the return status.
     ierr = 0
@@ -56,7 +57,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
     read(iun, '(2x, 6a4)', err = 98) NAME1, NAME2, NAME3, NAME4, NAME5, NAME6
     read(iun, '(2x, 6a4)', err = 98) PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
     read(iun, *, err = 98) &
-        DEGLAT, DEGLON, pm_gru%sfp%zrfm(1), pm_gru%sfp%zrfh(1), pm_gru%sfp%zbld(1), pm_gru%tp%gc(1), shd%wc%ILG, i, m
+        DEGLAT, DEGLON, pm%gru%zrfm(1), pm%gru%zrfh(1), pm%gru%zbld(1), pm%gru%gc(1), shd%wc%ILG, i, m
 
     !> Check that the number of GRUs matches the drainage database value.
     if (NTYPE /= m .and. NTYPE > 0) then
@@ -66,6 +67,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
         write(line, FMT_GEN) m
         call print_message(trim(adjustl(fls%fl(mfk%f50)%fn)) // ': ' // trim(adjustl(line)))
         ierr = 1
+        close(iun)
     end if
 
     !> Check that the number of grid cells matches the drainage database value.
@@ -76,6 +78,7 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
         write(line, FMT_GEN) i
         call print_message(trim(adjustl(fls%fl(mfk%f50)%fn)) // ': ' // trim(adjustl(line)))
         ierr = 1
+        close(iun)
     end if
 
     !> Return if an error has occurred.
@@ -94,32 +97,32 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
 
     !> Populate temporary variables from file.
     do m = 1, NTYPE
-        read(iun, *, err = 98) (pm_gru%cp%fcan(m, j), j = 1, ICP1), (pm_gru%cp%lamx(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%lnz0(m, j), j = 1, ICP1), (pm_gru%cp%lamn(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%alvc(m, j), j = 1, ICP1), (pm_gru%cp%cmas(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%alic(m, j), j = 1, ICP1), (pm_gru%cp%root(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%rsmn(m, j), j = 1, ICAN), (pm_gru%cp%qa50(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%vpda(m, j), j = 1, ICAN), (pm_gru%cp%vpdb(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) (pm_gru%cp%psga(m, j), j = 1, ICAN), (pm_gru%cp%psgb(m, j), j = 1, ICAN)
-        read(iun, *, err = 98) pm_gru%hp%drn(m), pm_gru%slp%sdep(m), pm_gru%tp%fare(m), pm_gru%hp%dd(m)
-        read(iun, *, err = 98) pm_gru%tp%xslp(m), pm_gru%hp%grkf(m), pm_gru%hp%mann(m), pm_gru%hp%ks(m), pm_gru%tp%mid(m)
-        read(iun, *, err = 98) (pm_gru%slp%sand(m, j), j = 1, ignd)
-        read(iun, *, err = 98) (pm_gru%slp%clay(m, j), j = 1, ignd)
-        read(iun, *, err = 98) (pm_gru%slp%orgm(m, j), j = 1, ignd)
+        read(iun, *, err = 98) (pm%gru%fcan(m, j), j = 1, ICP1), (pm%gru%lamx(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%lnz0(m, j), j = 1, ICP1), (pm%gru%lamn(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%alvc(m, j), j = 1, ICP1), (pm%gru%cmas(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%alic(m, j), j = 1, ICP1), (pm%gru%root(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%rsmn(m, j), j = 1, ICAN), (pm%gru%qa50(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%vpda(m, j), j = 1, ICAN), (pm%gru%vpdb(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) (pm%gru%psga(m, j), j = 1, ICAN), (pm%gru%psgb(m, j), j = 1, ICAN)
+        read(iun, *, err = 98) pm%gru%drn(m), pm%gru%sdep(m), pm%gru%fare(m), pm%gru%dd(m)
+        read(iun, *, err = 98) pm%gru%xslp(m), pm%gru%grkf(m), pm%gru%mann(m), pm%gru%ks(m), pm%gru%mid(m)
+        read(iun, *, err = 98) (pm%gru%sand(m, j), j = 1, ignd)
+        read(iun, *, err = 98) (pm%gru%clay(m, j), j = 1, ignd)
+        read(iun, *, err = 98) (pm%gru%orgm(m, j), j = 1, ignd)
         read(iun, *, err = 98) &
-            (stas_gru%sl%tbar(m, j), j = 1, ignd), stas_gru%cnpy%tcan(m), stas_gru%sno%tsno(m), stas_gru%sfc%tpnd(m)
-        read(iun, *, err = 98) (stas_gru%sl%thlq(m, j), j = 1, ignd), (stas_gru%sl%thic(m, j), j = 1, ignd), stas_gru%sfc%zpnd(m)
+            (vs%gru%tsol(m, j), j = 1, ignd), vs%gru%tcan(m), vs%gru%tsno(m), vs%gru%tpnd(m)
+        read(iun, *, err = 98) (vs%gru%thlqsol(m, j), j = 1, ignd), (vs%gru%thicsol(m, j), j = 1, ignd), vs%gru%zpnd(m)
         read(iun, *, err = 98) &
-            stas_gru%cnpy%rcan(m), stas_gru%cnpy%sncan(m), stas_gru%sno%sno(m), stas_gru%sno%albs(m), &
-            stas_gru%sno%rhos(m), stas_gru%cnpy%gro(m)
+            vs%gru%lqwscan(m), vs%gru%fzwscan(m), vs%gru%sno(m), vs%gru%albsno(m), &
+            vs%gru%rhosno(m), vs%gru%gro(m)
     end do
 
-!todo: Make sure these variables are documented properly (for CLASS output, not currently used)
-    read(iun, *, err = 98) JOUT1, JOUT2, JAV1, JAV2
-    read(iun, *, err = 98) KOUT1, KOUT2, KAV1, KAV2
+    !> Read CLASS output start/stop dates.
+    read(iun, *, err = 98) op%JOUT1, op%JOUT2, op%JAV1, op%JAV2
+    read(iun, *, err = 98) op%KOUT1, op%KOUT2, op%KAV1, op%KAV2
 
     !> Read in the starting date of the forcing files.
-    read(iun, *, err = 98) cm%start_date%hour, cm%start_date%mins, cm%start_date%jday, cm%start_date%year
+    read(iun, *, err = 98) IHOUR, IMINS, IJDAY, IYEAR
 
     !> Close the file.
     close(iun)
@@ -130,10 +133,22 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
         shd%xlng = DEGLON
     end if
 
+    !> Distribute the starting date of the forcing files.
+    do n = 1, cm%nclim
+        if (cm%dat(n)%start_date%year == 0 .and. cm%dat(n)%start_date%jday == 0 .and. &
+            cm%dat(n)%start_date%hour == 0 .and. cm%dat(n)%start_date%mins == 0) then
+            cm%dat(n)%start_date%year = IYEAR
+            cm%dat(n)%start_date%jday = IJDAY
+            cm%dat(n)%start_date%hour = IHOUR
+            cm%dat(n)%start_date%mins = IMINS
+        end if
+    end do
+
     return
 
 98  ierr = 1
     call print_error('Unable to read the file.')
+    close(iun)
     return
 
 end subroutine

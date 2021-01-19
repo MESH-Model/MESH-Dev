@@ -17,6 +17,7 @@
      G                 PCFC,   PCLC,   PCPN,   PCPG,   QFCF,   QFCL,
      H                 QFN,    QFG,    QFC,    HMFG,   
      I                 ROVG,   ROFC,   ROFN,   TRUNOF,
+     +                 ICE,    TICE,   ICEG,   TICEG,  ICEGS,  TICEGS,
      J                 THLIQX, THICEX, THLDUM, THIDUM,
      J                 DT,     RDUMMY, ZERO,   IZERO,  DELZZ,
      K                 FC,     FG,     FCS,    FGS,    
@@ -31,6 +32,11 @@
      T                 NLANDCS,NLANDGS,NLANDC, NLANDG, RADD,   SADD,
      U                 BI, PSISAT, DD, XSLOPE, BULK_FC  )
 C
+C     * AUG 26/20 - D.PRINCZ.   CHANGED THE DIMENSIONS OF SUBFLW/TSUBFL
+C                               TO PRESERVE THE PER-LAYER VALUES FOR
+C                               INTERFLOW. THE TILE TOTALS ARE THE SUMS
+C                               OF THE VALUES ALONG THE 2ND DIMENSION.
+C     * JUN 10/20 - D.PRINCZ.   ADDED ICE AND TICE (ICEBAL).
 C     * AUG 25/11 - D.VERSEGHY. REFINE CALCULATION OF TEMPERATURE OF
 C     *                         LUMPED PRECIPITATION.
 C     * NOV 24/09 - D.VERSEGHY. RESTORE EVAPOTRANSPIRATION WHEN
@@ -130,12 +136,14 @@ C
       REAL SUBLC (ILG),   SUBLCS(ILG),   WLOSTC(ILG),   WLOSTG(ILG),
      1     WLSTCS(ILG),   WLSTGS(ILG),   RAC   (ILG),   RACS  (ILG),
      2     SNC   (ILG),   SNCS  (ILG),   TSNOWC(ILG),   TSNOWG(ILG),
-     3     OVRFLW(ILG),   SUBFLW(ILG),   BASFLW(ILG),   
-     4     TOVRFL(ILG),   TSUBFL(ILG),   TBASFL(ILG),
+     3     OVRFLW(ILG),SUBFLW(ILG,IG),   BASFLW(ILG),   
+     4     TOVRFL(ILG),TSUBFL(ILG,IG),   TBASFL(ILG),
      5     PCFC  (ILG),   PCLC  (ILG),   PCPN  (ILG),   PCPG  (ILG),
      6     QFCF  (ILG),   QFCL  (ILG),   QFN   (ILG),   QFG   (ILG),
      7     ROVG  (ILG),   ROFC  (ILG),   ROFN  (ILG),   
-     8     TRUNOF(ILG),   DT    (ILG),   RDUMMY(ILG),   ZERO  (ILG)
+     8     TRUNOF(ILG),   DT    (ILG),   RDUMMY(ILG),   ZERO  (ILG),
+     +     ICE   (ILG),   TICE  (ILG),
+     +     ICEG  (ILG),   TICEG (ILG),   ICEGS (ILG),   TICEGS(ILG)
 C 
       INTEGER             IZERO (ILG)
 C
@@ -208,6 +216,8 @@ C
           HMFG  (I,J)=0.0
           THLDUM(I,J)=0.0
           THIDUM(I,J)=0.0
+          SUBFLW(I,J)=0.0
+          TSUBFL(I,J)=0.0
           IF(J.EQ.3.AND.IG.EQ.3) THEN
               DELZZ (I,J)=DELZW(I,J)
           ELSE
@@ -261,10 +271,10 @@ C
           ROFC  (I)=0.0
           ROFN  (I)=0.0
           OVRFLW(I)=0.0
-          SUBFLW(I)=0.0
+!-          SUBFLW(I)=0.0
           BASFLW(I)=0.0
           TOVRFL(I)=0.0
-          TSUBFL(I)=0.0
+!-          TSUBFL(I)=0.0
           TBASFL(I)=0.0
           ZPONDC(I)=0.0
           ZPONDG(I)=0.0
@@ -297,6 +307,12 @@ C
           TRNFCS(I)=0.0
           TRNFGS(I)=0.0
           TRUNOF(I)=0.0
+          ICE   (I)=0.0
+          TICE  (I)=0.0
+          ICEG  (I)=0.0
+          TICEG (I)=0.0
+          ICEGS (I)=0.0
+          TICEGS(I)=0.0
           TBASC (I)=TBASE(I)-TFREZ
           TBASG (I)=TBASE(I)-TFREZ
           TBASCS(I)=TBASE(I)-TFREZ

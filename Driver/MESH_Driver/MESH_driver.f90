@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1398'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1741'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -127,16 +127,16 @@ program RUNMESH
     !* NML: Temporary store for the number of active land elements (NA, NTYPE).
     !* NSL: Temporary store for the number of soil layers.
     !* iun: Temporary store for the unit number of a file.
-    integer NA, NTYPE, NML, NSL, iun, ignd
+!-    integer NA, NTYPE, NML, NSL, iun, ignd
 
 !todo: clean up comments and arrange variables a bit better
 
 !> START ENSIM == FOR ENSIM == FOR ENSIM == FOR ENSIM ==
-    integer(kind = 4) ensim_month, ensim_day
-    integer(kind = 4) WFO_SEQ
+    integer ensim_month, ensim_day
+    integer WFO_SEQ
 !> == ENSIM == ENSIM == ENSIM == ENSIM == ENSIM ==
 
-    integer i, j, k, l, m, u, z
+    integer iun, i, j, k, l, m, u, z
     character(len = DEFAULT_LINE_LENGTH) line
 
     integer FRAME_NO_NEW
@@ -151,13 +151,21 @@ program RUNMESH
     type(CLIM_INFO) cm
 
     !> Basin totals for the run from RESUMEFLAG.
+    integer(kind = 4) &
+        now_year_i4, now_jday_i4, now_month_i4, now_day_i4, now_hour_i4, now_mins_i4, &
+        iter_year_i4, iter_jday_i4, iter_month_i4, iter_day_i4, iter_hour_i4, iter_mins_i4, &
+        ts_daily_i4, ts_hourly_i4, ts_halfhourly_i4, ts_count_i4
+    real(kind = 4) &
+        TOTAL_PRE_r4, TOTAL_EVAP_r4, TOTAL_ROF_r4, TOTAL_ROFO_r4, TOTAL_ROFS_r4, TOTAL_ROFB_r4, &
+        STG_INI_r4
+    real(kind = 4), dimension(:), allocatable :: qomeas_val_r4, grid_qo_stmg_r4
     real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
 
     !> End of run states for prognostic variables.
-    real, dimension(:, :), allocatable :: tcan, rcan, sncan, gro, zpnd, tpnd, sno, tsno, albs, rhos
-    real, dimension(:, :, :), allocatable :: tbar, thlq, thic
-    integer, dimension(:), allocatable :: kc
-    character cfmt*3, cfmtt*1000
+!-    real, dimension(:, :), allocatable :: tcan, rcan, sncan, gro, zpnd, tpnd, sno, tsno, albs, rhos
+!-    real, dimension(:, :, :), allocatable :: tbar, thlq, thic
+!-    integer, dimension(:), allocatable :: kc
+!-    character cfmt*3, cfmtt*1000
 
     logical R2COUTPUT
     integer, parameter :: R2CFILEUNITSTART = 500
@@ -165,15 +173,24 @@ program RUNMESH
     integer, allocatable, dimension(:) :: GRD, GAT, GRDGAT, GRD_R, GAT_R, GRDGAT_R, GRD_S, GAT_S, GRDGAT_S
     character(50), allocatable, dimension(:, :) :: R2C_ATTRIBUTES, R2C_ATTRIBUTES_R, R2C_ATTRIBUTES_S
 
+    !> Variables for program run times.
     real startprog, endprog
+    integer dat(8)
 
     !> For reading arguments from the command line.
     character(500) fl_listMesh
     integer narg
+    logical ltest
 
     !> Set program start time.
-!todo: Also set date, which can be used for EnSim outputs.
     call cpu_time(startprog)
+    call date_and_time(values = dat)
+    ic%run_start%year = dat(1)
+    ic%run_start%month = dat(2)
+    ic%run_start%day = dat(3)
+    ic%run_start%jday = get_jday(ic%run_start%month, ic%run_start%day, ic%run_start%year)
+    ic%run_start%hour = dat(5)
+    ic%run_start%mins = dat(6)
 
     !> Reset spacing for screen output.
     call reset_tab()
@@ -181,9 +198,8 @@ program RUNMESH
     !> Initialize MPI.
     call MPI_Init(ierr)
     if (ierr /= MPI_SUCCESS) then
-        call print_warning('Failed to initialize MPI.')
         write(line, FMT_GEN) ierr
-        call print_message_detail('Error status: ' // trim(adjustl(line)))
+        call print_error("Failed to initialize MPI (Code: " // trim(adjustl(line)) // ").")
         call program_abort()
     end if
 
@@ -204,7 +220,7 @@ program RUNMESH
 
     !> Write MESH version to screen.
     write(RELEASE_STRING, "('MESH ', (a), ' ---  (', (a), ')')") trim(RELEASE), trim(VERSION)
-    call print_screen(RELEASE_STRING)
+    call print_screen(trim(RELEASE_STRING))
     call print_screen('')
 
     !> Check if any command line arguments are found.
@@ -232,36 +248,37 @@ program RUNMESH
     if (ierr /= 0) then
         call print_error('Errors occurred during initialization.')
         if (ISHEADNODE) call program_abort()
-    else
-        call print_message('')
     end if
 
     !> Assign shed values to local variables.
-    NA = shd%NA
-    NTYPE = shd%lc%NTYPE
-    NSL = shd%lc%IGND
-    NML = shd%lc%NML
+!    NA = shd%NA
+!    NTYPE = shd%lc%NTYPE
+!    NSL = shd%lc%IGND
+!    NML = shd%lc%NML
 
     !> Initialize climate forcing module.
     if (ro%RUNCLIM) then
         ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
         if (ENDDATA) goto 97
     end if
-    call print_message('')
 
     !> Initialize output variables.
-    call output_variables_init(shd, cm)
+    call output_variables_init(shd)
 
     !> Allocate output variables for screen output.
     if (PRINTSIMSTATUS == OUT_JDATE_DLY .or. PRINTSIMSTATUS == OUT_DATE_DLY) then
-        call output_variables_init_fields(shd, cm, out%d)
+        call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF /))
     end if
+    call output_variables_activate(out%d%grid, VN_QO)
     if (PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) then
-        call output_variables_init_fields(shd, cm, out%m)
+        call output_variables_activate(out%m%grid, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_QO /))
     end if
 
     !> Allocate output variables for run totals.
-    call output_variables_init_fields(shd, cm, out%tot)
+    call output_variables_activate( &
+        out%tot%grid, (/ &
+            VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
+            VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_DZS, VN_LQWSSOL, VN_FZWSSOL /))
 
     !> Initialize process modules.
     if (ro%RUNTILE) then
@@ -269,7 +286,6 @@ program RUNMESH
         call run_within_grid_init(fls, shd, cm)
     end if
     if (ro%RUNGRID) call run_between_grid_init(fls, shd, cm)
-    call print_message('')
 
     !> Initialize basin totals for the run.
     if (ISHEADNODE) then
@@ -295,9 +311,6 @@ program RUNMESH
 
     !> Read resume files.
     call resumerun_read(fls, shd, cm, ierr)
-
-    !> Update output variables with initial states.
-!-    call output_variables_update(shd, cm)
 
     FRAME_NO_NEW = 1
 
@@ -357,15 +370,15 @@ program RUNMESH
 !                end do
 !            end if !(FROZENSOILINFILFLAG == 1) then
 !            write(ECHO_TXT_IUN, "('Land class dependent hydrologic parameters:')")
-!            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZSNLROW'", NTYPE
-!            write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%ZSNLROW(1, m), m = 1, NTYPE)
-!            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZPLSROW'", NTYPE
-!            write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%ZPLSROW(1, m), m = 1, NTYPE)
-!            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZPLGROW'", NTYPE
-!            write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%ZPLGROW(1, m), m = 1, NTYPE)
+!            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZSNLROW'", shd%lc%NTYPE
+!            write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%ZSNLROW(1, m), m = 1, shd%lc%NTYPE)
+!            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZPLSROW'", shd%lc%NTYPE
+!            write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%ZPLSROW(1, m), m = 1, shd%lc%NTYPE)
+!            write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('ZPLGROW'", shd%lc%NTYPE
+!            write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%ZPLGROW(1, m), m = 1, shd%lc%NTYPE)
 !            if (DEPPAR >= 4) then
-!                write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('FRZCROW'", NTYPE
-!                write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%FRZCROW(1, m), m = 1, NTYPE)
+!                write(NMTESTFORMAT, "(a10, i3, 'f10.2)')") "('FRZCROW'", shd%lc%NTYPE
+!                write(ECHO_TXT_IUN, NMTESTFORMAT) (hp%FRZCROW(1, m), m = 1, shd%lc%NTYPE)
 !            end if
 !            write(ECHO_TXT_IUN, *)
 !            write(ECHO_TXT_IUN, "('MESH_parameters_CLASS.ini')")
@@ -375,8 +388,8 @@ program RUNMESH
 !            write(ECHO_TXT_IUN, '(2x, 6a4)') PLACE1, PLACE2, PLACE3, PLACE4, PLACE5, PLACE6
 !            i = 1
 !            write(ECHO_TXT_IUN, '(5f10.2, f7.1, 3i5)') &
-!                DEGLAT, DEGLON, cp%ZRFMGRD(i), cp%ZRFHGRD(i), cp%ZBLDGRD(i), cp%GCGRD(i), shd%wc%ILG, NA, NTYPE
-!            do m = 1, NTYPE
+!                DEGLAT, DEGLON, cp%ZRFMGRD(i), cp%ZRFHGRD(i), cp%ZBLDGRD(i), cp%GCGRD(i), shd%wc%ILG, shd%NA, shd%lc%NTYPE
+!            do m = 1, shd%lc%NTYPE
 !                write(ECHO_TXT_IUN, '(9f8.3)') (cp%FCANROW(i, m, j), j = 1, ICAN + 1), (cp%PAMXROW(i, m, j), j = 1, ICAN)
 !                write(ECHO_TXT_IUN, '(9f8.3)') (cp%LNZ0ROW(i, m, j), j = 1, ICAN + 1), (cp%PAMNROW(i, m, j), j = 1, ICAN)
 !                write(ECHO_TXT_IUN, '(9f8.3)') (cp%ALVCROW(i, m, j), j = 1, ICAN + 1), (cp%CMASROW(i, m, j), j = 1, ICAN)
@@ -386,16 +399,16 @@ program RUNMESH
 !                write(ECHO_TXT_IUN, '(4f8.3, 8x, 4f8.3)') (cp%PSGAROW(i, m, j), j = 1, ICAN), (cp%PSGBROW(i, m, j), j = 1, ICAN)
 !                write(ECHO_TXT_IUN, '(3f8.3, f8.4)') cp%DRNROW(i, m), cp%SDEPROW(i, m), cp%FAREROW(i, m), cp%DDROW(i, m)
 !                write(ECHO_TXT_IUN, '(4e8.1, i8)') cp%XSLPROW(i, m), cp%XDROW(i, m), cp%MANNROW(i, m), cp%KSROW(i, m), cp%MIDROW(i, m)
-!                write(ECHO_TXT_IUN, '(6f10.1)') (cp%SANDROW(i, m, j), j = 1, NSL)
-!                write(ECHO_TXT_IUN, '(6f10.1)') (cp%CLAYROW(i, m, j), j = 1, NSL)
-!                write(ECHO_TXT_IUN, '(6f10.1)') (cp%ORGMROW(i, m, j), j = 1, NSL)
-!                write(ECHO_TXT_IUN, '(9f10.2)') (cp%TBARROW(i, m, j), j = 1, NSL), cp%TCANROW(i, m), cp%TSNOROW(i, m), cp%TPNDROW(i, m)
+!                write(ECHO_TXT_IUN, '(6f10.1)') (cp%SANDROW(i, m, j), j = 1, shd%lc%IGND)
+!                write(ECHO_TXT_IUN, '(6f10.1)') (cp%CLAYROW(i, m, j), j = 1, shd%lc%IGND)
+!                write(ECHO_TXT_IUN, '(6f10.1)') (cp%ORGMROW(i, m, j), j = 1, shd%lc%IGND)
+!                write(ECHO_TXT_IUN, '(9f10.2)') (cp%TBARROW(i, m, j), j = 1, shd%lc%IGND), cp%TCANROW(i, m), cp%TSNOROW(i, m), cp%TPNDROW(i, m)
 !                write(ECHO_TXT_IUN, '(10f10.3)') &
-!                    (cp%THLQROW(i, m, j), j = 1, NSL), (cp%THICROW(i, m, j), j = 1, NSL), cp%ZPNDROW(i, m)
+!                    (cp%THLQROW(i, m, j), j = 1, shd%lc%IGND), (cp%THICROW(i, m, j), j = 1, shd%lc%IGND), cp%ZPNDROW(i, m)
 !                write(ECHO_TXT_IUN, '(2f10.4, f10.2, f10.3, f10.4, f10.3, f10.3)') &
 !                    cp%RCANROW(i, m), cp%SCANROW(i, m), cp%SNOROW(i, m), cp%ALBSROW(i, m), cp%RHOSROW(i, m), cp%GROROW(i, m)
 !                write(ECHO_TXT_IUN, *)
-!            end do !m = 1, NTYPE
+!            end do !m = 1, shd%lc%NTYPE
         end if
     end if
 
@@ -438,17 +451,17 @@ program RUNMESH
                         if (GRD(i) == 1) then
                             NR2CFILES = NR2CFILES + 1
                             write(line, "(i3, ' (GRD)    : ', (a))") NR2CFILES, R2C_ATTRIBUTES(i, 3)
-                            call print_echo_txt(line)
+                            call print_echo_txt(trim(line))
                         end if
                         if (GAT(i) == 1) then
                             NR2CFILES = NR2CFILES + 1
                             write(line, "(i3, ' (GRD)    : ', (a))") NR2CFILES, R2C_ATTRIBUTES(i, 3)
-                            call print_echo_txt(line)
+                            call print_echo_txt(trim(line))
                         end if
                         if (GRDGAT(i) == 1) then
                             NR2CFILES = NR2CFILES + 1
                             write(line, "(i3, ' (GRDGAT) : ', (a))") NR2CFILES, R2C_ATTRIBUTES(i, 3)
-                            call print_echo_txt(line)
+                            call print_echo_txt(trim(line))
                         end if
                     end if
                 end do
@@ -462,7 +475,7 @@ program RUNMESH
 
         !> WRITE THE HEADER FOR R2C FILES:
         if (NR2CFILES > 0) then
-            call WRITE_R2C_HEADER(NTYPE, NR2C, NR2CFILES, GRD, GAT, GRDGAT, R2C_ATTRIBUTES, &
+            call WRITE_R2C_HEADER(shd%lc%NTYPE, NR2C, NR2CFILES, GRD, GAT, GRDGAT, R2C_ATTRIBUTES, &
                                   R2CFILEUNITSTART, NR2CSTATES, shd%CoordSys%Proj, shd%CoordSys%Ellips, shd%CoordSys%Zone, &
                                   shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta, shd%xCount, shd%yCount)
         end if
@@ -486,7 +499,7 @@ program RUNMESH
 
       !> Check if we are reading in a resume_state.r2c file
 !+    if (RESUMEFLAG == 2) then
-!+        call print_screen('Reading saved state variables')
+!+        call print_message('Reading saved state variables')
 
           !> Allocate arrays for resume_state_r2c
 !+        open(54, file = 'resume_state_r2c.txt', action = 'read')
@@ -539,8 +552,8 @@ program RUNMESH
 !BEGIN: PDMROF
 !                     CMINPDM, CMAXPDM, BPDM, K1PDM, K2PDM, &
 !END: PDMROF
-!                     shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, NA, NTYPE, &
-!                     NML, il1, il2, NSL, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
+!                     shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, shd%NA, shd%lc%NTYPE, &
+!                     shd%lc%NML, il1, il2, shd%lc%IGND, ICAN, ICP1, cp%TBARROW, cp%THLQROW, &
 !                     cp%THICROW, cp%TPNDROW, cp%ZPNDROW, TBASROW, cp%ALBSROW, &
 !                     cp%TSNOROW, cp%RHOSROW, cp%SNOROW, cp%TCANROW, &
 !                     cp%RCANROW, cp%SCANROW, cp%GROROW, CMAIROW, cp%FCANROW, &
@@ -555,10 +568,10 @@ program RUNMESH
 !                     cp%DRNROW, cp%XSLPROW, cp%XDROW, WFSFROW, cp%KSROW, &
 !                     ALGWROW, ALGDROW, ASVDROW, ASIDROW, AGVDROW, &
 !                     AGIDROW, ISNDROW, RADJGRD, cp%ZBLDGRD, Z0ORGRD, &
-!                     cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, cm%dat(ck%FB)%GRD/2.0, &
-!                     cm%dat(ck%FB)%GRD/2.0, CSZGRD, cm%dat(ck%FI)%GRD, cm%dat(ck%UV)%GRD, VLGRD, &
-!                     cm%dat(ck%TT)%GRD, cm%dat(ck%HU)%GRD, cm%dat(ck%P0)%GRD, &
-!                     cm%dat(ck%RT)%GRD, PADRGRD, &
+!                     cp%ZRFMGRD, cp%ZRFHGRD, ZDMGRD, ZDHGRD, vs%grid%fsin/2.0, &
+!                     vs%grid%fsin/2.0, CSZGRD, vs%grid%flin, vs%grid%uv, VLGRD, &
+!                     vs%grid%ta, vs%grid%qa, vs%grid%pres, &
+!                     vs%grid%pre, PADRGRD, &
 !                     VPDGRD, TADPGRD, RHOAGRD, RPCPGRD, TRPCGRD, &
 !                     SPCPGRD, TSPCGRD, RHSIGRD, FCLOGRD, DLONGRD, &
 !                     GGEOGRD, cp%MANNROW, MANNGAT, cp%DDROW, DDGAT, &
@@ -638,9 +651,9 @@ program RUNMESH
 !        cdv%GFLX = 0.0
 !        ITCTGAT = 0
 
-!+        call resume_state_r2c(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
+!+        call resume_state_r2c(shd%lc%NML, shd%NA, shd%lc%NTYPE, ic%ts_daily, &
 !+                              ic%now%mins, shd%lc%ACLASS, NR2C_R, GRD_R, GAT_R, GRDGAT_R, R2C_ATTRIBUTES_R, &
-!+                              NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, NSL, &
+!+                              shd%NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, shd%lc%NML, ICAN, ICP1, shd%lc%IGND, &
 !+                              cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
 !+                              cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
 !+                              cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
@@ -684,7 +697,7 @@ program RUNMESH
 !                    cp%RHOSROW, cp%SNOROW, cp%TCANROW, cp%RCANROW, cp%SCANROW, &
 !                    cp%GROROW, CMAIROW, TACROW, QACROW, WSNOROW, &
 !                    shd%lc%ILMOS, shd%lc%JLMOS, shd%wc%ILMOS, shd%wc%JLMOS, &
-!                    NA, NTYPE, NML, il1, il2, NSL, ICAN, ICAN + 1, &
+!                    shd%NA, shd%lc%NTYPE, shd%lc%NML, il1, il2, shd%lc%IGND, ICAN, ICAN + 1, &
 !                    cpv%TBAR, cpv%THLQ, cpv%THIC, cdv%GFLX, cpv%TSFS, &
 !                    cpv%TPND, cpv%ZPND, cpv%TBAS, cpv%ALBS, cpv%TSNO, &
 !                    cpv%RHOS, cpv%SNO, cpv%TCAN, cpv%RCAN, cpv%SNCAN, &
@@ -763,7 +776,7 @@ program RUNMESH
 !            HBLROW(ik, jk) = cdv%HBL(k)
 !180     continue
 
-!        do 190 l = 1, NSL
+!        do 190 l = 1, shd%lc%IGND
 !            do 190 k = il1, il2
 !                ik = shd%lc%ILMOS(k)
 !                jk = shd%lc%JLMOS(k)
@@ -781,15 +794,31 @@ program RUNMESH
 !230     continue
 !+    end if !(RESUMEFLAG == 2) then
 
+    !> Update initial values.
+    ltest = .false.
+    inquire(file = 'MESH_initial_values.r2c', exist = ltest)
+    if (ltest) then
+        ierr = 0
+        call read_initial_values_r2c(shd, 100, 'MESH_initial_values.r2c', ierr)
+        call reset_tab()
+        call MPI_Barrier(MPI_COMM_WORLD, z)
+        if (ierr /= 0) then
+            call print_error('Errors occurred during reading values from file.')
+            if (ISHEADNODE) call program_abort()
+        end if
+    end if
+
     !> Update output variables with initial states.
-    call output_variables_update(shd, cm)
+    call output_variables_reset(shd)
+    call output_variables_update(shd)
 
     !> Calculate initial storage.
     if (ro%RUNBALWB .and. ISHEADNODE) then
         STG_INI = sum( &
-            (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
-             out%ts%grid%lzs + out%ts%grid%dzs + &
-             sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC)
+            (out%ts%grid%lqwscan(1:shd%NA) + out%ts%grid%fzwscan(1:shd%NA) + &
+             out%ts%grid%sno(1:shd%NA) + out%ts%grid%lqwssno(1:shd%NA) + out%ts%grid%lqwspnd(1:shd%NA) + &
+             out%ts%grid%stggw(1:shd%NA) + out%ts%grid%dzs(1:shd%NA) + &
+             sum(out%ts%grid%lqwssol(1:shd%NA, :), 2) + sum(out%ts%grid%fzwssol(1:shd%NA, :), 2))*shd%FRAC)
         STG_INI = STG_INI/sum(shd%FRAC)
     end if
 
@@ -804,26 +833,57 @@ program RUNMESH
 !todo: condition for ierr.
 
         !> Time-stepping information.
-        read(iun) ic%now%year, ic%now%jday, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins
-        read(iun) ic%iter%year, ic%iter%jday, ic%iter%month, ic%iter%jday, ic%iter%hour, ic%iter%mins
-        read(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
+        read(iun) now_year_i4, now_jday_i4, now_month_i4, now_day_i4, now_hour_i4, now_mins_i4
+        ic%now%year = int(now_year_i4, kind(ic%now%year))
+        ic%now%jday = int(now_jday_i4, kind(ic%now%jday))
+        ic%now%month = int(now_month_i4, kind(ic%now%month))
+        ic%now%day = int(now_day_i4, kind(ic%now%day))
+        ic%now%hour = int(now_hour_i4, kind(ic%now%hour))
+        ic%now%mins = int(now_mins_i4, kind(ic%now%mins))
+        read(iun) iter_year_i4, iter_jday_i4, iter_month_i4, iter_day_i4, iter_hour_i4, iter_mins_i4
+        ic%iter%year = int(iter_year_i4, kind(ic%iter%year))
+        ic%iter%jday = int(iter_jday_i4, kind(ic%iter%jday))
+        ic%iter%month = int(iter_month_i4, kind(ic%iter%month))
+        ic%iter%day = int(iter_day_i4, kind(ic%iter%day))
+        ic%iter%hour = int(iter_hour_i4, kind(ic%iter%hour))
+        ic%iter%mins = int(iter_mins_i4, kind(ic%iter%mins))
+        read(iun) ts_daily_i4, ts_hourly_i4, ts_halfhourly_i4, ts_count_i4
+        ic%ts_daily = int(ts_daily_i4, kind(ic%ts_daily))
+        ic%ts_hourly = int(ts_hourly_i4, kind(ic%ts_hourly))
+        ic%ts_halfhourly = int(ts_halfhourly_i4, kind(ic%ts_halfhourly))
+        ic%ts_count = int(ts_count_i4, kind(ic%ts_count))
 
         !> Read states for the driver (for the head node or in serial).
         if (ISHEADNODE) then
 
             !> Water balance totals.
-            read(iun) TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-            read(iun) STG_INI
+            read(iun) TOTAL_PRE_r4, TOTAL_EVAP_r4, TOTAL_ROF_r4, TOTAL_ROFO_r4, TOTAL_ROFS_r4, TOTAL_ROFB_r4
+            TOTAL_PRE = real(TOTAL_PRE_r4, kind(TOTAL_PRE))
+            TOTAL_EVAP = real(TOTAL_EVAP_r4, kind(TOTAL_EVAP))
+            TOTAL_ROF = real(TOTAL_ROF_r4, kind(TOTAL_ROF))
+            TOTAL_ROFO = real(TOTAL_ROFO_r4, kind(TOTAL_ROFO))
+            TOTAL_ROFS = real(TOTAL_ROFS_r4, kind(TOTAL_ROFS))
+            TOTAL_ROFB = real(TOTAL_ROFB_r4, kind(TOTAL_ROFB))
+            read(iun) STG_INI_r4
+            STG_INI = real(STG_INI_r4, kind(STG_INI))
 
             !> Daily streamflow values.
-            read(iun) fms%stmg%qomeas%val
-            read(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
+            if (fms%stmg%n > 0) then
+                allocate(qomeas_val_r4(size(fms%stmg%qomeas%val)), grid_qo_stmg_r4(size(fms%stmg%meta%rnk)))
+                qomeas_val_r4 = 0.0
+                read(iun) qomeas_val_r4
+                fms%stmg%qomeas%val = real(qomeas_val_r4, kind(fms%stmg%qomeas%val))
+                grid_qo_stmg_r4 = 0.0
+                read(iun) grid_qo_stmg_r4
+                out%d%grid%qo(fms%stmg%meta%rnk(:)) = real(grid_qo_stmg_r4, kind(out%d%grid%qo))
+                deallocate(qomeas_val_r4, grid_qo_stmg_r4)
+            end if
 
         end if
 
         !> Close the file to free the unit.
         close(iun)
-    else
+!-    else
 !-        call run_save_basin_update_stg_ini(fls, shd, cm)
     end if
 
@@ -851,7 +911,7 @@ program RUNMESH
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
         !> Reset output variables.
-        call output_variables_reset(shd, cm)
+        call output_variables_reset(shd)
 
         !> Load or update climate forcing input.
         if (ro%RUNCLIM) then
@@ -876,7 +936,7 @@ program RUNMESH
 
         !> Update output variables.
 !todo: Enable this when the one in 'run_between_grid' is removed.
-!+        call output_variables_update(shd, cm)
+!+        call output_variables_update(shd)
 
         !> *********************************************************************
         !> Start of book-keeping and grid accumulation.
@@ -888,12 +948,12 @@ program RUNMESH
             if (NR2CFILES > 0 .and. mod(ic%ts_daily*30, DELTR2C) == 0) then
 !                call FIND_MONTH (ic%now%jday, ic%now%year, ensim_month)
 !                call FIND_DAY (ic%now%jday, ic%now%year, ensim_day)
-!                call WRITE_R2C_DATA(shd%lc%NML, NA, NTYPE, ic%ts_daily, ic%now%mins, shd%lc%ACLASS, &
-!                                    NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, &
+!                call WRITE_R2C_DATA(shd%lc%NML, shd%NA, shd%lc%NTYPE, ic%ts_daily, ic%now%mins, shd%lc%ACLASS, &
+!                                    shd%NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, shd%lc%NML, &
 !                                    NR2C, NR2CFILES, R2CFILEUNITSTART, GRD, GAT, &
 !                                    GRDGAT, NR2CSTATES, R2C_ATTRIBUTES, FRAME_NO_NEW, ic%now%year, &
 !                                    ensim_MONTH, ensim_DAY, ic%now%hour, ic%now%mins, ICAN, &
-!                                    ICAN + 1, NSL, &
+!                                    ICAN + 1, shd%lc%IGND, &
 !                                    cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
 !                                    cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
 !                                    cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
@@ -964,11 +1024,11 @@ program RUNMESH
                     if (ro%RUNBALWB) then
                         write(line, '((a), 3(f10.3))') &
                             trim(line), &
-                            sum(out%d%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                            sum(out%d%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                            sum(out%d%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
+                            sum(out%d%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC), &
+                            sum(out%d%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%d%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
                     end if
-                    call print_screen(line)
+                    call print_screen(trim(line))
                 end if
 
                 !> Monthly.
@@ -983,37 +1043,40 @@ program RUNMESH
                     if (ro%RUNBALWB) then
                         write(line, '((a), 3(f10.3))') &
                             trim(line), &
-                            sum(out%m%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                            sum(out%m%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                            sum(out%m%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
+                            sum(out%m%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC), &
+                            sum(out%m%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC), &
+                            sum(out%m%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
                     end if
-                    call print_screen(line)
+                    call print_screen(trim(line))
                 end if
             end if
 
             !> Save resume files.
-            call resumerun_save(fls, shd, cm, ierr)
+            call resumerun_save(fls, shd, cm)
         end if
 
         !> Update the current time-step and counter.
         call counter_update()
 
         !> Check if we should terminate the run yet.
-        if (ic%now%year >= ic%stop%year .and. ic%stop%year > 0) then
-            if (ic%now%year > ic%stop%year) then
-                ENDDATE = .true.
-            else if (ic%now%year == ic%stop%year .and. ic%now%jday >= ic%stop%jday) then
-                if (ic%now%jday > ic%stop%jday) then
-                    ENDDATE = .true.
-                else if (ic%now%jday == ic%stop%jday .and. ic%now%hour >= ic%stop%hour) then
-                    if (ic%now%hour > ic%stop%hour) then
-                        ENDDATE = .true.
-                    else if (ic%now%hour == ic%stop%hour .and. ic%now%mins >= ic%stop%mins) then
-                        ENDDATE = .true.
-                    end if
-                end if
-            end if
-        end if
+        ENDDATE = ( &
+            ic%now%year == ic%stop%year .and. ic%now%jday == ic%stop%jday .and. &
+            ic%now%hour == ic%stop%hour .and. ic%now%mins == ic%stop%mins)
+!-        if (ic%now%year >= ic%stop%year .and. ic%stop%year > 0) then
+!-            if (ic%now%year > ic%stop%year) then
+!-                ENDDATE = .true.
+!-            else if (ic%now%year == ic%stop%year .and. ic%now%jday >= ic%stop%jday) then
+!-                if (ic%now%jday > ic%stop%jday) then
+!-                    ENDDATE = .true.
+!-                else if (ic%now%jday == ic%stop%jday .and. ic%now%hour >= ic%stop%hour) then
+!-                    if (ic%now%hour > ic%stop%hour) then
+!-                        ENDDATE = .true.
+!-                    else if (ic%now%hour == ic%stop%hour .and. ic%now%mins >= ic%stop%mins) then
+!-                        ENDDATE = .true.
+!-                    end if
+!-                end if
+!-            end if
+!-        end if
 
         !> Check the run state.
         if (ENDDATA .or. ENDDATE) exit
@@ -1038,7 +1101,7 @@ program RUNMESH
 
     !> Write the resume file
 !+    if (SAVERESUMEFLAG == 2) then !todo: done: use a flag
-!+        call print_screen('Saving state variables in r2c file format')
+!+        call print_message('Saving state variables in r2c file format')
 
     !> Allocate arrays for save_state_r2c
 !+        open(55, file = 'save_state_r2c.txt', action = 'read')
@@ -1054,9 +1117,9 @@ program RUNMESH
 !+        end if
 !+        close(55)
 
-!+        call SAVE_STATE_R2C(shd%lc%NML, NA, NTYPE, ic%ts_daily, &
+!+        call SAVE_STATE_R2C(shd%lc%NML, shd%NA, shd%lc%NTYPE, ic%ts_daily, &
 !+                            ic%now%mins, shd%lc%ACLASS, NR2C_S, GRD_S, GAT_S, GRDGAT_S, R2C_ATTRIBUTES_S, &
-!+                            NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, NML, ICAN, ICP1, NSL, &
+!+                            shd%NA, shd%xxx, shd%yyy, shd%xCount, shd%yCount, shd%lc%ILMOS, shd%lc%JLMOS, shd%lc%NML, ICAN, ICP1, shd%lc%IGND, &
 !+                            cpv%TBAR, cpv%THLQ, cpv%THIC, cpv%TPND, cpv%ZPND, &
 !+                            cpv%TBAS, cpv%ALBS, cpv%TSNO, cpv%RHOS, cpv%SNO, &
 !+                            cpv%TCAN, cpv%RCAN, cpv%SNCAN, cpv%GRO, cpv%CMAI, &
@@ -1106,10 +1169,10 @@ program RUNMESH
     if (ENDDATA) call print_message('Reached end of forcing data.')
     if (ENDDATE) call print_message('Reached simulation end date.')
 
+    if (ISHEADNODE .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
+
     !> PREEMPTIONFLAG (FTEST) termination point.
 98  continue
-
-    if (ISHEADNODE .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
 
     !> Call finalization routines.
     if (ro%RUNTILE) then
@@ -1119,25 +1182,26 @@ program RUNMESH
     if (ro%RUNGRID) call run_between_grid_finalize(fls, shd, cm)
     if (ro%RUNCLIM) call climate_module_finalize(fls, shd, cm)
 
-    if (ISHEADNODE) then
+    !> Save resume files.
+    !> Force the save frequency to 'now' to force saving the files.
+    vs%flgs%save%freq = FREQ_NOW
+    call resumerun_save(fls, shd, cm)
 
-        !> Save resume files.
-        !> Force the save frequency to 'now' to force saving the files.
-        vs%flgs%save%freq = FREQ_NOW
-        call resumerun_save(fls, shd, cm, ierr)
+    if (ISHEADNODE) then
 
         !> Basin totals for the run.
         if (ro%RUNBALWB) then
-            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%prec*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%evap*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%rofo*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROFS = TOTAL_ROFS + sum(out%tot%grid%rofs*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%rofb*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
+            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%ovrflw(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFS = TOTAL_ROFS + sum(sum(out%tot%grid%latflw(1:shd%NA, :), 2)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%drainsol(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
             STG_FIN = sum( &
-                (out%ts%grid%rcan + out%ts%grid%sncan + out%ts%grid%sno + out%ts%grid%wsno + out%ts%grid%pndw + &
-                 out%ts%grid%lzs + out%ts%grid%dzs + &
-                 sum(out%ts%grid%lqws, 2) + sum(out%ts%grid%fzws, 2))*shd%FRAC)/sum(shd%FRAC)
+                (out%ts%grid%lqwscan(1:shd%NA) + out%ts%grid%fzwscan(1:shd%NA) + &
+                 out%ts%grid%sno(1:shd%NA) + out%ts%grid%lqwssno(1:shd%NA) + out%ts%grid%lqwspnd(1:shd%NA) + &
+                 out%ts%grid%stggw(1:shd%NA) + out%ts%grid%dzs(1:shd%NA) + &
+                 sum(out%ts%grid%lqwssol(1:shd%NA, :), 2) + sum(out%ts%grid%fzwssol(1:shd%NA, :), 2))*shd%FRAC)/sum(shd%FRAC)
         end if
 
         !> Save the current state of the model for SAVERESUMEFLAG.
@@ -1151,17 +1215,26 @@ program RUNMESH
 !todo: condition for ierr.
 
             !> Time-stepping information.
-            write(iun) ic%now%year, ic%now%jday, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins
-            write(iun) ic%iter%year, ic%iter%jday, ic%iter%month, ic%iter%jday, ic%iter%hour, ic%iter%mins
-            write(iun) ic%ts_daily, ic%ts_hourly, ic%ts_halfhourly, ic%ts_count
+            write(iun) &
+                int(ic%now%year, kind = 4), int(ic%now%jday, kind = 4), int(ic%now%month, kind = 4), int(ic%now%day, kind = 4), &
+                int(ic%now%hour, kind = 4), int(ic%now%mins, kind = 4)
+            write(iun) &
+                int(ic%iter%year, kind = 4), int(ic%iter%jday, kind = 4), int(ic%iter%month, kind = 4), &
+                int(ic%iter%jday, kind = 4), int(ic%iter%hour, kind = 4), int(ic%iter%mins, kind = 4)
+            write(iun) &
+                int(ic%ts_daily, kind = 4), int(ic%ts_hourly, kind = 4), int(ic%ts_halfhourly, kind = 4), int(ic%ts_count, kind = 4)
 
             !> Water balance totals.
-            write(iun) TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
-            write(iun) STG_INI
+            write(iun) &
+                real(TOTAL_PRE, kind = 4), real(TOTAL_EVAP, kind = 4), real(TOTAL_ROF, kind = 4), &
+                real(TOTAL_ROFO, kind = 4), real(TOTAL_ROFS, kind = 4), real(TOTAL_ROFB, kind = 4)
+            write(iun) real(STG_INI, kind = 4)
 
             !> Daily streamflow values.
-            write(iun) fms%stmg%qomeas%val
-            write(iun) out%d%grid%qo(fms%stmg%meta%rnk(:))
+            if (fms%stmg%n > 0) then
+                write(iun) real(fms%stmg%qomeas%val, kind = 4)
+                write(iun) real(out%d%grid%qo(fms%stmg%meta%rnk(:)), kind = 4)
+            end if
 
             !> Close the file to free the unit.
             close(iun)
@@ -1169,161 +1242,168 @@ program RUNMESH
         end if
 
         !> Write data to the output summary file.
-        if (ECHOTXTMODE) then
+!-        if (ECHOTXTMODE) then
 
             !> CLASS states for prognostic variables.
-            NTYPE = shd%lc%NTYPE
-            NSL = shd%lc%IGND
-            allocate(tcan(3, NTYPE), rcan(3, NTYPE), sncan(3, NTYPE), gro(3, NTYPE), zpnd(3, NTYPE), tpnd(3, NTYPE), &
-                     sno(3, NTYPE), tsno(3, NTYPE), albs(3, NTYPE), rhos(3, NTYPE), &
-                     tbar(3, NTYPE, NSL), thlq(3, NTYPE, NSL), thic(3, NTYPE, NSL), kc(NTYPE))
-            tcan = 0.0; rcan = 0.0; sncan = 0.0; gro = 0.0; zpnd = 0.0; tpnd = 0.0
-            sno = 0.0; tsno = 0.0; albs = 0.0; rhos = 0.0
-            tbar = 0.0; thlq = 0.0; thic = 0.0; kc = 0
+!-            NTYPE = shd%lc%NTYPE
+!-            NSL = shd%lc%IGND
+!-            NML = shd%lc%NML
+!-            allocate(tcan(3, NTYPE), rcan(3, NTYPE), sncan(3, NTYPE), gro(3, NTYPE), zpnd(3, NTYPE), tpnd(3, NTYPE), &
+!-                     sno(3, NTYPE), tsno(3, NTYPE), albs(3, NTYPE), rhos(3, NTYPE), &
+!-                     tbar(3, NTYPE, NSL), thlq(3, NTYPE, NSL), thic(3, NTYPE, NSL), kc(NTYPE))
+!-            tcan = 0.0; rcan = 0.0; sncan = 0.0; gro = 0.0; zpnd = 0.0; tpnd = 0.0
+!-            sno = 0.0; tsno = 0.0; albs = 0.0; rhos = 0.0
+!-            tbar = 0.0; thlq = 0.0; thic = 0.0; kc = 0
 
             !> Loop through the GRUs.
-            do m = 1, NTYPE
+!-            do m = 1, NTYPE
 
                 !> Cycle if the GRU does not exist.
-                if (count(shd%lc%JLMOS(1:NML) == m) == 0) cycle
+!-                if (count(shd%lc%JLMOS(1:NML) == m) == 0) cycle
 
                 !> Canopy.
-                tcan(3, m) = maxval(stas%cnpy%tcan, shd%lc%JLMOS(1:NML) == m)
-                if (tcan(3, m) > 0.0) then
-                    tcan(1, m) = sum(stas%cnpy%tcan, shd%lc%JLMOS(1:NML) == m .and. &
-                                     stas%cnpy%tcan /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. stas%cnpy%tcan /= 0.0)
-                    tcan(2, m) = minval(stas%cnpy%tcan, shd%lc%JLMOS(1:NML) == m .and. stas%cnpy%tcan /= 0.0)
-                end if
-                where (tcan < 173.16 .or. tcan > 373.16 .or. tcan == 0.0) tcan = 273.16
-                rcan(2, m) = minval(stas%cnpy%rcan, shd%lc%JLMOS(1:NML) == m)
-                rcan(3, m) = maxval(stas%cnpy%rcan, shd%lc%JLMOS(1:NML) == m)
-                rcan(1, m) = sum(stas%cnpy%rcan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                sncan(2, m) = minval(stas%cnpy%sncan, shd%lc%JLMOS(1:NML) == m)
-                sncan(3, m) = maxval(stas%cnpy%sncan, shd%lc%JLMOS(1:NML) == m)
-                sncan(1, m) = sum(stas%cnpy%sncan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                gro(2, m) = minval(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m)
-                gro(3, m) = maxval(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m)
-                gro(1, m) = sum(stas%cnpy%gro, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                tcan(3, m) = maxval(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m)
+!-                if (tcan(3, m) > 0.0) then
+!-                    tcan(1, m) = sum(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m .and. &
+!-                                     vs%tile%tcan /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tcan /= 0.0)
+!-                    tcan(2, m) = minval(vs%tile%tcan, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tcan /= 0.0)
+!-                end if
+!-                where (tcan < 173.16 .or. tcan > 373.16 .or. tcan == 0.0) tcan = 273.16
+!-                rcan(2, m) = minval(vs%tile%lqwscan, shd%lc%JLMOS(1:NML) == m)
+!-                rcan(3, m) = maxval(vs%tile%lqwscan, shd%lc%JLMOS(1:NML) == m)
+!-                rcan(1, m) = sum(vs%tile%lqwscan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                sncan(2, m) = minval(vs%tile%fzwscan, shd%lc%JLMOS(1:NML) == m)
+!-                sncan(3, m) = maxval(vs%tile%fzwscan, shd%lc%JLMOS(1:NML) == m)
+!-                sncan(1, m) = sum(vs%tile%fzwscan, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                gro(2, m) = minval(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)
+!-                gro(3, m) = maxval(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)
+!-                gro(1, m) = sum(vs%tile%gro, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
 
                 !> Ponded water at surface.
-                zpnd(2, m) = minval(stas%sfc%zpnd, shd%lc%JLMOS(1:NML) == m)
-                zpnd(3, m) = maxval(stas%sfc%zpnd, shd%lc%JLMOS(1:NML) == m)
-                zpnd(1, m) = sum(stas%sfc%zpnd, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                tpnd(3, m) = maxval(stas%sfc%tpnd, shd%lc%JLMOS(1:NML) == m)
-                if (tpnd(3, m) > 0.0) then
-                    tpnd(1, m) = sum(stas%sfc%tpnd, shd%lc%JLMOS(1:NML) == m .and. &
-                                     stas%sfc%tpnd /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. stas%sfc%tpnd /= 0.0)
-                    tpnd(2, m) = minval(stas%sfc%tpnd, shd%lc%JLMOS(1:NML) == m .and. stas%sfc%tpnd /= 0.0)
-                end if
-                where (tpnd < 173.16 .or. tpnd > 373.16 .or. tpnd == 0.0) tpnd = 273.16
+!-                zpnd(2, m) = minval(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)
+!-                zpnd(3, m) = maxval(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)
+!-                zpnd(1, m) = sum(vs%tile%zpnd, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                tpnd(3, m) = maxval(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m)
+!-                if (tpnd(3, m) > 0.0) then
+!-                    tpnd(1, m) = sum(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m .and. &
+!-                                     vs%tile%tpnd /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tpnd /= 0.0)
+!-                    tpnd(2, m) = minval(vs%tile%tpnd, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tpnd /= 0.0)
+!-                end if
+!-                where (tpnd < 173.16 .or. tpnd > 373.16 .or. tpnd == 0.0) tpnd = 273.16
 
                 !> Snow.
-                sno(2, m) = minval(stas%sno%sno, shd%lc%JLMOS(1:NML) == m)
-                sno(3, m) = maxval(stas%sno%sno, shd%lc%JLMOS(1:NML) == m)
-                sno(1, m) = sum(stas%sno%sno, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                tsno(3, m) = maxval(stas%sno%tsno, shd%lc%JLMOS(1:NML) == m)
-                if (tsno(3, m) > 0.0) then
-                    tsno(1, m) = sum(stas%sno%tsno, shd%lc%JLMOS(1:NML) == m .and. &
-                                     stas%sno%tsno /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. stas%sno%tsno /= 0.0)
-                    tsno(2, m) = minval(stas%sno%tsno, shd%lc%JLMOS(1:NML) == m .and. stas%sno%tsno /= 0.0)
-                end if
-                where (tsno < 173.16 .or. tsno > 373.16 .or. tsno == 0.0) tsno = 273.16
-                if (sno(3, m) > 0.0) then
-                    albs(1, m) = sum(stas%sno%albs, shd%lc%JLMOS(1:NML) == m .and. &
-                                     stas%sno%sno > 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. stas%sno%sno > 0.0)
-                    albs(2, m) = minval(stas%sno%albs, shd%lc%JLMOS(1:NML) == m .and. stas%sno%sno > 0.0)
-                    albs(3, m) = maxval(stas%sno%albs, shd%lc%JLMOS(1:NML) == m .and. stas%sno%sno > 0.0)
-                end if
-                rhos(3, m) = maxval(stas%sno%rhos, shd%lc%JLMOS(1:NML) == m)
-                if (rhos(3, m) > 0.0) then
-                    rhos(1, m) = sum(stas%sno%rhos, shd%lc%JLMOS(1:NML) == m .and. &
-                                     stas%sno%rhos /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. stas%sno%rhos /= 0.0)
-                    rhos(2, m) = minval(stas%sno%rhos, shd%lc%JLMOS(1:NML) == m .and. stas%sno%rhos /= 0.0)
-                end if
+!-                sno(2, m) = minval(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)
+!-                sno(3, m) = maxval(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)
+!-                sno(1, m) = sum(vs%tile%sno, shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                tsno(3, m) = maxval(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m)
+!-                if (tsno(3, m) > 0.0) then
+!-                    tsno(1, m) = sum(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m .and. &
+!-                                     vs%tile%tsno /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%tsno /= 0.0)
+!-                    tsno(2, m) = minval(vs%tile%tsno, shd%lc%JLMOS(1:NML) == m .and. vs%tile%tsno /= 0.0)
+!-                end if
+!-                where (tsno < 173.16 .or. tsno > 373.16 .or. tsno == 0.0) tsno = 273.16
+!-                if (sno(3, m) > 0.0) then
+!-                    albs(1, m) = sum(vs%tile%albsno, shd%lc%JLMOS(1:NML) == m .and. &
+!-                                     vs%tile%sno > 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+!-                    albs(2, m) = minval(vs%tile%albsno, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+!-                    albs(3, m) = maxval(vs%tile%albsno, shd%lc%JLMOS(1:NML) == m .and. vs%tile%sno > 0.0)
+!-                end if
+!-                rhos(3, m) = maxval(vs%tile%rhosno, shd%lc%JLMOS(1:NML) == m)
+!-                if (rhos(3, m) > 0.0) then
+!-                    rhos(1, m) = sum(vs%tile%rhosno, shd%lc%JLMOS(1:NML) == m .and. &
+!-                                     vs%tile%rhosno /= 0.0)/count(shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhosno /= 0.0)
+!-                    rhos(2, m) = minval(vs%tile%rhosno, shd%lc%JLMOS(1:NML) == m .and. vs%tile%rhosno /= 0.0)
+!-                end if
 
                 !> Soil.
-                do j = 1, NSL
-                    tbar(1, m, j) = sum(stas%sl%tbar(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                    tbar(2, m, j) = minval(stas%sl%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
-                    tbar(3, m, j) = maxval(stas%sl%tbar(:, j), shd%lc%JLMOS(1:NML) == m)
-                    thlq(1, m, j) = sum(stas%sl%thlq(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                    thlq(2, m, j) = minval(stas%sl%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
-                    thlq(3, m, j) = maxval(stas%sl%thlq(:, j), shd%lc%JLMOS(1:NML) == m)
-                    thic(1, m, j) = sum(stas%sl%thic(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
-                    thic(2, m, j) = minval(stas%sl%thic(:, j), shd%lc%JLMOS(1:NML) == m)
-                    thic(3, m, j) = maxval(stas%sl%thic(:, j), shd%lc%JLMOS(1:NML) == m)
-                end do
-            end do
+!-                do j = 1, NSL
+!-                    tbar(1, m, j) = sum(vs%tile%tsol(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                    tbar(2, m, j) = minval(vs%tile%tsol(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                    tbar(3, m, j) = maxval(vs%tile%tsol(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                    thlq(1, m, j) = sum(vs%tile%thlqsol(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                    thlq(2, m, j) = minval(vs%tile%thlqsol(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                    thlq(3, m, j) = maxval(vs%tile%thlqsol(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                    thic(1, m, j) = sum(vs%tile%thicsol(:, j), shd%lc%JLMOS(1:NML) == m)/count(shd%lc%JLMOS(1:NML) == m)
+!-                    thic(2, m, j) = minval(vs%tile%thicsol(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                    thic(3, m, j) = maxval(vs%tile%thicsol(:, j), shd%lc%JLMOS(1:NML) == m)
+!-                end do
+!-            end do
 
             !> Write to file.
-            if (NRSOILAYEREADFLAG > 3) then
-                ignd = min(NRSOILAYEREADFLAG, NSL)
-            else if (NRSOILAYEREADFLAG == 1) then
-                ignd = NSL
-            else
-                ignd = 3
-            end if
-            write(cfmt, '(i3)') ignd
-            write(ECHO_TXT_IUN, *)
-            write(ECHO_TXT_IUN, '(a)') 'End of run prognostic states'
-            write(ECHO_TXT_IUN, '(3x, (a), i4)') 'Number of GRUs: ', NTYPE
-            do i = 1, 3
-                write(ECHO_TXT_IUN, *)
-                select case (i)
-                    case (1); write(ECHO_TXT_IUN, '(a)') 'Average values'
-                    case (2); write(ECHO_TXT_IUN, '(a)') 'Minimum values'
-                    case (3); write(ECHO_TXT_IUN, '(a)') 'Maximum values'
-                end select
-                do m = 1, NTYPE
-                    write(ECHO_TXT_IUN, "(3x, 'GRU ', i3, ':')") m
-                    cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), 3(f10.3), " // &
-                            "2x, '!> TBAR(1:" // trim(adjustl(cfmt)) // ")/TCAN/TSNO/TPND')"
-                    write(ECHO_TXT_IUN, cfmtt) ((tbar(i, m, j) - 273.16), j = 1, ignd), &
-                        (tcan(i, m) - 273.16), (tsno(i, m) - 273.16), (tpnd(i, m) - 273.16)
-                    cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), " // trim(adjustl(cfmt)) // "(f10.3), f10.3, " // &
-                            "2x, '!> THLQ(1:" // trim(adjustl(cfmt)) // ")/THIC(1:" // trim(adjustl(cfmt)) // ")/ZPND')"
-                    write(ECHO_TXT_IUN, cfmtt) (thlq(i, m, j), j = 1, ignd), (thic(i, m, j), j = 1, ignd), zpnd(i, m)
-                    write(ECHO_TXT_IUN, "(6(f10.3), 2x, '!> RCAN/SNCAN/SNO/ALBS/RHOS/GRO')") &
-                        rcan(i, m), sncan(i, m), sno(i, m), albs(i, m), rhos(i, m), gro(i, m)
-                end do
-            end do
+!-            if (NRSOILAYEREADFLAG > 3) then
+!-                ignd = min(NRSOILAYEREADFLAG, NSL)
+!-            else if (NRSOILAYEREADFLAG == 1) then
+!-                ignd = NSL
+!-            else
+!-                ignd = 3
+!-            end if
+!-            write(cfmt, '(i3)') ignd
+!-            write(ECHO_TXT_IUN, *)
+!-            write(ECHO_TXT_IUN, '(a)') 'End of run prognostic states'
+!-            write(ECHO_TXT_IUN, '(3x, (a), i4)') 'Number of GRUs: ', NTYPE
+!-            do i = 1, 3
+!-                write(ECHO_TXT_IUN, *)
+!-                select case (i)
+!-                    case (1); write(ECHO_TXT_IUN, '(a)') 'Average values'
+!-                    case (2); write(ECHO_TXT_IUN, '(a)') 'Minimum values'
+!-                    case (3); write(ECHO_TXT_IUN, '(a)') 'Maximum values'
+!-                end select
+!-                do m = 1, NTYPE
+!-                    write(ECHO_TXT_IUN, "(3x, 'GRU ', i3, ':')") m
+!-                    cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), 3(f10.3), " // &
+!-                            "2x, '!> TBAR(1:" // trim(adjustl(cfmt)) // ")/TCAN/TSNO/TPND')"
+!-                    write(ECHO_TXT_IUN, cfmtt) ((tbar(i, m, j) - 273.16), j = 1, ignd), &
+!-                        (tcan(i, m) - 273.16), (tsno(i, m) - 273.16), (tpnd(i, m) - 273.16)
+!-                    cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), " // trim(adjustl(cfmt)) // "(f10.3), f10.3, " // &
+!-                            "2x, '!> THLQ(1:" // trim(adjustl(cfmt)) // ")/THIC(1:" // trim(adjustl(cfmt)) // ")/ZPND')"
+!-                    write(ECHO_TXT_IUN, cfmtt) (thlq(i, m, j), j = 1, ignd), (thic(i, m, j), j = 1, ignd), zpnd(i, m)
+!-                    write(ECHO_TXT_IUN, "(6(f10.3), 2x, '!> RCAN/SNCAN/SNO/ALBS/RHOS/GRO')") &
+!-                        rcan(i, m), sncan(i, m), sno(i, m), albs(i, m), rhos(i, m), gro(i, m)
+!-                end do
+!-            end do
 
-        end if
+!-        end if
 
     end if
 
-    !> Print end of run diagnostics and information.
-
-    !> Basin vertical water balance totals.
-    call print_message('')
-    call print_message('End of run totals')
-    call print_message('')
+    !> Print basin vertical water balance totals.
+    call print_new_section('Basin water balance end of run totals (mm)')
+    call increase_tab()
     write(line, FMT_GEN) TOTAL_PRE
-    call print_message_detail('Total Precipitation         (mm) =' // trim(line))
+    call print_message('Total precipitation              =' // trim(line))
     write(line, FMT_GEN) TOTAL_EVAP
-    call print_message_detail('Total Evaporation           (mm) =' // trim(line))
+    call print_message('Total evapotranspiration         =' // trim(line))
     write(line, FMT_GEN) TOTAL_ROF
-    call print_message_detail('Total Runoff                (mm) =' // trim(line))
-    write(line, FMT_GEN) (STG_FIN - STG_INI), STG_INI, STG_FIN
-    call print_message_detail('Storage(Change/Init/Final)  (mm) =' // trim(line))
-    call print_message('')
+    call print_message('Total runoff                     =' // trim(line))
+    call increase_tab()
     write(line, FMT_GEN) TOTAL_ROFO
-    call print_message_detail('Total Overland flow         (mm) =' // trim(line))
+    call print_message('Overland         =' // trim(line))
     write(line, FMT_GEN) TOTAL_ROFS
-    call print_message_detail('Total Interflow             (mm) =' // trim(line))
+    call print_message('Lateral          =' // trim(line))
     write(line, FMT_GEN) TOTAL_ROFB
-    call print_message_detail('Total Baseflow              (mm) =' // trim(line))
-    call print_message('')
+    call print_message('Drainage (soil)  =' // trim(line))
+    call decrease_tab()
+    write(line, FMT_GEN) (STG_FIN - STG_INI)
+    call print_message('Change in storage                =' // trim(line))
+    call increase_tab()
+    write(line, FMT_GEN) STG_INI
+    call print_message('Initial          =' // trim(line))
+    write(line, FMT_GEN) STG_FIN
+    call print_message('Final            =' // trim(line))
 
     !> Normal end of run message.
-    call print_message('')
-    call print_message('Program has terminated normally.')
+    call print_new_section('Program has terminated normally.', leading_lines = 2)
 
     !> Calculate and save program run time (to file only).
     call print_echo_txt('')
     call cpu_time(endprog)
-    write(line, FMT_GEN) (endprog - startprog)
-    call print_echo_txt('Time = ' // trim(adjustl(line)) // ' seconds.')
+    endprog = endprog - startprog
+    call print_echo_txt(' Time = ' // trim(friendly_time_length(endprog)), no_advance = .true.)
+    if (ic%iter%year > 1) then
+        endprog = endprog/ic%iter%year
+        call print_echo_txt(' (averaging ' // trim(friendly_time_length(endprog)) // ' per simulation year)', no_advance = .true.)
+    end if
+    call print_echo_txt('.')
 
     !> Absolute termination point (e.g., for worker nodes).
 99  continue

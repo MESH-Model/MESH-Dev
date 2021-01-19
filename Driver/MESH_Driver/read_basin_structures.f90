@@ -1,14 +1,15 @@
-!>
 !> Description:
 !>  Subroutine to read structure locations and configurations from
 !>  file. Structures shared by SA_MESH are accessible by
 !>  'sa_mesh_variables'. Other structures are accessible by their
 !>  respecitve process module(s).
 !>
-!> Input:
+!> Input variables:
 !*  shd: Basin shed object, containing information about the grid
 !*      definition read from MESH_drainage_database.r2c.
 !>
+!> Output variables:
+!*  ierr: Error return status.
 subroutine read_basin_structures(shd, ierr)
 
     use strings
@@ -19,13 +20,15 @@ subroutine read_basin_structures(shd, ierr)
     implicit none
 
     !> Input variables.
-    type(ShedGridParams) :: shd
+    type(ShedGridParams), intent(in) :: shd
 
     !> Output variables.
     integer, intent(out) :: ierr
 
     !> Local variables.
+    real, dimension(:), allocatable :: dist
     integer iun, iskip, isteps1, isteps2, n, i, z
+    real d
     character(len = DEFAULT_LINE_LENGTH) fname, line
 
     !> Initialize the return status.
@@ -62,40 +65,48 @@ subroutine read_basin_structures(shd, ierr)
     if (fms%stmg%n > 0) then
 
         !> Find the x-y cell coordinate of the location.
-        fms%stmg%meta%iy = int((fms%stmg%meta%y - shd%yOrigin)/shd%yDelta) + 1
-        fms%stmg%meta%jx = int((fms%stmg%meta%x - shd%xOrigin)/shd%xDelta) + 1
+!-        fms%stmg%meta%iy = int((fms%stmg%meta%y - shd%yOrigin)/shd%yDelta) + 1
+!-        fms%stmg%meta%jx = int((fms%stmg%meta%x - shd%xOrigin)/shd%xDelta) + 1
 
         !> Find the RANK of the location and create friendly name (if one does not exist).
         fms%stmg%meta%rnk = 0
+        allocate(dist(fms%stmg%n))
+        dist = huge(dist)
         do i = 1, fms%stmg%n
             if (len_trim(fms%stmg%meta%name(i)) == 0) then
                 write(line, FMT_GEN) i
                 fms%stmg%meta%name(i) = 'Gauge' // trim(adjustl(line))
             end if
             do n = 1, shd%NA
-                if (fms%stmg%meta%jx(i) == shd%xxx(n) .and. fms%stmg%meta%iy(i) == shd%yyy(n)) then
+                d = (shd%ylat(n) - fms%stmg%meta%y(i))**2 + (shd%xlng(n) - fms%stmg%meta%x(i))**2
+                if (d < dist(i)) then
+!-                if (fms%stmg%meta%jx(i) == shd%xxx(n) .and. fms%stmg%meta%iy(i) == shd%yyy(n)) then
+                    dist(i) = d
                     fms%stmg%meta%rnk(i) = n
-                    if (shd%DA(n) == 0.0) then
-                        call print_warning('Drainage area (DA) is zero at ' // trim(fms%stmg%meta%name(i)) // '.')
-                    end if
+                    fms%stmg%meta%iy(i) = shd%yyy(n)
+                    fms%stmg%meta%jx(i) = shd%xxx(n)
+!-                    if (shd%DA(n) == 0.0) then
+!-                        call print_warning('Drainage area (DA) is zero at ' // trim(fms%stmg%meta%name(i)) // '.')
+!-                    end if
                 end if
             end do
         end do
+        deallocate(dist)
 
         !> Print a message if any location is missing RANK (outside the basin).
-        if (minval(fms%stmg%meta%rnk) == 0) then
-            call print_error('Streamflow gauge(s) are outside the basin.')
-            write(line, FMT_GEN) 'GAUGE', 'Y', 'IY', 'X', 'JX'
-            call print_message(line)
-            do i = 1, fms%stmg%n
-                if (fms%stmg%meta%rnk(i) == 0) then
-                    write(line, FMT_GEN) i, fms%stmg%meta%y(i), fms%stmg%meta%iy(i), fms%stmg%meta%x(i), fms%stmg%meta%jx(i)
-                    call print_message(line)
-                end if
-            end do
-            ierr = 1
-            return
-        end if
+!-        if (minval(fms%stmg%meta%rnk) == 0) then
+!-            call print_error('Streamflow gauge(s) are outside the basin.')
+!-            write(line, FMT_GEN) 'GAUGE', 'Y', 'IY', 'X', 'JX'
+!-            call print_message(line)
+!-            do i = 1, fms%stmg%n
+!-                if (fms%stmg%meta%rnk(i) == 0) then
+!-                    write(line, FMT_GEN) i, fms%stmg%meta%y(i), fms%stmg%meta%iy(i), fms%stmg%meta%x(i), fms%stmg%meta%jx(i)
+!-                    call print_message(line)
+!-                end if
+!-            end do
+!-            ierr = 1
+!-            return
+!-        end if
 
         !> Skip records in the file to the simulation start date.
         !> Units of the records interval is hours.
@@ -103,12 +114,14 @@ subroutine read_basin_structures(shd, ierr)
             fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday, fms%stmg%qomeas%ihour, fms%stmg%qomeas%imins, fms%stmg%qomeas%dts*60)
         isteps2 = jday_to_tsteps(ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins, fms%stmg%qomeas%dts*60)
         if (isteps2 < isteps1) then
-            call print_warning('The first record occurs after the simulation start date.')
+            call print_error('The first record occurs after the simulation start date.')
             call print_message('This may cause channels to initialize with no storage.')
             write(line, "(i5, i4)") fms%stmg%qomeas%iyear, fms%stmg%qomeas%ijday
             call print_message('First record occurs on: ' // trim(line))
             write(line, "(i5, i4)") ic%start%year, ic%start%jday
             call print_message('Simulation start date: ' // trim(line))
+            ierr = 1
+            return
         end if
         iskip = (isteps2 - isteps1)
         if (iskip > 0) then
@@ -135,11 +148,11 @@ subroutine read_basin_structures(shd, ierr)
         write(line, FMT_GEN) fms%stmg%n
         call print_message('Number of streamflow gauges: ' // trim(adjustl(line)))
         write(line, FMT_GEN) 'GAUGE', 'IY', 'JX', 'RANK', 'DA (km2)'
-        call print_echo_txt(line)
+        call print_echo_txt(trim(line))
         do i = 1, fms%stmg%n
             write(line, FMT_GEN) &
                 fms%stmg%meta%name(i), fms%stmg%meta%iy(i), fms%stmg%meta%jx(i), fms%stmg%meta%rnk(i), shd%DA(fms%stmg%meta%rnk(i))
-            call print_echo_txt(line)
+            call print_echo_txt(trim(line))
         end do
     end if
 
@@ -188,35 +201,45 @@ subroutine read_basin_structures(shd, ierr)
     if (fms%rsvr%n > 0) then
 
         !> Find the x-y cell coordinate of the location.
-        fms%rsvr%meta%iy = int((fms%rsvr%meta%y - shd%yOrigin)/shd%yDelta) + 1
-        fms%rsvr%meta%jx = int((fms%rsvr%meta%x - shd%xOrigin)/shd%xDelta) + 1
+!-        fms%rsvr%meta%iy = int((fms%rsvr%meta%y - shd%yOrigin)/shd%yDelta) + 1
+!-        fms%rsvr%meta%jx = int((fms%rsvr%meta%x - shd%xOrigin)/shd%xDelta) + 1
 
         !> Find the RANK of the location and create friendly name (if one does not exist).
         fms%rsvr%meta%rnk = 0
+        allocate(dist(fms%rsvr%n))
+        dist = huge(dist)
         do i = 1, fms%rsvr%n
             if (len_trim(fms%rsvr%meta%name(i)) == 0) then
                 write(line, FMT_GEN) i
                 fms%rsvr%meta%name(i) = 'Reach' // trim(adjustl(line))
             end if
-            do n = 1, shd%NAA
-                if (fms%rsvr%meta%jx(i) == shd%xxx(n) .and. fms%rsvr%meta%iy(i) == shd%yyy(n)) fms%rsvr%meta%rnk(i) = n
-            end do
-        end do
-
-        !> Print an error if any location has no RANK (is outside the basin).
-        if (minval(fms%rsvr%meta%rnk) == 0) then
-            call print_error('Reservoir outlet(s) are outside the basin.')
-            write(line, FMT_GEN) 'OUTLET', 'Y', 'IY', 'X', 'JX'
-            call print_message(line)
-            do i = 1, fms%rsvr%n
-                if (fms%rsvr%meta%rnk(i) == 0) then
-                    write(line, FMT_GEN) i, fms%rsvr%meta%y(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%x(i), fms%rsvr%meta%jx(i)
-                    call print_message(line)
+            do n = 1, shd%NA
+                d = (shd%ylat(n) - fms%rsvr%meta%y(i))**2 + (shd%xlng(n) - fms%rsvr%meta%x(i))**2
+                if (d < dist(i)) then
+!-                if (fms%rsvr%meta%jx(i) == shd%xxx(n) .and. fms%rsvr%meta%iy(i) == shd%yyy(n)) fms%rsvr%meta%rnk(i) = n
+                    dist(i) = d
+                    fms%rsvr%meta%rnk(i) = n
+                    fms%rsvr%meta%iy(i) = shd%yyy(n)
+                    fms%rsvr%meta%jx(i) = shd%xxx(n)
                 end if
             end do
-            ierr = 1
-            return
-        end if
+        end do
+        deallocate(dist)
+
+        !> Print an error if any location has no RANK (is outside the basin).
+!-        if (minval(fms%rsvr%meta%rnk) == 0) then
+!-            call print_error('Reservoir outlet(s) are outside the basin.')
+!-            write(line, FMT_GEN) 'OUTLET', 'Y', 'IY', 'X', 'JX'
+!-            call print_message(line)
+!-            do i = 1, fms%rsvr%n
+!-                if (fms%rsvr%meta%rnk(i) == 0) then
+!-                    write(line, FMT_GEN) i, fms%rsvr%meta%y(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%x(i), fms%rsvr%meta%jx(i)
+!-                    call print_message(line)
+!-                end if
+!-            end do
+!-            ierr = 1
+!-            return
+!-        end if
 
         !> Print an error if any outlet location has no REACH.
         ierr = 0
@@ -294,13 +317,13 @@ subroutine read_basin_structures(shd, ierr)
             write(line, FMT_GEN) (fms%rsvr%n - count(fms%rsvr%rls%b1 == 0.0))
             call print_message('Number of reservoir outlets with routing: ' // trim(adjustl(line)))
             write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
-            call print_echo_txt(line)
+            call print_echo_txt(trim(line))
             do i = 1, fms%rsvr%n
                 if (fms%rsvr%rls%b1(i) /= 0) then
                     write(line, FMT_GEN) &
                         fms%rsvr%meta%name(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), &
                         fms%rsvr%rls%area(i)/1.0e+6
-                    call print_echo_txt(line)
+                    call print_echo_txt(trim(line))
                 end if
             end do
         end if
@@ -308,13 +331,13 @@ subroutine read_basin_structures(shd, ierr)
             write(line, FMT_GEN) count(fms%rsvr%rls%b1 == 0.0)
             call print_message('Number of reservoir outlets with insertion: ' // trim(adjustl(line)))
             write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
-            call print_echo_txt(line)
+            call print_echo_txt(trim(line))
             do i = 1, fms%rsvr%n
                 if (fms%rsvr%rls%b1(i) == 0.0) then
                     write(line, FMT_GEN) &
                         fms%rsvr%meta%name(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), &
                         fms%rsvr%rls%area(i)/1.0e+6
-                    call print_echo_txt(line)
+                    call print_echo_txt(trim(line))
                 end if
             end do
         end if
@@ -327,7 +350,7 @@ subroutine read_basin_structures(shd, ierr)
     iun = fms%absp%sabst%fls%iun
 
     !> Read location from file if points exist.
-    if (any(pm%tp%iabsp > 0)) then
+    if (any(pm%tile%iabsp > 0)) then
 
         !> Initialize time-series.
         fms%absp%sabst%iyear = ic%start%year
@@ -350,10 +373,10 @@ subroutine read_basin_structures(shd, ierr)
     end if
 
     !> Print an error if no points are defined but exist from other files.
-    if (maxval(pm%tp%iabsp) /= fms%absp%n) then
+    if (maxval(pm%tile%iabsp) /= fms%absp%n) then
         line = 'The number of abstraction points does not match between other input files and: ' // trim(adjustl(fname))
         call print_error(line)
-        write(line, FMT_GEN) maxval(pm%tp%iabsp)
+        write(line, FMT_GEN) maxval(pm%tile%iabsp)
         call print_message('Maximum points defined in other input files: ' // trim(adjustl(line)))
         write(line, FMT_GEN) fms%absp%n
         call print_message('Number of points read from file: ' // trim(adjustl(line)))
@@ -365,44 +388,54 @@ subroutine read_basin_structures(shd, ierr)
     if (fms%absp%n > 0) then
 
         !> Find the x-y cell coordinate of the point.
-        fms%absp%meta%iy = int((fms%absp%meta%y - shd%yOrigin)/shd%yDelta) + 1
-        fms%absp%meta%jx = int((fms%absp%meta%x - shd%xOrigin)/shd%xDelta) + 1
+!-        fms%absp%meta%iy = int((fms%absp%meta%y - shd%yOrigin)/shd%yDelta) + 1
+!-        fms%absp%meta%jx = int((fms%absp%meta%x - shd%xOrigin)/shd%xDelta) + 1
 
         !> Find the RANK of the point and create friendly name (if one does not exist).
         fms%absp%meta%rnk = 0
+        allocate(dist(fms%rsvr%n))
+        dist = huge(dist)
         do i = 1, fms%absp%n
             if (len_trim(fms%absp%meta%name(i)) == 0) then
                 write(line, FMT_GEN) i
                 fms%absp%meta%name(i) = 'Abspt' // trim(adjustl(line))
             end if
-            do n = 1, shd%NAA
-                if (fms%absp%meta%jx(i) == shd%xxx(n) .and. fms%absp%meta%iy(i) == shd%yyy(n)) fms%absp%meta%rnk(i) = n
-            end do
-        end do
-
-        !> Print an error if any point has no RANK (is outside the basin).
-        if (minval(fms%absp%meta%rnk) == 0) then
-            call print_error('Abstraction point(s) are outside the basin.')
-            write(line, FMT_GEN) 'OUTLET', 'Y', 'IY', 'X', 'JX'
-            call print_message(line)
-            do i = 1, fms%absp%n
-                if (fms%absp%meta%rnk(i) == 0) then
-                    write(line, FMT_GEN) i, fms%absp%meta%y(i), fms%absp%meta%iy(i), fms%absp%meta%x(i), fms%absp%meta%jx(i)
-                    call print_message(line)
+            do n = 1, shd%NA
+                d = (shd%ylat(n) - fms%absp%meta%y(i))**2 + (shd%xlng(n) - fms%absp%meta%x(i))**2
+                if (d < dist(i)) then
+!-                if (fms%absp%meta%jx(i) == shd%xxx(n) .and. fms%absp%meta%iy(i) == shd%yyy(n)) fms%absp%meta%rnk(i) = n
+                    dist(i) = d
+                    fms%absp%meta%rnk(i) = n
+                    fms%absp%meta%iy(i) = shd%yyy(n)
+                    fms%absp%meta%jx(i) = shd%xxx(n)
                 end if
             end do
-            ierr = 1
-            return
-        end if
+        end do
+        deallocate(dist)
+
+        !> Print an error if any point has no RANK (is outside the basin).
+!-        if (minval(fms%absp%meta%rnk) == 0) then
+!-            call print_error('Abstraction point(s) are outside the basin.')
+!-            write(line, FMT_GEN) 'OUTLET', 'Y', 'IY', 'X', 'JX'
+!-            call print_message(line)
+!-            do i = 1, fms%absp%n
+!-                if (fms%absp%meta%rnk(i) == 0) then
+!-                    write(line, FMT_GEN) i, fms%absp%meta%y(i), fms%absp%meta%iy(i), fms%absp%meta%x(i), fms%absp%meta%jx(i)
+!-                    call print_message(line)
+!-                end if
+!-            end do
+!-            ierr = 1
+!-            return
+!-        end if
 
         !> Print a summary of locations to file.
         write(line, FMT_GEN) fms%absp%n
         call print_message('Number of abstraction points: ' // trim(adjustl(line)))
         write(line, FMT_GEN) 'ABST. POINT', 'IY', 'JX', 'RANK'
-        call print_echo_txt(line)
+        call print_echo_txt(trim(line))
         do i = 1, fms%absp%n
             write(line, FMT_GEN) fms%absp%meta%name(i), fms%absp%meta%iy(i), fms%absp%meta%jx(i), fms%absp%meta%rnk(i)
-            call print_echo_txt(line)
+            call print_echo_txt(trim(line))
         end do
     end if
 

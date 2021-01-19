@@ -18,8 +18,8 @@
 !> OCT 16/14 -GSA- GET Geothermal flux
       INTEGER GGEOFLAG
 
-      integer :: BASINAVGEVPFILEFLAG = 0
-      INTEGER :: BASINSWEOUTFLAG = 0
+!-      integer :: BASINAVGEVPFILEFLAG = 0
+!-      INTEGER :: BASINSWEOUTFLAG = 0
 !> FEB 8/17 -GSA- Reservoir
       INTEGER RESERVOIRFLAG
 

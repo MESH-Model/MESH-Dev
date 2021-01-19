@@ -25,44 +25,99 @@ module txt_io
     !>  ierr: Status of the read statement.
     !>
     interface read_records_txt
-        module procedure read_records_txt_N
-        module procedure read_records_txt_1
+        module procedure read_records_txt_multi_line_double
+        module procedure read_records_txt_multi_line_float
+        module procedure read_records_txt_single_line_double
+        module procedure read_records_txt_single_line_float
     end interface
 
     contains
 
-    integer function read_records_txt_N(iun, vals, nr) result(ierr)
+    integer function read_records_txt_multi_line_double(iun, dvals, nrows) result(ierr)
 
         implicit none
 
         !> Input/output variables.
-        integer, intent(in) :: iun, nr
-        real vals(:)
+        integer, intent(in) :: iun, nrows
+        real(kind = 8) dvals(:)
 
         !> Local variables.
         integer i
 
-        !> Skip records if 'nr' is provided.
-        do i = 1, max(0, nr - 1)
+        !> Initialize return variable.
+        ierr = 0
+
+        !> Read 'nrows' number of rows.
+        do i = 1, max(0, nrows - 1)
             read(iun, *, iostat = ierr)
             if (ierr /= 0) exit
         end do
 
         !> Read record to array using free format.
-        read(iun, *, iostat = ierr) (vals(i), i = 1, size(vals))
+        read(iun, *, iostat = ierr) (dvals(i), i = 1, size(dvals))
 
     end function
 
-    integer function read_records_txt_1(iun, vals) result(ierr)
+    integer function read_records_txt_multi_line_float(iun, fvals, nrows) result(ierr)
+
+        implicit none
+
+        !> Input/output variables.
+        integer, intent(in) :: iun, nrows
+        real(kind = 4) fvals(:)
+
+        !> Local variables.
+        real(kind = 8), allocatable :: dvals(:)
+
+        !> Allocate and initialize local variable.
+        allocate(dvals(size(fvals)))
+        dvals = 0.0
+
+        !> Call main subroutine to read records.
+        ierr = read_records_txt_multi_line_double(iun, dvals, nrows)
+
+        !> Convert field.
+        if (ierr == 0) then
+            fvals = real(dvals, kind = 4)
+        end if
+
+    end function
+
+    integer function read_records_txt_single_line_double(iun, dvals) result(ierr)
 
         implicit none
 
         !> Input/output variables.
         integer, intent(in) :: iun
-        real vals(:)
+        real(kind = 8) dvals(:)
 
         !> Call main subroutine to read a single record.
-        ierr = read_records_txt_N(iun, vals, 1)
+        ierr = read_records_txt_multi_line_double(iun, dvals, 1)
+
+    end function
+
+    integer function read_records_txt_single_line_float(iun, fvals) result(ierr)
+
+        implicit none
+
+        !> Input/output variables.
+        integer, intent(in) :: iun
+        real(kind = 4) fvals(:)
+
+        !> Local variables.
+        real(kind = 8), allocatable :: dvals(:)
+
+        !> Allocate and initialize local variable.
+        allocate(dvals(size(fvals)))
+        dvals = 0.0
+
+        !> Call main subroutine to read a single record.
+        ierr = read_records_txt_multi_line_double(iun, dvals, 1)
+
+        !> Convert field.
+        if (ierr == 0) then
+            fvals = real(dvals, kind = 4)
+        end if
 
     end function
 

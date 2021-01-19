@@ -27,8 +27,7 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     ierr = 0
 
     !> Print messages.
-    call reset_tab()
-    call print_message('READING: Resume run configuration')
+    call print_new_section('READING: Resume run configuration')
     call increase_tab()
 
     !> Assign the default options for RESUMEFLAG.
@@ -50,7 +49,7 @@ subroutine resumerun_config(fls, shd, cm, ierr)
 
             !> Legacy options.
             case ('2', '1')
-                call print_error('RESUMEFLAG ' // trim(adjustl(args(i))) // 'is not supported. Use RESUMEFLAG 4 instead.')
+                call print_error("'RESUMEFLAG " // trim(adjustl(args(i))) // "' is not supported. Use 'RESUMEFLAG 4' instead.")
                 ierr = 1
                 return
             case ('3')
@@ -105,7 +104,7 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     if (vs%flgs%resume%state == FLAG_ON .and. vs%flgs%resume%flo%ffmt == FFMT_NUL) then
 !+        call print_warning("RESUMEFLAG is active with no file format specified. Regular plain text format 'txt' is assumed.")
 !+        vs%flgs%resume%flo%ffmt = radix(FFMT_TXT)**FFMT_TXT
-        call print_error('RESUMEFLAG is active with no file format specified.')
+        call print_error("RESUMEFLAG is active with no file format specified.")
         ierr = 1
         return
     end if
@@ -127,9 +126,9 @@ subroutine resumerun_config(fls, shd, cm, ierr)
             line = ' on' // trim(line)
         end if
         line = 'RESUMEFLAG' // trim(line)
-        call print_message('RESUMEFLAG is ACTIVE: ' // trim(line))
+        call print_message("RESUMEFLAG is ACTIVE: " // trim(line))
     else
-        call print_message('RESUMEFLAG is not active: RESUMEFLAG off')
+        call print_message("RESUMEFLAG is not active: RESUMEFLAG off")
     end if
 
     !> Assign default options for SAVERESUMEFLAG.
@@ -149,7 +148,7 @@ subroutine resumerun_config(fls, shd, cm, ierr)
 
             !> Legacy options.
             case ('2', '1')
-                call print_error('SAVERESUMEFLAG ' // trim(adjustl(args(i))) // 'is not supported. Use SAVERESUMEFLAG 4 instead.')
+                call print_error("'SAVERESUMEFLAG " // trim(adjustl(args(i))) // "' is not supported. Use 'SAVERESUMEFLAG 4' instead.")
                 ierr = 1
                 return
             case ('3')
@@ -213,7 +212,7 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     if (vs%flgs%save%state == FLAG_ON .and. vs%flgs%save%flo%ffmt == FFMT_NUL) then
 !+        call print_warning("SAVERESUMEFLAG is active with no file format specified. Regular plain text format 'txt' is assumed.")
 !+        vs%flgs%save%flo%ffmt = radix(FFMT_TXT)**FFMT_TXT
-        call print_error('SAVERESUMEFLAG is active with no file format specified.')
+        call print_error("SAVERESUMEFLAG is active with no file format specified.")
         ierr = 1
         return
     end if
@@ -235,21 +234,25 @@ subroutine resumerun_config(fls, shd, cm, ierr)
             line = ' on' // trim(line)
         end if
         line = 'SAVERESUMEFLAG' // trim(line)
-        call print_message('SAVERESUMEFLAG is ACTIVE: ' // trim(line))
+        call print_message("SAVERESUMEFLAG is ACTIVE: " // trim(line))
     else
-        call print_message('SAVERESUMEFLAG is not active: SAVERESUMEFLAG off')
+        call print_message("SAVERESUMEFLAG is not active: SAVERESUMEFLAG off")
     end if
 
 !temp
     !> Auto-save/resume does not currently support option 4. Throw an error.
     if (vs%flgs%save%freq /= FREQ_NUL .and. &
         .not. (index(vs%flgs%save%bin, '+STASONLY') > 0 .or. index(vs%flgs%save%bin, '+CLASSPROG') > 0)) then
-        call print_error('Auto-save of resume files does not currently support this option.')
-        call print_message("The 'monthly' and 'yearly' options can added only to these configurations of SAVERESUMEFLAG:")
-        call print_message_detail('SAVERESUMEFLAG on seq only states')
-        call print_message_detail('SAVERESUMEFLAG on seq only class')
-        call print_message_detail('SAVERESUMEFLAG 5')
-        call print_message_detail('SAVERESUMEFLAG 3')
+        call print_error( &
+            "Auto-saving only supports SAVERESUMEFLAG options that save model states only " // &
+            "(without time or time-stepping information). The auto-save options, such as 'monthly' and 'yearly', can be added " // &
+            "to these configurations of SAVERESUMEFLAG:")
+        call increase_tab()
+        call print_message("SAVERESUMEFLAG on seq only states")
+        call print_message("SAVERESUMEFLAG on seq only class")
+        call print_message("SAVERESUMEFLAG 5")
+        call print_message("SAVERESUMEFLAG 3")
+        call decrease_tab()
         ierr = 1
         return
     end if
@@ -257,8 +260,7 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     !> Check for auto resume file.
     if (vs%flgs%resume%state == FLAG_AUTO) then
         fname = 'auto_resume.ini'
-        call reset_tab()
-        call print_message('READING: ' // trim(fname))
+        call print_new_section("READING: " // trim(fname))
         call increase_tab()
         inquire(file = fname, exist = lstate)
         if (lstate) then
@@ -267,30 +269,34 @@ subroutine resumerun_config(fls, shd, cm, ierr)
             iun = 100
             open(iun, file = fname, status = 'old', action = 'read', iostat = z)
             if (z /= 0) then
-                call print_error('Unable to open the file.')
+                call print_error("Unable to open the file.")
                 call program_abort()
             end if
 
             !> Read the simulation start date from the file.
             read(iun, *, iostat = z) ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
             if (z /= 0) then
-                call print_error('Unable to read the resume date from the file.')
+                call print_error("Unable to read the resume date from the file.")
                 call program_abort()
             end if
+!todo: format statement
             write(line, "(i5, '/', i3.3, ' ', i2.2, ':', i2.2)") ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
             call print_message( &
-                'Simulation start date revised to: ' // trim(adjustl(line)) // '. The previous run state will be resumed.')
+                "Simulation start date revised to: " // trim(adjustl(line)) // ". The previous run state will be resumed.")
             close(iun)
         else
 
             !> Print a warning if the resume file does not exist.
             call print_warning( &
-                'Auto-resume is active but ' // trim(fname) // ' cannot be found. A previous run state will not be resumed.')
-            call print_message('RESUMEFLAG is revised: RESUMEFLAG off')
+                "Auto-resume is active but '" // trim(fname) // "' cannot be found. A previous run state will not be resumed.")
+            call print_message("RESUMEFLAG is revised: RESUMEFLAG off")
 
             !> Override the resume functionality.
             vs%flgs%resume%state = FLAG_OFF
         end if
     end if
+
+    !> Reset tabs.
+    call reset_tab()
 
 end subroutine
