@@ -77,6 +77,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
                     SHDFILEFMT = 2
                 case ('netcdf', 'nc')
                     SHDFILEFMT = 3
+                case ('asc')
+                    SHDFILEFMT = 4
                 case ('to_map')
                     SHDTOMAPFLAG = .true.
             end select
@@ -339,6 +341,10 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
             ierr = 1
             return
 #endif
+
+        case (4)
+            call read_shed_csv(shd, 'MESH_drainage_database.asc', ierr)
+            if (ierr /= 0) return
 
         case default
 
