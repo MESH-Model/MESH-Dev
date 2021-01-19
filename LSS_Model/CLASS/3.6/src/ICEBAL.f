@@ -4,14 +4,17 @@
      3                  FI,EVAP,R,TR,GZERO,G12,G23,HCP,QMELT,WSNOW,
      +                  ICE,TICE,
      4                  ZMAT,TMOVE,WMOVE,ZRMDR,TADD,ZMOVE,TBOT,DELZ,
-     +                  FREZTH, SNDEPLIM, SNDENLIM,
+     +                  FREZTH, SWELIM, SNDENLIM,
      5                  ISAND,ICONT,IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
 C
+C     * OCT 30/20 - M.ELSHAMY   UPDATED THE SNOW TO ICE CONVERSION IN CASES
+C                               OF EXCEEDING SWE LIMIT TO CONVERT EXCESS OVER LIMIT   	
 C     * JUL 20/20 - D.PRINCZ.   MODIFIED THE CALCULATION OF HTC TO
 C                               CONSIDER CHANGE IN ZPOND WHEN USING IWF
 C                               (ICEBAL).
 C     * JUN 10/20 - D.PRINCZ.   ADDED ICE AND TICE (ICEBAL).
 C     * JUN 10/20 - D.PRINCZ.   CHANGED THRESHOLD AND LIMITS IN CHECKS
+C                               IN LOOP 500.
 C                               TO CONFIGURABLE VALUES.
 C     * DEC 27/07 - D.VERSEGHY. ADD GEOTHERMAL HEAT FLUX; ADD ICE MASS
 C     *                         LOSS TO RUNOFF.
@@ -81,10 +84,10 @@ C
 C
 C     * THRESHOLDS AND LIMITS FOR ICEBAL.
 C           FREZTH=-2.0
-C           SNDEPLIM=100.
+C           SWELIM=100.
 C           SNDENLIM=900.
 C
-      REAL, INTENT(IN) :: FREZTH(ILG), SNDEPLIM(ILG), SNDENLIM(ILG)
+      REAL, INTENT(IN) :: FREZTH(ILG), SWELIM(ILG), SNDENLIM(ILG)
 C
 C     * WORK FIELDS.
 C
@@ -315,14 +318,14 @@ C
               SNOCONV=0.
               HTCS(I)=HTCS(I)-FI(I)*(TSNOW(I)+TFREZ)*HCPSNO(I)*
      1                ZSNOW(I)/DELT
-              IF((RHOSNO(I)*ZSNOW(I)).GT.SNDEPLIM(I)) THEN
-                  SNOCONV=RHOSNO(I)*ZSNOW(I)-100.
+              IF((RHOSNO(I)*ZSNOW(I)).GT.SWELIM(I)) THEN
+                  SNOCONV=RHOSNO(I)*ZSNOW(I)-SWELIM(I)
                   WMOVE(I,1)=SNOCONV/RHOICE                                
                   TMOVE(I,1)=TSNOW(I)                                                      
                   WTRS(I)=WTRS(I)-FI(I)*WMOVE(I,1)*RHOICE/DELT
                   WTRG(I)=WTRG(I)+FI(I)*WMOVE(I,1)*RHOICE/DELT
                   ZSNOW(I)=ZSNOW(I)-WMOVE(I,1)                                                
-                  RHOSNO(I)=100.0/ZSNOW(I)
+                  RHOSNO(I)=SWELIM(I)/ZSNOW(I)
                   HCPSNO(I)=HCPICE*RHOSNO(I)/RHOICE+HCPW*WSNOW(I)/
      1                (RHOW*ZSNOW(I))
                   ICONT(I)=1

@@ -311,7 +311,7 @@ module RUNCLASS36_module
                         csfv%THP, csfv%THR, csfv%THM, csfv%BI, csfv%PSIS, csfv%GRKS, &
                         csfv%THRA, csfv%THFC, csfv%DRN, csfv%HCPS, shd%lc%sl%DELZ, &
                         csfv%DELZW, csfv%ZBTW, csfv%XSLP, XDGAT, csfv%WFSF, KSGAT, &
-                        cglv%FREZTH, cglv%SNDEPLIM, cglv%SNDENLIM, &
+                        cglv%FREZTH, cglv%SWELIM, cglv%SNDENLIM, &
                         csfv%ISND, csfv%IGDR, csfv%IWF, NML, il1, il2, ic%ts_count, &
                         JLAT, ICAN, IGND, IGND + 1, IGND + 2, &
                         NLANDCS, NLANDGS, NLANDC, NLANDG, NLANDI, &

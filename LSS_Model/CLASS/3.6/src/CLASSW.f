@@ -23,7 +23,7 @@
      M                  THPOR,  THLRET, THLMIN, BI,     PSISAT, GRKSAT,
      N                  THLRAT, THFC,   XDRAIN, HCPS,   DELZ,   
      O                  DELZW,  ZBOTW,  XSLOPE, XDRAINH, WFSURF, KSAT,
-     +                  FREZTH, SNDEPLIM, SNDENLIM,
+     +                  FREZTH, SWELIM, SNDENLIM,
      P                  ISAND,  IGDR,
      Q                  IWF,    ILG,    IL1,    IL2,    N,
      R                  JL,     IC,     IG,     IGP1,   IGP2,
@@ -207,10 +207,10 @@ C
 C
 C     * THRESHOLDS AND LIMITS FOR ICEBAL.
 C           FREZTH=-2.0
-C           SNDEPLIM=100.
+C           SWELIM=100.
 C           SNDENLIM=900.
 C
-      REAL, INTENT(IN) :: FREZTH(ILG), SNDEPLIM(ILG), SNDENLIM(ILG)
+      REAL, INTENT(IN) :: FREZTH(ILG), SWELIM(ILG), SNDENLIM(ILG)
 C
 C     * INTERNAL WORK ARRAYS USED THROUGHOUT CLASSW.
 C
@@ -556,7 +556,7 @@ C
      +                    ICEGS,TICEGS,
      +                    ZMAT,TMOVE,WMOVE,ZRMDR,
      5                    TADD,ZMOVE,TBOT,DELZ,
-     +                    FREZTH, SNDEPLIM, SNDENLIM,
+     +                    FREZTH, SWELIM, SNDENLIM,
      +                    ISAND,ICONT,
      6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
           ENDIF
@@ -726,7 +726,7 @@ C
      +                    ICEG,TICEG,
      +                    ZMAT,TMOVE,WMOVE,ZRMDR,
      5                    TADD,ZMOVE,TBOT,DELZ,
-     +                    FREZTH, SNDEPLIM, SNDENLIM,
+     +                    FREZTH, SWELIM, SNDENLIM,
      +                    ISAND,ICONT,
      6                    IWF,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
           ENDIF

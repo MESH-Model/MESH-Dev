@@ -297,13 +297,13 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         RUNCLASS36_flgs%pm%constant%FREZTH(:) = IROVALR
                     end if
-                case ('SNDEPLIM', 'ICEBAL_SNOW_DEPTH_LIMIT')
+                case ('SWELIM', 'ICEBAL_SWE_LIMIT')
                     call value(args(2), IROVALR, z)
                     if (z == 0) then
-                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
-                            allocate(RUNCLASS36_flgs%pm%constant%SNDEPLIM(1))
+                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%SWELIM)) then
+                            allocate(RUNCLASS36_flgs%pm%constant%SWELIM(1))
                         end if
-                        RUNCLASS36_flgs%pm%constant%SNDEPLIM(:) = IROVALR
+                        RUNCLASS36_flgs%pm%constant%SWELIM(:) = IROVALR
                     end if
                 case ('SNDENLIM', 'ICEBAL_SNOW_DENSITY_LIMIT')
                     call value(args(2), IROVALR, z)

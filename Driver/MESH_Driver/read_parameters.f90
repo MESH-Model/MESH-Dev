@@ -276,11 +276,11 @@ subroutine read_parameters(fls, shd, cm, ierr)
             end if
             RUNCLASS36_flgs%pm%tile%FREZTH(:) = RUNCLASS36_flgs%pm%constant%FREZTH(1)
         end if
-        if (allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
-            if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
-                allocate(RUNCLASS36_flgs%pm%tile%SNDEPLIM(shd%lc%NML))
+        if (allocated(RUNCLASS36_flgs%pm%constant%SWELIM)) then
+            if (.not. allocated(RUNCLASS36_flgs%pm%tile%SWELIM)) then
+                allocate(RUNCLASS36_flgs%pm%tile%SWELIM(shd%lc%NML))
             end if
-            RUNCLASS36_flgs%pm%tile%SNDEPLIM(:) = RUNCLASS36_flgs%pm%constant%SNDEPLIM(1)
+            RUNCLASS36_flgs%pm%tile%SWELIM(:) = RUNCLASS36_flgs%pm%constant%SWELIM(1)
         end if
         if (allocated(RUNCLASS36_flgs%pm%constant%SNDENLIM)) then
             if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
@@ -341,11 +341,11 @@ subroutine read_parameters(fls, shd, cm, ierr)
                     end if
                     RUNCLASS36_flgs%pm%tile%FREZTH(k) = RUNCLASS36_flgs%pm%gru%FREZTH(i)
                 end if
-                if (allocated(RUNCLASS36_flgs%pm%gru%SNDEPLIM)) then
-                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
-                        allocate(RUNCLASS36_flgs%pm%tile%SNDEPLIM(shd%lc%NML))
+                if (allocated(RUNCLASS36_flgs%pm%gru%SWELIM)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SWELIM)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%SWELIM(shd%lc%NML))
                     end if
-                    RUNCLASS36_flgs%pm%tile%SNDEPLIM(k) = RUNCLASS36_flgs%pm%gru%SNDEPLIM(i)
+                    RUNCLASS36_flgs%pm%tile%SWELIM(k) = RUNCLASS36_flgs%pm%gru%SWELIM(i)
                 end if
                 if (allocated(RUNCLASS36_flgs%pm%gru%SNDENLIM)) then
                     if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
@@ -468,11 +468,11 @@ subroutine read_parameters(fls, shd, cm, ierr)
                     end if
                     RUNCLASS36_flgs%pm%tile%FREZTH(k) = RUNCLASS36_flgs%pm%grid%FREZTH(i)
                 end if
-                if (allocated(RUNCLASS36_flgs%pm%grid%SNDEPLIM)) then
-                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
-                        allocate(RUNCLASS36_flgs%pm%tile%SNDEPLIM(shd%lc%NML))
+                if (allocated(RUNCLASS36_flgs%pm%grid%SWELIM)) then
+                    if (.not. allocated(RUNCLASS36_flgs%pm%tile%SWELIM)) then
+                        allocate(RUNCLASS36_flgs%pm%tile%SWELIM(shd%lc%NML))
                     end if
-                    RUNCLASS36_flgs%pm%tile%SNDEPLIM(k) = RUNCLASS36_flgs%pm%grid%SNDEPLIM(i)
+                    RUNCLASS36_flgs%pm%tile%SWELIM(k) = RUNCLASS36_flgs%pm%grid%SWELIM(i)
                 end if
                 if (allocated(RUNCLASS36_flgs%pm%grid%SNDENLIM)) then
                     if (.not. allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
