@@ -276,7 +276,7 @@ subroutine read_parameters_nc( &
                     if (ndims == 2) then
                         call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
                         do n = 1, shd%NA
-                            pm%grid%fcan(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
+                            pm%grid%lnz0(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
                         end do
                         if (svs_mesh%PROCESS_ACTIVE) then
                             if (.not. allocated(svs_mesh%vs%lnz0)) allocate(svs_mesh%vs%lnz0(shd%lc%NML))
@@ -288,7 +288,7 @@ subroutine read_parameters_nc( &
                         call nc4_get_variable(iun, field, dim_x, dim_y, dim_c, dat3_r, fill_r, ierr = ierr)
                         do m = 1, ncan
                             do n = 1, shd%NA
-                                pm%grid%fcan(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                                pm%grid%lnz0(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
                             end do
                         end do
                         deallocate(dat3_r)

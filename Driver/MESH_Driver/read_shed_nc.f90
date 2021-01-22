@@ -51,7 +51,7 @@ subroutine read_shed_nc(shd, fname, dim_x_name, dim_y_name, dim_c_name, dim_m_na
     integer natts, nvars, fill_i
 
     !> Local variables.
-    character(len = DEFAULT_FIELD_LENGTH) :: dim_x = '', dim_y = '', dim_c = '', dim_m = '', field, code
+    character(len = DEFAULT_FIELD_LENGTH) :: dim_x = '', dim_y = '', dim_m = '', field, code
     integer iun, x, y, m, n, i, z
 
     !> Initialize the return status.
@@ -432,9 +432,7 @@ subroutine read_shed_nc(shd, fname, dim_x_name, dim_y_name, dim_c_name, dim_m_na
     if (ierr /= 0) goto 999
 
     !> Get GRU names.
-    if (present(dim_c_name)) dim_c = dim_c_name
-    if (len_trim(dim_c) == 0) dim_c = 'string20'
-    call nc4_get_variable(iun, 'LandUse', dim_m, dim_c, dat_c, fill_c, ierr = ierr)
+    call nc4_get_variable(iun, 'LandUse', dim_m, dim_c_name, dat_c, fill_c, ierr = ierr)
     if (ierr /= 0) then
         call print_warning("Unable to read GRU names as 'LandUse'. Default names will be assumed.")
     end if

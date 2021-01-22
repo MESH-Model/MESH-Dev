@@ -1000,7 +1000,7 @@ module nc_io
         iun, standard_name, dim1_name, dim1_order, &
         dim2_name, dim2_order, dim3_name, dim3_order, dim4_name, dim4_order, dim5_name, dim5_order, &
         dim6_name, dim6_order, dim7_name, dim7_order, &
-        dim_lengths, dim_unlimited_id, &
+        dim_names, dim_lengths, dim_unlimited_id, &
         ierr)
 
         !> Input variables.
@@ -1016,6 +1016,7 @@ module nc_io
         !> Output variables (optional).
         integer, intent(out), optional :: &
             dim2_order, dim3_order, dim4_order, dim5_order, dim6_order, dim7_order, dim_unlimited_id
+        character(len = DEFAULT_FIELD_LENGTH), dimension(:), allocatable, optional :: dim_names
         integer, dimension(:), allocatable, optional :: dim_lengths
 
         !> Local variables.
@@ -1030,6 +1031,9 @@ module nc_io
         !> Check for a dimension of 'NF90_UNLIMITED' type.
         call nc4_inquire_file(iun, dim_unlimited_id = dim_unlimited_id, ierr = ierr)
         if (ierr /= 0) return
+
+        !> Allocate the variable for dimension names (output).
+        if (present(dim_names)) allocate(dim_names(n))
 
         !> Allocate the variable for dimension lengths.
         if (present(dim_lengths)) allocate(dim_lengths(n))
@@ -1049,6 +1053,9 @@ module nc_io
                 ierr = 1
                 z = 0
             else
+
+                !> Save the dimension name.
+                if (present(dim_names)) dim_names(i) = adjustl(dim_name)
 
                 !> Save the dimension length.
                 if (present(dim_lengths)) dim_lengths(i) = l
@@ -1075,32 +1082,51 @@ module nc_io
                                         if (lowercase(dim_name) == lowercase(dim7_name)) then
                                             if (present(dim7_order)) dim7_order = i
                                         else
+                                            if (present(dim7_order)) dim7_order = -1
                                             z = 1
                                         end if
                                     else
+                                        if (present(dim6_order)) dim6_order = -1
                                         z = 1
                                     end if
                                 else
+                                    if (present(dim5_order)) dim5_order = -1
                                     z = 1
                                 end if
                             else
+                                if (present(dim4_order)) dim4_order = -1
                                 z = 1
                             end if
                         else
+                            if (present(dim3_order)) dim3_order = -1
                             z = 1
                         end if
                     else
+                        if (present(dim2_order)) dim2_order = -1
                         z = 1
                     end if
                 else
+                    dim1_order = -1
                     z = 1
                 end if
 
-                !> Check for unassigned dimension.
+                !> Try to derive the unassigned dimension when all other orders were found.
+                if (n == 2 .and. present(dim2_order)) then
+                    if (dim2_order == -1) then
+                        if (dim1_order == 1) then
+                            dim2_order = 2
+                        else
+                            dim2_order = 1
+                        end if
+                        z = 0
+                    end if
+                end if
+
+                !> Check for unassigned dimensions.
                 if (z /= 0) then
                     call print_warning( &
                         "The dimension '" // trim(adjustl(dim_name)) // "' is not associated with the '" // &
-                        trim(standard_name) // "' variable (Code: " // trim(adjustl(code)) // ").")
+                        trim(standard_name) // "' variable.")
                     z = 0
                 end if
             end if
@@ -3453,7 +3479,11 @@ module nc_io
         ierr = 0
         if (present(size_dat) .and. present(dim_lengths)) then
             if (present(dim1_order)) then
-                if (size_dat(1) == 0) then
+                if (dim1_order == -1 .and. present(dim1_name)) then
+                    call print_error( &
+                        "The dimension '" // trim(dim1_name) // "' was not found in the file.")
+                    ierr = 1
+                else if (size_dat(1) == 0) then
                     size_dat(1) = dim_lengths(dim1_order)
                 else if (size_dat(1) /= dim_lengths(dim1_order)) then
                     write(field, FMT_GEN) size_dat(1)
@@ -3465,7 +3495,11 @@ module nc_io
                 end if
             end if
             if (present(dim2_order)) then
-                if (size_dat(2) == 0) then
+                if (dim2_order == -1 .and. present(dim2_name)) then
+                    call print_error( &
+                        "The dimension '" // trim(dim2_name) // "' was not found in the file.")
+                    ierr = 1
+                else if (size_dat(2) == 0) then
                     size_dat(2) = dim_lengths(dim2_order)
                 else if (size_dat(2) /= dim_lengths(dim2_order)) then
                     write(field, FMT_GEN) size_dat(2)
@@ -3477,7 +3511,11 @@ module nc_io
                 end if
             end if
             if (present(dim3_order)) then
-                if (size_dat(3) == 0) then
+                if (dim3_order == -1 .and. present(dim3_name)) then
+                    call print_error( &
+                        "The dimension '" // trim(dim3_name) // "' was not found in the file.")
+                    ierr = 1
+                else if (size_dat(3) == 0) then
                     size_dat(3) = dim_lengths(dim3_order)
                 else if (size_dat(3) /= dim_lengths(dim3_order)) then
                     write(field, FMT_GEN) size_dat(3)
@@ -3489,7 +3527,11 @@ module nc_io
                 end if
             end if
             if (present(dim4_order)) then
-                if (size_dat(4) == 0) then
+                if (dim4_order == -1 .and. present(dim4_name)) then
+                    call print_error( &
+                        "The dimension '" // trim(dim4_name) // "' was not found in the file.")
+                    ierr = 1
+                else if (size_dat(4) == 0) then
                     size_dat(4) = dim_lengths(dim4_order)
                 else if (size_dat(4) /= dim_lengths(dim4_order)) then
                     write(field, FMT_GEN) size_dat(4)
@@ -3501,7 +3543,11 @@ module nc_io
                 end if
             end if
             if (present(dim5_order)) then
-                if (size_dat(5) == 0) then
+                if (dim5_order == -1 .and. present(dim5_name)) then
+                    call print_error( &
+                        "The dimension '" // trim(dim5_name) // "' was not found in the file.")
+                    ierr = 1
+                else if (size_dat(5) == 0) then
                     size_dat(5) = dim_lengths(dim5_order)
                 else if (size_dat(5) /= dim_lengths(dim5_order)) then
                     write(field, FMT_GEN) size_dat(5)
@@ -4059,18 +4105,10 @@ module nc_io
         integer, dimension(:), allocatable :: dim_lengths
         integer dim1_order, n, v
 
-        !> Check the dimension name.
-        if (present(name_dim_char_length)) then
-            dim1_name = trim(name_dim_char_length)
-        else
-            write(code, FMT_GEN) DEFAULT_FIELD_LENGTH
-            dim1_name = 'string' // trim(adjustl(code))
-        end if
-
         !> Get variable information.
         call nc4_check_variable( &
             iun, standard_name, NF90_CHAR, &
-            dim1_name = dim1_name, dim1_order = dim1_order, &
+            dim1_name = name_dim_char_length, dim1_order = dim1_order, &
             vid = v, long_name = long_name, units = units, dtype = dtype, ndims = ndims, dimids = dimids, &
             dim_lengths = dim_lengths, &
             ierr = ierr)
@@ -4272,7 +4310,7 @@ module nc_io
         integer, dimension(:), allocatable, intent(out), optional :: dimids
 
         !> Local variables.
-        character(len = DEFAULT_FIELD_LENGTH) dim1_name, dim2_name, field, code
+        character(len = DEFAULT_FIELD_LENGTH) dim1_name, field, code
         character(len = :), dimension(:), allocatable :: dat_c
         integer, dimension(:), allocatable :: dim_lengths
         integer dim1_order, dim2_order, n, v
@@ -4283,18 +4321,12 @@ module nc_io
         else
             dim1_name = trim(standard_name)
         end if
-        if (present(name_dim_char_length)) then
-            dim2_name = trim(name_dim_char_length)
-        else
-            write(code, FMT_GEN) DEFAULT_FIELD_LENGTH
-            dim2_name = 'string' // trim(adjustl(code))
-        end if
 
         !> Get variable information.
         call nc4_check_variable( &
             iun, standard_name, NF90_CHAR, &
             dim1_name = dim1_name, dim1_order = dim1_order, &
-            dim2_name = dim2_name, dim2_order = dim2_order, &
+            dim2_name = name_dim_char_length, dim2_order = dim2_order, &
             vid = v, long_name = long_name, units = units, dtype = dtype, ndims = ndims, dimids = dimids, &
             dim_lengths = dim_lengths, &
             ierr = ierr)
