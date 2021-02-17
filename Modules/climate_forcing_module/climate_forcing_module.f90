@@ -376,6 +376,10 @@ module climate_forcing
                 !> netCDF format.
                 case ('nc')
                     climate_variable%ffmt = 7
+
+                !> netCDF format (vector/subbasin).
+                case ('nc_subbasin', 'nc_hru')
+                    climate_variable%ffmt = 8
             end select
 
             !> Multi-word options.
