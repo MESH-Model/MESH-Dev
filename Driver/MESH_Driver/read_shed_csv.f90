@@ -324,11 +324,10 @@ subroutine read_shed_csv(shd, fname, ierr)
         !> Calculate 'DA' from 'AREA' if not provided.
         if (.not. allocated(shd%DA)) then
             allocate(shd%DA(shd%NA))
-            shd%DA = shd%AREA
+            shd%DA = shd%AREA/1000000.0
             do i = 1, shd%NAA
-                shd%DA(shd%Next(i)) = shd%DA(shd%Next(i)) + shd%AREA(i)
+                shd%DA(shd%Next(i)) = shd%DA(shd%Next(i)) + shd%DA(i)
             end do
-            shd%DA = shd%DA/1000.0/1000.0
         end if
 
         !> Assume no reaches if 'REACH' was not provided.
