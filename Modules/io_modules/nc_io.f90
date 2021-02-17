@@ -433,6 +433,15 @@ module nc_io
         h = nint((datetime - floor(datetime))*24.0 - n/60.0 - s/60.0/60.0)
         ierr = 0
 
+        !> Variables.
+        if (present(year)) year = y
+        if (present(month)) month = m
+        if (present(day)) day = d
+        if (present(jday)) jday = j
+        if (present(hour)) hour = h
+        if (present(minutes)) minutes = n
+        if (present(seconds)) seconds = s
+
     end subroutine
 
     subroutine nc4_get_reference_time( &
