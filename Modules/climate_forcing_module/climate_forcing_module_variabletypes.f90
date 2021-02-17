@@ -34,7 +34,7 @@ module climate_forcing_variabletypes
         !* fpath: Full path to the forcing input file, including extension.
         !* fiun: Input file unit.
         !* fopen: Returns .true. if an input file for the variable has been opened.
-        character(20) :: id_var = ''
+        character(200) :: id_var = ''
         logical :: factive = .false.
         integer :: ffmt = 1
         character(200) :: fname = ''
