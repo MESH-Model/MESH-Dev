@@ -59,13 +59,16 @@ module print_routines
 
     !> Format constants (dates).
     character(len = *), parameter :: FMT_TIME_HMS = "(i2.2, ':', i2.2, ':', i2.2, '.000000')"
+    character(len = *), parameter :: FMT_TIME = FMT_TIME_HMS
     character(len = *), parameter :: FMT_DATE_DASHES_YMD = "(i4.4, '-', i2.2, '-', i2.2)"
     character(len = *), parameter :: FMT_DATETIME_DASHES_YMD = &
         "(i4.4, '-', i2.2, '-', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2, '.000000')"
     character(len = *), parameter :: FMT_DATE_SLASHES_YMD = "(i4.4, '/', i2.2, '/', i2.2)"
+    character(len = *), parameter :: FMT_DATE = FMT_DATE_SLASHES_YMD
     character(len = *), parameter :: FMT_DATETIME_SLASHES_YMD = &
         "(i4.4, '/', i2.2, '/', i2.2, 1x, i2.2, ':', i2.2, ':', i2.2, '.000000')"
     character(len = *), parameter :: FMT_DATE_SLASHES_YJD = "(i4.4, '/', i3.3)"
+    character(len = *), parameter :: FMT_DATE_YJD = FMT_DATE_SLASHES_YJD
 
     contains
 

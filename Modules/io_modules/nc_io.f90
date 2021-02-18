@@ -3577,7 +3577,7 @@ module nc_io
 
     subroutine nc4_get_data_1d_real( &
         iun, standard_name, vid, dat, &
-        start, &
+        start, quiet, &
         ierr)
 
         !> Input variables.
@@ -3589,22 +3589,39 @@ module nc_io
 
         !> Input variables (optional).
         integer, dimension(:), intent(in), optional :: start
+        logical, intent(in), optional :: quiet
 
         !> Output variables.
         integer, intent(out) :: ierr
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
+        logical :: q = .false.
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat, start = start)
+
+        !> Check for errors.
         if (ierr /= NF90_NOERR) then
-            write(code, FMT_GEN) ierr
-            call print_error( &
-                "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
-                trim(adjustl(code)) // ").")
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                if (ierr == NF90_EINVALCOORDS) then
+
+                    !> Generally signifies end of file (e.g., outside 'time' bound).
+                    call print_remark("Reached end of file reading '" // trim(standard_name) //"'.")
+                else
+
+                    !> Other read error (print generic message).
+                    write(code, FMT_GEN) ierr
+                    call print_error( &
+                        "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                        trim(adjustl(code)) // ").")
+                end if
+            end if
             ierr = 1
         else
+
+            !> No errors.
             ierr = 0
         end if
 
@@ -3612,7 +3629,7 @@ module nc_io
 
     subroutine nc4_get_data_1d_int( &
         iun, standard_name, vid, dat, &
-        start, &
+        start, quiet, &
         ierr)
 
         !> Input variables.
@@ -3621,6 +3638,7 @@ module nc_io
 
         !> Input variables (optional).
         integer, dimension(:), intent(in), optional :: start
+        logical, intent(in), optional :: quiet
 
         !> Input/output variables.
         integer, dimension(:) :: dat
@@ -3630,16 +3648,32 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
+        logical :: q = .false.
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat, start = start)
+
+        !> Check for errors.
         if (ierr /= NF90_NOERR) then
-            write(code, FMT_GEN) ierr
-            call print_error( &
-                "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
-                trim(adjustl(code)) // ").")
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                if (ierr == NF90_EINVALCOORDS) then
+
+                    !> Generally signifies end of file (e.g., outside 'time' bound).
+                    call print_remark("Reached end of file reading '" // trim(standard_name) //"'.")
+                else
+
+                    !> Other read error (print generic message).
+                    write(code, FMT_GEN) ierr
+                    call print_error( &
+                        "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                        trim(adjustl(code)) // ").")
+                end if
+            end if
             ierr = 1
         else
+
+            !> No errors.
             ierr = 0
         end if
 
@@ -3647,7 +3681,7 @@ module nc_io
 
     subroutine nc4_get_data_1d_char( &
         iun, standard_name, vid, dat, dim1_order, dim_char_order, &
-        start, &
+        start, quiet, &
         ierr)
 
         !> Input variables.
@@ -3656,6 +3690,7 @@ module nc_io
 
         !> Input variables (optional).
         integer, dimension(:), intent(in), optional :: start
+        logical, intent(in), optional :: quiet
 
         !> Input/output variables.
         character(len = *), dimension(:) :: dat
@@ -3665,22 +3700,40 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
+        logical :: q = .false.
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat, start = start)
+
+        !> Check for errors.
         if (ierr /= NF90_NOERR) then
-            write(code, FMT_GEN) ierr
-            call print_error( &
-                "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
-                trim(adjustl(code)) // ").")
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                if (ierr == NF90_EINVALCOORDS) then
+
+                    !> Generally signifies end of file (e.g., outside 'time' bound).
+                    call print_remark("Reached end of file reading '" // trim(standard_name) //"'.")
+                else
+
+                    !> Other read error (print generic message).
+                    write(code, FMT_GEN) ierr
+                    call print_error( &
+                        "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                        trim(adjustl(code)) // ").")
+                end if
+            end if
             ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
         end if
 
     end subroutine
 
     subroutine nc4_get_data_2d_real( &
         iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, &
-        start, &
+        start, quiet, &
         ierr)
 
         !> Input variables.
@@ -3689,6 +3742,7 @@ module nc_io
 
         !> Input variables (optional).
         integer, intent(in), optional :: start(:)
+        logical, intent(in), optional :: quiet
 
         !> Input/output variable.
         real dat(:, :)
@@ -3699,27 +3753,46 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         real, allocatable :: dat2(:, :)
+        logical :: q = .false.
+
+        !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
+        allocate(dat2(dim_lengths(1), dim_lengths(2)))
 
         !> Read variable.
-        allocate(dat2(dim_lengths(1), dim_lengths(2)))
         ierr = nf90_get_var(iun, vid, dat2, start = start)
-        if (ierr /= NF90_NOERR) then
-            write(code, FMT_GEN) ierr
-            call print_error( &
-                "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
-                trim(adjustl(code)) // ").")
-            ierr = 1
-            return
-        end if
 
-        !> Map variable.
-        call nc4_map_variable(iun, standard_name, dat, dat2, dim1_order, dim2_order, ierr)
+        !> Check for errors.
+        if (ierr /= NF90_NOERR) then
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                if (ierr == NF90_EINVALCOORDS) then
+
+                    !> Generally signifies end of file (e.g., outside 'time' bound).
+                    call print_remark("Reached end of file reading '" // trim(standard_name) //"'.")
+                else
+
+                    !> Other read error (print generic message).
+                    write(code, FMT_GEN) ierr
+                    call print_error( &
+                        "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                        trim(adjustl(code)) // ").")
+                end if
+            end if
+            ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
+
+            !> Map variable.
+            call nc4_map_variable(iun, standard_name, dat, dat2, dim1_order, dim2_order, ierr)
+        end if
 
     end subroutine
 
     subroutine nc4_get_data_2d_int( &
         iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, &
-        start, &
+        start, quiet, &
         ierr)
 
         !> Input variables.
@@ -3728,6 +3801,7 @@ module nc_io
 
         !> Input variables (optional).
         integer, intent(in), optional :: start(:)
+        logical, intent(in), optional :: quiet
 
         !> Input/output variable.
         integer dat(:, :)
@@ -3738,27 +3812,46 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         integer, allocatable :: dat2(:, :)
+        logical :: q = .false.
+
+        !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
+        allocate(dat2(dim_lengths(1), dim_lengths(2)))
 
         !> Read variable.
-        allocate(dat2(dim_lengths(1), dim_lengths(2)))
         ierr = nf90_get_var(iun, vid, dat2, start = start)
-        if (ierr /= NF90_NOERR) then
-            write(code, FMT_GEN) ierr
-            call print_error( &
-                "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
-                trim(adjustl(code)) // ").")
-            ierr = 1
-            return
-        end if
 
-        !> Map variable.
-        call nc4_map_variable(iun, standard_name, dat, dat2, dim1_order, dim2_order, ierr)
+        !> Check for errors.
+        if (ierr /= NF90_NOERR) then
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                if (ierr == NF90_EINVALCOORDS) then
+
+                    !> Generally signifies end of file (e.g., outside 'time' bound).
+                    call print_remark("Reached end of file reading '" // trim(standard_name) //"'.")
+                else
+
+                    !> Other read error (print generic message).
+                    write(code, FMT_GEN) ierr
+                    call print_error( &
+                        "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                        trim(adjustl(code)) // ").")
+                end if
+            end if
+            ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
+
+            !> Map variable.
+            call nc4_map_variable(iun, standard_name, dat, dat2, dim1_order, dim2_order, ierr)
+        end if
 
     end subroutine
 
     subroutine nc4_get_data_3d_real( &
         iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, &
-        start, &
+        start, quiet, &
         ierr)
 
         !> Input variables.
@@ -3767,6 +3860,7 @@ module nc_io
 
         !> Input variables (optional).
         integer, intent(in), optional :: start(:)
+        logical, intent(in), optional :: quiet
 
         !> Input/output variable.
         real dat(:, :, :)
@@ -3777,27 +3871,46 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         real, allocatable :: dat3(:, :, :)
+        logical :: q = .false.
+
+        !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
+        allocate(dat3(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
 
         !> Read variable.
-        allocate(dat3(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
         ierr = nf90_get_var(iun, vid, dat3, start = start)
-        if (ierr /= NF90_NOERR) then
-            write(code, FMT_GEN) ierr
-            call print_error( &
-                "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
-                trim(adjustl(code)) // ").")
-            ierr = 1
-            return
-        end if
 
-        !> Map variable.
-        call nc4_map_variable(iun, standard_name, dat, dat3, dim1_order, dim2_order, dim3_order, ierr)
+        !> Check for errors.
+        if (ierr /= NF90_NOERR) then
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                if (ierr == NF90_EINVALCOORDS) then
+
+                    !> Generally signifies end of file (e.g., outside 'time' bound).
+                    call print_remark("Reached end of file reading '" // trim(standard_name) //"'.")
+                else
+
+                    !> Other read error (print generic message).
+                    write(code, FMT_GEN) ierr
+                    call print_error( &
+                        "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                        trim(adjustl(code)) // ").")
+                end if
+            end if
+            ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
+
+            !> Map variable.
+            call nc4_map_variable(iun, standard_name, dat, dat3, dim1_order, dim2_order, dim3_order, ierr)
+        end if
 
     end subroutine
 
     subroutine nc4_get_data_3d_int( &
         iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, &
-        start, &
+        start, quiet, &
         ierr)
 
         !> Input variables.
@@ -3806,6 +3919,7 @@ module nc_io
 
         !> Input variables (optional).
         integer, intent(in), optional :: start(:)
+        logical, intent(in), optional :: quiet
 
         !> Input/output variable.
         integer dat(:, :, :)
@@ -3816,27 +3930,46 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         integer, allocatable :: dat3(:, :, :)
+        logical :: q = .false.
+
+        !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
+        allocate(dat3(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
 
         !> Read variable.
-        allocate(dat3(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
         ierr = nf90_get_var(iun, vid, dat3, start = start)
-        if (ierr /= NF90_NOERR) then
-            write(code, FMT_GEN) ierr
-            call print_error( &
-                "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
-                trim(adjustl(code)) // ").")
-            ierr = 1
-            return
-        end if
 
-        !> Map variable.
-        call nc4_map_variable(iun, standard_name, dat, dat3, dim1_order, dim2_order, dim3_order, ierr)
+        !> Check for errors.
+        if (ierr /= NF90_NOERR) then
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                if (ierr == NF90_EINVALCOORDS) then
+
+                    !> Generally signifies end of file (e.g., outside 'time' bound).
+                    call print_remark("Reached end of file reading '" // trim(standard_name) //"'.")
+                else
+
+                    !> Other read error (print generic message).
+                    write(code, FMT_GEN) ierr
+                    call print_error( &
+                        "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                        trim(adjustl(code)) // ").")
+                end if
+            end if
+            ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
+
+            !> Map variable.
+            call nc4_map_variable(iun, standard_name, dat, dat3, dim1_order, dim2_order, dim3_order, ierr)
+        end if
 
     end subroutine
 
     subroutine nc4_get_data_4d_real( &
         iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, &
-        start, &
+        start, quiet, &
         ierr)
 
         !> Input variables.
@@ -3845,6 +3978,7 @@ module nc_io
 
         !> Input variables (optional).
         integer, intent(in), optional :: start(:)
+        logical, intent(in), optional :: quiet
 
         !> Input/output variable.
         real dat(:, :, :, :)
@@ -3855,28 +3989,46 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         real, allocatable :: dat4(:, :, :, :)
+        logical :: q = .false.
+
+        !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
+        allocate(dat4(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
 
         !> Read variable.
-        allocate(dat4(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
         ierr = nf90_get_var(iun, vid, dat4, start = start)
-        if (ierr /= NF90_NOERR) then
-            write(code, FMT_GEN) ierr
-            call print_error( &
-                "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
-                trim(adjustl(code)) // ").")
-            ierr = 1
-            return
-        end if
 
-        !> Map variable.
-        call nc4_map_variable( &
-            iun, standard_name, dat, dat4, dim1_order, dim2_order, dim3_order, dim4_order, ierr)
+        !> Check for errors.
+        if (ierr /= NF90_NOERR) then
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                if (ierr == NF90_EINVALCOORDS) then
+
+                    !> Generally signifies end of file (e.g., outside 'time' bound).
+                    call print_remark("Reached end of file reading '" // trim(standard_name) //"'.")
+                else
+
+                    !> Other read error (print generic message).
+                    write(code, FMT_GEN) ierr
+                    call print_error( &
+                        "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                        trim(adjustl(code)) // ").")
+                end if
+            end if
+            ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
+
+            !> Map variable.
+            call nc4_map_variable(iun, standard_name, dat, dat4, dim1_order, dim2_order, dim3_order, dim4_order, ierr)
+        end if
 
     end subroutine
 
     subroutine nc4_get_data_4d_int( &
         iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, &
-        start, &
+        start, quiet, &
         ierr)
 
         !> Input variables.
@@ -3885,6 +4037,7 @@ module nc_io
 
         !> Input variables (optional).
         integer, intent(in), optional :: start(:)
+        logical, intent(in), optional :: quiet
 
         !> Input/output variable.
         integer dat(:, :, :, :)
@@ -3895,28 +4048,46 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         integer, allocatable :: dat4(:, :, :, :)
+        logical :: q = .false.
+
+        !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
+        allocate(dat4(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
 
         !> Read variable.
-        allocate(dat4(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
         ierr = nf90_get_var(iun, vid, dat4, start = start)
-        if (ierr /= NF90_NOERR) then
-            write(code, FMT_GEN) ierr
-            call print_error( &
-                "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
-                trim(adjustl(code)) // ").")
-            ierr = 1
-            return
-        end if
 
-        !> Map variable.
-        call nc4_map_variable( &
-            iun, standard_name, dat, dat4, dim1_order, dim2_order, dim3_order, dim4_order, ierr)
+        !> Check for errors.
+        if (ierr /= NF90_NOERR) then
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                if (ierr == NF90_EINVALCOORDS) then
+
+                    !> Generally signifies end of file (e.g., outside 'time' bound).
+                    call print_remark("Reached end of file reading '" // trim(standard_name) //"'.")
+                else
+
+                    !> Other read error (print generic message).
+                    write(code, FMT_GEN) ierr
+                    call print_error( &
+                        "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                        trim(adjustl(code)) // ").")
+                end if
+            end if
+            ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
+
+            !> Map variable.
+            call nc4_map_variable(iun, standard_name, dat, dat4, dim1_order, dim2_order, dim3_order, dim4_order, ierr)
+        end if
 
     end subroutine
 
     subroutine nc4_get_data_5d_real( &
         iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, &
-        start, &
+        start, quiet, &
         ierr)
 
         !> Input variables.
@@ -3925,6 +4096,7 @@ module nc_io
 
         !> Input variables (optional).
         integer, intent(in), optional :: start(:)
+        logical, intent(in), optional :: quiet
 
         !> Input/output variable.
         real dat(:, :, :, :, :)
@@ -3935,28 +4107,46 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         real, allocatable :: dat5(:, :, :, :, :)
+        logical :: q = .false.
+
+        !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
+        allocate(dat5(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4), dim_lengths(5)))
 
         !> Read variable.
-        allocate(dat5(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4), dim_lengths(5)))
         ierr = nf90_get_var(iun, vid, dat5, start = start)
-        if (ierr /= NF90_NOERR) then
-            write(code, FMT_GEN) ierr
-            call print_error( &
-                "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
-                trim(adjustl(code)) // ").")
-            ierr = 1
-            return
-        end if
 
-        !> Map variable.
-        call nc4_map_variable( &
-            iun, standard_name, dat, dat5, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, ierr)
+        !> Check for errors.
+        if (ierr /= NF90_NOERR) then
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                if (ierr == NF90_EINVALCOORDS) then
+
+                    !> Generally signifies end of file (e.g., outside 'time' bound).
+                    call print_remark("Reached end of file reading '" // trim(standard_name) //"'.")
+                else
+
+                    !> Other read error (print generic message).
+                    write(code, FMT_GEN) ierr
+                    call print_error( &
+                        "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                        trim(adjustl(code)) // ").")
+                end if
+            end if
+            ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
+
+            !> Map variable.
+            call nc4_map_variable(iun, standard_name, dat, dat5, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, ierr)
+        end if
 
     end subroutine
 
     subroutine nc4_get_data_5d_int( &
         iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, &
-        start, &
+        start, quiet, &
         ierr)
 
         !> Input variables.
@@ -3965,6 +4155,7 @@ module nc_io
 
         !> Input variables (optional).
         integer, intent(in), optional :: start(:)
+        logical, intent(in), optional :: quiet
 
         !> Input/output variable.
         integer dat(:, :, :, :, :)
@@ -3975,22 +4166,40 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         integer, allocatable :: dat5(:, :, :, :, :)
+        logical :: q = .false.
+
+        !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
+        allocate(dat5(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4), dim_lengths(5)))
 
         !> Read variable.
-        allocate(dat5(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4), dim_lengths(5)))
         ierr = nf90_get_var(iun, vid, dat5, start = start)
-        if (ierr /= NF90_NOERR) then
-            write(code, FMT_GEN) ierr
-            call print_error( &
-                "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
-                trim(adjustl(code)) // ").")
-            ierr = 1
-            return
-        end if
 
-        !> Map variable.
-        call nc4_map_variable( &
-            iun, standard_name, dat, dat5, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, ierr)
+        !> Check for errors.
+        if (ierr /= NF90_NOERR) then
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                if (ierr == NF90_EINVALCOORDS) then
+
+                    !> Generally signifies end of file (e.g., outside 'time' bound).
+                    call print_remark("Reached end of file reading '" // trim(standard_name) //"'.")
+                else
+
+                    !> Other read error (print generic message).
+                    write(code, FMT_GEN) ierr
+                    call print_error( &
+                        "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                        trim(adjustl(code)) // ").")
+                end if
+            end if
+            ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
+
+            !> Map variable.
+            call nc4_map_variable(iun, standard_name, dat, dat5, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, ierr)
+        end if
 
     end subroutine
 

@@ -717,7 +717,7 @@ module climate_forcing_io
 !-                    end if
                     call nc4_get_data( &
                         cm%dat(vid)%fiun, cm%dat(vid)%id_var, cm%dat(vid)%vid, dat3, cm%dat(vid)%dim_length, &
-                        cm%dat(vid)%ncol_lon, cm%dat(vid)%ncol_lat, cm%dat(vid)%ncol_time, start3, ierr = ierr)
+                        cm%dat(vid)%ncol_lon, cm%dat(vid)%ncol_lat, cm%dat(vid)%ncol_time, start3, quiet = .true., ierr = ierr)
                     if (ierr /= 0) goto 999
 
                     !> Map and save values from the temporary array.
@@ -787,7 +787,7 @@ module climate_forcing_io
                     !> Read data.
                     call nc4_get_data( &
                         cm%dat(vid)%fiun, cm%dat(vid)%id_var, cm%dat(vid)%vid, dat2, cm%dat(vid)%dim_length, &
-                        cm%dat(vid)%ncol_lon, cm%dat(vid)%ncol_time, start2, ierr = ierr)
+                        cm%dat(vid)%ncol_lon, cm%dat(vid)%ncol_time, start2, quiet = .true., ierr = ierr)
                     if (ierr /= 0) goto 999
 
                     !> Transfer values.
