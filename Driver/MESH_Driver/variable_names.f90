@@ -37,16 +37,16 @@ module variable_names
     character(len = *), parameter :: VN_TA = 'TA'
     character(len = *), parameter :: VN_QA = 'QA'
     character(len = *), parameter :: VN_PRES = 'PRES'
-    character(len = *), parameter :: VN_UV = 'UV'
-    character(len = *), parameter :: VN_WDIR = 'WDIR'
     character(len = *), parameter :: VN_UU = 'UU'
     character(len = *), parameter :: VN_VV = 'VV'
-    character(len = *), parameter :: VN_PRE = 'PRE'
+    character(len = *), parameter :: VN_UV = 'UV'
+    character(len = *), parameter :: VN_WDIR = 'WDIR'
     character(len = *), parameter :: VN_PRERN = 'PRERN'
     character(len = *), parameter :: VN_PRESNO = 'PRESNO'
-    character(len = *), parameter :: VN_PREC = 'PREC'
+    character(len = *), parameter :: VN_PRE = 'PRE'
     character(len = *), parameter :: VN_PRECRN = 'PRECRN'
     character(len = *), parameter :: VN_PRECSNO = 'PRECSNO'
+    character(len = *), parameter :: VN_PREC = 'PREC'
 
     !> Canopy variables.
     character(len = *), parameter :: VN_LQWSCAN = 'LQWSCAN'
@@ -56,13 +56,13 @@ module variable_names
     character(len = *), parameter :: VN_GRO = 'GRO'
 
     !> Snow variables.
+    character(len = *), parameter :: VN_FSNO = 'FSNO'
     character(len = *), parameter :: VN_SNO = 'SNO'
     character(len = *), parameter :: VN_RHOSNO = 'RHOSNO'
     character(len = *), parameter :: VN_ZSNO = 'ZSNO'
-    character(len = *), parameter :: VN_FSNO = 'FSNO'
-    character(len = *), parameter :: VN_ALBSNO = 'ALBSNO'
     character(len = *), parameter :: VN_LQWSSNO = 'LQWSSNO'
     character(len = *), parameter :: VN_TSNO = 'TSNO'
+    character(len = *), parameter :: VN_ALBSNO = 'ALBSNO'
     character(len = *), parameter :: VN_DRAINSNO = 'DRAINSNO'
 
     !> Surface variables.

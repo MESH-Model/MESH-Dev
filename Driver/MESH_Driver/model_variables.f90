@@ -62,13 +62,13 @@ module model_variables
         !* ta: Air temperature (at user-specified reference height). [K].
         !* qa: Specific humidity (at user-specificed reference height). [kg kg**-1].
         !* pres: Air pressure at the surface. [Pa].
-        !* uv: Wind speed (at user-specified reference height). [m s**-1].
-        !* wdir: Wind direction (at user-specified referenced height). [degrees].
         !* uu: U-component of wind speed (at user-specified reference height). [m s**-1].
         !* vv: V-component of wind speed (at user-specified reference height). [m s**-1].
-        !* pre: Total incoming precipitation rate. [kg m**-2 s**-1].
+        !* uv: Wind speed (at user-specified reference height). [m s**-1].
+        !* wdir: Wind direction (at user-specified referenced height). [degrees].
         !* prern: Total incoming liquid precipitation rate. [kg m**-2 s**-1].
         !* presno: Total incoming solid precipitation rate. [kg m**-2 s**-1].
+        !* pre: Total incoming precipitation rate. [kg m**-2 s**-1].
         real, dimension(:), pointer :: fsin => null()
         real, dimension(:), pointer :: fsdr => null()
         real, dimension(:), pointer :: fsdff => null()
@@ -76,13 +76,13 @@ module model_variables
         real, dimension(:), pointer :: ta => null()
         real, dimension(:), pointer :: qa => null()
         real, dimension(:), pointer :: pres => null()
-        real, dimension(:), pointer :: uv => null()
-        real, dimension(:), pointer :: wdir => null()
         real, dimension(:), pointer :: uu => null()
         real, dimension(:), pointer :: vv => null()
-        real, dimension(:), pointer :: pre => null()
+        real, dimension(:), pointer :: uv => null()
+        real, dimension(:), pointer :: wdir => null()
         real, dimension(:), pointer :: prern => null()
         real, dimension(:), pointer :: presno => null()
+        real, dimension(:), pointer :: pre => null()
 
         !* lqwscan: Liquid water interception in the canopy. [kg m**-2].
         !* fzwscan: Frozen water interception in the canopy. [kg m**-2].
@@ -99,21 +99,21 @@ module model_variables
         real, dimension(:), pointer :: tcan => null()
         real, dimension(:), pointer :: gro => null()
 
+        !* fsno: Fraction of fully snow covered area. [fraction].
         !* sno: Snow mass. [kg m**-2].
         !* rhosno: Snow density. [kg m**-3].
         !* zsno: Snow depth. [m].
-        !* fsno: Fraction of fully snow covered area. [fraction].
-        !* albsno: Snow albedo. [fraction].
         !* lqwssno: Liquid water content of the snow. [kg m**-2].
         !* tsno: Snowpack temperature. [K].
+        !* albsno: Snow albedo. [fraction].
         !* drainsno: Drainage from the bottom of the snowpack (runoff rate). [kg m**-2 s**-1].
+        real, dimension(:), pointer :: fsno => null()
         real, dimension(:), pointer :: sno => null()
         real, dimension(:), pointer :: rhosno => null()
 !-        real, dimension(:), pointer :: zsno => null()
-        real, dimension(:), pointer :: fsno => null()
-        real, dimension(:), pointer :: albsno => null()
         real, dimension(:), pointer :: lqwssno => null()
         real, dimension(:), pointer :: tsno => null()
+        real, dimension(:), pointer :: albsno => null()
         real, dimension(:), pointer :: drainsno => null()
 
         !* albt: Total albedo of the surface (visible and near-infrared). [fraction].
@@ -151,8 +151,7 @@ module model_variables
         real, dimension(:), pointer :: gzero => null()
         real, dimension(:, :), pointer :: tsfs => null()
 
-        !* ggeo: Geothermal heat flux. [W m**-2].
-        !* tbas: Temperature of bedrock in third soil layer. [K].
+        !* dzwat: Permeable thickness of the soil layer. [m].
         !* thlqsol: Volumetric liquid water content of the soil. [m3 m**-3].
         !* thicsol: Volumetric frozen water content of the soil. [m3 m**-3].
         !* lqwssol: Liquid water storage in the soil. [kg m**-2].
@@ -160,11 +159,11 @@ module model_variables
         !* tsol: Temperature of the soil. [K].
         !* gflx: Heat conduction between soil layers. [W m**-2].
         !* latflw: Interflow runoff rate. [kg m**-2 s**-1].
-        !* dzwat: Permeable thickness of the soil layer. [m].
         !* zbotwat: Permeable depth of the soil layer. [m].
+        !* ggeo: Geothermal heat flux. [W m**-2].
+        !* tbas: Temperature of bedrock in third soil layer. [K].
         !* drainsol: Drainage from the bottom of the permeable soil column (runoff rate). [kg m**-2 s**-1].
-        real, dimension(:), pointer :: ggeo => null()
-        real, dimension(:), pointer :: tbas => null()
+        real, dimension(:, :), pointer :: dzwat => null()
         real, dimension(:, :), pointer :: thlqsol => null()
         real, dimension(:, :), pointer :: thicsol => null()
 !-        real, dimension(:, :), pointer :: lqwssol => null()
@@ -172,8 +171,9 @@ module model_variables
         real, dimension(:, :), pointer :: tsol => null()
         real, dimension(:, :), pointer :: gflx => null()
         real, dimension(:, :), pointer :: latflw => null()
-        real, dimension(:, :), pointer :: dzwat => null()
         real, dimension(:, :), pointer :: zbotwat => null()
+        real, dimension(:), pointer :: ggeo => null()
+        real, dimension(:), pointer :: tbas => null()
         real, dimension(:), pointer :: drainsol => null()
 
         !* rchg: Drainage into groundwater/lower zone storage. [mm].
@@ -247,13 +247,13 @@ module model_variables
         if (associated(group%ta)) group%ta = 0.0
         if (associated(group%qa)) group%qa = 0.0
         if (associated(group%pres)) group%pres = 0.0
-        if (associated(group%uv)) group%uv = 0.0
-        if (associated(group%wdir)) group%wdir = 0.0
         if (associated(group%uu)) group%uu = 0.0
         if (associated(group%vv)) group%vv = 0.0
-        if (associated(group%pre)) group%pre = 0.0
+        if (associated(group%uv)) group%uv = 0.0
+        if (associated(group%wdir)) group%wdir = 0.0
         if (associated(group%prern)) group%prern = 0.0
         if (associated(group%presno)) group%presno = 0.0
+        if (associated(group%pre)) group%pre = 0.0
         if (associated(group%lqwscan)) group%lqwscan = 0.0
         if (associated(group%fzwscan)) group%fzwscan = 0.0
         if (associated(group%cmas)) group%cmas = 0.0
@@ -261,13 +261,13 @@ module model_variables
         if (associated(group%qacan)) group%qacan = 0.0
         if (associated(group%tcan)) group%tcan = 0.0
         if (associated(group%gro)) group%gro = 0.0
-!-        if (associated(group%zsno)) group%zsno = 0.0
-        if (associated(group%rhosno)) group%rhosno = 0.0
-        if (associated(group%sno)) group%sno = 0.0
         if (associated(group%fsno)) group%fsno = 0.0
-        if (associated(group%albsno)) group%albsno = 0.0
+        if (associated(group%sno)) group%sno = 0.0
+        if (associated(group%rhosno)) group%rhosno = 0.0
+!-        if (associated(group%zsno)) group%zsno = 0.0
         if (associated(group%lqwssno)) group%lqwssno = 0.0
         if (associated(group%tsno)) group%tsno = 0.0
+        if (associated(group%albsno)) group%albsno = 0.0
         if (associated(group%drainsno)) group%drainsno = 0.0
         if (associated(group%albt)) group%albt = 0.0
         if (associated(group%alvs)) group%alvs = 0.0
@@ -286,8 +286,7 @@ module model_variables
         if (associated(group%qsens)) group%qsens = 0.0
         if (associated(group%gzero)) group%gzero = 0.0
         if (associated(group%tsfs)) group%tsfs = 0.0
-        if (associated(group%ggeo)) group%ggeo = 0.0
-        if (associated(group%tbas)) group%tbas = 0.0
+        if (associated(group%dzwat)) group%dzwat = 0.0
         if (associated(group%thlqsol)) group%thlqsol = 0.0
         if (associated(group%thicsol)) group%thicsol = 0.0
 !-        if (associated(group%lqwssol)) group%lqwssol = 0.0
@@ -295,8 +294,9 @@ module model_variables
         if (associated(group%tsol)) group%tsol = 0.0
         if (associated(group%gflx)) group%gflx = 0.0
         if (associated(group%latflw)) group%latflw = 0.0
-        if (associated(group%dzwat)) group%dzwat = 0.0
         if (associated(group%zbotwat)) group%zbotwat = 0.0
+        if (associated(group%ggeo)) group%ggeo = 0.0
+        if (associated(group%tbas)) group%tbas = 0.0
         if (associated(group%drainsol)) group%drainsol = 0.0
         if (associated(group%rchg)) group%rchg = 0.0
         if (associated(group%stggw)) group%stggw = 0.0
@@ -388,13 +388,13 @@ module model_variables
         allocate(group%ta(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qa(n), stat = z); if (z /= 0) ierr = z
         allocate(group%pres(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%uv(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%wdir(n), stat = z); if (z /= 0) ierr = z
         allocate(group%uu(n), stat = z); if (z /= 0) ierr = z
         allocate(group%vv(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%pre(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%uv(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%wdir(n), stat = z); if (z /= 0) ierr = z
         allocate(group%prern(n), stat = z); if (z /= 0) ierr = z
         allocate(group%presno(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%pre(n), stat = z); if (z /= 0) ierr = z
         allocate(group%lqwscan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%fzwscan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%cmas(n), stat = z); if (z /= 0) ierr = z
@@ -402,13 +402,13 @@ module model_variables
         allocate(group%qacan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tcan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%gro(n), stat = z); if (z /= 0) ierr = z
-!-        allocate(group%zsno(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%rhosno(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%sno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%fsno(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%albsno(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%sno(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%rhosno(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%zsno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%lqwssno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tsno(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%albsno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%drainsno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%albt(n), stat = z); if (z /= 0) ierr = z
         allocate(group%alvs(n), stat = z); if (z /= 0) ierr = z
@@ -427,8 +427,7 @@ module model_variables
         allocate(group%qsens(n), stat = z); if (z /= 0) ierr = z
         allocate(group%gzero(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tsfs(n, 4), stat = z); if (z /= 0) ierr = z
-        allocate(group%ggeo(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%tbas(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%dzwat(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%thlqsol(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%thicsol(n, nsl), stat = z); if (z /= 0) ierr = z
 !-        allocate(group%lqwssol(n, nsl), stat = z); if (z /= 0) ierr = z
@@ -436,8 +435,9 @@ module model_variables
         allocate(group%tsol(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%gflx(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%latflw(n, nsl), stat = z); if (z /= 0) ierr = z
-        allocate(group%dzwat(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%zbotwat(n, nsl), stat = z); if (z /= 0) ierr = z
+        allocate(group%ggeo(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%tbas(n), stat = z); if (z /= 0) ierr = z
         allocate(group%drainsol(n), stat = z); if (z /= 0) ierr = z
         allocate(group%rchg(n), stat = z); if (z /= 0) ierr = z
         allocate(group%stggw(n), stat = z); if (z /= 0) ierr = z
