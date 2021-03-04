@@ -1191,7 +1191,7 @@ module save_basin_output
         call output_variables_activate( &
             series%basin, (/ &
                 VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
-                VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_DZS, VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, &
+                VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, &
                 VN_STGW /))
 
     end subroutine
@@ -1358,7 +1358,7 @@ module save_basin_output
                 VN_LQWSSOL // trim(adjustl(ffmti)), VN_FZWSSOL // trim(adjustl(ffmti)), &
                 VN_ALWSSOL // trim(adjustl(ffmti))
         end do
-        write(fik, 1010) VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, VN_STGGW, VN_DZS, VN_STGW, VN_DSTGW
+        write(fik, 1010) VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, VN_STGGW, 'DZS', VN_STGW, VN_DSTGW
 
 1010    format(9999(g15.7e2, ','))
 
@@ -1410,7 +1410,7 @@ module save_basin_output
             sum(series%basin%lqwssol(ina, :)), &
             sum(series%basin%fzwssol(ina, :)), &
             sum(series%basin%alwssol(ina, :)), &
-            series%basin%stggw(ina), series%basin%dzs(ina), &
+            series%basin%stggw(ina), 0.0, &
             series%basin%stgw(ina), &
             series%basin%dstgw(ina)
 

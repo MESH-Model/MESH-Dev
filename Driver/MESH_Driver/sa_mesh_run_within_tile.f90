@@ -150,15 +150,15 @@ module sa_mesh_run_within_tile
             i = i + 1
 
             !> Snow variables.
-            allocate(sno(8*iin))
+            allocate(sno(7*iin))
             sno((1 + iin*0):(iin*1)) = vs%tile%sno(ii1:ii2)
             sno((1 + iin*1):(iin*2)) = vs%tile%rhosno(ii1:ii2)
-            sno((1 + iin*2):(iin*3)) = vs%tile%zsno(ii1:ii2)
-            sno((1 + iin*3):(iin*4)) = vs%tile%fsno(ii1:ii2)
-            sno((1 + iin*4):(iin*5)) = vs%tile%albsno(ii1:ii2)
-            sno((1 + iin*5):(iin*6)) = vs%tile%lqwssno(ii1:ii2)
-            sno((1 + iin*6):(iin*7)) = vs%tile%tsno(ii1:ii2)
-            sno((1 + iin*7):(iin*8)) = vs%tile%drainsno(ii1:ii2)
+!-            sno((1 + iin*2):(iin*3)) = vs%tile%zsno(ii1:ii2)
+            sno((1 + iin*2):(iin*3)) = vs%tile%fsno(ii1:ii2)
+            sno((1 + iin*3):(iin*4)) = vs%tile%albsno(ii1:ii2)
+            sno((1 + iin*4):(iin*5)) = vs%tile%lqwssno(ii1:ii2)
+            sno((1 + iin*5):(iin*6)) = vs%tile%tsno(ii1:ii2)
+            sno((1 + iin*6):(iin*7)) = vs%tile%drainsno(ii1:ii2)
             call MPI_Isend(sno, size(sno), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
@@ -199,10 +199,10 @@ module sa_mesh_run_within_tile
             i = i + 1
 
             !> Groundwater/lower zone storage variables.
-            allocate(lz(3*iin))
+            allocate(lz(2*iin))
             lz((1 + iin*0):(iin*1)) = vs%tile%rchg(ii1:ii2)
             lz((1 + iin*1):(iin*2)) = vs%tile%stggw(ii1:ii2)
-            lz((1 + iin*2):(iin*3)) = vs%tile%dzs(ii1:ii2)
+!-            lz((1 + iin*2):(iin*3)) = vs%tile%dzs(ii1:ii2)
             call MPI_Isend(lz, size(lz), c, 0, t + i, MPI_COMM_WORLD, irqst(i), z)
             i = i + 1
 
@@ -232,10 +232,10 @@ module sa_mesh_run_within_tile
                 !> Allocate temporary arrays.
                 allocate(met(2*iin))
                 allocate(cnpy(7*iin))
-                allocate(sno(8*iin))
+                allocate(sno(7*iin))
                 allocate(sfc((13 + 1*4)*iin))
                 allocate(sl((3 + 5*s)*iin))
-                allocate(lz(3*iin))
+                allocate(lz(2*iin))
 
                 !> Reset the exchange variables.
                 irqst = MPI_REQUEST_NULL
@@ -278,12 +278,12 @@ module sa_mesh_run_within_tile
                 !> Snow variables.
                 vs%tile%sno(ii1:ii2) = sno((1 + iin*0):(iin*1))
                 vs%tile%rhosno(ii1:ii2) = sno((1 + iin*1):(iin*2))
-                vs%tile%zsno(ii1:ii2) = sno((1 + iin*2):(iin*3))
-                vs%tile%fsno(ii1:ii2) = sno((1 + iin*3):(iin*4))
-                vs%tile%albsno(ii1:ii2) = sno((1 + iin*4):(iin*5))
-                vs%tile%lqwssno(ii1:ii2) = sno((1 + iin*5):(iin*6))
-                vs%tile%tsno(ii1:ii2) = sno((1 + iin*6):(iin*7))
-                vs%tile%drainsno(ii1:ii2) = sno((1 + iin*7):(iin*8))
+!-                vs%tile%zsno(ii1:ii2) = sno((1 + iin*2):(iin*3))
+                vs%tile%fsno(ii1:ii2) = sno((1 + iin*2):(iin*3))
+                vs%tile%albsno(ii1:ii2) = sno((1 + iin*3):(iin*4))
+                vs%tile%lqwssno(ii1:ii2) = sno((1 + iin*4):(iin*5))
+                vs%tile%tsno(ii1:ii2) = sno((1 + iin*5):(iin*6))
+                vs%tile%drainsno(ii1:ii2) = sno((1 + iin*6):(iin*7))
 
                 !> Surface variables.
                 vs%tile%albt(ii1:ii2) = sfc((1 + iin*0):(iin*1))
@@ -318,7 +318,7 @@ module sa_mesh_run_within_tile
                 !> Groundwater/lower zone storage variables.
                 vs%tile%rchg(ii1:ii2) = lz((1 + iin*0):(iin*1))
                 vs%tile%stggw(ii1:ii2) = lz((1 + iin*1):(iin*2))
-                vs%tile%dzs(ii1:ii2) = lz((1 + iin*2):(iin*3))
+!-                vs%tile%dzs(ii1:ii2) = lz((1 + iin*2):(iin*3))
 
                 !> Deallocate temporary arrays.
                 deallocate(met, cnpy, sno, sfc, sl, lz)
@@ -443,7 +443,7 @@ module sa_mesh_run_within_tile
 !        if (associated(vs%tile%gro)) vs%tile%gro(il1:il2) = 0.0
 !        if (associated(vs%tile%sno)) vs%tile%sno(il1:il2) = 0.0
 !        if (associated(vs%tile%rhosno)) vs%tile%rhosno(il1:il2) = 0.0
-        if (associated(vs%tile%zsno)) vs%tile%zsno(il1:il2) = 0.0
+!-        if (associated(vs%tile%zsno)) vs%tile%zsno(il1:il2) = 0.0
         if (associated(vs%tile%fsno)) vs%tile%fsno(il1:il2) = 0.0
 !        if (associated(vs%tile%albsno)) vs%tile%albsno(il1:il2) = 0.0
 !        if (associated(vs%tile%lqwssno)) vs%tile%lqwssno(il1:il2) = 0.0
@@ -454,13 +454,13 @@ module sa_mesh_run_within_tile
         if (associated(vs%tile%alir)) vs%tile%alir(il1:il2) = 0.0
         if (associated(vs%tile%gte)) vs%tile%gte(il1:il2) = 0.0
 !        if (associated(vs%tile%zpnd)) vs%tile%zpnd(il1:il2) = 0.0
-        if (associated(vs%tile%lqwspnd)) vs%tile%lqwspnd(il1:il2) = 0.0
+!-        if (associated(vs%tile%lqwspnd)) vs%tile%lqwspnd(il1:il2) = 0.0
 !        if (associated(vs%tile%tpnd)) vs%tile%tpnd(il1:il2) = 0.0
         if (associated(vs%tile%fstr)) vs%tile%fstr(il1:il2) = 0.0
         if (associated(vs%tile%potevp)) vs%tile%potevp(il1:il2) = 0.0
         if (associated(vs%tile%et)) vs%tile%et(il1:il2) = 0.0
-        if (associated(vs%tile%evpb)) vs%tile%evpb(il1:il2) = 0.0
-        if (associated(vs%tile%arrd)) vs%tile%arrd(il1:il2) = 0.0
+!-        if (associated(vs%tile%evpb)) vs%tile%evpb(il1:il2) = 0.0
+!-        if (associated(vs%tile%arrd)) vs%tile%arrd(il1:il2) = 0.0
         if (associated(vs%tile%ovrflw)) vs%tile%ovrflw(il1:il2) = 0.0
         if (associated(vs%tile%qevp)) vs%tile%qevp(il1:il2) = 0.0
         if (associated(vs%tile%qsens)) vs%tile%qsens(il1:il2) = 0.0
@@ -470,8 +470,8 @@ module sa_mesh_run_within_tile
 !        if (associated(vs%tile%tbas)) vs%tile%tbas(il1:il2) = 0.0
 !        if (associated(vs%tile%thlqsol)) vs%tile%thlqsol(il1:il2, :) = 0.0
 !        if (associated(vs%tile%thicsol)) vs%tile%thicsol(il1:il2, :) = 0.0
-        if (associated(vs%tile%lqwssol)) vs%tile%lqwssol(il1:il2, :) = 0.0
-        if (associated(vs%tile%fzwssol)) vs%tile%fzwssol(il1:il2, :) = 0.0
+!-        if (associated(vs%tile%lqwssol)) vs%tile%lqwssol(il1:il2, :) = 0.0
+!-        if (associated(vs%tile%fzwssol)) vs%tile%fzwssol(il1:il2, :) = 0.0
 !        if (associated(vs%tile%tsol)) vs%tile%tsol(il1:il2, :) = 0.0
         if (associated(vs%tile%gflx)) vs%tile%gflx(il1:il2, :) = 0.0
         if (associated(vs%tile%latflw)) vs%tile%latflw(il1:il2, :) = 0.0
@@ -480,9 +480,9 @@ module sa_mesh_run_within_tile
         if (associated(vs%tile%drainsol)) vs%tile%drainsol(il1:il2) = 0.0
         if (associated(vs%tile%rchg)) vs%tile%rchg(il1:il2) = 0.0
 !        if (associated(vs%tile%stggw)) vs%tile%stggw(il1:il2) = 0.0
-!        if (associated(vs%tile%dzs)) vs%tile%dzs(il1:il2) = 0.0
-        if (associated(vs%tile%stge)) vs%tile%stge(il1:il2) = 0.0
-        if (associated(vs%tile%stgw)) vs%tile%stgw(il1:il2) = 0.0
+!-       if (associated(vs%tile%dzs)) vs%tile%dzs(il1:il2) = 0.0
+!-        if (associated(vs%tile%stge)) vs%tile%stge(il1:il2) = 0.0
+!-        if (associated(vs%tile%stgw)) vs%tile%stgw(il1:il2) = 0.0
         if (associated(vs%tile%rff)) vs%tile%rff(il1:il2) = 0.0
         if (associated(vs%tile%qi)) vs%tile%qi(il1:il2) = 0.0
         if (associated(vs%tile%qo)) vs%tile%qo(il1:il2) = 0.0
@@ -514,11 +514,11 @@ module sa_mesh_run_within_tile
             if (associated(vs%tile%tsno)) then
                 where (vs%tile%sno(il1:il2) == 0.0) vs%tile%tsno(il1:il2) = 0.0
             end if
-            if (associated(vs%tile%zsno) .and. associated(vs%tile%rhosno)) then
-                if (all(vs%tile%zsno(il1:il2) == 0.0)) then
-                    where (vs%tile%rhosno(il1:il2) > 0.0) vs%tile%zsno(il1:il2) = vs%tile%sno(il1:il2)/vs%tile%rhosno(il1:il2)
-                end if
-            end if
+!-            if (associated(vs%tile%zsno) .and. associated(vs%tile%rhosno)) then
+!-                if (all(vs%tile%zsno(il1:il2) == 0.0)) then
+!-                    where (vs%tile%rhosno(il1:il2) > 0.0) vs%tile%zsno(il1:il2) = vs%tile%sno(il1:il2)/vs%tile%rhosno(il1:il2)
+!-                end if
+!-            end if
         end if
         if (associated(vs%tile%albt) .and. associated(vs%tile%alvs) .and. associated(vs%tile%alir)) then
             if (all(vs%tile%albt(il1:il2) == 0.0)) then
@@ -530,35 +530,35 @@ module sa_mesh_run_within_tile
             end if
         end if
         if (associated(vs%tile%zpnd)) then
-            if (associated(vs%tile%lqwspnd)) vs%tile%lqwspnd(il1:il2) = vs%tile%zpnd(il1:il2)*RHOW
+!-            if (associated(vs%tile%lqwspnd)) vs%tile%lqwspnd(il1:il2) = vs%tile%zpnd(il1:il2)*RHOW
             if (associated(vs%tile%tpnd)) then
                 where (vs%tile%zpnd(il1:il2) == 0.0) vs%tile%tpnd(il1:il2) = 0.0
             end if
         end if
-        if (associated(vs%tile%et)) then
-            if (associated(vs%tile%evpb) .and. associated(vs%tile%potevp)) then
-                where (vs%tile%et(il1:il2) > 0.0 .and. vs%tile%potevp(il1:il2) /= 0.0)
-                    vs%tile%evpb(il1:il2) = vs%tile%et(il1:il2)/vs%tile%potevp(il1:il2)
-                elsewhere
-                    vs%tile%evpb(il1:il2) = 0.0
-                end where
-            end if
-            if (associated(vs%tile%arrd) .and. associated(vs%tile%pre)) then
-                where (vs%tile%potevp(il1:il2) /= 0.0)
-                    vs%tile%arrd(il1:il2) = vs%tile%pre(il1:il2)/vs%tile%potevp(il1:il2)
-                elsewhere
-                    vs%tile%arrd(il1:il2) = 0.0
-                end where
-            end if
-        end if
-        if (associated(vs%tile%dzwat)) then
-            if (associated(vs%tile%lqwssol) .and. associated(vs%tile%thlqsol)) then
-                vs%tile%lqwssol(il1:il2, :) = vs%tile%thlqsol(il1:il2, :)*vs%tile%dzwat(il1:il2, :)*RHOW
-            end if
-            if (associated(vs%tile%fzwssol) .and. associated(vs%tile%thicsol)) then
-                vs%tile%fzwssol(il1:il2, :) = vs%tile%thicsol(il1:il2, :)*vs%tile%dzwat(il1:il2, :)*RHOICE
-            end if
-        end if
+!-        if (associated(vs%tile%et)) then
+!-            if (associated(vs%tile%evpb) .and. associated(vs%tile%potevp)) then
+!-                where (vs%tile%et(il1:il2) > 0.0 .and. vs%tile%potevp(il1:il2) /= 0.0)
+!-                    vs%tile%evpb(il1:il2) = vs%tile%et(il1:il2)/vs%tile%potevp(il1:il2)
+!-                elsewhere
+!-                    vs%tile%evpb(il1:il2) = 0.0
+!-                end where
+!-            end if
+!-            if (associated(vs%tile%arrd) .and. associated(vs%tile%pre)) then
+!-                where (vs%tile%potevp(il1:il2) /= 0.0)
+!-                    vs%tile%arrd(il1:il2) = vs%tile%pre(il1:il2)/vs%tile%potevp(il1:il2)
+!-                elsewhere
+!-                    vs%tile%arrd(il1:il2) = 0.0
+!-                end where
+!-            end if
+!-        end if
+!-        if (associated(vs%tile%dzwat)) then
+!-            if (associated(vs%tile%lqwssol) .and. associated(vs%tile%thlqsol)) then
+!-                vs%tile%lqwssol(il1:il2, :) = vs%tile%thlqsol(il1:il2, :)*vs%tile%dzwat(il1:il2, :)*RHOW
+!-            end if
+!-            if (associated(vs%tile%fzwssol) .and. associated(vs%tile%thicsol)) then
+!-                vs%tile%fzwssol(il1:il2, :) = vs%tile%thicsol(il1:il2, :)*vs%tile%dzwat(il1:il2, :)*RHOICE
+!-            end if
+!-        end if
 
     end subroutine
 

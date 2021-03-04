@@ -60,6 +60,7 @@ module variable_names
     character(len = *), parameter :: VN_RHOSNO = 'RHOSNO'
     character(len = *), parameter :: VN_ZSNO = 'ZSNO'
     character(len = *), parameter :: VN_FSNO = 'FSNO'
+    character(len = *), parameter :: VN_ALBSNO = 'ALBSNO'
     character(len = *), parameter :: VN_LQWSSNO = 'LQWSSNO'
     character(len = *), parameter :: VN_TSNO = 'TSNO'
     character(len = *), parameter :: VN_DRAINSNO = 'DRAINSNO'
@@ -95,7 +96,7 @@ module variable_names
     !> Groundwater/lower zone storage variables.
     character(len = *), parameter :: VN_RCHG = 'RCHG'
     character(len = *), parameter :: VN_STGGW = 'STGGW'
-    character(len = *), parameter :: VN_DZS = 'DZS'
+!-    character(len = *), parameter :: VN_DZS = 'DZS'
 
     !> Diagnostic variables.
     character(len = *), parameter :: VN_STGE = 'STGE'

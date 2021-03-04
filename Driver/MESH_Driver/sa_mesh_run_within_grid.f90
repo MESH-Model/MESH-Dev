@@ -270,7 +270,7 @@ module sa_mesh_run_within_grid
         if (associated(vs%grid%gro)) vs%grid%gro(i1:i2) = 0.0
         if (associated(vs%grid%sno)) vs%grid%sno(i1:i2) = 0.0
         if (associated(vs%grid%rhosno)) vs%grid%rhosno(i1:i2) = 0.0
-        if (associated(vs%grid%zsno)) vs%grid%zsno(i1:i2) = 0.0
+!-        if (associated(vs%grid%zsno)) vs%grid%zsno(i1:i2) = 0.0
         if (associated(vs%grid%fsno)) vs%grid%fsno(i1:i2) = 0.0
         if (associated(vs%grid%albsno)) vs%grid%albsno(i1:i2) = 0.0
         if (associated(vs%grid%lqwssno)) vs%grid%lqwssno(i1:i2) = 0.0
@@ -281,13 +281,13 @@ module sa_mesh_run_within_grid
         if (associated(vs%grid%alir)) vs%grid%alir(i1:i2) = 0.0
         if (associated(vs%grid%gte)) vs%grid%gte(i1:i2) = 0.0
         if (associated(vs%grid%zpnd)) vs%grid%zpnd(i1:i2) = 0.0
-        if (associated(vs%grid%lqwspnd)) vs%grid%lqwspnd(i1:i2) = 0.0
+!-        if (associated(vs%grid%lqwspnd)) vs%grid%lqwspnd(i1:i2) = 0.0
         if (associated(vs%grid%tpnd)) vs%grid%tpnd(i1:i2) = 0.0
         if (associated(vs%grid%fstr)) vs%grid%fstr(i1:i2) = 0.0
         if (associated(vs%grid%potevp)) vs%grid%potevp(i1:i2) = 0.0
         if (associated(vs%grid%et)) vs%grid%et(i1:i2) = 0.0
-        if (associated(vs%grid%evpb)) vs%grid%evpb(i1:i2) = 0.0
-        if (associated(vs%grid%arrd)) vs%grid%arrd(i1:i2) = 0.0
+!-        if (associated(vs%grid%evpb)) vs%grid%evpb(i1:i2) = 0.0
+!-        if (associated(vs%grid%arrd)) vs%grid%arrd(i1:i2) = 0.0
         if (associated(vs%grid%ovrflw)) vs%grid%ovrflw(i1:i2) = 0.0
         if (associated(vs%grid%qevp)) vs%grid%qevp(i1:i2) = 0.0
         if (associated(vs%grid%qsens)) vs%grid%qsens(i1:i2) = 0.0
@@ -297,8 +297,8 @@ module sa_mesh_run_within_grid
         if (associated(vs%grid%tbas)) vs%grid%tbas(i1:i2) = 0.0
         if (associated(vs%grid%thlqsol)) vs%grid%thlqsol(i1:i2, :) = 0.0
         if (associated(vs%grid%thicsol)) vs%grid%thicsol(i1:i2, :) = 0.0
-        if (associated(vs%grid%lqwssol)) vs%grid%lqwssol(i1:i2, :) = 0.0
-        if (associated(vs%grid%fzwssol)) vs%grid%fzwssol(i1:i2, :) = 0.0
+!-        if (associated(vs%grid%lqwssol)) vs%grid%lqwssol(i1:i2, :) = 0.0
+!-        if (associated(vs%grid%fzwssol)) vs%grid%fzwssol(i1:i2, :) = 0.0
         if (associated(vs%grid%tsol)) vs%grid%tsol(i1:i2, :) = 0.0
         if (associated(vs%grid%gflx)) vs%grid%gflx(i1:i2, :) = 0.0
         if (associated(vs%grid%latflw)) vs%grid%latflw(i1:i2, :) = 0.0
@@ -307,9 +307,9 @@ module sa_mesh_run_within_grid
         if (associated(vs%grid%drainsol)) vs%grid%drainsol(i1:i2) = 0.0
 !+        if (associated(vs%grid%rchg)) vs%grid%rchg(i1:i2) = 0.0
         if (associated(vs%grid%stggw)) vs%grid%stggw(i1:i2) = 0.0
-        if (associated(vs%grid%dzs)) vs%grid%dzs(i1:i2) = 0.0
-        if (associated(vs%grid%stge)) vs%grid%stge(i1:i2) = 0.0
-        if (associated(vs%grid%stgw)) vs%grid%stgw(i1:i2) = 0.0
+!-        if (associated(vs%grid%dzs)) vs%grid%dzs(i1:i2) = 0.0
+!-        if (associated(vs%grid%stge)) vs%grid%stge(i1:i2) = 0.0
+!-        if (associated(vs%grid%stgw)) vs%grid%stgw(i1:i2) = 0.0
 
         !> Update variables.
         tcanfrac(i1:i2) = 0.0
@@ -393,9 +393,9 @@ module sa_mesh_run_within_grid
             if (associated(vs%grid%rhosno) .and. associated(vs%tile%rhosno)) then
                 vs%grid%rhosno(ki) = vs%grid%rhosno(ki) + vs%tile%rhosno(k)*frac
             end if
-            if (associated(vs%grid%zsno) .and. associated(vs%tile%zsno)) then
-                vs%grid%zsno(ki) = vs%grid%zsno(ki) + vs%tile%zsno(k)*frac
-            end if
+!-            if (associated(vs%grid%zsno) .and. associated(vs%tile%zsno)) then
+!-                vs%grid%zsno(ki) = vs%grid%zsno(ki) + vs%tile%zsno(k)*frac
+!-            end if
             if (associated(vs%grid%fsno) .and. associated(vs%tile%fsno)) then
                 vs%grid%fsno(ki) = vs%grid%fsno(ki) + vs%tile%fsno(k)*frac
             end if
@@ -431,9 +431,9 @@ module sa_mesh_run_within_grid
             if (associated(vs%grid%zpnd) .and. associated(vs%tile%zpnd)) then
                 vs%grid%zpnd(ki) = vs%grid%zpnd(ki) + vs%tile%zpnd(k)*frac
             end if
-            if (associated(vs%grid%lqwspnd) .and. associated(vs%tile%lqwspnd)) then
-                vs%grid%lqwspnd(ki) = vs%grid%lqwspnd(ki) + vs%tile%lqwspnd(k)*frac
-            end if
+!-            if (associated(vs%grid%lqwspnd) .and. associated(vs%tile%lqwspnd)) then
+!-                vs%grid%lqwspnd(ki) = vs%grid%lqwspnd(ki) + vs%tile%lqwspnd(k)*frac
+!-            end if
             if (associated(vs%tile%tpnd)) then
                 if (vs%tile%tpnd(k) > 0.0) then
                     if (associated(vs%grid%tpnd) .and. associated(vs%tile%tpnd)) then
@@ -451,12 +451,12 @@ module sa_mesh_run_within_grid
             if (associated(vs%grid%et) .and. associated(vs%tile%et)) then
                 vs%grid%et(ki) = vs%grid%et(ki) + vs%tile%et(k)*frac
             end if
-            if (associated(vs%grid%evpb) .and. associated(vs%tile%evpb)) then
-                vs%grid%evpb(ki) = vs%grid%evpb(ki) + vs%tile%evpb(k)*frac
-            end if
-            if (associated(vs%grid%arrd) .and. associated(vs%tile%arrd)) then
-                vs%grid%arrd(ki) = vs%grid%arrd(ki) + vs%tile%arrd(k)*frac
-            end if
+!-            if (associated(vs%grid%evpb) .and. associated(vs%tile%evpb)) then
+!-                vs%grid%evpb(ki) = vs%grid%evpb(ki) + vs%tile%evpb(k)*frac
+!-            end if
+!-            if (associated(vs%grid%arrd) .and. associated(vs%tile%arrd)) then
+!-                vs%grid%arrd(ki) = vs%grid%arrd(ki) + vs%tile%arrd(k)*frac
+!-            end if
             if (associated(vs%grid%ovrflw) .and. associated(vs%tile%ovrflw)) then
                 vs%grid%ovrflw(ki) = vs%grid%ovrflw(ki) + vs%tile%ovrflw(k)*frac
             end if
@@ -484,12 +484,12 @@ module sa_mesh_run_within_grid
             if (associated(vs%grid%thicsol) .and. associated(vs%tile%thicsol)) then
                 vs%grid%thicsol(ki, :) = vs%grid%thicsol(ki, :) + vs%tile%thicsol(k, :)*frac
             end if
-            if (associated(vs%grid%lqwssol) .and. associated(vs%tile%lqwssol)) then
-                vs%grid%lqwssol(ki, :) = vs%grid%lqwssol(ki, :) + vs%tile%lqwssol(k, :)*frac
-            end if
-            if (associated(vs%grid%fzwssol) .and. associated(vs%tile%fzwssol)) then
-                vs%grid%fzwssol(ki, :) = vs%grid%fzwssol(ki, :) + vs%tile%fzwssol(k, :)*frac
-            end if
+!-            if (associated(vs%grid%lqwssol) .and. associated(vs%tile%lqwssol)) then
+!-                vs%grid%lqwssol(ki, :) = vs%grid%lqwssol(ki, :) + vs%tile%lqwssol(k, :)*frac
+!-            end if
+!-            if (associated(vs%grid%fzwssol) .and. associated(vs%tile%fzwssol)) then
+!-                vs%grid%fzwssol(ki, :) = vs%grid%fzwssol(ki, :) + vs%tile%fzwssol(k, :)*frac
+!-            end if
             if (associated(vs%grid%tsol) .and. associated(vs%tile%tsol)) then
                 vs%grid%tsol(ki, :) = vs%grid%tsol(ki, :) + vs%tile%tsol(k, :)*frac
             end if
@@ -514,9 +514,9 @@ module sa_mesh_run_within_grid
             if (associated(vs%grid%stggw) .and. associated(vs%tile%stggw)) then
                 vs%grid%stggw(ki) = vs%grid%stggw(ki) + vs%tile%stggw(k)*frac
             end if
-            if (associated(vs%grid%dzs) .and. associated(vs%tile%dzs)) then
-                vs%grid%dzs(ki) = vs%grid%dzs(ki) + vs%tile%dzs(k)*frac
-            end if
+!-            if (associated(vs%grid%dzs) .and. associated(vs%tile%dzs)) then
+!-                vs%grid%dzs(ki) = vs%grid%dzs(ki) + vs%tile%dzs(k)*frac
+!-            end if
         end do
 
         !> Fractional averages.

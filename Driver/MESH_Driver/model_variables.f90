@@ -109,7 +109,7 @@ module model_variables
         !* drainsno: Drainage from the bottom of the snowpack (runoff rate). [kg m**-2 s**-1].
         real, dimension(:), pointer :: sno => null()
         real, dimension(:), pointer :: rhosno => null()
-        real, dimension(:), pointer :: zsno => null()
+!-        real, dimension(:), pointer :: zsno => null()
         real, dimension(:), pointer :: fsno => null()
         real, dimension(:), pointer :: albsno => null()
         real, dimension(:), pointer :: lqwssno => null()
@@ -138,13 +138,13 @@ module model_variables
         real, dimension(:), pointer :: alir => null()
         real, dimension(:), pointer :: gte => null()
         real, dimension(:), pointer :: zpnd => null()
-        real, dimension(:), pointer :: lqwspnd => null()
+!-        real, dimension(:), pointer :: lqwspnd => null()
         real, dimension(:), pointer :: tpnd => null()
         real, dimension(:), pointer :: fstr => null()
         real, dimension(:), pointer :: potevp => null()
         real, dimension(:), pointer :: et => null()
-        real, dimension(:), pointer :: evpb => null()
-        real, dimension(:), pointer :: arrd => null()
+!-        real, dimension(:), pointer :: evpb => null()
+!-        real, dimension(:), pointer :: arrd => null()
         real, dimension(:), pointer :: ovrflw => null()
         real, dimension(:), pointer :: qevp => null()
         real, dimension(:), pointer :: qsens => null()
@@ -167,8 +167,8 @@ module model_variables
         real, dimension(:), pointer :: tbas => null()
         real, dimension(:, :), pointer :: thlqsol => null()
         real, dimension(:, :), pointer :: thicsol => null()
-        real, dimension(:, :), pointer :: lqwssol => null()
-        real, dimension(:, :), pointer :: fzwssol => null()
+!-        real, dimension(:, :), pointer :: lqwssol => null()
+!-        real, dimension(:, :), pointer :: fzwssol => null()
         real, dimension(:, :), pointer :: tsol => null()
         real, dimension(:, :), pointer :: gflx => null()
         real, dimension(:, :), pointer :: latflw => null()
@@ -181,12 +181,12 @@ module model_variables
         !* dzs: Deep aquifer water storage. [mm].
         real, dimension(:), pointer :: rchg => null()
         real, dimension(:), pointer :: stggw => null()
-        real, dimension(:), pointer :: dzs => null()
+!-        real, dimension(:), pointer :: dzs => null()
 
         !* stge: Total energy stored in the system. [W m**-2].
         !* stgw: Total liquid water storage in the land surface. [kg m**-2].
-        real, dimension(:), pointer :: stge => null()
-        real, dimension(:), pointer :: stgw => null()
+!-        real, dimension(:), pointer :: stge => null()
+!-        real, dimension(:), pointer :: stgw => null()
 
         !* rff: Total runoff (from all surface, subsurface, and groundwater components). [mm].
         !* qi: Flow rate entering the channel. [m**3 s**-1].
@@ -261,7 +261,7 @@ module model_variables
         if (associated(group%qacan)) group%qacan = 0.0
         if (associated(group%tcan)) group%tcan = 0.0
         if (associated(group%gro)) group%gro = 0.0
-        if (associated(group%zsno)) group%zsno = 0.0
+!-        if (associated(group%zsno)) group%zsno = 0.0
         if (associated(group%rhosno)) group%rhosno = 0.0
         if (associated(group%sno)) group%sno = 0.0
         if (associated(group%fsno)) group%fsno = 0.0
@@ -274,13 +274,13 @@ module model_variables
         if (associated(group%alir)) group%alir = 0.0
         if (associated(group%gte)) group%gte = 0.0
         if (associated(group%zpnd)) group%zpnd = 0.0
-        if (associated(group%lqwspnd)) group%lqwspnd = 0.0
+!-        if (associated(group%lqwspnd)) group%lqwspnd = 0.0
         if (associated(group%tpnd)) group%tpnd = 0.0
         if (associated(group%fstr)) group%fstr = 0.0
         if (associated(group%potevp)) group%potevp = 0.0
         if (associated(group%et)) group%et = 0.0
-        if (associated(group%evpb)) group%evpb = 0.0
-        if (associated(group%arrd)) group%arrd = 0.0
+!-        if (associated(group%evpb)) group%evpb = 0.0
+!-        if (associated(group%arrd)) group%arrd = 0.0
         if (associated(group%ovrflw)) group%ovrflw = 0.0
         if (associated(group%qevp)) group%qevp = 0.0
         if (associated(group%qsens)) group%qsens = 0.0
@@ -290,8 +290,8 @@ module model_variables
         if (associated(group%tbas)) group%tbas = 0.0
         if (associated(group%thlqsol)) group%thlqsol = 0.0
         if (associated(group%thicsol)) group%thicsol = 0.0
-        if (associated(group%lqwssol)) group%lqwssol = 0.0
-        if (associated(group%fzwssol)) group%fzwssol = 0.0
+!-        if (associated(group%lqwssol)) group%lqwssol = 0.0
+!-        if (associated(group%fzwssol)) group%fzwssol = 0.0
         if (associated(group%tsol)) group%tsol = 0.0
         if (associated(group%gflx)) group%gflx = 0.0
         if (associated(group%latflw)) group%latflw = 0.0
@@ -300,9 +300,9 @@ module model_variables
         if (associated(group%drainsol)) group%drainsol = 0.0
         if (associated(group%rchg)) group%rchg = 0.0
         if (associated(group%stggw)) group%stggw = 0.0
-        if (associated(group%dzs)) group%dzs = 0.0
-        if (associated(group%stge)) group%stge = 0.0
-        if (associated(group%stgw)) group%stgw = 0.0
+!-        if (associated(group%dzs)) group%dzs = 0.0
+!-        if (associated(group%stge)) group%stge = 0.0
+!-        if (associated(group%stgw)) group%stgw = 0.0
         if (associated(group%rff)) group%rff = 0.0
         if (associated(group%qi)) group%qi = 0.0
         if (associated(group%qo)) group%qo = 0.0
@@ -402,7 +402,7 @@ module model_variables
         allocate(group%qacan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tcan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%gro(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%zsno(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%zsno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%rhosno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%sno(n), stat = z); if (z /= 0) ierr = z
         allocate(group%fsno(n), stat = z); if (z /= 0) ierr = z
@@ -415,13 +415,13 @@ module model_variables
         allocate(group%alir(n), stat = z); if (z /= 0) ierr = z
         allocate(group%gte(n), stat = z); if (z /= 0) ierr = z
         allocate(group%zpnd(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%lqwspnd(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%lqwspnd(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tpnd(n), stat = z); if (z /= 0) ierr = z
         allocate(group%fstr(n), stat = z); if (z /= 0) ierr = z
         allocate(group%potevp(n), stat = z); if (z /= 0) ierr = z
         allocate(group%et(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%evpb(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%arrd(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%evpb(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%arrd(n), stat = z); if (z /= 0) ierr = z
         allocate(group%ovrflw(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qevp(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qsens(n), stat = z); if (z /= 0) ierr = z
@@ -431,8 +431,8 @@ module model_variables
         allocate(group%tbas(n), stat = z); if (z /= 0) ierr = z
         allocate(group%thlqsol(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%thicsol(n, nsl), stat = z); if (z /= 0) ierr = z
-        allocate(group%lqwssol(n, nsl), stat = z); if (z /= 0) ierr = z
-        allocate(group%fzwssol(n, nsl), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%lqwssol(n, nsl), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%fzwssol(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%tsol(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%gflx(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%latflw(n, nsl), stat = z); if (z /= 0) ierr = z
@@ -441,9 +441,9 @@ module model_variables
         allocate(group%drainsol(n), stat = z); if (z /= 0) ierr = z
         allocate(group%rchg(n), stat = z); if (z /= 0) ierr = z
         allocate(group%stggw(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%dzs(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%stge(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%stgw(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%dzs(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%stge(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%stgw(n), stat = z); if (z /= 0) ierr = z
         allocate(group%rff(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qi(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qo(n), stat = z); if (z /= 0) ierr = z

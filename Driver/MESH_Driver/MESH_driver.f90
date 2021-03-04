@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1758'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1759'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -278,7 +278,7 @@ program RUNMESH
     call output_variables_activate( &
         out%tot%grid, (/ &
             VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
-            VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_DZS, VN_LQWSSOL, VN_FZWSSOL /))
+            VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_LQWSSOL, VN_FZWSSOL /))
 
     !> Initialize process modules.
     if (ro%RUNTILE) then
@@ -817,7 +817,7 @@ program RUNMESH
         STG_INI = sum( &
             (out%ts%grid%lqwscan(1:shd%NA) + out%ts%grid%fzwscan(1:shd%NA) + &
              out%ts%grid%sno(1:shd%NA) + out%ts%grid%lqwssno(1:shd%NA) + out%ts%grid%lqwspnd(1:shd%NA) + &
-             out%ts%grid%stggw(1:shd%NA) + out%ts%grid%dzs(1:shd%NA) + &
+             out%ts%grid%stggw(1:shd%NA) + &
              sum(out%ts%grid%lqwssol(1:shd%NA, :), 2) + sum(out%ts%grid%fzwssol(1:shd%NA, :), 2))*shd%FRAC)
         STG_INI = STG_INI/sum(shd%FRAC)
     end if
@@ -1200,7 +1200,7 @@ program RUNMESH
             STG_FIN = sum( &
                 (out%ts%grid%lqwscan(1:shd%NA) + out%ts%grid%fzwscan(1:shd%NA) + &
                  out%ts%grid%sno(1:shd%NA) + out%ts%grid%lqwssno(1:shd%NA) + out%ts%grid%lqwspnd(1:shd%NA) + &
-                 out%ts%grid%stggw(1:shd%NA) + out%ts%grid%dzs(1:shd%NA) + &
+                 out%ts%grid%stggw(1:shd%NA) + &
                  sum(out%ts%grid%lqwssol(1:shd%NA, :), 2) + sum(out%ts%grid%fzwssol(1:shd%NA, :), 2))*shd%FRAC)/sum(shd%FRAC)
         end if
 

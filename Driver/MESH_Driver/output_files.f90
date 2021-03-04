@@ -1908,7 +1908,7 @@ module output_files
             z = 0
             select case (args(1))
 
-                !> Model variables.
+                !> Meteorology/climatology variables.
                 case (VN_FSIN, 'FSDOWN')
                     call output_files_append_field(fls, shd, ts, VN_FSIN, args, nargs, z)
                 case (VN_FSVH)
@@ -1951,6 +1951,8 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_PRECRN, args, nargs, z)
                 case (VN_PRECSNO)
                     call output_files_append_field(fls, shd, ts, VN_PRECSNO, args, nargs, z)
+
+                !> Canopy variables.
                 case (VN_LQWSCAN, 'RCAN')
                     call output_files_append_field(fls, shd, ts, VN_LQWSCAN, args, nargs, z)
                 case (VN_FZWSCAN, 'SNCAN', 'SCAN')
@@ -1961,6 +1963,8 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_TCAN, args, nargs, z)
                 case (VN_GRO)
                     call output_files_append_field(fls, shd, ts, VN_GRO, args, nargs, z)
+
+                !> Snow variables.
                 case (VN_SNO)
                     call output_files_append_field(fls, shd, ts, VN_SNO, args, nargs, z)
                 case (VN_RHOSNO)
@@ -1969,12 +1973,16 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_ZSNO, args, nargs, z)
                 case (VN_FSNO)
                     call output_files_append_field(fls, shd, ts, VN_FSNO, args, nargs, z)
+                case (VN_ALBSNO)
+                    call output_files_append_field(fls, shd, ts, VN_ALBSNO, args, nargs, z)
                 case (VN_LQWSSNO, 'WSNO')
                     call output_files_append_field(fls, shd, ts, VN_LQWSSNO, args, nargs, z)
                 case (VN_TSNO)
                     call output_files_append_field(fls, shd, ts, VN_TSNO, args, nargs, z)
                 case (VN_DRAINSNO, 'ROFSNO')
                     call output_files_append_field(fls, shd, ts, VN_DRAINSNO, args, nargs, z, -1, real(ic%dts))
+
+                !> Surface variables.
                 case (VN_ALBT)
                     call output_files_append_field(fls, shd, ts, VN_ALBT, args, nargs, z)
                 case (VN_ALVS)
@@ -2005,6 +2013,8 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_QSENS, args, nargs, z)
                 case (VN_GZERO)
                     call output_files_append_field(fls, shd, ts, VN_GZERO, args, nargs, z)
+
+                !> Subsurface/soil variables.
                 case (VN_THLQSOL, 'THLQ')
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, VN_THLQSOL, args, nargs, z, j)
@@ -2039,12 +2049,16 @@ module output_files
                     end do
                 case (VN_DRAINSOL, 'ROFB')
                     call output_files_append_field(fls, shd, ts, VN_DRAINSOL, args, nargs, z, -1, real(ic%dts))
+
+                !> Groundwater/lower zone storage variables.
                 case (VN_RCHG, 'WR_RECHARGE')
                     call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs, z)
                 case (VN_STGGW, 'LZS')
                     call output_files_append_field(fls, shd, ts, VN_STGGW, args, nargs, z)
-                case (VN_DZS)
-                    call output_files_append_field(fls, shd, ts, VN_DZS, args, nargs, z)
+!-                case (VN_DZS)
+!-                    call output_files_append_field(fls, shd, ts, VN_DZS, args, nargs, z)
+
+                !> Diagnostic variables.
                 case (VN_STGE)
                     call output_files_append_field(fls, shd, ts, VN_STGE, args, nargs, z)
                 case (VN_DSTGE)
@@ -2053,6 +2067,8 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_STGW, args, nargs, z)
                 case (VN_DSTGW, 'DSTG')
                     call output_files_append_field(fls, shd, ts, VN_DSTGW, args, nargs, z)
+
+                !> Routing variables.
                 case (VN_RFF, 'WR_RUNOFF')
                     call output_files_append_field(fls, shd, ts, VN_RFF, args, nargs, z)
                 case (VN_ROF, 'Runoff')
