@@ -399,7 +399,7 @@ module RUNCLASS36_module
         vs%tile%gte(il1:il2) = cdv%GTE(il1:il2)
         vs%tile%zpnd(il1:il2) = cpv%ZPND(il1:il2)
         vs%tile%tpnd(il1:il2) = cpv%TPND(il1:il2)
-        vs%tile%fstr(il1:il2) = &
+        vs%tile%pndcaf(il1:il2) = &
             FSTRCS(il1:il2)*cdv%FCS(il1:il2) + FSTRC(il1:il2)*cdv%FC(il1:il2) + &
             FSTRG(il1:il2)*cdv%FG(il1:il2) + FSTRGS(il1:il2)*cdv%FGS(il1:il2)
         vs%tile%potevp(il1:il2) = cdv%PET(il1:il2)
@@ -409,6 +409,9 @@ module RUNCLASS36_module
         vs%tile%qsens(il1:il2) = cdv%HFS(il1:il2)
         vs%tile%gzero(il1:il2) = cdv%GFLX(il1:il2, 1)
         vs%tile%tsfs(il1:il2, :) = cpv%TSFS(il1:il2, :)
+        vs%tile%tsurf(il1:il2) = &
+            cpv%TSFS(il1:il2, 1)*cdv%FCS(il1:il2) + cpv%TSFS(il1:il2, 2)*cdv%FGS(il1:il2) + &
+            cpv%TSFS(il1:il2, 3)*cdv%FC(il1:il2) + cpv%TSFS(il1:il2, 4)*cdv%FG(il1:il2)
         vs%tile%tbas(il1:il2) = cpv%TBAS(il1:il2)
         vs%tile%latflw(il1:il2, :) = cdv%ROFS(il1:il2, :)
         vs%tile%thicsol(il1:il2, :) = cpv%THIC(il1:il2, :)

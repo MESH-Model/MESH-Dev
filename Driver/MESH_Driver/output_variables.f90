@@ -12,6 +12,8 @@ module output_variables
         !> Meteorology/climatology variables.
         real, dimension(:), pointer :: ifsin => null()
         real, dimension(:), pointer :: fsin => null()
+        real, dimension(:), pointer :: fsvs => null()
+        real, dimension(:), pointer :: fsir => null()
         real, dimension(:), pointer :: fsdr => null()
         real, dimension(:), pointer :: fsdff => null()
         real, dimension(:), pointer :: fsout => null()
@@ -59,6 +61,7 @@ module output_variables
         real, dimension(:), pointer :: zpnd => null()
         real, dimension(:), pointer :: lqwspnd => null()
         real, dimension(:), pointer :: tpnd => null()
+        real, dimension(:), pointer :: pndcaf => null()
         real, dimension(:), pointer :: potevp => null()
         real, dimension(:), pointer :: et => null()
         real, dimension(:), pointer :: evpb => null()
@@ -67,6 +70,12 @@ module output_variables
         real, dimension(:), pointer :: qevp => null()
         real, dimension(:), pointer :: qsens => null()
         real, dimension(:), pointer :: gzero => null()
+        real, dimension(:), pointer :: tsurf => null()
+
+        !> Ice/glacier variables.
+        real, dimension(:), pointer :: iice => null()
+        real, dimension(:), pointer :: lqwsice => null()
+        real, dimension(:), pointer :: tice => null()
 
         !> Subsurface/soil variables.
         real, dimension(:, :), pointer :: thlqsol => null()
@@ -77,11 +86,13 @@ module output_variables
         real, dimension(:, :), pointer :: tsol => null()
         real, dimension(:, :), pointer :: gflx => null()
         real, dimension(:, :), pointer :: latflw => null()
+        real, dimension(:), pointer :: zsolsat => null()
         real, dimension(:), pointer :: drainsol => null()
 
         !> Groundwater/lower zone storage variables.
         real, dimension(:), pointer :: rchg => null()
         real, dimension(:), pointer :: stggw => null()
+        real, dimension(:), pointer :: lkg => null()
 !-        real, dimension(:), pointer :: dzs => null()
 
         !> Diagnostic variables.
@@ -232,8 +243,8 @@ module output_variables
         z = 0
         select case (vname)
 
-            !> Meteorological forcing.
-            case (VN_FSIN, VN_FSVH, VN_FSIH)
+            !> Meteorology/climatology variables.
+            case (VN_FSIN)
                 if (associated(fields%vs%fsin)) then
                     call output_variables_allocate(fields%fsin, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsin, n1)
@@ -242,7 +253,23 @@ module output_variables
                 else
                     z = 1
                 end if
-            case (VN_FSDIR)
+            case (VN_FSVS)
+                call output_variables_activate_pntr(fields, VN_FSIN)
+                if (associated(fields%fsin)) then
+                    call output_variables_allocate(fields%fsvs, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsvs, n1)
+                else
+                    z = 1
+                end if
+            case (VN_FSIR)
+                call output_variables_activate_pntr(fields, VN_FSIN)
+                if (associated(fields%fsin)) then
+                    call output_variables_allocate(fields%fsir, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsir, n1)
+                else
+                    z = 1
+                end if
+            case (VN_FSDR)
                 if (associated(fields%vs%fsdr)) then
                     call output_variables_allocate(fields%fsdr, n1, pntr)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsdr, n1)
@@ -370,6 +397,8 @@ module output_variables
                 else
                     z = 1
                 end if
+
+            !> Canopy variables.
             case (VN_LQWSCAN)
                 if (associated(fields%vs%lqwscan)) then
                     call output_variables_allocate(fields%lqwscan, n1, pntr)
@@ -408,6 +437,8 @@ module output_variables
                 else
                     z = 1
                 end if
+
+            !> Snow variables.
             case (VN_FSNO)
                 if (associated(fields%vs%fsno)) then
                     call output_variables_allocate(fields%fsno, n1, pntr)
@@ -468,6 +499,8 @@ module output_variables
                 else
                     z = 1
                 end if
+
+            !> Surface variables.
             case (VN_ALBT)
                 call output_variables_activate_pntr(fields, VN_FSIN)
                 if (associated(fields%fsin) .and. associated(fields%vs%albt)) then
@@ -520,6 +553,13 @@ module output_variables
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%tpnd, n1)
                     call output_variables_allocate(fields%ipnd, n1)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%ipnd, n1)
+                else
+                    z = 1
+                end if
+            case (VN_PNDCAF)
+                if (associated(fields%vs%pndcaf)) then
+                    call output_variables_allocate(fields%pndcaf, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%pndcaf, n1)
                 else
                     z = 1
                 end if
@@ -583,6 +623,33 @@ module output_variables
                 else
                     z = 1
                 end if
+            case (VN_TSURF)
+                if (associated(fields%vs%tsurf)) then
+                    call output_variables_allocate(fields%tsurf, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%tsurf, n1)
+                else
+                    z = 1
+                end if
+
+            !> Ice/glacier variables.
+            case (VN_LQWSICE)
+                if (associated(fields%vs%lqwsice)) then
+                    call output_variables_allocate(fields%lqwsice, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%lqwsice, n1)
+                else
+                    z = 1
+                end if
+            case (VN_TICE)
+                if (associated(fields%vs%tice)) then
+                    call output_variables_allocate(fields%tice, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%tice, n1)
+                    call output_variables_allocate(fields%iice, n1)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%iice, n1)
+                else
+                    z = 1
+                end if
+
+            !> Subsurface/soil variables.
             case (VN_THLQSOL)
                 if (associated(fields%vs%thlqsol)) then
                     call output_variables_allocate(fields%thlqsol, n1, n2, pntr, ig)
@@ -643,6 +710,13 @@ module output_variables
                 else
                     z = 1
                 end if
+            case (VN_ZSOLSAT)
+                if (associated(fields%vs%zsolsat)) then
+                    call output_variables_allocate(fields%zsolsat, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%zsolsat, n1)
+                else
+                    z = 1
+                end if
             case (VN_DRAINSOL)
                 if (associated(fields%vs%drainsol)) then
                     call output_variables_allocate(fields%drainsol, n1, pntr)
@@ -650,6 +724,8 @@ module output_variables
                 else
                     z = 1
                 end if
+
+            !> Groundwater/lower zone storage variables.
             case (VN_RCHG)
                 if (associated(fields%vs%rchg)) then
                     call output_variables_allocate(fields%rchg, n1, pntr)
@@ -664,6 +740,13 @@ module output_variables
                 else
                     z = 1
                 end if
+            case (VN_LKG)
+                if (associated(fields%vs%lkg)) then
+                    call output_variables_allocate(fields%lkg, n1, pntr)
+                    if (associated(fields%ts)) call output_variables_allocate(fields%ts%lkg, n1)
+                else
+                    z = 1
+                end if
 !-            case (VN_DZS)
 !-                if (associated(fields%vs%dzs)) then
 !-                    call output_variables_allocate(fields%dzs, n1, pntr)
@@ -671,6 +754,8 @@ module output_variables
 !-                else
 !-                    z = 1
 !-                end if
+
+            !> Diagnostic variables.
             case (VN_STGE)
                 call output_variables_allocate(fields%stge, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%stge, n1)
@@ -707,6 +792,8 @@ module output_variables
                 if (associated(fields%stgw) .and. associated(fields%stg0w) .and. associated(fields%dstgw)) then
                     call output_variables_allocate(fields%dstgw, n1, pntr)
                 end if
+
+            !> Routing variables.
             case (VN_RFF)
                 if (associated(fields%vs%rff)) then
                     call output_variables_allocate(fields%rff, n1, pntr)
@@ -835,9 +922,11 @@ module output_variables
         !> Input/output variables.
         type(output_fields) group
 
-        !> Initialize variables.
+        !> Meteorology/climatology variables.
         if (associated(group%ifsin)) group%ifsin = 0.0
         if (associated(group%fsin)) group%fsin = out%NO_DATA
+        if (associated(group%fsvs)) group%fsvs = out%NO_DATA
+        if (associated(group%fsir)) group%fsir = out%NO_DATA
         if (associated(group%fsdr)) group%fsdr = out%NO_DATA
         if (associated(group%fsdff)) group%fsdff = out%NO_DATA
         if (associated(group%fsout)) group%fsout = out%NO_DATA
@@ -856,12 +945,16 @@ module output_variables
         if (associated(group%precrn)) group%precrn = out%NO_DATA
         if (associated(group%precsno)) group%precsno = out%NO_DATA
         if (associated(group%prec)) group%prec = out%NO_DATA
+
+        !> Canopy variables.
         if (associated(group%ican)) group%ican = 0.0
         if (associated(group%lqwscan)) group%lqwscan = out%NO_DATA
         if (associated(group%fzwscan)) group%fzwscan = out%NO_DATA
         if (associated(group%cmas)) group%cmas = out%NO_DATA
         if (associated(group%tcan)) group%tcan = out%NO_DATA
         if (associated(group%gro)) group%gro = out%NO_DATA
+
+        !> Snow variables.
         if (associated(group%isno)) group%isno = 0.0
         if (associated(group%fsno)) group%fsno = out%NO_DATA
         if (associated(group%sno)) group%sno = out%NO_DATA
@@ -871,6 +964,8 @@ module output_variables
         if (associated(group%tsno)) group%tsno = out%NO_DATA
         if (associated(group%albsno)) group%albsno = out%NO_DATA
         if (associated(group%drainsno)) group%drainsno = out%NO_DATA
+
+        !> Surface variables.
         if (associated(group%albt)) group%albt = out%NO_DATA
         if (associated(group%alvs)) group%alvs = out%NO_DATA
         if (associated(group%alir)) group%alir = out%NO_DATA
@@ -879,6 +974,7 @@ module output_variables
         if (associated(group%zpnd)) group%zpnd = out%NO_DATA
         if (associated(group%lqwspnd)) group%lqwspnd = out%NO_DATA
         if (associated(group%tpnd)) group%tpnd = out%NO_DATA
+        if (associated(group%pndcaf)) group%pndcaf = out%NO_DATA
         if (associated(group%potevp)) group%potevp = out%NO_DATA
         if (associated(group%et)) group%et = out%NO_DATA
         if (associated(group%evpb)) group%evpb = out%NO_DATA
@@ -887,6 +983,14 @@ module output_variables
         if (associated(group%qevp)) group%qevp = out%NO_DATA
         if (associated(group%qsens)) group%qsens = out%NO_DATA
         if (associated(group%gzero)) group%gzero = out%NO_DATA
+        if (associated(group%tsurf)) group%tsurf = out%NO_DATA
+
+        !> Ice/glacier variables.
+        if (associated(group%iice)) group%iice = 0.0
+        if (associated(group%lqwsice)) group%lqwsice = out%NO_DATA
+        if (associated(group%tice)) group%tice = out%NO_DATA
+
+        !> Subsurface/soil variables.
         if (associated(group%thlqsol)) group%thlqsol = out%NO_DATA
         if (associated(group%thicsol)) group%thicsol = out%NO_DATA
         if (associated(group%lqwssol)) group%lqwssol = out%NO_DATA
@@ -895,10 +999,16 @@ module output_variables
         if (associated(group%tsol)) group%tsol = out%NO_DATA
         if (associated(group%gflx)) group%gflx = out%NO_DATA
         if (associated(group%latflw)) group%latflw = out%NO_DATA
+        if (associated(group%zsolsat)) group%zsolsat = out%NO_DATA
         if (associated(group%drainsol)) group%drainsol = out%NO_DATA
+
+        !> Groundwater/lower zone storage variables.
         if (associated(group%rchg)) group%rchg = out%NO_DATA
         if (associated(group%stggw)) group%stggw = out%NO_DATA
+        if (associated(group%lkg)) group%lkg = out%NO_DATA
 !-        if (associated(group%dzs)) group%dzs = out%NO_DATA
+
+        !> Diagnostic variables.
         if (associated(group%stge)) then
             group%stg0e = group%stge
             group%stge = 0.0
@@ -909,6 +1019,8 @@ module output_variables
             group%stgw = 0.0
             group%dstgw = 0.0
         end if
+
+        !> Routing variables.
         if (associated(group%rff)) group%rff = out%NO_DATA
         if (associated(group%rof)) group%rof = out%NO_DATA
         if (associated(group%qi)) group%qi = out%NO_DATA
@@ -1027,7 +1139,7 @@ module output_variables
         !> Local variables.
         integer j
 
-        !> Update variables.
+        !> Meteorology/climatology variables.
         if (associated(group%ifsin)) then
             where (group_vs%fsin > 0.0)
                 group%ifsin = 1.0
@@ -1037,6 +1149,12 @@ module output_variables
         end if
         if (associated(group%fsin)) then
             if (all(group%fsin == out%NO_DATA)) group%fsin = group_vs%fsin
+        end if
+        if (associated(group%fsvs)) then
+            if (all(group%fsvs == out%NO_DATA)) group%fsvs = group_vs%fsin*0.5
+        end if
+        if (associated(group%fsir)) then
+            if (all(group%fsir == out%NO_DATA)) group%fsir = group_vs%fsin*0.5
         end if
         if (associated(group%fsdr)) then
             if (all(group%fsdr == out%NO_DATA)) group%fsdr = group_vs%fsdr
@@ -1092,6 +1210,8 @@ module output_variables
         if (associated(group%prec)) then
             if (all(group%prec == out%NO_DATA)) group%prec = group_vs%pre*ic%dts
         end if
+
+        !> Canopy variables.
         if (associated(group%ican)) then
             where (group_vs%tcan > 0.0)
                 group%ican = 1.0
@@ -1126,6 +1246,8 @@ module output_variables
         if (associated(group%gro)) then
             if (all(group%gro == out%NO_DATA)) group%gro = group_vs%gro
         end if
+
+        !> Snow variables.
         if (associated(group%isno)) then
             where (group_vs%tsno > 0.0)
                 group%isno = 1.0
@@ -1169,6 +1291,8 @@ module output_variables
         if (associated(group%drainsno)) then
             if (all(group%drainsno == out%NO_DATA)) group%drainsno = group_vs%drainsno
         end if
+
+        !> Surface variables.
         if (associated(group%albt)) then
             if (all(group%albt == out%NO_DATA)) group%albt = group_vs%albt
         end if
@@ -1202,6 +1326,9 @@ module output_variables
                     group%tpnd = 0.0
                 end where
             end if
+        end if
+        if (associated(group%pndcaf)) then
+            if (all(group%pndcaf == out%NO_DATA)) group%pndcaf = group_vs%pndcaf
         end if
         if (associated(group%potevp)) then
             if (all(group%potevp == out%NO_DATA)) group%potevp = group_vs%potevp
@@ -1239,6 +1366,32 @@ module output_variables
         if (associated(group%gzero)) then
             if (all(group%gzero == out%NO_DATA)) group%gzero = group_vs%gzero
         end if
+        if (associated(group%tsurf)) then
+            if (all(group%tsurf == out%NO_DATA)) group%tsurf = group_vs%tsurf
+        end if
+
+        !> Ice/glacier variables.
+        if (associated(group%iice)) then
+            where (group_vs%tice > 0.0)
+                group%iice = 1.0
+            elsewhere
+                group%iice = 0.0
+            end where
+        end if
+        if (associated(group%lqwsice)) then
+            if (all(group%lqwsice == out%NO_DATA)) group%lqwsice = group_vs%lqwsice
+        end if
+        if (associated(group%tice)) then
+            if (all(group%tice == out%NO_DATA)) then
+                where (group%iice == 1.0)
+                    group%tice = group_vs%tice
+                elsewhere
+                    group%tice = 0.0
+                end where
+            end if
+        end if
+
+        !> Subsurface/soil variables.
         if (associated(group%thlqsol)) then
             if (all(group%thlqsol == out%NO_DATA)) group%thlqsol = group_vs%thlqsol
         end if
@@ -1246,10 +1399,10 @@ module output_variables
             if (all(group%thicsol == out%NO_DATA)) group%thicsol = group_vs%thicsol
         end if
         if (associated(group%lqwssol)) then
-            if (all(group%lqwssol == out%NO_DATA)) group%lqwssol = group_vs%thlqsol*group_vs%dzwat*1000.0
+            if (all(group%lqwssol == out%NO_DATA)) group%lqwssol = group_vs%thlqsol*group_vs%dzsolhyd*1000.0
         end if
         if (associated(group%fzwssol)) then
-            if (all(group%fzwssol == out%NO_DATA)) group%fzwssol = group_vs%thicsol*group_vs%dzwat*917.0
+            if (all(group%fzwssol == out%NO_DATA)) group%fzwssol = group_vs%thicsol*group_vs%dzsolhyd*917.0
         end if
         if (associated(group%alwssol)) then
             if (all(group%alwssol == out%NO_DATA)) then
@@ -1267,18 +1420,28 @@ module output_variables
         if (associated(group%latflw)) then
             if (all(group%latflw == out%NO_DATA)) group%latflw = group_vs%latflw
         end if
+        if (associated(group%zsolsat)) then
+            if (all(group%zsolsat == out%NO_DATA)) group%zsolsat = group_vs%zsolsat
+        end if
         if (associated(group%drainsol)) then
             if (all(group%drainsol == out%NO_DATA)) group%drainsol = group_vs%drainsol
         end if
+
+        !> Groundwater/lower zone storage variables.
         if (associated(group%rchg)) then
             if (all(group%rchg == out%NO_DATA)) group%rchg = group_vs%rchg
         end if
         if (associated(group%stggw)) then
             if (all(group%stggw == out%NO_DATA)) group%stggw = group_vs%stggw
         end if
+        if (associated(group%lkg)) then
+            if (all(group%lkg == out%NO_DATA)) group%lkg = group_vs%lkg
+        end if
 !-        if (associated(group%dzs)) then
 !-            if (all(group%dzs == out%NO_DATA)) group%dzs = group_vs%dzs
 !-        end if
+
+        !> Diagnostic variables.
         if (associated(group%stge)) then
             if (all(group%stge == 0.0)) then
                 group%stg0e = out%NO_DATA
@@ -1310,6 +1473,8 @@ module output_variables
                 group%dstgw = group%stgw - group%stg0w
             end if
         end if
+
+        !> Routing variables.
         if (associated(group%rff)) then
             if (all(group%rff == out%NO_DATA)) group%rff = group_vs%rff
         end if
@@ -1472,12 +1637,18 @@ module output_variables
         !> Local variables.
         integer j
 
-        !> Update variables.
+        !> Meteorology/climatology variables.
         if (associated(group%ifsin)) then
             call output_variables_field_update(group%ifsin, group_ts%ifsin, its, 'sum')
         end if
         if (associated(group%fsin)) then
             call output_variables_field_update(group%fsin, group_ts%fsin, its, 'avg')
+        end if
+        if (associated(group%fsvs)) then
+            call output_variables_field_update(group%fsvs, group_ts%fsvs, its, 'avg')
+        end if
+        if (associated(group%fsir)) then
+            call output_variables_field_update(group%fsir, group_ts%fsir, its, 'avg')
         end if
         if (associated(group%fsdr)) then
             call output_variables_field_update(group%fsdr, group_ts%fsdr, its, 'avg')
@@ -1533,6 +1704,8 @@ module output_variables
         if (associated(group%prec)) then
             call output_variables_field_update(group%prec, group_ts%prec, its, 'sum')
         end if
+
+        !> Canopy variables.
         if (associated(group%ican)) then
             call output_variables_field_update(group%ican, group_ts%ican, its, 'sum')
         end if
@@ -1551,6 +1724,8 @@ module output_variables
         if (associated(group%gro)) then
             call output_variables_field_update(group%gro, group_ts%gro, its, 'avg')
         end if
+
+        !> Snow variables.
         if (associated(group%isno)) then
             call output_variables_field_update(group%isno, group_ts%isno, its, 'sum')
         end if
@@ -1578,6 +1753,8 @@ module output_variables
         if (associated(group%drainsno)) then
             call output_variables_field_update(group%drainsno, group_ts%drainsno, its, 'sum')
         end if
+
+        !> Surface variables.
         if (associated(group%albt)) then
             call output_variables_field_icount_average(group%albt, group_ts%albt, group%ifsin, group_ts%ifsin)
         end if
@@ -1601,6 +1778,9 @@ module output_variables
         end if
         if (associated(group%tpnd)) then
             call output_variables_field_icount_average(group%tpnd, group_ts%tpnd, group%ipnd, group_ts%ipnd)
+        end if
+        if (associated(group%pndcaf)) then
+            call output_variables_field_update(group%pndcaf, group_ts%pndcaf, its, 'avg')
         end if
         if (associated(group%potevp)) then
             call output_variables_field_update(group%potevp, group_ts%potevp, its, 'sum')
@@ -1626,6 +1806,22 @@ module output_variables
         if (associated(group%gzero)) then
             call output_variables_field_update(group%gzero, group_ts%gzero, its, 'avg')
         end if
+        if (associated(group%tsurf)) then
+            call output_variables_field_update(group%tsurf, group_ts%tsurf, its, 'avg')
+        end if
+
+        !> Ice/glacier variables.
+        if (associated(group%iice)) then
+            call output_variables_field_update(group%iice, group_ts%iice, its, 'sum')
+        end if
+        if (associated(group%lqwsice)) then
+            call output_variables_field_update(group%lqwsice, group_ts%lqwsice, its, 'avg')
+        end if
+        if (associated(group%tice)) then
+            call output_variables_field_icount_average(group%tice, group_ts%tice, group%iice, group_ts%iice)
+        end if
+
+        !> Subsurface/soil variables.
         do j = 1, shd%lc%IGND
             if (associated(group%thlqsol)) then
                 call output_variables_field_update(group%thlqsol(:, j), group_ts%thlqsol(:, j), its, 'avg')
@@ -1652,18 +1848,28 @@ module output_variables
                 call output_variables_field_update(group%latflw(:, j), group_ts%latflw(:, j), its, 'sum')
             end if
         end do
+        if (associated(group%zsolsat)) then
+            call output_variables_field_update(group%zsolsat, group_ts%zsolsat, its, 'avg')
+        end if
         if (associated(group%drainsol)) then
             call output_variables_field_update(group%drainsol, group_ts%drainsol, its, 'sum')
         end if
+
+        !> Groundwater/lower zone storage variables.
         if (associated(group%rchg)) then
             call output_variables_field_update(group%rchg, group_ts%rchg, its, 'sum')
         end if
         if (associated(group%stggw)) then
             call output_variables_field_update(group%stggw, group_ts%stggw, its, 'avg')
         end if
+        if (associated(group%lkg)) then
+            call output_variables_field_update(group%lkg, group_ts%lkg, its, 'sum')
+        end if
 !-        if (associated(group%dzs)) then
 !-            call output_variables_field_update(group%dzs, group_ts%dzs, its, 'avg')
 !-        end if
+
+        !> Diagnostic variables.
         if (associated(group%stge)) then
             if (its == 1) then
                 call output_variables_field_update(group%stg0e, group%stge, its, 'val')
@@ -1678,6 +1884,8 @@ module output_variables
             call output_variables_field_update(group%stgw, group_ts%stgw, its, 'avg')
             where (group%stgw /= out%NO_DATA) group%dstgw = group%stgw - group%stg0w
         end if
+
+        !> Routing variables.
         if (associated(group%rff)) then
             call output_variables_field_update(group%rff, group_ts%rff, its, 'sum')
         end if

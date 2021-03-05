@@ -526,8 +526,8 @@ module RUNCLASS36_config
         pm%tile%tcs(il1:il2, :) = csfv%TCS(il1:il2, :)
         pm%tile%thfc(il1:il2, :) = csfv%THFC(il1:il2, :)
         pm%tile%psiwlt(il1:il2, :) = csfv%PSIW(il1:il2, :)
-        vs%tile%dzwat(il1:il2, :) = csfv%DELZW(il1:il2, :)
-        vs%tile%zbotwat(il1:il2, :) = csfv%ZBTW(il1:il2, :)
+        vs%tile%dzsolhyd(il1:il2, :) = csfv%DELZW(il1:il2, :)
+        vs%tile%zsolhyd(il1:il2) = sum(csfv%ZBTW(il1:il2, :), 2)
 
         !> CLASS output files.
         if (WF_NUM_POINTS > 0) call CLASSOUT_open_files(shd)
