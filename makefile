@@ -3,7 +3,7 @@
 
 # ======================================================================
 # Make targets (defined below).
-.PHONY: default gfortran ifort mingw_static mpi_gcc mpi_intel debug netcdf all clean veryclean
+.PHONY: default gfortran ifort mingw_static mpi_gcc mpi_intel symbols debug netcdf all clean veryclean
 default: all
 
 # ======================================================================
@@ -56,7 +56,10 @@ endif
 # ======================================================================
 # Pre-configured targets: Debug symbols.
 ifeq ($(filter debug,$(MAKECMDGOALS)),debug)
+SYMBOLS=yes
 DEBUG=yes
+else ifeq ($(filter symbols,$(MAKECMDGOALS)),symbols)
+SYMBOLS=yes
 endif
 
 # ======================================================================
@@ -82,6 +85,7 @@ ifort: all
 mingw_static: all
 mpi_gcc: all
 mpi_intel: all
+symbols: all
 debug: all
 double: all
 netcdf: all
@@ -103,7 +107,10 @@ endif
 
 # Override debugging options if 'DEBUG' not enabled.
 ifndef DEBUG
+LFLAG=-c -g
+ifndef SYMBOLS
 LFLAG=-c -O2
+endif
 CLEANUP=@$(MAKE) -s clean DIST=$(DIST)
 endif
 
