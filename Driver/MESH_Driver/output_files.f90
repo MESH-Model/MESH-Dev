@@ -261,6 +261,7 @@ module output_files
         !> Clip the line to the first instance of '#' or '!' if one exists.
         line = ''
         i = 0
+        ierr = 0
         do while (ierr == 0)
             read(iun, '(a)', iostat = ierr) line
             i = i + 1
@@ -2187,9 +2188,16 @@ module output_files
             call program_abort()
         end if
 
-        !> Echo the number of active fields read from file.
-        write(line, FMT_GEN) n
-        call print_message('Output variables: ' // trim(adjustl(line)))
+        !> Echo the number of active fields read from file or print a warning if no variables were found in the file.
+        if (n > 0) then
+            write(line, FMT_GEN) n
+            call print_message('Output variables: ' // trim(adjustl(line)))
+        else
+            call print_warning('No output variables were found in the file.')
+
+            !> Deactivate the process.
+            fls_out%PROCESS_ACTIVE = .false.
+        end if
         call reset_tab()
 
     end subroutine
