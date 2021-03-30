@@ -699,10 +699,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 
             !> Check for errors.
             if (z /= 0) then
-                call print_screen("WARNING: Unable to parse the options of '" // trim(adjustl(args(1))) // "'.")
+                call print_screen("WARNING: An error occurred parsing the options of '" // trim(adjustl(args(1))) // "'.")
             end if
         end do
     end if
+    if (ierr /= 0) goto 99
 
     !> Empty lines.
     do i = 1, 2
@@ -757,6 +758,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 
 98  ierr = 1
     call print_error('Unable to read the file.')
+99  ECHOTXTMODE = .false.
     return
 
 end subroutine
