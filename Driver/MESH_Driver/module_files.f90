@@ -21,7 +21,7 @@ module model_files
         use sa_mesh_common
         use SIMSTATS_config, only: mtsfl, mtsk, init_metricsout_files
         use WF_ROUTE_config
-        use SA_RTE_module, only: SA_RTE_fls, SA_RTE_flkeys, SA_RTE_init_fls
+!-        use SA_RTE_module, only: SA_RTE_fls, SA_RTE_flkeys, SA_RTE_init_fls
 
         !> Input variables.
         !* fld: Name of the file that contains file information.
@@ -93,11 +93,11 @@ module model_files
         mtsfl%fl(mtsk%PE)%fn   = 'pre_emption_value.txt'
 
         !> For files used by Standalone RTE.
-        if (.not. allocated(SA_RTE_fls%fl)) call SA_RTE_init_fls()
-        SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn  = 'WR_runoff.r2c'
-        SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%iun = 31
-        SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn  = 'WR_recharge.r2c'
-        SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%iun = 32
+!-        if (.not. allocated(SA_RTE_fls%fl)) call SA_RTE_init_fls()
+!-        SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%fn  = 'WR_runoff.r2c'
+!-        SA_RTE_fls%fl(SA_RTE_flkeys%RFF)%iun = 31
+!-        SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%fn  = 'WR_recharge.r2c'
+!-        SA_RTE_fls%fl(SA_RTE_flkeys%RCH)%iun = 32
 
         !> Replace default file information with values from file.
         if (present(fld)) then

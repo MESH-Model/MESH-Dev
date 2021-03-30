@@ -19,7 +19,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use cropland_irrigation_variables
     use WF_ROUTE_config
     use rte_module
-    use SA_RTE_module, only: SA_RTE_flgs
+!-    use SA_RTE_module, only: SA_RTE_flgs
     use SIMSTATS_config, only: mtsflg
     use PBSM_module
     use mountain_module
@@ -542,15 +542,20 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     call value(args(2), METRICSINCLUDESPINUP, z)
                 case ('FROZENSOILINFILFLAG')
                     call value(args(2), FROZENSOILINFILFLAG, z)
-                case ('PRINTRFFR2CFILEFLAG')
-                    call value(args(2), SA_RTE_flgs%PRINTRFFR2CFILEFLAG, z)
-                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1)
-                case ('PRINTRCHR2CFILEFLAG')
-                    call value(args(2), SA_RTE_flgs%PRINTRCHR2CFILEFLAG, z)
-                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1)
-!+                case ('PRINTLKGR2CFILEFLAG')
-!+                    call value(args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG, z)
-!+                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTLKGR2CFILEFLAG == 1)
+!-                case ('PRINTRFFR2CFILEFLAG')
+!-                    call value(args(2), SA_RTE_flgs%PRINTRFFR2CFILEFLAG, z)
+!-                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1)
+!-                case ('PRINTRCHR2CFILEFLAG')
+!-                    call value(args(2), SA_RTE_flgs%PRINTRCHR2CFILEFLAG, z)
+!-                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1)
+!-                case ('PRINTLKGR2CFILEFLAG')
+!-                    call value(args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG, z)
+!-                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTLKGR2CFILEFLAG == 1)
+                case('PRINTRFFR2CFILEFLAG', 'PRINTRCHR2CFILEFLAG', 'PRINTLKGR2CFILEFLAG')
+                    call print_screen( &
+                        "ERROR: The '" // trim(args(1)) // "' control flag is not supported. Create the outputs using " // &
+                        "'OUTFILESFLAG' instead.")
+                    ierr = 1
                 case ('ICTEMMOD')
                     call value(args(2), ICTEMMOD, z)
 

@@ -67,7 +67,7 @@ module sa_mesh_run_between_grid
     subroutine run_between_grid_init(fls, shd, cm)
 
         !> Process modules.
-        use SA_RTE_module
+!-        use SA_RTE_module
         use WF_ROUTE_config
         use rte_module
         use cropland_irrigation_between_grid
@@ -271,7 +271,7 @@ module sa_mesh_run_between_grid
 !-        call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_QI, VN_STGCH, VN_QO, VN_ZLVL /))
 
         !> Call processes.
-        call SA_RTE_init(shd)
+!-        call SA_RTE_init(shd)
         call WF_ROUTE_init(fls, shd)
         call run_rte_init(fls, shd)
         call runci_between_grid_init(shd, fls)
@@ -286,7 +286,7 @@ module sa_mesh_run_between_grid
     subroutine run_between_grid(fls, shd, cm)
 
         !> Process modules.
-        use SA_RTE_module
+!-        use SA_RTE_module
         use WF_ROUTE_module
         use rte_module
         use cropland_irrigation_between_grid
@@ -378,7 +378,7 @@ module sa_mesh_run_between_grid
         end if
 
         !> Call processes.
-        call SA_RTE(shd)
+!-        call SA_RTE(shd)
         call WF_ROUTE_between_grid(fls, shd)
         call run_rte_between_grid(fls, shd)
         call runci_between_grid(shd, fls, cm)

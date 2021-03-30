@@ -14,12 +14,11 @@ module climate_forcing_config
     subroutine open_config(cm)
 
         use strings
-        use EF_ParseUtilities
 
         type(clim_info) :: cm
 
         integer i, iun, ios
-        character(len = DEFAULT_FIELD_LENGTH) fname, key, attr, ver_in
+        character(len = DEFAULT_FIELD_LENGTH) fname, ver_in
         character(len = DEFAULT_LINE_LENGTH) line
         logical is_exist, is_climInfo
 
@@ -35,10 +34,9 @@ module climate_forcing_config
             !> First uncommented line contains the tag and version of the file.
             !> :clim_info 1.0
             call readline(iun, line, ios)
-            ios = SplitLine(line, key, attr)
-            if (lowercase(key) == ':clim_info') then
+            if (lowercase(line(1:10)) == ':clim_info') then
                 is_climInfo = .true.
-                ver_in = lowercase(attr)
+                ver_in = trim(adjustl(lowercase(line(11:))))
             end if
 
             !> Call subroutine to parse the content of the file.
