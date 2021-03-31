@@ -642,7 +642,7 @@ module rte_module
         read(iun) store2
         read(iun) qi2
         if (fms%rsvr%n > 0) then
-            read(iun) lake_elv(:, fhr)
+            read(iun) lake_elv(:, 1)
         else
             read(iun)
         end if
