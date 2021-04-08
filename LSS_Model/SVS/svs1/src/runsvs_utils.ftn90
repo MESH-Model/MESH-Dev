@@ -1,27 +1,27 @@
 MODULE runsvs_utils
 !
 ! Namelist parameters
-NAMELIST /RUNSVS_OPT/   nt,dateo,houro,dt,\
-                        sigma_u,sigma_t,\
-                        observed_forcing,\
-                        inifile,interpfile,geofile,\
-                        metfile,outfile,rtefile,\
-			xcount,ycount
-INTEGER nt      ! Number of time steps
-INTEGER dateo   ! Starting date of the run
-INTEGER houro   ! Starting hour of the run
+!-NAMELIST /RUNSVS_OPT/   nt,dateo,houro,dt,\
+!-                        sigma_u,sigma_t,\
+!-                        observed_forcing,\
+!-                        inifile,interpfile,geofile,\
+!-                        metfile,outfile,rtefile,\
+!-			xcount,ycount
+!-INTEGER nt      ! Number of time steps
+!-INTEGER dateo   ! Starting date of the run
+!-INTEGER houro   ! Starting hour of the run
 REAL dt         ! Time step duration (sec)
 REAL sigma_u    ! Sigma level of momentum forcing
 REAL sigma_t    ! Sigma level of scalar forcings
-INTEGER xcount  ! Number of columns in the grid
-INTEGER ycount  ! Number of lines in the grid
+!-INTEGER xcount  ! Number of columns in the grid
+!-INTEGER ycount  ! Number of lines in the grid
 LOGICAL observed_forcing
-CHARACTER (LEN=255) inifile
-CHARACTER (LEN=255) interpfile
-CHARACTER (LEN=255) geofile
-CHARACTER (LEN=255) metfile
-CHARACTER (LEN=255) outfile
-CHARACTER (LEN=255) rtefile
+!-CHARACTER (LEN=255) inifile
+!-CHARACTER (LEN=255) interpfile
+!-CHARACTER (LEN=255) geofile
+!-CHARACTER (LEN=255) metfile
+!-CHARACTER (LEN=255) outfile
+!-CHARACTER (LEN=255) rtefile
 !
 CONTAINS
 SUBROUTINE surflayerheight(sigma_u,sigma_t,bus,bussiz)

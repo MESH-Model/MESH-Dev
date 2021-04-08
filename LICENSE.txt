@@ -12,6 +12,9 @@ This program also contains the following subprograms:
     (https://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html);
   - A modified version of WATROUTE licensed under the GNU Lesser General
     Public License (https://www.gnu.org/licenses/lgpl.html).
+  - The 'rmnlib' library licensed under the GNU Lesser General Public
+    License version 2.1
+    (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html)
 The text of these licenses is copied below.
 
 ---

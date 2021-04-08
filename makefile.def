@@ -104,15 +104,19 @@ PHY=$(DIR_REPO)/LSS_Model/SVS/svs1/rpnphy_5.8.3_all
 CHANGES2PHY=$(DIR_REPO)/LSS_Model/SVS/svs1/changes_to_rpnphy
 SVS=$(DIR_REPO)/LSS_Model/SVS/svs1/svs_GEM_v5.8.rc2
 VPATH+=	$(PHY): $(CHANGES2PHY): $(SVS) \
-		$(DIR_REPO)/LSS_Model/SVS/svs1/rmnlib_013: \
 		$(DIR_REPO)/LSS_Model/SVS/svs1/src:
 # Includes.
 INC_DIRS+=-I$(CHANGES2PHY) -I$(PHY) -I$(SVS)
 # Variables.
 DFLAG=-DRUNSVS
+# RMNLIB
+VPATH+=	$(DIR_REPO)/Modules/librmn/19.7.0/base: \
+		$(DIR_REPO)/Modules/librmn/19.7.0/primitives:
+INC_DIRS+=-I./Modules/librmn/19.7.0/CUSTOM_INCLUDES/
+OBJECTS+=	datec.o moduledate.o set_user_lock.o \
+			up2low.o getenvc.o
 # Core routines.
-OBJECTS+=	datec.o moduledate.o \
-			runsvs_mod_sa_mesh.o runsvs_utils.o \
+OBJECTS+=	runsvs_mod_sa_mesh.o runsvs_utils.o \
 			runsvs_init_mesh.o \
 			sfclayer_mod.o sfc_options.o svs_configs.o \
 			inicover_svs.o \
