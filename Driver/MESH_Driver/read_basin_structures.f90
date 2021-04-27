@@ -266,12 +266,12 @@ subroutine read_basin_structures(shd, ierr)
         end do
 
         !> Initialize reservoir release values if such a type of reservoir has been defined.
-        if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
+        if (count(fms%rsvr%rls%cfn == 1) > 0) then
 
             !> Re-allocate release values to the number of controlled reservoirs.
             if (fms%rsvr%rlsmeas%readmode /= 'n') then
                 deallocate(fms%rsvr%rlsmeas%val)
-                allocate(fms%rsvr%rlsmeas%val(count(fms%rsvr%rls%b1 == 0.0)))
+                allocate(fms%rsvr%rlsmeas%val(count(fms%rsvr%rls%cfn == 1)))
                 fms%rsvr%rlsmeas%val = 0.0
             end if
 
@@ -314,13 +314,13 @@ subroutine read_basin_structures(shd, ierr)
         end if
 
         !> Print a summary of locations to file.
-        if ((fms%rsvr%n - count(fms%rsvr%rls%b1 == 0.0)) > 0) then
-            write(line, FMT_GEN) (fms%rsvr%n - count(fms%rsvr%rls%b1 == 0.0))
+        if ((fms%rsvr%n - count(fms%rsvr%rls%cfn == 1)) > 0) then
+            write(line, FMT_GEN) (fms%rsvr%n - count(fms%rsvr%rls%cfn == 1))
             call print_message('Number of reservoir outlets with routing: ' // trim(adjustl(line)))
             write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
             call print_message(trim(line))
             do i = 1, fms%rsvr%n
-                if (fms%rsvr%rls%b1(i) /= 0) then
+                if (fms%rsvr%rls%cfn(i) /= 0) then
                     write(line, FMT_GEN) &
                         fms%rsvr%meta%name(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), &
                         fms%rsvr%rls%area(i)/1.0e+6
@@ -328,13 +328,13 @@ subroutine read_basin_structures(shd, ierr)
                 end if
             end do
         end if
-        if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
-            write(line, FMT_GEN) count(fms%rsvr%rls%b1 == 0.0)
+        if (count(fms%rsvr%rls%cfn == 1) > 0) then
+            write(line, FMT_GEN) count(fms%rsvr%rls%cfn == 1)
             call print_message('Number of reservoir outlets with insertion: ' // trim(adjustl(line)))
             write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
             call print_message(trim(line))
             do i = 1, fms%rsvr%n
-                if (fms%rsvr%rls%b1(i) == 0.0) then
+                if (fms%rsvr%rls%cfn(i) == 1) then
                     write(line, FMT_GEN) &
                         fms%rsvr%meta%name(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), &
                         fms%rsvr%rls%area(i)/1.0e+6

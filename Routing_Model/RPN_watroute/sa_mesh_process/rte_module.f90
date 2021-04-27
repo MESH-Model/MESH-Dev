@@ -363,7 +363,7 @@ module rte_module
             resindex = fms%rsvr%meta%rnk
 
             !> Routing coefficients.
-            allocate(b1(noresv), b2(noresv), b3(noresv), b4(noresv), b5(noresv), b6(noresv), b7(noresv))
+            allocate(b1(noresv), b2(noresv), b3(noresv), b4(noresv), b5(noresv), b6(noresv), b7(noresv), cfn(noresv))
 !                poliflg(noresv)
             b1 = real(fms%rsvr%rls%b1, kind(b1))
             b2 = real(fms%rsvr%rls%b2, kind(b2))
@@ -372,6 +372,7 @@ module rte_module
             b5 = real(fms%rsvr%rls%b5, kind(b5))
             b6 = real(fms%rsvr%rls%b6, kind(b6))
             b7 = real(fms%rsvr%rls%b7, kind(b7))
+            cfn = fms%rsvr%rls%cfn
 !            where (b3 == 0.0)
 !                poliflg = 'n'
 !            elsewhere
@@ -386,8 +387,8 @@ module rte_module
             !*  qdwpr: (Local variable in route.f) Used to accumulate flow in reaches that span multiple cells to the reservoir outlet. [m3 s-1].
             allocate(qdwpr(noresv, fhr), qrel(noresv, fhr))
             qdwpr = 0.0
-            if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0)), kind(qrel))
+            if (count(fms%rsvr%rls%cfn == 1) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
+                qrel(1:count(fms%rsvr%rls%cfn == 1), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%cfn == 1)), kind(qrel))
             else
                 qrel(:, 1) = real(fms%rsvr%rlsmeas%val, kind(qrel))
             end if
@@ -793,8 +794,8 @@ module rte_module
         store2_strt(1:naa) = store2(1:naa)
         if (fms%stmg%n > 0) qhyd(:, fhr) = real(fms%stmg%qomeas%val, kind(qhyd))
         if (fms%rsvr%n > 0) then
-            if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0)), kind(qrel))
+            if (count(fms%rsvr%rls%cfn == 1) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
+                qrel(1:count(fms%rsvr%rls%cfn == 1), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%cfn == 1)), kind(qrel))
             else
                 qrel(:, 1) = real(fms%rsvr%rlsmeas%val, kind(qrel))
             end if
