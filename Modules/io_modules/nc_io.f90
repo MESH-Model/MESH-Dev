@@ -864,6 +864,37 @@ module nc_io
 
     end subroutine
 
+    subroutine nc4_get_dimension_name(&
+        iun, did, &
+        dim_name, dim_length, &
+        ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, did
+
+        !> Output variables (optional).
+        character(len = *), intent(out), optional :: dim_name
+        integer, intent(out), optional :: dim_length
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) field, code
+
+        !> Get attributes of the dimension.
+        ierr = nf90_inquire_dimension(iun, did, name = dim_name, len = dim_length)
+        if (ierr /= NF90_NOERR) then
+            write(field, FMT_GEN) did
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "The dimension with ID (" // trim(adjustl(field)) // ") was not found (Code: " // trim(adjustl(code)) // ").")
+            ierr = 1
+            return
+        end if
+
+    end subroutine
+
     logical function nc4_inquire_variable(iun, variable_name)
 
         !> Input variables.
@@ -1038,8 +1069,10 @@ module nc_io
         if (ierr /= 0) return
 
         !> Check for a dimension of 'NF90_UNLIMITED' type.
-        call nc4_inquire_file(iun, dim_unlimited_id = dim_unlimited_id, ierr = ierr)
-        if (ierr /= 0) return
+        if (present(dim_unlimited_id)) then
+            call nc4_inquire_file(iun, dim_unlimited_id = dim_unlimited_id, ierr = ierr)
+            if (ierr /= 0) return
+        end if
 
         !> Allocate the variable for dimension names (output).
         if (present(dim_names)) allocate(dim_names(n))
@@ -3396,7 +3429,7 @@ module nc_io
 
     end subroutine
 
-    subroutine check_variable_dimensions(standard_name, size_dat, ndims, ierr)
+    subroutine nc4_check_variable_dimensions(standard_name, size_dat, ndims, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: standard_name
@@ -3471,7 +3504,7 @@ module nc_io
 
         !> Check the dimensions of the variable.
         if (present(size_dat)) then
-            call check_variable_dimensions(standard_name, size(size_dat), n, ierr)
+            call nc4_check_variable_dimensions(standard_name, size(size_dat), n, ierr)
             if (ierr /= 0) return
         end if
 

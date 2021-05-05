@@ -351,7 +351,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         !> 'nc' format (vector/subbasin).
         case (5)
 #ifdef NETCDF
-            call read_shed_nc_subbasin(shd, 'MESH_drainage_database.nc', '', ierr)
+            call read_shed_nc_subbasin(shd, 'MESH_drainage_database.nc', '', '', ierr)
             if (ierr /= 0) return
 #else
             call print_error( &

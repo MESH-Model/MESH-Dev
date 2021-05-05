@@ -5,13 +5,14 @@
 !> Input variables:
 !*  fname: Full path to the file.
 !*  dim_n_name: Name of the 'n' dimension (optional override).
+!*  dim_m_name: Name of the 'm' dimension (optional override).
 !>
 !> Output variables:
 !*  ierr: Return status.
 !>
 !> Input/output variables:
 !*  shd: Basin 'shed' object (properties).
-subroutine read_shed_nc_subbasin(shd, fname, dim_n_name, ierr)
+subroutine read_shed_nc_subbasin(shd, fname, dim_n_name, dim_m_name, ierr)
 
     !> strings: For 'lowercase' function.
     !> sa_mesh_common: For common MESH variables and routines.
@@ -28,7 +29,7 @@ subroutine read_shed_nc_subbasin(shd, fname, dim_n_name, ierr)
     character(len = *), intent(in) :: fname
 
     !> Input variables (optional).
-    character(len = *), intent(in), optional :: dim_n_name
+    character(len = *), intent(in), optional :: dim_n_name, dim_m_name
 
     !> Output variables.
     integer, intent(out) :: ierr
@@ -38,11 +39,10 @@ subroutine read_shed_nc_subbasin(shd, fname, dim_n_name, ierr)
 
     !> Local variables (reading).
     real fill_r
-    integer nvars, fill_i
-    integer, dimension (:), allocatable :: dat_i
+    integer ndims, natts, nvars, fill_i
 
     !> Local variables.
-    character(len = DEFAULT_FIELD_LENGTH) :: dim_n = '', field, code
+    character(len = DEFAULT_FIELD_LENGTH) :: dim_n = '', dim_m = '', field, code
     integer iun, n, i, z, m
     character(len = DEFAULT_LINE_LENGTH) line
 
@@ -68,38 +68,70 @@ subroutine read_shed_nc_subbasin(shd, fname, dim_n_name, ierr)
         if (DIAGNOSEMODE) call print_message("The projection of the file is '" // trim(shd%CoordSys%Proj) // "'.")
     end if
 
-    !> Reference latitude/longitude values (projection dependent).
-    if (present(dim_n_name)) dim_n = dim_n_name
-    select case (shd%CoordSys%Proj)
-        case ('LATLONG')
+    !> 'nc_subbasin' only supports 'LATLONG' projection.
+    if (shd%CoordSys%Proj /= 'LATLONG') then
+        call print_error("The projection '" // trim(shd%CoordSys%Proj) // "' is not supported for point-based file formats.")
+    end if
 
-            !> Get longitude and latitude and set respective counts.
-            if (len_trim(dim_n) == 0) dim_n = 'subbasin'
-            call nc4_get_dimension(iun, dim_n, dim_length = shd%NA, ierr = ierr)
-    end select
+    !> Get attributes from the file.
+    call nc4_inquire_file(iun, ndims = ndims, natts = natts, nvars = nvars, ierr = ierr)
     if (ierr /= 0) goto 999
 
+    !> Find and read dimensions.
+    if (DIAGNOSEMODE) then
+        write(code, FMT_GEN) ndims
+        call print_message(trim(adjustl(code)) // " dimensions found in the file.")
+    end if
+    if (present(dim_n_name)) dim_n = dim_n_name
+    if (len_trim(dim_n) == 0) dim_n = 'subbasin'
+    shd%NA = -1
+    if (present(dim_m_name)) dim_m = dim_m_name
+    if (len_trim(dim_m) == 0) dim_m = 'gru'
+    shd%lc%NTYPE = -1
+    do n = 1, ndims
+
+        !> Get the name of the dimension.
+        call nc4_get_dimension_name(iun, n, dim_name = field, dim_length = fill_i, ierr = ierr)
+        if (ierr /= 0) goto 999
+
+        !> Determine and assign the dimension.
+        if (lowercase(field) == dim_n) then
+            shd%NA = fill_i
+        else if (lowercase(field) == dim_m) then
+            shd%lc%NTYPE = fill_i
+        end if
+    end do
+
+    !> Check for errors.
+    if (.not. shd%NA > 0) then
+
+        !> The number of points could not be determined.
+        call print_error("The number of active points could not be read from the file.")
+        goto 999
+    end if
+
+    !> Check for GRUs.
+    if (.not. shd%lc%NTYPE > 1) then
+
+        !> Assume 2x GRU when no GRUs are defined in the file and an HLSS is active.
+        if (ro%RUNLSS) then
+            call print_remark("No GRUs were found in the file.")
+        end if
+        shd%lc%NTYPE = 2
+    end if
+
     !> Create dummy grid arrays for 1xNA vector and allocate the 'ACLASS' field.
-    shd%lc%NTYPE = 1
     shd%yCount = shd%NA
     shd%xCount = 1
-    allocate(shd%lc%ACLASS(shd%NA, shd%lc%NTYPE+1), shd%RNKGRD(shd%yCount, shd%xCount), shd%xxx(shd%NA), shd%yyy(shd%NA))
-    if (shd%lc%NTYPE == 1) then
-        shd%lc%ACLASS = 0
-        shd%lc%ACLASS(:,1) = 1.0
-    else
-        shd%lc%ACLASS = 0.0
-    end if
+    allocate(shd%lc%ACLASS(shd%NA, shd%lc%NTYPE), shd%RNKGRD(shd%yCount, shd%xCount), shd%xxx(shd%NA), shd%yyy(shd%NA))
+    shd%lc%ACLASS = 0.0
+    shd%lc%ACLASS(:, 1) = 1.0
     shd%xxx = 1
     shd%RNKGRD = 0
     do i = 1, shd%NA
         shd%yyy(i) = i
         shd%RNKGRD(i, 1) = i
     end do
-
-    !> Get the number of attributes and variables in the file.
-    call nc4_inquire_file(iun, nvars = nvars, ierr = ierr)
-    if (ierr /= 0) goto 999
 
     !> Scan and assign variables.
     if (DIAGNOSEMODE) then
@@ -116,11 +148,40 @@ subroutine read_shed_nc_subbasin(shd, fname, dim_n_name, ierr)
         !> Identify and assign the variable.
         z = radix(z)**pstat%NORMAL_STATUS
         select case (lowercase(field))
+
+            !> Basin attributes (general).
+            case ('latitude', 'lat')
+                call allocate_variable(shd%ylat, shd%NA, z)
+                if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
+                    call nc4_get_variable(iun, field, dim_n, shd%ylat, fill_r, ierr = ierr)
+                end if
+            case ('longitude', 'lon')
+                call allocate_variable(shd%xlng, shd%NA, z)
+                if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
+                    call nc4_get_variable(iun, field, dim_n, shd%xlng, fill_r, ierr = ierr)
+                end if
             case ('next')
                 call allocate_variable(shd%NEXT, shd%NA, z)
                 if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
                     call nc4_get_variable(iun, field, dim_n, shd%NEXT, fill_i, ierr = ierr)
                 end if
+            case ('gridarea')
+                call allocate_variable(shd%AREA, shd%NA, z)
+                if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
+                    call nc4_get_variable(iun, field, dim_n, shd%AREA, fill_r, ierr = ierr)
+                end if
+            case ('elev')
+                call allocate_variable(shd%ELEV, shd%NA, z)
+                if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
+                    call nc4_get_variable(iun, field, dim_n, shd%ELEV, fill_r, ierr = ierr)
+                end if
+!?            case ('intslope')
+!?                call allocate_variable(shd%SLOPE_TOPO, shd%NA, z)
+!?                if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
+!?                    call nc4_get_variable(iun, field, dim_n, shd%SLOPE_TOPO, fill_r, ierr = ierr)
+!?                end if
+
+            !> Drainage/routing attributes.
             case ('iak')
                 call allocate_variable(shd%IAK, shd%NA, z)
                 if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
@@ -151,36 +212,15 @@ subroutine read_shed_nc_subbasin(shd, fname, dim_n_name, ierr)
                 if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
                     call nc4_get_variable(iun, field, dim_n, shd%DA, fill_r, ierr = ierr)
                 end if
-            case ('gridarea')
-                call allocate_variable(shd%AREA, shd%NA, z)
-                if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
-                    call nc4_get_variable(iun, field, dim_n, shd%AREA, fill_r, ierr = ierr)
-                end if
             case ('bankfull')
                 call allocate_variable(shd%BNKFLL, shd%NA, z)
                 if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
                     call nc4_get_variable(iun, field, dim_n, shd%BNKFLL, fill_r, ierr = ierr)
                 end if
-            case ('elev')
-                call allocate_variable(shd%ELEV, shd%NA, z)
-                if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
-                    call nc4_get_variable(iun, field, dim_n, shd%ELEV, fill_r, ierr = ierr)
-                end if
-!?            case ('intslope')
-!?                call allocate_variable(shd%SLOPE_TOPO, shd%NA, z)
-!?                if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
-!?                    call nc4_get_variable(iun, field, dim_n, shd%SLOPE_TOPO, fill_r, ierr = ierr)
-!?                end if
-            case ('latitude', 'lat')
-                call allocate_variable(shd%ylat, shd%NA, z)
-                if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
-                    call nc4_get_variable(iun, field, dim_n, shd%ylat, fill_r, ierr = ierr)
-                end if
-            case ('longitude', 'lon')
-                call allocate_variable(shd%xlng, shd%NA, z)
-                if (.not. btest(z, pstat%ALLOCATION_ERROR)) then
-                    call nc4_get_variable(iun, field, dim_n, shd%xlng, fill_r, ierr = ierr)
-                end if
+
+            !> GRUs.
+            case ('gru')
+                call nc4_get_variable(iun, field, dim_n, dim_m, shd%lc%ACLASS, fill_r, ierr = ierr)
         end select
 
         !> Check for errors.
@@ -198,7 +238,7 @@ subroutine read_shed_nc_subbasin(shd, fname, dim_n_name, ierr)
         end if
     end do
     if (ierr /= 0) then
-        call print_error("Errors occurred reading attributes from the file.")
+        call print_error("Errors occurred reading variables from the file.")
         goto 999
     end if
 
@@ -293,7 +333,7 @@ subroutine read_shed_nc_subbasin(shd, fname, dim_n_name, ierr)
 
     !> Print number of active parameters.
     write(line, FMT_GEN) n
-    call print_message('Active attributes in file: ' // trim(adjustl(line)))
+    call print_message('Active variables in the file: ' // trim(adjustl(line)))
 
     !> Close the file to free the unit.
 999 continue

@@ -101,36 +101,33 @@ subroutine read_shed_csv(shd, fname, ierr)
     end if
     if (.not. shd%NA > 0) then
 
-        !> The number of HRUs could not be determined.
-        call print_error("The number of active HRUs could not be read from the file.")
-        ierr = 1
-    end if
-    if (ro%RUNLSS .and. .not. shd%lc%NTYPE > 1) then
-
-        !> No GRUs are defined in the file when an HLSS is active (in this case, assume 1x GRU like in point mode).
-        call print_remark("No GRUs were found in the file.")
-        shd%lc%NTYPE = 1
-    end if
-    if (ierr /= 0) then
+        !> The number of points could not be determined.
+        call print_error("The number of active points could not be read from the file.")
         goto 999
-    else
-
-        !> Create dummy grid arrays for 1xNA vector and allocate the 'ACLASS' field.
-        shd%yCount = shd%NA
-        shd%xCount = 1
-        allocate(shd%lc%ACLASS(shd%NA, shd%lc%NTYPE), shd%RNKGRD(shd%yCount, shd%xCount), shd%xxx(shd%NA), shd%yyy(shd%NA))
-        if (shd%lc%NTYPE == 1) then
-            shd%lc%ACLASS = 1.0
-        else
-            shd%lc%ACLASS = 0.0
-        end if
-        shd%xxx = 1
-        shd%RNKGRD = 0
-        do i = 1, shd%NA
-            shd%yyy(i) = i
-            shd%RNKGRD(i, 1) = i
-        end do
     end if
+
+    !> Check for GRUs.
+    if (.not. shd%lc%NTYPE > 1) then
+
+        !> Assume 2x GRU when no GRUs are defined in the file and an HLSS is active.
+        if (ro%RUNLSS) then
+            call print_remark("No GRUs were found in the file.")
+        end if
+        shd%lc%NTYPE = 2
+    end if
+
+    !> Create dummy grid arrays for 1xNA vector and allocate the 'ACLASS' field.
+    shd%yCount = shd%NA
+    shd%xCount = 1
+    allocate(shd%lc%ACLASS(shd%NA, shd%lc%NTYPE), shd%RNKGRD(shd%yCount, shd%xCount), shd%xxx(shd%NA), shd%yyy(shd%NA))
+    shd%lc%ACLASS = 0.0
+    shd%lc%ACLASS(:, 1) = 1.0
+    shd%xxx = 1
+    shd%RNKGRD = 0
+    do i = 1, shd%NA
+        shd%yyy(i) = i
+        shd%RNKGRD(i, 1) = i
+    end do
 
     !> Rewind the file.
     rewind(iun)
@@ -168,38 +165,40 @@ subroutine read_shed_csv(shd, fname, ierr)
         !> Assign and distribute the field.
         select case (lowercase(args(1)))
 
-            !> 'shed' attributes.
+            !> Basin attributes (general).
             case ('projection')
                 call assign_line_args(shd%CoordSys%Proj, args(2), istat)
                 p = 1
             case ('ellipsoid')
                 call assign_line_args(shd%CoordSys%Ellips, args(2), istat)
                 p = 1
-            case ('latitude')
+            case ('latitude', 'lat')
                 call assign_line_args(shd%ylat, p, args(2:), istat)
-            case ('longitude')
+            case ('longitude', 'lon')
                 call assign_line_args(shd%xlng, p, args(2:), istat)
             case ('next')
                 call assign_line_args(shd%NEXT, p, args(2:), istat)
-            case ('da')
-                call assign_line_args(shd%DA, p, args(2:), istat)
-            case ('bankfull')
-                call assign_line_args(shd%BNKFLL, p, args(2:), istat)
-            case ('chnlslope')
-                call assign_line_args(shd%SLOPE_CHNL, p, args(2:), istat)
+            case ('gridarea')
+                call assign_line_args(shd%AREA, p, args(2:), istat)
             case ('elev')
                 call assign_line_args(shd%ELEV, p, args(2:), istat)
-            case ('chnllength')
-                call assign_line_args(shd%CHNL_LEN, p, args(2:), istat)
+!?            case ('intslope')
+
+            !> Drainage/routing attributes.
             case ('iak')
                 call assign_line_args(shd%IAK, p, args(2:), istat)
-!?            case ('intslope')
+            case ('chnlslope')
+                call assign_line_args(shd%SLOPE_CHNL, p, args(2:), istat)
+            case ('chnllength')
+                call assign_line_args(shd%CHNL_LEN, p, args(2:), istat)
             case ('chnl')
                 call assign_line_args(shd%ICHNL, p, args(2:), istat)
             case ('reach')
                 call assign_line_args(shd%IREACH, p, args(2:), istat)
-            case ('gridarea')
-                call assign_line_args(shd%AREA, p, args(2:), istat)
+            case ('da')
+                call assign_line_args(shd%DA, p, args(2:), istat)
+            case ('bankfull')
+                call assign_line_args(shd%BNKFLL, p, args(2:), istat)
 
             !> GRUs.
             case ('gru')
@@ -305,7 +304,7 @@ subroutine read_shed_csv(shd, fname, ierr)
     end if
     if (ierr /= 0) goto 999
 
-    !> Derive the number of HRUs inside the basin.
+    !> Derive the number of points inside the basin.
     shd%NAA = count(shd%NEXT /= 0)
 
     !> Set the nominal area to 1.0 if not present (will normalize itself).
@@ -351,7 +350,7 @@ subroutine read_shed_csv(shd, fname, ierr)
 
     !> Print number of active parameters.
     write(line, FMT_GEN) n
-    call print_message('Active attributes in file: ' // trim(adjustl(line)))
+    call print_message('Active variables in file: ' // trim(adjustl(line)))
 
     !> Close the file to free the unit.
 999 close(iun)
