@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1772'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1773'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -159,7 +159,7 @@ program RUNMESH
         TOTAL_PRE_r4, TOTAL_EVAP_r4, TOTAL_ROF_r4, TOTAL_ROFO_r4, TOTAL_ROFS_r4, TOTAL_ROFB_r4, &
         STG_INI_r4
     real(kind = 4), dimension(:), allocatable :: qomeas_val_r4, grid_qo_stmg_r4
-    real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
+!-    real TOTAL_PRE, TOTAL_EVAP, TOTAL_ROF, STG_INI, STG_FIN, TOTAL_ROFO, TOTAL_ROFS, TOTAL_ROFB
 
     !> End of run states for prognostic variables.
 !-    real, dimension(:, :), allocatable :: tcan, rcan, sncan, gro, zpnd, tpnd, sno, tsno, albs, rhos
@@ -267,18 +267,29 @@ program RUNMESH
 
     !> Allocate output variables for screen output.
     if (PRINTSIMSTATUS == OUT_JDATE_DLY .or. PRINTSIMSTATUS == OUT_DATE_DLY) then
-        call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF /))
+        if (fms%stmg%n > 0) then
+            call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_QO /))
+        end if
+        if (ro%RUNBALWB .and. ro%RUNLSS) then
+            call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF /))
+        end if
     end if
-    call output_variables_activate(out%d%grid, VN_QO)
     if (PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) then
-        call output_variables_activate(out%m%grid, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_QO /))
+        if (fms%stmg%n > 0) then
+            call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_QO /))
+        end if
+        if (ro%RUNBALWB .and. ro%RUNLSS) then
+            call output_variables_activate(out%m%grid, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF /))
+        end if
     end if
 
     !> Allocate output variables for run totals.
-    call output_variables_activate( &
-        out%tot%grid, (/ &
-            VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
-            VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_LQWSSOL, VN_FZWSSOL /))
+!-    call output_variables_activate( &
+!-        out%tot%grid, (/ &
+!-            VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
+!-            VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_LQWSSOL, VN_FZWSSOL /))
+    call output_variables_activate(&
+        out%tot%basin, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, VN_STGW /))
 
     !> Initialize process modules.
     if (ro%RUNTILE) then
@@ -288,14 +299,14 @@ program RUNMESH
     if (ro%RUNGRID) call run_between_grid_init(fls, shd, cm)
 
     !> Initialize basin totals for the run.
-    if (ISHEADNODE) then
-        TOTAL_PRE = 0.0
-        TOTAL_EVAP = 0.0
-        TOTAL_ROF = 0.0
-        TOTAL_ROFO = 0.0
-        TOTAL_ROFS = 0.0
-        TOTAL_ROFB = 0.0
-    end if
+!-    if (ISHEADNODE) then
+!-        TOTAL_PRE = 0.0
+!-        TOTAL_EVAP = 0.0
+!-        TOTAL_ROF = 0.0
+!-        TOTAL_ROFO = 0.0
+!-        TOTAL_ROFS = 0.0
+!-        TOTAL_ROFB = 0.0
+!-    end if
 
     !> Open output files.
     if (ISHEADNODE) then
@@ -813,14 +824,14 @@ program RUNMESH
     call output_variables_update(shd)
 
     !> Calculate initial storage.
-    if (ro%RUNBALWB .and. ISHEADNODE) then
-        STG_INI = sum( &
-            (out%ts%grid%lqwscan(1:shd%NA) + out%ts%grid%fzwscan(1:shd%NA) + &
-             out%ts%grid%sno(1:shd%NA) + out%ts%grid%lqwssno(1:shd%NA) + out%ts%grid%lqwspnd(1:shd%NA) + &
-             out%ts%grid%stggw(1:shd%NA) + &
-             sum(out%ts%grid%lqwssol(1:shd%NA, :), 2) + sum(out%ts%grid%fzwssol(1:shd%NA, :), 2))*shd%FRAC)
-        STG_INI = STG_INI/sum(shd%FRAC)
-    end if
+!-    if (ro%RUNBALWB .and. ISHEADNODE) then
+!-        STG_INI = sum( &
+!-            (out%ts%grid%lqwscan(1:shd%NA) + out%ts%grid%fzwscan(1:shd%NA) + &
+!-             out%ts%grid%sno(1:shd%NA) + out%ts%grid%lqwssno(1:shd%NA) + out%ts%grid%lqwspnd(1:shd%NA) + &
+!-             out%ts%grid%stggw(1:shd%NA) + &
+!-             sum(out%ts%grid%lqwssol(1:shd%NA, :), 2) + sum(out%ts%grid%fzwssol(1:shd%NA, :), 2))*shd%FRAC)
+!-        STG_INI = STG_INI/sum(shd%FRAC)
+!-    end if
 
     !> Read in existing basin states for RESUMEFLAG.
     if (.not. vs%flgs%resume%state == FLAG_OFF .and. btest(vs%flgs%resume%flo%ffmt, FFMT_SEQ) .and. &
@@ -858,14 +869,14 @@ program RUNMESH
 
             !> Water balance totals.
             read(iun) TOTAL_PRE_r4, TOTAL_EVAP_r4, TOTAL_ROF_r4, TOTAL_ROFO_r4, TOTAL_ROFS_r4, TOTAL_ROFB_r4
-            TOTAL_PRE = real(TOTAL_PRE_r4, kind(TOTAL_PRE))
-            TOTAL_EVAP = real(TOTAL_EVAP_r4, kind(TOTAL_EVAP))
-            TOTAL_ROF = real(TOTAL_ROF_r4, kind(TOTAL_ROF))
-            TOTAL_ROFO = real(TOTAL_ROFO_r4, kind(TOTAL_ROFO))
-            TOTAL_ROFS = real(TOTAL_ROFS_r4, kind(TOTAL_ROFS))
-            TOTAL_ROFB = real(TOTAL_ROFB_r4, kind(TOTAL_ROFB))
+            out%tot%basin%prec(shd%NA) = real(TOTAL_PRE_r4, kind(out%tot%basin%prec))
+            out%tot%basin%et(shd%NA) = real(TOTAL_EVAP_r4, kind(out%tot%basin%et))/ic%dts
+            out%tot%basin%rof(shd%NA) = real(TOTAL_ROF_r4, kind(out%tot%basin%rof))/ic%dts
+            out%tot%basin%ovrflw(shd%NA) = real(TOTAL_ROFO_r4, kind(out%tot%basin%ovrflw))/ic%dts
+            out%tot%basin%latflw(shd%NA, :) = real(TOTAL_ROFS_r4, kind(out%tot%basin%latflw))/ic%dts/shd%lc%IGND
+            out%tot%basin%drainsol(shd%NA) = real(TOTAL_ROFB_r4, kind(out%tot%basin%drainsol))/ic%dts
             read(iun) STG_INI_r4
-            STG_INI = real(STG_INI_r4, kind(STG_INI))
+            out%tot%basin%stg0w(shd%NA) = real(STG_INI_r4, kind(out%tot%basin%stg0w))
 
             !> Daily streamflow values.
             if (fms%stmg%n > 0) then
@@ -1021,7 +1032,7 @@ program RUNMESH
                             write(line, '((a), f10.3)') trim(line), out%d%grid%qo(fms%stmg%meta%rnk(j))
                         end do
                     end if
-                    if (ro%RUNBALWB) then
+                    if (ro%RUNBALWB .and. ro%RUNLSS) then
                         write(line, '((a), 3(f10.3))') &
                             trim(line), &
                             sum(out%d%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC), &
@@ -1040,7 +1051,13 @@ program RUNMESH
                         case default
                             write(line, '(i5, i4)') ic%now%year, ic%now%jday
                     end select
-                    if (ro%RUNBALWB) then
+                    if (fms%stmg%n > 0) then
+                        do j = 1, fms%stmg%n
+                            if (fms%stmg%n > 0) write(line, '((a), f10.3)') trim(line), fms%stmg%qomeas%val(j)
+                            write(line, '((a), f10.3)') trim(line), out%d%grid%qo(fms%stmg%meta%rnk(j))
+                        end do
+                    end if
+                    if (ro%RUNBALWB .and. ro%RUNLSS) then
                         write(line, '((a), 3(f10.3))') &
                             trim(line), &
                             sum(out%m%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC), &
@@ -1190,19 +1207,19 @@ program RUNMESH
     if (ISHEADNODE) then
 
         !> Basin totals for the run.
-        if (ro%RUNBALWB) then
-            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
-            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%ovrflw(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROFS = TOTAL_ROFS + sum(sum(out%tot%grid%latflw(1:shd%NA, :), 2)*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%drainsol(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
-            STG_FIN = sum( &
-                (out%ts%grid%lqwscan(1:shd%NA) + out%ts%grid%fzwscan(1:shd%NA) + &
-                 out%ts%grid%sno(1:shd%NA) + out%ts%grid%lqwssno(1:shd%NA) + out%ts%grid%lqwspnd(1:shd%NA) + &
-                 out%ts%grid%stggw(1:shd%NA) + &
-                 sum(out%ts%grid%lqwssol(1:shd%NA, :), 2) + sum(out%ts%grid%fzwssol(1:shd%NA, :), 2))*shd%FRAC)/sum(shd%FRAC)
-        end if
+!-        if (ro%RUNBALWB) then
+!-            TOTAL_PRE = TOTAL_PRE + sum(out%tot%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC)
+!-            TOTAL_EVAP = TOTAL_EVAP + sum(out%tot%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+!-            TOTAL_ROF = TOTAL_ROF + sum(out%tot%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+!-            TOTAL_ROFO = TOTAL_ROFO + sum(out%tot%grid%ovrflw(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+!-            TOTAL_ROFS = TOTAL_ROFS + sum(sum(out%tot%grid%latflw(1:shd%NA, :), 2)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+!-            TOTAL_ROFB = TOTAL_ROFB + sum(out%tot%grid%drainsol(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+!-            STG_FIN = sum( &
+!-                (out%ts%grid%lqwscan(1:shd%NA) + out%ts%grid%fzwscan(1:shd%NA) + &
+!-                 out%ts%grid%sno(1:shd%NA) + out%ts%grid%lqwssno(1:shd%NA) + out%ts%grid%lqwspnd(1:shd%NA) + &
+!-                 out%ts%grid%stggw(1:shd%NA) + &
+!-                 sum(out%ts%grid%lqwssol(1:shd%NA, :), 2) + sum(out%ts%grid%fzwssol(1:shd%NA, :), 2))*shd%FRAC)/sum(shd%FRAC)
+!-        end if
 
         !> Save the current state of the model for SAVERESUMEFLAG.
         if (btest(vs%flgs%save%flo%ffmt, FFMT_SEQ) .and. &
@@ -1226,9 +1243,11 @@ program RUNMESH
 
             !> Water balance totals.
             write(iun) &
-                real(TOTAL_PRE, kind = 4), real(TOTAL_EVAP, kind = 4), real(TOTAL_ROF, kind = 4), &
-                real(TOTAL_ROFO, kind = 4), real(TOTAL_ROFS, kind = 4), real(TOTAL_ROFB, kind = 4)
-            write(iun) real(STG_INI, kind = 4)
+                real(out%tot%basin%prec(shd%NA), kind = 4), real(out%tot%basin%et(shd%NA)*ic%dts, kind = 4), &
+                real(out%tot%basin%rof(shd%NA)*ic%dts, kind = 4), &
+                real(out%tot%basin%ovrflw(shd%NA)*ic%dts, kind = 4), real(sum(out%tot%basin%latflw(shd%NA, :))*ic%dts, kind = 4), &
+                real(out%tot%basin%drainsol(shd%NA)*ic%dts, kind = 4)
+            write(iun) real(out%tot%basin%stg0w(shd%NA), kind = 4)
 
             !> Daily streamflow values.
             if (fms%stmg%n > 0) then
@@ -1367,29 +1386,31 @@ program RUNMESH
     end if
 
     !> Print basin vertical water balance totals.
-    call print_new_section('Basin water balance end of run totals (mm)')
-    call increase_tab()
-    write(line, FMT_GEN) TOTAL_PRE
-    call print_message('Total precipitation              =' // trim(line))
-    write(line, FMT_GEN) TOTAL_EVAP
-    call print_message('Total evapotranspiration         =' // trim(line))
-    write(line, FMT_GEN) TOTAL_ROF
-    call print_message('Total runoff                     =' // trim(line))
-    call increase_tab()
-    write(line, FMT_GEN) TOTAL_ROFO
-    call print_message('Overland         =' // trim(line))
-    write(line, FMT_GEN) TOTAL_ROFS
-    call print_message('Lateral          =' // trim(line))
-    write(line, FMT_GEN) TOTAL_ROFB
-    call print_message('Drainage (soil)  =' // trim(line))
-    call decrease_tab()
-    write(line, FMT_GEN) (STG_FIN - STG_INI)
-    call print_message('Change in storage                =' // trim(line))
-    call increase_tab()
-    write(line, FMT_GEN) STG_INI
-    call print_message('Initial          =' // trim(line))
-    write(line, FMT_GEN) STG_FIN
-    call print_message('Final            =' // trim(line))
+    if (ro%RUNBALWB) then
+        call print_new_section('Basin water balance end of run totals (mm)')
+        call increase_tab()
+        write(line, FMT_GEN) out%tot%basin%prec(shd%NA)
+        call print_message('Total precipitation              =' // trim(line))
+        write(line, FMT_GEN) out%tot%basin%et(shd%NA)*ic%dts
+        call print_message('Total evapotranspiration         =' // trim(line))
+        write(line, FMT_GEN) out%tot%basin%rof(shd%NA)*ic%dts
+        call print_message('Total runoff                     =' // trim(line))
+        call increase_tab()
+        write(line, FMT_GEN) out%tot%basin%ovrflw(shd%NA)*ic%dts
+        call print_message('Overland         =' // trim(line))
+        write(line, FMT_GEN) sum(out%tot%basin%latflw(shd%NA, :))*ic%dts
+        call print_message('Lateral          =' // trim(line))
+        write(line, FMT_GEN) out%tot%basin%drainsol(shd%NA)*ic%dts
+        call print_message('Drainage (soil)  =' // trim(line))
+        call decrease_tab()
+        write(line, FMT_GEN) out%tot%basin%dstgw(shd%NA)
+        call print_message('Change in storage                =' // trim(line))
+        call increase_tab()
+        write(line, FMT_GEN) out%tot%basin%stg0w(shd%NA)
+        call print_message('Initial          =' // trim(line))
+        write(line, FMT_GEN) out%tot%basin%stgw(shd%NA)
+        call print_message('Final            =' // trim(line))
+    end if
 
     !> Normal end of run message.
     call print_new_section('Program has terminated normally.', leading_lines = 2)
