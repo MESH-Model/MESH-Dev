@@ -393,7 +393,7 @@ subroutine read_basin_structures(shd, ierr)
 
         !> Find the RANK of the point and create friendly name (if one does not exist).
         fms%absp%meta%rnk = 0
-        allocate(dist(fms%rsvr%n))
+        allocate(dist(fms%absp%n))
         dist = huge(dist)
         do i = 1, fms%absp%n
             if (len_trim(fms%absp%meta%name(i)) == 0) then
