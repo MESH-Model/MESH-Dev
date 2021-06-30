@@ -1400,7 +1400,7 @@ c         Copied over from runof6.for (thr=1):  AKB July 11, 2002
 !        For control with rating curve, use rating curve.
 !        For controlled reservoirs, just use channel stoage rule
 !        (above) so we at least have some value.
-         if(b1(k).gt.0.0)then
+         if(b1(k).gt.0.0.and.b2(k).gt.0.0)then
             if(lake_area(k).gt.0.0.and.lake_elv(k,kt).gt.0.0)then
                store1(n)=lake_elv(k,kt)*lake_area(k)
             elseif(b6(k).gt.0.0.and.lake_elv(k,kt).gt.0.0)then
