@@ -147,19 +147,19 @@ module irrigation_module
                 irrm%va%dmnd(k) = 0.0
             end if
 
+            !> Determine abstraction point source.
+            if (pm%tile%iabsp(k) > 0 .and. pm%tile%iabsp(k) <= fms%absp%n) then
+
+                !> Discrict, pulls from an abstraction point.
+                n = fms%absp%meta%rnk(pm%tile%iabsp(k))
+            else
+
+                !> Grid, tile pulls from its own cell.
+                n = shd%lc%ILMOS(k)
+            end if
+
             !> Pool demand for irrigation districts.
             if (ro%RUNGRID .and. irrm%va%dmnd(k) > 0.0) then
-
-                !> Determine abstraction point source.
-                if (pm%tile%iabsp(k) > 0 .and. pm%tile%iabsp(k) <= fms%absp%n) then
-
-                    !> Discrict, pulls from an abstraction point.
-                    n = fms%absp%meta%rnk(pm%tile%iabsp(k))
-                else
-
-                    !> Grid, tile pulls from its own cell.
-                    n = shd%lc%ILMOS(k)
-                end if
                 IRDMND_GRID(n) = IRDMND_GRID(n) + &
                     (irrm%va%dmnd(k)/1000.0*ic%dts)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))*shd%AREA(shd%lc%ILMOS(k)) ! m3
             end if
@@ -172,16 +172,19 @@ module irrigation_module
 
                 !> Calculate available storage.
                 if (IRDMND_GRID(n) > 0.0) then
-                    if (any(fms%absp%meta%rnk == n)) then
 
-                        !> Apply minimum storage conditions at abstraction points.
-                        l = maxloc(fms%absp%meta%rnk, 1, fms%absp%meta%rnk <= n)
-                        AVAIL_GRID(n) = &
-                            min(max(vs%grid%stgch(n) - fms%absp%smin(l), 0.0)*(1.0 - fms%absp%fsmin(l)), IRDMND_GRID(n))
-                    else if (pm%grid%iabsp(n) == 0) then
-
-                        !> Minimum of available water and demand, with absolute minimum %5 storage preserved in channel.
+                    !> Minimum of available water and demand, with absolute minimum %5 storage preserved in channel.
+                    if (pm%grid%iabsp(n) == 0) then
                         AVAIL_GRID(n) = min(vs%grid%stgch(n)*(1.0 - 0.05), IRDMND_GRID(n)) ! m3
+                    end if
+
+                    !> Apply user-provided minimum storage conditions at abstraction points.
+                    if (fms%absp%n > 0) then
+                        if (any(fms%absp%meta%rnk == n)) then
+                            l = maxloc(fms%absp%meta%rnk, 1, fms%absp%meta%rnk <= n)
+                            AVAIL_GRID(n) = &
+                                min(max(vs%grid%stgch(n) - fms%absp%smin(l), 0.0)*(1.0 - fms%absp%fsmin(l)), IRDMND_GRID(n))
+                        end if
                     end if
 
                     !> Update storage.
