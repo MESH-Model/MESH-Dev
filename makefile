@@ -97,7 +97,7 @@ ifeq ($(DIST),intel)
 FC=ifort
 CC=icc
 GFLAG=-check bounds -fpe0
-LFLAG=-c -g -traceback
+LFLAG=-c -g -traceback -fp-model source
 FTN90PP=-fpp -free
 FTN90PPOPT=-Tf
 else
@@ -114,6 +114,9 @@ ifndef DEBUG
 GFLAG=
 ifndef SYMBOLS
 LFLAG=-c -O2
+ifeq ($(DIST),intel)
+LFLAG=-c -O2 -fp-model precise
+endif
 endif
 CLEANUP=@$(MAKE) -s clean DIST=$(DIST)
 endif
