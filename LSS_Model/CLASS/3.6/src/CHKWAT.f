@@ -80,7 +80,7 @@ C
 C
 C     * TEMPORARY VARIABLES.
 C
-      REAL ACCLMT,BALLMT,CANFAC,SNOFAC
+      REAL ACCLMT,BALLMT,CANFAC,SNOFAC(ILG)
 C
 C     * SOIL INFORMATION ARRAYS.
 C
@@ -213,15 +213,15 @@ C
           IF(FI(I).GT.0. .AND. ZSNOW(I).GT.0.) XSNOW(I)=1.0
           IF(FI(I).GT.0. .AND. ISAND(I,1).GT.-4)                   THEN
              IF(ISFC.EQ.1 .OR. ISFC.EQ.2)                 THEN
-                SNOFAC=1.0/(FCS(I)+FGS(I))
+                SNOFAC(I)=1.0/(FCS(I)+FGS(I))
              ELSE
-                SNOFAC=0.0
+                SNOFAC(I)=0.0
              ENDIF
              BAL(I)=PCPR(I)*DELT-                                               
      1                 EVAP(I)*RHOW*DELT-RUNOFF(I)*RHOW+WLOST(I)-
      2                 CANFAC*(RAICAN(I)-RAICNI(I)+SNOCAN(I)-
      3                 SNOCNI(I))-(ZPOND(I)-ZPONDI(I))*RHOW-                   
-     4                 ZSNOW(I)*RHOSNO(I)+SNOFAC*SNOWI(I)-
+     4                 ZSNOW(I)*RHOSNO(I)+SNOFAC(I)*SNOWI(I)-
      5                 WSNOW(I)+WSNOWI(I)
              DO 275 J=1,IG
                  BAL(I)=BAL(I)-
@@ -244,10 +244,10 @@ C
      1         SNOCAN(IPTBAD),SNOCNI(IPTBAD),ZPOND(IPTBAD),
      2         ZPONDI(IPTBAD)
           WRITE(6,6460) ZSNOW(IPTBAD)*RHOSNO(IPTBAD),
-     1        SNOFAC*SNOWI(IPTBAD),WSNOW(IPTBAD),WSNOWI(IPTBAD),
-     2        SNOFAC*SNOWI(IPTBAD)-ZSNOW(IPTBAD)*RHOSNO(IPTBAD),
+     1        SNOFAC(I)*SNOWI(IPTBAD),WSNOW(IPTBAD),WSNOWI(IPTBAD),
+     2        SNOFAC(I)*SNOWI(IPTBAD)-ZSNOW(IPTBAD)*RHOSNO(IPTBAD),
      3        WSNOWI(IPTBAD)-WSNOW(IPTBAD)
-          WRITE(6,6460) ZSNOW(IPTBAD),RHOSNO(IPTBAD),SNOFAC,
+          WRITE(6,6460) ZSNOW(IPTBAD),RHOSNO(IPTBAD),SNOFAC(I),
      1        SNOWI(IPTBAD)
           DO 350 J=1,IG
               WRITE(6,6460) 

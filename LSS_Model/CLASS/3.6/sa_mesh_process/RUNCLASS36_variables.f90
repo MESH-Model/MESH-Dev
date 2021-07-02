@@ -115,7 +115,7 @@ module RUNCLASS36_variables
 
     type CLASS_glacier_variables
         real, dimension(:), allocatable :: &
-            FREZTH, SNDEPLIM, SNDENLIM
+            FREZTH, SWELIM, SNDENLIM
     end type
 
     type CLASS_atmospheric_variables

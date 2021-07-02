@@ -19,7 +19,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use cropland_irrigation_variables
     use WF_ROUTE_config
     use rte_module
-    use SA_RTE_module, only: SA_RTE_flgs
+!-    use SA_RTE_module, only: SA_RTE_flgs
     use SIMSTATS_config, only: mtsflg
     use PBSM_module
     use mountain_module
@@ -303,13 +303,13 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         RUNCLASS36_flgs%pm%constant%FREZTH(:) = IROVALR
                     end if
-                case ('SNDEPLIM', 'ICEBAL_SNOW_DEPTH_LIMIT')
+                case ('SWELIM', 'ICEBAL_SWE_LIMIT')
                     call value(args(2), IROVALR, z)
                     if (z == 0) then
-                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
-                            allocate(RUNCLASS36_flgs%pm%constant%SNDEPLIM(1))
+                        if (.not. allocated(RUNCLASS36_flgs%pm%constant%SWELIM)) then
+                            allocate(RUNCLASS36_flgs%pm%constant%SWELIM(1))
                         end if
-                        RUNCLASS36_flgs%pm%constant%SNDEPLIM(:) = IROVALR
+                        RUNCLASS36_flgs%pm%constant%SWELIM(:) = IROVALR
                     end if
                 case ('SNDENLIM', 'ICEBAL_SNOW_DENSITY_LIMIT')
                     call value(args(2), IROVALR, z)
@@ -550,15 +550,20 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     call value(args(2), METRICSINCLUDESPINUP, z)
                 case ('FROZENSOILINFILFLAG')
                     call value(args(2), FROZENSOILINFILFLAG, z)
-                case ('PRINTRFFR2CFILEFLAG')
-                    call value(args(2), SA_RTE_flgs%PRINTRFFR2CFILEFLAG, z)
-                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1)
-                case ('PRINTRCHR2CFILEFLAG')
-                    call value(args(2), SA_RTE_flgs%PRINTRCHR2CFILEFLAG, z)
-                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1)
-!+                case ('PRINTLKGR2CFILEFLAG')
-!+                    call value(args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG, z)
-!+                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTLKGR2CFILEFLAG == 1)
+!-                case ('PRINTRFFR2CFILEFLAG')
+!-                    call value(args(2), SA_RTE_flgs%PRINTRFFR2CFILEFLAG, z)
+!-                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTRFFR2CFILEFLAG == 1)
+!-                case ('PRINTRCHR2CFILEFLAG')
+!-                    call value(args(2), SA_RTE_flgs%PRINTRCHR2CFILEFLAG, z)
+!-                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTRCHR2CFILEFLAG == 1)
+!-                case ('PRINTLKGR2CFILEFLAG')
+!-                    call value(args(2), SA_RTE_flgs%PRINTLKGR2CFILEFLAG, z)
+!-                    SA_RTE_flgs%PROCESS_ACTIVE = (SA_RTE_flgs%PRINTLKGR2CFILEFLAG == 1)
+                case('PRINTRFFR2CFILEFLAG', 'PRINTRCHR2CFILEFLAG', 'PRINTLKGR2CFILEFLAG')
+                    call print_screen( &
+                        "ERROR: The '" // trim(args(1)) // "' control flag is not supported. Create the outputs using " // &
+                        "'OUTFILESFLAG' instead.")
+                    ierr = 1
                 case ('ICTEMMOD')
                     call value(args(2), ICTEMMOD, z)
 
@@ -709,10 +714,11 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 
             !> Check for errors.
             if (z /= 0) then
-                call print_screen("WARNING: Unable to parse the options of '" // trim(adjustl(args(1))) // "'.")
+                call print_screen("WARNING: An error occurred parsing the options of '" // trim(adjustl(args(1))) // "'.")
             end if
         end do
     end if
+    if (ierr /= 0) goto 99
 
     !> Empty lines.
     do i = 1, 2
@@ -767,6 +773,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 
 98  ierr = 1
     call print_error('Unable to read the file.')
+99  ECHOTXTMODE = .false.
     return
 
 end subroutine

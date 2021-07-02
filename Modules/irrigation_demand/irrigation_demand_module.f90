@@ -130,7 +130,7 @@ module irrigation_module
                             check = irrm%pm%thlmin(k)*pm%tile%thfc(k, j) ! calculate 50% of field capacity
                             lqsum =  vs%tile%thlqsol(k, j)
                             if (lqsum < check)then ! check if sum of soil moisture is less than 50% of FC
-                                ir = (pm%tile%thfc(k, j) - lqsum)*vs%tile%dzwat(k, j) ! calculate irrigation water to field capacity for each permeable soil depth
+                                ir = (pm%tile%thfc(k, j) - lqsum)*vs%tile%dzsolhyd(k, j) ! calculate irrigation water to field capacity for each permeable soil depth
                             else
                                 ir = 0.0
                             end if

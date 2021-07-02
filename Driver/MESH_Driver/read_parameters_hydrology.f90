@@ -819,15 +819,15 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls, ierr)
                                     if (z /= 0) goto 931
                                 end do
                             end if
-                        case ('sndeplim', 'icebal_snow_depth_limit')
+                        case ('swelim', 'icebal_swe_limit')
                             if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) then
                                 ikey = 1
                             else
-                                if (.not. allocated(RUNCLASS36_flgs%pm%gru%SNDEPLIM)) then
-                                    allocate(RUNCLASS36_flgs%pm%gru%SNDEPLIM(NTYPE))
+                                if (.not. allocated(RUNCLASS36_flgs%pm%gru%SWELIM)) then
+                                    allocate(RUNCLASS36_flgs%pm%gru%SWELIM(NTYPE))
                                 end if
                                 do j = 1, NTYPE
-                                    call value(args(j + 1), RUNCLASS36_flgs%pm%gru%SNDEPLIM(j), z)
+                                    call value(args(j + 1), RUNCLASS36_flgs%pm%gru%SWELIM(j), z)
                                     if (z /= 0) goto 931
                                 end do
                             end if

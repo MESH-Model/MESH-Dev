@@ -179,7 +179,7 @@ C
       DO 300 J=1,IGP1                                                             
       DO 300 K=1,IGP1
       DO 300 I=IL1,IL2
-          IF(IGRN(I).GT.0 .AND. K.LE.NINF(I))                       THEN
+          IF(IGRN(I).GT.0)                       THEN
               ZMAT(I,K,J)=0.0                                                       
           ENDIF
   300 CONTINUE                        

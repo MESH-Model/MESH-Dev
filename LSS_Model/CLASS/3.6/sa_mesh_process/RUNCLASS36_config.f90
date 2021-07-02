@@ -296,7 +296,7 @@ module RUNCLASS36_config
         allocate(csfv%ALIC(NML, ICP1), csfv%ALVC(NML, ICP1), csfv%FCAN(NML, ICP1), csfv%LNZ0(NML, ICP1))
 
         !> Glacier variables.
-        allocate(cglv%FREZTH(NML), cglv%SNDEPLIM(NML), cglv%SNDENLIM(NML))
+        allocate(cglv%FREZTH(NML), cglv%SWELIM(NML), cglv%SNDENLIM(NML))
 
         !> Atmospheric variables.
         allocate(catv%CSZ(NML), catv%DLON(NML), catv%FCLO(NML), catv%GC(NML), catv%GGEO(NML), catv%PADR(NML), catv%RADJ(NML), &
@@ -417,21 +417,21 @@ module RUNCLASS36_config
         else
             cglv%FREZTH(il1:il2) = -2.0
         end if
-        if (allocated(RUNCLASS36_flgs%pm%tile%SNDEPLIM)) then
+        if (allocated(RUNCLASS36_flgs%pm%tile%SWELIM)) then
             if (DIAGNOSEMODE) then
-                call print_message('ICEBAL_SNOW_DEPTH_LIMIT (SNDEPLIM) override is ACTIVE.')
-                if (allocated(RUNCLASS36_flgs%pm%constant%SNDEPLIM)) then
-                    write(line, FMT_GEN) 'Uniform value: ', RUNCLASS36_flgs%pm%constant%SNDEPLIM
+                call print_message('ICEBAL_SWE_LIMIT (SWELIM) override is ACTIVE.')
+                if (allocated(RUNCLASS36_flgs%pm%constant%SWELIM)) then
+                    write(line, FMT_GEN) 'Uniform value: ', RUNCLASS36_flgs%pm%constant%SWELIM
                     call print_message(line)
                 end if
-                if (allocated(RUNCLASS36_flgs%pm%gru%SNDEPLIM)) then
-                    write(line, FMT_GEN) 'GRU value: ', (RUNCLASS36_flgs%pm%gru%SNDEPLIM(j), j = 1, NTYPE)
+                if (allocated(RUNCLASS36_flgs%pm%gru%SWELIM)) then
+                    write(line, FMT_GEN) 'GRU value: ', (RUNCLASS36_flgs%pm%gru%SWELIM(j), j = 1, NTYPE)
                     call print_message(line)
                 end if
             end if
-            cglv%SNDEPLIM(il1:il2) = RUNCLASS36_flgs%pm%tile%SNDEPLIM(il1:il2)
+            cglv%SWELIM(il1:il2) = RUNCLASS36_flgs%pm%tile%SWELIM(il1:il2)
         else
-            cglv%SNDEPLIM(il1:il2) = 100.0
+            cglv%SWELIM(il1:il2) = 100.0
         end if
         if (allocated(RUNCLASS36_flgs%pm%tile%SNDENLIM)) then
             if (DIAGNOSEMODE) then
@@ -526,8 +526,8 @@ module RUNCLASS36_config
         pm%tile%tcs(il1:il2, :) = csfv%TCS(il1:il2, :)
         pm%tile%thfc(il1:il2, :) = csfv%THFC(il1:il2, :)
         pm%tile%psiwlt(il1:il2, :) = csfv%PSIW(il1:il2, :)
-        vs%tile%dzwat(il1:il2, :) = csfv%DELZW(il1:il2, :)
-        vs%tile%zbotwat(il1:il2, :) = csfv%ZBTW(il1:il2, :)
+        vs%tile%dzsolhyd(il1:il2, :) = csfv%DELZW(il1:il2, :)
+        vs%tile%zsolhyd(il1:il2) = sum(csfv%ZBTW(il1:il2, :), 2)
 
         !> CLASS output files.
         if (WF_NUM_POINTS > 0) call CLASSOUT_open_files(shd)

@@ -40,8 +40,7 @@ OBJECTS+=	precmod.o stringmod.o
 OBJECTS+=	print_routines.o program_end.o program_abort.o \
 			module_files_variabletypes.o module_files_variables.o \
 			mesh_io_options.o \
-			module_dates.o \
-			EF_Module.o EF_ParseUtilities.o FLAGS.o \
+			module_dates.o FLAGS.o \
 			parse_utilities.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			control_variables.o \
@@ -106,15 +105,19 @@ PHY=$(DIR_REPO)/LSS_Model/SVS/svs1/rpnphy_5.8.3_all
 CHANGES2PHY=$(DIR_REPO)/LSS_Model/SVS/svs1/changes_to_rpnphy
 SVS=$(DIR_REPO)/LSS_Model/SVS/svs1/svs_GEM_v5.8.rc2
 VPATH+=	$(PHY): $(CHANGES2PHY): $(SVS) \
-		$(DIR_REPO)/LSS_Model/SVS/svs1/rmnlib_013: \
 		$(DIR_REPO)/LSS_Model/SVS/svs1/src:
 # Includes.
 INC_DIRS+=-I$(CHANGES2PHY) -I$(PHY) -I$(SVS)
 # Variables.
 DFLAG=-DRUNSVS
+# RMNLIB
+VPATH+=	$(DIR_REPO)/Modules/librmn/19.7.0/base: \
+		$(DIR_REPO)/Modules/librmn/19.7.0/primitives:
+INC_DIRS+=-I./Modules/librmn/19.7.0/CUSTOM_INCLUDES/
+OBJECTS+=	datec.o moduledate.o set_user_lock.o \
+			up2low.o getenvc.o
 # Core routines.
-OBJECTS+=	datec.o moduledate.o \
-			runsvs_mod_sa_mesh.o runsvs_utils.o \
+OBJECTS+=	runsvs_mod_sa_mesh.o runsvs_utils.o \
 			runsvs_init_mesh.o \
 			sfclayer_mod.o sfc_options.o svs_configs.o \
 			inicover_svs.o \
@@ -141,13 +144,11 @@ VPATH+=	$(DIR_REPO)/Routing_Model/reservoir_update:
 OBJECTS+=	module_reservoir.o zonebased_reservoir_release.o
 
 # ======================================================================
-# WF_ROUTE and SA_RTE.
+# WF_ROUTE.
 # Paths.
-VPATH+=	$(DIR_REPO)/Routing_Model/WatRoute_old: \
-		$(DIR_REPO)/Routing_Model/RPN_watroute/sa_mesh_process:
+VPATH+=	$(DIR_REPO)/Routing_Model/WatRoute_old:
 # Files.
 OBJECTS+=	WF_ROUTE_config.o WF_ROUTE.o WF_ROUTE_module.o
-OBJECTS+=	SA_RTE_module.o
 
 # ======================================================================
 # RTE.
@@ -162,7 +163,7 @@ OBJECTS+=	area_watflood.o rerout.o route.o flowinit.o \
 # SA_MESH routines.
 # Input routines.
 OBJECTS+=	read_initial_inputs.o \
-			read_shed_r2c.o read_shed_nc.o read_soil_levels.o \
+			read_shed_r2c.o read_shed_nc.o read_shed_csv.o read_soil_levels.o read_shed_nc_subbasin.o \
 			read_parameters.o \
 			read_parameters_class.o read_parameters_hydrology.o read_parameters_r2c.o read_parameters_nc.o read_parameters_csv.o \
 			check_parameters.o \
@@ -173,8 +174,7 @@ OBJECTS+=	read_initial_inputs.o \
 			read_initial_values_r2c.o \
 			module_files.o
 # Output routines.
-OBJECTS+=	WRITE_R2C_HEADER.o write_r2c.o \
-			output_files.o save_basin_output.o
+OBJECTS+=	output_files.o save_basin_output.o
 # MESH driver.
 OBJECTS+=	read_run_options.o \
 			sa_mesh_run_within_tile.o sa_mesh_run_within_grid.o sa_mesh_run_between_grid.o \

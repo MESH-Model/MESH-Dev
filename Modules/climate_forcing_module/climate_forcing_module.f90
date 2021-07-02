@@ -52,6 +52,7 @@ module climate_forcing
         !> Local variables.
         integer vid, iun, isteps1, isteps2, month, day, t, s, k, j, i, ierr
         character(len = DEFAULT_LINE_LENGTH) line
+        character(len = DEFAULT_FIELD_LENGTH) date1, date2, time
 
         ENDDATA = .false.
 
@@ -168,7 +169,8 @@ module climate_forcing
             if (open_data(shd, cm, vid)) goto 999
 
             !> Print field to screen.
-            call print_message(cm%dat(vid)%fpath)
+            call print_message("OPENING: " // trim(cm%dat(vid)%fpath))
+            call increase_tab()
 
             !> Check if the file is in the legacy binary format.
             if (cm%dat(vid)%ffmt == 0) then
@@ -266,17 +268,24 @@ module climate_forcing
                 call print_message('Skipping ' // trim(adjustl(line)) // ' records.')
                 if (update_data(shd, cm, vid, cm%dat(vid)%iskip)) goto 999
             end if
+            call decrease_tab()
         end do
 
         !> Print summary of climate forcing variables.
         if (DIAGNOSEMODE) then
+            call print_message('Diagnostic summary:')
             call increase_tab()
-            write(line, FMT_GEN) 'Variable', 'Name', 'File format', 'Frame length', 'Blocks in-mem.', 'No. series'
+            write(line, FMT_GEN) &
+                'Variable', 'Name', 'File format', 'Frame length', 'Blocks in-mem.', 'No. series', 'Ref. date', '(YJD)', 'Ref. time'
             call print_message(line)
             do i = 1, cm%nclim
                 if (cm%dat(i)%factive) then
+                    write(date1, FMT_DATE) cm%dat(i)%start_date%year, cm%dat(i)%start_date%month, cm%dat(i)%start_date%day
+                    write(date2, FMT_DATE_YJD) cm%dat(i)%start_date%year, cm%dat(i)%start_date%jday
+                    write(time, FMT_TIME) cm%dat(i)%start_date%hour, cm%dat(i)%start_date%mins, 0
                     write(line, FMT_GEN) &
-                        cm%dat(i)%id_var, cm%dat(i)%fname, cm%dat(i)%ffmt, cm%dat(i)%hf, cm%dat(i)%nblocks, cm%dat(i)%nseries
+                        cm%dat(i)%id_var, cm%dat(i)%fname, cm%dat(i)%ffmt, cm%dat(i)%hf, cm%dat(i)%nblocks, cm%dat(i)%nseries, &
+                        date1, date2, time
                     call print_message(line)
                 end if
             end do
@@ -330,6 +339,10 @@ module climate_forcing
             case ('3')
                 climate_variable%ffmt = 3
 
+            !> Rank-ordered text (ASCII) format.
+            case ('4')
+                climate_variable%ffmt = 4
+
             !> Old-format frames to read in to memory.
             case ('5')
                 if (n >= 4) then
@@ -365,9 +378,17 @@ module climate_forcing
                 case ('seq')
                     climate_variable%ffmt = 3
 
+                !> Rank-ordered text (ASCII) format.
+                case ('asc')
+                    climate_variable%ffmt = 4
+
                 !> netCDF format.
                 case ('nc')
                     climate_variable%ffmt = 7
+
+                !> netCDF format (vector/subbasin).
+                case ('nc_subbasin', 'nc_hru')
+                    climate_variable%ffmt = 8
             end select
 
             !> Multi-word options.
@@ -454,6 +475,11 @@ module climate_forcing
 
                 !> Data additive factor.
                 call value(args(j)(4:), climate_variable%ca, z)
+                if (z /= 0) ierr = z
+            else if (args(j)(1:12) == 'n_skip_cols=') then
+
+                !> Number of leading columns (to skip).
+                call value(args(j)(13:), climate_variable%n_skip_cols, z)
                 if (z /= 0) ierr = z
             else if (args(j)(1:11) == 'time_shift=') then
 

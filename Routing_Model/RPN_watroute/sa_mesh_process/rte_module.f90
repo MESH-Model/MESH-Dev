@@ -642,7 +642,7 @@ module rte_module
         read(iun) store2
         read(iun) qi2
         if (fms%rsvr%n > 0) then
-            read(iun) lake_elv(:, fhr)
+            read(iun) lake_elv(:, 1)
         else
             read(iun)
         end if
@@ -937,7 +937,13 @@ module rte_module
             !> Update the local variables for output averaging.
             if (associated(out%ts%grid%qi)) inline_qi = inline_qi + qi2
             if (associated(out%ts%grid%stgch)) inline_stgch = inline_stgch + store2
-            if (associated(out%ts%grid%qo)) inline_qo = inline_qo + qo2
+            if (associated(out%ts%grid%qo)) then
+                inline_qo = inline_qo + qo2
+
+                !> Override to preserve flow passed to the outlet when the outlet is outside the basin
+                !>  (this condition is expected but not guaranteed).
+                if (na > naa) inline_qo(na) = inline_qo(na) + qi2(na)
+            end if
 
         end do !n = 1, no_dt
 

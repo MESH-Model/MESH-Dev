@@ -112,7 +112,7 @@ module climate_forcing_io
                 if (ierr /= 0) goto 999
                 cm%dat(vid)%blocktype = cbk%GRD
 
-            !> ASCII format.
+            !> Rank-ordered text (ASCII) format.
             case (4)
                 if (len_trim(cm%dat(vid)%fpath) == 0) then
                     cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname)) // '.asc'
@@ -432,6 +432,64 @@ module climate_forcing_io
                 call program_abort()
 #endif
 
+            !> netCDF format (vector/subbasin).
+            case(8)
+
+                !> Update the path if none exists.
+                if (len_trim(cm%dat(vid)%fpath) == 0) then
+                    cm%dat(vid)%fpath = trim(adjustl(cm%dat(vid)%fname)) // '.nc'
+                end if
+#ifdef NETCDF
+
+                !> Open the file.
+                call nc4_open_input(cm%dat(vid)%fpath, quiet = .true., iun = cm%dat(vid)%fiun, ierr = ierr)
+                if (ierr /= 0) goto 999
+
+                !> Check that the variable 'id_var' exists in the file.
+                call nc4_check_variable( &
+                    cm%dat(vid)%fiun, cm%dat(vid)%id_var, &
+                    size_dat = (/shd%NA, 0/), &
+                    dim1_name = 'subbasin', dim2_name = cm%dat(vid)%name_time, &
+                    vid = cm%dat(vid)%vid, &
+                    dim1_order = cm%dat(vid)%ncol_lon, dim2_order = cm%dat(vid)%ncol_time, &
+                    dim_lengths = cm%dat(vid)%dim_length, &
+                    ierr = ierr)
+                if (ierr /= 0) then
+                    goto 998
+                else
+
+                    !> Get the dimensions of the variable.
+                    cm%dat(vid)%dim_length(cm%dat(vid)%ncol_time) = cm%dat(vid)%nblocks
+                end if
+
+                !> Get the reference time.
+                call nc4_get_reference_time( &
+                    cm%dat(vid)%fiun, &
+                    cm%dat(vid)%name_time, cm%dat(vid)%time_shift, &
+                    tid = cm%dat(vid)%tid, dtype = dtype, units = time_units, reference_time = reference_time, &
+                    ierr = ierr)
+                if (ierr /= 0) goto 998
+
+                !> Convert the reference time to component-wise units.
+                call nc4_get_time( &
+                    cm%dat(vid)%fiun, cm%dat(vid)%tid, reference_time, time_units, dtype, &
+                    cm%dat(vid)%name_time, &
+                    year = cm%dat(vid)%start_date%year, month = cm%dat(vid)%start_date%month, &
+                    day = cm%dat(vid)%start_date%day, jday = cm%dat(vid)%start_date%jday, &
+                    hour = cm%dat(vid)%start_date%hour, minutes = cm%dat(vid)%start_date%mins, &
+                    ierr = ierr)
+                if (ierr /= 0) goto 998
+
+                !> Set the block type.
+                cm%dat(vid)%blocktype = cbk%GRD
+#else
+                call print_error( &
+                    'NetCDF format is specified for ' // trim(cm%dat(vid)%fpath) // ' (' // trim(cm%dat(vid)%id_var) // &
+                    ') but the module is not active.' // &
+                    ' A version of MESH compiled with the NetCDF library must be used to read files in this format.')
+                call program_abort()
+#endif
+
             !> Unknown file format.
             case default
                 call print_error(trim(cm%dat(vid)%fname) // ' (' // trim(cm%dat(vid)%id_var) // '): Unsupported file format.')
@@ -508,8 +566,8 @@ module climate_forcing_io
         real GRD(shd%yCount, shd%xCount), MET(9)
         character(len = DEFAULT_LINE_LENGTH) line
 #ifdef NETCDF
-        real, allocatable :: dat3(:, :, :)
-        integer, dimension(3) :: start
+        real, allocatable :: dat3(:, :, :), dat2(:, :)
+        integer start3(3), start2(2)
         integer ierr
 #endif
 
@@ -551,7 +609,8 @@ module climate_forcing_io
             case (2)
                 do t = 1, n
                     if (iskip == 0) then
-                        read(cm%dat(vid)%fiun, *, end = 999) (cm%dat(vid)%blocks(j, t), j = 1, shd%lc%NTYPE)
+                        read(cm%dat(vid)%fiun, *, end = 999) &
+                            (line, j = 1, cm%dat(vid)%n_skip_cols), (cm%dat(vid)%blocks(j, t), j = 1, shd%lc%NTYPE)
                     else
                         read(cm%dat(vid)%fiun, *, end = 999)
                     end if
@@ -575,11 +634,12 @@ module climate_forcing_io
                 end if
                 deallocate(blocks_r4)
 
-            !> ASCII format.
+            !> Rank-ordered text (ASCII) format.
             case (4)
                 do t = 1, n
                     if (iskip == 0) then
-                        read(cm%dat(vid)%fiun, *, end = 999) (cm%dat(vid)%blocks(i, t), i = 1, shd%NA)
+                        read(cm%dat(vid)%fiun, *, end = 999) &
+                            (line, j = 1, cm%dat(vid)%n_skip_cols), (cm%dat(vid)%blocks(i, t), i = 1, shd%NA)
                     else
                         read(cm%dat(vid)%fiun, *, end = 999)
                     end if
@@ -642,8 +702,8 @@ module climate_forcing_io
                     allocate(dat3(shd%xCount, shd%yCount, cm%dat(vid)%nblocks))
 
                     !> Set the starting position in each dimension (all at '1' except time).
-                    start = 1
-                    start(cm%dat(vid)%ncol_time) = cm%dat(vid)%iskip + 1
+                    start3 = 1
+                    start3(cm%dat(vid)%ncol_time) = cm%dat(vid)%iskip + 1
 
                     !> Read data.
 !-                    z = nf90_get_var(cm%dat(vid)%fiun, cm%dat(vid)%vid, dat3, start = start)
@@ -657,7 +717,7 @@ module climate_forcing_io
 !-                    end if
                     call nc4_get_data( &
                         cm%dat(vid)%fiun, cm%dat(vid)%id_var, cm%dat(vid)%vid, dat3, cm%dat(vid)%dim_length, &
-                        cm%dat(vid)%ncol_lon, cm%dat(vid)%ncol_lat, cm%dat(vid)%ncol_time, start, ierr = ierr)
+                        cm%dat(vid)%ncol_lon, cm%dat(vid)%ncol_lat, cm%dat(vid)%ncol_time, start3, quiet = .true., ierr = ierr)
                     if (ierr /= 0) goto 999
 
                     !> Map and save values from the temporary array.
@@ -700,6 +760,40 @@ module climate_forcing_io
 !-                                cm%dat(vid)%blocks(i, :) = dat3(:, shd%yyy(i), shd%xxx(i))
 !-                            end do
 !-                    end select
+                end if
+
+                !> Save the number of records read to save for the next update.
+                cm%dat(vid)%iskip = cm%dat(vid)%iskip + cm%dat(vid)%nblocks
+#else
+                call print_error( &
+                    'NetCDF format is specified for ' // trim(cm%dat(vid)%fpath) // ' (' // trim(cm%dat(vid)%id_var) // &
+                    ') but the module is not active.' // &
+                    ' A version of MESH compiled with the NetCDF library must be used to read files in this format.')
+                call program_abort()
+#endif
+
+            !> netCDF format (vector/subbasin).
+            case(8)
+#ifdef NETCDF
+                if (iskip == 0) then
+
+                    !> Allocate the temporary array considering the order of the dimensions in the variable.
+                    allocate(dat2(shd%NA, cm%dat(vid)%nblocks))
+
+                    !> Set the starting position in each dimension (all at '1' except time).
+                    start2 = 1
+                    start2(cm%dat(vid)%ncol_time) = cm%dat(vid)%iskip + 1
+
+                    !> Read data.
+                    call nc4_get_data( &
+                        cm%dat(vid)%fiun, cm%dat(vid)%id_var, cm%dat(vid)%vid, dat2, cm%dat(vid)%dim_length, &
+                        cm%dat(vid)%ncol_lon, cm%dat(vid)%ncol_time, start2, quiet = .true., ierr = ierr)
+                    if (ierr /= 0) goto 999
+
+                    !> Transfer values.
+                    do i = 1, shd%NA
+                        cm%dat(vid)%blocks(i, :) = dat2(i, :)
+                    end do
                 end if
 
                 !> Save the number of records read to save for the next update.

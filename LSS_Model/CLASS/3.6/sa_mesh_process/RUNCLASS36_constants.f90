@@ -36,7 +36,7 @@ module RUNCLASS36_constants
     real, dimension(18, 4, 2) :: GROWYR
 
     type CLASS_parameters
-        real, dimension(:), allocatable :: FREZTH, SNDEPLIM, SNDENLIM
+        real, dimension(:), allocatable :: FREZTH, SWELIM, SNDENLIM
     end type
 
     !> Common CLASS blocks defined and set in CLASSBD and CLASSD.

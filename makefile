@@ -3,7 +3,7 @@
 
 # ======================================================================
 # Make targets (defined below).
-.PHONY: default gfortran ifort mingw_static mpi_gcc mpi_intel debug netcdf all clean veryclean
+.PHONY: default gfortran ifort mingw_static mpi_gcc mpi_intel symbols debug netcdf all clean veryclean
 default: all
 
 # ======================================================================
@@ -56,7 +56,10 @@ endif
 # ======================================================================
 # Pre-configured targets: Debug symbols.
 ifeq ($(filter debug,$(MAKECMDGOALS)),debug)
+SYMBOLS=yes
 DEBUG=yes
+else ifeq ($(filter symbols,$(MAKECMDGOALS)),symbols)
+SYMBOLS=yes
 endif
 
 # ======================================================================
@@ -82,6 +85,7 @@ ifort: all
 mingw_static: all
 mpi_gcc: all
 mpi_intel: all
+symbols: all
 debug: all
 double: all
 netcdf: all
@@ -91,19 +95,26 @@ netcdf: all
 # 'FTN90PP' and 'FTN90PPOPT' required to compile 'ftn90' files.
 ifeq ($(DIST),intel)
 FC=ifort
-LFLAG=-c -g -traceback -check bounds -fpe0
+CC=icc
+GFLAG=-check bounds -fpe0
+LFLAG=-c -g -traceback
 FTN90PP=-fpp -free
 FTN90PPOPT=-Tf
 else
 FC=gfortran
-LFLAG=-c -g -fbacktrace -fbounds-check -ffpe-trap=invalid,zero,overflow -Wconversion -Winteger-division -Wsurprising -Wintrinsic-shadow -Wtarget-lifetime
+CC=gcc
+GFLAG=-fbounds-check -ffpe-trap=invalid,zero,overflow -Wconversion -Winteger-division -Wsurprising -Wintrinsic-shadow -Wtarget-lifetime
+LFLAG=-c -g -fbacktrace
 FTN90PP=-x f95 -cpp -ffree-form -ffree-line-length-none -fcray-pointer
 FTN90PPOPT=
 endif
 
 # Override debugging options if 'DEBUG' not enabled.
 ifndef DEBUG
+GFLAG=
+ifndef SYMBOLS
 LFLAG=-c -O2
+endif
 CLEANUP=@$(MAKE) -s clean DIST=$(DIST)
 endif
 
@@ -127,6 +138,7 @@ FC=mpif90
 else
 FC=mpifort
 endif
+CC=mpicc
 OUT=mpi_sa_mesh
 else
 OBJECTS:=	mpi_stub.o $(OBJECTS)
@@ -137,6 +149,7 @@ ifeq ($(DIST),mingw)
 BIN_DEL=del
 LLINK=-static
 FC=gfortran
+CC=gcc
 OUT=sa_mesh_static
 else
 BIN_DEL=rm
@@ -145,13 +158,15 @@ endif
 # ======================================================================
 # General rules.
 %.o: %.f
-	$(FC) $(LFLAG) $(LIBNCO) $<
+	$(FC) $(LFLAG) $(GFLAG) $(LIBNCO) $<
 %.o: %.F90
-	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $(DFLAG) $(LIBNCO) $(FTN90PPOPT) $<
+	$(FC) $(FTN90PP) $(LFLAG) $(GFLAG) $(INC_DIRS) $(DFLAG) $(LIBNCO) $(FTN90PPOPT) $<
 %.o: %.f90
-	$(FC) $(FTN90PP) $(LFLAG) $(LIBNCO) $<
+	$(FC) $(FTN90PP) $(LFLAG) $(GFLAG) $(LIBNCO) $<
 %.o: %.for
-	$(FC) $(LFLAG) $(LIBNCO) $<
+	$(FC) $(LFLAG) $(GFLAG) $(LIBNCO) $<
+%.o: %.c
+	$(CC) $(LFLAG) $(INC_DIRS) $<
 
 # ======================================================================
 # Special rules.

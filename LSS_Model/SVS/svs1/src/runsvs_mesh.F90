@@ -200,6 +200,7 @@ module runsvs_mesh
         character(len = DEFAULT_LINE_LENGTH) line
         character(len = DEFAULT_FIELD_LENGTH) level
 
+        integer dateo(1), houro
         integer, external :: newdate
 !        external incdatr
         external svs, inicover_svs
@@ -897,7 +898,7 @@ module runsvs_mesh
 !        integer, parameter :: bussiz = runsvs_busdim
 !        real bus(bussiz)
 !        integer datecmc_o, date_f, hour_f
-        integer datecmc_v, date_v, hour_v, istat, kount, bidon
+        integer datecmc_v, date_v(1), hour_v, istat, kount, bidon
         real(kind = 8) kdt
 
         integer iun, k, ki, kj, j, i

@@ -261,6 +261,7 @@ module output_files
         !> Clip the line to the first instance of '#' or '!' if one exists.
         line = ''
         i = 0
+        ierr = 0
         do while (ierr == 0)
             read(iun, '(a)', iostat = ierr) line
             i = i + 1
@@ -1908,15 +1909,15 @@ module output_files
             z = 0
             select case (args(1))
 
-                !> Model variables.
+                !> Meteorology/climatology variables.
                 case (VN_FSIN, 'FSDOWN')
                     call output_files_append_field(fls, shd, ts, VN_FSIN, args, nargs, z)
-                case (VN_FSVH)
-                    call output_files_append_field(fls, shd, ts, VN_FSVH, args, nargs, z, -1, 0.5)
-                case (VN_FSIH)
-                    call output_files_append_field(fls, shd, ts, VN_FSIH, args, nargs, z, -1, 0.5)
-                case (VN_FSDIR)
-                    call output_files_append_field(fls, shd, ts, VN_FSDIR, args, nargs, z)
+                case (VN_FSVS, 'FSVH')
+                    call output_files_append_field(fls, shd, ts, VN_FSVS, args, nargs, z)
+                case (VN_FSIR, 'FSIH')
+                    call output_files_append_field(fls, shd, ts, VN_FSIR, args, nargs, z)
+                case (VN_FSDR, 'FSDIR')
+                    call output_files_append_field(fls, shd, ts, VN_FSDR, args, nargs, z)
                 case (VN_FSDFF)
                     call output_files_append_field(fls, shd, ts, VN_FSDFF, args, nargs, z)
                 case (VN_FSOUT)
@@ -1931,26 +1932,28 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_QA, args, nargs, z)
                 case (VN_PRES)
                     call output_files_append_field(fls, shd, ts, VN_PRES, args, nargs, z)
-                case (VN_UV, 'UL')
-                    call output_files_append_field(fls, shd, ts, VN_UV, args, nargs, z)
-                case (VN_WDIR)
-                    call output_files_append_field(fls, shd, ts, VN_WDIR, args, nargs, z)
                 case (VN_UU)
                     call output_files_append_field(fls, shd, ts, VN_UU, args, nargs, z)
                 case (VN_VV)
                     call output_files_append_field(fls, shd, ts, VN_VV, args, nargs, z)
-                case (VN_PRE)
-                    call output_files_append_field(fls, shd, ts, VN_PRE, args, nargs, z)
+                case (VN_UV, 'UL')
+                    call output_files_append_field(fls, shd, ts, VN_UV, args, nargs, z)
+                case (VN_WDIR)
+                    call output_files_append_field(fls, shd, ts, VN_WDIR, args, nargs, z)
                 case (VN_PRERN)
                     call output_files_append_field(fls, shd, ts, VN_PRERN, args, nargs, z)
                 case (VN_PRESNO)
                     call output_files_append_field(fls, shd, ts, VN_PRESNO, args, nargs, z)
-                case (VN_PREC, 'Rainfall', 'Rain', 'Precipitation')
-                    call output_files_append_field(fls, shd, ts, VN_PREC, args, nargs, z)
+                case (VN_PRE)
+                    call output_files_append_field(fls, shd, ts, VN_PRE, args, nargs, z)
                 case (VN_PRECRN)
                     call output_files_append_field(fls, shd, ts, VN_PRECRN, args, nargs, z)
                 case (VN_PRECSNO)
                     call output_files_append_field(fls, shd, ts, VN_PRECSNO, args, nargs, z)
+                case (VN_PREC, 'Rainfall', 'Rain', 'Precipitation')
+                    call output_files_append_field(fls, shd, ts, VN_PREC, args, nargs, z)
+
+                !> Canopy variables.
                 case (VN_LQWSCAN, 'RCAN')
                     call output_files_append_field(fls, shd, ts, VN_LQWSCAN, args, nargs, z)
                 case (VN_FZWSCAN, 'SNCAN', 'SCAN')
@@ -1961,20 +1964,26 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_TCAN, args, nargs, z)
                 case (VN_GRO)
                     call output_files_append_field(fls, shd, ts, VN_GRO, args, nargs, z)
+
+                !> Snow variables.
+                case (VN_FSNO)
+                    call output_files_append_field(fls, shd, ts, VN_FSNO, args, nargs, z)
                 case (VN_SNO)
                     call output_files_append_field(fls, shd, ts, VN_SNO, args, nargs, z)
                 case (VN_RHOSNO)
                     call output_files_append_field(fls, shd, ts, VN_RHOSNO, args, nargs, z)
                 case (VN_ZSNO)
                     call output_files_append_field(fls, shd, ts, VN_ZSNO, args, nargs, z)
-                case (VN_FSNO)
-                    call output_files_append_field(fls, shd, ts, VN_FSNO, args, nargs, z)
                 case (VN_LQWSSNO, 'WSNO')
                     call output_files_append_field(fls, shd, ts, VN_LQWSSNO, args, nargs, z)
                 case (VN_TSNO)
                     call output_files_append_field(fls, shd, ts, VN_TSNO, args, nargs, z)
+                case (VN_ALBSNO)
+                    call output_files_append_field(fls, shd, ts, VN_ALBSNO, args, nargs, z)
                 case (VN_DRAINSNO, 'ROFSNO')
                     call output_files_append_field(fls, shd, ts, VN_DRAINSNO, args, nargs, z, -1, real(ic%dts))
+
+                !> Surface variables.
                 case (VN_ALBT)
                     call output_files_append_field(fls, shd, ts, VN_ALBT, args, nargs, z)
                 case (VN_ALVS)
@@ -1989,6 +1998,8 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_LQWSPND, args, nargs, z)
                 case (VN_TPND)
                     call output_files_append_field(fls, shd, ts, VN_TPND, args, nargs, z)
+                case (VN_PNDCAF, 'FSTR')
+                    call output_files_append_field(fls, shd, ts, VN_PNDCAF, args, nargs, z)
                 case (VN_POTEVP, 'PEVP')
                     call output_files_append_field(fls, shd, ts, VN_POTEVP, args, nargs, z, -1, real(ic%dts))
                 case (VN_ET, 'EVAP', 'Evapotranspiration')
@@ -2005,6 +2016,16 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_QSENS, args, nargs, z)
                 case (VN_GZERO)
                     call output_files_append_field(fls, shd, ts, VN_GZERO, args, nargs, z)
+                case (VN_TSURF)
+                    call output_files_append_field(fls, shd, ts, VN_TSURF, args, nargs, z)
+
+                !> Ice/glacier variables.
+                case (VN_LQWSICE)
+                    call output_files_append_field(fls, shd, ts, VN_LQWSICE, args, nargs, z)
+                case (VN_TICE)
+                    call output_files_append_field(fls, shd, ts, VN_TICE, args, nargs, z)
+
+                !> Subsurface/soil variables.
                 case (VN_THLQSOL, 'THLQ')
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, VN_THLQSOL, args, nargs, z, j)
@@ -2037,14 +2058,22 @@ module output_files
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, VN_LATFLW, args, nargs, z, j, real(ic%dts))
                     end do
+                case (VN_ZSOLSAT)
+                    call output_files_append_field(fls, shd, ts, VN_ZSOLSAT, args, nargs, z, -1)
                 case (VN_DRAINSOL, 'ROFB')
                     call output_files_append_field(fls, shd, ts, VN_DRAINSOL, args, nargs, z, -1, real(ic%dts))
+
+                !> Groundwater/lower zone storage variables.
                 case (VN_RCHG, 'WR_RECHARGE')
                     call output_files_append_field(fls, shd, ts, VN_RCHG, args, nargs, z)
                 case (VN_STGGW, 'LZS')
                     call output_files_append_field(fls, shd, ts, VN_STGGW, args, nargs, z)
-                case (VN_DZS)
-                    call output_files_append_field(fls, shd, ts, VN_DZS, args, nargs, z)
+                case (VN_LKG)
+                    call output_files_append_field(fls, shd, ts, VN_LKG, args, nargs, z)
+!-                case (VN_DZS)
+!-                    call output_files_append_field(fls, shd, ts, VN_DZS, args, nargs, z)
+
+                !> Diagnostic variables.
                 case (VN_STGE)
                     call output_files_append_field(fls, shd, ts, VN_STGE, args, nargs, z)
                 case (VN_DSTGE)
@@ -2053,6 +2082,8 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_STGW, args, nargs, z)
                 case (VN_DSTGW, 'DSTG')
                     call output_files_append_field(fls, shd, ts, VN_DSTGW, args, nargs, z)
+
+                !> Routing variables.
                 case (VN_RFF, 'WR_RUNOFF')
                     call output_files_append_field(fls, shd, ts, VN_RFF, args, nargs, z)
                 case (VN_ROF, 'Runoff')
@@ -2157,9 +2188,16 @@ module output_files
             call program_abort()
         end if
 
-        !> Echo the number of active fields read from file.
-        write(line, FMT_GEN) n
-        call print_message('Output variables: ' // trim(adjustl(line)))
+        !> Echo the number of active fields read from file or print a warning if no variables were found in the file.
+        if (n > 0) then
+            write(line, FMT_GEN) n
+            call print_message('Output variables: ' // trim(adjustl(line)))
+        else
+            call print_warning('No output variables were found in the file.')
+
+            !> Deactivate the process.
+            fls_out%PROCESS_ACTIVE = .false.
+        end if
         call reset_tab()
 
     end subroutine

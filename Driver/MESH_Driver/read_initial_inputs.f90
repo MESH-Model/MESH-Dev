@@ -77,6 +77,10 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
                     SHDFILEFMT = 2
                 case ('netcdf', 'nc')
                     SHDFILEFMT = 3
+                case ('asc')
+                    SHDFILEFMT = 4
+                case ('nc_subbasin', 'nc_hru')
+                    SHDFILEFMT = 5
                 case ('to_map')
                     SHDTOMAPFLAG = .true.
             end select
@@ -331,6 +335,23 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         case (3)
 #ifdef NETCDF
             call read_shed_nc(shd, 'MESH_drainage_database.nc', '', '', '', '', ierr)
+            if (ierr /= 0) return
+#else
+            call print_error( &
+                "The format of the drainage database input file is specified as NetCDF but the module is not active. " // &
+                "A version of MESH compiled with the NetCDF library must be used to read files in this format.")
+            ierr = 1
+            return
+#endif
+
+        case (4)
+            call read_shed_csv(shd, 'MESH_drainage_database.asc', ierr)
+            if (ierr /= 0) return
+
+        !> 'nc' format (vector/subbasin).
+        case (5)
+#ifdef NETCDF
+            call read_shed_nc_subbasin(shd, 'MESH_drainage_database.nc', '', '', ierr)
             if (ierr /= 0) return
 #else
             call print_error( &

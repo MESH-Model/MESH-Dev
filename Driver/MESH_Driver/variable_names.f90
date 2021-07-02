@@ -27,9 +27,9 @@ module variable_names
 
     !> Meteorology/climatology variables.
     character(len = *), parameter :: VN_FSIN = 'FSIN'
-    character(len = *), parameter :: VN_FSVH = 'FSVH'
-    character(len = *), parameter :: VN_FSIH = 'FSIH'
-    character(len = *), parameter :: VN_FSDIR = 'FSDIR'
+    character(len = *), parameter :: VN_FSVS = 'FSVS'
+    character(len = *), parameter :: VN_FSIR = 'FSIR'
+    character(len = *), parameter :: VN_FSDR = 'FSDR'
     character(len = *), parameter :: VN_FSDFF = 'FSDFF'
     character(len = *), parameter :: VN_FSOUT = 'FSOUT'
     character(len = *), parameter :: VN_FLIN = 'FLIN'
@@ -37,16 +37,16 @@ module variable_names
     character(len = *), parameter :: VN_TA = 'TA'
     character(len = *), parameter :: VN_QA = 'QA'
     character(len = *), parameter :: VN_PRES = 'PRES'
-    character(len = *), parameter :: VN_UV = 'UV'
-    character(len = *), parameter :: VN_WDIR = 'WDIR'
     character(len = *), parameter :: VN_UU = 'UU'
     character(len = *), parameter :: VN_VV = 'VV'
-    character(len = *), parameter :: VN_PRE = 'PRE'
+    character(len = *), parameter :: VN_UV = 'UV'
+    character(len = *), parameter :: VN_WDIR = 'WDIR'
     character(len = *), parameter :: VN_PRERN = 'PRERN'
     character(len = *), parameter :: VN_PRESNO = 'PRESNO'
-    character(len = *), parameter :: VN_PREC = 'PREC'
+    character(len = *), parameter :: VN_PRE = 'PRE'
     character(len = *), parameter :: VN_PRECRN = 'PRECRN'
     character(len = *), parameter :: VN_PRECSNO = 'PRECSNO'
+    character(len = *), parameter :: VN_PREC = 'PREC'
 
     !> Canopy variables.
     character(len = *), parameter :: VN_LQWSCAN = 'LQWSCAN'
@@ -56,12 +56,13 @@ module variable_names
     character(len = *), parameter :: VN_GRO = 'GRO'
 
     !> Snow variables.
+    character(len = *), parameter :: VN_FSNO = 'FSNO'
     character(len = *), parameter :: VN_SNO = 'SNO'
     character(len = *), parameter :: VN_RHOSNO = 'RHOSNO'
     character(len = *), parameter :: VN_ZSNO = 'ZSNO'
-    character(len = *), parameter :: VN_FSNO = 'FSNO'
     character(len = *), parameter :: VN_LQWSSNO = 'LQWSSNO'
     character(len = *), parameter :: VN_TSNO = 'TSNO'
+    character(len = *), parameter :: VN_ALBSNO = 'ALBSNO'
     character(len = *), parameter :: VN_DRAINSNO = 'DRAINSNO'
 
     !> Surface variables.
@@ -72,6 +73,7 @@ module variable_names
     character(len = *), parameter :: VN_ZPND = 'ZPND'
     character(len = *), parameter :: VN_LQWSPND = 'LQWSPND'
     character(len = *), parameter :: VN_TPND = 'TPND'
+    character(len = *), parameter :: VN_PNDCAF = 'PNDCAF'
     character(len = *), parameter :: VN_POTEVP = 'POTEVP'
     character(len = *), parameter :: VN_ET = 'ET'
     character(len = *), parameter :: VN_EVPB = 'EVPB'
@@ -80,6 +82,11 @@ module variable_names
     character(len = *), parameter :: VN_QEVP = 'QEVP'
     character(len = *), parameter :: VN_QSENS = 'QSENS'
     character(len = *), parameter :: VN_GZERO = 'GZERO'
+    character(len = *), parameter :: VN_TSURF = 'TSURF'
+
+    !> Ice/glacier variables.
+    character(len = *), parameter :: VN_LQWSICE = 'LQWSICE'
+    character(len = *), parameter :: VN_TICE = 'TICE'
 
     !> Subsurface/soil variables.
     character(len = *), parameter :: VN_THLQSOL = 'THLQSOL'
@@ -90,12 +97,14 @@ module variable_names
     character(len = *), parameter :: VN_TSOL = 'TSOL'
     character(len = *), parameter :: VN_GFLX = 'GFLX'
     character(len = *), parameter :: VN_LATFLW = 'LATFLW'
+    character(len = *), parameter :: VN_ZSOLSAT = 'ZSOLSAT'
     character(len = *), parameter :: VN_DRAINSOL = 'DRAINSOL'
 
     !> Groundwater/lower zone storage variables.
     character(len = *), parameter :: VN_RCHG = 'RCHG'
     character(len = *), parameter :: VN_STGGW = 'STGGW'
-    character(len = *), parameter :: VN_DZS = 'DZS'
+    character(len = *), parameter :: VN_LKG = 'LKG'
+!-    character(len = *), parameter :: VN_DZS = 'DZS'
 
     !> Diagnostic variables.
     character(len = *), parameter :: VN_STGE = 'STGE'
