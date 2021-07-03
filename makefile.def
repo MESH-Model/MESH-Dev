@@ -26,7 +26,7 @@ VPATH+=	$(DIR_REPO)/Driver/MESH_Driver: \
 		$(DIR_REPO)/Modules/mpi_module: \
 		$(DIR_REPO)/Modules/climate_forcing_module: \
 		$(DIR_REPO)/Modules/simulation_statistics: \
-		$(DIR_REPO)/Modules/cropland_irrigation: \
+		$(DIR_REPO)/Modules/irrigation_demand: \
 		$(DIR_REPO)/Modules/permafrost_outputs: \
 		$(DIR_REPO)/Blowing_Snow: \
 		$(DIR_REPO)/Routing_Model/baseflow_module: \
@@ -59,6 +59,7 @@ OBJECTS+=	cropland_irrigation_variables.o \
 			cropland_irrigation_init.o \
 			cropland_irrigation_within_tile.o cropland_irrigation_between_grid.o \
 			calc_ET0.o
+OBJECTS+=	irrigation_demand_module.o
 OBJECTS+=	SIMSTATS_config.o \
 			KGE.o NSE.o SAE.o SORT.o SAESRT.o calc_drms.o calc_abserr.o \
 			SIMSTATS.o
@@ -134,6 +135,14 @@ OBJECTS+=	inisoili_svs.o
 # SA_MESH modules.
 OBJECTS+=	runsvs_mesh.o
 
+
+# ======================================================================
+#reservoir_update (reservoirs)
+# Paths.
+VPATH+=	$(DIR_REPO)/Routing_Model/reservoir_update:
+# Files.
+OBJECTS+=	module_reservoir.o zonebased_reservoir_release.o
+
 # ======================================================================
 # WF_ROUTE.
 # Paths.
@@ -160,6 +169,7 @@ OBJECTS+=	read_initial_inputs.o \
 			check_parameters.o \
 			read_basin_structures.o \
 			read_streamflow_txt.o read_streamflow_tb0.o read_reservoir_txt.o read_reservoir_tb0.o \
+			read_abstractionpoint_tb0.o read_abstractionpoint_txt.o \
 			read_soil_ini.o \
 			read_initial_values_r2c.o \
 			module_files.o

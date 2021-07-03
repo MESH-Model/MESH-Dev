@@ -18,6 +18,7 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls, ierr)
 
     !> Required for the variables of various modules.
     use RUNCLASS36_variables
+    use irrigation_module
     use WF_ROUTE_config
     use rte_module
     use baseflow_module
@@ -991,6 +992,50 @@ subroutine READ_PARAMETERS_HYDROLOGY(shd, fls, ierr)
                                     if (z /= 0) goto 931
                                 end do
                             end if
+
+                        !> Irrigation module.
+                        case ('irflg')
+                            do j = 1, NTYPE
+                                call value(args(j + 1), irrm%pm_gru%irflg(j), z)
+                                if (z /= 0) goto 931
+                            end do
+                        case ('irt1')
+                            do j = 1, NTYPE
+                                call value(args(j + 1), irrm%pm_gru%t1(j), z)
+                                if (z /= 0) goto 931
+                            end do
+                        case ('irt2')
+                            do j = 1, NTYPE
+                                call value(args(j + 1), irrm%pm_gru%t2(j), z)
+                                if (z /= 0) goto 931
+                            end do
+                        case ('irijday1')
+                            do j = 1, NTYPE
+                                call value(args(j + 1), irrm%pm_gru%ijday1(j), z)
+                                if (z /= 0) goto 931
+                            end do
+                        case ('irijday2')
+                            do j = 1, NTYPE
+                                call value(args(j + 1), irrm%pm_gru%ijday2(j), z)
+                                if (z /= 0) goto 931
+                            end do
+                        case ('irignd')
+                            do j = 1, NTYPE
+                                call value(args(j + 1), irrm%pm_gru%ignd(j), z)
+                                if (z /= 0) goto 931
+                            end do
+                        case ('irthlmin')
+                            do j = 1, NTYPE
+                                call value(args(j + 1), irrm%pm_gru%thlmin(j), z)
+                                if (z /= 0) goto 931
+                            end do
+
+                        !> Abstraction point location.
+                        case ('iabsp')
+                            do j = 1, NTYPE
+                                call value(args(j + 1), pm%gru%iabsp(j), z)
+                                if (z /= 0) goto 931
+                            end do
 
                         !> Unrecognized parameter name.
                         case default

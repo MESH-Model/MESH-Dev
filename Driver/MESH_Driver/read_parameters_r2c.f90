@@ -19,6 +19,7 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
     !> Process modules: Required for process variables, parameters.
     use RUNCLASS36_variables
     use runsvs_mesh
+    use irrigation_module
     use baseflow_module
     use rte_module
     use PBSM_module
@@ -234,6 +235,26 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
                     pm%grid%iwf(1:shd%NA) = int(ffield)
                 end if
+
+            !> Irrigation module.
+            case ('irflg')
+                irrm%pm_grid%irflg(1:shd%NA) = int(ffield)
+            case ('irt1')
+                irrm%pm_grid%t1(1:shd%NA) = int(ffield)
+            case ('irt2')
+                irrm%pm_grid%t2(1:shd%NA) = int(ffield)
+            case ('irijday1')
+                irrm%pm_grid%ijday1(1:shd%NA) = int(ffield)
+            case ('irijday2')
+                irrm%pm_grid%ijday2(1:shd%NA) = int(ffield)
+            case ('irignd')
+                irrm%pm_grid%ignd(1:shd%NA) = int(ffield)
+            case ('irthlmin')
+                irrm%pm_grid%thlmin(1:shd%NA) = ffield
+
+            !> Abstraction point location.
+            case ('iabsp')
+                pm%grid%iabsp(1:shd%NA) = int(ffield)
 
             !> BASEFLOWFLAG == 2 (lower zone storage).
             case ('pwr')

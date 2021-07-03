@@ -72,6 +72,9 @@ module model_files
         fms%rsvr%rlsmeas%fls%iun = 21
         fms%rsvr%rlsmeas%fls%ffmt = 'txt'
         fms%rsvr%rlsmeas%readmode = 'subset'
+        fms%absp%sabst%fls%fname = 'MESH_input_abstractionpoint'
+        fms%absp%sabst%fls%iun = 24
+        fms%absp%sabst%fls%ffmt = 'txt'
 
         flg%fl(mfk%out_response)%fn = ''
         flg%fl(mfk%out_response)%iun = 444

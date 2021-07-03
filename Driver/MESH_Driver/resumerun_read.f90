@@ -21,6 +21,10 @@ subroutine resumerun_read(fls, shd, cm, ierr)
     use baseflow_module
     use save_basin_output
     use SIMSTATS
+!>>>>>zone-based storage
+    use FLAGS, only: RESERVOIRFLAG
+    use reservoir, only: resrvs
+!<<<<<zone-based storage
 
     implicit none
 
@@ -163,12 +167,38 @@ subroutine resumerun_read(fls, shd, cm, ierr)
                 call run_rte_resume_read(fls, shd)
                 call run_save_basin_output_resume_read(fls, shd)
                 call stats_state_resume(fls)
+!>>>>>zone-based storage
+                if (RESERVOIRFLAG == 2) then
+                    iun = 100
+                    if (vs%flgs%resume%state == FLAG_AUTO) then
+                        open(iun, file = 'zone_storage_states.' // trim(adjustl(line)) // '.txt', action = 'read', status = 'old')
+                    else
+                        open(iun, file = 'zone_storage_states.txt', action = 'read', status = 'old')
+                    end if
+                    read(iun, *) (resrvs%rsvr(i)%stoSIM(1), i = 1, resrvs%nreserv)
+                    read(iun, *) (resrvs%rsvr(i)%flowSIM(1), i = 1, resrvs%nreserv)
+                    close(iun)
+                end if
+!<<<<<zone-based storage
             else if (index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
                 call read_init_prog_variables_class(fls, shd)
                 call runsvs_mesh_resume_states_seq(fls, shd, resume_ts = .false.)
                 call bflm_resume_read(fls, shd)
                 call WF_ROUTE_resume_read_nots(fls, shd)
                 call run_rte_resume_read_nots(fls, shd)
+!>>>>>zone-based storage
+                if (RESERVOIRFLAG == 2) then
+                    iun = 100
+                    if (vs%flgs%resume%state == FLAG_AUTO) then
+                        open(iun, file = 'zone_storage_states.' // trim(adjustl(line)) // '.txt', action = 'read', status = 'old')
+                    else
+                        open(iun, file = 'zone_storage_states.txt', action = 'read', status = 'old')
+                    end if
+                    read(iun, *) (resrvs%rsvr(i)%stoSIM(1), i = 1, resrvs%nreserv)
+                    read(iun, *) (resrvs%rsvr(i)%flowSIM(1), i = 1, resrvs%nreserv)
+                    close(iun)
+                end if
+!<<<<<zone-based storage
             else
                 call read_init_prog_variables_class_row(fls, shd)
                 call runsvs_mesh_resume_states_seq(fls, shd, resume_ts = .false.)

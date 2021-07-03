@@ -343,4 +343,100 @@ subroutine read_basin_structures(shd, ierr)
         end if
     end if
 
+    !> Abstraction point locations.
+
+    !> File unit and name.
+    fname = fms%absp%sabst%fls%fname
+    iun = fms%absp%sabst%fls%iun
+
+    !> Read location from file if points exist.
+    if (any(pm%tile%iabsp > 0)) then
+
+        !> Initialize time-series.
+        fms%absp%sabst%iyear = ic%start%year
+        fms%absp%sabst%ijday = ic%start%jday
+        fms%absp%sabst%ihour = ic%start%hour
+        fms%absp%sabst%imins = ic%start%mins
+
+        !> Read from file.
+        select case (lowercase(fms%absp%sabst%fls%ffmt))
+            case ('tb0')
+                fname = trim(adjustl(fname)) // '.tb0'
+                call read_abstractionpoint_tb0(shd, iun, fname, ierr)
+            case default
+                fname = trim(adjustl(fname)) // '.txt'
+                call read_abstractionpoint_txt(shd, iun, fname, ierr)
+        end select
+        if (ierr /= 0) return
+    else
+        fms%absp%n = 0
+    end if
+
+    !> Print an error if no points are defined but exist from other files.
+    if (maxval(pm%tile%iabsp) /= fms%absp%n) then
+        line = 'The number of abstraction points does not match between other input files and: ' // trim(adjustl(fname))
+        call print_error(line)
+        write(line, FMT_GEN) maxval(pm%tile%iabsp)
+        call print_message('Maximum points defined in other input files: ' // trim(adjustl(line)))
+        write(line, FMT_GEN) fms%absp%n
+        call print_message('Number of points read from file: ' // trim(adjustl(line)))
+        ierr = 1
+        return
+    end if
+
+    !> If points exist.
+    if (fms%absp%n > 0) then
+
+        !> Find the x-y cell coordinate of the point.
+!-        fms%absp%meta%iy = int((fms%absp%meta%y - shd%yOrigin)/shd%yDelta) + 1
+!-        fms%absp%meta%jx = int((fms%absp%meta%x - shd%xOrigin)/shd%xDelta) + 1
+
+        !> Find the RANK of the point and create friendly name (if one does not exist).
+        fms%absp%meta%rnk = 0
+        allocate(dist(fms%absp%n))
+        dist = huge(dist)
+        do i = 1, fms%absp%n
+            if (len_trim(fms%absp%meta%name(i)) == 0) then
+                write(line, FMT_GEN) i
+                fms%absp%meta%name(i) = 'Abspt' // trim(adjustl(line))
+            end if
+            do n = 1, shd%NA
+                d = (shd%ylat(n) - fms%absp%meta%y(i))**2 + (shd%xlng(n) - fms%absp%meta%x(i))**2
+                if (d < dist(i)) then
+!-                if (fms%absp%meta%jx(i) == shd%xxx(n) .and. fms%absp%meta%iy(i) == shd%yyy(n)) fms%absp%meta%rnk(i) = n
+                    dist(i) = d
+                    fms%absp%meta%rnk(i) = n
+                    fms%absp%meta%iy(i) = shd%yyy(n)
+                    fms%absp%meta%jx(i) = shd%xxx(n)
+                end if
+            end do
+        end do
+        deallocate(dist)
+
+        !> Print an error if any point has no RANK (is outside the basin).
+!-        if (minval(fms%absp%meta%rnk) == 0) then
+!-            call print_error('Abstraction point(s) are outside the basin.')
+!-            write(line, FMT_GEN) 'OUTLET', 'Y', 'IY', 'X', 'JX'
+!-            call print_message(line)
+!-            do i = 1, fms%absp%n
+!-                if (fms%absp%meta%rnk(i) == 0) then
+!-                    write(line, FMT_GEN) i, fms%absp%meta%y(i), fms%absp%meta%iy(i), fms%absp%meta%x(i), fms%absp%meta%jx(i)
+!-                    call print_message(line)
+!-                end if
+!-            end do
+!-            ierr = 1
+!-            return
+!-        end if
+
+        !> Print a summary of locations to file.
+        write(line, FMT_GEN) fms%absp%n
+        call print_message('Number of abstraction points: ' // trim(adjustl(line)))
+        write(line, FMT_GEN) 'ABST. POINT', 'IY', 'JX', 'RANK'
+        call print_echo_txt(trim(line))
+        do i = 1, fms%absp%n
+            write(line, FMT_GEN) fms%absp%meta%name(i), fms%absp%meta%iy(i), fms%absp%meta%jx(i), fms%absp%meta%rnk(i)
+            call print_echo_txt(trim(line))
+        end do
+    end if
+
 end subroutine

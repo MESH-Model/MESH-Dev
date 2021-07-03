@@ -297,6 +297,13 @@ c     *      183.2,175.98,174.8,174.01,74.61/
         lake_inflow(l,fhr)=qi2(n)
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
 
+!     zone-based storage/release
+      elseif(b1(l).eq.1.0 .and. b2(l).eq.0.0)then
+        call zonebased_reservoir_release(
+     +          0,0,n,l,qi2(n),div*2.0,                     !input
+     +          qo2(n),store2(n))                           !output
+        lake_inflow(l,fhr)=qi2(n)
+
 !     natural lake or uncontrolled reservoir routing:
 !     NOTE: the lake level is not calculated for reaches other than the Great Lakes and Lake Champlain;
       elseif(b1(l).ne.0.0)then

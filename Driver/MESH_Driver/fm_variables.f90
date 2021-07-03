@@ -122,10 +122,11 @@ module fm_variables
     !*  s: Storage available. [m3].
     !*  smin: Minimum storage to keep in the channel. [m3].
     !*  fsmin: Fraction of storage to keep in the channel (e.g., if 'smin' is not used). [--].
+    !*  zlvl0: Minimum level to keep in the channel (e.g., if storage is not used). [m].
     type abstraction_point_location
         integer :: n = 0
         type(outlet_location) meta
-        real, dimension(:), allocatable :: s, smin, fsmin
+        real, dimension(:), allocatable :: s, smin, fsmin, zlvl0
         type(time_series) sabst
     end type
 
@@ -138,6 +139,7 @@ module fm_variables
     type forms
         type(streamflow_gauge_location) stmg
         type(reservoir_outlet_location) rsvr
+        type(abstraction_point_location) absp
     end type
 
     !* fms: Collection of structures in the basin.
@@ -216,9 +218,9 @@ module fm_variables
         absp%n = n
         call allocate_outlet_location(absp%meta, n, ierr)
         if (ierr /= 0) return
-        allocate(absp%s(n), absp%smin(n), absp%fsmin(n), stat = ierr)
+        allocate(absp%s(n), absp%smin(n), absp%fsmin(n), absp%zlvl0(n), stat = ierr)
         if (ierr /= 0) return
-        absp%s = 0.0; absp%smin = 0.0; absp%fsmin = 0.0
+        absp%s = 0.0; absp%smin = 0.0; absp%fsmin = 0.0; absp%zlvl0 = 0.0
         call allocate_time_series(absp%sabst, n, ierr)
     end subroutine
 

@@ -19,6 +19,10 @@ subroutine resumerun_save(fls, shd, cm)
     use baseflow_module
     use save_basin_output
     use SIMSTATS
+!>>>>>zone-based storage
+    use FLAGS, only: RESERVOIRFLAG
+    use reservoir, only: resrvs
+!<<<<<zone-based storage
 
     implicit none
 
@@ -29,6 +33,9 @@ subroutine resumerun_save(fls, shd, cm)
 
     !> Local variables.
     integer iun, j, z
+!>>>>>zone-based storage
+    integer i
+!<<<<<zone-based storage
     character(len = DEFAULT_LINE_LENGTH) args(100), line, fname
     logical now
 
@@ -222,12 +229,38 @@ subroutine resumerun_save(fls, shd, cm)
             call run_rte_resume_save(fls, shd)
             call run_save_basin_output_resume_save(fls, shd)
             call stats_state_save(fls)
+!>>>>>zone-based storage
+            if (RESERVOIRFLAG == 2) then
+                iun = 100
+                if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+                    open(iun, file = 'zone_storage_states.' // trim(adjustl(line)) // '.txt', action = 'write', status = 'replace')
+                else
+                    open(iun, file = 'zone_storage_states.txt', action = 'write', status = 'replace')
+                end if
+                write(iun, *) (resrvs%rsvr(i)%stoSIM(1), i = 1, resrvs%nreserv), '# Intstor1(1:NRESV)'
+                write(iun, *) (resrvs%rsvr(i)%flowSIM(1), i = 1, resrvs%nreserv), '# flowO1(1:NRESV)'
+                close(iun)
+            end if
+!<<<<<zone-based storage
         else if (index(vs%flgs%save%bin, '+CLASSPROG') == 0) then
             call save_init_prog_variables_class(fls, shd)
             call runsvs_mesh_save_states_seq(fls, shd)
             call bflm_resume_save(fls, shd)
             call WF_ROUTE_resume_save(fls, shd)
             call run_rte_resume_save(fls, shd)
+!>>>>>zone-based storage
+            if (RESERVOIRFLAG == 2) then
+                iun = 100
+                if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+                    open(iun, file = 'zone_storage_states.' // trim(adjustl(line)) // '.txt', action = 'write', status = 'replace')
+                else
+                    open(iun, file = 'zone_storage_states.txt', action = 'write', status = 'replace')
+                end if
+                write(iun, *) (resrvs%rsvr(i)%stoSIM(1), i = 1, resrvs%nreserv), '# Intstor1(1:NRESV)'
+                write(iun, *) (resrvs%rsvr(i)%flowSIM(1), i = 1, resrvs%nreserv), '# flowO1(1:NRESV)'
+                close(iun)
+            end if
+!<<<<<zone-based storage
         else
             call save_init_prog_variables_class_row(fls, shd)
             call runsvs_mesh_save_states_seq(fls, shd)

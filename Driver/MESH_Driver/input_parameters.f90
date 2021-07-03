@@ -27,6 +27,7 @@ module input_parameters
         real, dimension(:), allocatable :: xslp
         integer, dimension(:), allocatable :: mid
         integer, dimension(:), allocatable :: iwf
+        integer, dimension(:), allocatable :: iabsp
 
         !* fcan: Annual maximum fraction of the grid-cell occupied by vegetation category or land cover. [--].
         !* z0or: Orographic roughness length. [m].
@@ -162,6 +163,7 @@ module input_parameters
         if (allocated(group%xslp)) group%xslp = 0.0
         if (allocated(group%mid)) group%mid = 0
         if (allocated(group%iwf)) group%iwf = -1
+        if (allocated(group%iabsp)) group%iabsp = 0
         if (allocated(group%fcan)) group%fcan = 0.0
         if (allocated(group%z0or)) group%z0or = 0.0
         if (allocated(group%lnz0)) group%lnz0 = 0.0
@@ -282,6 +284,7 @@ module input_parameters
         allocate(group%xslp(n), stat = z); if (z /= 0) ierr = z
         allocate(group%mid(n), stat = z); if (z /= 0) ierr = z
         allocate(group%iwf(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%iabsp(n), stat = z); if (z /= 0) ierr = z
         allocate(group%fcan(n, ncan1), stat = z); if (z /= 0) ierr = z
         allocate(group%z0or(n, ncan1), stat = z); if (z /= 0) ierr = z
         allocate(group%lnz0(n, ncan1), stat = z); if (z /= 0) ierr = z

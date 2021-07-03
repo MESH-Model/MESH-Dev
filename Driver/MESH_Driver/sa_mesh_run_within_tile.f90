@@ -18,6 +18,7 @@ module sa_mesh_run_within_tile
         !> Process modules.
         use RUNCLASS36_config
         use runsvs_mesh
+        use irrigation_module
         use baseflow_module
         use cropland_irrigation_init
         use mountain_module
@@ -31,6 +32,7 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
         !> Call processes.
+        call irrigation_init(fls, shd, cm)
         call mountain_init(fls, shd, cm)
         call RUNCLASS36_init(shd, fls, cm)
         call runsvs_mesh_init(shd, fls, cm)
@@ -40,6 +42,9 @@ module sa_mesh_run_within_tile
         !> Update variables.
         call run_within_tile_stas_update(fls, shd, cm)
 
+        !> Output files.
+        call irrigation_open_output(fls, shd, cm)
+
     end subroutine
 
     subroutine run_within_tile(fls, shd, cm)
@@ -47,6 +52,7 @@ module sa_mesh_run_within_tile
         !> Process modules.
         use RUNCLASS36_module
         use runsvs_mesh
+        use irrigation_module
         use baseflow_module
         use cropland_irrigation_within_tile
         use mountain_module
@@ -59,11 +65,14 @@ module sa_mesh_run_within_tile
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
-        !> MPI exchange.
-        call run_within_tile_mpi_irecv(fls, shd, cm)
-
         !> Reset variables non-prognostic variables.
         call run_within_tile_stas_reset(fls, shd, cm)
+
+        !> Call processes.
+        call irrigation_within_tile(fls, shd, cm)
+
+        !> MPI exchange.
+        call run_within_tile_mpi_irecv(fls, shd, cm)
 
         !> Call processes.
         call mountain_within_tile(fls, shd, cm)
@@ -78,12 +87,16 @@ module sa_mesh_run_within_tile
         !> Update variables.
         call run_within_tile_stas_update(fls, shd, cm)
 
+        !> Output files.
+        call irrigation_write_output(fls, shd, cm)
+
     end subroutine
 
     subroutine run_within_tile_mpi_isend(fls, shd, cm)
 
         !> Process modules.
         use baseflow_module
+        use irrigation_module
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -357,13 +370,16 @@ module sa_mesh_run_within_tile
 
     subroutine run_within_tile_mpi_irecv(fls, shd, cm)
 
+        !> Process modules.
+        use irrigation_module
+
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
         type(clim_info) cm
 
         !> Local variables.
-        integer nvars, t, i, j, u, ii1, ii2, iin, z
+        integer nvars, t, c, i, j, u, ii1, ii2, iin, z
         logical lstat
         integer, allocatable :: irqst(:), imstat(:, :)
 
@@ -372,12 +388,20 @@ module sa_mesh_run_within_tile
 
         !> Count the number of active variables included in the exchange.
         nvars = 0
+        if (irrm%PROCESS_ACTIVE) nvars = nvars + 1
         if (nvars == 0) return
 
         !> Exchange variables.
         if (allocated(irqst)) deallocate(irqst)
         if (allocated(imstat)) deallocate(imstat)
         allocate(irqst(nvars), imstat(MPI_STATUS_SIZE, nvars))
+
+        !> Check active kind of 'real'.
+        if (kind(2.0) == 8) then
+            c = MPI_REAL8
+        else
+            c = MPI_REAL
+        end if
 
         !> Assign the indices.
         ii1 = 1
@@ -395,6 +419,11 @@ module sa_mesh_run_within_tile
                 t = itag
                 i = 1
 
+                if (irrm%PROCESS_ACTIVE) then
+                    call mpi_isend(vs%tile%pre(ii1:ii2), iin, c, u, t + i, MPI_COMM_WORLD, irqst(i), z)
+                    i = i + 1
+                end if
+
                 !> Wait until the exchange completes.
                 lstat = .false.
                 do while (.not. lstat)
@@ -410,6 +439,10 @@ module sa_mesh_run_within_tile
             irqst = MPI_REQUEST_NULL
             t = itag
             i = 1
+
+            if (irrm%PROCESS_ACTIVE) then
+                call mpi_irecv(vs%tile%pre(ii1:ii2), iin, c, 0, t + i, MPI_COMM_WORLD, irqst(i), z); i = i + 1
+            end if
 
             !> Wait until the exchange completes.
             lstat = .false.

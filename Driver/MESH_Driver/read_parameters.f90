@@ -15,6 +15,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
 
     use RUNCLASS36_variables
     use runsvs_mesh
+    use irrigation_module
     use WF_ROUTE_config
     use rte_module
     use baseflow_module
@@ -72,6 +73,11 @@ subroutine read_parameters(fls, shd, cm, ierr)
         end if
         hp%CMAXROW = 0.0; hp%CMINROW = 0.0; hp%BROW = 0.0; hp%K1ROW = 0.0; hp%K2ROW = 0.0
     end if
+
+    !> Irrigation module.
+    call irrigation_parameters_allocate(irrm%pm, NML, ierr)
+    call irrigation_parameters_allocate(irrm%pm_grid, NA, ierr)
+    call irrigation_parameters_allocate(irrm%pm_gru, NTYPE, ierr)
 
     !> WF_ROUTE (Watflood, 1988).
     if (WF_RTE_flgs%PROCESS_ACTIVE) then
@@ -290,6 +296,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
         end if
     end if
 
+    !> Irrigation module.
+    irrm%PROCESS_ACTIVE = (any(irrm%pm_grid%irflg == 1) .or. any(irrm%pm_gru%irflg == 1))
+
     !> Parameters.
 
     !> From GRU.
@@ -355,6 +364,15 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 end if
             end if
 
+            !> Irrigation module.
+            if (irrm%pm_gru%irflg(i) /= 0) irrm%pm%irflg(k) = irrm%pm_gru%irflg(i)
+            if (irrm%pm_gru%t1(i) /= 0) irrm%pm%t1(k) = irrm%pm_gru%t1(i)
+            if (irrm%pm_gru%t2(i) /= 0) irrm%pm%t2(k) = irrm%pm_gru%t2(i)
+            if (irrm%pm_gru%ijday1(i) /= 0) irrm%pm%ijday1(k) = irrm%pm_gru%ijday1(i)
+            if (irrm%pm_gru%ijday2(i) /= 0) irrm%pm%ijday2(k) = irrm%pm_gru%ijday2(i)
+            if (irrm%pm_gru%ignd(i) /= 0) irrm%pm%ignd(k) = irrm%pm_gru%ignd(i)
+            if (irrm%pm_gru%thlmin(i) /= 0) irrm%pm%thlmin(k) = irrm%pm_gru%thlmin(i)
+
             !> BASEFLOWFLAG 1 (Luo, 2012).
             if (bflm%BASEFLOWFLAG == 1) then
                 bflm%pm%dgw(k) = bflm%pm_gru%dgw(i)
@@ -379,6 +397,9 @@ subroutine read_parameters(fls, shd, cm, ierr)
                 cip%Kcmid(k) = ciprot%Kcmid(i)
                 cip%Kclate(k) = ciprot%Kclate(i)
             end if
+
+            !> Abstraction point location.
+            if (pm%gru%iabsp(i) /= 0) pm%tile%iabsp(k) = pm%gru%iabsp(i)
 
             !> PBSM (blowing snow).
             if (pbsm%PROCESS_ACTIVE) then
@@ -435,8 +456,8 @@ subroutine read_parameters(fls, shd, cm, ierr)
     if (btest(INPUTPARAMSFORMFLAG, 1) .or. btest(INPUTPARAMSFORMFLAG, 4)) then
         do k = 1, shd%lc%NML
 
-            !> Omit GRU's with mosaic ID >= 100 from being assigned grid-based values (special condition).
-            if (pm%tile%mid(k) >= 100) cycle
+            !> Omit GRU's with mosaic ID >= 100 and < 1000 from being assigned grid-based values (special condition).
+            if (pm%tile%mid(k) >= 100 .and. pm%tile%mid(k) < 1000) cycle
 
             !> Grid index.
             i = shd%lc%ILMOS(k)
@@ -481,6 +502,18 @@ subroutine read_parameters(fls, shd, cm, ierr)
                     RUNCLASS36_flgs%pm%tile%SNDENLIM(k) = RUNCLASS36_flgs%pm%grid%SNDENLIM(i)
                 end if
             end if
+
+            !> Irrigation module.
+            if (irrm%pm_grid%irflg(i) /= 0) irrm%pm%irflg(k) = irrm%pm_grid%irflg(i)
+            if (irrm%pm_grid%t1(i) /= 0) irrm%pm%t1(k) = irrm%pm_grid%t1(i)
+            if (irrm%pm_grid%t2(i) /= 0) irrm%pm%t2(k) = irrm%pm_grid%t2(i)
+            if (irrm%pm_grid%ijday1(i) /= 0) irrm%pm%ijday1(k) = irrm%pm_grid%ijday1(i)
+            if (irrm%pm_grid%ijday2(i) /= 0) irrm%pm%ijday2(k) = irrm%pm_grid%ijday2(i)
+            if (irrm%pm_grid%ignd(i) /= 0) irrm%pm%ignd(k) = irrm%pm_grid%ignd(i)
+            if (irrm%pm_grid%thlmin(i) /= 0) irrm%pm%thlmin(k) = irrm%pm_grid%thlmin(i)
+
+            !> Abstraction point location.
+            if (pm%grid%iabsp(i) /= 0) pm%tile%iabsp(k) = pm%grid%iabsp(i)
 
             !> BASEFLOWFLAG == 2 (lower zone storage).
             if (bflm%BASEFLOWFLAG == 2) then

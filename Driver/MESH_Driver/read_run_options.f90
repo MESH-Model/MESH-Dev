@@ -216,6 +216,12 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     !>     1 = Save the SCA and SWE output files.
 !-    BASINSWEOUTFLAG = 0
 
+    !> RESERVOIR FLAG TO HANDLED WICH KIND OF RESERVOIR DO WE APPLY
+    !>  0 = Non Reservoir is present
+    !>  1 = Standar Reservoir type that support Mesh
+    !>  2 = Reservoir type based on LISFLOOD 
+    RESERVOIRFLAG = 0
+
     !> The above parameter values are defaults, to change to a different
     !> value, use the MESH_input_run_options.ini file
 
@@ -492,6 +498,8 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                     fms%stmg%qomeas%fls%ffmt = adjustl(args(2))
                 case ('RESERVOIRFILEFLAG')
                     fms%rsvr%rlsmeas%fls%ffmt = adjustl(args(2))
+                case ('ABSTPOINTFILEFLAG')
+                    fms%absp%sabst%fls%ffmt = adjustl(args(2))
 
                 case ('SHDFILEFLAG')
                     SHDFILEFLAG = adjustl(line)
@@ -622,6 +630,8 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                 !> BASEFLOW routing.
                 case ('BASEFLOWFLAG')
                     call bflm_parse_flag(line)
+                case ('RESERVOIRFLAG')
+                    call value(args(2), RESERVOIRFLAG, ierr)
 
                 !> Reservoir Release function flag (Number of WF_B coefficients).
 !?                    case ('RESVRELSWFB')

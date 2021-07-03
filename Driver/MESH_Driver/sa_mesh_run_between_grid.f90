@@ -62,6 +62,15 @@ module sa_mesh_run_between_grid
 
 !-    real, dimension(:), allocatable :: WF_QO2_ACC, WF_QO2_ACC_MM, WF_STORE2_ACC_MM
 
+!>>>temp_diversion
+    integer :: iun_div = 64, n_div, dt_div, iyear_div, ijday_div
+    character(len = 13) :: fn_div = 'diversion.txt'
+    real, dimension(:), allocatable :: x_src, y_src, x_snk, y_snk, in_div_m3, in_div_m3s, tnsfr_div
+    integer, dimension(:), allocatable :: jx_src, iy_src, jx_snk, iy_snk, rnk_src, rnk_snk
+    logical run_div
+    real, dimension(:), allocatable :: qo_div_dly, qa_div_dly
+!<<<temp_diversion
+
     contains
 
     subroutine run_between_grid_init(fls, shd, cm)
@@ -69,9 +78,14 @@ module sa_mesh_run_between_grid
         !> Process modules.
 !-        use SA_RTE_module
         use WF_ROUTE_config
+        use reservoir
         use rte_module
         use cropland_irrigation_between_grid
 
+!>>>temp_diversion
+        use txt_io
+        use FLAGS
+!<<<temp_diversion
 !temp: Outputs.
 !-        use save_basin_output, only: STREAMFLOWOUTFLAG, REACHOUTFLAG
 !-        use FLAGS
@@ -92,6 +106,11 @@ module sa_mesh_run_between_grid
 !-        character(MaxLenField), dimension(MaxArgs) :: out_args
 !-        integer nargs
 
+!>>>temp_diversion
+        integer l, n, isteps1, isteps2, iskip, ierr
+        character(len = DEFAULT_LINE_LENGTH) line
+!<<<temp_diversion
+
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return
 
@@ -107,6 +126,9 @@ module sa_mesh_run_between_grid
 !-        NA = shd%NA
 !-        NR = fms%rsvr%n
 !-        NS = fms%stmg%n
+
+        !> Read configuration for zone-based storage.
+        if (RESERVOIRFLAG == 2) call init_reservoirs('coeff_reserv.txt')
 
         !> Allocate file object.
 !-        allocate( &
@@ -276,6 +298,83 @@ module sa_mesh_run_between_grid
         call run_rte_init(fls, shd)
         call runci_between_grid_init(shd, fls)
 
+!>>>temp_diversion
+        !> Enable diversion sets if the file exists.
+        inquire(file = fn_div, exist = run_div)
+        if (run_div) then
+
+            !> Meta information.
+            call reset_tab()
+            call print_message("READING: " // trim(fn_div))
+            call increase_tab()
+            n_div = 0
+            open(iun_div, file = fn_div, status = 'old', action = 'read')
+            read(iun_div, *) n_div, dt_div, iyear_div, ijday_div !number of sets; dt (hours); start year; start jday
+            if (n_div <= 0) then
+                print *, "Bad number of diversions from '" // fn_div // "'."
+                print *, 'To remove diversions rename or remove the file.'
+                stop
+            end if
+            allocate( &
+                x_src(n_div), y_src(n_div), x_snk(n_div), y_snk(n_div), in_div_m3(n_div), in_div_m3s(n_div), tnsfr_div(n_div), &
+                jx_src(n_div), iy_src(n_div), jx_snk(n_div), iy_snk(n_div), rnk_src(n_div), rnk_snk(n_div))
+            in_div_m3 = 0.0; in_div_m3s = 0.0
+            do l = 1, n_div
+                read(iun_div, *) x_src(l), y_src(l), x_snk(l), y_snk(l)
+            end do
+
+            !> Find the x-y cell coordinate of the locations.
+            iy_src = int((y_src - shd%yOrigin)/shd%yDelta) + 1
+            jx_src = int((x_src - shd%xOrigin)/shd%xDelta) + 1
+            iy_snk = int((y_snk - shd%yOrigin)/shd%yDelta) + 1
+            jx_snk = int((x_snk - shd%xOrigin)/shd%xDelta) + 1
+
+            !> Find RANK at the locations.
+            rnk_src = 0
+            rnk_snk = 0
+            do l = 1, n_div
+                do n = 1, shd%NA
+                    if (jx_src(l) == shd%xxx(n) .and. iy_src(l) == shd%yyy(n)) rnk_src(l) = n
+                    if (jx_snk(l) == shd%xxx(n) .and. iy_snk(l) == shd%yyy(n)) rnk_snk(l) = n
+                end do
+            end do
+
+            !> Skip records in the file to the simulation start date.
+            !> Units of the records interval is hours.
+            isteps1 = jday_to_tsteps(iyear_div, ijday_div, 0, 0, dt_div*60)
+            isteps2 = jday_to_tsteps(ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins, dt_div*60)
+            if (isteps2 < isteps1) then
+                call print_warning('The first record occurs after the simulation start date.')
+                call print_message('This may cause channels to initialize with no storage.')
+                write(line, "(i5, i4)") iyear_div, ijday_div
+                call print_message('First record occurs on: ' // trim(line))
+                write(line, "(i5, i4)") ic%start%year, ic%start%jday
+                call print_message('Simulation start date: ' // trim(line))
+            end if
+            iskip = (isteps2 - isteps1)
+            if (iskip > 0) then
+                write(line, FMT_GEN) iskip
+                call print_message('Skipping ' // trim(adjustl(line)) // ' records.')
+                ierr = read_records_txt(iun_div, in_div_m3s, iskip)
+                if (ierr /= 0) then
+                    call print_warning('Reached end of file.')
+                end if
+            end if
+
+            !> Print a summary of locations to file.
+            write(line, FMT_GEN) n_div
+            call print_message('Number of diversion point sets: ' // trim(adjustl(line)))
+            write(line, FMT_GEN) 'SET', 'SOURCE', 'IY', 'JX', 'RANK', 'SINK', 'IY', 'JX', 'RANK'
+            call print_echo_txt(trim(line))
+            do l = 1, n_div
+                write(line, FMT_GEN) &
+                    l, '', iy_src(l), jx_src(l), rnk_src(l), '', iy_snk(l), jx_snk(l), rnk_snk(l)
+                call print_echo_txt(trim(line))
+            end do
+            call print_echo_txt('')
+        end if
+!<<<temp_diversion
+
         !> Update basin variables.
         call run_within_grid_stas_basin_update(fls, shd, cm)
 
@@ -306,6 +405,12 @@ module sa_mesh_run_between_grid
 
         !> Local variables.
 !-        integer l, i, iun
+
+!>>>temp_diversion
+        character(len = 4) ffmti
+        character(len = 200) fn
+        integer iun, l, n
+!<<<temp_diversion
 
         !> SCA variables
 !-        real TOTAL_AREA, FRAC, basin_SCA, basin_SWE
@@ -344,6 +449,71 @@ module sa_mesh_run_between_grid
                 end if
             end if
         end if
+
+!>>>temp_diversion
+        if (run_div) then
+
+            !> Read value.
+            if (mod(ic%now%hour, dt_div) == 0 .and. ic%now%mins == 0) then
+                ierr = read_records_txt(iun_div, in_div_m3s)
+                if (ierr /= 0) then
+                    if (ipid == 0) print 9990, trim(fn_div)
+                    stop
+                end if
+                in_div_m3 = max(in_div_m3s*ic%dts, 0.0) !unit conversion: m3/s flow to m3 storage
+            end if
+
+9990    format(3x, 'ERROR: End of file reached when reading from ', (a), '.')
+
+            !> Apply diversion.
+            do l = 1, n_div
+
+                !> Source.
+                tnsfr_div(l) = 0.0
+                n = rnk_src(l)
+                if (n >= 1 .and. n <= shd%NAA) then
+                    tnsfr_div(l) = min(max(vs%grid%stgch(n) - 0.0, 0.0)*(1.0 - 0.05), in_div_m3(l)) !m3
+                    vs%grid%stgch(n) = vs%grid%stgch(n) - tnsfr_div(l)
+                end if
+
+                !> Sink.
+                n = rnk_snk(l)
+                if (n >= 1 .and. n <= shd%NAA) then
+                    vs%grid%stgch(n) = vs%grid%stgch(n) + tnsfr_div(l)
+                end if
+
+            end do
+        end if
+!<<<temp_diversion
+
+!>>>temp_diversion
+        if (run_div) then
+            if (.not. allocated(qo_div_dly)) allocate(qo_div_dly(n_div))
+            if (.not. allocated(qa_div_dly)) allocate(qa_div_dly(n_div))
+            if (ic%ts_count == 1) then !first time-step
+                qo_div_dly = 0.0; qa_div_dly = 0.0
+                do l = 1, n_div
+                    iun = 2080 + l
+                    write(ffmti, '(i4)') l
+                    fn = './' // trim(fls%GENDIR_OUT) // '/' // 'MESH_output_diversion' // trim(adjustl(ffmti)) // '.csv'
+                    open(unit = iun, file = fn)
+                    write(iun, FMT_GEN) 'YEAR', 'DAY', 'QODIV', 'QADIV'
+                end do
+            end if
+            qo_div_dly = qo_div_dly + in_div_m3 !m3 storage
+            qa_div_dly = qa_div_dly + tnsfr_div !m3 storage
+            if (ic%ts_daily == 24*3600/ic%dts) then !daily
+                qo_div_dly = qo_div_dly/(ic%dts*ic%ts_daily) !m3/s flow
+                qa_div_dly = qa_div_dly/(ic%dts*ic%ts_daily) !m3/s flow
+                do l = 1, n_div
+                    iun = 2080 + l
+                    write(iun, FMT_GEN) ic%now%year, ic%now%jday, qo_div_dly(l), qa_div_dly(l)
+                end do
+                qo_div_dly = 0.0
+                qa_div_dly = 0.0
+            end if
+        end if
+!<<<temp_diversion
 
         !> calculate and write the basin avg SCA similar to watclass3.0f5
         !> Same code than in wf_ensim.f subrutine of watclass3.0f8

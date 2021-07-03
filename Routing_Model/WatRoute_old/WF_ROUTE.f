@@ -333,7 +333,9 @@ c Gauge locations
                 end if
            end do
            if (wf_b3(l) == 0.0) then
-            wf_store2(n)=(wf_qo2(n)/wf_b1(l))**(1.0/wf_b2(l))
+            if(wf_b2(l).gt.0.0) then
+                wf_store2(n)=(wf_qo2(n)/wf_b1(l))**(1.0/wf_b2(l))
+            endif
            else
             wf_store2(n)=10.0
             try1=0.0
@@ -451,8 +453,26 @@ c     and proceed to the lowest.
 
           if( wf_ireach(i).gt.0 ) then ! We are in a Reservoir
                l=wf_ireach(i)
+             if (wf_b1(l).eq.1.0 .and. wf_b2(l).eq.0.0) then !Reservoir type for zone-based storage
+C Are we at the outlet
+              if(wf_r(l).eq.i) then
+C yes we are at the outlet
+C Call external code to get discharge and storage
+                  wf_qi2(i)=wf_resstore(l)+qadd(i)+wf_qi2(i)
+                  call zonebased_reservoir_release(
+     +                    IYEAR,IDAY,i,l,wf_qi2(i),div*2.0, !input
+     +                    wf_qo2(i),wf_store2(i))           !output
+                  wf_resstore(l)=0.0
+               else
+C no we are in the reservoir
+C accumulate flow to the outlet
+                  wf_resstore(l)=wf_resstore(l)+qadd(i)+wf_qi2(i)
+                  wf_qo2(i)=0.0
+	              wf_store2(i)=0.0
+              endif !are we at the outlet
+
 C are we in a natural or controlled reservoir?
-             if(l.gt.wf_noresv_ctrl) then !Natural reservoir routing
+             else if(l.gt.wf_noresv_ctrl) then !Natural reservoir routing
 C Are we at the outlet of a natural reservoir
               if(wf_r(l).eq.i) then
 C yes we are at the outlet, use the big storage term to determine wf_qo2
