@@ -292,7 +292,7 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
             case ('distrib')
                 if (pbsm%PROCESS_ACTIVE) pbsm%pm_grid%Distrib(1:shd%NA) = ffield
 
-            !> SOLARADJUSTFLAG.
+            !> MOUNTAINMESHFLAG.
             case ('elevation')
                 if (.not. allocated(mountain_mesh%pm%elev)) allocate(mountain_mesh%pm%elev(shd%NA, shd%lc%NTYPE))
                 if (ilvl == 0) then
@@ -334,6 +334,17 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                     end do
                 else if (ilvl <= shd%lc%NTYPE) then
                     mountain_mesh%pm%delta(:, ilvl) = ffield
+                else
+                    z = 1
+                end if
+            case ('delta_elevmax')
+                if (.not. allocated(mountain_mesh%pm%delta_elevmax)) allocate(mountain_mesh%pm%delta_elevmax(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        mountain_mesh%pm%delta_elevmax(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    mountain_mesh%pm%delta_elevmax(:, ilvl) = ffield
                 else
                     z = 1
                 end if
