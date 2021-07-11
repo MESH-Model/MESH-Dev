@@ -368,6 +368,7 @@ C
                  RHOSNO(I)=0.
                  ZSNOW(I)=0.
                  SNO(I)=0.
+                 Subl(I)=Subl(I)+WSNOW(I)
                  WSNOW(I)=0.
                  endif
           ENDIF !Drift(I).GT.0. .OR. Subl(I).GT.0.
