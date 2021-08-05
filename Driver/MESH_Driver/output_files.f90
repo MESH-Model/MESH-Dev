@@ -1121,7 +1121,7 @@ module output_files
                 if (.not. lopen) then
                     call open_txt_output(fls, group%grid%iun + iun, trim(fname) // '_' // VN_GRD // '.ts', z)
                     if (z /= 0) then
-                        call print_error("Unable to open file for output: '" // trim(fname) // "_" // VN_GRD // ".ts")
+                        call print_error("Unable to open file for output: " // trim(fname) // "_" // VN_GRD // ".ts")
                         ierr = z
                     end if
                 else
@@ -1144,7 +1144,11 @@ module output_files
                         shd%CoordSys%Ellips, shd%CoordSys%Zone, shd%CoordSys%earth_radius, shd%CoordSys%grid_north_pole_latitude, &
                         shd%CoordSys%grid_north_pole_longitude, &
                         quiet = .true., fill = out%NO_DATA, &
-                        vid = group%grid%vid, vtime = group%grid%tid, iun = group%grid%nid, ierr = ierr)
+                        vid = group%grid%vid, vtime = group%grid%tid, iun = group%grid%nid, ierr = z)
+                    if (ierr /= 0) then
+                        call print_error("Unable to open file for output: " // trim(fname) // "_" // VN_GRD // ".nc")
+                        ierr = z
+                    end if
                 else
                     call print_error( &
                         "Another output variable has already opened the file: " // trim(fname) // "_" // VN_GRD // ".nc")
@@ -2274,6 +2278,7 @@ module output_files
                     group%grid%nid, field%vname, ffreq, group%grid%tid, group%grid%vid, shd%xxx, shd%yyy, &
                     shd%xCount, shd%yCount, out%NO_DATA, group%grid%dat, dates, z)
                 if (z /= 0) then
+                    call print_error("Unable to write to output file: " // trim(group%grid%fname) // "_" // VN_GRD // ".nc")
                     call program_abort()
                 end if
             end if
