@@ -768,7 +768,7 @@ module RUNCLASS36_config
         real, dimension(:, :, :), allocatable :: tbar, thlq, thic
         integer, dimension(:), allocatable :: kc
         character cfmt*3, cfmtt*1000
-
+        character(len = DEFAULT_LINE_LENGTH) line_buffer
         integer NA, NTYPE, NML, NSL, m, k, ik, jk, j, i, ignd, iun, ierr
 
         !> Return if not the head node or if the process is not active.
@@ -874,27 +874,32 @@ module RUNCLASS36_config
                 ignd = 3
             end if
             write(cfmt, '(i3)') ignd
-            write(ECHO_TXT_IUN, *)
-            write(ECHO_TXT_IUN, '(a)') 'End of run prognostic states'
-            write(ECHO_TXT_IUN, '(3x, (a), i4)') 'Number of GRUs: ', NTYPE
+            call print_echo_txt('')
+            call print_echo_txt('End of run prognostic states')
+            write(line_buffer, '(3x, (a), i4)') 'Number of GRUs: ', NTYPE
+            call print_echo_txt(trim(line_buffer))
             do i = 1, 3
-                write(ECHO_TXT_IUN, *)
+                call print_echo_txt('')
                 select case (i)
-                    case (1); write(ECHO_TXT_IUN, '(a)') 'Average values'
-                    case (2); write(ECHO_TXT_IUN, '(a)') 'Minimum values'
-                    case (3); write(ECHO_TXT_IUN, '(a)') 'Maximum values'
+                    case (1); call print_echo_txt('Average values')
+                    case (2); call print_echo_txt('Minimum values')
+                    case (3); call print_echo_txt('Maximum values')
                 end select
                 do m = 1, NTYPE
-                    write(ECHO_TXT_IUN, "(3x, 'GRU ', i3, ':')") m
+                    write(line_buffer, "(3x, 'GRU ', i3, ':')") m
+                    call print_echo_txt(trim(line_buffer))
                     cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), 3(f10.3), " // &
                             "2x, '!> TBAR(1:" // trim(adjustl(cfmt)) // ")/TCAN/TSNO/TPND')"
-                    write(ECHO_TXT_IUN, cfmtt) ((tbar(i, m, j) - 273.16), j = 1, ignd), &
+                    write(line_buffer, cfmtt) ((tbar(i, m, j) - 273.16), j = 1, ignd), &
                         (tcan(i, m) - 273.16), (tsno(i, m) - 273.16), (tpnd(i, m) - 273.16)
+                    call print_echo_txt(trim(line_buffer))
                     cfmtt = "(" // trim(adjustl(cfmt)) // "(f10.3), " // trim(adjustl(cfmt)) // "(f10.3), f10.3, " // &
                             "2x, '!> THLQ(1:" // trim(adjustl(cfmt)) // ")/THIC(1:" // trim(adjustl(cfmt)) // ")/ZPND')"
-                    write(ECHO_TXT_IUN, cfmtt) (thlq(i, m, j), j = 1, ignd), (thic(i, m, j), j = 1, ignd), zpnd(i, m)
-                    write(ECHO_TXT_IUN, "(6(f10.3), 2x, '!> RCAN/SNCAN/SNO/ALBS/RHOS/GRO')") &
+                    write(line_buffer, cfmtt) (thlq(i, m, j), j = 1, ignd), (thic(i, m, j), j = 1, ignd), zpnd(i, m)
+                    call print_echo_txt(trim(line_buffer))
+                    write(line_buffer, "(6(f10.3), 2x, '!> RCAN/SNCAN/SNO/ALBS/RHOS/GRO')") &
                         rcan(i, m), sncan(i, m), sno(i, m), albs(i, m), rhos(i, m), gro(i, m)
+                    call print_echo_txt(trim(line_buffer))
                 end do
             end do
 

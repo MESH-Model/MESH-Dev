@@ -29,7 +29,7 @@ module print_routines
     !> File units.
     !* ECHO_SCN_IUN: Unit of screen (for print).
     !* ECHO_TXT_IUN: Unit of summary file (for write).
-    integer, parameter :: ECHO_SCN_IUN = 6, ECHO_TXT_IUN = 58
+    integer, private, save :: ECHO_SCN_IUN = 6, ECHO_TXT_IUN = -1
 
     !> Padding constants.
     !* PAD_LEAD: Padding of '1x'.
@@ -152,7 +152,7 @@ module print_routines
         character(len = 3) :: advance_modifier = 'yes'
 
         !> Print to the summary file.
-        if (ISHEADNODE .and. ECHOTXTMODE) then
+        if (ISHEADNODE .and. ECHOTXTMODE .and. ECHO_TXT_IUN > 0) then
             if (present(no_advance)) then
                 if (no_advance) advance_modifier = 'no'
             end if
@@ -222,6 +222,25 @@ module print_routines
 
         !> Flush the message.
         call print_message('REMARK: ' // trim(message), level)
+
+    end subroutine
+
+    !> Description:
+    !>  Print the provided message to screen and to the summary file
+    !>  with leading "INFO:", padded by the specified number of spaces
+    !>  or using the current tab if not explicitly provided.
+    !>
+    !> Variables:
+    !>  message: Message to output.
+    !>  level: Offset from the leading edge of the line (optional).
+    subroutine print_info(message, level)
+
+        !> Input variables.
+        character(len = *), intent(in) :: message
+        integer, intent(in), optional :: level
+
+        !> Flush the message.
+        call print_message('INFO: ' // trim(message), level)
 
     end subroutine
 
@@ -371,10 +390,12 @@ module print_routines
         if (.not. ECHOTXTMODE .or. len_trim(path) == 0 .or. .not. ISHEADNODE) return
 
         !> Open the file and print an error if unsuccessful.
+        ECHO_TXT_IUN = 58
         open(ECHO_TXT_IUN, file = path, status = 'replace', action = 'write', iostat = ierr)
         if (ierr /= 0) then
 
             !> Disable output to the file.
+            ECHO_TXT_IUN = -1
             ECHOTXTMODE = .false.
 
             !> Print an error (to screen).

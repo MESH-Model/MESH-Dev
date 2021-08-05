@@ -325,38 +325,38 @@ program RUNMESH
 
 !-    FRAME_NO_NEW = 1
 
-    if (ISHEADNODE) then
+!    if (ISHEADNODE) then
 
     !> ******************************************************
     !> echo print information to MESH_output_echo_print.txt
     !> ******************************************************
 
-        if (ECHOTXTMODE) then
-            write(ECHO_TXT_IUN, *)
-            write(ECHO_TXT_IUN, "('MESH_input_run_options.ini')")
-            write(ECHO_TXT_IUN, *)
-            write(ECHO_TXT_IUN, "('Configuration flags - specified by user or default values')")
+!        if (ECHOTXTMODE) then
+!            write(ECHO_TXT_IUN, *)
+!            write(ECHO_TXT_IUN, "('MESH_input_run_options.ini')")
+!            write(ECHO_TXT_IUN, *)
+!            write(ECHO_TXT_IUN, "('Configuration flags - specified by user or default values')")
 
 !todo: this list should be updated (dgp: 2015-01-09)
-            write(ECHO_TXT_IUN, *) 'BASINSHORTWAVEFLAG   = ', cm%dat(ck%FB)%ffmt
-            write(ECHO_TXT_IUN, *) 'BASINLONGWAVEFLAG    = ', cm%dat(ck%FI)%ffmt
-            write(ECHO_TXT_IUN, *) 'BASINRAINFLAG        = ', cm%dat(ck%RT)%ffmt
-            write(ECHO_TXT_IUN, *) 'BASINTEMPERATUREFLAG = ', cm%dat(ck%TT)%ffmt
-            write(ECHO_TXT_IUN, *) 'BASINWINDFLAG        = ', cm%dat(ck%UV)%ffmt
-            write(ECHO_TXT_IUN, *) 'BASINPRESFLAG        = ', cm%dat(ck%P0)%ffmt
-            write(ECHO_TXT_IUN, *) 'BASINHUMIDITYFLAG    = ', cm%dat(ck%HU)%ffmt
+!-            write(ECHO_TXT_IUN, *) 'BASINSHORTWAVEFLAG   = ', cm%dat(ck%FB)%ffmt
+!-            write(ECHO_TXT_IUN, *) 'BASINLONGWAVEFLAG    = ', cm%dat(ck%FI)%ffmt
+!-            write(ECHO_TXT_IUN, *) 'BASINRAINFLAG        = ', cm%dat(ck%RT)%ffmt
+!-            write(ECHO_TXT_IUN, *) 'BASINTEMPERATUREFLAG = ', cm%dat(ck%TT)%ffmt
+!-            write(ECHO_TXT_IUN, *) 'BASINWINDFLAG        = ', cm%dat(ck%UV)%ffmt
+!-            write(ECHO_TXT_IUN, *) 'BASINPRESFLAG        = ', cm%dat(ck%P0)%ffmt
+!-            write(ECHO_TXT_IUN, *) 'BASINHUMIDITYFLAG    = ', cm%dat(ck%HU)%ffmt
 !-            write(ECHO_TXT_IUN, *) 'RESUMEFLAG           = ', RESUMEFLAG
 !-            write(ECHO_TXT_IUN, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
-            write(ECHO_TXT_IUN, *) 'SHDFILEFLAG          = ', SHDFILEFMT
-            write(ECHO_TXT_IUN, *) 'SOILINIFLAG          = ', SOILINIFLAG
-            write(ECHO_TXT_IUN, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
-            write(ECHO_TXT_IUN, *) 'SUBBASINFLAG         = ', SUBBASINFLAG
-            write(ECHO_TXT_IUN, *) 'R2COUTPUTFLAG        = ', R2COUTPUTFLAG
-            write(ECHO_TXT_IUN, *) 'OBJFNFLAG            = ', OBJFNFLAG
-            write(ECHO_TXT_IUN, *) 'AUTOCALIBRATIONFLAG  = ', mtsflg%AUTOCALIBRATIONFLAG
-            write(ECHO_TXT_IUN, *) 'WINDOWSIZEFLAG       = ', WINDOWSIZEFLAG
-            write(ECHO_TXT_IUN, *) 'WINDOWSPACINGFLAG    = ', WINDOWSPACINGFLAG
-            write(ECHO_TXT_IUN, *) 'FROZENSOILINFILFLAG  = ', FROZENSOILINFILFLAG
+!            write(ECHO_TXT_IUN, *) 'SHDFILEFLAG          = ', SHDFILEFMT
+!            write(ECHO_TXT_IUN, *) 'SOILINIFLAG          = ', SOILINIFLAG
+!            write(ECHO_TXT_IUN, *) 'PREEMPTIONFLAG       = ', mtsflg%PREEMPTIONFLAG
+!            write(ECHO_TXT_IUN, *) 'SUBBASINFLAG         = ', SUBBASINFLAG
+!            write(ECHO_TXT_IUN, *) 'R2COUTPUTFLAG        = ', R2COUTPUTFLAG
+!            write(ECHO_TXT_IUN, *) 'OBJFNFLAG            = ', OBJFNFLAG
+!            write(ECHO_TXT_IUN, *) 'AUTOCALIBRATIONFLAG  = ', mtsflg%AUTOCALIBRATIONFLAG
+!            write(ECHO_TXT_IUN, *) 'WINDOWSIZEFLAG       = ', WINDOWSIZEFLAG
+!            write(ECHO_TXT_IUN, *) 'WINDOWSPACINGFLAG    = ', WINDOWSPACINGFLAG
+!            write(ECHO_TXT_IUN, *) 'FROZENSOILINFILFLAG  = ', FROZENSOILINFILFLAG
 
 !todo: restore this.
 !            write(ECHO_TXT_IUN, *)
@@ -420,8 +420,8 @@ program RUNMESH
 !                    cp%RCANROW(i, m), cp%SCANROW(i, m), cp%SNOROW(i, m), cp%ALBSROW(i, m), cp%RHOSROW(i, m), cp%GROROW(i, m)
 !                write(ECHO_TXT_IUN, *)
 !            end do !m = 1, shd%lc%NTYPE
-        end if
-    end if
+!        end if
+!    end if
 
     !> Open and print header information to the output files
     !> Open and read in values from r2c_output.txt file
