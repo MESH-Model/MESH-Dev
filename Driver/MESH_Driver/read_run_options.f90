@@ -303,7 +303,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                         end if
                         RUNCLASS36_flgs%pm%constant%FREZTH(:) = IROVALR
                     end if
-                case ('SWELIM', 'ICEBAL_SWE_LIMIT')
+                case ('SWELIM', 'ICEBAL_SWE_LIMIT', 'SNDEPLIM', 'ICEBAL_SNOW_DEPTH_LIMIT')
                     call value(args(2), IROVALR, z)
                     if (z == 0) then
                         if (.not. allocated(RUNCLASS36_flgs%pm%constant%SWELIM)) then
