@@ -72,13 +72,11 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
 
     !> Check that the number of grid cells matches the drainage database value.
     if (i /= NA) then
-        call print_error('The number of grid cells does not match the drainage database.')
+        call print_warning('The number of grid cells does not match the drainage database.')
         write(line, FMT_GEN) NA
         call print_message('Drainage database: ' // trim(adjustl(line)))
         write(line, FMT_GEN) i
         call print_message(trim(adjustl(fls%fl(mfk%f50)%fn)) // ': ' // trim(adjustl(line)))
-        ierr = 1
-        close(iun)
     end if
 
     !> Return if an error has occurred.

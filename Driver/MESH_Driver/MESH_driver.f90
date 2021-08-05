@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1773'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1790'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -271,7 +271,7 @@ program RUNMESH
             call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_QO /))
         end if
         if (ro%RUNBALWB .and. ro%RUNLSS) then
-            call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF /))
+            call output_variables_activate(out%d%basin, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF /))
         end if
     end if
     if (PRINTSIMSTATUS == OUT_JDATE_MLY .or. PRINTSIMSTATUS == OUT_DATE_MLY) then
@@ -279,7 +279,7 @@ program RUNMESH
             call output_variables_activate(out%d%grid, (/ VN_DUMMY_LENGTH, VN_QO /))
         end if
         if (ro%RUNBALWB .and. ro%RUNLSS) then
-            call output_variables_activate(out%m%grid, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF /))
+            call output_variables_activate(out%m%basin, (/ VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF /))
         end if
     end if
 
@@ -1034,10 +1034,7 @@ program RUNMESH
                     end if
                     if (ro%RUNBALWB .and. ro%RUNLSS) then
                         write(line, '((a), 3(f10.3))') &
-                            trim(line), &
-                            sum(out%d%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC), &
-                            sum(out%d%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                            sum(out%d%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+                            trim(line), out%d%basin%prec(shd%NA), out%d%basin%et(shd%NA)*ic%dts, out%d%basin%rof(shd%NA)*ic%dts
                     end if
                     call print_screen(trim(line))
                 end if
@@ -1059,10 +1056,7 @@ program RUNMESH
                     end if
                     if (ro%RUNBALWB .and. ro%RUNLSS) then
                         write(line, '((a), 3(f10.3))') &
-                            trim(line), &
-                            sum(out%m%grid%prec(1:shd%NA)*shd%FRAC)/sum(shd%FRAC), &
-                            sum(out%m%grid%et(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC), &
-                            sum(out%m%grid%rof(1:shd%NA)*shd%FRAC)*ic%dts/sum(shd%FRAC)
+                            trim(line), out%m%basin%prec(shd%NA), out%m%basin%et(shd%NA)*ic%dts, out%m%basin%rof(shd%NA)*ic%dts
                     end if
                     call print_screen(trim(line))
                 end if
