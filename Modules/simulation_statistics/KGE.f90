@@ -38,14 +38,20 @@
         !* corr: Correlation coefficient of observed and simulated.
         real mo, ms, so, ss, corr
 
+        !> Set the return variable.
+        KGE = 0.0
+
         !> Calculate means (where obs > 0.0).
         na = count(obs > 0.0)
+        if (na == 0) return
         mo = sum(obs, obs > 0.0)/na
         ms = sum(sim, obs > 0.0)/na
+        if (mo == 0.0) return
 
         !> Standard deviations.
         so = sqrt(sum((obs - mo)**2, obs > 0.0)/(na - 1))
         ss = sqrt(sum((sim - ms)**2, obs > 0.0)/(na - 1))
+        if (so == 0.0 .or. ss == 0.0) return
 
         !> Correlation.
         corr = (sum(obs*sim, obs > 0.0) - na*mo*ms)/((na - 1)*so*ss)

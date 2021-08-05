@@ -131,12 +131,13 @@ module SIMSTATS
 
         !> Calculate the mean of the observed values.
         nad = count(obs(ilf:ncal) >= 0.0)
+        if (nad == 0) return
         obsdm = sum(obs(ilf:ncal), mask = obs(ilf:ncal) >= 0.0)/nad
         lobsdm = sum(log(obs(ilf:ncal) + ltol), mask = obs(ilf:ncal) >= 0.0)/nad
 
         !> Calculate the mean of the weekly values.
         naw = count(obsw(1:nw) >= 0.0)
-        obswm = sum(obsw(1:nw), mask = obsw(1:nw) >= 0.0)/naw
+        if (naw > 0) obswm = sum(obsw(1:nw), mask = obsw(1:nw) >= 0.0)/naw
 
         !> Calculate the error terms for observed values greater than zero.
         where(obs(ilf:ncal) >= 0.0)
@@ -153,10 +154,10 @@ module SIMSTATS
         end where
 
         !> Calculate the statistical coefficients.
-        bias = sum(errd(ilf:ncal))/(obsdm*nad)
-        nsd = 1.0 - sum(errd**2)/sum(errdm**2)
-        lnsd = 1.0 - sum(lerrd**2)/sum(lerrdm**2)
-        nsw = 1.0 - sum(errw**2)/sum(errwm**2)
+        if (obsdm > 0) bias = sum(errd(ilf:ncal))/(obsdm*nad)
+        if (sum(errdm) > 0) nsd = 1.0 - sum(errd**2)/sum(errdm**2)
+        if (sum(lerrdm) > 0) lnsd = 1.0 - sum(lerrd**2)/sum(lerrdm**2)
+        if (sum(errwm) > 0) nsw = 1.0 - sum(errw**2)/sum(errwm**2)
 
         !> Calculate the time to peak value.
         errtp = 0.0
