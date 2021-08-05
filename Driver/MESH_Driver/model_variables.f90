@@ -230,6 +230,10 @@ module model_variables
         real, dimension(:), pointer :: zlvl => null()
         real, dimension(:), pointer :: div => null()
         real, dimension(:), pointer :: abstr => null()
+
+        !> Indices.
+        character(len = FLEN_FIELD) :: dim_name = ''
+        integer :: dim_length = 0
     end type
 
     !> Description:
@@ -561,14 +565,30 @@ module model_variables
         !> Allocate and initialize groups.
         if (ro%RUNTILE) then
             call model_variables_group_allocate(vs%tile, shd%lc%NML, shd%lc%IGND, z); if (z /= 0) ierr = z
+            if (associated(vs%tile)) then
+                vs%tile%dim_length = shd%lc%NML
+                vs%tile%dim_name = 'tile'
+            end if
             call model_variables_group_reset(vs%tile, z); if (z /= 0) ierr = z
             call model_variables_group_allocate(vs%gru, shd%lc%NTYPE, shd%lc%IGND, z); if (z /= 0) ierr = z
+            if (associated(vs%gru)) then
+                vs%gru%dim_length = shd%lc%NTYPE
+                vs%gru%dim_name = 'gru'
+            end if
             call model_variables_group_reset(vs%gru, z); if (z /= 0) ierr = z
         end if
         if (ro%RUNGRID) then
             call model_variables_group_allocate(vs%grid, shd%NA, shd%lc%IGND, z); if (z /= 0) ierr = z
+            if (associated(vs%grid)) then
+                vs%grid%dim_length = shd%NA
+                vs%grid%dim_name = 'grid'
+            end if
             call model_variables_group_reset(vs%grid, z); if (z /= 0) ierr = z
             call model_variables_group_allocate(vs%basin, shd%NA, shd%lc%IGND, z); if (z /= 0) ierr = z
+            if (associated(vs%basin)) then
+                vs%basin%dim_length = shd%NA
+                vs%basin%dim_name = 'basin'
+            end if
             call model_variables_group_reset(vs%basin, z); if (z /= 0) ierr = z
         end if
 
