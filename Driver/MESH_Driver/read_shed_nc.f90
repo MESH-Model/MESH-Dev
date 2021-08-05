@@ -111,11 +111,11 @@ subroutine read_shed_nc(shd, fname, dim_x_name, dim_y_name, dim_c_name, dim_m_na
                 end if
             end if
             select case (lowercase(units))
-                case ('degrees', 'decimal_degrees', 'degrees_north')
+                case ('degrees', 'decimal_degrees', 'degrees_east')
                 case default
                     call print_warning( &
-                        "The units '" // trim(units) // "' of the latitude variable are different from the expected units of " // &
-                        "'degrees', 'decimal_degrees', or 'degrees_north'.")
+                        "The units '" // trim(units) // "' of the longitude variable are different from the expected units of " // &
+                        "'degrees', 'decimal_degrees', or 'degrees_east'.")
             end select
             if (len_trim(dim_y) == 0) dim_y = 'lat'
             call nc4_get_variable(iun, dim_y, dat = shd%CoordSys%lat, fill = fill_r, units = units, ierr = z)
@@ -207,6 +207,8 @@ subroutine read_shed_nc(shd, fname, dim_x_name, dim_y_name, dim_c_name, dim_m_na
 
     !> Determine 'NA'.
     shd%NA = count(shd%RNKGRD /= fill_i .and. shd%RNKGRD > 0)
+    shd%AL = 1.0
+    shd%DebugGridNo = shd%NA
 
     !> Create the 'xxx' and 'yyy' reference tables.
     allocate(shd%xxx(shd%NA), shd%yyy(shd%NA))
