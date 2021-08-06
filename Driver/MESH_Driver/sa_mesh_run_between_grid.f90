@@ -1285,78 +1285,76 @@ module sa_mesh_run_between_grid
 
                 !> Meteorology/climatology variables.
                 if (associated(vs%basin%fsin)) then
-                    if (all(vs%basin%fsin /= huge(vs%basin%fsin))) vs%basin%fsin(ii) = vs%basin%fsin(ii) + vs%basin%fsin(i)
+                    if (vs%basin%fsin(i) /= huge(vs%basin%fsin)) vs%basin%fsin(ii) = vs%basin%fsin(ii) + vs%basin%fsin(i)
                 end if
                 if (associated(vs%basin%fsvs)) then
-                    if (all(vs%basin%fsvs /= huge(vs%basin%fsvs))) vs%basin%fsvs(ii) = vs%basin%fsvs(ii) + vs%basin%fsvs(i)
+                    if (vs%basin%fsvs(i) /= huge(vs%basin%fsvs)) vs%basin%fsvs(ii) = vs%basin%fsvs(ii) + vs%basin%fsvs(i)
                 end if
                 if (associated(vs%basin%fsir)) then
-                    if (all(vs%basin%fsir /= huge(vs%basin%fsir))) vs%basin%fsir(ii) = vs%basin%fsir(ii) + vs%basin%fsir(i)
+                    if (vs%basin%fsir(i) /= huge(vs%basin%fsir)) vs%basin%fsir(ii) = vs%basin%fsir(ii) + vs%basin%fsir(i)
                 end if
                 if (associated(vs%basin%fsdr)) then
-                    if (all(vs%basin%fsdr /= huge(vs%basin%fsdr))) vs%basin%fsdr(ii) = vs%basin%fsdr(ii) + vs%basin%fsdr(i)
+                    if (vs%basin%fsdr(i) /= huge(vs%basin%fsdr)) vs%basin%fsdr(ii) = vs%basin%fsdr(ii) + vs%basin%fsdr(i)
                 end if
                 if (associated(vs%basin%fsdff)) then
-                    if (all(vs%basin%fsdff /= huge(vs%basin%fsdff))) vs%basin%fsdff(ii) = vs%basin%fsdff(ii) + vs%basin%fsdff(i)
+                    if (vs%basin%fsdff(i) /= huge(vs%basin%fsdff)) vs%basin%fsdff(ii) = vs%basin%fsdff(ii) + vs%basin%fsdff(i)
                 end if
                 if (associated(vs%basin%flin)) then
-                    if (all(vs%basin%flin /= huge(vs%basin%flin))) vs%basin%flin(ii) = vs%basin%flin(ii) + vs%basin%flin(i)
+                    if (vs%basin%flin(i) /= huge(vs%basin%flin)) vs%basin%flin(ii) = vs%basin%flin(ii) + vs%basin%flin(i)
                 end if
                 if (associated(vs%basin%ta)) then
-                    if (all(vs%basin%ta /= huge(vs%basin%ta))) vs%basin%ta(ii) = vs%basin%ta(ii) + vs%basin%ta(i)
+                    if (vs%basin%ta(i) /= huge(vs%basin%ta)) vs%basin%ta(ii) = vs%basin%ta(ii) + vs%basin%ta(i)
                 end if
                 if (associated(vs%basin%qa)) then
-                    if (all(vs%basin%qa /= huge(vs%basin%qa))) vs%basin%qa(ii) = vs%basin%qa(ii) + vs%basin%qa(i)
+                    if (vs%basin%qa(i) /= huge(vs%basin%qa)) vs%basin%qa(ii) = vs%basin%qa(ii) + vs%basin%qa(i)
                 end if
                 if (associated(vs%basin%pres)) then
-                    if (all(vs%basin%pres /= huge(vs%basin%pres))) vs%basin%pres(ii) = vs%basin%pres(ii) + vs%basin%pres(i)
+                    if (vs%basin%pres(i) /= huge(vs%basin%pres)) vs%basin%pres(ii) = vs%basin%pres(ii) + vs%basin%pres(i)
                 end if
                 if (associated(vs%basin%uu)) then
-                    if (all(vs%basin%uu /= huge(vs%basin%uu))) vs%basin%uu(ii) = vs%basin%uu(ii) + vs%basin%uu(i)
+                    if (vs%basin%uu(i) /= huge(vs%basin%uu)) vs%basin%uu(ii) = vs%basin%uu(ii) + vs%basin%uu(i)
                 end if
                 if (associated(vs%basin%vv)) then
-                    if (all(vs%basin%vv /= huge(vs%basin%vv))) vs%basin%vv(ii) = vs%basin%vv(ii) + vs%basin%vv(i)
+                    if (vs%basin%vv(i) /= huge(vs%basin%vv)) vs%basin%vv(ii) = vs%basin%vv(ii) + vs%basin%vv(i)
                 end if
                 if (associated(vs%basin%uv)) then
-                    if (all(vs%basin%uv /= huge(vs%basin%uv))) vs%basin%uv(ii) = vs%basin%uv(ii) + vs%basin%uv(i)
+                    if (vs%basin%uv(i) /= huge(vs%basin%uv)) vs%basin%uv(ii) = vs%basin%uv(ii) + vs%basin%uv(i)
                 end if
                 if (associated(vs%basin%wdir)) then
-                    if (all(vs%basin%wdir /= huge(vs%basin%wdir))) vs%basin%wdir(ii) = vs%basin%wdir(ii) + vs%basin%wdir(i)
+                    if (vs%basin%wdir(i) /= huge(vs%basin%wdir)) vs%basin%wdir(ii) = vs%basin%wdir(ii) + vs%basin%wdir(i)
                 end if
                 if (associated(vs%basin%prern)) then
-                    if (all(vs%basin%prern /= huge(vs%basin%prern))) vs%basin%prern(ii) = vs%basin%prern(ii) + vs%basin%prern(i)
+                    if (vs%basin%prern(i) /= huge(vs%basin%prern)) vs%basin%prern(ii) = vs%basin%prern(ii) + vs%basin%prern(i)
                 end if
                 if (associated(vs%basin%presno)) then
-                    if (all(vs%basin%presno /= huge(vs%basin%presno))) then
-                        vs%basin%presno(ii) = vs%basin%presno(ii) + vs%basin%presno(i)
-                    end if
+                    if (vs%basin%presno(i) /= huge(vs%basin%presno)) vs%basin%presno(ii) = vs%basin%presno(ii) + vs%basin%presno(i)
                 end if
                 if (associated(vs%basin%pre)) then
-                    if (all(vs%basin%pre /= huge(vs%basin%pre))) vs%basin%pre(ii) = vs%basin%pre(ii) + vs%basin%pre(i)
+                    if (vs%basin%pre(i) /= huge(vs%basin%pre)) vs%basin%pre(ii) = vs%basin%pre(ii) + vs%basin%pre(i)
                 end if
 
                 !> Canopy variables.
                 if (associated(vs%basin%lqwscan)) then
-                    if (all(vs%basin%lqwscan /= huge(vs%basin%lqwscan))) then
+                    if (vs%basin%lqwscan(i) /= huge(vs%basin%lqwscan)) then
                         vs%basin%lqwscan(ii) = vs%basin%lqwscan(ii) + vs%basin%lqwscan(i)
                     end if
                 end if
                 if (associated(vs%basin%fzwscan)) then
-                    if (all(vs%basin%fzwscan /= huge(vs%basin%fzwscan))) then
+                    if (vs%basin%fzwscan(i) /= huge(vs%basin%fzwscan)) then
                         vs%basin%fzwscan(ii) = vs%basin%fzwscan(ii) + vs%basin%fzwscan(i)
                     end if
                 end if
                 if (associated(vs%basin%cmas)) then
-                    if (all(vs%basin%cmas /= huge(vs%basin%cmas))) vs%basin%cmas(ii) = vs%basin%cmas(ii) + vs%basin%cmas(i)
+                    if (vs%basin%cmas(i) /= huge(vs%basin%cmas)) vs%basin%cmas(ii) = vs%basin%cmas(ii) + vs%basin%cmas(i)
                 end if
                 if (associated(vs%basin%tacan)) then
-                    if (all(vs%basin%tacan /= huge(vs%basin%tacan))) vs%basin%tacan(ii) = vs%basin%tacan(ii) + vs%basin%tacan(i)
+                    if (vs%basin%tacan(i) /= huge(vs%basin%tacan)) vs%basin%tacan(ii) = vs%basin%tacan(ii) + vs%basin%tacan(i)
                 end if
                 if (associated(vs%basin%qacan)) then
-                    if (all(vs%basin%qacan /= huge(vs%basin%qacan))) vs%basin%qacan(ii) = vs%basin%qacan(ii) + vs%basin%qacan(i)
+                    if (vs%basin%qacan(i) /= huge(vs%basin%qacan)) vs%basin%qacan(ii) = vs%basin%qacan(ii) + vs%basin%qacan(i)
                 end if
                 if (associated(vs%basin%tcan)) then
-                    if (all(vs%basin%tcan /= huge(vs%basin%tcan))) then
+                    if (vs%basin%tcan(i) /= huge(vs%basin%tcan)) then
                         vs%basin%tcan(ii) = vs%basin%tcan(ii) + vs%basin%tcan(i)
                         if (vs%basin%tcan(i) > 0.0) then
                             tcanfrac(ii) = tcanfrac(ii) + tcanfrac(i)
@@ -1364,31 +1362,29 @@ module sa_mesh_run_between_grid
                     end if
                 end if
                 if (associated(vs%basin%gro)) then
-                    if (all(vs%basin%gro /= huge(vs%basin%gro))) vs%basin%gro(ii) = vs%basin%gro(ii) + vs%basin%gro(i)
+                    if (vs%basin%gro(i) /= huge(vs%basin%gro)) vs%basin%gro(ii) = vs%basin%gro(ii) + vs%basin%gro(i)
                 end if
 
                 !> Snow variables.
                 if (associated(vs%basin%fsno)) then
-                    if (all(vs%basin%fsno /= huge(vs%basin%fsno))) vs%basin%fsno(ii) = vs%basin%fsno(ii) + vs%basin%fsno(i)
+                    if (vs%basin%fsno(i) /= huge(vs%basin%fsno)) vs%basin%fsno(ii) = vs%basin%fsno(ii) + vs%basin%fsno(i)
                 end if
                 if (associated(vs%basin%sno)) then
-                    if (all(vs%basin%sno /= huge(vs%basin%sno))) vs%basin%sno(ii) = vs%basin%sno(ii) + vs%basin%sno(i)
+                    if (vs%basin%sno(i) /= huge(vs%basin%sno)) vs%basin%sno(ii) = vs%basin%sno(ii) + vs%basin%sno(i)
                 end if
                 if (associated(vs%basin%rhosno)) then
-                    if (all(vs%basin%rhosno /= huge(vs%basin%rhosno))) then
-                        vs%basin%rhosno(ii) = vs%basin%rhosno(ii) + vs%basin%rhosno(i)
-                    end if
+                    if (vs%basin%rhosno(i) /= huge(vs%basin%rhosno)) vs%basin%rhosno(ii) = vs%basin%rhosno(ii) + vs%basin%rhosno(i)
                 end if
 !-                if (associated(vs%basin%zsno)) then
-!-                    if (all(vs%basin%zsno /= huge(vs%basin%zsno))) vs%basin%zsno(ii) = vs%basin%zsno(ii) + vs%basin%zsno(i)
+!-                    if (vs%basin%zsno(i) /= huge(vs%basin%zsno)) vs%basin%zsno(ii) = vs%basin%zsno(ii) + vs%basin%zsno(i)
 !-                end if
                 if (associated(vs%basin%lqwssno)) then
-                    if (all(vs%basin%lqwssno /= huge(vs%basin%lqwssno))) then
+                    if (vs%basin%lqwssno(i) /= huge(vs%basin%lqwssno)) then
                         vs%basin%lqwssno(ii) = vs%basin%lqwssno(ii) + vs%basin%lqwssno(i)
                     end if
                 end if
                 if (associated(vs%basin%tsno)) then
-                    if (all(vs%basin%tsno /= huge(vs%basin%tsno))) then
+                    if (vs%basin%tsno(i) /= huge(vs%basin%tsno)) then
                         vs%basin%tsno(ii) = vs%basin%tsno(ii) + vs%basin%tsno(i)
                         if (vs%basin%tsno(i) > 0.0) then
                             tsnofrac(ii) = tsnofrac(ii) + tsnofrac(i)
@@ -1396,19 +1392,17 @@ module sa_mesh_run_between_grid
                     end if
                 end if
                 if (associated(vs%basin%albsno)) then
-                    if (all(vs%basin%albsno /= huge(vs%basin%albsno))) then
-                        vs%basin%albsno(ii) = vs%basin%albsno(ii) + vs%basin%albsno(i)
-                    end if
+                    if (vs%basin%albsno(i) /= huge(vs%basin%albsno)) vs%basin%albsno(ii) = vs%basin%albsno(ii) + vs%basin%albsno(i)
                 end if
                 if (associated(vs%basin%drainsno)) then
-                    if (all(vs%basin%drainsno /= huge(vs%basin%drainsno))) then
+                    if (vs%basin%drainsno(i) /= huge(vs%basin%drainsno)) then
                         vs%basin%drainsno(ii) = vs%basin%drainsno(ii) + vs%basin%drainsno(i)
                     end if
                 end if
 
                 !> Surface variables.
                 if (associated(vs%basin%albt)) then
-                    if (all(vs%basin%albt /= huge(vs%basin%albt))) then
+                    if (vs%basin%albt(i) /= huge(vs%basin%albt)) then
                         vs%basin%albt(ii) = vs%basin%albt(ii) + vs%basin%albt(i)
                         if (vs%basin%albt(i) > 0.0) then
                             albtfrac(ii) = albtfrac(ii) + albtfrac(i)
@@ -1416,24 +1410,24 @@ module sa_mesh_run_between_grid
                     end if
                 end if
                 if (associated(vs%basin%alvs)) then
-                    if (all(vs%basin%alvs /= huge(vs%basin%alvs))) vs%basin%alvs(ii) = vs%basin%alvs(ii) + vs%basin%alvs(i)
+                    if (vs%basin%alvs(i) /= huge(vs%basin%alvs)) vs%basin%alvs(ii) = vs%basin%alvs(ii) + vs%basin%alvs(i)
                 end if
                 if (associated(vs%basin%alir)) then
-                    if (all(vs%basin%alir /= huge(vs%basin%alir))) vs%basin%alir(ii) = vs%basin%alir(ii) + vs%basin%alir(i)
+                    if (vs%basin%alir(i) /= huge(vs%basin%alir)) vs%basin%alir(ii) = vs%basin%alir(ii) + vs%basin%alir(i)
                 end if
                 if (associated(vs%basin%gte)) then
-                    if (all(vs%basin%gte /= huge(vs%basin%gte))) vs%basin%gte(ii) = vs%basin%gte(ii) + vs%basin%gte(i)
+                    if (vs%basin%gte(i) /= huge(vs%basin%gte)) vs%basin%gte(ii) = vs%basin%gte(ii) + vs%basin%gte(i)
                 end if
                 if (associated(vs%basin%zpnd)) then
-                    if (all(vs%basin%zpnd /= huge(vs%basin%zpnd))) vs%basin%zpnd(ii) = vs%basin%zpnd(ii) + vs%basin%zpnd(i)
+                    if (vs%basin%zpnd(i) /= huge(vs%basin%zpnd)) vs%basin%zpnd(ii) = vs%basin%zpnd(ii) + vs%basin%zpnd(i)
                 end if
 !-                if (associated(vs%basin%lqwspnd)) then
-!-                    if (all(vs%basin%lqwspnd /= huge(vs%basin%lqwspnd))) then
+!-                    if (vs%basin%lqwspnd(i) /= huge(vs%basin%lqwspnd)) then
 !-                        vs%basin%lqwspnd(ii) = vs%basin%lqwspnd(ii) + vs%basin%lqwspnd(i)
 !-                    end if
 !-                end if
                 if (associated(vs%basin%tpnd)) then
-                    if (all(vs%basin%tpnd /= huge(vs%basin%tpnd))) then
+                    if (vs%basin%tpnd(i) /= huge(vs%basin%tpnd)) then
                         vs%basin%tpnd(ii) = vs%basin%tpnd(ii) + vs%basin%tpnd(i)
                         if (vs%basin%tpnd(i) > 0.0) then
                             tpndfrac(ii) = tpndfrac(ii) + tpndfrac(i)
@@ -1441,53 +1435,51 @@ module sa_mesh_run_between_grid
                     end if
                 end if
                 if (associated(vs%basin%pndcaf)) then
-                    if (all(vs%basin%pndcaf /= huge(vs%basin%pndcaf))) then
-                        vs%basin%pndcaf(ii) = vs%basin%pndcaf(ii) + vs%basin%pndcaf(i)
-                    end if
+                    if (vs%basin%pndcaf(i) /= huge(vs%basin%pndcaf)) vs%basin%pndcaf(ii) = vs%basin%pndcaf(ii) + vs%basin%pndcaf(i)
                 end if
                 if (associated(vs%basin%potevp)) then
-                    if (all(vs%basin%potevp /= huge(vs%basin%potevp))) then
-                        vs%basin%potevp(ii) = vs%basin%potevp(ii) + vs%basin%potevp(i)
-                    end if
+                    if (vs%basin%potevp(i) /= huge(vs%basin%potevp)) vs%basin%potevp(ii) = vs%basin%potevp(ii) + vs%basin%potevp(i)
                 end if
                 if (associated(vs%basin%et)) then
-                    if (all(vs%basin%et /= huge(vs%basin%et))) vs%basin%et(ii) = vs%basin%et(ii) + vs%basin%et(i)
+                    if (vs%basin%et(i) /= huge(vs%basin%et)) vs%basin%et(ii) = vs%basin%et(ii) + vs%basin%et(i)
                 end if
 !-                if (associated(vs%basin%evpb)) then
-!-                    if (all(vs%basin%evpb /= huge(vs%basin%evpb))) vs%basin%evpb(ii) = vs%basin%evpb(ii) + vs%basin%evpb(i)
+!-                    if (vs%basin%evpb(i) /= huge(vs%basin%evpb)) vs%basin%evpb(ii) = vs%basin%evpb(ii) + vs%basin%evpb(i)
 !-                end if
 !-                if (associated(vs%basin%arrd)) then
-!-                    if (all(vs%basin%arrd /= huge(vs%basin%arrd))) vs%basin%arrd(ii) = vs%basin%arrd(ii) + vs%basin%arrd(i)
+!-                    if (vs%basin%arrd(i) /= huge(vs%basin%arrd)) vs%basin%arrd(ii) = vs%basin%arrd(ii) + vs%basin%arrd(i)
 !-                end if
                 if (associated(vs%basin%ovrflw)) then
-                    if (all(vs%basin%ovrflw /= huge(vs%basin%ovrflw))) then
+                    if (vs%basin%ovrflw(i) /= huge(vs%basin%ovrflw)) then
                         vs%basin%ovrflw(ii) = vs%basin%ovrflw(ii) + vs%basin%ovrflw(i)
                     end if
                 end if
                 if (associated(vs%basin%qevp)) then
-                    if (all(vs%basin%qevp /= huge(vs%basin%qevp))) vs%basin%qevp(ii) = vs%basin%qevp(ii) + vs%basin%qevp(i)
+                    if (vs%basin%qevp(i) /= huge(vs%basin%qevp)) vs%basin%qevp(ii) = vs%basin%qevp(ii) + vs%basin%qevp(i)
                 end if
                 if (associated(vs%basin%qsens)) then
-                    if (all(vs%basin%qsens /= huge(vs%basin%qsens))) vs%basin%qsens(ii) = vs%basin%qsens(ii) + vs%basin%qsens(i)
+                    if (vs%basin%qsens(i) /= huge(vs%basin%qsens)) vs%basin%qsens(ii) = vs%basin%qsens(ii) + vs%basin%qsens(i)
                 end if
                 if (associated(vs%basin%gzero)) then
-                    if (all(vs%basin%gzero /= huge(vs%basin%gzero))) vs%basin%gzero(ii) = vs%basin%gzero(ii) + vs%basin%gzero(i)
+                    if (vs%basin%gzero(i) /= huge(vs%basin%gzero)) vs%basin%gzero(ii) = vs%basin%gzero(ii) + vs%basin%gzero(i)
                 end if
                 if (associated(vs%basin%tsfs)) then
-                    if (all(vs%basin%tsfs /= huge(vs%basin%tsfs))) vs%basin%tsfs(ii, :) = vs%basin%tsfs(ii, :) + vs%basin%tsfs(i, :)
+                    if (all(vs%basin%tsfs(i, :) /= huge(vs%basin%tsfs))) then
+                        vs%basin%tsfs(ii, :) = vs%basin%tsfs(ii, :) + vs%basin%tsfs(i, :)
+                    end if
                 end if
                 if (associated(vs%basin%tsurf)) then
-                    if (all(vs%basin%tsurf /= huge(vs%basin%tsurf))) vs%basin%tsurf(ii) = vs%basin%tsurf(ii) + vs%basin%tsurf(i)
+                    if (vs%basin%tsurf(i) /= huge(vs%basin%tsurf)) vs%basin%tsurf(ii) = vs%basin%tsurf(ii) + vs%basin%tsurf(i)
                 end if
 
                 !> Ice/glacier variables.
                 if (associated(vs%basin%lqwsice)) then
-                    if (all(vs%basin%lqwsice /= huge(vs%basin%lqwsice))) then
+                    if (vs%basin%lqwsice(i) /= huge(vs%basin%lqwsice)) then
                         vs%basin%lqwsice(ii) = vs%basin%lqwsice(ii) + vs%basin%lqwsice(i)
                     end if
                 end if
                 if (associated(vs%basin%tice)) then
-                    if (all(vs%basin%tice /= huge(vs%basin%tice))) then
+                    if (vs%basin%tice(i) /= huge(vs%basin%tice)) then
                         vs%basin%tice(ii) = vs%basin%tice(ii) + vs%basin%tice(i)
                         if (vs%basin%tice(i) > 0.0) then
                             ticefrac(ii) = ticefrac(ii) + ticefrac(i)
@@ -1497,106 +1489,110 @@ module sa_mesh_run_between_grid
 
                 !> Subsurface/soil variables.
                 if (associated(vs%basin%dzsol)) then
-                    if (all(vs%basin%dzsol /= huge(vs%basin%dzsol))) then
+                    if (all(vs%basin%dzsol(i, :) /= huge(vs%basin%dzsol))) then
                         vs%basin%dzsol(ii, :) = vs%basin%dzsol(ii, :) + vs%basin%dzsol(i, :)
                     end if
                 end if
                 if (associated(vs%basin%dzsolhyd)) then
-                    if (all(vs%basin%dzsolhyd /= huge(vs%basin%dzsolhyd))) then
+                    if (all(vs%basin%dzsolhyd(i, :) /= huge(vs%basin%dzsolhyd))) then
                         vs%basin%dzsolhyd(ii, :) = vs%basin%dzsolhyd(ii, :) + vs%basin%dzsolhyd(i, :)
                     end if
                 end if
                 if (associated(vs%basin%thlqsol)) then
-                    if (all(vs%basin%thlqsol /= huge(vs%basin%thlqsol))) then
+                    if (all(vs%basin%thlqsol(i, :) /= huge(vs%basin%thlqsol))) then
                         vs%basin%thlqsol(ii, :) = vs%basin%thlqsol(ii, :) + vs%basin%thlqsol(i, :)
                     end if
                 end if
                 if (associated(vs%basin%thicsol)) then
-                    if (all(vs%basin%thicsol /= huge(vs%basin%thicsol))) then
+                    if (all(vs%basin%thicsol(i, :) /= huge(vs%basin%thicsol))) then
                         vs%basin%thicsol(ii, :) = vs%basin%thicsol(ii, :) + vs%basin%thicsol(i, :)
                     end if
                 end if
 !-                if (associated(vs%basin%lqwssol)) then
-!-                    if (all(vs%basin%lqwssol /= huge(vs%basin%lqwssol))) then
+!-                    if (all(vs%basin%lqwssol(i, :) /= huge(vs%basin%lqwssol))) then
 !-                        vs%basin%lqwssol(ii, :) = vs%basin%lqwssol(ii, :) + vs%basin%lqwssol(i, :)
 !-                    end if
 !-                end if
 !-                if (associated(vs%basin%fzwssol)) then
-!-                    if (all(vs%basin%fzwssol /= huge(vs%basin%fzwssol))) then
+!-                    if (all(vs%basin%fzwssol(i, :) /= huge(vs%basin%fzwssol))) then
 !-                        vs%basin%fzwssol(ii, :) = vs%basin%fzwssol(ii, :) + vs%basin%fzwssol(i, :)
 !-                    end if
 !-                end if
                 if (associated(vs%basin%tsol)) then
-                    if (all(vs%basin%tsol /= huge(vs%basin%tsol))) vs%basin%tsol(ii, :) = vs%basin%tsol(ii, :) + vs%basin%tsol(i, :)
+                    if (all(vs%basin%tsol(i, :) /= huge(vs%basin%tsol))) then
+                        vs%basin%tsol(ii, :) = vs%basin%tsol(ii, :) + vs%basin%tsol(i, :)
+                    end if
                 end if
                 if (associated(vs%basin%gflx)) then
-                    if (all(vs%basin%gflx /= huge(vs%basin%gflx))) vs%basin%gflx(ii, :) = vs%basin%gflx(ii, :) + vs%basin%gflx(i, :)
+                    if (all(vs%basin%gflx(i, :) /= huge(vs%basin%gflx))) then
+                        vs%basin%gflx(ii, :) = vs%basin%gflx(ii, :) + vs%basin%gflx(i, :)
+                    end if
                 end if
                 if (associated(vs%basin%latflw)) then
-                    if (all(vs%basin%latflw /= huge(vs%basin%latflw))) then
+                    if (all(vs%basin%latflw(i, :) /= huge(vs%basin%latflw))) then
                         vs%basin%latflw(ii, :) = vs%basin%latflw(ii, :) + vs%basin%latflw(i, :)
                     end if
                 end if
                 if (associated(vs%basin%zsol)) then
-                    if (all(vs%basin%zsol /= huge(vs%basin%zsol))) vs%basin%zsol(ii) = vs%basin%zsol(ii) + vs%basin%zsol(i)
+                    if (vs%basin%zsol(i) /= huge(vs%basin%zsol)) vs%basin%zsol(ii) = vs%basin%zsol(ii) + vs%basin%zsol(i)
                 end if
                 if (associated(vs%basin%zsolhyd)) then
-                    if (all(vs%basin%zsolhyd /= huge(vs%basin%zsolhyd))) then
+                    if (vs%basin%zsolhyd(i) /= huge(vs%basin%zsolhyd)) then
                         vs%basin%zsolhyd(ii) = vs%basin%zsolhyd(ii) + vs%basin%zsolhyd(i)
                     end if
                 end if
                 if (associated(vs%basin%zsolsat)) then
-                    if (all(vs%basin%zsolsat /= huge(vs%basin%zsolsat))) then
+                    if (vs%basin%zsolsat(i) /= huge(vs%basin%zsolsat)) then
                         vs%basin%zsolsat(ii) = vs%basin%zsolsat(ii) + vs%basin%zsolsat(i)
                     end if
                 end if
                 if (associated(vs%basin%ggeo)) then
-                    if (all(vs%basin%ggeo /= huge(vs%basin%ggeo))) vs%basin%ggeo(ii) = vs%basin%ggeo(ii) + vs%basin%ggeo(i)
+                    if (vs%basin%ggeo(i) /= huge(vs%basin%ggeo)) vs%basin%ggeo(ii) = vs%basin%ggeo(ii) + vs%basin%ggeo(i)
                 end if
                 if (associated(vs%basin%tbas)) then
-                    if (all(vs%basin%tbas /= huge(vs%basin%tbas))) vs%basin%tbas(ii) = vs%basin%tbas(ii) + vs%basin%tbas(i)
+                    if (vs%basin%tbas(i) /= huge(vs%basin%tbas)) vs%basin%tbas(ii) = vs%basin%tbas(ii) + vs%basin%tbas(i)
                 end if
                 if (associated(vs%basin%drainsol)) then
-                    if (all(vs%basin%drainsol /= huge(vs%basin%drainsol))) then
+                    if (vs%basin%drainsol(i) /= huge(vs%basin%drainsol)) then
                         vs%basin%drainsol(ii) = vs%basin%drainsol(ii) + vs%basin%drainsol(i)
                     end if
                 end if
 
                 !> Groundwater/lower zone storage variables.
                 if (associated(vs%basin%rchg)) then
-                    if (all(vs%basin%rchg /= huge(vs%basin%rchg))) vs%basin%rchg(ii) = vs%basin%rchg(ii) + vs%basin%rchg(i)
+                    if (vs%basin%rchg(i) /= huge(vs%basin%rchg)) vs%basin%rchg(ii) = vs%basin%rchg(ii) + vs%basin%rchg(i)
                 end if
                 if (associated(vs%basin%stggw)) then
-                    if (all(vs%basin%stggw /= huge(vs%basin%stggw))) vs%basin%stggw(ii) = vs%basin%stggw(ii) + vs%basin%stggw(i)
+                    if (vs%basin%stggw(i) /= huge(vs%basin%stggw)) vs%basin%stggw(ii) = vs%basin%stggw(ii) + vs%basin%stggw(i)
                 end if
                 if (associated(vs%basin%lkg)) then
-                    if (all(vs%basin%lkg /= huge(vs%basin%lkg))) vs%basin%lkg(ii) = vs%basin%lkg(ii) + vs%basin%lkg(i)
+                    if (vs%basin%lkg(i) /= huge(vs%basin%lkg)) vs%basin%lkg(ii) = vs%basin%lkg(ii) + vs%basin%lkg(i)
                 end if
 !-                if (associated(vs%basin%dzs)) then
-!-                    if (all(vs%basin%dzs /= huge(vs%basin%dzs))) vs%basin%dzs(ii) = vs%basin%dzs(ii) + vs%basin%dzs(i)
+!-                    if (vs%basin%dzs(i) /= huge(vs%basin%dzs)) vs%basin%dzs(ii) = vs%basin%dzs(ii) + vs%basin%dzs(i)
 !-                end if
 
                 !> Routing variables.
                 if (associated(vs%basin%rff)) then
-                    if (all(vs%basin%rff /= huge(vs%basin%rff))) vs%basin%rff(ii) = vs%basin%rff(ii) + vs%basin%rff(i)
+                    if (vs%basin%rff(i) /= huge(vs%basin%rff)) vs%basin%rff(ii) = vs%basin%rff(ii) + vs%basin%rff(i)
                 end if
 !                if (associated(vs%basin%qi)) then
-!                    if (all(vs%basin%qi /= huge(vs%basin%qi))) vs%basin%qi(ii) = vs%basin%qi(ii) + vs%basin%qi(i)
+!                    if (vs%basin%qi(i) /= huge(vs%basin%qi)) vs%basin%qi(ii) = vs%basin%qi(ii) + vs%basin%qi(i)
 !                end if
 !                if (associated(vs%basin%qo)) then
-!                    if (all(vs%basin%qo /= huge(vs%basin%qo))) vs%basin%qo(ii) = vs%basin%qo(ii) + vs%basin%qo(i)
+!                    if (vs%basin%qo(i) /= huge(vs%basin%qo)) vs%basin%qo(ii) = vs%basin%qo(ii) + vs%basin%qo(i)
 !                end if
 !                if (associated(vs%basin%stgch)) then
-!                    if (all(vs%basin%stgch /= huge(vs%basin%stgch))) vs%basin%stgch(ii) = vs%basin%stgch(ii) + vs%basin%stgch(i)
+!                    if (vs%basin%stgch(i) /= huge(vs%basin%stgch)) vs%basin%stgch(ii) = vs%basin%stgch(ii) + vs%basin%stgch(i)
 !                end if
 !                if (associated(vs%basin%zlvl)) then
-!                    if (all(vs%basin%zlvl /= huge(vs%basin%zlvl))) vs%basin%zlvl(ii) = vs%basin%zlvl(ii) + vs%basin%zlvl(i)
+!                    if (vs%basin%zlvl(i) /= huge(vs%basin%zlvl)) vs%basin%zlvl(ii) = vs%basin%zlvl(ii) + vs%basin%zlvl(i)
 !                end if
 !                if (associated(vs%basin%div)) then
-!                    if (all(vs%basin%div /= huge(vs%basin%div))) vs%basin%div(ii) = vs%basin%div(ii) + vs%basin%div(i)
+!                    if (vs%basin%div(i) /= huge(vs%basin%div)) vs%basin%div(ii) = vs%basin%div(ii) + vs%basin%div(i)
 !                end if
 !                if (associated(vs%basin%abstr)) then
-!                    if (all(vs%basin%abstr /= huge(vs%basin%abstr))) vs%basin%abstr(ii) = vs%basin%abstr(ii) + vs%basin%abstr(i)
+!                    if (vs%basin%abstr(i) /= huge(vs%basin%abstr)) vs%basin%abstr(ii) = vs%basin%abstr(ii) + vs%basin%abstr(i)
 !                end if
 
                 !> Relative area fraction.
