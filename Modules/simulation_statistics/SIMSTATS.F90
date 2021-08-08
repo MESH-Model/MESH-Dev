@@ -154,10 +154,10 @@ module SIMSTATS
         end where
 
         !> Calculate the statistical coefficients.
-        if (obsdm > 0) bias = sum(errd(ilf:ncal))/(obsdm*nad)
-        if (sum(errdm) > 0) nsd = 1.0 - sum(errd**2)/sum(errdm**2)
-        if (sum(lerrdm) > 0) lnsd = 1.0 - sum(lerrd**2)/sum(lerrdm**2)
-        if (sum(errwm) > 0) nsw = 1.0 - sum(errw**2)/sum(errwm**2)
+        if (obsdm /= 0) bias = sum(errd(ilf:ncal))/(obsdm*nad)
+        if (sum(errdm) /= 0) nsd = 1.0 - sum(errd**2)/sum(errdm**2)
+        if (sum(lerrdm) /= 0) lnsd = 1.0 - sum(lerrd**2)/sum(lerrdm**2)
+        if (sum(errwm) /= 0) nsw = 1.0 - sum(errw**2)/sum(errwm**2)
 
         !> Calculate the time to peak value.
         errtp = 0.0
