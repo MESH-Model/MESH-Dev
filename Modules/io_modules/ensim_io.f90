@@ -42,7 +42,7 @@ module ensim_io
     end type
 
     type ensim_attr
-        character(len = MAX_WORD_LENGTH) :: attr = '', units = ''
+        character(len = MAX_WORD_LENGTH) :: attr = '', units = '', type = ''
         character(len = MAX_LINE_LENGTH) :: frame_string = ''
         type(ensim_date) frame_date
         real, dimension(:, :), allocatable :: val
@@ -247,12 +247,12 @@ module ensim_io
         integer, intent(out) :: nattr, ierr
 
         !> Local variables.
-        integer n, j, i
+        integer n, k, j, i
 
         !> Identify and count entries for attributes in the list of keywords.
         nattr = 0
         do n = 1, nkeyword
-            if (lowercase(vkeyword(n)%keyword) == ':attributename' .and. size(vkeyword(n)%words) > 1) nattr = nattr + 1
+            if (lowercase(vkeyword(n)%keyword) == ':attributename') nattr = nattr + 1
         end do
 
         !> Return if no attributes were found.
@@ -268,23 +268,36 @@ module ensim_io
         end if
 
         do n = 1, nkeyword
-            if (len_trim(vkeyword(n)%keyword) < 10 .or. size(vkeyword(n)%words) < 2) cycle
             if (lowercase(vkeyword(n)%keyword(1:10)) /= ':attribute') cycle
-            call value(vkeyword(n)%words(1), j, ierr)
-            if (ierr /= 0) then
-                call print_warning("Bad attribute definition in '" // trim(vkeyword(n)%keyword) // "'.")
-                cycle
+            if (nattr == 1 .and. size(vkeyword(n)%words) == 1) then
+
+                !> Permit missing attribute number for compatibility with improperly generated files.
+                j = 1
+                k = 1
+            else
+                call value(vkeyword(n)%words(1), j, ierr)
+                if (ierr /= 0) then
+                    call print_warning("Bad attribute definition in '" // trim(vkeyword(n)%keyword) // "'.")
+                    cycle
+                else
+                    k = 2
+                end if
             end if
             select case (lowercase(vkeyword(n)%keyword))
                 case (':attributename')
-                    vattr(j)%attr = vkeyword(n)%words(2)
-                    do i = 3, size(vkeyword(n)%words)
+                    vattr(j)%attr = vkeyword(n)%words(k)
+                    do i = (k + 1), size(vkeyword(n)%words)
                         vattr(j)%attr = trim(adjustl(vattr(j)%attr)) // ' ' // trim(adjustl(vkeyword(n)%words(i)))
                     end do
                 case (':attributeunits')
-                    vattr(j)%units = vkeyword(n)%words(2)
-                    do i = 3, size(vkeyword(n)%words)
+                    vattr(j)%units = vkeyword(n)%words(k)
+                    do i = (k + 1), size(vkeyword(n)%words)
                         vattr(j)%units = trim(adjustl(vattr(j)%units)) // ' ' // trim(adjustl(vkeyword(n)%words(i)))
+                    end do
+                case (':attributetype')
+                    vattr(j)%type = vkeyword(n)%words(k)
+                    do i = (k + 1), size(vkeyword(n)%words)
+                        vattr(j)%type = trim(adjustl(vattr(j)%type)) // ' ' // trim(adjustl(vkeyword(n)%words(i)))
                     end do
             end select
         end do
@@ -297,6 +310,33 @@ module ensim_io
         return
 
     end subroutine
+
+    !> Description: Check for multi-frame signature.
+    logical function is_multi_frame(iun)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+
+        !> Local variables.
+        character(len = MAX_LINE_LENGTH) line
+        integer ierr
+
+        !> Advance past header.
+        call advance_past_header(iun, ierr = ierr)
+        if (ierr /= 0) then
+            is_multi_frame = .false.
+            return
+        end if
+
+        !> Check for 'Frame' signature.
+        call read_ensim_line(iun, line, ierr)
+        if (ierr == 0 .and. lowercase(line(1:7)) == ':frame') then
+            is_multi_frame = .true.
+        else
+            is_multi_frame = .false.
+        end if
+
+    end function
 
     !> Description: 'get_keyword_value' for a vector of type character.
     subroutine get_keyword_field_char(iun, vkeyword, nkeyword, cname, cfield, ncol, ierr)
@@ -892,8 +932,8 @@ module ensim_io
     subroutine advance_past_header(iun, fname, ierr)
 
         !> Input variables.
-        character(len = *), intent(in) :: fname
         integer, intent(in) :: iun
+        character(len = *), intent(in), optional :: fname
 
         !> Output variables.
         integer, intent(out) :: ierr
@@ -910,7 +950,7 @@ module ensim_io
             if (is_header(line)) exit
         end do
         if (ierr /= 0) then
-            call print_warning('Reached end of file: ' // trim(fname))
+            call print_warning("Reached end of file while advancing past the header.")
         end if
 
         return
