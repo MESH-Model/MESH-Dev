@@ -659,31 +659,39 @@ module sa_mesh_run_within_grid
 
         !> Fractional averages.
         if (associated(vs%grid%cmas)) then
-            if (vs%tile%cmas(k) /= huge(vs%tile%cmas)) then
+            if (all(vs%grid%cmas(i1:i2) /= huge(vs%grid%cmas))) then
                 where (tcanfrac(i1:i2) > 0.0) vs%grid%cmas(i1:i2) = vs%grid%cmas(i1:i2)/tcanfrac(i1:i2)
             end if
         end if
-        if (vs%tile%tcan(k) /= huge(vs%tile%tcan)) then
-            where (tcanfrac(i1:i2) > 0.0) vs%grid%tcan(i1:i2) = vs%grid%tcan(i1:i2)/tcanfrac(i1:i2)
+        if (associated(vs%grid%tcan)) then
+            if (all(vs%grid%tcan(i1:i2) /= huge(vs%grid%tcan))) then
+                where (tcanfrac(i1:i2) > 0.0) vs%grid%tcan(i1:i2) = vs%grid%tcan(i1:i2)/tcanfrac(i1:i2)
+            end if
         end if
         if (associated(vs%grid%gro)) then
-            if (vs%tile%gro(k) /= huge(vs%tile%gro)) then
+            if (all(vs%grid%gro(i1:i2) /= huge(vs%grid%gro))) then
                 where (tcanfrac(i1:i2) > 0.0) vs%grid%gro(i1:i2) = vs%grid%gro(i1:i2)/tcanfrac(i1:i2)
             end if
         end if
-        if (vs%tile%tsno(k) /= huge(vs%tile%tsno)) then
-            where (tsnofrac(i1:i2) > 0.0) vs%grid%tsno(i1:i2) = vs%grid%tsno(i1:i2)/tsnofrac(i1:i2)
+        if (associated(vs%grid%tsno)) then
+            if (all(vs%grid%tsno(i1:i2) /= huge(vs%grid%tsno))) then
+                where (tsnofrac(i1:i2) > 0.0) vs%grid%tsno(i1:i2) = vs%grid%tsno(i1:i2)/tsnofrac(i1:i2)
+            end if
         end if
         if (associated(vs%grid%rhosno)) then
-            if (vs%tile%rhosno(k) /= huge(vs%tile%rhosno)) then
+            if (all(vs%grid%rhosno(i1:i2) /= huge(vs%grid%rhosno))) then
                 where (tsnofrac(i1:i2) > 0.0) vs%grid%rhosno(i1:i2) = vs%grid%rhosno(i1:i2)/tsnofrac(i1:i2)
             end if
         end if
-        if (vs%tile%tpnd(k) /= huge(vs%tile%tpnd)) then
-            where (tpndfrac(i1:i2) > 0.0) vs%grid%tpnd(i1:i2) = vs%grid%tpnd(i1:i2)/tpndfrac(i1:i2)
+        if (associated(vs%grid%tpnd)) then
+            if (all(vs%grid%tpnd(i1:i2) /= huge(vs%grid%tpnd))) then
+                where (tpndfrac(i1:i2) > 0.0) vs%grid%tpnd(i1:i2) = vs%grid%tpnd(i1:i2)/tpndfrac(i1:i2)
+            end if
         end if
-        if (vs%tile%tice(k) /= huge(vs%tile%tice)) then
-            where (ticefrac(i1:i2) > 0.0) vs%grid%tice(i1:i2) = vs%grid%tice(i1:i2)/ticefrac(i1:i2)
+        if (associated(vs%grid%tice)) then
+            if (all(vs%grid%tice(i1:i2) /= huge(vs%grid%tice))) then
+                where (ticefrac(i1:i2) > 0.0) vs%grid%tice(i1:i2) = vs%grid%tice(i1:i2)/ticefrac(i1:i2)
+            end if
         end if
 
     end subroutine
