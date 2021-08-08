@@ -3,6 +3,7 @@
 subroutine resumerun_config(fls, shd, cm, ierr)
 
     use strings
+    use mesh_io_options
     use model_files_variables
     use sa_mesh_common
     use climate_forcing
@@ -33,7 +34,7 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     !> Assign the default options for RESUMEFLAG.
     vs%flgs%resume%state = FLAG_OFF
     vs%flgs%resume%freq = FREQ_NUL
-    vs%flgs%resume%flo%ext = FFMT_NUL
+    vs%flgs%resume%flo%ext = FILE_TYPE_NUL
     vs%flgs%resume%bin = ''
 
     !> Parse RESUMEFLAG.
@@ -54,21 +55,21 @@ subroutine resumerun_config(fls, shd, cm, ierr)
                 return
             case ('3')
                 if (vs%flgs%resume%state == FLAG_OFF) vs%flgs%resume%state = FLAG_ON
-                if (.not. btest(vs%flgs%resume%flo%ext, FFMT_SEQ)) then
-                    vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FFMT_SEQ)**FFMT_SEQ
+                if (.not. btest(vs%flgs%resume%flo%ext, FILE_TYPE_SEQ)) then
+                    vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FILE_TYPE_SEQ)**FILE_TYPE_SEQ
                 end if
                 if (index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
                     vs%flgs%resume%bin = trim(vs%flgs%resume%bin) // '+CLASSPROG'
                 end if
             case ('4')
                 if (vs%flgs%resume%state == FLAG_OFF) vs%flgs%resume%state = FLAG_ON
-                if (.not. btest(vs%flgs%resume%flo%ext, FFMT_SEQ)) then
-                    vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FFMT_SEQ)**FFMT_SEQ
+                if (.not. btest(vs%flgs%resume%flo%ext, FILE_TYPE_SEQ)) then
+                    vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FILE_TYPE_SEQ)**FILE_TYPE_SEQ
                 end if
             case ('5')
                 if (vs%flgs%resume%state == FLAG_OFF) vs%flgs%resume%state = FLAG_ON
-                if (.not. btest(vs%flgs%resume%flo%ext, FFMT_SEQ)) then
-                    vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FFMT_SEQ)**FFMT_SEQ
+                if (.not. btest(vs%flgs%resume%flo%ext, FILE_TYPE_SEQ)) then
+                    vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FILE_TYPE_SEQ)**FILE_TYPE_SEQ
                 end if
                 if (index(vs%flgs%resume%bin, '+STASONLY') == 0) then
                     vs%flgs%resume%bin = trim(vs%flgs%resume%bin) // '+STASONLY'
@@ -76,15 +77,15 @@ subroutine resumerun_config(fls, shd, cm, ierr)
 
             !> File formats.
             case ('r2c')
-                vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FFMT_R2C)**FFMT_R2C
+                vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FILE_TYPE_R2C)**FILE_TYPE_R2C
             case ('seq', 'binseq')
-                if (.not. btest(vs%flgs%resume%flo%ext, FFMT_SEQ)) then
-                    vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FFMT_SEQ)**FFMT_SEQ
+                if (.not. btest(vs%flgs%resume%flo%ext, FILE_TYPE_SEQ)) then
+                    vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FILE_TYPE_SEQ)**FILE_TYPE_SEQ
                 end if
             case ('txt')
-                vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FFMT_TXT)**FFMT_TXT
+                vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FILE_TYPE_TXT)**FILE_TYPE_TXT
             case ('csv')
-                vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FFMT_CSV)**FFMT_CSV
+                vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FILE_TYPE_CSV)**FILE_TYPE_CSV
 
             !> Directives.
             case ('only')
@@ -101,9 +102,9 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     end do
 
     !> Check for bad configuration.
-    if (vs%flgs%resume%state == FLAG_ON .and. vs%flgs%resume%flo%ext == FFMT_NUL) then
+    if (vs%flgs%resume%state == FLAG_ON .and. vs%flgs%resume%flo%ext == FILE_TYPE_NUL) then
 !+        call print_warning("RESUMEFLAG is active with no file format specified. Regular plain text format 'txt' is assumed.")
-!+        vs%flgs%resume%flo%ext = radix(FFMT_TXT)**FFMT_TXT
+!+        vs%flgs%resume%flo%ext = radix(FILE_TYPE_TXT)**FILE_TYPE_TXT
         call print_error("RESUMEFLAG is active with no file format specified.")
         ierr = 1
         return
@@ -112,14 +113,14 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     !> Echo configuration.
     if (vs%flgs%resume%state == FLAG_ON .or. vs%flgs%resume%state == FLAG_AUTO) then
         line = ''
-        if (vs%flgs%resume%freq == FREQ_YLY) line = ' yearly' // trim(line)
-        if (vs%flgs%resume%freq == FREQ_MLY) line = ' monthly' // trim(line)
+        if (vs%flgs%resume%freq == FREQ_YEARLY) line = ' yearly' // trim(line)
+        if (vs%flgs%resume%freq == FREQ_MONTHLY) line = ' monthly' // trim(line)
         if (index(vs%flgs%resume%bin, '+CLASSPROG') > 0) line = ' only class' // trim(line)
         if (index(vs%flgs%resume%bin, '+STASONLY') > 0) line = ' only states' // trim(line)
-        if (btest(vs%flgs%resume%flo%ext, FFMT_R2C)) line = ' r2c' // trim(line)
-        if (btest(vs%flgs%resume%flo%ext, FFMT_CSV)) line = ' csv' // trim(line)
-        if (btest(vs%flgs%resume%flo%ext, FFMT_SEQ)) line = ' seq' // trim(line)
-        if (btest(vs%flgs%resume%flo%ext, FFMT_TXT)) line = ' txt' // trim(line)
+        if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_R2C)) line = ' r2c' // trim(line)
+        if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_SEQ)) line = ' seq' // trim(line)
+        if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_TXT)) line = ' txt' // trim(line)
+        if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_CSV)) line = ' csv' // trim(line)
         if (vs%flgs%resume%state == FLAG_AUTO) then
             line = ' auto' // trim(line)
         else
@@ -134,7 +135,7 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     !> Assign default options for SAVERESUMEFLAG.
     vs%flgs%save%state = FLAG_OFF
     vs%flgs%save%freq = FREQ_NUL
-    vs%flgs%save%flo%ext = FFMT_NUL
+    vs%flgs%save%flo%ext = FILE_TYPE_NUL
     vs%flgs%save%bin = ''
 
     !> Parse SAVERESUMEFLAG.
@@ -153,21 +154,21 @@ subroutine resumerun_config(fls, shd, cm, ierr)
                 return
             case ('3')
                 if (vs%flgs%save%state == FLAG_OFF) vs%flgs%save%state = FLAG_ON
-                if (.not. btest(vs%flgs%save%flo%ext, FFMT_SEQ)) then
-                    vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FFMT_SEQ)**FFMT_SEQ
+                if (.not. btest(vs%flgs%save%flo%ext, FILE_TYPE_SEQ)) then
+                    vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FILE_TYPE_SEQ)**FILE_TYPE_SEQ
                 end if
                 if (index(vs%flgs%save%bin, '+CLASSPROG') == 0) then
                     vs%flgs%save%bin = trim(vs%flgs%save%bin) // '+CLASSPROG'
                 end if
             case ('4')
                 if (vs%flgs%save%state == FLAG_OFF) vs%flgs%save%state = FLAG_ON
-                if (.not. btest(vs%flgs%save%flo%ext, FFMT_SEQ)) then
-                    vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FFMT_SEQ)**FFMT_SEQ
+                if (.not. btest(vs%flgs%save%flo%ext, FILE_TYPE_SEQ)) then
+                    vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FILE_TYPE_SEQ)**FILE_TYPE_SEQ
                 end if
             case ('5')
                 if (vs%flgs%save%state == FLAG_OFF) vs%flgs%save%state = FLAG_ON
-                if (.not. btest(vs%flgs%save%flo%ext, FFMT_SEQ)) then
-                    vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FFMT_SEQ)**FFMT_SEQ
+                if (.not. btest(vs%flgs%save%flo%ext, FILE_TYPE_SEQ)) then
+                    vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FILE_TYPE_SEQ)**FILE_TYPE_SEQ
                 end if
                 if (index(vs%flgs%save%bin, '+STASONLY') == 0) then
                     vs%flgs%save%bin = trim(vs%flgs%save%bin) // '+STASONLY'
@@ -175,21 +176,21 @@ subroutine resumerun_config(fls, shd, cm, ierr)
 
             !> Frequency for I/O functions that are repeated.
             case ('yearly', 'yly', 'y')
-                vs%flgs%save%freq = FREQ_YLY
+                vs%flgs%save%freq = FREQ_YEARLY
             case ('monthly', 'mly', 'm')
-                vs%flgs%save%freq = FREQ_MLY
+                vs%flgs%save%freq = FREQ_MONTHLY
 
             !> File formats.
             case ('r2c')
-                vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FFMT_R2C)**FFMT_R2C
+                vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FILE_TYPE_R2C)**FILE_TYPE_R2C
             case ('seq', 'binseq')
-                if (.not. btest(vs%flgs%save%flo%ext, FFMT_SEQ)) then
-                    vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FFMT_SEQ)**FFMT_SEQ
+                if (.not. btest(vs%flgs%save%flo%ext, FILE_TYPE_SEQ)) then
+                    vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FILE_TYPE_SEQ)**FILE_TYPE_SEQ
                 end if
             case ('txt')
-                vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FFMT_TXT)**FFMT_TXT
+                vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FILE_TYPE_TXT)**FILE_TYPE_TXT
             case ('csv')
-                vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FFMT_CSV)**FFMT_CSV
+                vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FILE_TYPE_CSV)**FILE_TYPE_CSV
 
             !> Directives.
             case ('only')
@@ -209,9 +210,9 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     if (vs%flgs%save%freq /= FREQ_NUL) vs%flgs%save%state = FLAG_ON
 
     !> Check for bad configuration.
-    if (vs%flgs%save%state == FLAG_ON .and. vs%flgs%save%flo%ext == FFMT_NUL) then
+    if (vs%flgs%save%state == FLAG_ON .and. vs%flgs%save%flo%ext == FILE_TYPE_NUL) then
 !+        call print_warning("SAVERESUMEFLAG is active with no file format specified. Regular plain text format 'txt' is assumed.")
-!+        vs%flgs%save%flo%ext = radix(FFMT_TXT)**FFMT_TXT
+!+        vs%flgs%save%flo%ext = radix(FILE_TYPE_TXT)**FILE_TYPE_TXT
         call print_error("SAVERESUMEFLAG is active with no file format specified.")
         ierr = 1
         return
@@ -220,14 +221,14 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     !> Echo configuration.
     if (vs%flgs%save%state == FLAG_ON .or. vs%flgs%save%state == FLAG_AUTO) then
         line = ''
-        if (vs%flgs%save%freq == FREQ_YLY) line = ' yearly' // trim(line)
-        if (vs%flgs%save%freq == FREQ_MLY) line = ' monthly' // trim(line)
+        if (vs%flgs%save%freq == FREQ_YEARLY) line = ' yearly' // trim(line)
+        if (vs%flgs%save%freq == FREQ_MONTHLY) line = ' monthly' // trim(line)
         if (index(vs%flgs%save%bin, '+CLASSPROG') > 0) line = ' only class' // trim(line)
         if (index(vs%flgs%save%bin, '+STASONLY') > 0) line = ' only states' // trim(line)
-        if (btest(vs%flgs%save%flo%ext, FFMT_R2C)) line = ' r2c' // trim(line)
-        if (btest(vs%flgs%save%flo%ext, FFMT_CSV)) line = ' csv' // trim(line)
-        if (btest(vs%flgs%save%flo%ext, FFMT_SEQ)) line = ' seq' // trim(line)
-        if (btest(vs%flgs%save%flo%ext, FFMT_TXT)) line = ' txt' // trim(line)
+        if (btest(vs%flgs%save%flo%ext, FILE_TYPE_R2C)) line = ' r2c' // trim(line)
+        if (btest(vs%flgs%save%flo%ext, FILE_TYPE_SEQ)) line = ' seq' // trim(line)
+        if (btest(vs%flgs%save%flo%ext, FILE_TYPE_TXT)) line = ' txt' // trim(line)
+        if (btest(vs%flgs%save%flo%ext, FILE_TYPE_CSV)) line = ' csv' // trim(line)
         if (vs%flgs%save%state == FLAG_AUTO) then
             line = ' auto' // trim(line)
         else

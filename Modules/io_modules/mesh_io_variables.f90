@@ -13,9 +13,9 @@ module mesh_io_variables
     !*  description: Description.
     !*  units: Units.
     type io_variable_info
-        character(len = FLEN_FIELD) :: short_name = ''
-        character(len = FLEN_FIELD) :: description = ''
-        character(len = FLEN_FIELD) :: units = ''
+        character(len = SHORT_FIELD_LENGTH) :: short_name = ''
+        character(len = LONG_FIELD_LENGTH) :: description = ''
+        character(len = SHORT_FIELD_LENGTH) :: units = ''
     end type
 
     !> Description:
@@ -44,18 +44,18 @@ module mesh_io_variables
     !*  valid_max: Upper limit of reasonable values for numeric fields (default: huge).
     !*  valid_min: Lower limit of reasonable values for numeric fields (default: tiny).
     type, extends(io_variable_info), abstract :: io_field
-        character(len = FLEN_FIELD) :: label = ''
+        character(len = SHORT_FIELD_LENGTH) :: label = ''
         integer :: id = -1
-        character(len = FLEN_FIELD) :: field_name = ''
-        character(len = FLEN_FIELD) :: level = ''
+        character(len = SHORT_FIELD_LENGTH) :: field_name = ''
+        character(len = SHORT_FIELD_LENGTH) :: level = ''
         integer :: level_id = -1
-        character(len = FLEN_FIELD) :: mapped_name = ''
+        character(len = SHORT_FIELD_LENGTH) :: mapped_name = ''
         integer, dimension(:), allocatable :: mapped_dim_order
     end type
 
     !> Extensions.
     type, abstract, extends(io_field) :: io_field_Nd
-        character(len = FLEN_FIELD), dimension(:), allocatable :: dim_names
+        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names
         integer :: time_order = 0
         integer, dimension(:, :), allocatable :: cell_map
         integer, dimension(:, :), allocatable :: tile_map
@@ -143,12 +143,12 @@ module mesh_io_variables
     type, extends(io_field) :: io_field_char
         real, dimension(:), allocatable :: mapped_dat_cell
         real, dimension(:), allocatable :: mapped_dat_tile
-        character(len = FLEN_FIELD) :: dat = ''
+        character(len = SHORT_FIELD_LENGTH) :: dat = ''
     end type
     type, extends(io_field_Nd) :: io_field_char1d
         real, dimension(:), allocatable :: mapped_dat_cell
         real, dimension(:), allocatable :: mapped_dat_tile
-        character(len = FLEN_FIELD), dimension(:), allocatable :: dat
+        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dat
         character :: no_data_value = achar(0)
         contains
         final :: io_field_char1d_destructor
@@ -195,8 +195,8 @@ module mesh_io_variables
     !*  ext: Extension type (if cannot be determined from 'io_file' extension, default: unknown).
     !*  iunit: File handle/unit.
     type io_file_info
-        character(len = FLEN_PATH) :: full_path = ''
-        integer :: ext = FFMT_NUL
+        character(len = LONG_FIELD_LENGTH) :: full_path = ''
+        integer :: ext = FILE_TYPE_NUL
         integer :: iunit = -1
     end type
 
@@ -220,7 +220,7 @@ module mesh_io_variables
     !*  fields: List of fields in the file.
     !*  field_map: Map of file field name to internal field name (in list, 1: field name; 2: internal name).
     type, extends(io_file_info) :: io_file
-        character(len = FLEN_FIELD) :: label = ''
+        character(len = SHORT_FIELD_LENGTH) :: label = ''
         integer, dimension(:), allocatable :: subset_ids
         logical :: multi_frame = .false.
         integer :: freq = FREQ_NUL
@@ -234,7 +234,7 @@ module mesh_io_variables
         real, dimension(:), allocatable :: interp_weights
         integer :: ipos = 1
         type(io_field_wrapper), dimension(:), allocatable :: fields
-        character(len = FLEN_FIELD), dimension(:, :), allocatable :: field_map
+        character(len = SHORT_FIELD_LENGTH), dimension(:, :), allocatable :: field_map
         contains
         final :: io_file_destructor
     end type
@@ -250,7 +250,7 @@ module mesh_io_variables
     type, extends(io_file) :: io_file_txt_delimited
         integer :: n_skip_rows = 0
         integer :: n_skip_cols = 0
-        character(len = FLEN_FIELD), dimension(:), allocatable :: dim_names
+        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names
         character :: delimiter = ' '
     end type
 
@@ -269,7 +269,7 @@ module mesh_io_variables
     !> Variables:
     !*  dim_names: Names of dimensions of fields in the file.
     type, extends(io_file) :: io_file_seq
-        character(len = FLEN_FIELD), dimension(:), allocatable :: dim_names
+        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names
     end type
 
     !> Description:
@@ -290,13 +290,13 @@ module mesh_io_variables
     !*  const_add: Additive factor applied uniformly to fields in the file (default: 0.0).
     type, extends(io_file) :: io_file_nc
         logical :: flatten_output = .false.
-        character(len = FLEN_FIELD) :: dim_name_x = ''
-        character(len = FLEN_FIELD) :: dim_name_y = ''
-        character(len = FLEN_FIELD) :: dim_name_t = ''
-        character(len = FLEN_FIELD) :: dim_name_m = ''
-        character(len = FLEN_FIELD) :: dim_name_s = ''
-        character(len = FLEN_FIELD) :: dim_name_c = ''
-        character(len = FLEN_FIELD) :: dim_name_g = ''
+        character(len = SHORT_FIELD_LENGTH) :: dim_name_x = ''
+        character(len = SHORT_FIELD_LENGTH) :: dim_name_y = ''
+        character(len = SHORT_FIELD_LENGTH) :: dim_name_t = ''
+        character(len = SHORT_FIELD_LENGTH) :: dim_name_m = ''
+        character(len = SHORT_FIELD_LENGTH) :: dim_name_s = ''
+        character(len = SHORT_FIELD_LENGTH) :: dim_name_c = ''
+        character(len = SHORT_FIELD_LENGTH) :: dim_name_g = ''
         real :: const_mul = 1.0
         real :: const_add = 0.0
     end type

@@ -22,27 +22,24 @@ module model_variables
     !>      - FLAG_ON: Save and resume run state to and from file.
     !>      - FLAG_AUTO: Automatically resume the run state in the presence of auto_resume.ini (RESUMEFLAG only).
     !>  File format options (enables SAVERESUMEFLAG):
-    !>      - FFMT_TXT: Plain text format (not implemented).
-    !>      - FFMT_SEQ: Sequential binary format.
-    !>      - FFMT_CSV: From CSV by GRU (not implemented).
-    !>      - FFMT_R2C: From r2c by grid (not implemented).
+    !>      - FILE_TYPE_SEQ: Sequential binary format.
     !>  Output frequency options (default is only at the end of the run):
     !>      - FREQ_MLY: Before the beginning of the next month.
     !>      - FREQ_YLY: Before the beginning of the next year.
-    character(len = 80), save :: RESUMEFLAG = 'none'
-    character(len = 80), save :: SAVERESUMEFLAG = 'none'
+    character(len = LONG_FIELD_LENGTH), save :: RESUMEFLAG = 'none'
+    character(len = LONG_FIELD_LENGTH), save :: SAVERESUMEFLAG = 'none'
 
     !> Type: io_state_flag
     !>
     !> Variables:
     !*  active: .true. if active.
     !*  freq: Frequency for I/O functions that are repeated.
-    !*  ffmt: File formats for output (default: 0).
     !*  bin: Read/write directives.
+    !*  flo: File properties.
     type io_state_flag
         integer :: state = FLAG_OFF
         integer :: freq = FREQ_NUL
-        character(len = FLEN_PATH) :: bin = ''
+        character(len = LONG_FIELD_LENGTH) :: bin = ''
         type(io_file_info) flo
     end type
 
@@ -233,7 +230,7 @@ module model_variables
         real, dimension(:), pointer :: abstr => null()
 
         !> Indices.
-        character(len = FLEN_FIELD) :: dim_name = ''
+        character(len = SHORT_FIELD_LENGTH) :: dim_name = ''
         integer :: dim_length = 0
     end type
 

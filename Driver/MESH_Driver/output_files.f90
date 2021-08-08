@@ -1050,7 +1050,7 @@ module output_files
             fls_out%iun = fls_out%iun + 1
             group%grid%iun = fls_out%iun
             iun = 0
-            if (btest(field%ffmt, IO_TYPE_R2C)) then
+            if (btest(field%ffmt, FILE_TYPE_R2C)) then
                 z = 0
                 lopen = .false.
                 inquire(file = trim(fname) // '.r2c', opened = lopen)
@@ -1066,7 +1066,7 @@ module output_files
                 end if
                 iun = iun + 1
             end if
-            if (btest(field%ffmt, IO_TYPE_SEQ)) then
+            if (btest(field%ffmt, FILE_TYPE_SEQ)) then
                 z = 0
                 lopen = .false.
                 inquire(file = trim(fname) // '.seq', opened = lopen)
@@ -1082,7 +1082,7 @@ module output_files
                 end if
                 iun = iun + 1
             end if
-            if (btest(field%ffmt, IO_TYPE_TXT)) then
+            if (btest(field%ffmt, FILE_TYPE_TXT)) then
                 z = 0
                 lopen = .false.
                 inquire(file = trim(fname) // '.txt', opened = lopen)
@@ -1098,7 +1098,7 @@ module output_files
                 end if
                 iun = iun + 1
             end if
-            if (btest(field%ffmt, IO_TYPE_CSV)) then
+            if (btest(field%ffmt, FILE_TYPE_CSV)) then
                 z = 0
                 lopen = .false.
                 inquire(file = trim(fname) // '.csv', opened = lopen)
@@ -1114,7 +1114,7 @@ module output_files
                 end if
                 iun = iun + 1
             end if
-            if (btest(field%ffmt, IO_TYPE_TSI)) then
+            if (btest(field%ffmt, FILE_TYPE_TSI)) then
                 z = 0
                 lopen = .false.
                 inquire(file = trim(fname) // '_' // VN_GRD // '.ts', opened = lopen)
@@ -1132,7 +1132,7 @@ module output_files
                 iun = iun + 1
             end if
 #ifdef NETCDF
-            if (btest(field%ffmt, IO_TYPE_NC4)) then
+            if (btest(field%ffmt, FILE_TYPE_NC4)) then
                 z = 0
                 lopen = .false.
                 inquire(file = trim(fname) // '_' // VN_GRD // '.nc', opened = lopen)
@@ -1156,7 +1156,7 @@ module output_files
                 end if
             end if
 #endif
-            if (btest(field%ffmt, IO_TYPE_R2C_BIN)) then
+            if (btest(field%ffmt, FILE_TYPE_R2C_BIN)) then
                 z = 0
                 lopen = .false.
                 inquire(file = trim(fname) // '_binary.r2c', opened = lopen)
@@ -1200,7 +1200,7 @@ module output_files
             fls_out%iun = fls_out%iun + 1
             group%tile%iun = fls_out%iun
             iun = 0
-            if (btest(field%ffmt, IO_TYPE_TSK)) then
+            if (btest(field%ffmt, FILE_TYPE_TSK)) then
                 z = 0
                 lopen = .false.
                 inquire(file = trim(fname) // '_' // VN_NML // '.ts', opened = lopen)
@@ -1254,44 +1254,44 @@ module output_files
 
         !> Allocate data fields to existing output variable frequencies.
         ierr = 0
-        if (btest(field%ffreq, IO_FREQ_YLY)) then
+        if (btest(field%ffreq, FREQ_YEARLY)) then
             if (field%in_mem) t = ts%nyears
             field%y%fname = trim(fname) // '_Y'
-            call output_files_allocate_group(fls, shd, IO_FREQ_YLY, out%y, field, field%y, t, z)
+            call output_files_allocate_group(fls, shd, FREQ_YEARLY, out%y, field, field%y, t, z)
             if (z /= 0) ierr = z
         end if
-        if (btest(field%ffreq, IO_FREQ_MLY)) then
+        if (btest(field%ffreq, FREQ_MONTHLY)) then
             if (field%in_mem) t = ts%nmonths
             field%m%fname = trim(fname) // '_M'
-            call output_files_allocate_group(fls, shd, IO_FREQ_MLY, out%m, field, field%m, t, z)
+            call output_files_allocate_group(fls, shd, FREQ_MONTHLY, out%m, field, field%m, t, z)
             if (z /= 0) ierr = z
         end if
-        if (btest(field%ffreq, IO_FREQ_DLY)) then
+        if (btest(field%ffreq, FREQ_DAILY)) then
             if (field%in_mem) t = ts%nr_days
             field%d%fname = trim(fname) // '_D'
-            call output_files_allocate_group(fls, shd, IO_FREQ_DLY, out%d, field, field%d, t, z)
+            call output_files_allocate_group(fls, shd, FREQ_DAILY, out%d, field, field%d, t, z)
             if (z /= 0) ierr = z
         end if
-        if (btest(field%ffreq, IO_FREQ_HLY)) then
+        if (btest(field%ffreq, FREQ_HOURLY)) then
             if (field%in_mem) t = ts%nr_days*24
             field%h%fname = trim(fname) // '_H'
-            call output_files_allocate_group(fls, shd, IO_FREQ_HLY, out%h, field, field%h, t, z)
+            call output_files_allocate_group(fls, shd, FREQ_HOURLY, out%h, field, field%h, t, z)
             if (z /= 0) ierr = z
         end if
 
         !> Per 'n' time-steps (user-defined).
-        if (btest(field%ffreq, IO_FREQ_PTS)) then
+        if (btest(field%ffreq, FREQ_PTS)) then
             write(label, FMT_GEN) field%pts_length
             field%pts%fname = trim(fname) // '_PTS-' // trim(adjustl(label)) // 'M_' // trim(field%fn)
-            call output_files_allocate_group(fls, shd, IO_FREQ_PTS, out%ts, field, field%pts, t, z)
+            call output_files_allocate_group(fls, shd, FREQ_PTS, out%ts, field, field%pts, t, z)
             if (z /= 0) ierr = z
         end if
 
         !> 'Seasonal' must go last because it changes 't' regardless of the state of 'in_mem'.
-        if (btest(field%ffreq, IO_FREQ_SSL)) then
+        if (btest(field%ffreq, FREQ_SEASONAL)) then
             t = 12
             field%s%fname = trim(fname) // '_S'
-            call output_files_allocate_group(fls, shd, IO_FREQ_SSL, out%m, field, field%s, t, z)
+            call output_files_allocate_group(fls, shd, FREQ_SEASONAL, out%m, field, field%s, t, z)
             if (z /= 0) ierr = z
         end if
 
@@ -1404,8 +1404,8 @@ module output_files
 
                 !> Per 'n' time-steps (user-defined in minutes).
                 call value(str(5:), field%pts_length, z)
-                if (z == 0 .and. .not. btest(field%ffreq, IO_FREQ_PTS)) then
-                    field%ffreq = field%ffreq + radix(IO_FREQ_PTS)**IO_FREQ_PTS
+                if (z == 0 .and. .not. btest(field%ffreq, FREQ_PTS)) then
+                    field%ffreq = field%ffreq + radix(FREQ_PTS)**FREQ_PTS
                 end if
             else
 
@@ -1414,62 +1414,62 @@ module output_files
 
                     !> File output frequencies.
                     case ('y')
-                        if (.not. btest(field%ffreq, IO_FREQ_YLY)) then
-                            field%ffreq = field%ffreq + radix(IO_FREQ_YLY)**IO_FREQ_YLY
+                        if (.not. btest(field%ffreq, FREQ_YEARLY)) then
+                            field%ffreq = field%ffreq + radix(FREQ_YEARLY)**FREQ_YEARLY
                         end if
                     case ('m')
-                        if (.not. btest(field%ffreq, IO_FREQ_MLY)) then
-                            field%ffreq = field%ffreq + radix(IO_FREQ_MLY)**IO_FREQ_MLY
+                        if (.not. btest(field%ffreq, FREQ_MONTHLY)) then
+                            field%ffreq = field%ffreq + radix(FREQ_MONTHLY)**FREQ_MONTHLY
                         end if
                     case ('s')
-                        if (.not. btest(field%ffreq, IO_FREQ_MLY)) then
-                            field%ffreq = field%ffreq + radix(IO_FREQ_MLY)**IO_FREQ_MLY
+                        if (.not. btest(field%ffreq, FREQ_MONTHLY)) then
+                            field%ffreq = field%ffreq + radix(FREQ_MONTHLY)**FREQ_MONTHLY
                         end if
-                        if (.not. btest(field%ffreq, IO_FREQ_SSL)) then
-                            field%ffreq = field%ffreq + radix(IO_FREQ_SSL)**IO_FREQ_SSL
+                        if (.not. btest(field%ffreq, FREQ_SEASONAL)) then
+                            field%ffreq = field%ffreq + radix(FREQ_SEASONAL)**FREQ_SEASONAL
                         end if
                     case ('d')
-                        if (.not. btest(field%ffreq, IO_FREQ_DLY)) then
-                            field%ffreq = field%ffreq + radix(IO_FREQ_DLY)**IO_FREQ_DLY
+                        if (.not. btest(field%ffreq, FREQ_DAILY)) then
+                            field%ffreq = field%ffreq + radix(FREQ_DAILY)**FREQ_DAILY
                         end if
                     case ('h')
-                        if (.not. btest(field%ffreq, IO_FREQ_HLY)) then
-                            field%ffreq = field%ffreq + radix(IO_FREQ_HLY)**IO_FREQ_HLY
+                        if (.not. btest(field%ffreq, FREQ_HOURLY)) then
+                            field%ffreq = field%ffreq + radix(FREQ_HOURLY)**FREQ_HOURLY
                         end if
 
                     !> File formats.
                     case ('r2c')
-                        if (.not. btest(field%ffmt, IO_TYPE_R2C)) then
-                            field%ffmt = field%ffmt + radix(IO_TYPE_R2C)**IO_TYPE_R2C
+                        if (.not. btest(field%ffmt, FILE_TYPE_R2C)) then
+                            field%ffmt = field%ffmt + radix(FILE_TYPE_R2C)**FILE_TYPE_R2C
                         end if
                         if (.not. btest(field%fgroup, DATA_TYPE_GRID)) then
                             field%fgroup = field%fgroup + radix(DATA_TYPE_GRID)**DATA_TYPE_GRID
                         end if
                     case ('seq', 'binseq')
-                        if (.not. btest(field%ffmt, IO_TYPE_SEQ)) then
-                            field%ffmt = field%ffmt + radix(IO_TYPE_SEQ)**IO_TYPE_SEQ
+                        if (.not. btest(field%ffmt, FILE_TYPE_SEQ)) then
+                            field%ffmt = field%ffmt + radix(FILE_TYPE_SEQ)**FILE_TYPE_SEQ
                         end if
                         if (.not. btest(field%fgroup, DATA_TYPE_GRID)) then
                             field%fgroup = field%fgroup + radix(DATA_TYPE_GRID)**DATA_TYPE_GRID
                         end if
                     case ('txt')
-                        if (.not. btest(field%ffmt, IO_TYPE_TXT)) then
-                            field%ffmt = field%ffmt + radix(IO_TYPE_TXT)**IO_TYPE_TXT
+                        if (.not. btest(field%ffmt, FILE_TYPE_TXT)) then
+                            field%ffmt = field%ffmt + radix(FILE_TYPE_TXT)**FILE_TYPE_TXT
                         end if
                         if (.not. btest(field%fgroup, DATA_TYPE_GRID)) then
                             field%fgroup = field%fgroup + radix(DATA_TYPE_GRID)**DATA_TYPE_GRID
                         end if
                     case ('csv')
-                        if (.not. btest(field%ffmt, IO_TYPE_CSV)) then
-                            field%ffmt = field%ffmt + radix(IO_TYPE_CSV)**IO_TYPE_CSV
+                        if (.not. btest(field%ffmt, FILE_TYPE_CSV)) then
+                            field%ffmt = field%ffmt + radix(FILE_TYPE_CSV)**FILE_TYPE_CSV
                         end if
                         if (.not. btest(field%fgroup, DATA_TYPE_GRID)) then
                             field%fgroup = field%fgroup + radix(DATA_TYPE_GRID)**DATA_TYPE_GRID
                         end if
                     case ('nc', 'netcdf', 'nc4')
 #ifdef NETCDF
-                        if (.not. btest(field%ffmt, IO_TYPE_NC4)) then
-                            field%ffmt = field%ffmt + radix(IO_TYPE_NC4)**IO_TYPE_NC4
+                        if (.not. btest(field%ffmt, FILE_TYPE_NC4)) then
+                            field%ffmt = field%ffmt + radix(FILE_TYPE_NC4)**FILE_TYPE_NC4
                         end if
                         if (.not. btest(field%fgroup, DATA_TYPE_GRID)) then
                             field%fgroup = field%fgroup + radix(DATA_TYPE_GRID)**DATA_TYPE_GRID
@@ -1482,8 +1482,8 @@ module output_files
                         return
 #endif
                     case ('r2c_bin', 'r2c_binary')
-                        if (.not. btest(field%ffmt, IO_TYPE_R2C_BIN)) then
-                            field%ffmt = field%ffmt + radix(IO_TYPE_R2C_BIN)**IO_TYPE_R2C_BIN
+                        if (.not. btest(field%ffmt, FILE_TYPE_R2C_BIN)) then
+                            field%ffmt = field%ffmt + radix(FILE_TYPE_R2C_BIN)**FILE_TYPE_R2C_BIN
                         end if
                         if (.not. btest(field%fgroup, DATA_TYPE_GRID)) then
                             field%fgroup = field%fgroup + radix(DATA_TYPE_GRID)**DATA_TYPE_GRID
@@ -1502,8 +1502,8 @@ module output_files
                         if (.not. btest(field%fgroup, DATA_TYPE_GRID)) then
                             field%fgroup = field%fgroup + radix(DATA_TYPE_GRID)**DATA_TYPE_GRID
                         end if
-                        if (.not. btest(field%ffmt, IO_TYPE_TSI)) then
-                            field%ffmt = field%ffmt + radix(IO_TYPE_TSI)**IO_TYPE_TSI
+                        if (.not. btest(field%ffmt, FILE_TYPE_TSI)) then
+                            field%ffmt = field%ffmt + radix(FILE_TYPE_TSI)**FILE_TYPE_TSI
                         end if
                         call output_files_parse_indices(args, nargs, field%tsi, i, z)
                     case ('tsk')
@@ -1511,8 +1511,8 @@ module output_files
                         if (.not. btest(field%fgroup, DATA_TYPE_TILE)) then
                             field%fgroup = field%fgroup + radix(DATA_TYPE_TILE)**DATA_TYPE_TILE
                         end if
-                        if (.not. btest(field%ffmt, IO_TYPE_TSK)) then
-                            field%ffmt = field%ffmt + radix(IO_TYPE_TSK)**IO_TYPE_TSK
+                        if (.not. btest(field%ffmt, FILE_TYPE_TSK)) then
+                            field%ffmt = field%ffmt + radix(FILE_TYPE_TSK)**FILE_TYPE_TSK
                         end if
                         call output_files_parse_indices(args, nargs, field%tsk, i, z)
 
@@ -1647,13 +1647,13 @@ module output_files
                     ' or exceeds the number of GRUs identified in the basin.')
             end if
         end if
-        if (len_trim(field%fn) > 0 .and. .not. btest(field%ffreq, IO_FREQ_PTS)) then
+        if (len_trim(field%fn) > 0 .and. .not. btest(field%ffreq, FREQ_PTS)) then
             call print_warning( &
                 "The option '" // trim(field%fn) // "' is only supported with the 'pts' option " // &
                 "but the frequency format is not active for this variable " //&
                 "and this modifier has no effect (Variable '" // trim(field%vname) // "').")
             field%fn = ''
-        else if (btest(field%ffreq, IO_FREQ_PTS) .and. len_trim(field%fn) == 0) then
+        else if (btest(field%ffreq, FREQ_PTS) .and. len_trim(field%fn) == 0) then
             call print_remark( &
                 "The 'pts' frequency format is active but no aggregation option is specified. " // &
                 "The default aggregation option of '" // VN_ACC // "' is assumed " // &
@@ -1809,27 +1809,27 @@ module output_files
         field = fls_out%fls(n)
 
         !> Assign 'process_group' fields to 'src' variables.
-        if (btest(field%ffreq, IO_FREQ_YLY)) then
+        if (btest(field%ffreq, FREQ_YEARLY)) then
             if (btest(field%fgroup, DATA_TYPE_TILE) .and. associated(pfld%y_tile)) fls_out%fls(n)%y%tile%src => pfld%y_tile
             if (btest(field%fgroup, DATA_TYPE_GRID) .and. associated(pfld%y_grid)) fls_out%fls(n)%y%grid%src => pfld%y_grid
         end if
-        if (btest(field%ffreq, IO_FREQ_MLY)) then
+        if (btest(field%ffreq, FREQ_MONTHLY)) then
             if (btest(field%fgroup, DATA_TYPE_TILE) .and. associated(pfld%m_tile)) fls_out%fls(n)%m%tile%src => pfld%m_tile
             if (btest(field%fgroup, DATA_TYPE_GRID) .and. associated(pfld%m_grid)) fls_out%fls(n)%m%grid%src => pfld%m_grid
         end if
-        if (btest(field%ffreq, IO_FREQ_DLY)) then
+        if (btest(field%ffreq, FREQ_DAILY)) then
             if (btest(field%fgroup, DATA_TYPE_TILE) .and. associated(pfld%d_tile)) fls_out%fls(n)%d%tile%src => pfld%d_tile
             if (btest(field%fgroup, DATA_TYPE_GRID) .and. associated(pfld%d_grid)) fls_out%fls(n)%d%grid%src => pfld%d_grid
         end if
-        if (btest(field%ffreq, IO_FREQ_HLY)) then
+        if (btest(field%ffreq, FREQ_HOURLY)) then
             if (btest(field%fgroup, DATA_TYPE_TILE) .and. associated(pfld%h_tile)) fls_out%fls(n)%h%tile%src => pfld%h_tile
             if (btest(field%fgroup, DATA_TYPE_GRID) .and. associated(pfld%h_grid)) fls_out%fls(n)%h%grid%src => pfld%h_grid
         end if
-        if (btest(field%ffreq, IO_FREQ_PTS)) then
+        if (btest(field%ffreq, FREQ_PTS)) then
             if (btest(field%fgroup, DATA_TYPE_TILE) .and. associated(pfld%ts_tile)) fls_out%fls(n)%pts%tile%src => pfld%ts_tile
             if (btest(field%fgroup, DATA_TYPE_GRID) .and. associated(pfld%ts_grid)) fls_out%fls(n)%pts%grid%src => pfld%ts_grid
         end if
-        if (btest(field%ffreq, IO_FREQ_SSL)) then
+        if (btest(field%ffreq, FREQ_SEASONAL)) then
             if (btest(field%fgroup, DATA_TYPE_TILE) .and. associated(pfld%m_tile)) fls_out%fls(n)%s%tile%src => pfld%m_tile
             if (btest(field%fgroup, DATA_TYPE_GRID) .and. associated(pfld%m_grid)) fls_out%fls(n)%s%grid%src => pfld%m_grid
         end if
@@ -2226,7 +2226,7 @@ module output_files
 
             !> Write output.
             iun = 0
-            if (btest(field%ffmt, IO_TYPE_R2C)) then
+            if (btest(field%ffmt, FILE_TYPE_R2C)) then
                 z = 0
                 call output_files_write_r2c(fls, shd, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
@@ -2235,7 +2235,7 @@ module output_files
                 end if
                 iun = iun + 1
             end if
-            if (btest(field%ffmt, IO_TYPE_SEQ)) then
+            if (btest(field%ffmt, FILE_TYPE_SEQ)) then
                 z = 0
                 call output_files_write_seq(fls, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
@@ -2244,7 +2244,7 @@ module output_files
                 end if
                 iun = iun + 1
             end if
-            if (btest(field%ffmt, IO_TYPE_TXT)) then
+            if (btest(field%ffmt, FILE_TYPE_TXT)) then
                 z = 0
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
@@ -2253,7 +2253,7 @@ module output_files
                 end if
                 iun = iun + 1
             end if
-            if (btest(field%ffmt, IO_TYPE_CSV)) then
+            if (btest(field%ffmt, FILE_TYPE_CSV)) then
                 z = 0
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z, sep = ',')
                 if (z /= 0) then
@@ -2262,7 +2262,7 @@ module output_files
                 end if
                 iun = iun + 1
             end if
-            if (btest(field%ffmt, IO_TYPE_TSI)) then
+            if (btest(field%ffmt, FILE_TYPE_TSI)) then
                 z = 0
                 call output_files_write_txt(fls, shd, field, group%grid%iun + iun, group%grid%dat, dates, z)
                 if (z /= 0) then
@@ -2272,7 +2272,7 @@ module output_files
                 iun = iun + 1
             end if
 #ifdef NETCDF
-            if (btest(field%ffmt, IO_TYPE_NC4)) then
+            if (btest(field%ffmt, FILE_TYPE_NC4)) then
                 z = 0
                 call nc4_add_data_xyt( &
                     group%grid%nid, field%vname, ffreq, group%grid%tid, group%grid%vid, shd%xxx, shd%yyy, &
@@ -2283,7 +2283,7 @@ module output_files
                 end if
             end if
 #endif
-            if (btest(field%ffmt, IO_TYPE_R2C_BIN)) then
+            if (btest(field%ffmt, FILE_TYPE_R2C_BIN)) then
                 z = 0
                 call output_files_write_r2c_binary(fls, shd, group%grid%iun + iun, group%grid%dat, group%grid%record, dates, z)
                 if (z /= 0) then
@@ -2302,7 +2302,7 @@ module output_files
 
             !> Write output.
             iun = 0
-            if (btest(field%ffmt, IO_TYPE_TSK)) then
+            if (btest(field%ffmt, FILE_TYPE_TSK)) then
                 z = 0
                 call output_files_write_txt(fls, shd, field, group%tile%iun + iun, group%tile%dat, dates, z)
                 if (z /= 0) then
@@ -2508,7 +2508,7 @@ module output_files
         t = 1
 
         !> Update data fields for existing output variable frequencies.
-        if (btest(field%ffreq, IO_FREQ_YLY)) then
+        if (btest(field%ffreq, FREQ_YEARLY)) then
             if (ic%now%year /= ic%next%year) then
                 if (field%in_mem) t = ic%iter%year
                 call output_files_update_dates(fls_out%dates%y, t, ic%iter%year, ic%now%year, 1, 1)
@@ -2516,10 +2516,10 @@ module output_files
             end if
             if ((ic%now%year /= ic%next%year .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
                 (field%in_mem .and. fls_out%fclose)) then
-                call output_files_update_file(fls, shd, IO_FREQ_YLY, field, field%y, fls_out%dates%y)
+                call output_files_update_file(fls, shd, FREQ_YEARLY, field, field%y, fls_out%dates%y)
             end if
         end if
-        if (btest(field%ffreq, IO_FREQ_MLY)) then
+        if (btest(field%ffreq, FREQ_MONTHLY)) then
             if (ic%now%month /= ic%next%month) then
                 if (field%in_mem) t = ic%iter%month
                 call output_files_update_dates(fls_out%dates%m, t, ic%iter%month, ic%now%year, ic%now%month, 1)
@@ -2527,10 +2527,10 @@ module output_files
             end if
             if ((ic%now%month /= ic%next%month .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
                 (field%in_mem .and. fls_out%fclose)) then
-                call output_files_update_file(fls, shd, IO_FREQ_MLY, field, field%m, fls_out%dates%m)
+                call output_files_update_file(fls, shd, FREQ_MONTHLY, field, field%m, fls_out%dates%m)
             end if
         end if
-        if (btest(field%ffreq, IO_FREQ_DLY)) then
+        if (btest(field%ffreq, FREQ_DAILY)) then
             if (ic%now%day /= ic%next%day) then
                 if (field%in_mem) t = ic%iter%day
                 call output_files_update_dates(fls_out%dates%d, t, ic%iter%day, ic%now%year, ic%now%month, ic%now%day)
@@ -2538,10 +2538,10 @@ module output_files
             end if
             if ((ic%now%day /= ic%next%day .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
                 (field%in_mem .and. fls_out%fclose)) then
-                call output_files_update_file(fls, shd, IO_FREQ_DLY, field, field%d, fls_out%dates%d)
+                call output_files_update_file(fls, shd, FREQ_DAILY, field, field%d, fls_out%dates%d)
             end if
         end if
-        if (btest(field%ffreq, IO_FREQ_HLY)) then
+        if (btest(field%ffreq, FREQ_HOURLY)) then
             if (ic%now%hour /= ic%next%hour) then
                 if (field%in_mem) t = ic%iter%hour
                 call output_files_update_dates(fls_out%dates%h, t, ic%iter%hour, ic%now%year, ic%now%month, ic%now%day, ic%now%hour)
@@ -2549,12 +2549,12 @@ module output_files
             end if
             if ((ic%now%hour /= ic%next%hour .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
                 (field%in_mem .and. fls_out%fclose)) then
-                call output_files_update_file(fls, shd, IO_FREQ_HLY, field, field%h, fls_out%dates%h)
+                call output_files_update_file(fls, shd, FREQ_HOURLY, field, field%h, fls_out%dates%h)
             end if
         end if
 
         !> Per 'n' time-steps (user-defined).
-        if (btest(field%ffreq, IO_FREQ_PTS)) then
+        if (btest(field%ffreq, FREQ_PTS)) then
 
             !> Update group.
             t = 1
@@ -2577,14 +2577,14 @@ module output_files
                     field%pts%tile%dat(:, t) = field%pts%tile%dat(:, t)/(field%pts_aggregator/ic%dtmins)
                 end if
                 if ((.not. field%in_mem) .or. (field%in_mem .and. fls_out%fclose)) then
-                    call output_files_update_file(fls, shd, IO_FREQ_PTS, field, field%pts, fls_out%dates%pts)
+                    call output_files_update_file(fls, shd, FREQ_PTS, field, field%pts, fls_out%dates%pts)
                 end if
                 field%pts_aggregator = 0
             end if
         end if
 
         !> 'Seasonal' must go last because it changes 't' regardless of the state of 'in_mem'.
-        if (btest(field%ffreq, IO_FREQ_SSL)) then
+        if (btest(field%ffreq, FREQ_SEASONAL)) then
             if (ic%now%month /= ic%next%month) then
                 t = ic%now%month
                 call output_files_update_dates(fls_out%dates%s, t, t, ic%now%year, ic%now%month, 1)
@@ -2601,7 +2601,7 @@ module output_files
                         field%s%tile%dat(:, t) = field%s%tile%dat(:, t)/fls_out%dates%iter_s(t)
                     end if
                 end do
-                call output_files_update_file(fls, shd, IO_FREQ_SSL, field, field%s, fls_out%dates%s)
+                call output_files_update_file(fls, shd, FREQ_SEASONAL, field, field%s, fls_out%dates%s)
             end if
         end if
 
@@ -2630,7 +2630,9 @@ module output_files
 
         !> Update fields and output files.
         do i = 1, size(fls_out%fls)
-            if (fls_out%fls(i)%ffreq /= IO_FREQ_STA) call output_files_update_field(fls, shd, fls_out%fls(i))
+            if (fls_out%fls(i)%ffreq /= FREQ_START .and. fls_out%fls(i)%ffreq /= FREQ_END) then
+                call output_files_update_field(fls, shd, fls_out%fls(i))
+            end if
         end do
 
     end subroutine

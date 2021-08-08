@@ -3,23 +3,42 @@ module mesh_io_options
     implicit none
 
     !> Constants for file formats.
-    !* FFMT_NUL: None (no file format applicable or not set).
-    !* FFMT_R2C: EnSim Hydrologic/GreenKenue R2C file in ASCII format
+    !* FILE_TYPE_NUL: None (no file format applicable or not set).
+    !* FILE_TYPE_R2C: EnSim Hydrologic/GreenKenue R2C file in ASCII format
     !*  (multi-attribute single framed or single attribute multi-frame).
-    !* FFMT_TXT: Space-delimited plain text format.
-    !* FFMT_CSV: Comma-delimited plain text format.
-    !* FFMT_SEQ: Binary sequential format (no predefined structure).
-    integer, parameter :: FFMT_NUL = 0
-    integer, parameter :: FFMT_R2C = 1
-    integer, parameter :: FFMT_TXT = 2
-    integer, parameter :: FFMT_CSV = 3
-    integer, parameter :: FFMT_SEQ = 4
+    !* FILE_TYPE_R2C_BIN: EnSim Hydrologic/GreenKenue R2C file in binary format
+    !*  (single attribute multi-frame).
+    !* FILE_TYPE_TXT: Space-delimited plain text format.
+    !* FILE_TYPE_ASC: Space-delimited plain text format (Rank-order).
+    !* FILE_TYPE_CSV: Comma-delimited plain text format.
+    !* FILE_TYPE_TSI: Space-delimited plain text format (Rank-subset).
+    !* FILE_TYPE_TSK: Space-delimited plain text format (Tile-subset).
+    !* FILE_TYPE_SEQ: Binary sequential format (no predefined structure).
+    !* FILE_TYPE_NC4: NetCDF format.
+    !* FILE_TYPE_MET: CLASS 'MET' format forcing file.
+    integer, parameter :: FILE_TYPE_NUL = 0
+    integer, parameter :: FILE_TYPE_R2C = 1
+    integer, parameter :: FILE_TYPE_R2C_BIN = 2
+    integer, parameter :: FILE_TYPE_TXT = 3
+    integer, parameter :: FILE_TYPE_ASC = 4
+    integer, parameter :: FILE_TYPE_CSV = 5
+    integer, parameter :: FILE_TYPE_TSI = 6
+    integer, parameter :: FILE_TYPE_TSK = 7
+    integer, parameter :: FILE_TYPE_SEQ = 8
+    integer, parameter :: FILE_TYPE_NC4 = 9
+    integer, parameter :: FILE_TYPE_MET = 10
 
     !> Constants for field lengths.
-    !* FLEN_FIELD: Default length of any field.
-    !* FLEN_FPATH: Default length of any file path.
-    integer, parameter :: FLEN_FIELD = 200
-    integer, parameter :: FLEN_PATH = 2000
+    !* SHORT_FIELD_LENGTH: Default length for short fields.
+    !* LONG_FIELD_LENGTH: Default length for long fields.
+    integer, parameter :: SHORT_FIELD_LENGTH = 200
+    integer, parameter :: LONG_FIELD_LENGTH = 2000
+
+    !> Constants for field scale.
+    !* DATA_TYPE_GRID: Grid-based (e.g., aggregated from 'tile').
+    !* DATA_TYPE_TILE: Tile-based.
+    integer, parameter :: DATA_TYPE_GRID = 1
+    integer, parameter :: DATA_TYPE_TILE = 2
 
     !> Constants for binary flag states.
     !* FLAG_OFF: Disabled/inactive.
@@ -31,28 +50,34 @@ module mesh_io_options
 
     !> Constants for time frequencies of inputs and outputs.
     !* FREQ_NUL: None/no frequency applicable or not set.
-    !* FREQ_YLY: Yearly, before the beginning of the next year.
-    !* FREQ_MLY: Monthly, before the beginning of the next month.
-    !* FREQ_DLY: Daily, before the beginning of the next day.
-    !* FREQ_HLY: Hourly, before the beginning of the next hour.
+    !* FREQ_YEARLY: Yearly, before the beginning of the next year.
+    !* FREQ_MONTHLY: Monthly, before the beginning of the next month.
+    !* FREQ_SEASONAL: Seasonal monthly output (monthly average across years).
+    !* FREQ_DAILY: Daily, before the beginning of the next day.
+    !* FREQ_HOURLY: Hourly, before the beginning of the next hour.
     !* FREQ_PTS: Per model time-step (model configuration dependent).
-    !* FREQ_NOW: Instantaneous (e.g., if dependent on a particular time or process).
-    !* FREQ_SECS: At the end of a pre-defined increment in seconds.
-    !* FREQ_MINS: At the end of a pre-defined increment in minutes.
-    !* FREQ_HRS: At the end of a pre-defined increment in hours.
+    !* FREQ_START: Only at the start of a simulation.
+    !* FREQ_END: Only at the end of a simulation.
+    !* FREQ_NOW: In the current time-step.
+    !* FREQ_SECONDS: At the end of a pre-defined increment in seconds.
+    !* FREQ_MINUTES: At the end of a pre-defined increment in minutes.
+    !* FREQ_HOURS: At the end of a pre-defined increment in hours.
     !* FREQ_DAYS: At the end of a pre-defined increment in days.
     !* FREQ_IC: A pre-defined 'ic' counter date, where values matched are those greater than zero.
     integer, parameter :: FREQ_NUL = 0
-    integer, parameter :: FREQ_YLY = 1
-    integer, parameter :: FREQ_MLY = 2
-    integer, parameter :: FREQ_DLY = 3
-    integer, parameter :: FREQ_HLY = 4
-    integer, parameter :: FREQ_PTS = 5
-    integer, parameter :: FREQ_NOW = 6
-    integer, parameter :: FREQ_SECS = 7
-    integer, parameter :: FREQ_MINS = 8
-    integer, parameter :: FREQ_HRS = 9
-    integer, parameter :: FREQ_DAYS = 10
-    integer, parameter :: FREQ_IC = 11
+    integer, parameter :: FREQ_YEARLY = 1
+    integer, parameter :: FREQ_MONTHLY = 2
+    integer, parameter :: FREQ_SEASONAL = 3
+    integer, parameter :: FREQ_DAILY = 4
+    integer, parameter :: FREQ_HOURLY = 5
+    integer, parameter :: FREQ_PTS = 6
+    integer, parameter :: FREQ_START = 7
+    integer, parameter :: FREQ_END = 8
+    integer, parameter :: FREQ_NOW = 9
+    integer, parameter :: FREQ_SECONDS = 10
+    integer, parameter :: FREQ_MINUTES = 11
+    integer, parameter :: FREQ_HOURS = 12
+    integer, parameter :: FREQ_DAYS = 13
+    integer, parameter :: FREQ_IC = 14
 
 end module

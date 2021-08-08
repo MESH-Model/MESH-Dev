@@ -1,13 +1,13 @@
 module nc_io
 
     !> 'print_routines': For print routines, format statements, and line lengths and limits.
-    !* 'model_files_variables': For I/O constants.
+    !* 'mesh_io_options': For I/O constants.
     !* 'model_dates': For 'ic' counter.
     !* 'netcdf': For netCDF library.
     !* 'typesizes': For data types used by netCDF library.
     use print_routines
     use parse_utilities
-    use model_files_variables
+    use mesh_io_options
     use model_dates
 #ifdef NETCDF
     use netcdf
@@ -5611,13 +5611,13 @@ module nc_io
         write(line, FMT_DATETIME_DASHES_YMD) &
             ic%now%year, ic%now%month, ic%now%day, ic%now%hour, ic%now%mins, 0
         select case (ts_freq)
-            case (IO_FREQ_MLY, IO_FREQ_SSL, IO_FREQ_DLY)
+            case (FREQ_MONTHLY, FREQ_SEASONAL, FREQ_DAILY)
                 ierr = nf90_put_att(iun, vtime, 'units', 'days since ' // trim(adjustl(line)))
-            case (IO_FREQ_YLY)
+            case (FREQ_YEARLY)
                 ierr = nf90_put_att(iun, vtime, 'units', 'years since ' // trim(adjustl(line)))
-            case (IO_FREQ_HLY)
+            case (FREQ_HOURLY)
                 ierr = nf90_put_att(iun, vtime, 'units', 'hours since ' // trim(adjustl(line)))
-            case (IO_FREQ_PTS)
+            case (FREQ_PTS)
                 ierr = nf90_put_att(iun, vtime, 'units', 'minutes since ' // trim(adjustl(line)))
             case default
                 ierr = nf90_put_att(iun, vtime, 'units', 'seconds since ' // trim(adjustl(line)))
@@ -7704,13 +7704,13 @@ module nc_io
         t0_r8 = nc4_time_from_date_components( &
             ic%start%year, ic%start%month, ic%start%day, ic%start%hour, ic%start%mins, ierr = ierr)
         select case (ts_freq)
-            case (IO_FREQ_MLY, IO_FREQ_SSL, IO_FREQ_DLY)
+            case (FREQ_MONTHLY, FREQ_SEASONAL, FREQ_DAILY)
                 t0_r8 = t0_r8
-            case (IO_FREQ_YLY)
+            case (FREQ_YEARLY)
                 t0_r8 = ic%start%year
-            case (IO_FREQ_HLY)
+            case (FREQ_HOURLY)
                 t0_r8 = t0_r8*24.0
-            case (IO_FREQ_PTS)
+            case (FREQ_PTS)
                 t0_r8 = t0_r8*24.0*60.0
             case default
                 t0_r8 = t0_r8*24.0*60.0*60.0
@@ -7735,13 +7735,13 @@ module nc_io
             t1_r8 = nc4_time_from_date_components( &
                 dates(2, t), dates(3, t), dates(4, t), dates(5, t), dates(6, t), ierr = ierr)
             select case (ts_freq)
-                case (IO_FREQ_MLY, IO_FREQ_SSL, IO_FREQ_DLY)
+                case (FREQ_MONTHLY, FREQ_SEASONAL, FREQ_DAILY)
                     t1_r8 = t1_r8
-                case (IO_FREQ_YLY)
+                case (FREQ_YEARLY)
                     t1_r8 = dates(2, t)
-                case (IO_FREQ_HLY)
+                case (FREQ_HOURLY)
                     t1_r8 = t1_r8*24.0
-                case (IO_FREQ_PTS)
+                case (FREQ_PTS)
                     t1_r8 = t1_r8*24.0*60.0
                 case default
                     t1_r8 = t1_r8*24.0*60.0*60.0

@@ -2,7 +2,7 @@
 !>  Subroutine to resume the run state from file.
 subroutine resumerun_read(fls, shd, cm, ierr)
 
-    use model_files_variables
+    use mesh_io_options
     use sa_mesh_common
     use climate_forcing
     use sa_mesh_run_within_tile
@@ -150,7 +150,7 @@ subroutine resumerun_read(fls, shd, cm, ierr)
         !> txt: In text format.
 
         !> seq: Sequential binary format.
-        if (btest(vs%flgs%resume%flo%ext, FFMT_SEQ)) then
+        if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_SEQ)) then
 
             !> Append the date to the default resume filename for auto resume.
             if (vs%flgs%resume%state == FLAG_AUTO) then

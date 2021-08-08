@@ -44,19 +44,19 @@ module model_files_variables
     !>  Keys for output file formats.
     !>      To assign: += radix(key)**key
     !>      To test: btest(val, key)
-    integer, parameter :: IO_TYPE_R2C = 2
-    integer, parameter :: IO_TYPE_SEQ = 3
-    integer, parameter :: IO_TYPE_TXT = 4
-    integer, parameter :: IO_TYPE_CSV = 6
-    integer, parameter :: IO_TYPE_TSI = 7
-    integer, parameter :: IO_TYPE_TSK = 8
-    integer, parameter :: IO_TYPE_NC4 = 9
-    integer, parameter :: IO_TYPE_R2C_BIN = 10
+!-    integer, parameter :: IO_TYPE_R2C = 2
+!-    integer, parameter :: IO_TYPE_SEQ = 3
+!-    integer, parameter :: IO_TYPE_TXT = 4
+!-    integer, parameter :: IO_TYPE_CSV = 6
+!-    integer, parameter :: IO_TYPE_TSI = 7
+!-    integer, parameter :: IO_TYPE_TSK = 8
+!-    integer, parameter :: IO_TYPE_NC4 = 9
+!-    integer, parameter :: IO_TYPE_R2C_BIN = 10
 
     !> Description:
     !>  Keys for output file scale.
-    integer, parameter :: DATA_TYPE_GRID = 1
-    integer, parameter :: DATA_TYPE_TILE = 2
+!-    integer, parameter :: DATA_TYPE_GRID = 1
+!-    integer, parameter :: DATA_TYPE_TILE = 2
 
     !> Description:
     !>  Keys for output file frequency.
@@ -70,13 +70,13 @@ module model_files_variables
     !* PTS: Per time-step.
     !* YLY: Yearly.
     !* SSL: Seasonal.
-    integer, parameter :: IO_FREQ_STA = 0
-    integer, parameter :: IO_FREQ_TOT = 1
-    integer, parameter :: IO_FREQ_DLY = 2
-    integer, parameter :: IO_FREQ_MLY = 3
-    integer, parameter :: IO_FREQ_HLY = 4
-    integer, parameter :: IO_FREQ_PTS = 5
-    integer, parameter :: IO_FREQ_YLY = 6
-    integer, parameter :: IO_FREQ_SSL = 7
+!-    integer, parameter :: IO_FREQ_STA = 0
+!-    integer, parameter :: IO_FREQ_TOT = 1
+!-    integer, parameter :: IO_FREQ_DLY = 2
+!-    integer, parameter :: IO_FREQ_MLY = 3
+!-    integer, parameter :: IO_FREQ_HLY = 4
+!-    integer, parameter :: IO_FREQ_PTS = 5
+!-    integer, parameter :: IO_FREQ_YLY = 6
+!-    integer, parameter :: IO_FREQ_SSL = 7
 
 end module

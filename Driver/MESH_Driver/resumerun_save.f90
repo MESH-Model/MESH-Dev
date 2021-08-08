@@ -3,6 +3,7 @@
 subroutine resumerun_save(fls, shd, cm)
 
     use mpi_module
+    use mesh_io_options
     use model_files_variables
     use sa_mesh_common
     use climate_forcing
@@ -47,9 +48,9 @@ subroutine resumerun_save(fls, shd, cm)
     select case (vs%flgs%save%freq)
 
         !> User-specified frequency.
-        case (FREQ_YLY)
+        case (FREQ_YEARLY)
             now = (ic%now%year /= ic%next%year)
-        case (FREQ_MLY)
+        case (FREQ_MONTHLY)
             now = (ic%now%month /= ic%next%month)
 
         !> End of run/force.
@@ -63,7 +64,7 @@ subroutine resumerun_save(fls, shd, cm)
     !> Save files.
 
     !> txt: In text format.
-    if (btest(vs%flgs%save%flo%ext, FFMT_TXT)) then
+    if (btest(vs%flgs%save%flo%ext, FILE_TYPE_TXT)) then
         fname = 'MESH_variables.txt'
 !+        call reset_tab()
         call print_message('SAVING: ' // trim(fname))
@@ -210,7 +211,7 @@ subroutine resumerun_save(fls, shd, cm)
     end if
 
     !> seq: Sequential binary format.
-    if (btest(vs%flgs%save%flo%ext, FFMT_SEQ)) then
+    if (btest(vs%flgs%save%flo%ext, FILE_TYPE_SEQ)) then
 
         !> Append the date to the default resume filename if auto resume is enabled.
         if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then

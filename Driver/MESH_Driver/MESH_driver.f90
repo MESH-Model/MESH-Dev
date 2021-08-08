@@ -113,7 +113,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1797'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1798'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -834,7 +834,7 @@ program RUNMESH
 !-    end if
 
     !> Read in existing basin states for RESUMEFLAG.
-    if (.not. vs%flgs%resume%state == FLAG_OFF .and. btest(vs%flgs%resume%flo%ext, FFMT_SEQ) .and. &
+    if (.not. vs%flgs%resume%state == FLAG_OFF .and. btest(vs%flgs%resume%flo%ext, FILE_TYPE_SEQ) .and. &
         index(vs%flgs%resume%bin, '+STASONLY') == 0 .and. index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
 
         !> Open the resume file for the driver.
@@ -1216,7 +1216,7 @@ program RUNMESH
 !-        end if
 
         !> Save the current state of the model for SAVERESUMEFLAG.
-        if (btest(vs%flgs%save%flo%ext, FFMT_SEQ) .and. &
+        if (btest(vs%flgs%save%flo%ext, FILE_TYPE_SEQ) .and. &
             index(vs%flgs%save%bin, '+STASONLY') == 0 .and. index(vs%flgs%save%bin, '+CLASSPROG') == 0) then
 
             !> Open the resume file for the driver.
