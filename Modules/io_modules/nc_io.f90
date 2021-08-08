@@ -1,11 +1,11 @@
 module nc_io
 
-    !* 'sa_mesh_common': For 'print_routines' and 'shd_variables'.
+    !> 'print_routines': For print routines, format statements, and line lengths and limits.
     !* 'model_files_variables': For I/O constants.
     !* 'model_dates': For 'ic' counter.
     !* 'netcdf': For netCDF library.
     !* 'typesizes': For data types used by netCDF library.
-    use sa_mesh_common
+    use print_routines
     use parse_utilities
     use model_files_variables
     use model_dates
@@ -42,6 +42,9 @@ module nc_io
     end interface
 
     interface nc4_get_data
+        module procedure nc4_get_data_scalar_real
+        module procedure nc4_get_data_scalar_int
+        module procedure nc4_get_data_scalar_char
         module procedure nc4_get_data_1d_real
         module procedure nc4_get_data_1d_int
         module procedure nc4_get_data_1d_char
@@ -556,18 +559,20 @@ module nc_io
     end subroutine
 
     subroutine nc4_get_time( &
-        iun, tid, reference_time, units, dtype, &
-        name_time, start, &
+        iun, &
+        tid, reference_time, units, name_time, time_shift, start, &
         year, month, day, jday, hour, minutes, seconds, &
         ierr)
 
         !> Input variables.
-        integer, intent(in) :: iun, tid, dtype
-        real(kind = EightByteReal), intent(in) :: reference_time
-        character(len = *), intent(in) :: units
+        integer, intent(in) :: iun
 
         !> Input variables (optional).
+        integer, intent(in), optional :: tid
+        real(kind = EightByteReal), intent(in), optional :: reference_time
+        character(len = *), intent(in), optional :: units
         character(len = *), intent(in), optional :: name_time
+        real, intent(in), optional :: time_shift
         integer, intent(in), optional :: start(:)
 
         !> Output variables (optional).
@@ -577,9 +582,9 @@ module nc_io
         integer, intent(out) :: ierr
 
         !> Local variables.
-        character(len = DEFAULT_FIELD_LENGTH) vname, field, code
-        integer i
-        real(kind = EightByteReal) t1_r8(1)
+        character(len = DEFAULT_FIELD_LENGTH) vname, vunits, field, code
+        integer i, vid
+        real(kind = EightByteReal) t0, t1_r8(1)
 
         !> Set the variable name.
         if (present(name_time)) then
@@ -588,22 +593,33 @@ module nc_io
             vname = 'time'
         end if
 
+        !> Get the reference time and variables (if not provided).
+        if (.not. present(tid) .or. .not. present(reference_time) .or. .not. present(units)) then
+            call nc4_get_reference_time(iun, vname, time_shift, tid = vid, units = vunits, reference_time = t0, ierr = ierr)
+            if (ierr /= 0) return
+        end if
+
+        !> Assign optional variables.
+        if (present(tid)) vid = tid
+        if (present(units)) vunits = units
+        if (present(reference_time)) t0 = reference_time
+
         !> Get the time value.
-        ierr = nf90_get_var(iun, tid, t1_r8, start = start)
+        ierr = nf90_get_var(iun, vid, t1_r8, start = start)
         if (ierr /= 0) return
 
         !> Add the value to the reference time (converting to units of 'hours').
-        i = index(units, 'since')
+        i = index(vunits, 'since')
         if (i > 1) then
-            select case (units(1:(i - 1)))
+            select case (vunits(1:(i - 1)))
                 case ('seconds')
-                    t1_r8 = reference_time + t1_r8/24.0/60.0/60.0
+                    t1_r8 = t0 + t1_r8/24.0/60.0/60.0
                 case ('minutes')
-                    t1_r8 = reference_time + t1_r8/24.0/60.0
+                    t1_r8 = t0 + t1_r8/24.0/60.0
                 case ('hours')
-                    t1_r8 = reference_time + t1_r8/24.0
+                    t1_r8 = t0 + t1_r8/24.0
                 case ('days')
-                    t1_r8 = reference_time + t1_r8
+                    t1_r8 = t0 + t1_r8
                 case default
                     call print_error( &
                         "Unsupported units for the '" // trim(vname) // "' variable. " // &
@@ -670,6 +686,41 @@ module nc_io
                 "The attribute with ID (" // trim(adjustl(field)) // ") was not found (Code: " // trim(adjustl(code)) // ").")
             ierr = 1
             return
+        end if
+
+    end subroutine
+
+    subroutine nc4_get_attribute_type(iun, vid, attribute_name, dtype, length, ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+        character(len = *), intent(in) :: attribute_name
+        integer, intent(in), optional :: vid
+
+        !> Output variables.
+        integer, intent(out), optional :: dtype
+        integer, intent(out), optional :: length
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+        integer v
+
+        !> Assign the variable ID.
+        if (present(vid)) then
+            v = vid
+        else
+            v = NF90_GLOBAL
+        end if
+        ierr = nf90_inquire_attribute(iun, v, attribute_name, xtype = dtype, len = length)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error( &
+                "An error occurred reading information about the '" // trim(attribute_name) // "' attribute (Code: " // &
+                trim(adjustl(code)) // ").")
+            ierr = 1
+            if (present(dtype)) dtype = 0
+            if (present(length)) length = 0
         end if
 
     end subroutine
@@ -936,7 +987,7 @@ module nc_io
 
     subroutine nc4_get_variable_attributes( &
         iun, standard_name, &
-        vid, long_name, units, dtype, ndims, dimids, &
+        vid, long_name, units, dtype, ndims, dimids, natts, &
         ierr)
 
         !> Input variables.
@@ -947,6 +998,7 @@ module nc_io
         character(len = *), intent(out), optional :: long_name, units
         integer, intent(out), optional :: vid, dtype, ndims
         integer, dimension(:), allocatable, intent(out), optional :: dimids
+        integer, intent(out), optional :: natts
         integer, intent(out) :: ierr
 
         !> Local variables.
@@ -1031,6 +1083,17 @@ module nc_io
                     end if
                 end if
                 if (present(ndims)) ndims = n
+            end if
+        end if
+
+        !> Get attributes.
+        if (present(natts)) then
+            ierr = nf90_inquire_variable(iun, v, natts = natts)
+            if (ierr /= NF90_NOERR) then
+                write(code, FMT_GEN) ierr
+                call print_warning( &
+                    "An error occurred reading the number of attributes for the '" // trim(standard_name) // &
+                    "' variable (Code: " // trim(adjustl(code)) // ").")
             end if
         end if
 
@@ -3461,7 +3524,7 @@ module nc_io
     subroutine nc4_check_variable( &
         iun, standard_name, &
         dtype_expected, size_dat, dim1_name, dim2_name, dim3_name, dim4_name, dim5_name, &
-        vid, long_name, units, dtype, ndims, dimids, &
+        vid, long_name, units, dtype, ndims, dimids, natts, &
         dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, dim_lengths, dim_unlimited_id, &
         ierr)
 
@@ -3484,13 +3547,14 @@ module nc_io
         integer, intent(out), optional :: &
             vid, dtype, ndims, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, dim_unlimited_id
         integer, dimension(:), allocatable, intent(out), optional :: dimids, dim_lengths
+        integer, intent(out), optional :: natts
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) field, code
         integer l, n, t, v
 
         !> Get variable attributes (return if an error occurred).
-        call nc4_get_variable_attributes(iun, standard_name, v, long_name, units, t, n, dimids, ierr)
+        call nc4_get_variable_attributes(iun, standard_name, v, long_name, units, t, n, dimids, natts, ierr)
         if (ierr /= 0) return
         if (present(vid)) vid = v
         if (present(dtype)) dtype = t
@@ -3608,6 +3672,135 @@ module nc_io
 
     end subroutine
 
+    subroutine nc4_get_data_scalar_real( &
+        iun, standard_name, vid, dat, &
+        quiet, &
+        ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, vid
+        character(len = *), intent(in) :: standard_name
+
+        !> Input/output variables.
+        real dat
+
+        !> Input variables (optional).
+        logical, intent(in), optional :: quiet
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+        logical :: q = .false.
+
+        !> Read variable.
+        ierr = nf90_get_var(iun, vid, dat)
+
+        !> Check for errors.
+        if (ierr /= NF90_NOERR) then
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                write(code, FMT_GEN) ierr
+                call print_error( &
+                    "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                    trim(adjustl(code)) // ").")
+            end if
+            ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
+        end if
+
+    end subroutine
+
+    subroutine nc4_get_data_scalar_int( &
+        iun, standard_name, vid, dat, &
+        quiet, &
+        ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, vid
+        character(len = *), intent(in) :: standard_name
+
+        !> Input variables (optional).
+        logical, intent(in), optional :: quiet
+
+        !> Input/output variables.
+        integer dat
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+        logical :: q = .false.
+
+        !> Read variable.
+        ierr = nf90_get_var(iun, vid, dat)
+
+        !> Check for errors.
+        if (ierr /= NF90_NOERR) then
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                write(code, FMT_GEN) ierr
+                call print_error( &
+                    "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                    trim(adjustl(code)) // ").")
+            end if
+            ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
+        end if
+
+    end subroutine
+
+    subroutine nc4_get_data_scalar_char( &
+        iun, standard_name, vid, dat, &
+        quiet, &
+        ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, vid
+        character(len = *), intent(in) :: standard_name
+
+        !> Input variables (optional).
+        logical, intent(in), optional :: quiet
+
+        !> Input/output variables.
+        character dat
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+        logical :: q = .false.
+
+        !> Read variable.
+        ierr = nf90_get_var(iun, vid, dat)
+
+        !> Check for errors.
+        if (ierr /= NF90_NOERR) then
+            if (present(quiet)) q = quiet
+            if (.not. q) then
+                write(code, FMT_GEN) ierr
+                call print_error( &
+                    "An error occurred reading data from the '" // trim(standard_name) // "' variable (Code: " // &
+                    trim(adjustl(code)) // ").")
+            end if
+            ierr = 1
+        else
+
+            !> No errors.
+            ierr = 0
+        end if
+
+    end subroutine
+
     subroutine nc4_get_data_1d_real( &
         iun, standard_name, vid, dat, &
         start, quiet, &
@@ -3713,12 +3906,12 @@ module nc_io
     end subroutine
 
     subroutine nc4_get_data_1d_char( &
-        iun, standard_name, vid, dat, dim1_order, dim_char_order, &
+        iun, standard_name, vid, dat, &
         start, quiet, &
         ierr)
 
         !> Input variables.
-        integer, intent(in) :: iun, vid, dim1_order, dim_char_order
+        integer, intent(in) :: iun, vid
         character(len = *), intent(in) :: standard_name
 
         !> Input variables (optional).
@@ -3765,16 +3958,16 @@ module nc_io
     end subroutine
 
     subroutine nc4_get_data_2d_real( &
-        iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, &
-        start, quiet, &
+        iun, standard_name, vid, dat, &
+        dim_lengths, dim1_order, dim2_order, start, quiet, &
         ierr)
 
         !> Input variables.
-        integer, intent(in) :: iun, vid, dim_lengths(2), dim1_order, dim2_order
+        integer, intent(in) :: iun, vid
         character(len = *), intent(in) :: standard_name
 
         !> Input variables (optional).
-        integer, intent(in), optional :: start(:)
+        integer, intent(in), optional :: dim_lengths(2), dim1_order, dim2_order, start(:)
         logical, intent(in), optional :: quiet
 
         !> Input/output variable.
@@ -3789,7 +3982,11 @@ module nc_io
         logical :: q = .false.
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
-        allocate(dat2(dim_lengths(1), dim_lengths(2)))
+        if (present(dim_lengths)) then
+            allocate(dat2(dim_lengths(1), dim_lengths(2)))
+        else
+            allocate(dat2(size(dat, 1), size(dat, 2)))
+        end if
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat2, start = start)
@@ -3818,22 +4015,26 @@ module nc_io
             ierr = 0
 
             !> Map variable.
-            call nc4_map_variable(iun, standard_name, dat, dat2, dim1_order, dim2_order, ierr)
+            if (present(dim1_order) .and. present(dim2_order)) then
+                call nc4_map_variable(iun, standard_name, dat, dat2, dim1_order, dim2_order, ierr)
+            else
+                dat = dat2
+            end if
         end if
 
     end subroutine
 
     subroutine nc4_get_data_2d_int( &
-        iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, &
-        start, quiet, &
+        iun, standard_name, vid, dat, &
+        dim_lengths, dim1_order, dim2_order, start, quiet, &
         ierr)
 
         !> Input variables.
-        integer, intent(in) :: iun, vid, dim_lengths(2), dim1_order, dim2_order
+        integer, intent(in) :: iun, vid
         character(len = *), intent(in) :: standard_name
 
         !> Input variables (optional).
-        integer, intent(in), optional :: start(:)
+        integer, intent(in), optional :: dim_lengths(2), dim1_order, dim2_order, start(:)
         logical, intent(in), optional :: quiet
 
         !> Input/output variable.
@@ -3848,7 +4049,11 @@ module nc_io
         logical :: q = .false.
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
-        allocate(dat2(dim_lengths(1), dim_lengths(2)))
+        if (present(dim_lengths)) then
+            allocate(dat2(dim_lengths(1), dim_lengths(2)))
+        else
+            allocate(dat2(size(dat, 1), size(dat, 2)))
+        end if
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat2, start = start)
@@ -3877,22 +4082,26 @@ module nc_io
             ierr = 0
 
             !> Map variable.
-            call nc4_map_variable(iun, standard_name, dat, dat2, dim1_order, dim2_order, ierr)
+            if (present(dim1_order) .and. present(dim2_order)) then
+                call nc4_map_variable(iun, standard_name, dat, dat2, dim1_order, dim2_order, ierr)
+            else
+                dat = dat2
+            end if
         end if
 
     end subroutine
 
     subroutine nc4_get_data_3d_real( &
-        iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, &
-        start, quiet, &
+        iun, standard_name, vid, dat, &
+        dim_lengths, dim1_order, dim2_order, dim3_order, start, quiet, &
         ierr)
 
         !> Input variables.
-        integer, intent(in) :: iun, vid, dim_lengths(3), dim1_order, dim2_order, dim3_order
+        integer, intent(in) :: iun, vid
         character(len = *), intent(in) :: standard_name
 
         !> Input variables (optional).
-        integer, intent(in), optional :: start(:)
+        integer, intent(in), optional :: dim_lengths(3), dim1_order, dim2_order, dim3_order, start(:)
         logical, intent(in), optional :: quiet
 
         !> Input/output variable.
@@ -3907,7 +4116,11 @@ module nc_io
         logical :: q = .false.
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
-        allocate(dat3(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
+        if (present(dim_lengths)) then
+            allocate(dat3(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
+        else
+            allocate(dat3(size(dat, 1), size(dat, 2), size(dat, 3)))
+        end if
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat3, start = start)
@@ -3936,22 +4149,26 @@ module nc_io
             ierr = 0
 
             !> Map variable.
-            call nc4_map_variable(iun, standard_name, dat, dat3, dim1_order, dim2_order, dim3_order, ierr)
+            if (present(dim1_order) .and. present(dim2_order) .and. present(dim3_order)) then
+                call nc4_map_variable(iun, standard_name, dat, dat3, dim1_order, dim2_order, dim3_order, ierr)
+            else
+                dat = dat3
+            end if
         end if
 
     end subroutine
 
     subroutine nc4_get_data_3d_int( &
-        iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, &
-        start, quiet, &
+        iun, standard_name, vid, dat, &
+        dim_lengths, dim1_order, dim2_order, dim3_order, start, quiet, &
         ierr)
 
         !> Input variables.
-        integer, intent(in) :: iun, vid, dim_lengths(3), dim1_order, dim2_order, dim3_order
+        integer, intent(in) :: iun, vid
         character(len = *), intent(in) :: standard_name
 
         !> Input variables (optional).
-        integer, intent(in), optional :: start(:)
+        integer, intent(in), optional :: dim_lengths(3), dim1_order, dim2_order, dim3_order, start(:)
         logical, intent(in), optional :: quiet
 
         !> Input/output variable.
@@ -3966,7 +4183,11 @@ module nc_io
         logical :: q = .false.
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
-        allocate(dat3(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
+        if (present(dim_lengths)) then
+            allocate(dat3(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
+        else
+            allocate(dat3(size(dat, 1), size(dat, 2), size(dat, 3)))
+        end if
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat3, start = start)
@@ -3995,22 +4216,26 @@ module nc_io
             ierr = 0
 
             !> Map variable.
-            call nc4_map_variable(iun, standard_name, dat, dat3, dim1_order, dim2_order, dim3_order, ierr)
+            if (present(dim1_order) .and. present(dim2_order) .and. present(dim3_order)) then
+                call nc4_map_variable(iun, standard_name, dat, dat3, dim1_order, dim2_order, dim3_order, ierr)
+            else
+                dat = dat3
+            end if
         end if
 
     end subroutine
 
     subroutine nc4_get_data_4d_real( &
-        iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, &
-        start, quiet, &
+        iun, standard_name, vid, dat, &
+        dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, start, quiet, &
         ierr)
 
         !> Input variables.
-        integer, intent(in) :: iun, vid, dim_lengths(4), dim1_order, dim2_order, dim3_order, dim4_order
+        integer, intent(in) :: iun, vid
         character(len = *), intent(in) :: standard_name
 
         !> Input variables (optional).
-        integer, intent(in), optional :: start(:)
+        integer, intent(in), optional :: dim_lengths(4), dim1_order, dim2_order, dim3_order, dim4_order, start(:)
         logical, intent(in), optional :: quiet
 
         !> Input/output variable.
@@ -4025,7 +4250,11 @@ module nc_io
         logical :: q = .false.
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
-        allocate(dat4(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
+        if (present(dim_lengths)) then
+            allocate(dat4(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
+        else
+            allocate(dat4(size(dat, 1), size(dat, 2), size(dat, 3), size(dat, 4)))
+        end if
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat4, start = start)
@@ -4054,22 +4283,26 @@ module nc_io
             ierr = 0
 
             !> Map variable.
-            call nc4_map_variable(iun, standard_name, dat, dat4, dim1_order, dim2_order, dim3_order, dim4_order, ierr)
+            if (present(dim1_order) .and. present(dim2_order) .and. present(dim3_order) .and. present(dim4_order)) then
+                call nc4_map_variable(iun, standard_name, dat, dat4, dim1_order, dim2_order, dim3_order, dim4_order, ierr)
+            else
+                dat = dat4
+            end if
         end if
 
     end subroutine
 
     subroutine nc4_get_data_4d_int( &
-        iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, &
-        start, quiet, &
+        iun, standard_name, vid, dat, &
+        dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, start, quiet, &
         ierr)
 
         !> Input variables.
-        integer, intent(in) :: iun, vid, dim_lengths(4), dim1_order, dim2_order, dim3_order, dim4_order
+        integer, intent(in) :: iun, vid
         character(len = *), intent(in) :: standard_name
 
         !> Input variables (optional).
-        integer, intent(in), optional :: start(:)
+        integer, intent(in), optional :: dim_lengths(4), dim1_order, dim2_order, dim3_order, dim4_order, start(:)
         logical, intent(in), optional :: quiet
 
         !> Input/output variable.
@@ -4084,7 +4317,11 @@ module nc_io
         logical :: q = .false.
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
-        allocate(dat4(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
+        if (present(dim_lengths)) then
+            allocate(dat4(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
+        else
+            allocate(dat4(size(dat, 1), size(dat, 2), size(dat, 3), size(dat, 4)))
+        end if
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat4, start = start)
@@ -4113,22 +4350,26 @@ module nc_io
             ierr = 0
 
             !> Map variable.
-            call nc4_map_variable(iun, standard_name, dat, dat4, dim1_order, dim2_order, dim3_order, dim4_order, ierr)
+            if (present(dim1_order) .and. present(dim2_order) .and. present(dim3_order) .and. present(dim4_order)) then
+                call nc4_map_variable(iun, standard_name, dat, dat4, dim1_order, dim2_order, dim3_order, dim4_order, ierr)
+            else
+                dat = dat4
+            end if
         end if
 
     end subroutine
 
     subroutine nc4_get_data_5d_real( &
-        iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, &
-        start, quiet, &
+        iun, standard_name, vid, dat, &
+        dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, start, quiet, &
         ierr)
 
         !> Input variables.
-        integer, intent(in) :: iun, vid, dim_lengths(5), dim1_order, dim2_order, dim3_order, dim4_order, dim5_order
+        integer, intent(in) :: iun, vid
         character(len = *), intent(in) :: standard_name
 
         !> Input variables (optional).
-        integer, intent(in), optional :: start(:)
+        integer, intent(in), optional :: dim_lengths(5), dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, start(:)
         logical, intent(in), optional :: quiet
 
         !> Input/output variable.
@@ -4143,7 +4384,11 @@ module nc_io
         logical :: q = .false.
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
-        allocate(dat5(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4), dim_lengths(5)))
+        if (present(dim_lengths)) then
+            allocate(dat5(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4), dim_lengths(5)))
+        else
+            allocate(dat5(size(dat, 1), size(dat, 2), size(dat, 3), size(dat, 4), size(dat, 5)))
+        end if
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat5, start = start)
@@ -4172,22 +4417,29 @@ module nc_io
             ierr = 0
 
             !> Map variable.
-            call nc4_map_variable(iun, standard_name, dat, dat5, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, ierr)
+            if ( &
+                present(dim1_order) .and. present(dim2_order) .and. present(dim3_order) .and. present(dim4_order) .and. &
+                present(dim5_order)) then
+                call nc4_map_variable( &
+                    iun, standard_name, dat, dat5, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, ierr)
+            else
+                dat = dat5
+            end if
         end if
 
     end subroutine
 
     subroutine nc4_get_data_5d_int( &
-        iun, standard_name, vid, dat, dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, &
-        start, quiet, &
+        iun, standard_name, vid, dat, &
+        dim_lengths, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, start, quiet, &
         ierr)
 
         !> Input variables.
-        integer, intent(in) :: iun, vid, dim_lengths(5), dim1_order, dim2_order, dim3_order, dim4_order, dim5_order
+        integer, intent(in) :: iun, vid
         character(len = *), intent(in) :: standard_name
 
         !> Input variables (optional).
-        integer, intent(in), optional :: start(:)
+        integer, intent(in), optional :: dim_lengths(5), dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, start(:)
         logical, intent(in), optional :: quiet
 
         !> Input/output variable.
@@ -4202,7 +4454,11 @@ module nc_io
         logical :: q = .false.
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
-        allocate(dat5(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4), dim_lengths(5)))
+        if (present(dim_lengths)) then
+            allocate(dat5(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4), dim_lengths(5)))
+        else
+            allocate(dat5(size(dat, 1), size(dat, 2), size(dat, 3), size(dat, 4), size(dat, 5)))
+        end if
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat5, start = start)
@@ -4231,7 +4487,14 @@ module nc_io
             ierr = 0
 
             !> Map variable.
-            call nc4_map_variable(iun, standard_name, dat, dat5, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, ierr)
+            if ( &
+                present(dim1_order) .and. present(dim2_order) .and. present(dim3_order) .and. present(dim4_order) .and. &
+                present(dim5_order)) then
+                call nc4_map_variable( &
+                    iun, standard_name, dat, dat5, dim1_order, dim2_order, dim3_order, dim4_order, dim5_order, ierr)
+            else
+                dat = dat5
+            end if
         end if
 
     end subroutine
@@ -4631,7 +4894,7 @@ module nc_io
         allocate(character(len = dim_lengths(dim2_order)) :: dat_c(dim_lengths(dim1_order)))
 
         !> Read variable.
-        call nc4_get_data(iun, standard_name, v, dat_c, dim1_order, dim2_order, ierr = ierr)
+        call nc4_get_data(iun, standard_name, v, dat_c, ierr = ierr)
         if (ierr == 0) then
             dat = adjustl(dat_c)
         end if
@@ -4833,7 +5096,7 @@ module nc_io
         integer, allocatable :: dat(:, :, :)
 
         !> Output variables.
-        real, intent(out) :: fill
+        integer, intent(out) :: fill
         integer, intent(out) :: ierr
 
         !> Output variables (optional).

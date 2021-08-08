@@ -351,8 +351,7 @@ module climate_forcing_io
 !-                    call program_abort()
 !-                end if
                 call nc4_get_time( &
-                    cm%dat(vid)%fiun, cm%dat(vid)%tid, reference_time, time_units, dtype, &
-                    cm%dat(vid)%name_time, &
+                    cm%dat(vid)%fiun, cm%dat(vid)%tid, reference_time, time_units, cm%dat(vid)%name_time, &
                     year = cm%dat(vid)%start_date%year, month = cm%dat(vid)%start_date%month, &
                     day = cm%dat(vid)%start_date%day, jday = cm%dat(vid)%start_date%jday, &
                     hour = cm%dat(vid)%start_date%hour, minutes = cm%dat(vid)%start_date%mins, &
@@ -472,8 +471,7 @@ module climate_forcing_io
 
                 !> Convert the reference time to component-wise units.
                 call nc4_get_time( &
-                    cm%dat(vid)%fiun, cm%dat(vid)%tid, reference_time, time_units, dtype, &
-                    cm%dat(vid)%name_time, &
+                    cm%dat(vid)%fiun, cm%dat(vid)%tid, reference_time, time_units, cm%dat(vid)%name_time, &
                     year = cm%dat(vid)%start_date%year, month = cm%dat(vid)%start_date%month, &
                     day = cm%dat(vid)%start_date%day, jday = cm%dat(vid)%start_date%jday, &
                     hour = cm%dat(vid)%start_date%hour, minutes = cm%dat(vid)%start_date%mins, &
