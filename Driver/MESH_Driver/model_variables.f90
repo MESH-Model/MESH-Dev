@@ -5,6 +5,7 @@
 module model_variables
 
     use mesh_io_options
+    use mesh_io_variables, only: io_file_info
 
     implicit none
 
@@ -41,8 +42,8 @@ module model_variables
     type io_state_flag
         integer :: state = FLAG_OFF
         integer :: freq = FREQ_NUL
-        character(len = 80) :: bin = ''
-        type(io_file) flo
+        character(len = FLEN_PATH) :: bin = ''
+        type(io_file_info) flo
     end type
 
     !> Type: io_state_flags

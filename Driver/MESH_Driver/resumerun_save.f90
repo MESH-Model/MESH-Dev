@@ -63,7 +63,7 @@ subroutine resumerun_save(fls, shd, cm)
     !> Save files.
 
     !> txt: In text format.
-    if (btest(vs%flgs%save%flo%ffmt, FFMT_TXT)) then
+    if (btest(vs%flgs%save%flo%ext, FFMT_TXT)) then
         fname = 'MESH_variables.txt'
 !+        call reset_tab()
         call print_message('SAVING: ' // trim(fname))
@@ -210,7 +210,7 @@ subroutine resumerun_save(fls, shd, cm)
     end if
 
     !> seq: Sequential binary format.
-    if (btest(vs%flgs%save%flo%ffmt, FFMT_SEQ)) then
+    if (btest(vs%flgs%save%flo%ext, FFMT_SEQ)) then
 
         !> Append the date to the default resume filename if auto resume is enabled.
         if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
