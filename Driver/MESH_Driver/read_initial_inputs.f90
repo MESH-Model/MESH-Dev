@@ -24,6 +24,9 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     real, dimension(:, :), allocatable :: grid
     character(len = DEFAULT_LINE_LENGTH) line, field
     character(len = DEFAULT_FIELD_LENGTH), dimension(50) :: args
+!>>fews
+    logical ltest
+!<<fews
 
     !> SUBBASINFLAG.
     integer, dimension(:), allocatable :: SUBBASIN
@@ -768,6 +771,16 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
             ic%start%mins = min(ic%start%mins, cm%dat(n)%start_date%mins)
         end do
     end if
+
+!>>fews
+    !> Read 'FEWS' configuration file if one exists.
+    inquire(file = 'runinfo.nc', exist = ltest)
+    if (ltest) then
+        call reset_tab()
+        call print_remark("A 'FEWS' configuration file 'runinfo.nc' exists and will override user-provided configuration.")
+        call read_fews_runinfo_nc('runinfo.nc', cm, ierr)
+    end if
+!<<fews
 
     !> Initialize the current time-step.
     ic%now%year = ic%start%year

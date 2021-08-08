@@ -818,6 +818,9 @@ program RUNMESH
             if (ISHEADNODE) call program_abort()
         end if
     end if
+    if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_NC4)) then
+        call read_initial_states_nc(fls, shd, ierr)
+    end if
 
     !> Update output variables with initial states.
     call output_variables_reset(shd)
@@ -1252,6 +1255,11 @@ program RUNMESH
             !> Close the file to free the unit.
             close(iun)
 
+        end if
+
+        !> Save state file.
+        if (btest(vs%flgs%save%flo%ext, FILE_TYPE_NC4)) then
+            call save_initial_states_nc(fls, shd, ierr)
         end if
 
         !> Write data to the output summary file.

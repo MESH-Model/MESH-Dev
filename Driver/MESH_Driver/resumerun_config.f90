@@ -74,6 +74,11 @@ subroutine resumerun_config(fls, shd, cm, ierr)
                 if (index(vs%flgs%resume%bin, '+STASONLY') == 0) then
                     vs%flgs%resume%bin = trim(vs%flgs%resume%bin) // '+STASONLY'
                 end if
+            case ('6')
+                if (vs%flgs%resume%state == FLAG_OFF) vs%flgs%resume%state = FLAG_ON
+                if (.not. btest(vs%flgs%resume%flo%ext, FILE_TYPE_NC4)) then
+                    vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FILE_TYPE_NC4)**FILE_TYPE_NC4
+                end if
 
             !> File formats.
             case ('r2c')

@@ -171,12 +171,13 @@ OBJECTS+=	read_initial_inputs.o \
 			read_streamflow_txt.o read_streamflow_tb0.o read_reservoir_txt.o read_reservoir_tb0.o \
 			read_abstractionpoint_tb0.o read_abstractionpoint_txt.o \
 			read_soil_ini.o \
-			read_initial_values_r2c.o \
+			read_initial_values_r2c.o read_initial_values_nc.o \
 			module_files.o
 # Output routines.
-OBJECTS+=	output_files.o save_basin_output.o
+OBJECTS+=	save_initial_values_nc.o \
+			output_files.o save_basin_output.o
 # MESH driver.
-OBJECTS+=	read_run_options.o \
+OBJECTS+=	read_run_options.o read_fews_runinfo_nc.o \
 			sa_mesh_run_within_tile.o sa_mesh_run_within_grid.o sa_mesh_run_between_grid.o \
 			resumerun_config.o resumerun_read.o resumerun_save.o \
 			MESH_driver.o
