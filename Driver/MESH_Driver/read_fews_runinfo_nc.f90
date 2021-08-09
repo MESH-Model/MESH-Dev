@@ -38,6 +38,7 @@ subroutine read_fews_runinfo_nc(fname, cm, ierr)
 
     !> Initialize the return status.
     ierr = 0
+#ifdef NETCDF
 
     !> Open the file.
 !-    call reset_tab()
@@ -159,5 +160,6 @@ subroutine read_fews_runinfo_nc(fname, cm, ierr)
 
     !> Close the file to free the unit.
     call nc4_close_file(iun, fname, ierr = ierr)
+#endif
 
 end subroutine

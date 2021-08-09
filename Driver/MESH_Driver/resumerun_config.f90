@@ -75,10 +75,18 @@ subroutine resumerun_config(fls, shd, cm, ierr)
                     vs%flgs%resume%bin = trim(vs%flgs%resume%bin) // '+STASONLY'
                 end if
             case ('6')
+#ifdef NETCDF
                 if (vs%flgs%resume%state == FLAG_OFF) vs%flgs%resume%state = FLAG_ON
                 if (.not. btest(vs%flgs%resume%flo%ext, FILE_TYPE_NC4)) then
                     vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FILE_TYPE_NC4)**FILE_TYPE_NC4
                 end if
+#else
+                call print_error( &
+                    "The NetCDF format is specified for a resume file but the module is not active. " // &
+                    "A version of MESH compiled with the NetCDF library must be used to use files in this format.")
+                ierr = 1
+                return
+#endif
 
             !> File formats.
             case ('r2c')

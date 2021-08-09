@@ -30,6 +30,7 @@ subroutine read_initial_states_nc(fls, shd, ierr)
 
     !> Initialize the return status.
     ierr = 0
+#ifdef NETCDF
 
     !> Reset spacing for screen output.
     call reset_tab()
@@ -276,5 +277,6 @@ subroutine read_initial_states_nc(fls, shd, ierr)
         ierr = 1
 !-        return
     end if
+#endif
 
 end subroutine
