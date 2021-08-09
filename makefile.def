@@ -41,14 +41,14 @@ OBJECTS+=	print_routines.o program_end.o program_abort.o \
 			module_files_variabletypes.o module_files_variables.o \
 			module_dates.o FLAGS.o \
 			mesh_io_options.o mesh_io_variables.o \
-			parse_utilities.o \
+			parse_utilities.o field_utilities.o date_utilities.o \
+			txt_io.o ensim_io.o nc_io.o \
 			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			control_variables.o \
 			variable_names.o parameter_names.o \
 			shd_variables.o fm_variables.o input_parameters.o model_variables.o \
 			output_variables.o \
 			sa_mesh_common.o \
-			txt_io.o ensim_io.o nc_io.o \
 			climate_forcing_module_config.o \
 			climate_forcing_module_io.o climate_forcing_module.o \
 			tile_connector.o

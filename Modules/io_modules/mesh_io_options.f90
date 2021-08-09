@@ -80,4 +80,34 @@ module mesh_io_options
     integer, parameter :: FREQ_DAYS = 13
     integer, parameter :: FREQ_IC = 14
 
+    !> Constants for dimension names.
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LAT = 'lat'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LATITUDE = 'latitude'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_RLAT = 'rlat'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_Y = 'y'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LON = 'lon'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LONGITUDE = 'longitude'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_RLON = 'rlon'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_X = 'x'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_TIME = 'time'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_T = 't'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_CRS = 'crs'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_SUBBASIN = 'subbasin'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NSUBBASIN = 'nsubbasin'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_N = 'n'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_BASIN = 'basin'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_B = 'b'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_GRU = 'gru'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NANE_LANDCOVER = 'landcover'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NGRU = 'ngru'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_M = 'm'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_RVR = 'rvr'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_IAK = 'iak'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_RIVERCLASS = 'riverclass'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NRVR = 'nrvr'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_K = 'k'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NML = 'nml'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LANDTILE = 'landtile'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_G = 'g'
+
 end module

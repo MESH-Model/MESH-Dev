@@ -521,11 +521,6 @@ module parse_utilities
     !>  'parse_line_values' for type character.
     subroutine parse_line_values_character1d(line, values, max_vals, istat)
 
-        !> strings: For 'value' function.
-        !> print_routines: For 'DEFAULT_FIELD_LENGTH' constant.
-        use strings
-        use print_routines
-
         !> Input variables.
         character(len = *), intent(in) :: line
 
@@ -533,7 +528,7 @@ module parse_utilities
         integer, intent(in), optional :: max_vals
 
         !> Output variables.
-        character(len = DEFAULT_FIELD_LENGTH), dimension(:), allocatable, intent(out) :: values
+        character(len = *), dimension(:), allocatable, intent(out) :: values
         integer, intent(out) :: istat
 
         !> Local variables.
@@ -897,9 +892,9 @@ module parse_utilities
             !> Assign value.
             do i = 1, min(size1, size(field))
                 if (i > n) then
-                    field(i) = adjustl(values(n))
+                    field(i) = trim(adjustl(values(n)))
                 else
-                    field(i) = adjustl(values(i))
+                    field(i) = trim(adjustl(values(i)))
                 end if
             end do
         end if
