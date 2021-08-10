@@ -62,87 +62,209 @@ module climate_forcing
 !?        allocate(cm%dat(cm%nclim))
 
         !> Set the default file name and map the climate GRD/GAT/GRU variables to 'vs'.
-        if (len_trim(cm%dat(ck%FB)%fname) == 0) then
-            cm%dat(ck%FB)%fname = 'basin_shortwave'
+        if (cm%dat(ck%FB)%factive) then
+            if (len_trim(cm%dat(ck%FB)%fname) == 0) then
+                cm%dat(ck%FB)%fname = 'basin_shortwave'
+            end if
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%fsin)) allocate(vs%grid%fsin(vs%grid%dim_length))
+                cm%dat(ck%FB)%GRD => vs%grid%fsin(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%fsin)) allocate(vs%tile%fsin(vs%tile%dim_length))
+                cm%dat(ck%FB)%GAT => vs%tile%fsin(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%fsin)) allocate(vs%gru%fsin(vs%gru%dim_length))
+                cm%dat(ck%FB)%GRU => vs%gru%fsin(1:shd%lc%NTYPE)
+            end if
         end if
-        cm%dat(ck%FB)%GRD => vs%grid%fsin(1:shd%NA)
-        cm%dat(ck%FB)%GAT => vs%tile%fsin(1:shd%lc%NML)
-        cm%dat(ck%FB)%GRU => vs%gru%fsin(1:shd%lc%NTYPE)
-        if (len_trim(cm%dat(ck%FI)%fname) == 0) then
-            cm%dat(ck%FI)%fname = 'basin_longwave'
+        if (cm%dat(ck%FI)%factive) then
+            if (len_trim(cm%dat(ck%FI)%fname) == 0) then
+                cm%dat(ck%FI)%fname = 'basin_longwave'
+            end if
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%flin)) allocate(vs%grid%flin(vs%grid%dim_length))
+                cm%dat(ck%FI)%GRD => vs%grid%flin(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%flin)) allocate(vs%tile%flin(vs%tile%dim_length))
+                cm%dat(ck%FI)%GAT => vs%tile%flin(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%flin)) allocate(vs%gru%flin(vs%gru%dim_length))
+                cm%dat(ck%FI)%GRU => vs%gru%flin(1:shd%lc%NTYPE)
+            end if
         end if
-        cm%dat(ck%FI)%GRD => vs%grid%flin(1:shd%NA)
-        cm%dat(ck%FI)%GAT => vs%tile%flin(1:shd%lc%NML)
-        cm%dat(ck%FI)%GRU => vs%gru%flin(1:shd%lc%NTYPE)
-        if (len_trim(cm%dat(ck%RT)%fname) == 0) then
-            cm%dat(ck%RT)%fname = 'basin_rain'
+        if (cm%dat(ck%RT)%factive) then
+            if (len_trim(cm%dat(ck%RT)%fname) == 0) then
+                cm%dat(ck%RT)%fname = 'basin_rain'
+            end if
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%pre)) allocate(vs%grid%pre(vs%grid%dim_length))
+                cm%dat(ck%RT)%GRD => vs%grid%pre(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%pre)) allocate(vs%tile%pre(vs%tile%dim_length))
+                cm%dat(ck%RT)%GAT => vs%tile%pre(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%pre)) allocate(vs%gru%pre(vs%gru%dim_length))
+                cm%dat(ck%RT)%GRU => vs%gru%pre(1:shd%lc%NTYPE)
+            end if
         end if
-        cm%dat(ck%RT)%GRD => vs%grid%pre(1:shd%NA)
-        cm%dat(ck%RT)%GAT => vs%tile%pre(1:shd%lc%NML)
-        cm%dat(ck%RT)%GRU => vs%gru%pre(1:shd%lc%NTYPE)
         if (cm%dat(ck%RR)%factive) then
             if (len_trim(cm%dat(ck%RR)%fname) == 0) then
                 cm%dat(ck%RR)%fname = 'basin_liquid_precip'
             end if
-            cm%dat(ck%RR)%GRD => vs%grid%prern(1:shd%NA)
-            cm%dat(ck%RR)%GAT => vs%tile%prern(1:shd%lc%NML)
-            cm%dat(ck%RR)%GRU => vs%gru%prern(1:shd%lc%NTYPE)
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%prern)) allocate(vs%grid%prern(vs%grid%dim_length))
+                cm%dat(ck%RR)%GRD => vs%grid%prern(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%prern)) allocate(vs%tile%prern(vs%tile%dim_length))
+                cm%dat(ck%RR)%GAT => vs%tile%prern(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%prern)) allocate(vs%gru%prern(vs%gru%dim_length))
+                cm%dat(ck%RR)%GRU => vs%gru%prern(1:shd%lc%NTYPE)
+            end if
         end if
         if (cm%dat(ck%SR)%factive) then
             if (len_trim(cm%dat(ck%SR)%fname) == 0) then
                 cm%dat(ck%SR)%fname = 'basin_solid_precip'
             end if
-            cm%dat(ck%SR)%GRD => vs%grid%presno(1:shd%NA)
-            cm%dat(ck%SR)%GAT => vs%tile%presno(1:shd%lc%NML)
-            cm%dat(ck%SR)%GRU => vs%gru%presno(1:shd%lc%NTYPE)
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%presno)) allocate(vs%grid%presno(vs%grid%dim_length))
+                cm%dat(ck%SR)%GRD => vs%grid%presno(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%presno)) allocate(vs%tile%presno(vs%tile%dim_length))
+                cm%dat(ck%SR)%GAT => vs%tile%presno(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%presno)) allocate(vs%gru%presno(vs%gru%dim_length))
+                cm%dat(ck%SR)%GRU => vs%gru%presno(1:shd%lc%NTYPE)
+            end if
         end if
-        if (len_trim(cm%dat(ck%TT)%fname) == 0) then
-            cm%dat(ck%TT)%fname = 'basin_temperature'
+        if (cm%dat(ck%TT)%factive) then
+            if (len_trim(cm%dat(ck%TT)%fname) == 0) then
+                cm%dat(ck%TT)%fname = 'basin_temperature'
+            end if
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%ta)) allocate(vs%grid%ta(vs%grid%dim_length))
+                cm%dat(ck%TT)%GRD => vs%grid%ta(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%ta)) allocate(vs%tile%ta(vs%tile%dim_length))
+                cm%dat(ck%TT)%GAT => vs%tile%ta(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%ta)) allocate(vs%gru%ta(vs%gru%dim_length))
+                cm%dat(ck%TT)%GRU => vs%gru%ta(1:shd%lc%NTYPE)
+            end if
         end if
-        cm%dat(ck%TT)%GRD => vs%grid%ta(1:shd%NA)
-        cm%dat(ck%TT)%GAT => vs%tile%ta(1:shd%lc%NML)
-        cm%dat(ck%TT)%GRU => vs%gru%ta(1:shd%lc%NTYPE)
-        if (len_trim(cm%dat(ck%UV)%fname) == 0) then
-            cm%dat(ck%UV)%fname = 'basin_wind'
+        if (cm%dat(ck%UV)%factive) then
+            if (len_trim(cm%dat(ck%UV)%fname) == 0) then
+                cm%dat(ck%UV)%fname = 'basin_wind'
+            end if
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%uv)) allocate(vs%grid%uv(vs%grid%dim_length))
+                cm%dat(ck%UV)%GRD => vs%grid%uv(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%uv)) allocate(vs%tile%uv(vs%tile%dim_length))
+                cm%dat(ck%UV)%GAT => vs%tile%uv(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%uv)) allocate(vs%gru%uv(vs%gru%dim_length))
+                cm%dat(ck%UV)%GRU => vs%gru%uv(1:shd%lc%NTYPE)
+            end if
         end if
-        cm%dat(ck%UV)%GRD => vs%grid%uv(1:shd%NA)
-        cm%dat(ck%UV)%GAT => vs%tile%uv(1:shd%lc%NML)
-        cm%dat(ck%UV)%GRU => vs%gru%uv(1:shd%lc%NTYPE)
         if (cm%dat(ck%WD)%factive) then
             if (len_trim(cm%dat(ck%WD)%fname) == 0) then
                 cm%dat(ck%WD)%fname = 'basin_winddir'
             end if
-            cm%dat(ck%WD)%GRD => vs%grid%wdir(1:shd%NA)
-            cm%dat(ck%WD)%GAT => vs%tile%wdir(1:shd%lc%NML)
-            cm%dat(ck%WD)%GRU => vs%gru%wdir(1:shd%lc%NTYPE)
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%wdir)) allocate(vs%grid%wdir(vs%grid%dim_length))
+                cm%dat(ck%WD)%GRD => vs%grid%wdir(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%wdir)) allocate(vs%tile%wdir(vs%tile%dim_length))
+                cm%dat(ck%WD)%GAT => vs%tile%wdir(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%wdir)) allocate(vs%gru%wdir(vs%gru%dim_length))
+                cm%dat(ck%WD)%GRU => vs%gru%wdir(1:shd%lc%NTYPE)
+            end if
         end if
-        if (len_trim(cm%dat(ck%P0)%fname) == 0) then
-            cm%dat(ck%P0)%fname = 'basin_pres'
+        if (cm%dat(ck%P0)%factive) then
+            if (len_trim(cm%dat(ck%P0)%fname) == 0) then
+                cm%dat(ck%P0)%fname = 'basin_pres'
+            end if
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%pres)) allocate(vs%grid%pres(vs%grid%dim_length))
+                cm%dat(ck%P0)%GRD => vs%grid%pres(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%pres)) allocate(vs%tile%pres(vs%tile%dim_length))
+                cm%dat(ck%P0)%GAT => vs%tile%pres(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%pres)) allocate(vs%gru%pres(vs%gru%dim_length))
+                cm%dat(ck%P0)%GRU => vs%gru%pres(1:shd%lc%NTYPE)
+            end if
         end if
-        cm%dat(ck%P0)%GRD => vs%grid%pres(1:shd%NA)
-        cm%dat(ck%P0)%GAT => vs%tile%pres(1:shd%lc%NML)
-        cm%dat(ck%P0)%GRU => vs%gru%pres(1:shd%lc%NTYPE)
-        if (len_trim(cm%dat(ck%HU)%fname) == 0) then
-            cm%dat(ck%HU)%fname = 'basin_humidity'
+        if (cm%dat(ck%HU)%factive) then
+            if (len_trim(cm%dat(ck%HU)%fname) == 0) then
+                cm%dat(ck%HU)%fname = 'basin_humidity'
+            end if
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%qa)) allocate(vs%grid%qa(vs%grid%dim_length))
+                cm%dat(ck%HU)%GRD => vs%grid%qa(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%qa)) allocate(vs%tile%qa(vs%tile%dim_length))
+                cm%dat(ck%HU)%GAT => vs%tile%qa(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%qa)) allocate(vs%gru%qa(vs%gru%dim_length))
+                cm%dat(ck%HU)%GRU => vs%gru%qa(1:shd%lc%NTYPE)
+            end if
         end if
-        cm%dat(ck%HU)%GRD => vs%grid%qa(1:shd%NA)
-        cm%dat(ck%HU)%GAT => vs%tile%qa(1:shd%lc%NML)
-        cm%dat(ck%HU)%GRU => vs%gru%qa(1:shd%lc%NTYPE)
         if (cm%dat(ck%N0)%factive) then
             if (len_trim(cm%dat(ck%N0)%fname) == 0) then
                 cm%dat(ck%N0)%fname = 'WR_runoff'
             end if
-            cm%dat(ck%N0)%GRD => vs%grid%rff(1:shd%NA)
-            cm%dat(ck%N0)%GAT => vs%tile%rff(1:shd%lc%NML)
-            cm%dat(ck%N0)%GRU => vs%gru%rff(1:shd%lc%NTYPE)
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%rff)) allocate(vs%grid%rff(vs%grid%dim_length))
+                cm%dat(ck%N0)%GRD => vs%grid%rff(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%rff)) allocate(vs%tile%rff(vs%tile%dim_length))
+                cm%dat(ck%N0)%GAT => vs%tile%rff(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%rff)) allocate(vs%gru%rff(vs%gru%dim_length))
+                cm%dat(ck%N0)%GRU => vs%gru%rff(1:shd%lc%NTYPE)
+            end if
         end if
         if (cm%dat(ck%O1)%factive) then
             if (len_trim(cm%dat(ck%O1)%fname) == 0) then
                 cm%dat(ck%O1)%fname = 'WR_recharge'
             end if
-            cm%dat(ck%O1)%GRD => vs%grid%rchg(1:shd%NA)
-            cm%dat(ck%O1)%GAT => vs%tile%rchg(1:shd%lc%NML)
-            cm%dat(ck%O1)%GRU => vs%gru%rchg(1:shd%lc%NTYPE)
+            if (associated(vs%grid)) then
+                if (.not. associated(vs%grid%rchg)) allocate(vs%grid%rchg(vs%grid%dim_length))
+                cm%dat(ck%O1)%GRD => vs%grid%rchg(1:shd%NA)
+            end if
+            if (associated(vs%tile)) then
+                if (.not. associated(vs%tile%rchg)) allocate(vs%tile%rchg(vs%tile%dim_length))
+                cm%dat(ck%O1)%GAT => vs%tile%rchg(1:shd%lc%NML)
+            end if
+            if (associated(vs%gru)) then
+                if (.not. associated(vs%gru%rchg)) allocate(vs%gru%rchg(vs%gru%dim_length))
+                cm%dat(ck%O1)%GRU => vs%gru%rchg(1:shd%lc%NTYPE)
+            end if
         end if
 
         !> Read from file to override default configuration.

@@ -53,13 +53,19 @@ module RUNCLASS36_module
 
         if (ipid /= 0 .or. izero == 0) then
 
-            !> Grab climate data.
+            !> Transfer driving variables.
             cfi%FSVH(il1:il2) = vs%tile%fsin(il1:il2)/2.0
             cfi%FSIH(il1:il2) = vs%tile%fsin(il1:il2)/2.0
             cfi%FDL(il1:il2) = vs%tile%flin(il1:il2)
-            cfi%PRE(il1:il2) = vs%tile%pre(il1:il2)
-            catv%RPRE(il1:il2) = vs%tile%prern(il1:il2)
-            catv%SPRE(il1:il2) = vs%tile%presno(il1:il2)
+            if (IPCP == 4) then
+                catv%RPRE(il1:il2) = vs%tile%prern(il1:il2)
+                catv%SPRE(il1:il2) = vs%tile%presno(il1:il2)
+
+                !> Required to activate 'CLASSI'.
+                cfi%PRE(il1:il2) = catv%RPRE(il1:il2) + catv%SPRE(il1:il2)
+            else
+                cfi%PRE(il1:il2) = vs%tile%pre(il1:il2)
+            end if
             cfi%TA(il1:il2) = vs%tile%ta(il1:il2)
             cfi%UL(il1:il2) = vs%tile%uv(il1:il2)
             cfi%PRES(il1:il2) = vs%tile%pres(il1:il2)
@@ -378,8 +384,8 @@ module RUNCLASS36_module
         if (WF_NUM_POINTS > 0) call CLASSOUT_update_files(shd)
 
         !> Copy internal variables back to MESH.
-        vs%tile%prern(il1:il2) = catv%RPCP(il1:il2)*RHOW !from [m s-1] to [kg ms-2 s-1].
-        vs%tile%presno(il1:il2) = catv%SPCP(il1:il2)*catv%RHSI(il1:il2) !from [m s-1] to [kg ms-2 s-1].
+        if (associated(vs%tile%prern)) vs%tile%prern(il1:il2) = catv%RPCP(il1:il2)*RHOW !from [m s-1] to [kg ms-2 s-1].
+        if (associated(vs%tile%presno)) vs%tile%presno(il1:il2) = catv%SPCP(il1:il2)*catv%RHSI(il1:il2) !from [m s-1] to [kg ms-2 s-1].
         vs%tile%lqwscan(il1:il2) = cpv%RCAN(il1:il2)
         vs%tile%fzwscan(il1:il2) = cpv%SNCAN(il1:il2)
         vs%tile%cmas(il1:il2) = cpv%CMAI(il1:il2)

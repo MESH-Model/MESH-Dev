@@ -459,22 +459,22 @@ module model_variables
         allocate(group)
 
         !> Meteorology/climatology variables.
-        allocate(group%fsin(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%fsvs(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%fsir(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%fsdr(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%fsdff(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%flin(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%ta(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%qa(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%pres(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%uu(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%vv(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%uv(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%wdir(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%prern(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%presno(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%pre(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%fsin(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%fsvs(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%fsir(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%fsdr(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%fsdff(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%flin(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%ta(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%qa(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%pres(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%uu(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%vv(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%uv(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%wdir(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%prern(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%presno(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%pre(n), stat = z); if (z /= 0) ierr = z
 
         !> Canopy variables.
         allocate(group%lqwscan(n), stat = z); if (z /= 0) ierr = z

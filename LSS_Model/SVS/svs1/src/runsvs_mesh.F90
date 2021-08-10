@@ -207,7 +207,55 @@ module runsvs_mesh
 !        external inisoili_svs, phyopt_initdata, runsvs_init
 
         !> Return if the process is not marked active.
-        if (.not. svs_mesh%PROCESS_ACTIVE) return
+        if (.not. svs_mesh%PROCESS_ACTIVE) then
+            return
+        else
+            call print_new_section("RUNSVS (SVS1) is active.")
+            call increase_tab()
+        end if
+
+        !> Check for required variables.
+        z = 0
+        if (.not. associated(vs%tile%fsin)) then
+            call print_error("The driving variable '" // VN_FSIN // "' is not active or not associated with an input file.")
+            z = 1
+        end if
+        if (.not. associated(vs%tile%flin)) then
+            call print_error("The driving variable '" // VN_FLIN // "' is not active or not associated with an input file.")
+            z = 1
+        end if
+        if (.not. associated(vs%tile%ta)) then
+            call print_error("The driving variable '" // VN_TA // "' is not active or not associated with an input file.")
+            z = 1
+        end if
+        if (.not. associated(vs%tile%qa)) then
+            call print_error("The driving variable '" // VN_QA // "' is not active or not associated with an input file.")
+            z = 1
+        end if
+        if (.not. associated(vs%tile%pres)) then
+            call print_error("The driving variable '" // VN_PRES // "' is not active or not associated with an input file.")
+            z = 1
+        end if
+        if (.not. associated(vs%tile%uv)) then
+            call print_error("The driving variable '" // VN_UV // "' is not active or not associated with an input file.")
+            z = 1
+        end if
+        if ((.not. associated(vs%tile%prern) .and. .not. associated(vs%tile%presno)) .or. .not. associated(vs%tile%pre)) then
+            call print_error( &
+                "No driving variable for precipitation is active nor associated with an input file. The '" // VN_PRE // &
+                "' variable or both the '" // VN_PRERN // "' and '" // VN_PRESNO // "' variables are required.")
+            z = 1
+        else if (associated(vs%tile%prern) .and. associated(vs%tile%presno) .and. associated(vs%tile%pre)) then
+            call print_info( &
+                "The '" // VN_PRERN // "' and '" // VN_PRESNO // "' variables are active. The '" // VN_PRE // &
+                "' variable is also active but inputs on the field are not being used.")
+        end if
+        if (z /= 0) then
+            call reset_tab()
+            call print_error( &
+                "The variables required to drive the model are not active or have not been associated with an input file.")
+            call program_abort()
+        end if
 
         !> Initialize common blocks, read options and configuration file.
         sigma_u = svs_mesh%vs%sigma_u
@@ -942,26 +990,24 @@ module runsvs_mesh
         !> Loop tiles.
         do k = 0, NG - 1
 
-            if(cm%dat(ck%TT)%GAT(il1 + k) > tcdk) then
-                bus(rainrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
+            !> Transfer driving variables.
+            if (associated(vs%tile%prern) .and. associated(vs%tile%presno)) then
+                bus(rainrate + k) = vs%tile%prern(il1 + k)/1000.0
+                bus(snowrate + k) = vs%tile%presno(il1 + k)/1000.0
+            else if (vs%tile%ta(il1 + k) > tcdk) then
+                bus(rainrate + k) = vs%tile%pre(il1 + k)/1000.0
                 bus(snowrate + k) = 0.0
             else
                 bus(rainrate + k) = 0.0
-                bus(snowrate + k) = cm%dat(ck%RT)%GAT(il1 + k)/1000.0
+                bus(snowrate + k) = vs%tile%pre(il1 + k)/1000.0
             end if
-            if (associated(cm%dat(ck%RR)%GAT)) then
-                bus(rainrate + k) = cm%dat(ck%RR)%GAT(il1 + k)/1000.0
-            end if
-            if (associated(cm%dat(ck%SR)%GAT)) then
-                bus(snowrate + k) = cm%dat(ck%SR)%GAT(il1 + k)/1000.0
-            end if
-            bus(flusolis + k) = cm%dat(ck%FB)%GAT(il1 + k)
-            bus(fdsi + k) = cm%dat(ck%FI)%GAT(il1 + k)
-            bus(tmoins + k) = cm%dat(ck%TT)%GAT(il1 + k)
-            bus(humoins + k) = cm%dat(ck%HU)%GAT(il1 + k)
-            bus(umoins + k) = cm%dat(ck%UV)%GAT(il1 + k)
+            bus(flusolis + k) = vs%tile%fsin(il1 + k)
+            bus(fdsi + k) = vs%tile%flin(il1 + k)
+            bus(tmoins + k) = vs%tile%ta(il1 + k)
+            bus(humoins + k) = vs%tile%qa(il1 + k)
+            bus(umoins + k) = vs%tile%uv(il1 + k)
             bus(vmoins + k) = 0.0
-            bus(pmoins + k) = cm%dat(ck%P0)%GAT(il1 + k)
+            bus(pmoins + k) = vs%tile%pres(il1 + k)
         end do
 
         call compvirttemp(sigma_t, bus, bussiz)

@@ -97,8 +97,62 @@ module RUNCLASS36_config
         character(len = DEFAULT_LINE_LENGTH) line
 
         !> Return if the process is not active.
-        if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
+        if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) then
+            return
+        else
+            call print_new_section("RUNCLASS36 is active.")
+            call increase_tab()
+        end if
 
+        !> Check for required variables.
+        ierr = 0
+        if (.not. associated(vs%tile%fsin)) then
+            call print_error("The driving variable '" // VN_FSIN // "' is not active or not associated with an input file.")
+            ierr = 1
+        end if
+        if (.not. associated(vs%tile%flin)) then
+            call print_error("The driving variable '" // VN_FLIN // "' is not active or not associated with an input file.")
+            ierr = 1
+        end if
+        if (.not. associated(vs%tile%ta)) then
+            call print_error("The driving variable '" // VN_TA // "' is not active or not associated with an input file.")
+            ierr = 1
+        end if
+        if (.not. associated(vs%tile%qa)) then
+            call print_error("The driving variable '" // VN_QA // "' is not active or not associated with an input file.")
+            ierr = 1
+        end if
+        if (.not. associated(vs%tile%pres)) then
+            call print_error("The driving variable '" // VN_PRES // "' is not active or not associated with an input file.")
+            ierr = 1
+        end if
+        if (.not. associated(vs%tile%uv)) then
+            call print_error("The driving variable '" // VN_UV // "' is not active or not associated with an input file.")
+            ierr = 1
+        end if
+        if (IPCP == 4) then
+            if (.not. associated(vs%tile%prern) .or. .not. associated(vs%tile%presno)) then
+                call print_error( &
+                    "'IPCP 4' is active but the driving variables '" // VN_PRERN // "' and '" // VN_PRESNO // &
+                    "' are not active or not associated with an input file.")
+                ierr = 1
+            else if (associated(vs%tile%pre)) then
+                call print_info( &
+                    "'IPCP 4' is active with the '" // VN_PRERN // "' and '" // VN_PRESNO // "' variables. The '" // VN_PRE // &
+                    "' variable is also active but inputs on the field are not being used.")
+            end if
+        else if (.not. associated(vs%tile%pre)) then
+            call print_error("The driving variable '" // VN_PRE // "' is not active or not associated with an input file.")
+            ierr = 1
+        end if
+        if (ierr /= 0) then
+            call reset_tab()
+            call print_error( &
+                "The variables required to drive the model are not active or have not been associated with an input file.")
+            call program_abort()
+        end if
+
+        !> Local variables.
         NA = shd%NA
         NTYPE = shd%lc%NTYPE
         NSL = shd%lc%IGND

@@ -405,8 +405,7 @@ module mountain_module
         if (allocated(mountain_mesh%pm%curvature)) deallocate(mountain_mesh%pm%curvature)
 
         !> Print summary and remark that the process is active.
-        call reset_tab()
-        call print_message('MOUNTAINMESH is ACTIVE.')
+        call print_new_section("MOUNTAINMESH is active.")
         call increase_tab()
 
         !> Print configuration information to file if 'DIAGNOSEMODE' is active.
@@ -680,6 +679,110 @@ module mountain_module
             call reset_tab()
         end if
 
+        !> Check for required variables.
+        if (mountain_mesh%pm%iwind > 0 .and. .not. associated(vs%tile%uv)) then
+            call print_error( &
+                "'IWIND' is active but the driving variable '" // VN_UV // "' is not active or not associated with an input file.")
+            ierr = 1
+            if (mountain_mesh%pm%iwind == 1 .and. .not. associated(vs%tile%wdir)) then
+                call print_error( &
+                    "'IWIND 1' is active but the driving variable '" // VN_WDIR // &
+                    "' is not active or not associated with an input file.")
+                ierr = 1
+            end if
+        end if
+        if (mountain_mesh%pm%itemp > 0 .and. .not. associated(vs%tile%ta)) then
+            call print_error( &
+                "'ITEMP' is active but the driving variable '" // VN_TA // "' is not active or not associated with an input file.")
+            ierr = 1
+        end if
+        if (mountain_mesh%pm%ipres > 0 .and. .not. associated(vs%tile%pres)) then
+            call print_error( &
+                "'IPRES' is active but the driving variable '" // VN_PRES // &
+                "' is not active or not associated with an input file.")
+            ierr = 1
+            if (.not. associated(vs%tile%ta)) then
+                call print_error( &
+                    "'IPRES' is active but the driving variable '" // VN_TA // &
+                    "' is not active or not associated with an input file.")
+                ierr = 1
+            end if
+        end if
+        if (mountain_mesh%pm%ihumd > 0 .and. .not. associated(vs%tile%qa)) then
+            call print_error( &
+                "'IHUMD' is active but the driving variable '" // VN_QA // "' is not active or not associated with an input file.")
+            ierr = 1
+            if (.not. associated(vs%tile%ta)) then
+                call print_error( &
+                    "'IHUMD' is active but the driving variable '" // VN_TA // &
+                    "' is not active or not associated with an input file.")
+                ierr = 1
+            end if
+            if (.not. associated(vs%tile%pres)) then
+                call print_error( &
+                    "'IHUMD' is active but the driving variable '" // VN_PRES // &
+                    "' is not active or not associated with an input file.")
+                ierr = 1
+            end if
+        end if
+        if (mountain_mesh%pm%irlds > 0 .and. .not. associated(vs%tile%flin)) then
+            call print_error( &
+                "'IRLDS' is active but the driving variable '" // VN_FLIN // &
+                "' is not active or not associated with an input file.")
+            ierr = 1
+            if (mountain_mesh%pm%irlds == 1 .and. .not. associated(vs%tile%ta)) then
+                call print_error( &
+                    "'IRLDS 1' is active but the driving variable '" // VN_TA // &
+                    "' is not active or not associated with an input file.")
+                ierr = 1
+            end if
+        end if
+        if (mountain_mesh%pm%ipre > 0 .and. .not. associated(vs%tile%pre)) then
+            call print_error( &
+                "'IPRE' is active but the driving variable '" // VN_PRE // "' is not active or not associated with an input file.")
+            ierr = 1
+        end if
+        if (mountain_mesh%pm%iphase > 0) then
+            if (.not. associated(vs%tile%pre)) then
+                call print_error( &
+                    "'IPHASE' is active but the driving variable '" // VN_PRE // &
+                    "' is not active or not associated with an input file.")
+                ierr = 1
+            end if
+            if (.not. associated(vs%tile%ta)) then
+                call print_error( &
+                    "'IPRE' is active with 'IPHASE' but the driving variable '" // VN_TA // &
+                    "' is not active or not associated with an input file.")
+                ierr = 1
+            end if
+            if (ierr == 0) then
+                if (.not. associated(vs%tile%prern)) allocate(vs%tile%prern(vs%tile%dim_length))
+                if (.not. associated(vs%tile%presno)) allocate(vs%tile%presno(vs%tile%dim_length))
+                if (associated(vs%grid)) then
+                    if (.not. associated(vs%grid%prern)) allocate(vs%grid%prern(vs%grid%dim_length))
+                    if (.not. associated(vs%grid%presno)) allocate(vs%grid%presno(vs%grid%dim_length))
+                end if
+            end if
+        end if
+        if (mountain_mesh%pm%irsrd > 0 .and. .not. associated(vs%tile%fsin)) then
+            call print_error( &
+                "'IRSRD' is active but the driving variable '" // VN_FSIN // &
+                "' is not active or not associated with an input file.")
+            ierr = 1
+            if (mountain_mesh%pm%irsrd == 1 .and. .not. associated(vs%tile%pres)) then
+                call print_error( &
+                    "'IRSRD 1' is active but the driving variable '" // VN_PRES // &
+                    "' is not active or not associated with an input file.")
+                ierr = 1
+            end if
+        end if
+        if (ierr /= 0) then
+            call reset_tab()
+            call print_error( &
+                "The variables required to drive the model are not active or have not been associated with an input file.")
+            call program_abort()
+        end if
+
     end subroutine
 
     subroutine mountain_within_tile(fls, shd, cm)
@@ -703,18 +806,28 @@ module mountain_module
 
         !> Local variables.
         integer k
-        real, dimension(il1:il2) :: rsrd_adjusted
-        real, dimension(il1:il2) :: rlds_adjusted
-        real, dimension(il1:il2) :: temp_adjusted
-        real, dimension(il1:il2) :: pres_adjusted
-        real, dimension(il1:il2) :: humd_adjusted
-        real, dimension(il1:il2) :: rain_adjusted
+        real, dimension(il1:il2) :: rsrd_adjusted, rsds_in
+        real, dimension(il1:il2) :: rlds_adjusted, rlds_in
+        real, dimension(il1:il2) :: temp_adjusted, temp_in
+        real, dimension(il1:il2) :: pres_adjusted, pres_in
+        real, dimension(il1:il2) :: humd_adjusted, humd_in
+        real, dimension(il1:il2) :: rain_adjusted, rain_in
         real, dimension(il1:il2) :: rain_phased_adjusted
         real, dimension(il1:il2) :: snow_phased_adjusted
-        real, dimension(il1:il2) :: wind_adjusted
+        real, dimension(il1:il2) :: wind_adjusted, wind_in, winddir_in
 
         !> Return if module is not enabled.
         if (.not. mountain_mesh%PROCESS_ACTIVE) return
+
+        !> Transfer variables.
+        if (associated(vs%tile%fsin)) rsds_in(il1:il2) = vs%tile%fsin(il1:il2)
+        if (associated(vs%tile%flin)) rlds_in(il1:il2) = vs%tile%flin(il1:il2)
+        if (associated(vs%tile%ta)) temp_in(il1:il2) = vs%tile%ta(il1:il2)
+        if (associated(vs%tile%pres)) pres_in(il1:il2) = vs%tile%pres(il1:il2)
+        if (associated(vs%tile%qa)) humd_in(il1:il2) = vs%tile%qa(il1:il2)
+        if (associated(vs%tile%pre)) rain_in(il1:il2) = vs%tile%pre(il1:il2)
+        if (associated(vs%tile%uv)) wind_in(il1:il2) = vs%tile%uv(il1:il2)
+        if (associated(vs%tile%wdir)) winddir_in(il1:il2) = vs%tile%wdir(il1:il2)
 
         !> Call routine to calculate adjusted radiation value.
         call forcing_adjust( &
@@ -731,22 +844,22 @@ module mountain_module
             mountain_mesh%pm%iphase, mountain_mesh%pm%irsrd, mountain_mesh%pm%idecl, &
             mountain_mesh%pm%tlapse, mountain_mesh%pm%plapse, mountain_mesh%pm%dtlapse, &
             mountain_mesh%pm%lwlapse, mountain_mesh%pm%wlapse, &
-            cm%dat(ck%FB)%hf, &
-            cm%dat(ck%FI)%hf, &
-            cm%dat(ck%TT)%hf, &
-            cm%dat(ck%P0)%hf, &
-            cm%dat(ck%HU)%hf, &
-            cm%dat(ck%RT)%hf, &
-            cm%dat(ck%UV)%hf, &
-            cm%dat(ck%WD)%hf, &
-            cm%dat(ck%FB)%GAT(il1:il2), &
-            cm%dat(ck%FI)%GAT(il1:il2), &
-            cm%dat(ck%TT)%GAT(il1:il2), &
-            cm%dat(ck%P0)%GAT(il1:il2), &
-            cm%dat(ck%HU)%GAT(il1:il2), &
-            cm%dat(ck%RT)%GAT(il1:il2), &
-            cm%dat(ck%UV)%GAT(il1:il2), &
-            cm%dat(ck%WD)%GAT(il1:il2), &
+            0, &
+            0, &
+            0, &
+            0, &
+            0, &
+            0, &
+            0, &
+            0, &
+            rsds_in(il1:il2), &
+            rlds_in(il1:il2), &
+            temp_in(il1:il2), &
+            pres_in(il1:il2), &
+            humd_in(il1:il2), &
+            rain_in(il1:il2), &
+            wind_in(il1:il2), &
+            winddir_in(il1:il2), &
             rsrd_adjusted(il1:il2), &
             rlds_adjusted(il1:il2), &
             temp_adjusted(il1:il2), &
@@ -761,43 +874,61 @@ module mountain_module
 
         !> Update radiation.
         !> Must update 'GRD' separately for output (e.g., energy_balance.csv).
-        cm%dat(ck%FB)%GAT(il1:il2) = rsrd_adjusted(il1:il2)
-        cm%dat(ck%FI)%GAT(il1:il2) = rlds_adjusted(il1:il2)
-        cm%dat(ck%TT)%GAT(il1:il2) = temp_adjusted(il1:il2)
-        cm%dat(ck%P0)%GAT(il1:il2) = pres_adjusted(il1:il2)
-        cm%dat(ck%HU)%GAT(il1:il2) = humd_adjusted(il1:il2)
-        cm%dat(ck%RT)%GAT(il1:il2) = rain_adjusted(il1:il2)
-        vs%tile%prern(il1:il2) = rain_phased_adjusted(il1:il2)
-        vs%tile%presno(il1:il2) = snow_phased_adjusted(il1:il2)
-        cm%dat(ck%UV)%GAT(il1:il2) = wind_adjusted(il1:il2)
-        cm%dat(ck%FB)%GRD = 0.0
-        cm%dat(ck%FI)%GRD = 0.0
-        cm%dat(ck%TT)%GRD = 0.0
-        cm%dat(ck%P0)%GRD = 0.0
-        cm%dat(ck%HU)%GRD = 0.0
-        cm%dat(ck%RT)%GRD = 0.0
-        vs%grid%prern = 0.0
-        vs%grid%presno = 0.0
-        cm%dat(ck%UV)%GRD = 0.0
+        if (associated(vs%tile%fsin)) vs%tile%fsin(il1:il2) = rsrd_adjusted(il1:il2)
+        if (associated(vs%tile%flin)) vs%tile%flin(il1:il2) = rlds_adjusted(il1:il2)
+        if (associated(vs%tile%ta)) vs%tile%ta(il1:il2) = temp_adjusted(il1:il2)
+        if (associated(vs%tile%pres)) vs%tile%pres(il1:il2) = pres_adjusted(il1:il2)
+        if (associated(vs%tile%qa)) vs%tile%qa(il1:il2) = humd_adjusted(il1:il2)
+        if (associated(vs%tile%pre)) vs%tile%pre(il1:il2) = rain_adjusted(il1:il2)
+        if (associated(vs%tile%prern)) vs%tile%prern(il1:il2) = rain_phased_adjusted(il1:il2)
+        if (associated(vs%tile%presno)) vs%tile%presno(il1:il2) = snow_phased_adjusted(il1:il2)
+        if (associated(vs%tile%uv)) vs%tile%uv(il1:il2) = wind_adjusted(il1:il2)
+        if (associated(vs%grid%fsin)) vs%grid%fsin = 0.0
+        if (associated(vs%grid%flin)) vs%grid%flin = 0.0
+        if (associated(vs%grid%ta)) vs%grid%ta = 0.0
+        if (associated(vs%grid%pres)) vs%grid%pres = 0.0
+        if (associated(vs%grid%qa)) vs%grid%qa = 0.0
+        if (associated(vs%grid%pre)) vs%grid%pre = 0.0
+        if (associated(vs%grid%prern)) vs%grid%prern = 0.0
+        if (associated(vs%grid%presno)) vs%grid%presno = 0.0
+        if (associated(vs%grid%uv)) vs%grid%uv = 0.0
         do k = il1, il2
-            cm%dat(ck%FB)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%FB)%GRD(shd%lc%ILMOS(k)) + &
-                rsrd_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-            cm%dat(ck%FI)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%FI)%GRD(shd%lc%ILMOS(k)) + &
-                rlds_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-            cm%dat(ck%TT)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%TT)%GRD(shd%lc%ILMOS(k)) + &
-                temp_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-            cm%dat(ck%P0)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%P0)%GRD(shd%lc%ILMOS(k)) + &
-                pres_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-            cm%dat(ck%HU)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%HU)%GRD(shd%lc%ILMOS(k)) + &
-                humd_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-            cm%dat(ck%RT)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%RT)%GRD(shd%lc%ILMOS(k)) + &
-                rain_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-            vs%grid%prern(shd%lc%ILMOS(k)) = vs%grid%prern(shd%lc%ILMOS(k)) + &
-                rain_phased_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-            vs%grid%presno(shd%lc%ILMOS(k)) = vs%grid%presno(shd%lc%ILMOS(k)) + &
-                snow_phased_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
-            cm%dat(ck%UV)%GRD(shd%lc%ILMOS(k)) = cm%dat(ck%UV)%GRD(shd%lc%ILMOS(k)) + &
-                wind_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            if (associated(vs%grid%fsin)) then
+                vs%grid%fsin(shd%lc%ILMOS(k)) = vs%grid%fsin(shd%lc%ILMOS(k)) + &
+                    rsrd_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
+            if (associated(vs%grid%flin)) then
+                vs%grid%flin(shd%lc%ILMOS(k)) = vs%grid%flin(shd%lc%ILMOS(k)) + &
+                    rlds_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
+            if (associated(vs%grid%ta)) then
+                vs%grid%ta(shd%lc%ILMOS(k)) = vs%grid%ta(shd%lc%ILMOS(k)) + &
+                    temp_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
+            if (associated(vs%grid%pres)) then
+                vs%grid%pres(shd%lc%ILMOS(k)) = vs%grid%pres(shd%lc%ILMOS(k)) + &
+                    pres_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
+            if (associated(vs%grid%qa)) then
+                vs%grid%qa(shd%lc%ILMOS(k)) = vs%grid%qa(shd%lc%ILMOS(k)) + &
+                    humd_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
+            if (associated(vs%grid%pre)) then
+                vs%grid%pre(shd%lc%ILMOS(k)) = vs%grid%pre(shd%lc%ILMOS(k)) + &
+                    rain_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
+            if (associated(vs%grid%prern)) then
+                vs%grid%prern(shd%lc%ILMOS(k)) = vs%grid%prern(shd%lc%ILMOS(k)) + &
+                    rain_phased_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
+            if (associated(vs%grid%presno)) then
+                vs%grid%presno(shd%lc%ILMOS(k)) = vs%grid%presno(shd%lc%ILMOS(k)) + &
+                    snow_phased_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
+            if (associated(vs%grid%uv)) then
+                vs%grid%uv(shd%lc%ILMOS(k)) = vs%grid%uv(shd%lc%ILMOS(k)) + &
+                    wind_adjusted(k)*shd%lc%ACLASS(shd%lc%ILMOS(k), shd%lc%JLMOS(k))
+            end if
         end do
 
     end subroutine
