@@ -51,7 +51,7 @@ OBJECTS+=	print_routines.o program_end.o program_abort.o \
 			output_variables.o \
 			sa_mesh_common.o \
 			climate_forcing_module_config.o \
-			climate_forcing_module_io.o climate_forcing_module.o \
+			input_forcing.o climate_forcing_module_io.o climate_forcing_module.o \
 			basin_utilities.o \
 			tile_connector.o
 # Process modules.

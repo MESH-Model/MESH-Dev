@@ -853,18 +853,18 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 !-    end do
 
     !> Set the starting date from the forcing files if none is provided.
-    if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%hour == 0 .and. ic%start%mins == 0) then
-        ic%start%year = cm%dat(1)%start_date%year
-        ic%start%jday = cm%dat(1)%start_date%jday
-        ic%start%hour = cm%dat(1)%start_date%hour
-        ic%start%mins = cm%dat(1)%start_date%mins
-        do n = 2, cm%nclim
-            ic%start%year = min(ic%start%year, cm%dat(n)%start_date%year)
-            ic%start%jday = min(ic%start%jday, cm%dat(n)%start_date%jday)
-            ic%start%hour = min(ic%start%hour, cm%dat(n)%start_date%hour)
-            ic%start%mins = min(ic%start%mins, cm%dat(n)%start_date%mins)
-        end do
-    end if
+!-    if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%hour == 0 .and. ic%start%mins == 0) then
+!-        ic%start%year = cm%dat(1)%start_date%year
+!-        ic%start%jday = cm%dat(1)%start_date%jday
+!-        ic%start%hour = cm%dat(1)%start_date%hour
+!-        ic%start%mins = cm%dat(1)%start_date%mins
+!-        do n = 2, cm%nclim
+!-            ic%start%year = min(ic%start%year, cm%dat(n)%start_date%year)
+!-            ic%start%jday = min(ic%start%jday, cm%dat(n)%start_date%jday)
+!-            ic%start%hour = min(ic%start%hour, cm%dat(n)%start_date%hour)
+!-            ic%start%mins = min(ic%start%mins, cm%dat(n)%start_date%mins)
+!-        end do
+!-    end if
 
 !>>fews
     !> Read 'FEWS' configuration file if one exists.
@@ -877,13 +877,13 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 !<<fews
 
     !> Initialize the current time-step.
-    ic%now%year = ic%start%year
-    ic%now%jday = ic%start%jday
-    call julian2monthday(ic%start%jday, ic%start%year, ic%start%month, ic%start%day)
-    ic%now%month = ic%start%month
-    ic%now%day = ic%start%day
-    ic%now%hour = ic%start%hour
-    ic%now%mins = ic%start%mins
+!-    ic%now%year = ic%start%year
+!-    ic%now%jday = ic%start%jday
+!-    call julian2monthday(ic%start%jday, ic%start%year, ic%start%month, ic%start%day)
+!-    ic%now%month = ic%start%month
+!-    ic%now%day = ic%start%day
+!-    ic%now%hour = ic%start%hour
+!-    ic%now%mins = ic%start%mins
 
     !>
     !> READ BASIN STRUCTURES.

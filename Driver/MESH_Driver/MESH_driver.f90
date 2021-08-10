@@ -106,6 +106,7 @@ program RUNMESH
     use output_files
     use save_basin_output
     use SIMSTATS
+    use input_forcing
 
     implicit none
 
@@ -113,7 +114,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1807'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1808'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -258,8 +259,37 @@ program RUNMESH
 
     !> Initialize climate forcing module.
     if (ro%RUNCLIM) then
-        ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
-        if (ENDDATA) goto 97
+!-        ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
+!-        if (ENDDATA) goto 97
+        call open_input_forcing_files(ierr)
+        if (ierr /= 0) then
+            call reset_tab()
+            call print_error("Errors occurred opening the forcing files.")
+            call program_abort()
+        end if
+    end if
+
+    !> Start date.
+    call get_start_date_components_from_forcing_files( &
+        ic%start%year, ic%start%month, ic%start%day, ic%start%jday, ic%start%hour, ic%start%mins, ierr)
+
+    !> Set the current time-step.
+    if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%hour == 0 .and. ic%start%mins == 0) then
+        call print_error("The simulation start date is not set and could not be derived from the forcing input files.")
+        call program_abort()
+    else
+        ic%now%year = ic%start%year
+        ic%now%month = ic%start%month
+        ic%now%day = ic%start%day
+        ic%now%jday = ic%start%jday
+        ic%now%hour = ic%start%hour
+        ic%now%mins = ic%start%mins
+    end if
+
+    !> Position the input forcing files to the current date.
+    if (ro%RUNCLIM) then
+        call skip_to_first_forcing_record(ierr)
+        if (ierr /= 0) goto 97
     end if
 
     !> Initialize output variables.
@@ -929,8 +959,10 @@ program RUNMESH
 
         !> Load or update climate forcing input.
         if (ro%RUNCLIM) then
-            ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
-            if (ENDDATA) exit
+!-            ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
+!-            if (ENDDATA) exit
+            call read_input_forcing_frame(ierr)
+            if (ierr /= 0) exit
         end if
 
         !> Distribute grid states (e.g., channel storage) to worker nodes.

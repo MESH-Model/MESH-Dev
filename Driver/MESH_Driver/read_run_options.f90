@@ -8,8 +8,10 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use climate_forcing
     use output_files
     use variable_names
+    use date_utilities, only: jday_to_date
 
     use FLAGS
+    use input_forcing, only: parse_basinforcingflag, forcing_file_hourly_flag_override, forcing_file_temporal_interpolation
     use save_basin_output, only: &
         BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, BASINAVGEVPFILEFLAG, BASINSWEOUTFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
     use RUNCLASS36_variables
@@ -328,12 +330,13 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 
                 !> Basin forcing time-step flag.
                 case ('HOURLYFLAG')
-                    call value(args(2), IROVAL, z)
-                    if (z == 0) then
-                        do j = 1, cm%nclim
-                            cm%dat(j)%hf = IROVAL
-                        end do
-                    end if
+!-                    call value(args(2), IROVAL, z)
+!-                    if (z == 0) then
+!-                        do j = 1, cm%nclim
+!-                            cm%dat(j)%hf = IROVAL
+!-                        end do
+!-                    end if
+                    read(args(2), *, iostat = ierr) forcing_file_hourly_flag_override
 
                 !> Model time-step.
                 case ('TIMESTEPFLAG')
@@ -358,141 +361,152 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
                 !> BASIN FORCING DATA OPTIONS
                 !> Basin forcing data.
                 case ('BASINFORCINGFLAG')
+                    call parse_basinforcingflag(trim(line), error_status = z)
 
                     !> Assign options to all forcing flags.
-                    do n = 1, cm%nclim
-                        call climate_module_parse_flag(cm%dat(n), line, z)
-                    end do
+!-                    do n = 1, cm%nclim
+!-                        call climate_module_parse_flag(cm%dat(n), line, z)
+!-                    end do
 
                     !> Special options.
-                    do j = 2, nargs
-                        select case (lowercase(args(j)))
+!-                    do j = 2, nargs
+!-                        select case (lowercase(args(j)))
 
                             !> CLASS 'MET' file.
-                            case ('met')
+!-                            case ('met')
 
                                 !> Activate the 'MET' format file.
-                                cm%dat(ck%MET)%id_var = 'CLASSMET'
-                                cm%dat(ck%MET)%factive = .true.
+!-                                cm%dat(ck%MET)%id_var = 'CLASSMET'
+!-                                cm%dat(ck%MET)%factive = .true.
 
                                 !> Assign the format to all variables.
-                                do n = 1, cm%nclim
-                                    cm%dat(n)%ffmt = 6
-                                end do
+!-                                do n = 1, cm%nclim
+!-                                    cm%dat(n)%ffmt = 6
+!-                                end do
 
                             !> Separate liquid/solid precipitation fields.
-                            case ('rr_sr')
-                                cm%dat(ck%RR)%factive = .true.
-                                cm%dat(ck%RR)%id_var = VN_PRERN
-                                cm%dat(ck%SR)%factive = .true.
-                                cm%dat(ck%SR)%id_var = VN_PRESNO
+!-                            case ('rr_sr')
+!-                                cm%dat(ck%RR)%factive = .true.
+!-                                cm%dat(ck%RR)%id_var = VN_PRERN
+!-                                cm%dat(ck%SR)%factive = .true.
+!-                                cm%dat(ck%SR)%id_var = VN_PRESNO
 
                             !> Deactivate climate variables.
-                            case ('no_clim')
-                                if (.not. cm%dat(ck%MET)%factive) then
-                                    cm%dat(ck%FB)%ffmt = -1
-                                    cm%dat(ck%FI)%ffmt = -1
-                                    cm%dat(ck%RT)%ffmt = -1
-                                    cm%dat(ck%TT)%ffmt = -1
-                                    cm%dat(ck%UV)%ffmt = -1
-                                    cm%dat(ck%P0)%ffmt = -1
-                                    cm%dat(ck%HU)%ffmt = -1
-                                end if
-                        end select
-                    end do
+!-                            case ('no_clim')
+!-                                if (.not. cm%dat(ck%MET)%factive) then
+!-                                    cm%dat(ck%FB)%ffmt = -1
+!-                                    cm%dat(ck%FI)%ffmt = -1
+!-                                    cm%dat(ck%RT)%ffmt = -1
+!-                                    cm%dat(ck%TT)%ffmt = -1
+!-                                    cm%dat(ck%UV)%ffmt = -1
+!-                                    cm%dat(ck%P0)%ffmt = -1
+!-                                    cm%dat(ck%HU)%ffmt = -1
+!-                                end if
+!-                        end select
+!-                    end do
 
                     !> Activate climate variables if a file format has been specified.
                     !> Deactivate climate variables if a file format was nullified via the 'no_clim' option.
                     !> To override this behaviour, respective 'BASIN' flags should list after 'BASINFORCINGFLAG'.
-                    n = ck%FB
-                    if (cm%dat(n)%ffmt /= -1) then
-                        cm%dat(n)%factive = .true.
-                        cm%dat(n)%id_var = VN_FSIN
-                    else
-                        cm%dat(n)%factive = .false.
-                    end if
-                    n = ck%FI
-                    if (cm%dat(n)%ffmt /= -1) then
-                        cm%dat(n)%factive = .true.
-                        cm%dat(n)%id_var = VN_FLIN
-                    else
-                        cm%dat(n)%factive = .false.
-                    end if
-                    n = ck%RT
-                    if (cm%dat(n)%ffmt /= -1) then
-                        cm%dat(n)%factive = .true.
-                        cm%dat(n)%id_var = VN_PRE
-                    else
-                        cm%dat(n)%factive = .false.
-                    end if
-                    n = ck%TT
-                    if (cm%dat(n)%ffmt /= -1) then
-                        cm%dat(n)%factive = .true.
-                        cm%dat(n)%id_var = VN_TA
-                    else
-                        cm%dat(n)%factive = .false.
-                    end if
-                    n = ck%UV
-                    if (cm%dat(n)%ffmt /= -1) then
-                        cm%dat(n)%factive = .true.
-                        cm%dat(n)%id_var = VN_UV
-                    else
-                        cm%dat(n)%factive = .false.
-                    end if
-                    n = ck%P0
-                    if (cm%dat(n)%ffmt /= -1) then
-                        cm%dat(n)%factive = .true.
-                        cm%dat(n)%id_var = VN_PRES
-                    else
-                        cm%dat(n)%factive = .false.
-                    end if
-                    n = ck%HU
-                    if (cm%dat(n)%ffmt /= -1) then
-                        cm%dat(n)%factive = .true.
-                        cm%dat(n)%id_var = VN_QA
-                    else
-                        cm%dat(n)%factive = .false.
-                    end if
+!-                    n = ck%FB
+!-                    if (cm%dat(n)%ffmt /= -1) then
+!-                        cm%dat(n)%factive = .true.
+!-                        cm%dat(n)%id_var = VN_FSIN
+!-                    else
+!-                        cm%dat(n)%factive = .false.
+!-                    end if
+!-                    n = ck%FI
+!-                    if (cm%dat(n)%ffmt /= -1) then
+!-                        cm%dat(n)%factive = .true.
+!-                        cm%dat(n)%id_var = VN_FLIN
+!-                    else
+!-                        cm%dat(n)%factive = .false.
+!-                    end if
+!-                    n = ck%RT
+!-                    if (cm%dat(n)%ffmt /= -1) then
+!-                        cm%dat(n)%factive = .true.
+!-                        cm%dat(n)%id_var = VN_PRE
+!-                    else
+!-                        cm%dat(n)%factive = .false.
+!-                    end if
+!-                    n = ck%TT
+!-                    if (cm%dat(n)%ffmt /= -1) then
+!-                        cm%dat(n)%factive = .true.
+!-                        cm%dat(n)%id_var = VN_TA
+!-                    else
+!-                        cm%dat(n)%factive = .false.
+!-                    end if
+!-                    n = ck%UV
+!-                    if (cm%dat(n)%ffmt /= -1) then
+!-                        cm%dat(n)%factive = .true.
+!-                        cm%dat(n)%id_var = VN_UV
+!-                    else
+!-                        cm%dat(n)%factive = .false.
+!-                    end if
+!-                    n = ck%P0
+!-                    if (cm%dat(n)%ffmt /= -1) then
+!-                        cm%dat(n)%factive = .true.
+!-                        cm%dat(n)%id_var = VN_PRES
+!-                    else
+!-                        cm%dat(n)%factive = .false.
+!-                    end if
+!-                    n = ck%HU
+!-                    if (cm%dat(n)%ffmt /= -1) then
+!-                        cm%dat(n)%factive = .true.
+!-                        cm%dat(n)%id_var = VN_QA
+!-                    else
+!-                        cm%dat(n)%factive = .false.
+!-                    end if
                 case ('BASINSHORTWAVEFLAG')
-                    cm%dat(ck%FB)%id_var = VN_FSIN
-                    call climate_module_parse_flag(cm%dat(ck%FB), line, z)
-                    cm%dat(ck%FB)%factive = (z == 0)
+                    call parse_basinforcingflag(trim(line), error_status = z)
+!-                    cm%dat(ck%FB)%id_var = VN_FSIN
+!-                    call climate_module_parse_flag(cm%dat(ck%FB), line, z)
+!-                    cm%dat(ck%FB)%factive = (z == 0)
                 case ('BASINLONGWAVEFLAG')
-                    cm%dat(ck%FI)%id_var = VN_FLIN
-                    call climate_module_parse_flag(cm%dat(ck%FI), line, z)
-                    cm%dat(ck%FI)%factive = (z == 0)
+                    call parse_basinforcingflag(trim(line), error_status = z)
+!-                    cm%dat(ck%FI)%id_var = VN_FLIN
+!-                    call climate_module_parse_flag(cm%dat(ck%FI), line, z)
+!-                    cm%dat(ck%FI)%factive = (z == 0)
                 case ('BASINRAINFLAG')
-                    cm%dat(ck%RT)%id_var = VN_PRE
-                    call climate_module_parse_flag(cm%dat(ck%RT), line, z)
-                    cm%dat(ck%RT)%factive = (z == 0)
+                    call parse_basinforcingflag(trim(line), error_status = z)
+!-                    cm%dat(ck%RT)%id_var = VN_PRE
+!-                    call climate_module_parse_flag(cm%dat(ck%RT), line, z)
+!-                    cm%dat(ck%RT)%factive = (z == 0)
                 case ('BASINTEMPERATUREFLAG')
-                    cm%dat(ck%TT)%id_var = VN_TA
-                    call climate_module_parse_flag(cm%dat(ck%TT), line, z)
-                    cm%dat(ck%TT)%factive = (z == 0)
+                    call parse_basinforcingflag(trim(line), error_status = z)
+!-                    cm%dat(ck%TT)%id_var = VN_TA
+!-                    call climate_module_parse_flag(cm%dat(ck%TT), line, z)
+!-                    cm%dat(ck%TT)%factive = (z == 0)
                 case ('BASINWINDFLAG')
-                    cm%dat(ck%UV)%id_var = VN_UV
-                    call climate_module_parse_flag(cm%dat(ck%UV), line, z)
-                    cm%dat(ck%UV)%factive = (z == 0)
+                    call parse_basinforcingflag(trim(line), error_status = z)
+!-                    cm%dat(ck%UV)%id_var = VN_UV
+!-                    call climate_module_parse_flag(cm%dat(ck%UV), line, z)
+!-                    cm%dat(ck%UV)%factive = (z == 0)
                 case ('BASINWINDDIRFLAG')
-                    cm%dat(ck%WD)%id_var = VN_WDIR
-                    call climate_module_parse_flag(cm%dat(ck%WD), line, z)
-                    cm%dat(ck%WD)%factive = (z == 0)
+                    call parse_basinforcingflag(trim(line), error_status = z)
+!-                    cm%dat(ck%WD)%id_var = VN_WDIR
+!-                    call climate_module_parse_flag(cm%dat(ck%WD), line, z)
+!-                    cm%dat(ck%WD)%factive = (z == 0)
                 case ('BASINPRESFLAG')
-                    cm%dat(ck%P0)%id_var = VN_PRES
-                    call climate_module_parse_flag(cm%dat(ck%P0), line, z)
-                    cm%dat(ck%P0)%factive = (z == 0)
+                    call parse_basinforcingflag(trim(line), error_status = z)
+!-                    cm%dat(ck%P0)%id_var = VN_PRES
+!-                    call climate_module_parse_flag(cm%dat(ck%P0), line, z)
+!-                    cm%dat(ck%P0)%factive = (z == 0)
                 case ('BASINHUMIDITYFLAG')
-                    cm%dat(ck%HU)%id_var = VN_QA
-                    call climate_module_parse_flag(cm%dat(ck%HU), line, z)
-                    cm%dat(ck%HU)%factive = (z == 0)
+                    call parse_basinforcingflag(trim(line), error_status = z)
+!-                    cm%dat(ck%HU)%id_var = VN_QA
+!-                    call climate_module_parse_flag(cm%dat(ck%HU), line, z)
+!-                    cm%dat(ck%HU)%factive = (z == 0)
                 case ('BASINRUNOFFFLAG')
-                    cm%dat(ck%N0)%id_var = VN_RFF
-                    call climate_module_parse_flag(cm%dat(ck%N0), line, z)
-                    cm%dat(ck%N0)%factive = (z == 0)
+                    call parse_basinforcingflag(trim(line), error_status = z)
+!-                    cm%dat(ck%N0)%id_var = VN_RFF
+!-                    call climate_module_parse_flag(cm%dat(ck%N0), line, z)
+!-                    cm%dat(ck%N0)%factive = (z == 0)
                 case ('BASINRECHARGEFLAG')
-                    cm%dat(ck%O1)%id_var = VN_RCHG
-                    call climate_module_parse_flag(cm%dat(ck%O1), line, z)
-                    cm%dat(ck%O1)%factive = (z == 0)
+                    call parse_basinforcingflag(trim(line), error_status = z)
+!-                    cm%dat(ck%O1)%id_var = VN_RCHG
+!-                    call climate_module_parse_flag(cm%dat(ck%O1), line, z)
+!-                    cm%dat(ck%O1)%factive = (z == 0)
 
                 case ('STREAMFLOWFILEFLAG')
                     fms%stmg%qomeas%fls%ffmt = adjustl(args(2))
@@ -516,16 +530,17 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
 
                 !> Interpolation flag for climate forcing data.
                 case ('INTERPOLATIONFLAG')
-                    call value(args(2), IROVAL, z)
-                    if (z == 0) then
-                        cm%dat(ck%FB)%ipflg = IROVAL
-                        cm%dat(ck%FI)%ipflg = IROVAL
-                        cm%dat(ck%RT)%ipflg = IROVAL
-                        cm%dat(ck%TT)%ipflg = IROVAL
-                        cm%dat(ck%UV)%ipflg = IROVAL
-                        cm%dat(ck%P0)%ipflg = IROVAL
-                        cm%dat(ck%HU)%ipflg = IROVAL
-                    end if
+                    read(args(2), *, iostat = ierr) forcing_file_temporal_interpolation
+!-                    call value(args(2), IROVAL, z)
+!-                    if (z == 0) then
+!-                        cm%dat(ck%FB)%ipflg = IROVAL
+!-                        cm%dat(ck%FI)%ipflg = IROVAL
+!-                        cm%dat(ck%RT)%ipflg = IROVAL
+!-                        cm%dat(ck%TT)%ipflg = IROVAL
+!-                        cm%dat(ck%UV)%ipflg = IROVAL
+!-                        cm%dat(ck%P0)%ipflg = IROVAL
+!-                        cm%dat(ck%HU)%ipflg = IROVAL
+!-                    end if
 
                 case ('SUBBASINFLAG')
                     call value(args(2), SUBBASINFLAG, z)
@@ -764,7 +779,9 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     read(iun, *, err = 98)
     read(iun, *, err = 98)
     read(iun, *, err = 98) ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
+    call jday_to_date(ic%start%year, ic%start%jday, ic%start%month, ic%start%day)
     read(iun, *, err = 98) ic%stop%year, ic%stop%jday, ic%stop%hour, ic%stop%mins
+    call jday_to_date(ic%stop%year, ic%stop%jday, ic%stop%month, ic%stop%day)
 
     !> Close the file.
     close(iun)

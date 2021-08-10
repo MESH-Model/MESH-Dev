@@ -51,6 +51,7 @@ module parse_utilities
     !*  values: List of values found in the line.
     !*  istat: Return status.
     interface parse_line_values
+        module procedure parse_line_values_char1d
         module procedure parse_line_values_character1d
         module procedure parse_line_values_integer1d
         module procedure parse_line_values_real1d
@@ -513,6 +514,128 @@ module parse_utilities
             istat = istat + radix(istat)**pstat%ALLOCATION_ERROR
         else
             field = huge(field)
+        end if
+
+    end subroutine
+
+    subroutine parse_line_values_char1d(line, delimiter, n_skip_cols, keep_alloc, quiet, values, error_status)
+
+        !> 'print_routines': For print routines, format statements, and line lengths and limits.
+        use print_routines
+
+        !> Input/output variables.
+        character(len = *), intent(in) :: line
+        character, intent(in), optional :: delimiter
+        integer, intent(in), optional :: n_skip_cols
+        logical, intent(in), optional :: keep_alloc
+        logical, intent(in), optional :: quiet
+        character(len = *), dimension(:), allocatable :: values
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        character(len = len_trim(line)) :: line_buffer
+        character(len = len_trim(line)), dimension(len_trim(line)) :: vals
+        character(len = DEFAULT_FIELD_LENGTH) code1, code2
+        character sep
+        integer j, i, iskip_cols, word_count
+        logical v, in_whitespace, in_quotes, realloc_values
+
+        !> Status.
+        error_status = 0
+
+        !> Verbosity.
+        v = .true.
+        if (present(quiet)) v = (.not. quiet)
+
+        !> Deallocate input variable if allocated.
+        realloc_values = .true.
+        if (present(keep_alloc)) realloc_values = .not. keep_alloc
+        if (realloc_values) then
+            if (allocated(values)) deallocate(values)
+        else
+
+            !> Reset values.
+            values = ''
+        end if
+
+        !> Make a copy of the line.
+        line_buffer = trim(line)
+
+        !> Delimiter.
+        sep = ' '
+        if (present(delimiter)) sep = delimiter
+
+        !> Count the number of values in the line.
+        in_quotes = .false.
+        in_whitespace = .false.
+        word_count = 1
+        j = 1
+        vals = ''
+        do i = 1, len_trim(line_buffer)
+
+            !> Convert tabs to spaces.
+            if (line_buffer(i:i) == achar(9)) line_buffer(:) = ' '
+
+            !> Check character.
+            if (line_buffer(i:i) == sep .and. .not. in_quotes) then
+
+                !> In whitespace.
+                in_whitespace = .true.
+            else if (line_buffer(i:i) == '"' .or. line_buffer(i:i) == "'") then
+
+                !> Entering or exiting quote.
+                in_quotes = (.not. in_quotes)
+            else
+
+                !> Start of new word if was in whitespace.
+                if (in_whitespace) then
+                    word_count = word_count + 1
+                    j = 1
+                    in_whitespace = .false.
+                end if
+
+                !> Add character to current value.
+                vals(word_count)(j:j) = line_buffer(i:i)
+                j = j + 1
+            end if
+        end do
+
+        !> Clip internal list of values and save to output array.
+        iskip_cols = 0
+        if (present(n_skip_cols)) iskip_cols = n_skip_cols
+        if (word_count <= iskip_cols) then
+            write(code1, *) iskip_cols
+            write(code2, *) word_count
+            if (v) call print_error( &
+                "The number of values parsed from the line (" // trim(adjustl(code1)) // &
+                ") is less than or equal to the number of values to skip from the beginning of the line (" // &
+                trim(adjustl(code2)) // ").")
+            error_status = 1
+        else
+            if (realloc_values) then
+                allocate(values(word_count - iskip_cols))
+            else if ((word_count - iskip_cols) < size(values)) then
+                write(code1, *) (word_count - iskip_cols)
+                write(code2, *) size(values)
+                if (v) then
+                    call print_warning( &
+                        "The number of values parsed from the line (" // trim(adjustl(code1)) // &
+                        ") is less than the expected number of values (" // trim(adjustl(code2)) // "). " // &
+                        "The resulting field contains empty values.")
+                end if
+            else if ((word_count - iskip_cols) > size(values)) then
+                write(code1, *) (word_count - iskip_cols)
+                write(code2, *) size(values)
+                if (v) then
+                    call print_warning( &
+                        "The number of values parsed from the line (" // trim(adjustl(code1)) // &
+                        ") is greater than the expected number of values (" // trim(adjustl(code2)) // "). " // &
+                        "Trailing values are omitted from the resulting field.")
+                end if
+            end if
+            do i = 1, size(values)
+                values(i) = trim(adjustl(vals(i + iskip_cols)))
+            end do
         end if
 
     end subroutine
