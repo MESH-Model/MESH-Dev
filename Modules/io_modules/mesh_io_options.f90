@@ -110,4 +110,19 @@ module mesh_io_options
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LANDTILE = 'landtile'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_G = 'g'
 
+    !> Constants for units.
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_UNITS_DEGREES = 'degrees'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_UNITS_DECIMAL_DEGREES = 'decimal_degrees'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_UNITS_DEGREES_EAST = 'degrees_east'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_UNITS_DEGREES_NORTH = 'degrees_north'
+
+    !> Constants for MESH variable dimension order (derived).
+    integer, parameter :: MAP_ORDER_X = 1
+    integer, parameter :: MAP_ORDER_Y = 2
+    integer, parameter :: MAP_ORDER_M = 3
+    integer, parameter :: MAP_ORDER_K = 4
+    integer, parameter :: MAP_ORDER_N = 5
+    integer, parameter :: MAP_ORDER_B = 6
+    integer, parameter :: MAP_ORDER_G = 7
+
 end module

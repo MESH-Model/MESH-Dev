@@ -25,6 +25,21 @@ module variable_names
     character(len = *), parameter :: VN_NML = 'NML'
     character(len = *), parameter :: VN_IG = 'IG'
 
+    !> Basin attributes (general).
+    character(len = *), parameter :: VN_NEXT = 'NEXT'
+    character(len = *), parameter :: VN_GRIDAREA = 'GRIDAREA'
+    character(len = *), parameter :: VN_ELEV = 'ELEV'
+    character(len = *), parameter :: VN_TOPOSLOPE = 'TOPOSLOPE'
+
+    !> Drainage/routing attributes.
+    character(len = *), parameter :: VN_IRVR = 'IRVR'
+    character(len = *), parameter :: VN_CHNLSLOPE = 'CHNLSLOPE'
+    character(len = *), parameter :: VN_CHNLLENGTH = 'CHNLLENGTH'
+    character(len = *), parameter :: VN_ICHNL = 'ICHNL'
+    character(len = *), parameter :: VN_IREACH = 'IREACH'
+    character(len = *), parameter :: VN_DA = 'DA'
+    character(len = *), parameter :: VN_BNKFLL = 'BNKFLL'
+
     !> Meteorology/climatology variables.
     character(len = *), parameter :: VN_FSIN = 'FSIN'
     character(len = *), parameter :: VN_FSVS = 'FSVS'

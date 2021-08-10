@@ -229,6 +229,32 @@ module model_variables
         real, dimension(:), pointer :: div => null()
         real, dimension(:), pointer :: abstr => null()
 
+        !> Basin attributes (general).
+        integer, dimension(:), allocatable :: next_id
+        real, dimension(:), allocatable :: surface_area
+        real, dimension(:), allocatable :: area_weight
+        real, dimension(:), allocatable :: topo_elev
+        real, dimension(:), allocatable :: topo_slope
+
+        !> Routing attributes.
+        real, dimension(:), allocatable :: chnl_slope
+        real, dimension(:), allocatable :: chnl_length
+        integer, dimension(:), allocatable :: ichnl
+        integer, dimension(:), allocatable :: ireach
+        real, dimension(:), allocatable :: drainage_area
+        real, dimension(:), allocatable :: bankfull
+
+        !> Reference fields.
+        real, dimension(:), allocatable :: lon
+        real, dimension(:), allocatable :: lat
+
+        !> Maps.
+        integer, dimension(:), allocatable :: from_grid_x
+        integer, dimension(:), allocatable :: from_grid_y
+        integer, dimension(:), allocatable :: from_gru
+        integer, dimension(:), allocatable :: from_riverclass
+        integer, dimension(:), allocatable :: from_cell
+
         !> Indices.
         character(len = SHORT_FIELD_LENGTH) :: dim_name = ''
         integer :: dim_length = 0
