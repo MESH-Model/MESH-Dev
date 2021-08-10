@@ -3,10 +3,13 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     use mpi_module
     use strings
     use sa_mesh_common
+    use projection_variables
     use model_files_variables
     use FLAGS
     use climate_forcing
     use parse_utilities
+    use mesh_io
+    use basin_utilities
 
     implicit none
 
@@ -27,6 +30,10 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 !>>fews
     logical ltest
 !<<fews
+!>>
+    class(io_file), allocatable :: db
+    type(io_field_wrapper), dimension(:), allocatable :: field_list
+!<<
 
     !> SUBBASINFLAG.
     integer, dimension(:), allocatable :: SUBBASIN
@@ -95,8 +102,9 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 
         !> 'r2c' format shed file.
         case (1)
-            call read_shed_r2c(shd, fls%fl(mfk%f20)%iun, fls%fl(mfk%f20)%fn, ierr)
-            if (ierr /= 0) return
+!-            call read_shed_r2c(shd, fls%fl(mfk%f20)%iun, fls%fl(mfk%f20)%fn, ierr)
+!-            if (ierr /= 0) return
+            db = io_file_r2c(full_path = 'MESH_drainage_database.r2c', fields = null())
 
         !> Map file (diagnostic).
         if (SHDTOMAPFLAG .and. ISHEADNODE) then
@@ -308,27 +316,42 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         case (2)
 
             !> Assign presumed projection.
-            shd%CoordSys%Proj = 'LATLONG'
-            shd%CoordSys%Ellips = 'GRS80'
+!-            shd%CoordSys%Proj = 'LATLONG'
+!-            shd%CoordSys%Ellips = 'GRS80'
 
             !> Assign no projection or grid properties.
-            shd%xOrigin = 0.0; shd%xDelta = 1.0; shd%xCount = 1; shd%jxMin = 0; shd%jxMax = 1; shd%GRDE = 1.0
-            shd%yOrigin = 0.0; shd%yDelta = 1.0; shd%yCount = 1; shd%iyMin = 0; shd%iyMax = 1; shd%GRDN = 1.0
-            shd%AL = 1.0
-            shd%NA = 1; shd%NAA = 1; shd%lc%NTYPE = 1; shd%NRVR = 0
+!-            shd%xOrigin = 0.0; shd%xDelta = 1.0; shd%xCount = 1; shd%jxMin = 0; shd%jxMax = 1; shd%GRDE = 1.0
+!-            shd%yOrigin = 0.0; shd%yDelta = 1.0; shd%yCount = 1; shd%iyMin = 0; shd%iyMax = 1; shd%GRDN = 1.0
+!-            shd%AL = 1.0
+!-            shd%NA = 1; shd%NAA = 1; shd%lc%NTYPE = 1; shd%NRVR = 0
 
             !> Allocate and initialize grid variables.
-            allocate( &
-                shd%xxx(shd%NA), shd%yyy(shd%NA), shd%RNKGRD(shd%yCount, shd%xCount), &
-                shd%NEXT(shd%NA), &
-                shd%SLOPE_INT(shd%NA), &
-                shd%AREA(shd%NA), shd%FRAC(shd%NA), &
-                shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1), stat=ierr)
-            shd%xxx = 1; shd%yyy = 1; shd%RNKGRD = 1
-            shd%NEXT = 0
-            shd%SLOPE_INT = 1.0E-5
-            shd%AREA = 1.0; shd%FRAC=shd%AREA/shd%AL/shd%AL
-            shd%lc%ACLASS(:, shd%lc%NTYPE) = 1.0; shd%lc%ACLASS(:, shd%lc%NTYPE + 1) = 0.0
+!-            allocate( &
+!-                shd%xxx(shd%NA), shd%yyy(shd%NA), shd%RNKGRD(shd%yCount, shd%xCount), &
+!-                shd%NEXT(shd%NA), &
+!-                shd%SLOPE_INT(shd%NA), &
+!-                shd%AREA(shd%NA), shd%FRAC(shd%NA), &
+!-                shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1), stat=ierr)
+!-            shd%xxx = 1; shd%yyy = 1; shd%RNKGRD = 1
+!-            shd%NEXT = 0
+!-            shd%SLOPE_INT = 1.0E-5
+!-            shd%AREA = 1.0; shd%FRAC=shd%AREA/shd%AL/shd%AL
+!-            shd%lc%ACLASS(:, shd%lc%NTYPE) = 1.0; shd%lc%ACLASS(:, shd%lc%NTYPE + 1) = 0.0
+            call reset_tab()
+            call print_message("READING: (creating basin for point mode)")
+            call increase_tab()
+            allocate(db)
+            allocate(db%fields(10))
+            db%fields(1)%field = io_field_char(label = 'projection', dat = 'LATLONG')
+            db%fields(2)%field = io_field_char(label = 'ellipsoid', dat = 'GRS80')
+            db%fields(3)%field = io_field_int1d(label = 'Rank', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1, 2/))
+            db%fields(4)%field = io_field_int1d(label = 'Next', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/2, 0/))
+            db%fields(5)%field = io_field_real1d(label = 'lat', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/))
+            db%fields(6)%field = io_field_real1d(label = 'lon', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/))
+            db%fields(7)%field = io_field_real1d(label = 'GridArea', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1.0, 0.0/))
+            db%fields(8)%field = io_field_int(label = 'ngru', dat = 2)
+            db%fields(9)%field = io_field_real1d(label = 'gru 1', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1.0, 0.0/))
+            db%fields(10)%field = io_field_real1d(label = 'gru 2', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/))
 
             !> Force 'RUNMODE noroute' (overrides the run option).
 !-            ro%RUNCHNL = .false.
@@ -337,8 +360,9 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         !> 'nc' format shed file.
         case (3)
 #ifdef NETCDF
-            call read_shed_nc(shd, 'MESH_drainage_database.nc', '', '', '', '', ierr)
-            if (ierr /= 0) return
+!-            call read_shed_nc(shd, 'MESH_drainage_database.nc', '', '', '', '', ierr)
+!-            if (ierr /= 0) return
+            db = io_file_nc(full_path = 'MESH_drainage_database.nc', fields = null())
 #else
             call print_error( &
                 "The format of the drainage database input file is specified as NetCDF but the module is not active. " // &
@@ -348,14 +372,16 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 #endif
 
         case (4)
-            call read_shed_csv(shd, 'MESH_drainage_database.asc', ierr)
-            if (ierr /= 0) return
+!-            call read_shed_csv(shd, 'MESH_drainage_database.asc', ierr)
+!-            if (ierr /= 0) return
+            db = io_file_txt_delimited(full_path = 'MESH_drainage_database.asc', fields = null(), dim_names = (/DIM_NAME_N/))
 
         !> 'nc' format (vector/subbasin).
         case (5)
 #ifdef NETCDF
-            call read_shed_nc_subbasin(shd, 'MESH_drainage_database.nc', '', '', ierr)
-            if (ierr /= 0) return
+!-            call read_shed_nc_subbasin(shd, 'MESH_drainage_database.nc', '', '', ierr)
+!-            if (ierr /= 0) return
+            db = io_file_nc(full_path = 'MESH_drainage_database.nc', fields = null())
 #else
             call print_error( &
                 "The format of the drainage database input file is specified as NetCDF but the module is not active. " // &
@@ -373,121 +399,138 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
             return
 
     end select
+!>>
+
+    !> Read fields from file.
+    if (.not. allocated(db)) then
+        call print_error("Unrecognized basin information file format.")
+        ierr = 1
+    else if (len_trim(db%full_path) > 0) then
+        call open_input_file(db, error_status = ierr)
+        if (ierr /= 0) return
+    end if
+    call read_file_fields_to_buffer(db, error_status = ierr)
+    if (ierr /= 0) return
+
+    !> Assign fields.
+    call basin_info_from_field_list(db%fields, ierr)
+    if (ierr /= 0) return
+!<<
 
     !> Check maximum number of cells and outlets, and print a warning if an adjustment is made.
-    if (ro%RUNCHNL) then
-        if (shd%NA /= maxval(shd%NEXT)) then
-            line = 'Total number of grids adjusted to maximum RANK. Consider adjusting the input files.'
-            call print_remark(line)
-            shd%NA = maxval(shd%NEXT)
-        end if
-        if (shd%NAA /= (maxval(shd%NEXT) - count(shd%NEXT == 0))) then
-            line = 'The number of outlets adjusted to the number of cells where NEXT is zero. Consider adjusting the input files.'
-            call print_remark(line)
-            shd%NAA = maxval(shd%NEXT) - count(shd%NEXT == 0)
-        end if
-    end if
+!-    if (ro%RUNCHNL) then
+!-        if (shd%NA /= maxval(shd%NEXT)) then
+!-            line = 'Total number of grids adjusted to maximum RANK. Consider adjusting the input files.'
+!-            call print_remark(line)
+!-            shd%NA = maxval(shd%NEXT)
+!-        end if
+!-        if (shd%NAA /= (maxval(shd%NEXT) - count(shd%NEXT == 0))) then
+!-            line = 'The number of outlets adjusted to the number of cells where NEXT is zero. Consider adjusting the input files.'
+!-            call print_remark(line)
+!-            shd%NAA = maxval(shd%NEXT) - count(shd%NEXT == 0)
+!-        end if
+!-    end if
 
     !> Check for errors in the basin configuration.
-    z = 0
+!-    z = 0
 
     !> Print messages to screen (including non-critical warnings).
-    do n = 1, shd%NAA
+!-    do n = 1, shd%NAA
 
         !> Prepare 'RANK' ID for output.
-        write(line, FMT_GEN) n
-        line = 'RANK ' // trim(adjustl(line))
+!-        write(line, FMT_GEN) n
+!-        line = 'RANK ' // trim(adjustl(line))
 
         !> If channel routing is enabled.
         !>  Errors: Invalid channel slope; invalid channel length; invalid grid area; invalid drainage area.
         !>  Warnings: NEXT <= RANK.
-        if (ro%RUNCHNL) then
-            if (shd%SLOPE_CHNL(n) <= 0) then
-                z = 1
-                call print_message('ERROR: Invalid or negative channel slope at ' // trim(adjustl(line)) // '.')
-            end if
-            if (shd%CHNL_LEN(n) <= 0.0) then
-                z = 1
-                call print_message('ERROR: Invalid or negative channel length at ' // trim(adjustl(line)) // '.')
-            end if
-            if (shd%AREA(n) <= 0.0) then
-                z = 1
-                call print_message('ERROR: Invalid or negative grid area at ' // trim(adjustl(line)) // '.')
-            end if
-            if (shd%DA(n) <= 0.0) then
-                z = 1
-                call print_message('ERROR: Invalid or negative drainage area at ' // trim(adjustl(line)) // '.')
-            end if
-            if (shd%NEXT(n) <= n) then
-                call print_warning('NEXT might be upstream of RANK (NEXT <= RANK) at ' // trim(adjustl(line)) // '.')
-            end if
-        end if
+!-        if (ro%RUNCHNL) then
+!-            if (shd%SLOPE_CHNL(n) <= 0) then
+!-                z = 1
+!-                call print_message('ERROR: Invalid or negative channel slope at ' // trim(adjustl(line)) // '.')
+!-            end if
+!-            if (shd%CHNL_LEN(n) <= 0.0) then
+!-                z = 1
+!-                call print_message('ERROR: Invalid or negative channel length at ' // trim(adjustl(line)) // '.')
+!-            end if
+!-            if (shd%AREA(n) <= 0.0) then
+!-                z = 1
+!-                call print_message('ERROR: Invalid or negative grid area at ' // trim(adjustl(line)) // '.')
+!-            end if
+!-            if (shd%DA(n) <= 0.0) then
+!-                z = 1
+!-                call print_message('ERROR: Invalid or negative drainage area at ' // trim(adjustl(line)) // '.')
+!-            end if
+!-            if (shd%NEXT(n) <= n) then
+!-                call print_warning('NEXT might be upstream of RANK (NEXT <= RANK) at ' // trim(adjustl(line)) // '.')
+!-            end if
+!-        end if
 
         !> If tile processes (i.e., LSS) is enabled.
         !>  Errors: Sum of land covers is zero.
         !>  Warnings: Sum of land covers not equal to one.
         !>  Adjustments: Sum of land covers not equal to one.
-        if (ro%RUNTILE) then
-            if (sum(shd%lc%ACLASS(n, :)) == 0.0) then
-                z = 1
-                call print_message('ERROR: Total fraction of land covers (GRUs) is zero at ' // trim(adjustl(line)) // '.')
-            else if (abs(sum(shd%lc%ACLASS(n, :)) - 1.0) > 0.0) then
+!-        if (ro%RUNTILE) then
+!-            if (sum(shd%lc%ACLASS(n, :)) == 0.0) then
+!-                z = 1
+!-                call print_message('ERROR: Total fraction of land covers (GRUs) is zero at ' // trim(adjustl(line)) // '.')
+!-            else if (abs(sum(shd%lc%ACLASS(n, :)) - 1.0) > 0.0) then
 
                 !> Print a warning if the missing fraction is significant (> 1%).
-                if (abs(sum(shd%lc%ACLASS(n, :)) - 1.0) > 0.1) then
-                    write(field, FMT_GEN) sum(shd%lc%ACLASS(n, :))
-                    line = &
-                        'Total fraction of land covers (GRUs) at ' // trim(adjustl(line)) // ' adjusted from ' // &
-                        trim(adjustl(field)) // ' to 1.0.'
-                    call print_warning(line)
-                end if
-                shd%lc%ACLASS(n, :) = shd%lc%ACLASS(n, :)/sum(shd%lc%ACLASS(n, :))
-            end if
-        end if
+!-                if (abs(sum(shd%lc%ACLASS(n, :)) - 1.0) > 0.1) then
+!-                    write(field, FMT_GEN) sum(shd%lc%ACLASS(n, :))
+!-                    line = &
+!-                        'Total fraction of land covers (GRUs) at ' // trim(adjustl(line)) // ' adjusted from ' // &
+!-                        trim(adjustl(field)) // ' to 1.0.'
+!-                    call print_warning(line)
+!-                end if
+!-                shd%lc%ACLASS(n, :) = shd%lc%ACLASS(n, :)/sum(shd%lc%ACLASS(n, :))
+!-            end if
+!-        end if
 
         !> General.
         !>  Errors: Cell has no x/y coordinate value (e.g., outside basin).
-        if (shd%xxx(n) == 0 .or. shd%yyy(n) == 0) then
-            z = 1
-            call print_message(trim(line) // ' is assigned but outside the basin.')
-        end if
-    end do
+!-        if (shd%xxx(n) == 0 .or. shd%yyy(n) == 0) then
+!-            z = 1
+!-            call print_message(trim(line) // ' is assigned but outside the basin.')
+!-        end if
+!-    end do
 
     !> If tile processes (i.e., LSS) is enabled.
     !>  Remark: Land cover has no active coverage in any cells.
-    if (ro%RUNTILE) then
-        do m = 1, shd%lc%NTYPE
-            if (sum(shd%lc%ACLASS(:, m)) == 0.0) then
-                write(line, FMT_GEN) m
-                call print_remark('GRU ' // trim(adjustl(line)) // ' has no coverage and is zero across the domain.')
-            end if
-        end do
-    end if
+!-    if (ro%RUNTILE) then
+!-        do m = 1, shd%lc%NTYPE
+!-            if (sum(shd%lc%ACLASS(:, m)) == 0.0) then
+!-                write(line, FMT_GEN) m
+!-                call print_remark('GRU ' // trim(adjustl(line)) // ' has no coverage and is zero across the domain.')
+!-            end if
+!-        end do
+!-    end if
 
     !> If routing is enabled.
     !>  Error: The number of river classes is zero.
-    if (ro%RUNCHNL) then
-        if (maxval(shd%IAK) == 0) then
-            z = 1
-            line = 'The number of river classes (IAK) is zero. At least one river class must exist when channel routing is enabled.'
-            call print_error(line)
-        end if
-    end if
+!-    if (ro%RUNCHNL) then
+!-        if (maxval(shd%IAK) == 0) then
+!-            z = 1
+!-            line = 'The number of river classes (IAK) is zero. At least one river class must exist when channel routing is enabled.'
+!-            call print_error(line)
+!-        end if
+!-    end if
 
     !> Return if errors exist.
-    if (z /= 0) then
-        ierr = z
-        call print_error('Errors exist in the drainage database.')
-        return
-    end if
+!-    if (z /= 0) then
+!-        ierr = z
+!-        call print_error('Errors exist in the drainage database.')
+!-        return
+!-    end if
 
     !> Check the number of river classes.
-    if (ro%RUNCHNL) then
-        if (shd%NRVR /= maxval(shd%IAK)) then
-            call print_remark('The number of river classes is adjusted to match IAK. Consider adjusting the input files.')
-            shd%NRVR = maxval(shd%IAK)
-        end if
-    end if
+!-    if (ro%RUNCHNL) then
+!-        if (shd%NRVR /= maxval(shd%IAK)) then
+!-            call print_remark('The number of river classes is adjusted to match IAK. Consider adjusting the input files.')
+!-            shd%NRVR = maxval(shd%IAK)
+!-        end if
+!-    end if
 
     !> Determine coordinates for intermediate grid locations.
     !> NOTE FROM FRANK
@@ -517,53 +560,53 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 !-        shd%ylat(i) = (shd%yOrigin + shd%yDelta*shd%yyy(i)) - shd%yDelta/2.0
 !-        shd%xlng(i) = (shd%xOrigin + shd%xDelta*shd%xxx(i)) - shd%xDelta/2.0
 !-    end do
-    if (.not. allocated(shd%ylat)) then
-        z = 0
-        call allocate_variable(shd%ylat, shd%NA, z)
-        if (btest(z, pstat%ALLOCATION_ERROR)) then
-            call print_message("ERROR: An error occurred allocating the 'ylat' variable.")
-            ierr = z
-        end if
-    end if
-    if (.not. allocated(shd%xlng)) then
-        z = 0
-        call allocate_variable(shd%xlng, shd%NA, z)
-        if (btest(z, pstat%ALLOCATION_ERROR)) then
-            call print_message("ERROR: An error occurred allocating the 'xlng' variable.")
-            ierr = z
-        end if
-    end if
-    if (ierr /= 0) return
-    select case (lowercase(shd%CoordSys%Proj))
-        case ('latlong')
-            z = 0
-            call check_allocated(shd%ylat, shd%NA, z)
-            if (.not. btest(z, pstat%ASSIGNED)) then
-                shd%ylat = (shd%yOrigin + shd%yDelta*shd%yyy) - shd%yDelta/2.0
-            end if
-            z = 0
-            call check_allocated(shd%xlng, shd%NA, z)
-            if (.not. btest(z, pstat%ASSIGNED)) then
-                shd%xlng = (shd%xOrigin + shd%xDelta*shd%xxx) - shd%xDelta/2.0
-            end if
-            shd%iyMin = int(shd%yOrigin*60.0)
-            shd%iyMax = int((shd%yOrigin + shd%yCount*shd%yDelta)*60.0)
-            shd%jxMin = int(shd%xOrigin*60.0)
-            shd%jxMax = int((shd%xOrigin + shd%xCount*shd%xDelta)*60.0)
-            shd%GRDE = shd%xDelta*60.0
-            shd%GRDN = shd%yDelta*60.0
-            if (.not. allocated(shd%CoordSys%lat)) then
-                allocate(shd%CoordSys%lat(shd%yCount))
-                do i = 1, shd%yCount
-                    shd%CoordSys%lat(i) = (shd%yOrigin + shd%yDelta*i) - shd%yDelta/2.0
-                end do
-            end if
-            if (.not. allocated(shd%CoordSys%lon)) then
-                allocate(shd%CoordSys%lon(shd%xCount))
-                do i = 1, shd%xCount
-                    shd%CoordSys%lon(i) = (shd%xOrigin + shd%xDelta*i) - shd%xDelta/2.0
-                end do
-            end if
+!-    if (.not. allocated(shd%ylat)) then
+!-        z = 0
+!-        call allocate_variable(shd%ylat, shd%NA, z)
+!-        if (btest(z, pstat%ALLOCATION_ERROR)) then
+!-            call print_message("ERROR: An error occurred allocating the 'ylat' variable.")
+!-            ierr = z
+!-        end if
+!-    end if
+!-    if (.not. allocated(shd%xlng)) then
+!-        z = 0
+!-        call allocate_variable(shd%xlng, shd%NA, z)
+!-        if (btest(z, pstat%ALLOCATION_ERROR)) then
+!-            call print_message("ERROR: An error occurred allocating the 'xlng' variable.")
+!-            ierr = z
+!-        end if
+!-    end if
+!-    if (ierr /= 0) return
+!-    select case (lowercase(shd%CoordSys%Proj))
+!-        case ('latlong')
+!-            z = 0
+!-            call check_allocated(shd%ylat, shd%NA, z)
+!-            if (.not. btest(z, pstat%ASSIGNED)) then
+!-                shd%ylat = (shd%yOrigin + shd%yDelta*shd%yyy) - shd%yDelta/2.0
+!-            end if
+!-            z = 0
+!-            call check_allocated(shd%xlng, shd%NA, z)
+!-            if (.not. btest(z, pstat%ASSIGNED)) then
+!-                shd%xlng = (shd%xOrigin + shd%xDelta*shd%xxx) - shd%xDelta/2.0
+!-            end if
+!-            shd%iyMin = int(shd%yOrigin*60.0)
+!-            shd%iyMax = int((shd%yOrigin + shd%yCount*shd%yDelta)*60.0)
+!-            shd%jxMin = int(shd%xOrigin*60.0)
+!-            shd%jxMax = int((shd%xOrigin + shd%xCount*shd%xDelta)*60.0)
+!-            shd%GRDE = shd%xDelta*60.0
+!-            shd%GRDN = shd%yDelta*60.0
+!-            if (.not. allocated(shd%CoordSys%lat)) then
+!-                allocate(shd%CoordSys%lat(shd%yCount))
+!-                do i = 1, shd%yCount
+!-                    shd%CoordSys%lat(i) = (shd%yOrigin + shd%yDelta*i) - shd%yDelta/2.0
+!-                end do
+!-            end if
+!-            if (.not. allocated(shd%CoordSys%lon)) then
+!-                allocate(shd%CoordSys%lon(shd%xCount))
+!-                do i = 1, shd%xCount
+!-                    shd%CoordSys%lon(i) = (shd%xOrigin + shd%xDelta*i) - shd%xDelta/2.0
+!-                end do
+!-            end if
 !?        case ('utm')
 !?            shd%GRDE = shd%xDelta/1000.0
 !?            shd%GRDN = shd%yDelta/1000.0
@@ -571,111 +614,162 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 !?            shd%jxMax = shd%jxMin + shd%GRDE*(shd%xCount - 1)
 !?            shd%iyMin = int(shd%yOrigin/1000.0)
 !?            shd%iyMax = shd%iyMin + shd%GRDN*(shd%yCount - 1)
-        case ('rotlatlong', 'rotated_latitude_longitude')
-            z = 0
-            call check_allocated(shd%ylat, shd%NA, z)
-            if (.not. btest(z, pstat%ASSIGNED)) then
-                call print_message( &
-                    "ERROR: Latitudes in regular degrees have not been defined for the domain in '" // trim(shd%CoordSys%Proj) // &
-                    "' projection. Coordinates are not automatically calculated for domains in '" // trim(shd%CoordSys%Proj) // &
-                    "' projection, and must be provided as an attribute in the drainage database file.")
-                ierr = 1
-            end if
-            z = 0
-            call check_allocated(shd%xlng, shd%NA, z)
-            if (.not. btest(z, pstat%ASSIGNED)) then
-                call print_message( &
-                    "ERROR: Longitudes in regular degrees have not been defined for the domain in '" // trim(shd%CoordSys%Proj) // &
-                    "' projection. Coordinates are not automatically calculated for domains in '" // trim(shd%CoordSys%Proj) // &
-                    "' projection, and must be provided as an attribute in the drainage database file.")
-                ierr = 1
-            end if
-        case default
-            call print_message('ERROR: Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
-            ierr = 1
-    end select
-    if (ierr /= 0) return
+!-        case ('rotlatlong', 'rotated_latitude_longitude')
+!-            z = 0
+!-            call check_allocated(shd%ylat, shd%NA, z)
+!-            if (.not. btest(z, pstat%ASSIGNED)) then
+!-                call print_message( &
+!-                    "ERROR: Latitudes in regular degrees have not been defined for the domain in '" // trim(shd%CoordSys%Proj) // &
+!-                    "' projection. Coordinates are not automatically calculated for domains in '" // trim(shd%CoordSys%Proj) // &
+!-                    "' projection, and must be provided as an attribute in the drainage database file.")
+!-                ierr = 1
+!-            end if
+!-            z = 0
+!-            call check_allocated(shd%xlng, shd%NA, z)
+!-            if (.not. btest(z, pstat%ASSIGNED)) then
+!-                call print_message( &
+!-                    "ERROR: Longitudes in regular degrees have not been defined for the domain in '" // trim(shd%CoordSys%Proj) // &
+!-                    "' projection. Coordinates are not automatically calculated for domains in '" // trim(shd%CoordSys%Proj) // &
+!-                    "' projection, and must be provided as an attribute in the drainage database file.")
+!-                ierr = 1
+!-            end if
+!-        case default
+!-            call print_message('ERROR: Unsupported coordinate system: ' // trim(shd%CoordSys%Proj))
+!-            ierr = 1
+!-    end select
+!-    if (ierr /= 0) return
 
     !> Convert longitudes from (0:360) to (-180:180).
-    where (shd%xlng > 180.0)
-        shd%xlng = shd%xlng - 360.0
-    end where
+!-    where (shd%xlng > 180.0)
+!-        shd%xlng = shd%xlng - 360.0
+!-    end where
 
     !> If no sub-grid variability is active.
-    if (.not. ro%RUNTILE) then
-        shd%lc%NTYPE = 1
-        if (allocated(shd%lc%ACLASS)) deallocate(shd%lc%ACLASS)
-        allocate(shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1))
-        shd%lc%ACLASS(:, shd%lc%NTYPE) = 1.0
-        shd%lc%ACLASS(:, shd%lc%NTYPE + 1) = 0.0
-    end if
+!-    if (.not. ro%RUNTILE) then
+!-        shd%lc%NTYPE = 1
+!-        if (allocated(shd%lc%ACLASS)) deallocate(shd%lc%ACLASS)
+!-        allocate(shd%lc%ACLASS(shd%NA, shd%lc%NTYPE + 1))
+!-        shd%lc%ACLASS(:, shd%lc%NTYPE) = 1.0
+!-        shd%lc%ACLASS(:, shd%lc%NTYPE + 1) = 0.0
+!-    end if
 
     !> Compute the maximum number of tile elements.
-    shd%lc%ILG = shd%NA*shd%lc%NTYPE
-    shd%wc%ILG = shd%NA*shd%lc%NTYPE
+!-    shd%lc%ILG = shd%NA*shd%lc%NTYPE
+!-    shd%wc%ILG = shd%NA*shd%lc%NTYPE
 
     !> Determine the number of active tiles.
     !> Store callback indices in the 'IxMOS' and 'JxMOS' variables.
 !todo: Fix this for water tiles.
-    allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), &
-             shd%wc%ILMOS(shd%wc%ILG), shd%wc%JLMOS(shd%wc%ILG))
-    shd%lc%NML = 0
-    shd%wc%NML = 0
-    do i = 1, shd%NA
+!-    allocate(shd%lc%ILMOS(shd%lc%ILG), shd%lc%JLMOS(shd%lc%ILG), &
+!-             shd%wc%ILMOS(shd%wc%ILG), shd%wc%JLMOS(shd%wc%ILG))
+!-    shd%lc%NML = 0
+!-    shd%wc%NML = 0
+!-    do i = 1, shd%NA
 
         !> Only count active GRUs (with > 0.0 contributing fraction).
-        if (shd%FRAC(i) > 0.0) then
-            do m = 1, shd%lc%NTYPE
+!-        if (shd%FRAC(i) > 0.0) then
+!-            do m = 1, shd%lc%NTYPE
 
                 !> Land.
-                if (shd%lc%ACLASS(i, m) > 0.0) then
-                    shd%lc%NML = shd%lc%NML + 1
-                    shd%lc%ILMOS(shd%lc%NML) = i
-                    shd%lc%JLMOS(shd%lc%NML) = m
+!-                if (shd%lc%ACLASS(i, m) > 0.0) then
+!-                    shd%lc%NML = shd%lc%NML + 1
+!-                    shd%lc%ILMOS(shd%lc%NML) = i
+!-                    shd%lc%JLMOS(shd%lc%NML) = m
 
                 !> Water.
 !                else
 !                    shd%wc%NML = shd%wc%NML + 1
 !                    shd%wc%ILMOS(shd%wc%NML) = i
 !                    shd%wc%JLMOS(shd%wc%NML) = m
-                end if
-            end do
-        end if
-    end do
+!-                end if
+!-            end do
+!-        end if
+!-    end do
+!>>temp
+    shd%CoordSys%Proj = trim(pj%projection)
+    shd%CoordSys%Ellips = trim(pj%ellipsoid)
+    allocate(shd%CoordSys%lon, source = pj%lon)
+    shd%xCount = size(pj%lon)
+    shd%xOrigin = pj%llc_x
+    shd%xDelta = pj%dx
+    allocate(shd%CoordSys%lat, source = pj%lat)
+    shd%yCount = size(pj%lat)
+    shd%yOrigin = pj%llc_y
+    shd%yDelta = pj%dy
+    shd%NA = vs%grid%dim_length
+    if (allocated(vs%grid%next_id)) then
+        shd%NAA = count(vs%grid%next_id > 0)
+        allocate(shd%NEXT, source = vs%grid%next_id)
+    else
+        shd%NAA = 1
+    end if
+    allocate(shd%AREA, source = vs%grid%surface_area)
+    if (ro%RUNCHNL) then
+        allocate(shd%IAK, source = vs%grid%from_riverclass)
+        shd%NRVR = maxval(vs%grid%from_riverclass)
+        allocate(shd%SLOPE_CHNL, source = vs%grid%chnl_slope)
+        allocate(shd%CHNL_LEN, source = vs%grid%chnl_length)
+        allocate(shd%ICHNL, source = vs%grid%ichnl)
+        allocate(shd%IREACH, source = vs%grid%ireach)
+        allocate(shd%DA, source = vs%grid%drainage_area)
+        allocate(shd%BNKFLL, source = vs%grid%bankfull)
+        allocate(shd%IROUGH(vs%grid%dim_length))
+    end if
+    allocate(shd%ELEV(vs%grid%dim_length))
+    shd%AL = pj%nominal_side_length
+    allocate(shd%xlng, source = vs%grid%lon)
+    allocate(shd%ylat, source = vs%grid%lat)
+    allocate(shd%xxx, source = vs%grid%from_grid_x)
+    allocate(shd%yyy, source = vs%grid%from_grid_y)
+    allocate(shd%FRAC, source = vs%grid%area_weight)
+    if (ro%RUNLSS) then
+        shd%lc%NTYPE = maxval(vs%tile%from_gru)
+        shd%lc%NML = vs%tile%dim_length
+        shd%lc%ILG = vs%tile%dim_length
+        allocate(shd%lc%ILMOS, source = vs%tile%from_cell)
+        allocate(shd%lc%JLMOS, source = vs%tile%from_gru)
+        allocate(shd%lc%ACLASS(vs%grid%dim_length, maxval(vs%tile%from_gru) + 1))
+        do k = 1, vs%tile%dim_length
+            shd%lc%ACLASS(vs%tile%from_cell(k), vs%tile%from_gru(k)) = vs%tile%area_weight(k)
+        end do
+    end if
+!<<temp
 
     !> Write information about tile configuration to file.
-    if (DIAGNOSEMODE) then
+    if (ro%RUNLSS) then
+        if (DIAGNOSEMODE) then
 
-        !> Land tiles.
-        write(line, FMT_GEN) shd%lc%NML
-        call print_echo_txt('Number of land tiles (NML): ' // trim(adjustl(line)))
-        if (shd%lc%NML > 0) then
-            write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU'
-            call print_echo_txt(trim(line))
-            do k = 1, shd%lc%NML
-                write(line, FMT_GEN) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
+            !> Land tiles.
+            write(line, FMT_GEN) shd%lc%NML
+            call print_echo_txt('Number of land tiles (NML): ' // trim(adjustl(line)))
+            if (shd%lc%NML > 0) then
+                write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU'
                 call print_echo_txt(trim(line))
-            end do
+                do k = 1, shd%lc%NML
+                    write(line, FMT_GEN) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
+                    call print_echo_txt(trim(line))
+                end do
+            end if
+
+            !> Water tiles.
+            write(line, FMT_GEN) shd%wc%NML
+            call print_echo_txt('Number of water tiles (NMW): ' // trim(adjustl(line)))
+            if (shd%wc%NML > 0) then
+                write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU'
+                call print_echo_txt(trim(line))
+                do k = 1, shd%wc%NML
+                    write(line, FMT_GEN) k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
+                    call print_echo_txt(trim(line))
+                end do
+            end if
         end if
 
-        !> Water tiles.
-        write(line, FMT_GEN) shd%wc%NML
-        call print_echo_txt('Number of water tiles (NMW): ' // trim(adjustl(line)))
-        if (shd%wc%NML > 0) then
-            write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU'
-            call print_echo_txt(trim(line))
-            do k = 1, shd%wc%NML
-                write(line, FMT_GEN) k, shd%wc%ILMOS(k), shd%wc%JLMOS(k)
-                call print_echo_txt(trim(line))
-            end do
-        end if
+        !> Calculate active tiles in the current node.
+        !> Update grid indices.
+        call mpi_split_nml(inp, izero, ipid, shd%lc%NML, shd%lc%ILMOS, il1, il2, iln)
+        i1 = shd%lc%ILMOS(il1)
+        i2 = shd%lc%ILMOS(il2)
     end if
-
-    !> Calculate active tiles in the current node.
-    !> Update grid indices.
-    call mpi_split_nml(inp, izero, ipid, shd%lc%NML, shd%lc%ILMOS, il1, il2, iln)
-    i1 = shd%lc%ILMOS(il1)
-    i2 = shd%lc%ILMOS(il2)
 
 !todo: Update for head node to print all.
 !?    if (DIAGNOSEMODE) then
@@ -690,18 +784,18 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 !?    end if
 
     !> Print summary.
-    write(line, FMT_GEN) shd%NA
-    call print_message('Total number of grids: ' // trim(adjustl(line)))
-    write(line, FMT_GEN) shd%NAA
-    call print_message('Total number of grids inside the basin: ' // trim(adjustl(line)))
-    write(line, FMT_GEN) shd%AL
-    call print_message('Side length of grid: ' // trim(adjustl(line)) // ' m')
-    write(line, FMT_GEN) shd%lc%NTYPE
-    call print_message('Number of GRUs: ' // trim(adjustl(line)))
-    write(line, FMT_GEN) shd%lc%NML
-    call print_message('Number of land-based tiles: ' // trim(adjustl(line)))
-    write(line, FMT_GEN) shd%NRVR
-    call print_message('Number of river classes: ' // trim(adjustl(line)))
+!-    write(line, FMT_GEN) shd%NA
+!-    call print_message('Total number of grids: ' // trim(adjustl(line)))
+!-    write(line, FMT_GEN) shd%NAA
+!-    call print_message('Total number of grids inside the basin: ' // trim(adjustl(line)))
+!-    write(line, FMT_GEN) shd%AL
+!-    call print_message('Side length of grid: ' // trim(adjustl(line)) // ' m')
+!-    write(line, FMT_GEN) shd%lc%NTYPE
+!-    call print_message('Number of GRUs: ' // trim(adjustl(line)))
+!-    write(line, FMT_GEN) shd%lc%NML
+!-    call print_message('Number of land-based tiles: ' // trim(adjustl(line)))
+!-    write(line, FMT_GEN) shd%NRVR
+!-    call print_message('Number of river classes: ' // trim(adjustl(line)))
 
     !> Open and read in soil depths from file.
     if (ro%RUNLSS) then

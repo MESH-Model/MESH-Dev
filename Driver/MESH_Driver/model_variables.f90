@@ -482,7 +482,7 @@ module model_variables
         z = 0
 
         !> Allocate group.
-        allocate(group)
+        if (.not. associated(group)) allocate(group)
 
         !> Meteorology/climatology variables.
 !-        allocate(group%fsin(n), stat = z); if (z /= 0) ierr = z

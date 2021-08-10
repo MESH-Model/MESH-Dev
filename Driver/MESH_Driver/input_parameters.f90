@@ -360,7 +360,7 @@ module input_parameters
         z = 0
 
         !> Allocate and initialize groups.
-        if (ro%RUNTILE) then
+        if (ro%RUNLSS) then
             call input_parameters_group_allocate(pm%tile, shd%lc%NML, shd%lc%IGND, z); if (z /= 0) ierr = z
             call input_parameters_group_reset(pm%tile, z); if (z /= 0) ierr = z
             call input_parameters_group_allocate(pm%gru, shd%lc%NTYPE, shd%lc%IGND, z); if (z /= 0) ierr = z

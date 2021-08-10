@@ -30,6 +30,7 @@ subroutine read_basin_structures(shd, ierr)
     integer iun, iskip, isteps1, isteps2, n, i, z
     real d
     character(len = DEFAULT_LINE_LENGTH) fname, line
+    logical ltest
 
     !> Initialize the return status.
     ierr = 0
@@ -344,13 +345,20 @@ subroutine read_basin_structures(shd, ierr)
     end if
 
     !> Abstraction point locations.
+    ltest = .false.
+    if (allocated(pm%tile%iabsp)) then
+        if (any(pm%tile%iabsp > 0)) ltest = .true.
+    end if
+    if (allocated(pm%grid%iabsp)) then
+        if (any(pm%grid%iabsp > 0)) ltest = .true.
+    end if
 
     !> File unit and name.
     fname = fms%absp%sabst%fls%fname
     iun = fms%absp%sabst%fls%iun
 
     !> Read location from file if points exist.
-    if (any(pm%tile%iabsp > 0)) then
+    if (ltest) then
 
         !> Initialize time-series.
         fms%absp%sabst%iyear = ic%start%year
@@ -368,20 +376,20 @@ subroutine read_basin_structures(shd, ierr)
                 call read_abstractionpoint_txt(shd, iun, fname, ierr)
         end select
         if (ierr /= 0) return
+
+        !> Print an error if no points are defined but exist from other files.
+        if (maxval(pm%tile%iabsp) /= fms%absp%n) then
+            line = 'The number of abstraction points does not match between other input files and: ' // trim(adjustl(fname))
+            call print_error(line)
+            write(line, FMT_GEN) maxval(pm%tile%iabsp)
+            call print_message('Maximum points defined in other input files: ' // trim(adjustl(line)))
+            write(line, FMT_GEN) fms%absp%n
+            call print_message('Number of points read from file: ' // trim(adjustl(line)))
+            ierr = 1
+            return
+        end if
     else
         fms%absp%n = 0
-    end if
-
-    !> Print an error if no points are defined but exist from other files.
-    if (maxval(pm%tile%iabsp) /= fms%absp%n) then
-        line = 'The number of abstraction points does not match between other input files and: ' // trim(adjustl(fname))
-        call print_error(line)
-        write(line, FMT_GEN) maxval(pm%tile%iabsp)
-        call print_message('Maximum points defined in other input files: ' // trim(adjustl(line)))
-        write(line, FMT_GEN) fms%absp%n
-        call print_message('Number of points read from file: ' // trim(adjustl(line)))
-        ierr = 1
-        return
     end if
 
     !> If points exist.

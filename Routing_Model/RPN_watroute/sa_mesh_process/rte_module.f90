@@ -131,7 +131,11 @@ module rte_module
         step2 = astep*astep
         na = shd%NA
         naa = shd%NAA
-        ntype = shd%lc%NTYPE + 1
+        if (shd%lc%NTYPE > 0) then
+            ntype = shd%lc%NTYPE + 1
+        else
+            ntype = 2
+        end if
 
         !> Allocate and transfer grid variables.
         allocate(xxx(na), yyy(na), s(ycount, xcount), &
@@ -145,7 +149,11 @@ module rte_module
                  glacier_flag(na))
         xxx = shd%xxx
         yyy = shd%yyy
-        s = shd%RNKGRD
+!-        s = shd%RNKGRD
+        s = 0
+        do n = 1, na
+            s(yyy(n), xxx(n)) = n
+        end do
         next = shd%NEXT
         da = real(shd%DA, kind(da))
         bnkfll = real(shd%BNKFLL, kind(bnkfll))
@@ -159,7 +167,12 @@ module rte_module
         Nreaches = maxval(shd%IREACH)
         grid_area = real(shd%AREA, kind(grid_area))
         frac = real(shd%FRAC, kind(frac))
-        aclass = 0.0; aclass(:, 1:ntype) = real(shd%lc%ACLASS, kind(aclass))
+        aclass = 0.0
+        if (allocated(shd%lc%ACLASS)) then
+            aclass(:, 1:ntype) = real(shd%lc%ACLASS, kind(aclass))
+        else if (ntype == 2) then
+            aclass(:, 1) = 1.0
+        end if
         nhyd = 0
         glacier_flag = 'n'
 
