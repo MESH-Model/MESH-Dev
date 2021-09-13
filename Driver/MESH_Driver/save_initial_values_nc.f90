@@ -5,7 +5,7 @@
 !>  Other variables are accessible by their respecitve process
 !>  module(s).
 !>
-subroutine save_initial_states_nc(fls, shd, ierr)
+subroutine save_initial_states_nc(fls, shd, fname, ierr)
 
     use model_files_variables
     use sa_mesh_common
@@ -16,6 +16,7 @@ subroutine save_initial_states_nc(fls, shd, ierr)
     !> Input variables.
     type(fl_ids):: fls
     type(ShedGridParams) :: shd
+    character(len = *), intent(in) :: fname
 
     !> Output variables.
     integer, intent(out) :: ierr
@@ -36,7 +37,7 @@ subroutine save_initial_states_nc(fls, shd, ierr)
 
     !> Open output file.
     z = 0
-    line = 'MESH_initial_values.nc'
+    line = trim(fname) !'MESH_initial_values.nc'
 !-    call reset_tab()
 !-    call print_message('SAVING: ' // trim(line))
 !-    call increase_tab()

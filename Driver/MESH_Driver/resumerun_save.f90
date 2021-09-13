@@ -275,6 +275,20 @@ subroutine resumerun_save(fls, shd, cm)
 
     !> csv: From CSV by GRU.
 
+    !> NetCDF.
+    if (btest(vs%flgs%save%flo%ext, FILE_TYPE_NC4)) then
+        fname = 'MESH_initial_values.nc'
+        if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+            write(line, "(i4.4, '_', i3.3)") ic%next%year, ic%next%jday
+            fname = trim(fname(1:index(fname, '.'))) // trim(adjustl(line)) // trim(fname(index(fname, '.'):))
+        end if
+        call save_initial_states_nc(fls, shd, trim(fname), z)
+        if (z /= 0) then
+            call print_error("An error occurred saving variables to the file '" // trim(fname) // "'.")
+            call program_abort()
+        end if
+    end if
+
     !> Save the resume date ('next') to the auto resume file.
     if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
         fname = 'auto_resume.ini'

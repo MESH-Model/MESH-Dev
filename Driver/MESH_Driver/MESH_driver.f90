@@ -114,7 +114,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1808'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1810'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -848,9 +848,9 @@ program RUNMESH
             if (ISHEADNODE) call program_abort()
         end if
     end if
-    if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_NC4)) then
-        call read_initial_states_nc(fls, shd, ierr)
-    end if
+!-    if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_NC4)) then
+!-        call read_initial_states_nc(fls, shd, ierr)
+!-    end if
 
     !> Update output variables with initial states.
     call output_variables_reset(shd)
@@ -1290,9 +1290,9 @@ program RUNMESH
         end if
 
         !> Save state file.
-        if (btest(vs%flgs%save%flo%ext, FILE_TYPE_NC4)) then
-            call save_initial_states_nc(fls, shd, ierr)
-        end if
+!-        if (btest(vs%flgs%save%flo%ext, FILE_TYPE_NC4)) then
+!-            call save_initial_states_nc(fls, shd, ierr)
+!-        end if
 
         !> Write data to the output summary file.
 !-        if (ECHOTXTMODE) then

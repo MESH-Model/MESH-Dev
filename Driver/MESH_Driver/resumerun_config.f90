@@ -74,11 +74,14 @@ subroutine resumerun_config(fls, shd, cm, ierr)
                 if (index(vs%flgs%resume%bin, '+STASONLY') == 0) then
                     vs%flgs%resume%bin = trim(vs%flgs%resume%bin) // '+STASONLY'
                 end if
-            case ('6')
+            case ('6', 'nc', 'nc4', 'netcdf')
 #ifdef NETCDF
                 if (vs%flgs%resume%state == FLAG_OFF) vs%flgs%resume%state = FLAG_ON
                 if (.not. btest(vs%flgs%resume%flo%ext, FILE_TYPE_NC4)) then
                     vs%flgs%resume%flo%ext = vs%flgs%resume%flo%ext + radix(FILE_TYPE_NC4)**FILE_TYPE_NC4
+                end if
+                if (index(vs%flgs%resume%bin, '+STASONLY') == 0) then
+                    vs%flgs%resume%bin = trim(vs%flgs%resume%bin) // '+STASONLY'
                 end if
 #else
                 call print_error( &
@@ -134,6 +137,7 @@ subroutine resumerun_config(fls, shd, cm, ierr)
         if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_SEQ)) line = ' seq' // trim(line)
         if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_TXT)) line = ' txt' // trim(line)
         if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_CSV)) line = ' csv' // trim(line)
+        if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_NC4)) line = ' nc' // trim(line)
         if (vs%flgs%resume%state == FLAG_AUTO) then
             line = ' auto' // trim(line)
         else
@@ -186,6 +190,22 @@ subroutine resumerun_config(fls, shd, cm, ierr)
                 if (index(vs%flgs%save%bin, '+STASONLY') == 0) then
                     vs%flgs%save%bin = trim(vs%flgs%save%bin) // '+STASONLY'
                 end if
+            case ('6', 'nc', 'nc4', 'netcdf')
+#ifdef NETCDF
+                if (vs%flgs%save%state == FLAG_OFF) vs%flgs%save%state = FLAG_ON
+                if (.not. btest(vs%flgs%save%flo%ext, FILE_TYPE_NC4)) then
+                    vs%flgs%save%flo%ext = vs%flgs%save%flo%ext + radix(FILE_TYPE_NC4)**FILE_TYPE_NC4
+                end if
+                if (index(vs%flgs%save%bin, '+STASONLY') == 0) then
+                    vs%flgs%save%bin = trim(vs%flgs%save%bin) // '+STASONLY'
+                end if
+#else
+                call print_error( &
+                    "The NetCDF format is specified for a resume file but the module is not active. " // &
+                    "A version of MESH compiled with the NetCDF library must be used to use files in this format.")
+                ierr = 1
+                return
+#endif
 
             !> Frequency for I/O functions that are repeated.
             case ('yearly', 'yly', 'y')
@@ -242,6 +262,7 @@ subroutine resumerun_config(fls, shd, cm, ierr)
         if (btest(vs%flgs%save%flo%ext, FILE_TYPE_SEQ)) line = ' seq' // trim(line)
         if (btest(vs%flgs%save%flo%ext, FILE_TYPE_TXT)) line = ' txt' // trim(line)
         if (btest(vs%flgs%save%flo%ext, FILE_TYPE_CSV)) line = ' csv' // trim(line)
+        if (btest(vs%flgs%save%flo%ext, FILE_TYPE_NC4)) line = ' nc' // trim(line)
         if (vs%flgs%save%state == FLAG_AUTO) then
             line = ' auto' // trim(line)
         else
@@ -262,8 +283,10 @@ subroutine resumerun_config(fls, shd, cm, ierr)
             "(without time or time-stepping information). The auto-save options, such as 'monthly' and 'yearly', can be added " // &
             "to these configurations of SAVERESUMEFLAG:")
         call increase_tab()
+        call print_message("SAVERESUMEFLAG on nc only states")
         call print_message("SAVERESUMEFLAG on seq only states")
         call print_message("SAVERESUMEFLAG on seq only class")
+        call print_message("SAVERESUMEFLAG 6")
         call print_message("SAVERESUMEFLAG 5")
         call print_message("SAVERESUMEFLAG 3")
         call decrease_tab()

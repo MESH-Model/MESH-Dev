@@ -211,6 +211,20 @@ subroutine resumerun_read(fls, shd, cm, ierr)
         !> r2c: From r2c by grid.
 
         !> csv: From CSV by GRU.
+
+        !> NetCDF.
+        if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_NC4)) then
+            fname = 'MESH_initial_values.nc'
+            if (vs%flgs%resume%state == FLAG_AUTO) then
+                write(line, "(i4.4, '_', i3.3)") ic%start%year, ic%start%jday
+                fname = trim(fname(1:index(fname, '.'))) // trim(adjustl(line)) // trim(fname(index(fname, '.'):))
+            end if
+            call read_initial_states_nc(fls, shd, trim(fname), ierr)
+            if (ierr /= 0) then
+                call print_error("An error occurred reading variables from the file '" // trim(fname) // "'.")
+                call program_abort()
+            end if
+        end if
     end if
 
     !> Update derived values.

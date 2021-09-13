@@ -828,10 +828,10 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     end if
 
     !> Read resume configuration.
-    call resumerun_config(fls, shd, cm, ierr)
-    if (ierr /= 0) then
-        call program_abort()
-    end if
+!-    call resumerun_config(fls, shd, cm, ierr)
+!-    if (ierr /= 0) then
+!-        call program_abort()
+!-    end if
 
     !> Call 'CLASSD' to initialize constants.
 !todo: replace this with a non-CLASS/generic version.
@@ -875,6 +875,12 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         call read_fews_runinfo_nc('runinfo.nc', cm, ierr)
     end if
 !<<fews
+
+    !> Read resume configuration.
+    call resumerun_config(fls, shd, cm, ierr)
+    if (ierr /= 0) then
+        call program_abort()
+    end if
 
     !> Initialize the current time-step.
 !-    ic%now%year = ic%start%year
