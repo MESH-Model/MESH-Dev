@@ -240,7 +240,7 @@ module runsvs_mesh
             call print_error("The driving variable '" // VN_UV // "' is not active or not associated with an input file.")
             z = 1
         end if
-        if ((.not. associated(vs%tile%prern) .and. .not. associated(vs%tile%presno)) .or. .not. associated(vs%tile%pre)) then
+        if (.not. (associated(vs%tile%prern) .and. associated(vs%tile%presno)) .and. .not. associated(vs%tile%pre)) then
             call print_error( &
                 "No driving variable for precipitation is active nor associated with an input file. The '" // VN_PRE // &
                 "' variable or both the '" // VN_PRERN // "' and '" // VN_PRESNO // "' variables are required.")
