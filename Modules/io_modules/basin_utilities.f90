@@ -31,7 +31,7 @@ module basin_utilities
         character(len = SHORT_FIELD_LENGTH) field, level, code
         character(len = :), allocatable :: message
         real, allocatable :: dat1_r(:), gru_n(:), gru_nm(:, :)
-        integer, allocatable :: dat2_i(:, :), rank_xy(:, :)
+        integer, allocatable :: dat1_i(:), dat2_i(:, :), rank_xy(:, :)
         integer y, x, n, m, k, i, ncell, ncell_active, ngru, nrvr, nlandtile, ilvl, ierr
 
         !> Status.
@@ -64,21 +64,16 @@ module basin_utilities
                         return
                     end if
 
-                    !> Check the dimensions.
+                    !> Check the order of the X/Y dimensions.
                     ierr = 0
-                    if ( &
-                        field_list(i)%field%mapped_dim_order(MAP_ORDER_X) > 0 .and. &
-                        field_list(i)%field%mapped_dim_order(MAP_ORDER_Y) > 0) then
+                    allocate(dat1_i(2))
+                    dat1_i(1) = field_list(i)%field%mapped_dim_order(MAP_ORDER_X)
+                    dat1_i(2) = field_list(i)%field%mapped_dim_order(MAP_ORDER_Y)
+                    if (dat1_i(1) == 0 .and. dat1_i(2) == 0 .and. field_list(i)%field%mapped_dim_order(MAP_ORDER_N) > 0) then
 
-                        !> Map to the existing 'x' and 'y' dimensions.
-                        call map_dimensions(dat2_i, (/ &
-                            field_list(i)%field%mapped_dim_order(MAP_ORDER_X), &
-                            field_list(i)%field%mapped_dim_order(MAP_ORDER_Y)/), rank_xy, ierr)
-                    else if (field_list(i)%field%mapped_dim_order(MAP_ORDER_N) > 0) then
-
-                        !> Map to an one-dimensional array.
-                        call map_dimensions(dat2_i, (/1, 2/), rank_xy, ierr)
-                    else
+                        !> Map the 1-D basin definition to the structure of the 2-D array.
+                        dat1_i = (/1, 2/)
+                    else if (dat1_i(1) == 0 .or. dat1_i(2) == 0) then
                         ierr = 1
                     end if
 
@@ -89,6 +84,9 @@ module basin_utilities
                         return
                     end if
 
+                    !> Map the array of 'Rank' in the desired X/Y order.
+                    call map_dimensions(dat2_i, dat1_i, rank_xy, ierr)
+
                     !> Count the number of active cells.
                     ncell = count(rank_xy > 0)
                     if (.not. ncell > 0) then
@@ -98,7 +96,9 @@ module basin_utilities
                     end if
 
                     !> Allocate the 'cell' group of variables.
-                    allocate(vs%grid, source = model_variables_fields(dim_name = 'cell', dim_length = ncell))
+                    allocate(vs%grid)
+                    vs%grid%dim_name = 'cell'
+                    vs%grid%dim_length = ncell
                     ro%RUNGRID = .true.
 
                     !> Assign maps.
@@ -448,7 +448,9 @@ module basin_utilities
             end if
 
             !> Allocate 'tile' variables.
-            allocate(vs%tile, source = model_variables_fields(dim_name = 'landtile', dim_length = nlandtile))
+            allocate(vs%tile)
+            vs%tile%dim_name = 'landtile'
+            vs%tile%dim_length = nlandtile
             ro%RUNTILE = .true.
 
             !> Allocate and assign maps.
@@ -505,7 +507,9 @@ module basin_utilities
 
         !> Activate 'basin' variables if 'Next' was found.
         if (allocated(vs%grid%next_id)) then
-            allocate(vs%basin, source = model_variables_fields(dim_name = 'basin', dim_length = ncell))
+            allocate(vs%basin)
+            vs%basin%dim_name = 'basin'
+            vs%basin%dim_length = ncell
 
             !> Derive the number of points inside the basin.
             ncell_active = count(vs%grid%next_id /= 0)

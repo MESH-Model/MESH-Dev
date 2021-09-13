@@ -125,4 +125,8 @@ module mesh_io_options
     integer, parameter :: MAP_ORDER_B = 6
     integer, parameter :: MAP_ORDER_G = 7
 
+    !> List of dimension order names.
+    character(len = SHORT_FIELD_LENGTH), parameter :: MAP_ORDER_LIST(7) = (/ &
+        DIM_NAME_X, DIM_NAME_Y, DIM_NAME_M, DIM_NAME_K, DIM_NAME_N, DIM_NAME_B, DIM_NAME_G/)
+
 end module

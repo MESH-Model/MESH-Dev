@@ -19,15 +19,21 @@ module mesh_io
 
     interface assign_cell_values
         module procedure assign_cell_values_real
-        module procedure assign_cell_values_real_pntr
         module procedure assign_cell_values_int
+    end interface
+
+    interface assign_cell_values_pntr
+        module procedure assign_cell_values_real_pntr
         module procedure assign_cell_values_int_pntr
     end interface
 
     interface assign_tile_values
         module procedure assign_tile_values_real
-        module procedure assign_tile_values_real_pntr
         module procedure assign_tile_values_int
+    end interface
+
+    interface assign_tile_values_pntr
+        module procedure assign_tile_values_real_pntr
         module procedure assign_tile_values_int_pntr
     end interface
 
@@ -452,7 +458,7 @@ module mesh_io
         type(ensim_attr), dimension(:), allocatable :: vattr
         real, allocatable :: dat3_r(:, :, :)
         integer, allocatable :: dat1_i(:)
-        integer x, y, class_count
+        integer x, y, nattrs, class_count
         character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names, args
         character(len = DEFAULT_LINE_LENGTH) line_buffer
 #ifdef NETCDF
@@ -464,7 +470,7 @@ module mesh_io
         real dat_r, fill_r
         integer, dimension(:), allocatable :: dimids, dim_lengths, mapped_dim_order
         integer, allocatable :: dat2_i(:, :), dat3_i(:, :, :), dat4_i(:, :, :, :), dat5_i(:, :, :, :, :)
-        integer dtype, time_order, nattrs, atype, alength, ndims, dat_i, fill_i
+        integer dtype, time_order, atype, alength, ndims, dat_i, fill_i
 #endif
 
         !> Check verbosity (override if 'DIAGNOSEMODE' is enabled).
@@ -495,10 +501,10 @@ module mesh_io
                 rewind(input_file%iunit)
 
                 !> Read the header.
-                call parse_header_ensim(input_file%iunit, vkeyword, natts, ierr)
+                call parse_header_ensim(input_file%iunit, vkeyword, nattrs, ierr)
 
                 !> Get a list of attributes and variables in the file.
-                if (ierr == 0) call parse_header_attribute_ensim(input_file%iunit, vkeyword, natts, vattr, nvars, ierr)
+                if (ierr == 0) call parse_header_attribute_ensim(input_file%iunit, vkeyword, nattrs, vattr, nvars, ierr)
 
                 !> Determine type of file.
                 input_file%multi_frame = is_multi_frame(input_file%iunit)
@@ -507,11 +513,11 @@ module mesh_io
                 if (ierr == 0) then
 
                     !> Allocate the working list of fields.
-                    allocate(file_buffer(nvars + natts))
+                    allocate(file_buffer(nvars + nattrs))
 
                     !> Loop through the attributes.
                     class_count = 0
-                    do i = 1, natts
+                    do i = 1, nattrs
 
                         !> Skip 'attributename', 'attributetype' and 'attributeunits'.
                         select case (lowercase(vkeyword(i)%keyword(2:)))
@@ -524,6 +530,7 @@ module mesh_io
                                     line_buffer = trim(line_buffer) // trim(vkeyword(i)%words(j))
                                 end do
                                 allocate(file_buffer(n)%field, source = io_field_char( &
+                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
                                     label = trim(vkeyword(i)%keyword(2:)), dat = trim(line_buffer), id = i))
                                 n = n + 1
 
@@ -566,6 +573,7 @@ module mesh_io
                         if (ierr == 0) call load_data_r2c(input_file%iunit, input_file%full_path, vattr, nvars, x, y, .false., ierr)
 
                         !> Set the dimension names.
+                        allocate(dim_names(2))
                         dim_names = (/DIM_NAME_X, DIM_NAME_Y/)
 
                         !> Special cases.
@@ -577,6 +585,9 @@ module mesh_io
                                 !> Register the field (assuming 'attributetype' from known variable).
                                 write(code, *) (i - (nvars - class_count))
                                 allocate(file_buffer(n)%field, source = io_field_real2d( &
+                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                    cell_map = null(), tile_map = null(), &
+                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                     label = trim(DIM_NAME_GRU) // ' ' // trim(adjustl(code)), short_name = trim(vattr(i)%attr), &
                                     units = trim(vattr(i)%units), dim_names = dim_names, dat = vattr(i)%val, id = i))
                                 n = n + 1
@@ -590,9 +601,14 @@ module mesh_io
                             select case (vattr(i)%type)
                                 case ('integer')
                                     allocate(file_buffer(n)%field, source = io_field_int2d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
                                         dim_names = dim_names, dat = int(vattr(i)%val)))
                                 case ('float', '')
                                     allocate(file_buffer(n)%field, source = io_field_real2d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
+                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                         dim_names = dim_names, dat = vattr(i)%val))
                                 case default
                                     if (v) call print_warning( &
@@ -621,6 +637,7 @@ module mesh_io
                     else
 
                         !> Set the dimension names.
+                        allocate(dim_names(3))
                         dim_names = (/DIM_NAME_X, DIM_NAME_Y, DIM_NAME_T/)
 
                         !> Save meta-information and register the field.
@@ -630,6 +647,9 @@ module mesh_io
                                 allocate(dat3_r(x, y, input_file%block_interval))
                                 dat3_r = huge(dat3_r)
                                 allocate(file_buffer(n)%field, source = io_field_real3d( &
+                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                    cell_map = null(), tile_map = null(), &
+                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                     dim_names = dim_names, dat = dat3_r, time_order = 3))
                                 deallocate(dat3_r)
                             case default
@@ -655,7 +675,7 @@ module mesh_io
                     end if
 
                     !> Adjust the number of attributes in the file.
-                    natts = natts - nvars
+                    natts = nattrs - nvars
                 end if
 
             !> Simple text formats (txt, asc, CSV).
@@ -728,7 +748,7 @@ module mesh_io
                         if (.not. is_letter(args(1)(1:1))) cycle
 
                         !> Allocate 'dim_names'.
-                        dim_names = (/input_file%dim_names/)
+                        allocate(dim_names(1), source = (/input_file%dim_names/))
 
                         !> Special cases.
                         select case (lowercase(args(1)))
@@ -736,6 +756,8 @@ module mesh_io
                             !> GRUs.
                             case (DIM_NAME_GRU)
                                 allocate(file_buffer(n)%field, source = io_field_char1d( &
+                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                    cell_map = null(), tile_map = null(), &
                                     label = trim(DIM_NAME_GRU) // ' ' // trim(args(2)), dim_names = dim_names, &
                                     dat = args(3:), id = i))
                                 n = n + 1
@@ -745,9 +767,12 @@ module mesh_io
                         !> Save the field.
                         if (size(args) > 2) then
                             allocate(file_buffer(n)%field, source = io_field_char1d( &
+                                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                cell_map = null(), tile_map = null(), &
                                 label = trim(args(1)), dim_names = dim_names, dat = args(2:), id = i))
                         else
                             allocate(file_buffer(n)%field, source = io_field_char( &
+                                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
                                 label = trim(args(1)), dat = trim(args(2)), id = i))
                         end if
                         n = n + 1
@@ -811,18 +836,25 @@ module mesh_io
                         case (NF90_INT64, NF90_BYTE, NF90_SHORT, NF90_INT)
                             call nc4_get_attribute(input_file%iunit, aname, dat_i, ierr = ierr)
                             if (ierr == 0) then
-                                allocate(file_buffer(n)%field, source = io_field_int(dat = dat_i))
+                                allocate(file_buffer(n)%field, source = io_field_int( &
+                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                    dat = dat_i))
                             end if
                         case (NF90_FLOAT, NF90_DOUBLE)
                             call nc4_get_attribute(input_file%iunit, aname, dat_r, ierr = ierr)
                             if (ierr == 0) then
-                                allocate(file_buffer(n)%field, source = io_field_real(dat = dat_r))
+                                allocate(file_buffer(n)%field, source = io_field_real( &
+                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                                    dat = dat_r))
                             end if
                         case (NF90_CHAR)
                             allocate(character(len = alength) :: dat_c)
                             call nc4_get_attribute(input_file%iunit, aname, dat_c, ierr = ierr)
                             if (ierr == 0) then
-                                allocate(file_buffer(n)%field, source = io_field_char(dat = trim(dat_c)))
+                                allocate(file_buffer(n)%field, source = io_field_char( &
+                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                    dat = trim(dat_c)))
                             end if
                             deallocate(dat_c)
                     end select
@@ -940,7 +972,9 @@ module mesh_io
                                             allocate(character(len = alength) :: dat_c)
                                             call nc4_get_attribute(input_file%iunit, aname, dat_c, vid = i, ierr = ierr)
                                             if (ierr == 0) then
-                                                allocate(file_buffer(n)%field, source = io_field_char(dat = trim(dat_c)))
+                                                allocate(file_buffer(n)%field, source = io_field_char( &
+                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                                    dat = trim(dat_c)))
                                             end if
                                             deallocate(dat_c)
                                         end if
@@ -948,7 +982,10 @@ module mesh_io
                                         'grid_north_pole_latitude', 'grid_north_pole_longitude')
                                         call nc4_get_attribute(input_file%iunit, aname, dat_r, vid = i, ierr = ierr)
                                         if (ierr == 0) then
-                                            allocate(file_buffer(n)%field, source = io_field_real(dat = dat_r))
+                                            allocate(file_buffer(n)%field, source = io_field_real( &
+                                                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                                                dat = dat_r))
                                         end if
                                 end select
                                 if (allocated(file_buffer(n)%field)) then
@@ -981,6 +1018,7 @@ module mesh_io
 
                                 !> Add a field for the dimension.
                                 allocate(file_buffer(n)%field, source = io_field_int( &
+                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
                                     label = trim(DIM_NAME_NGRU), dat = class_count, id = i))
                                 n = n + 1
 
@@ -1012,11 +1050,17 @@ module mesh_io
                                             case (2)
                                                 dat1_r = (/dat2_r(:, j)/)
                                                 allocate(file_buffer(n)%field, source = io_field_real1d( &
+                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                                    cell_map = null(), tile_map = null(), &
+                                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                                     dim_names = (/dim_names(1)/), dat = dat1_r))
                                                 deallocate(dat1_r)
                                             case default
                                                 dat1_r = (/dat2_r(j, :)/)
                                                 allocate(file_buffer(n)%field, source = io_field_real1d( &
+                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                                    cell_map = null(), tile_map = null(), &
+                                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                                     dim_names = (/dim_names(2)/), dat = dat1_r))
                                                 deallocate(dat1_r)
                                         end select
@@ -1025,16 +1069,25 @@ module mesh_io
                                             case (3)
                                                 dat2_r = dat3_r(:, :, j)
                                                 allocate(file_buffer(n)%field, source = io_field_real2d( &
+                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                                    cell_map = null(), tile_map = null(), &
+                                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                                     dim_names = (/dim_names(1), dim_names(2)/), dat = dat2_r))
                                                 deallocate(dat2_r)
                                             case (2)
                                                 dat2_r = dat3_r(:, j, :)
                                                 allocate(file_buffer(n)%field, source = io_field_real2d( &
+                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                                    cell_map = null(), tile_map = null(), &
+                                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                                     dim_names = (/dim_names(1), dim_names(3)/), dat = dat2_r))
                                                 deallocate(dat2_r)
                                             case default
                                                 dat2_r = dat3_r(j, :, :)
                                                 allocate(file_buffer(n)%field, source = io_field_real2d( &
+                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                                    cell_map = null(), tile_map = null(), &
+                                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                                     dim_names = (/dim_names(2), dim_names(3)/), dat = dat2_r))
                                                 deallocate(dat2_r)
                                         end select
@@ -1127,6 +1180,8 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat5_i, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = io_field_int5d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
                                         dim_names = dim_names, time_order = time_order, dat = dat5_i, no_data_value = fill_i))
                                     deallocate(dat5_i)
                                 case (4)
@@ -1136,6 +1191,8 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat4_i, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = io_field_int4d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
                                         dim_names = dim_names, time_order = time_order, dat = dat4_i, no_data_value = fill_i))
                                     deallocate(dat4_i)
                                 case (3)
@@ -1145,6 +1202,8 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat3_i, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = io_field_int3d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
                                         dim_names = dim_names, time_order = time_order, dat = dat3_i, no_data_value = fill_i))
                                     deallocate(dat3_i)
                                 case (2)
@@ -1154,6 +1213,8 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat2_i, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = io_field_int2d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
                                         dim_names = dim_names, time_order = time_order, dat = dat2_i, no_data_value = fill_i))
                                     deallocate(dat2_i)
                                 case (1)
@@ -1163,12 +1224,16 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat1_i, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = io_field_int1d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
                                         dim_names = dim_names, time_order = time_order, dat = dat1_i, no_data_value = fill_i))
                                     deallocate(dat1_i)
                                 case default
                                     call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat_i, ierr = ierr)
                                     if (ierr == 0) then
-                                        allocate(file_buffer(n)%field, source = io_field_int(dat = dat_i))
+                                        allocate(file_buffer(n)%field, source = io_field_int( &
+                                            mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                            dat = dat_i))
                                     end if
                             end select
                         case (NF90_FLOAT, NF90_DOUBLE)
@@ -1180,6 +1245,9 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat5_r, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = io_field_real5d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
+                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                         dim_names = dim_names, time_order = time_order, dat = dat5_r, no_data_value = fill_r))
                                     deallocate(dat5_r)
                                 case (4)
@@ -1189,6 +1257,9 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat4_r, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = io_field_real4d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
+                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                         dim_names = dim_names, time_order = time_order, dat = dat4_r, no_data_value = fill_r))
                                     deallocate(dat4_r)
                                 case (3)
@@ -1198,6 +1269,9 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat3_r, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = io_field_real3d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
+                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                         dim_names = dim_names, time_order = time_order, dat = dat3_r, no_data_value = fill_r))
                                     deallocate(dat3_r)
                                 case (2)
@@ -1207,6 +1281,9 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat2_r, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = io_field_real2d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
+                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                         dim_names = dim_names, time_order = time_order, dat = dat2_r, no_data_value = fill_r))
                                     deallocate(dat2_r)
                                 case (1)
@@ -1216,12 +1293,18 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat1_r, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = io_field_real1d( &
+                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                        cell_map = null(), tile_map = null(), &
+                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                         dim_names = dim_names, time_order = time_order, dat = dat1_r, no_data_value = fill_r))
                                     deallocate(dat1_r)
                                 case default
                                     call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat_r, ierr = ierr)
                                     if (ierr == 0) then
-                                        allocate(file_buffer(n)%field, source = io_field_real(dat = dat_r))
+                                        allocate(file_buffer(n)%field, source = io_field_real( &
+                                            mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                            mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                                            dat = dat_r))
                                     end if
                             end select
                         case (NF90_CHAR)
@@ -1248,6 +1331,8 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat1_c, ierr = ierr)
                                         if (ierr == 0) then
                                             allocate(file_buffer(n)%field, source = io_field_char1d( &
+                                                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                                cell_map = null(), tile_map = null(), &
                                                 dim_names = (/dim_names(j)/), dat = dat1_c, no_data_value = fill_c))
                                         end if
                                         deallocate(dat1_c)
@@ -1256,7 +1341,9 @@ module mesh_io
                                     allocate(character(len = dim_lengths(1)) :: dat_c)
                                     call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat_c, ierr = ierr)
                                     if (ierr == 0) then
-                                        allocate(file_buffer(n)%field, source = io_field_char(dat = dat_c))
+                                        allocate(file_buffer(n)%field, source = io_field_char( &
+                                            mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                                            dat = dat_c))
                                     end if
                                     deallocate(dat_c)
                                 case default
@@ -1360,14 +1447,13 @@ module mesh_io
                             if (this%time_order == 1 .and. size(this%dim_names) == 1) then
 
                                 !> Identify the field as a basin-wide value 'DIM_NAME_B' if the only dimension is time 'DIM_NAME_T'.
-                                this%mapped_dim_order = (/0, 0, 0, 0, 0, 1, 0/)
+                                allocate(this%mapped_dim_order(len(MAP_ORDER_LIST)))
+                                this%mapped_dim_order = 0
+                                this%mapped_dim_order(MAP_ORDER_B) = 1
                             else
 
                                 !> Map spatial dimensions.
-                                call get_dimension_order( &
-                                    this%dim_names, &
-                                    (/DIM_NAME_X, DIM_NAME_Y, DIM_NAME_M, DIM_NAME_K, DIM_NAME_N, DIM_NAME_B, DIM_NAME_G/), &
-                                    this%mapped_dim_order, ierr)
+                                call get_dimension_order(this%dim_names, MAP_ORDER_LIST, this%mapped_dim_order, ierr)
                             end if
                         else
 
@@ -1390,7 +1476,9 @@ module mesh_io
                     class default
 
                         !> Assume a basin-wide value 'DIM_NAME_B' for scalar fields.
-                        this%mapped_dim_order = (/0, 0, 0, 0, 0, 1, 0/)
+                        allocate(this%mapped_dim_order(len(MAP_ORDER_LIST)))
+                        this%mapped_dim_order = 0
+                        this%mapped_dim_order(MAP_ORDER_B) = 1
                 end select
 
                 !> Print message.
@@ -2023,7 +2111,7 @@ module mesh_io
                 if (associated(vs%tile)) then
                     allocate(input_field%tile_map(5, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
                 end if
-                dim_lengths = shape(input_field%dat)
+                allocate(dim_lengths(5), source = shape(input_field%dat))
             class is (io_field_real4d)
                 if (associated(vs%grid)) then
                     allocate(input_field%cell_map(4, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
@@ -2031,7 +2119,7 @@ module mesh_io
                 if (associated(vs%tile)) then
                     allocate(input_field%tile_map(4, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
                 end if
-                dim_lengths = shape(input_field%dat)
+                allocate(dim_lengths(4), source = shape(input_field%dat))
             class is (io_field_real3d)
                 if (associated(vs%grid)) then
                     allocate(input_field%cell_map(3, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
@@ -2039,7 +2127,7 @@ module mesh_io
                 if (associated(vs%tile)) then
                     allocate(input_field%tile_map(3, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
                 end if
-                dim_lengths = shape(input_field%dat)
+                allocate(dim_lengths(3), source = shape(input_field%dat))
             class is (io_field_real2d)
                 if (associated(vs%grid)) then
                     allocate(input_field%cell_map(2, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
@@ -2047,7 +2135,7 @@ module mesh_io
                 if (associated(vs%tile)) then
                     allocate(input_field%tile_map(2, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
                 end if
-                dim_lengths = shape(input_field%dat)
+                allocate(dim_lengths(2), source = shape(input_field%dat))
             class is (io_field_real1d)
                 if (associated(vs%grid)) then
                     allocate(input_field%cell_map(1, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
@@ -2055,7 +2143,7 @@ module mesh_io
                 if (associated(vs%tile)) then
                     allocate(input_field%tile_map(1, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
                 end if
-                dim_lengths = shape(input_field%dat)
+                allocate(dim_lengths(1), source = shape(input_field%dat))
             class is (io_field_real)
                 if (associated(vs%grid)) then
                     allocate(input_field%mapped_dat_cell(vs%grid%dim_length))
@@ -2073,7 +2161,7 @@ module mesh_io
                 if (associated(vs%tile)) then
                     allocate(input_field%tile_map(5, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
                 end if
-                dim_lengths = shape(input_field%dat)
+                allocate(dim_lengths(5), source = shape(input_field%dat))
             class is (io_field_int4d)
                 if (associated(vs%grid)) then
                     allocate(input_field%cell_map(4, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
@@ -2081,7 +2169,7 @@ module mesh_io
                 if (associated(vs%tile)) then
                     allocate(input_field%tile_map(4, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
                 end if
-                dim_lengths = shape(input_field%dat)
+                allocate(dim_lengths(4), source = shape(input_field%dat))
             class is (io_field_int3d)
                 if (associated(vs%grid)) then
                     allocate(input_field%cell_map(3, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
@@ -2089,7 +2177,7 @@ module mesh_io
                 if (associated(vs%tile)) then
                     allocate(input_field%tile_map(3, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
                 end if
-                dim_lengths = shape(input_field%dat)
+                allocate(dim_lengths(3), source = shape(input_field%dat))
             class is (io_field_int2d)
                 if (associated(vs%grid)) then
                     allocate(input_field%cell_map(2, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
@@ -2097,7 +2185,7 @@ module mesh_io
                 if (associated(vs%tile)) then
                     allocate(input_field%tile_map(2, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
                 end if
-                dim_lengths = shape(input_field%dat)
+                allocate(dim_lengths(2), source = shape(input_field%dat))
             class is (io_field_int1d)
                 if (associated(vs%grid)) then
                     allocate(input_field%cell_map(1, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
@@ -2105,7 +2193,7 @@ module mesh_io
                 if (associated(vs%tile)) then
                     allocate(input_field%tile_map(1, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
                 end if
-                dim_lengths = shape(input_field%dat)
+                allocate(dim_lengths(1), source = shape(input_field%dat))
             class is (io_field_int)
                 if (associated(vs%grid)) then
                     allocate(input_field%mapped_dat_cell(vs%grid%dim_length))
@@ -2123,7 +2211,7 @@ module mesh_io
                 if (associated(vs%tile)) then
                     allocate(input_field%tile_map(1, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
                 end if
-                dim_lengths = shape(input_field%dat)
+                allocate(dim_lengths(1), source = shape(input_field%dat))
             class is (io_field_char)
                 if (associated(vs%grid)) then
                     allocate(input_field%mapped_dat_cell(vs%grid%dim_length))
@@ -2723,38 +2811,38 @@ module mesh_io
 
     end subroutine
 
-    subroutine assign_cell_values_real_pntr(input_field, ranked_output, error_status)
+    subroutine assign_cell_values_real_pntr(input_field, ranked_output_pntr, error_status)
 
         !> Modules.
         use model_variables, only: vs
 
         !> Input/output variables.
         class(io_field), intent(in) :: input_field
-        real, dimension(:), pointer :: ranked_output
+        real, dimension(:), pointer :: ranked_output_pntr
         integer, intent(out) :: error_status
 
         !> Reset variable.
-        if (.not. associated(ranked_output)) allocate(ranked_output(vs%grid%dim_length))
-        ranked_output = huge(ranked_output)
+        if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%grid%dim_length))
+        ranked_output_pntr = huge(ranked_output_pntr)
 
         !> Assign 'cell' value from field.
         select type (input_field)
             class is (io_field_real)
-                ranked_output = input_field%mapped_dat_cell
+                ranked_output_pntr = input_field%mapped_dat_cell
             class is (io_field_realNd)
-                ranked_output = input_field%mapped_dat_cell
+                ranked_output_pntr = input_field%mapped_dat_cell
             class is (io_field_int)
-                ranked_output = real(input_field%mapped_dat_cell)
+                ranked_output_pntr = real(input_field%mapped_dat_cell)
             class is (io_field_intNd)
-                ranked_output = real(input_field%mapped_dat_cell)
+                ranked_output_pntr = real(input_field%mapped_dat_cell)
             class is (io_field_char)
-                ranked_output = input_field%mapped_dat_cell
+                ranked_output_pntr = input_field%mapped_dat_cell
             class is (io_field_char1d)
-                ranked_output = input_field%mapped_dat_cell
+                ranked_output_pntr = input_field%mapped_dat_cell
         end select
 
         !> Check for errors.
-        if (all(ranked_output == huge(ranked_output))) error_status = 1
+        if (all(ranked_output_pntr == huge(ranked_output_pntr))) error_status = 1
 
     end subroutine
 
@@ -2793,38 +2881,38 @@ module mesh_io
 
     end subroutine
 
-    subroutine assign_cell_values_int_pntr(input_field, ranked_output, error_status)
+    subroutine assign_cell_values_int_pntr(input_field, ranked_output_pntr, error_status)
 
         !> Modules.
         use model_variables, only: vs
 
         !> Input/output variables.
         class(io_field), intent(in) :: input_field
-        integer, dimension(:), pointer :: ranked_output
+        integer, dimension(:), pointer :: ranked_output_pntr
         integer, intent(out) :: error_status
 
         !> Reset variable.
-        if (.not. associated(ranked_output)) allocate(ranked_output(vs%grid%dim_length))
-        ranked_output = huge(ranked_output)
+        if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%grid%dim_length))
+        ranked_output_pntr = huge(ranked_output_pntr)
 
         !> Assign 'cell' value from field.
         select type (input_field)
             class is (io_field_real)
-                ranked_output = int(input_field%mapped_dat_cell)
+                ranked_output_pntr = int(input_field%mapped_dat_cell)
             class is (io_field_realNd)
-                ranked_output = int(input_field%mapped_dat_cell)
+                ranked_output_pntr = int(input_field%mapped_dat_cell)
             class is (io_field_int)
-                ranked_output = input_field%mapped_dat_cell
+                ranked_output_pntr = input_field%mapped_dat_cell
             class is (io_field_intNd)
-                ranked_output = input_field%mapped_dat_cell
+                ranked_output_pntr = input_field%mapped_dat_cell
             class is (io_field_char)
-                ranked_output = int(input_field%mapped_dat_cell)
+                ranked_output_pntr = int(input_field%mapped_dat_cell)
             class is (io_field_char1d)
-                ranked_output = int(input_field%mapped_dat_cell)
+                ranked_output_pntr = int(input_field%mapped_dat_cell)
         end select
 
         !> Check for errors.
-        if (all(ranked_output == huge(ranked_output))) error_status = 1
+        if (all(ranked_output_pntr == huge(ranked_output_pntr))) error_status = 1
 
     end subroutine
 
@@ -2863,38 +2951,38 @@ module mesh_io
 
     end subroutine
 
-    subroutine assign_tile_values_real_pntr(input_field, ranked_output, error_status)
+    subroutine assign_tile_values_real_pntr(input_field, ranked_output_pntr, error_status)
 
         !> Modules.
         use model_variables, only: vs
 
         !> Input/output variables.
         class(io_field), intent(in) :: input_field
-        real, dimension(:), pointer :: ranked_output
+        real, dimension(:), pointer :: ranked_output_pntr
         integer, intent(out) :: error_status
 
         !> Reset variable.
-        if (.not. associated(ranked_output)) allocate(ranked_output(vs%tile%dim_length))
-        ranked_output = huge(ranked_output)
+        if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%tile%dim_length))
+        ranked_output_pntr = huge(ranked_output_pntr)
 
         !> Assign 'cell' value from field.
         select type (input_field)
             class is (io_field_real)
-                ranked_output = input_field%mapped_dat_tile
+                ranked_output_pntr = input_field%mapped_dat_tile
             class is (io_field_realNd)
-                ranked_output = input_field%mapped_dat_tile
+                ranked_output_pntr = input_field%mapped_dat_tile
             class is (io_field_int)
-                ranked_output = real(input_field%mapped_dat_tile)
+                ranked_output_pntr = real(input_field%mapped_dat_tile)
             class is (io_field_intNd)
-                ranked_output = real(input_field%mapped_dat_tile)
+                ranked_output_pntr = real(input_field%mapped_dat_tile)
             class is (io_field_char)
-                ranked_output = input_field%mapped_dat_tile
+                ranked_output_pntr = input_field%mapped_dat_tile
             class is (io_field_char1d)
-                ranked_output = input_field%mapped_dat_tile
+                ranked_output_pntr = input_field%mapped_dat_tile
         end select
 
         !> Check for errors.
-        if (all(ranked_output == huge(ranked_output))) error_status = 1
+        if (all(ranked_output_pntr == huge(ranked_output_pntr))) error_status = 1
 
     end subroutine
 
@@ -2933,38 +3021,38 @@ module mesh_io
 
     end subroutine
 
-    subroutine assign_tile_values_int_pntr(input_field, ranked_output, error_status)
+    subroutine assign_tile_values_int_pntr(input_field, ranked_output_pntr, error_status)
 
         !> Modules.
         use model_variables, only: vs
 
         !> Input/output variables.
         class(io_field), intent(in) :: input_field
-        integer, dimension(:), pointer :: ranked_output
+        integer, dimension(:), pointer :: ranked_output_pntr
         integer, intent(out) :: error_status
 
         !> Reset variable.
-        if (.not. associated(ranked_output)) allocate(ranked_output(vs%tile%dim_length))
-        ranked_output = huge(ranked_output)
+        if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%tile%dim_length))
+        ranked_output_pntr = huge(ranked_output_pntr)
 
         !> Assign 'cell' value from field.
         select type (input_field)
             class is (io_field_real)
-                ranked_output = int(input_field%mapped_dat_tile)
+                ranked_output_pntr = int(input_field%mapped_dat_tile)
             class is (io_field_realNd)
-                ranked_output = int(input_field%mapped_dat_tile)
+                ranked_output_pntr = int(input_field%mapped_dat_tile)
             class is (io_field_int)
-                ranked_output = input_field%mapped_dat_tile
+                ranked_output_pntr = input_field%mapped_dat_tile
             class is (io_field_intNd)
-                ranked_output = input_field%mapped_dat_tile
+                ranked_output_pntr = input_field%mapped_dat_tile
             class is (io_field_char)
-                ranked_output = int(input_field%mapped_dat_tile)
+                ranked_output_pntr = int(input_field%mapped_dat_tile)
             class is (io_field_char1d)
-                ranked_output = int(input_field%mapped_dat_tile)
+                ranked_output_pntr = int(input_field%mapped_dat_tile)
         end select
 
         !> Check for errors.
-        if (all(ranked_output == huge(ranked_output))) error_status = 1
+        if (all(ranked_output_pntr == huge(ranked_output_pntr))) error_status = 1
 
     end subroutine
 
@@ -3034,49 +3122,49 @@ module mesh_io
 
             !> Meteorology/climatology variables.
             case (VN_FSIN)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%fsin, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%fsin, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%fsin, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%fsin, error_status)
             case (VN_FLIN)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%flin, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%flin, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%flin, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%flin, error_status)
             case (VN_TA)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%ta, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%ta, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%ta, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%ta, error_status)
             case (VN_QA)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%qa, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%qa, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%qa, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%qa, error_status)
             case (VN_PRES)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%pres, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%pres, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%pres, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%pres, error_status)
             case (VN_UU)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%uu, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%uu, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%uu, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%uu, error_status)
             case (VN_VV)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%vv, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%vv, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%vv, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%vv, error_status)
             case (VN_UV)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%uv, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%uv, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%uv, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%uv, error_status)
             case (VN_WDIR)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%wdir, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%wdir, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%wdir, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%wdir, error_status)
             case (VN_PRERN)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%prern, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%prern, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%prern, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%prern, error_status)
             case (VN_PRESNO)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%presno, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%presno, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%presno, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%presno, error_status)
             case (VN_PRE)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%pre, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%pre, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%pre, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%pre, error_status)
 
             !> Routing variables.
             case (VN_RFF)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%rff, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%rff, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%rff, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%rff, error_status)
             case (VN_RCHG)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%rchg, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%rchg, error_status)
+                if (associated(vs%grid)) call assign_cell_values_pntr(input_field, vs%grid%rchg, error_status)
+                if (associated(vs%tile)) call assign_tile_values_pntr(input_field, vs%tile%rchg, error_status)
 
             !> Others (not saved).
             case default

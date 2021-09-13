@@ -35,17 +35,10 @@ module input_forcing
         !> Status.
         error_status = 0
 
-        !> Allocate the working list.
+        !> Allocate the working list and transfer fields.
         if (allocated(forcing_files)) then
             allocate(temp_list(size(forcing_files) + 1))
-
-            !> Transfer fields.
-            do i = 1, size(forcing_files)
-                if (allocated(forcing_files(i)%file)) then
-                    allocate(temp_list(i)%file, source = forcing_files(i)%file)
-                    deallocate(forcing_files(i)%file)
-                end if
-            end do
+            temp_list(1:size(forcing_files)) = forcing_files
 
             !> Deallocate the main list.
             deallocate(forcing_files)
@@ -56,12 +49,9 @@ module input_forcing
         !> Assign the new object.
         allocate(temp_list(size(temp_list))%file, source = input_file)
 
-        !> Combine 'forcing_files' and the temporary list.
+        !> Transfer back to the main list.
         allocate(forcing_files(size(temp_list)))
-        do i = 1, size(temp_list)
-            allocate(forcing_files(i)%file, source = temp_list(i)%file)
-            deallocate(temp_list(i)%file)
-        end do
+        forcing_files = temp_list
         deallocate(temp_list)
 
     end subroutine
@@ -81,9 +71,9 @@ module input_forcing
 
         !> Local variables.
         type(io_field_wrapper), allocatable :: field_list(:)
-        character(len = :), allocatable :: base_file_name, flag_name, file_label
-        character(len = SHORT_FIELD_LENGTH) :: field_map(1, 2) = reshape((/'', ''/), (/1, 2/)), code
-        character(len = SHORT_FIELD_LENGTH), allocatable :: values(:)
+        character(len = :), allocatable :: base_file_name, input_flag, flag_name, file_label
+        character(len = SHORT_FIELD_LENGTH) :: field_map(1,2), code
+        character(len = SHORT_FIELD_LENGTH), allocatable :: dim_names(:), values(:)
         real const_mul, const_add
         integer j, i, block_interval
         logical v, no_clim_flag
@@ -93,8 +83,14 @@ module input_forcing
         if (present(quiet)) v = .not. quiet
         if (DIAGNOSEMODE) v = .true.
 
-        !> Split the string (skipping the flag name itself).
-        call parse_line_values(trim(basinforcingflag) // forcing_file_preset_options, values = values, error_status = error_status)
+        !> Transfer the input forcing flag to a temporary variables.
+        input_flag = trim(basinforcingflag)
+
+        !> Append any pre-existing options.
+        if (allocated(forcing_file_preset_options)) input_flag = input_flag // ' ' // forcing_file_preset_options
+
+        !> Split the string.
+        call parse_line_values(input_flag, values = values, error_status = error_status)
         if (error_status /= 0) then
             if (v) call print_remark("An error occurred parsing the options of the flag.")
             return
@@ -110,25 +106,28 @@ module input_forcing
 
         !> Create variable map where provided one of the variable-override flags.
         base_file_name = 'basin_forcing'
+        field_map = ''
         select case (flag_name)
             case ('BASINFORCINGFLAG')
 
                 !> Save options to apply to other fields.
-                forcing_file_preset_options = trim(basinforcingflag((len(flag_name) + 1):))
-                if (index(basinforcingflag, ' met') > 0) then
+                forcing_file_preset_options = input_flag((len(flag_name) + 1):)
+                if (index(input_flag, ' met') > 0) then
 
                     !> Continue to read the flag if a CLASS MET format file.
                     field_map(1, 2) = 'CLASSMET'
-                else if (index(basinforcingflag, ' no_clim') == 0) then
+                else
 
-                    !> Call other flags recursively.
-                    call parse_basinforcingflag('BASINSHORTWAVEFLAG', quiet, error_status)
-                    call parse_basinforcingflag('BASINLONGWAVEFLAG', quiet, error_status)
-                    call parse_basinforcingflag('BASINRAINFLAG', quiet, error_status)
-                    call parse_basinforcingflag('BASINTEMPERATUREFLAG', quiet, error_status)
-                    call parse_basinforcingflag('BASINWINDFLAG', quiet, error_status)
-                    call parse_basinforcingflag('BASINPRESFLAG', quiet, error_status)
-                    call parse_basinforcingflag('BASINHUMIDITYFLAG', quiet, error_status)
+                    !> Call other flags recursively (if not disabled with 'no_clim').
+                    if (index(input_flag, ' no_clim') == 0) then
+                        call parse_basinforcingflag('BASINSHORTWAVEFLAG', quiet, error_status)
+                        call parse_basinforcingflag('BASINLONGWAVEFLAG', quiet, error_status)
+                        call parse_basinforcingflag('BASINRAINFLAG', quiet, error_status)
+                        call parse_basinforcingflag('BASINTEMPERATUREFLAG', quiet, error_status)
+                        call parse_basinforcingflag('BASINWINDFLAG', quiet, error_status)
+                        call parse_basinforcingflag('BASINPRESFLAG', quiet, error_status)
+                        call parse_basinforcingflag('BASINHUMIDITYFLAG', quiet, error_status)
+                    end if
 
                     !> Return since the options are saved for other flags.
                     return
@@ -157,6 +156,14 @@ module input_forcing
                 base_file_name = 'basin_temperature'
                 field_map(1, 1) = VN_TA
                 field_map(1, 2) = VN_TA
+            case ('BASINUWINDFLAG')
+                base_file_name = 'basin_uwind'
+                field_map(1, 1) = VN_UU
+                field_map(1, 2) = VN_UU
+            case ('BASINVWINDFLAG')
+                base_file_name = 'basin_vwind'
+                field_map(1, 1) = VN_VV
+                field_map(1, 2) = VN_VV
             case ('BASINWINDFLAG')
                 base_file_name = 'basin_wind'
                 field_map(1, 1) = VN_UV
@@ -261,47 +268,62 @@ module input_forcing
 
                         !> ASCII R2C format.
                         call add_input_forcing_file(io_file_r2c( &
-                            label = file_label, full_path = base_file_name // '.r2c', fields = null(), field_map = field_map, &
+                            label = file_label, full_path = base_file_name // '.r2c', fields = null(), &
+                            subset_ids = null(), interp_weights = null(), field_map = null(), &
                             freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, &
                             block_interval = block_interval), error_status)
                     case ('csv')
 
                         !> CSV format.
+                        allocate(dim_names(2))
+                        dim_names = (/DIM_NAME_M, DIM_NAME_T/)
                         call add_input_forcing_file(io_file_txt_delimited( &
-                            label = file_label, full_path = base_file_name // '.csv', fields = null(), field_map = field_map, &
+                            label = file_label, full_path = base_file_name // '.csv', fields = null(), &
+                            subset_ids = null(), interp_weights = null(), field_map = null(), &
                             freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, multi_frame = .true., &
-                            block_interval = block_interval, dim_names = (/DIM_NAME_M, DIM_NAME_T/), delimiter = ','), error_status)
+                            block_interval = block_interval, dim_names = dim_names, delimiter = ','), error_status)
                     case ('seq')
 
                         !> Rank-ordered binary sequential format.
+                        allocate(dim_names(2))
+                        dim_names = (/DIM_NAME_N, DIM_NAME_T/)
                         call add_input_forcing_file(io_file_seq( &
-                            label = file_label, full_path = base_file_name // '.seq', fields = null(), field_map = field_map, &
+                            label = file_label, full_path = base_file_name // '.seq', fields = null(), &
+                            subset_ids = null(), interp_weights = null(), field_map = null(), &
                             freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, multi_frame = .true., &
-                            block_interval = block_interval, dim_names = (/DIM_NAME_N, DIM_NAME_T/)), error_status)
+                            block_interval = block_interval, dim_names = dim_names), error_status)
                     case ('asc')
 
                         !> Rank-ordered text (ASCII) format.
+                        allocate(dim_names(2))
+                        dim_names = (/DIM_NAME_N, DIM_NAME_T/)
                         call add_input_forcing_file(io_file_txt_delimited( &
-                            label = file_label, full_path = base_file_name // '.asc', fields = null(), field_map = field_map, &
+                            label = file_label, full_path = base_file_name // '.asc', fields = null(), &
+                            subset_ids = null(), interp_weights = null(), field_map = null(), &
                             freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, multi_frame = .true., &
-                            block_interval = block_interval, dim_names = (/DIM_NAME_N, DIM_NAME_T/)), error_status)
+                            block_interval = block_interval, dim_names = dim_names), error_status)
                     case ('met')
 
                         !> CLASS 'MET' file.
                         call add_input_forcing_file(io_file_met( &
-                            label = file_label, full_path = base_file_name // '.met', fields = null(), field_map = field_map, &
+                            label = file_label, full_path = base_file_name // '.met', fields = null(), &
+                            subset_ids = null(), interp_weights = null(), field_map = null(), &
                             freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, multi_frame = .true., &
                             block_interval = block_interval), error_status)
                     case ('nc')
 
                         !> netCDF format.
                         call add_input_forcing_file(io_file_nc( &
-                            label = file_label, full_path = base_file_name // '.nc', fields = null(), field_map = field_map, &
+                            label = file_label, full_path = base_file_name // '.nc', fields = null(), &
+                            subset_ids = null(), interp_weights = null(), field_map = null(), &
                             freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, block_interval = block_interval), &
                             error_status)
                     case default
                         error_status = 1
                 end select
+
+                !> Transfer field map.
+                allocate(forcing_files(i)%file%field_map(1, 2), source = field_map)
             end if
         end if
 
@@ -457,29 +479,58 @@ module input_forcing
                     else
                         allocate(field_list(7))
                     end if
+                    allocate(dim_names(1))
+                    dim_names = (/DIM_NAME_T/)
 
                     !> Add the standard fields of the CLASS MET file.
                     allocate(field_list(1)%field, source = io_field_real1d( &
-                        label = VN_FSIN, dim_names = (/DIM_NAME_T/), time_order = 1, id = 1))
+                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                        cell_map = null(), tile_map = null(), &
+                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                        label = VN_FSIN, dim_names = dim_names, time_order = 1, dat = null(), id = 1))
                     allocate(field_list(2)%field, source = io_field_real1d( &
-                        label = VN_FLIN, dim_names = (/DIM_NAME_T/), time_order = 1, id = 2))
+                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                        cell_map = null(), tile_map = null(), &
+                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                        label = VN_FLIN, dim_names = dim_names, time_order = 1, dat = null(), id = 2))
                     allocate(field_list(3)%field, source = io_field_real1d( &
-                        label = VN_PRE, dim_names = (/DIM_NAME_T/), time_order = 1, id = 3))
+                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                        cell_map = null(), tile_map = null(), &
+                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                        label = VN_PRE, dim_names = dim_names, time_order = 1, dat = null(), id = 3))
                     allocate(field_list(4)%field, source = io_field_real1d( &
-                        label = VN_TA, dim_names = (/DIM_NAME_T/), time_order = 1, const_add = 273.16, id = 4))
+                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                        cell_map = null(), tile_map = null(), &
+                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                        label = VN_TA, dim_names = dim_names, time_order = 1, const_add = 273.16, dat = null(), id = 4))
                     allocate(field_list(5)%field, source = io_field_real1d( &
-                        label = VN_QA, dim_names = (/DIM_NAME_T/), time_order = 1, id = 5))
+                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                        cell_map = null(), tile_map = null(), &
+                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                        label = VN_QA, dim_names = dim_names, time_order = 1, dat = null(), id = 5))
                     allocate(field_list(6)%field, source = io_field_real1d( &
-                        label = VN_UV, dim_names = (/DIM_NAME_T/), time_order = 1, id = 6))
+                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                        cell_map = null(), tile_map = null(), &
+                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                        label = VN_UV, dim_names = dim_names, time_order = 1, dat = null(), id = 6))
                     allocate(field_list(7)%field, source = io_field_real1d( &
-                        label = VN_PRES, dim_names = (/DIM_NAME_T/), time_order = 1, id = 7))
+                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                        cell_map = null(), tile_map = null(), &
+                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                        label = VN_PRES, dim_names = dim_names, time_order = 1, dat = null(), id = 7))
 
                     !> Add the extended fields by the 'sr_rr' option.
                     if (this%rr_sr) then
                         allocate(field_list(8)%field, source = io_field_real1d( &
-                            label = VN_PRERN, dim_names = (/DIM_NAME_T/), time_order = 1, id = 8))
+                            mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                            cell_map = null(), tile_map = null(), &
+                            mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                            label = VN_PRERN, dim_names = dim_names, time_order = 1, dat = null(), id = 8))
                         allocate(field_list(9)%field, source = io_field_real1d( &
-                            label = VN_PRESNO, dim_names = (/DIM_NAME_T/), time_order = 1, id = 9))
+                            mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                            cell_map = null(), tile_map = null(), &
+                            mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                            label = VN_PRESNO, dim_names = dim_names, time_order = 1, dat = null(), id = 9))
                     end if
 
                     !> Attach the field list to the file.
@@ -494,8 +545,11 @@ module input_forcing
 
                     !> Add the field.
                     allocate(field_list(1)%field, source = io_field_real2d( &
-                        label = trim(field_map(1, 2)), dim_names = this%dim_names, const_mul = const_mul, &
-                        const_add = const_add, time_order = 2, id = 1))
+                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                        cell_map = null(), tile_map = null(), &
+                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                        label = trim(this%field_map(1, 2)), dim_names = this%dim_names, const_mul = const_mul, &
+                        const_add = const_add, time_order = 2, dat = null(), id = 1))
                     call combine_field_list(this%fields, field_list, error_status)
 
                     !> Clean-up.
@@ -507,8 +561,11 @@ module input_forcing
 
                     !> Add the field.
                     allocate(field_list(1)%field, source = io_field_real2d( &
-                        label = trim(field_map(1, 2)), dim_names = this%dim_names, const_mul = const_mul, &
-                        const_add = const_add, time_order = 2, id = 1))
+                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                        cell_map = null(), tile_map = null(), &
+                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                        label = trim(this%field_map(1, 2)), dim_names = this%dim_names, const_mul = const_mul, &
+                        const_add = const_add, time_order = 2, dat = null(), id = 1))
                     call combine_field_list(this%fields, field_list, error_status)
 
                     !> Clean-up.
@@ -567,7 +624,7 @@ module input_forcing
                             !> Assume number of dimensions and field type from known file format.
                             class is (io_field_real2d)
                                 if (allocated(field%dim_names)) then
-                                    select case (this%dim_names(1))
+                                    select case (field%dim_names(1))
                                         case (DIM_NAME_M)
                                             allocate(field%dat(maxval(vs%tile%from_gru), this%block_interval))
                                         case (DIM_NAME_N)
@@ -926,9 +983,25 @@ module input_forcing
         n = 0
         do i = 1, size(forcing_files)
 
+            !> Get the file start time.
+            t0 = date_components_to_time( &
+                forcing_files(i)%file%start%year, &
+                forcing_files(i)%file%start%month, &
+                forcing_files(i)%file%start%day, &
+                forcing_files(i)%file%start%hour, &
+                forcing_files(i)%file%start%minutes, error_status = error_status)
+            if (error_status /= 0) then
+                call print_error( &
+                    "An error occurred getting the start time from the '" // trim(forcing_files(i)%file%full_path) // "' file.")
+                return
+            else
+
+                !> Convert from days to minutes.
+                t0 = t0*24.0*60.0
+            end if
+
             !> Reset variables.
             skip_count = 0
-            t0 = 0.0
             frame_length_minutes = 0
 
             !> Check the file time-stepping.
@@ -975,25 +1048,7 @@ module input_forcing
             end if
 
             !> Check start time.
-            if (( &
-                forcing_files(i)%file%start%year*10000000 + forcing_files(i)%file%start%jday*10000 + &
-                forcing_files(i)%file%start%hour*100 + forcing_files(i)%file%start%minutes) < (ic%start%year*10000000 + &
-                ic%start%jday*10000 + ic%start%hour*100 + ic%start%mins)) then
-                t0 = date_components_to_time( &
-                    forcing_files(i)%file%start%year, &
-                    forcing_files(i)%file%start%month, &
-                    forcing_files(i)%file%start%day, &
-                    forcing_files(i)%file%start%hour, &
-                    forcing_files(i)%file%start%minutes, error_status = error_status)
-                if (error_status /= 0) then
-                    call print_error( &
-                        "An error occurred getting the start time from the '" // trim(forcing_files(i)%file%full_path) // "' file.")
-                    return
-                else
-
-                    !> Convert from days to minutes.
-                    t0 = t0*24.0*60.0
-                end if
+            if (t0 < t1) then
 
                 !> Calculate the difference.
                 select case (forcing_files(i)%file%freq)
@@ -1021,10 +1076,7 @@ module input_forcing
                 else if (DIAGNOSEMODE) then
                     call print_info("Skipping no records in '" // trim(forcing_files(i)%file%full_path) // "'.")
                 end if
-            else if (( &
-                forcing_files(i)%file%start%year*10000000 + forcing_files(i)%file%start%jday*10000 + &
-                forcing_files(i)%file%start%hour*100 + forcing_files(i)%file%start%minutes) > (ic%start%year*10000000 + &
-                ic%start%jday*10000 + ic%start%hour*100 + ic%start%mins)) then
+            else if (t0 > t1) then
                 call print_error("The start time of the forcing file occurs after the simulation start time.")
                 error_status = 1
                 return

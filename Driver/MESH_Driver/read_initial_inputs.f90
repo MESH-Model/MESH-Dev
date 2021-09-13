@@ -32,7 +32,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 !<<fews
 !>>
     class(io_file), allocatable :: db
-    type(io_field_wrapper), dimension(:), allocatable :: field_list
+!-    type(io_field_wrapper), dimension(:), allocatable :: field_list
 !<<
 
     !> SUBBASINFLAG.
@@ -104,7 +104,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         case (1)
 !-            call read_shed_r2c(shd, fls%fl(mfk%f20)%iun, fls%fl(mfk%f20)%fn, ierr)
 !-            if (ierr /= 0) return
-            db = io_file_r2c(full_path = 'MESH_drainage_database.r2c', fields = null())
+            allocate(db, source = io_file_r2c(full_path = 'MESH_drainage_database.r2c', &
+                subset_ids = null(), interp_weights = null(), fields = null(), field_map = null()))
 
         !> Map file (diagnostic).
         if (SHDTOMAPFLAG .and. ISHEADNODE) then
@@ -342,16 +343,48 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
             call increase_tab()
             allocate(db)
             allocate(db%fields(10))
-            db%fields(1)%field = io_field_char(label = 'projection', dat = 'LATLONG')
-            db%fields(2)%field = io_field_char(label = 'ellipsoid', dat = 'GRS80')
-            db%fields(3)%field = io_field_int1d(label = 'Rank', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1, 2/))
-            db%fields(4)%field = io_field_int1d(label = 'Next', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/2, 0/))
-            db%fields(5)%field = io_field_real1d(label = 'lat', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/))
-            db%fields(6)%field = io_field_real1d(label = 'lon', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/))
-            db%fields(7)%field = io_field_real1d(label = 'GridArea', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1.0, 0.0/))
-            db%fields(8)%field = io_field_int(label = 'ngru', dat = 2)
-            db%fields(9)%field = io_field_real1d(label = 'gru 1', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1.0, 0.0/))
-            db%fields(10)%field = io_field_real1d(label = 'gru 2', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/))
+            allocate(db%fields(1)%field, source = io_field_char( &
+                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                label = 'projection', dat = 'LATLONG'))
+            allocate(db%fields(2)%field, source = io_field_char( &
+                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                label = 'ellipsoid', dat = 'GRS80'))
+            allocate(db%fields(3)%field, source = io_field_int1d( &
+                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                cell_map = null(), tile_map = null(), &
+                label = 'Rank', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1, 2/)))
+            allocate(db%fields(4)%field, source = io_field_int1d( &
+                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                cell_map = null(), tile_map = null(), &
+                label = 'Next', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/2, 0/)))
+            allocate(db%fields(5)%field, source = io_field_real1d( &
+                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                cell_map = null(), tile_map = null(), &
+                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                label = 'lat', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/)))
+            allocate(db%fields(6)%field, source = io_field_real1d( &
+                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                cell_map = null(), tile_map = null(), &
+                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                label = 'lon', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/)))
+            allocate(db%fields(7)%field, source = io_field_real1d( &
+                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                cell_map = null(), tile_map = null(), &
+                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                label = 'GridArea', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1.0, 0.0/)))
+            allocate(db%fields(8)%field, source = io_field_int( &
+                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                label = 'ngru', dat = 2))
+            allocate(db%fields(9)%field, source = io_field_real1d( &
+                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                cell_map = null(), tile_map = null(), &
+                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                label = 'gru 1', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1.0, 0.0/)))
+            allocate(db%fields(10)%field, source = io_field_real1d( &
+                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
+                cell_map = null(), tile_map = null(), &
+                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                label = 'gru 2', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/)))
 
             !> Force 'RUNMODE noroute' (overrides the run option).
 !-            ro%RUNCHNL = .false.
@@ -362,7 +395,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 #ifdef NETCDF
 !-            call read_shed_nc(shd, 'MESH_drainage_database.nc', '', '', '', '', ierr)
 !-            if (ierr /= 0) return
-            db = io_file_nc(full_path = 'MESH_drainage_database.nc', fields = null())
+            allocate(db, source = io_file_nc(full_path = 'MESH_drainage_database.nc', &
+                subset_ids = null(), interp_weights = null(), fields = null(), field_map = null()))
 #else
             call print_error( &
                 "The format of the drainage database input file is specified as NetCDF but the module is not active. " // &
@@ -374,14 +408,17 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
         case (4)
 !-            call read_shed_csv(shd, 'MESH_drainage_database.asc', ierr)
 !-            if (ierr /= 0) return
-            db = io_file_txt_delimited(full_path = 'MESH_drainage_database.asc', fields = null(), dim_names = (/DIM_NAME_N/))
+            allocate(db, source = io_file_txt_delimited( &
+                full_path = 'MESH_drainage_database.asc', dim_names = (/DIM_NAME_N/), &
+                subset_ids = null(), interp_weights = null(), fields = null(), field_map = null()))
 
         !> 'nc' format (vector/subbasin).
         case (5)
 #ifdef NETCDF
 !-            call read_shed_nc_subbasin(shd, 'MESH_drainage_database.nc', '', '', ierr)
 !-            if (ierr /= 0) return
-            db = io_file_nc(full_path = 'MESH_drainage_database.nc', fields = null())
+            allocate(db, source = io_file_nc(full_path = 'MESH_drainage_database.nc', &
+                subset_ids = null(), interp_weights = null(), fields = null(), field_map = null()))
 #else
             call print_error( &
                 "The format of the drainage database input file is specified as NetCDF but the module is not active. " // &
@@ -688,46 +725,48 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
 !>>temp
     shd%CoordSys%Proj = trim(pj%projection)
     shd%CoordSys%Ellips = trim(pj%ellipsoid)
-    allocate(shd%CoordSys%lon, source = pj%lon)
+    allocate(shd%CoordSys%lon(size(pj%lon)), source = pj%lon)
     shd%xCount = size(pj%lon)
     shd%xOrigin = pj%llc_x
     shd%xDelta = pj%dx
-    allocate(shd%CoordSys%lat, source = pj%lat)
+    allocate(shd%CoordSys%lat(size(pj%lat)), source = pj%lat)
     shd%yCount = size(pj%lat)
     shd%yOrigin = pj%llc_y
     shd%yDelta = pj%dy
     shd%NA = vs%grid%dim_length
     if (allocated(vs%grid%next_id)) then
         shd%NAA = count(vs%grid%next_id > 0)
-        allocate(shd%NEXT, source = vs%grid%next_id)
+        allocate(shd%NEXT(vs%grid%dim_length), source = vs%grid%next_id)
     else
         shd%NAA = 1
     end if
-    allocate(shd%AREA, source = vs%grid%surface_area)
+    allocate(shd%AREA(vs%grid%dim_length), source = vs%grid%surface_area)
     if (ro%RUNCHNL) then
-        allocate(shd%IAK, source = vs%grid%from_riverclass)
+        allocate(shd%IAK(vs%grid%dim_length), source = vs%grid%from_riverclass)
         shd%NRVR = maxval(vs%grid%from_riverclass)
-        allocate(shd%SLOPE_CHNL, source = vs%grid%chnl_slope)
-        allocate(shd%CHNL_LEN, source = vs%grid%chnl_length)
-        allocate(shd%ICHNL, source = vs%grid%ichnl)
-        allocate(shd%IREACH, source = vs%grid%ireach)
-        allocate(shd%DA, source = vs%grid%drainage_area)
-        allocate(shd%BNKFLL, source = vs%grid%bankfull)
+        allocate(shd%SLOPE_CHNL(vs%grid%dim_length), source = vs%grid%chnl_slope)
+        allocate(shd%CHNL_LEN(vs%grid%dim_length), source = vs%grid%chnl_length)
+        allocate(shd%ICHNL(vs%grid%dim_length), source = vs%grid%ichnl)
+        allocate(shd%IREACH(vs%grid%dim_length), source = vs%grid%ireach)
+        allocate(shd%DA(vs%grid%dim_length), source = vs%grid%drainage_area)
+        allocate(shd%BNKFLL(vs%grid%dim_length), source = vs%grid%bankfull)
         allocate(shd%IROUGH(vs%grid%dim_length))
+        shd%IROUGH = 0
     end if
     allocate(shd%ELEV(vs%grid%dim_length))
+    shd%ELEV = 0.0
     shd%AL = pj%nominal_side_length
-    allocate(shd%xlng, source = vs%grid%lon)
-    allocate(shd%ylat, source = vs%grid%lat)
-    allocate(shd%xxx, source = vs%grid%from_grid_x)
-    allocate(shd%yyy, source = vs%grid%from_grid_y)
-    allocate(shd%FRAC, source = vs%grid%area_weight)
+    allocate(shd%xlng(vs%grid%dim_length), source = vs%grid%lon)
+    allocate(shd%ylat(vs%grid%dim_length), source = vs%grid%lat)
+    allocate(shd%xxx(vs%grid%dim_length), source = vs%grid%from_grid_x)
+    allocate(shd%yyy(vs%grid%dim_length), source = vs%grid%from_grid_y)
+    allocate(shd%FRAC(vs%grid%dim_length), source = vs%grid%area_weight)
     if (ro%RUNLSS) then
         shd%lc%NTYPE = maxval(vs%tile%from_gru)
         shd%lc%NML = vs%tile%dim_length
         shd%lc%ILG = vs%tile%dim_length
-        allocate(shd%lc%ILMOS, source = vs%tile%from_cell)
-        allocate(shd%lc%JLMOS, source = vs%tile%from_gru)
+        allocate(shd%lc%ILMOS(vs%tile%dim_length), source = vs%tile%from_cell)
+        allocate(shd%lc%JLMOS(vs%tile%dim_length), source = vs%tile%from_gru)
         allocate(shd%lc%ACLASS(vs%grid%dim_length, maxval(vs%tile%from_gru) + 1))
         do k = 1, vs%tile%dim_length
             shd%lc%ACLASS(vs%tile%from_cell(k), vs%tile%from_gru(k)) = vs%tile%area_weight(k)
