@@ -91,6 +91,27 @@ double: all
 netcdf: all
 
 # ======================================================================
+# Compiler check (if not the 'clean' or 'veryclean' targets).
+# Minimum requirement.
+# Intel 16+ (15+):
+#   - Intel 15 introduces full Fortran 2003 support but is untested.
+#   - Intel 14 will compile but may stall during run-time. This is
+#       presumed to be the result of partial Fortran 2003 support.
+# GNU/gcc 5+:
+#   - GNU/gcc 4 does not implement the necessary Fortran 2003 features.
+ifeq ($(filter clean veryclean, $(MAKECMDGOALS)), )
+  ifeq ($(DIST),intel)
+    ifeq ($(shell test $$(icc -dumpversion | cut -d '.' -f 1) -lt 16; echo $$?), 0)
+      $(error The code requires Intel compiler version 16 or higher)
+    endif
+  else
+    ifeq ($(shell test $$(gcc -dumpversion | cut -d '.' -f 1) -lt 5; echo $$?), 0)
+      $(error The code requires GNU/gcc and GNU/gfortran version 5 or higher)
+    endif
+  endif
+endif
+
+# ======================================================================
 # Compiler and options.
 # 'FTN90PP' and 'FTN90PPOPT' required to compile 'ftn90' files.
 ifeq ($(DIST),intel)
@@ -98,13 +119,21 @@ FC=ifort
 CC=icc
 GFLAG=-check bounds -fpe0
 LFLAG=-c -g -traceback -fp-model source
+CFLAG=
+ifeq ($(shell test $$(icc -dumpversion | cut -d '.' -f 1) -lt 17; echo $$?), 0)
+  CFLAG+= -no-multibyte-chars
+endif
 FTN90PP=-fpp -free
 FTN90PPOPT=-Tf
 else
 FC=gfortran
 CC=gcc
-GFLAG=-fbounds-check -ffpe-trap=invalid,zero,overflow -Wconversion -Winteger-division -Wsurprising -Wintrinsic-shadow -Wtarget-lifetime
+GFLAG=-fbounds-check -ffpe-trap=invalid,zero,overflow -Wconversion -Wsurprising -Wintrinsic-shadow -Wtarget-lifetime
+ifeq ($(shell test $$(gcc -dumpversion | cut -d '.' -f 1) -gt 5; echo $$?), 0)
+  GFLAG+= -Winteger-division
+endif
 LFLAG=-c -g -fbacktrace
+CFLAG=
 FTN90PP=-x f95 -cpp -ffree-form -ffree-line-length-none -fcray-pointer
 FTN90PPOPT=
 endif
@@ -169,7 +198,7 @@ endif
 %.o: %.for
 	$(FC) $(LFLAG) $(GFLAG) $(LIBNCO) $<
 %.o: %.c
-	$(CC) $(LFLAG) $(INC_DIRS) $<
+	$(CC) $(LFLAG) $(CFLAG) $(INC_DIRS) $<
 
 # ======================================================================
 # Special rules.
