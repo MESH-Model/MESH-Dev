@@ -8,6 +8,7 @@ subroutine resumerun_read(fls, shd, cm, ierr)
     use sa_mesh_run_within_tile
     use sa_mesh_run_within_grid
     use sa_mesh_run_between_grid
+    use resume_run
 
     !> Process modules.
     use FLAGS, only: NRSOILAYEREADFLAG
@@ -107,7 +108,7 @@ subroutine resumerun_read(fls, shd, cm, ierr)
     end if
 
 !?    !> Check for auto resume file.
-!?    if (vs%flgs%resume%state == FLAG_AUTO) then
+!?    if (resume_options%resume%state == FLAG_AUTO) then
 !?        fname = 'auto_resume.ini'
 !?!+        call reset_tab()
 !?        call print_message('READING: ' // trim(fname))
@@ -140,25 +141,25 @@ subroutine resumerun_read(fls, shd, cm, ierr)
 !?                'Auto-resume is active but ' // trim(fname) // ' cannot be found. No previous run state is resumed.')
 !?
 !?            !> Override the resume functionality.
-!?            vs%flgs%resume%state = FLAG_OFF
+!?            resume_options%resume%state = FLAG_OFF
 !?        end if
 !?    end if
 
     !> Read files.
-    if (.not. vs%flgs%resume%state == FLAG_OFF) then
+    if (.not. resume_options%resume%state == FLAG_OFF) then
 
         !> txt: In text format.
 
         !> seq: Sequential binary format.
-        if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_SEQ)) then
+        if (btest(resume_options%resume%flo%ext, FILE_TYPE_SEQ)) then
 
             !> Append the date to the default resume filename for auto resume.
-            if (vs%flgs%resume%state == FLAG_AUTO) then
+            if (resume_options%resume%state == FLAG_AUTO) then
                 write(line, "(i4.4, '_', i3.3)") ic%start%year, ic%start%jday
                 fname = fls%fl(mfk%f883)%fn
                 fls%fl(mfk%f883)%fn = trim(fname(1:index(fname, '.'))) // trim(adjustl(line)) // trim(fname(index(fname, '.'):))
             end if
-            if (index(vs%flgs%resume%bin, '+STASONLY') == 0 .and. index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
+            if (index(resume_options%resume%bin, '+STASONLY') == 0 .and. index(resume_options%resume%bin, '+CLASSPROG') == 0) then
                 lstate = climate_module_resume_read(fls, shd, cm)
                 call read_init_prog_variables_class(fls, shd)
                 call runsvs_mesh_resume_states_seq(fls, shd, resume_ts = .true.)
@@ -170,7 +171,7 @@ subroutine resumerun_read(fls, shd, cm, ierr)
 !>>>>>zone-based storage
                 if (RESERVOIRFLAG == 2) then
                     iun = 100
-                    if (vs%flgs%resume%state == FLAG_AUTO) then
+                    if (resume_options%resume%state == FLAG_AUTO) then
                         open(iun, file = 'zone_storage_states.' // trim(adjustl(line)) // '.txt', action = 'read', status = 'old')
                     else
                         open(iun, file = 'zone_storage_states.txt', action = 'read', status = 'old')
@@ -180,7 +181,7 @@ subroutine resumerun_read(fls, shd, cm, ierr)
                     close(iun)
                 end if
 !<<<<<zone-based storage
-            else if (index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
+            else if (index(resume_options%resume%bin, '+CLASSPROG') == 0) then
                 call read_init_prog_variables_class(fls, shd)
                 call runsvs_mesh_resume_states_seq(fls, shd, resume_ts = .false.)
                 call bflm_resume_read(fls, shd)
@@ -189,7 +190,7 @@ subroutine resumerun_read(fls, shd, cm, ierr)
 !>>>>>zone-based storage
                 if (RESERVOIRFLAG == 2) then
                     iun = 100
-                    if (vs%flgs%resume%state == FLAG_AUTO) then
+                    if (resume_options%resume%state == FLAG_AUTO) then
                         open(iun, file = 'zone_storage_states.' // trim(adjustl(line)) // '.txt', action = 'read', status = 'old')
                     else
                         open(iun, file = 'zone_storage_states.txt', action = 'read', status = 'old')
@@ -203,7 +204,7 @@ subroutine resumerun_read(fls, shd, cm, ierr)
                 call read_init_prog_variables_class_row(fls, shd)
                 call runsvs_mesh_resume_states_seq(fls, shd, resume_ts = .false.)
             end if
-            if (vs%flgs%resume%state == FLAG_AUTO) then
+            if (resume_options%resume%state == FLAG_AUTO) then
                 fls%fl(mfk%f883)%fn = fname
             end if
         end if
@@ -213,9 +214,9 @@ subroutine resumerun_read(fls, shd, cm, ierr)
         !> csv: From CSV by GRU.
 
         !> NetCDF.
-        if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_NC4)) then
+        if (btest(resume_options%resume%flo%ext, FILE_TYPE_NC4)) then
             fname = 'MESH_initial_values.nc'
-            if (vs%flgs%resume%state == FLAG_AUTO) then
+            if (resume_options%resume%state == FLAG_AUTO) then
                 write(line, "(i4.4, '_', i3.3)") ic%start%year, ic%start%jday
                 fname = trim(fname(1:index(fname, '.'))) // trim(adjustl(line)) // trim(fname(index(fname, '.'):))
             end if

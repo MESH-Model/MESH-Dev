@@ -53,7 +53,7 @@ OBJECTS+=	print_routines.o program_end.o program_abort.o \
 			climate_forcing_module_config.o \
 			input_forcing.o climate_forcing_module_io.o climate_forcing_module.o \
 			basin_utilities.o \
-			tile_connector.o
+			tile_connector.o resume_run.o
 # Process modules.
 OBJECTS+=	baseFlow_luo2012.o baseflow_wfqlz.o baseflow_module.o
 OBJECTS+=	permafrost_alt.o permafrost_dzaa.o permafrost_outputs_module.o

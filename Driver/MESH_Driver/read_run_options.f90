@@ -25,6 +25,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, cm, ierr)
     use SIMSTATS_config, only: mtsflg
     use PBSM_module
     use mountain_module
+    use resume_run
 
     implicit none
 

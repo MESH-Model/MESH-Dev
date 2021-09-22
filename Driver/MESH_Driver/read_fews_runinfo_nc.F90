@@ -15,8 +15,9 @@ subroutine read_fews_runinfo_nc(fname, cm, ierr)
     use strings
     use sa_mesh_common
     use climate_forcing
-    use FLAGS
+!-    use FLAGS
     use nc_io
+    use resume_run
 
     implicit none
 

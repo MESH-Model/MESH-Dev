@@ -8,6 +8,7 @@ subroutine resumerun_save(fls, shd, cm)
     use sa_mesh_common
     use climate_forcing
     use model_dates
+    use resume_run
 
     !> Process modules.
     use RUNCLASS36_constants
@@ -41,11 +42,11 @@ subroutine resumerun_save(fls, shd, cm)
     logical now
 
     !> Return if not the head node.
-    if (.not. ISHEADNODE .or. vs%flgs%save%state == FLAG_OFF) return
+    if (.not. ISHEADNODE .or. resume_options%save%state == FLAG_OFF) return
 
     !> Check if now is the time for the I/O operation.
     now = .false.
-    select case (vs%flgs%save%freq)
+    select case (resume_options%save%freq)
 
         !> User-specified frequency.
         case (FREQ_YEARLY)
@@ -64,7 +65,7 @@ subroutine resumerun_save(fls, shd, cm)
     !> Save files.
 
     !> txt: In text format.
-    if (btest(vs%flgs%save%flo%ext, FILE_TYPE_TXT)) then
+    if (btest(resume_options%save%flo%ext, FILE_TYPE_TXT)) then
         fname = 'MESH_variables.txt'
 !+        call reset_tab()
         call print_message('SAVING: ' // trim(fname))
@@ -211,17 +212,17 @@ subroutine resumerun_save(fls, shd, cm)
     end if
 
     !> seq: Sequential binary format.
-    if (btest(vs%flgs%save%flo%ext, FILE_TYPE_SEQ)) then
+    if (btest(resume_options%save%flo%ext, FILE_TYPE_SEQ)) then
 
         !> Append the date to the default resume filename if auto resume is enabled.
-        if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+        if (resume_options%save%freq /= FREQ_NUL .and. resume_options%save%freq /= FREQ_NOW) then
             write(line, "(i4.4, '_', i3.3)") ic%next%year, ic%next%jday
             fname = fls%fl(mfk%f883)%fn
             fls%fl(mfk%f883)%fn = trim(fname(1:index(fname, '.'))) // trim(adjustl(line)) // trim(fname(index(fname, '.'):))
         end if
 
         !> Save files.
-        if (index(vs%flgs%save%bin, '+STASONLY') == 0 .and. index(vs%flgs%save%bin, '+CLASSPROG') == 0) then
+        if (index(resume_options%save%bin, '+STASONLY') == 0 .and. index(resume_options%save%bin, '+CLASSPROG') == 0) then
             call climate_module_resume_save(fls, shd, cm)
             call save_init_prog_variables_class(fls, shd)
             call runsvs_mesh_save_states_seq(fls, shd)
@@ -233,7 +234,7 @@ subroutine resumerun_save(fls, shd, cm)
 !>>>>>zone-based storage
             if (RESERVOIRFLAG == 2) then
                 iun = 100
-                if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+                if (resume_options%save%freq /= FREQ_NUL .and. resume_options%save%freq /= FREQ_NOW) then
                     open(iun, file = 'zone_storage_states.' // trim(adjustl(line)) // '.txt', action = 'write', status = 'replace')
                 else
                     open(iun, file = 'zone_storage_states.txt', action = 'write', status = 'replace')
@@ -243,7 +244,7 @@ subroutine resumerun_save(fls, shd, cm)
                 close(iun)
             end if
 !<<<<<zone-based storage
-        else if (index(vs%flgs%save%bin, '+CLASSPROG') == 0) then
+        else if (index(resume_options%save%bin, '+CLASSPROG') == 0) then
             call save_init_prog_variables_class(fls, shd)
             call runsvs_mesh_save_states_seq(fls, shd)
             call bflm_resume_save(fls, shd)
@@ -252,7 +253,7 @@ subroutine resumerun_save(fls, shd, cm)
 !>>>>>zone-based storage
             if (RESERVOIRFLAG == 2) then
                 iun = 100
-                if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+                if (resume_options%save%freq /= FREQ_NUL .and. resume_options%save%freq /= FREQ_NOW) then
                     open(iun, file = 'zone_storage_states.' // trim(adjustl(line)) // '.txt', action = 'write', status = 'replace')
                 else
                     open(iun, file = 'zone_storage_states.txt', action = 'write', status = 'replace')
@@ -266,7 +267,7 @@ subroutine resumerun_save(fls, shd, cm)
             call save_init_prog_variables_class_row(fls, shd)
             call runsvs_mesh_save_states_seq(fls, shd)
         end if
-        if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+        if (resume_options%save%freq /= FREQ_NUL .and. resume_options%save%freq /= FREQ_NOW) then
             fls%fl(mfk%f883)%fn = fname
         end if
     end if
@@ -276,9 +277,9 @@ subroutine resumerun_save(fls, shd, cm)
     !> csv: From CSV by GRU.
 
     !> NetCDF.
-    if (btest(vs%flgs%save%flo%ext, FILE_TYPE_NC4)) then
+    if (btest(resume_options%save%flo%ext, FILE_TYPE_NC4)) then
         fname = 'MESH_initial_values.nc'
-        if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+        if (resume_options%save%freq /= FREQ_NUL .and. resume_options%save%freq /= FREQ_NOW) then
             write(line, "(i4.4, '_', i3.3)") ic%next%year, ic%next%jday
             fname = trim(fname(1:index(fname, '.'))) // trim(adjustl(line)) // trim(fname(index(fname, '.'):))
         end if
@@ -290,7 +291,7 @@ subroutine resumerun_save(fls, shd, cm)
     end if
 
     !> Save the resume date ('next') to the auto resume file.
-    if (vs%flgs%save%freq /= FREQ_NUL .and. vs%flgs%save%freq /= FREQ_NOW) then
+    if (resume_options%save%freq /= FREQ_NUL .and. resume_options%save%freq /= FREQ_NOW) then
         fname = 'auto_resume.ini'
 !+        call reset_tab()
         call print_message('SAVING: ' // trim(fname))

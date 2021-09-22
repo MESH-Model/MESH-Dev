@@ -107,6 +107,7 @@ program RUNMESH
     use save_basin_output
     use SIMSTATS
     use input_forcing
+    use resume_run
 
     implicit none
 
@@ -114,7 +115,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1813'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1814'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -848,7 +849,7 @@ program RUNMESH
             if (ISHEADNODE) call program_abort()
         end if
     end if
-!-    if (btest(vs%flgs%resume%flo%ext, FILE_TYPE_NC4)) then
+!-    if (btest(resume_options%resume%flo%ext, FILE_TYPE_NC4)) then
 !-        call read_initial_states_nc(fls, shd, ierr)
 !-    end if
 
@@ -867,8 +868,8 @@ program RUNMESH
 !-    end if
 
     !> Read in existing basin states for RESUMEFLAG.
-    if (.not. vs%flgs%resume%state == FLAG_OFF .and. btest(vs%flgs%resume%flo%ext, FILE_TYPE_SEQ) .and. &
-        index(vs%flgs%resume%bin, '+STASONLY') == 0 .and. index(vs%flgs%resume%bin, '+CLASSPROG') == 0) then
+    if (.not. resume_options%resume%state == FLAG_OFF .and. btest(resume_options%resume%flo%ext, FILE_TYPE_SEQ) .and. &
+        index(resume_options%resume%bin, '+STASONLY') == 0 .and. index(resume_options%resume%bin, '+CLASSPROG') == 0) then
 
         !> Open the resume file for the driver.
         iun = fls%fl(mfk%f883)%iun
@@ -1230,8 +1231,8 @@ program RUNMESH
 
     !> Save resume files.
     !> Force the save frequency to 'now' to force saving the files.
-    vs%flgs%save%freq = FREQ_NOW
-    call resumerun_save(fls, shd, cm)
+    resume_options%save%freq = FREQ_NOW
+    call resumerun_save(fls, shd)
 
     if (ISHEADNODE) then
 
@@ -1251,8 +1252,8 @@ program RUNMESH
 !-        end if
 
         !> Save the current state of the model for SAVERESUMEFLAG.
-        if (btest(vs%flgs%save%flo%ext, FILE_TYPE_SEQ) .and. &
-            index(vs%flgs%save%bin, '+STASONLY') == 0 .and. index(vs%flgs%save%bin, '+CLASSPROG') == 0) then
+        if (btest(resume_options%save%flo%ext, FILE_TYPE_SEQ) .and. &
+            index(resume_options%save%bin, '+STASONLY') == 0 .and. index(resume_options%save%bin, '+CLASSPROG') == 0) then
 
             !> Open the resume file for the driver.
             iun = fls%fl(mfk%f883)%iun
@@ -1290,7 +1291,7 @@ program RUNMESH
         end if
 
         !> Save state file.
-!-        if (btest(vs%flgs%save%flo%ext, FILE_TYPE_NC4)) then
+!-        if (btest(resume_options%save%flo%ext, FILE_TYPE_NC4)) then
 !-            call save_initial_states_nc(fls, shd, ierr)
 !-        end if
 

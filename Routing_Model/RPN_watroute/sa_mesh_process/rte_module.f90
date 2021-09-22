@@ -94,6 +94,7 @@ module rte_module
         use model_files_variables
         use sa_mesh_common
 !-        use FLAGS
+        use resume_run
 
         type(fl_ids) :: fls
 
@@ -411,7 +412,7 @@ module rte_module
         end if
 
         !> Channel and reservoir initialization.
-        if ((fms%rsvr%n > 0 .or. fms%stmg%n > 0) .and. vs%flgs%resume%state == FLAG_OFF) then
+        if ((fms%rsvr%n > 0 .or. fms%stmg%n > 0) .and. resume_options%resume%state == FLAG_OFF) then
             allocate(nbasin(ycount, xcount), r(na, ntype + 1), p(ycount,xcount), inbsnflg(no + noresv))
             nbasin = 0; p = 0.0; inbsnflg = 1
             if (fms%stmg%n > 0) then
