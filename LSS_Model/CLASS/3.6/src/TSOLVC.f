@@ -292,6 +292,8 @@ C
                   KF1(I)=4
                   KF2(I)=5
               ENDIF
+          ELSE
+              ITER(I)=0
           ENDIF
    50 CONTINUE
 C

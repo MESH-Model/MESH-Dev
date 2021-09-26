@@ -66,6 +66,7 @@ module RUNCLASS36_module
             end if
             cfi%TA(il1:il2) = vs%tile%ta(il1:il2)
             cfi%UL(il1:il2) = vs%tile%uv(il1:il2)
+            cfi%VL(il1:il2) = 0.0
             cfi%PRES(il1:il2) = vs%tile%pres(il1:il2)
             cfi%QA(il1:il2) = vs%tile%qa(il1:il2)
 
