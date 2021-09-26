@@ -74,13 +74,12 @@ module RUNCLASS36_config
 
     contains
 
-    subroutine RUNCLASS36_init(shd, fls, cm)
+    subroutine RUNCLASS36_init(shd, fls)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
         use FLAGS
 
         !> For CLASS output.
@@ -90,7 +89,6 @@ module RUNCLASS36_config
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(clim_info) :: cm
 
         integer NA, NTYPE, NML, NSL, l, k, ik, jk, m, j, i, iun, ierr
         real FRAC
@@ -385,7 +383,7 @@ module RUNCLASS36_config
 
         !> Initialize PBSM or allocate and initialize variables used in CLASS even if PBSM is not enabled.
         if (pbsm%PROCESS_ACTIVE) then
-            call PBSM_init(fls, shd, cm)
+            call PBSM_init(fls, shd)
         else
 
             !> Variables used in CLASSZ.
@@ -604,7 +602,6 @@ module RUNCLASS36_config
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         type(fl_ids) fls
         type(ShedGridParams) shd
@@ -705,7 +702,6 @@ module RUNCLASS36_config
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         type(fl_ids) fls
         type(ShedGridParams) shd
@@ -804,18 +800,16 @@ module RUNCLASS36_config
 
     end subroutine
 
-    subroutine RUNCLASS36_finalize(fls, shd, cm)
+    subroutine RUNCLASS36_finalize(fls, shd)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
         use FLAGS
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(clim_info) :: cm
 
         !> For GRU-based end of run prognostic variables.
         real, dimension(:, :), allocatable :: tcan, rcan, sncan, gro, zpnd, tpnd, sno, tsno, albs, rhos

@@ -1,12 +1,11 @@
 !> Description:
 !>  Subroutine to save the run state to file.
-subroutine resumerun_save(fls, shd, cm)
+subroutine resumerun_save(fls, shd)
 
     use mpi_module
     use mesh_io_options
     use model_files_variables
     use sa_mesh_common
-    use climate_forcing
     use model_dates
     use resume_run
 
@@ -31,7 +30,6 @@ subroutine resumerun_save(fls, shd, cm)
     !> Input variables.
     type(fl_ids) fls
     type(ShedGridParams) shd
-    type(clim_info) cm
 
     !> Local variables.
     integer iun, j, z
@@ -223,7 +221,6 @@ subroutine resumerun_save(fls, shd, cm)
 
         !> Save files.
         if (index(resume_options%save%bin, '+STASONLY') == 0 .and. index(resume_options%save%bin, '+CLASSPROG') == 0) then
-            call climate_module_resume_save(fls, shd, cm)
             call save_init_prog_variables_class(fls, shd)
             call runsvs_mesh_save_states_seq(fls, shd)
             call bflm_resume_save(fls, shd)

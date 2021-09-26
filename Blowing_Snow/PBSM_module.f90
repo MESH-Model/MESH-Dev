@@ -83,20 +83,18 @@ module PBSM_module
     !> Description:
     !>  Set initial SnowAge & DrySnow values for PBSM calculations
     !>  (MK MacDonald, Sept 2010).
-    subroutine PBSM_init(fls, shd, cm)
+    subroutine PBSM_init(fls, shd)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         use RUNCLASS36_constants
 
         !> Input variables from driver.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
         !> Local variables.
         integer NML, k, m
@@ -166,18 +164,16 @@ module PBSM_module
         FC, FG, FCS, FGS, &
         SFCT, SFCU, SFCQ, ZRFM, ZOMLCS, ZOMLNS, &
         NML, &
-        fls, shd, cm)
+        fls, shd)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         !> Input variables from driver.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
         !> Input/output variables.
         integer, intent(in) :: NML
@@ -220,18 +216,16 @@ module PBSM_module
         GC, FARE, WSNOCS, WSNOGS, FCS, FGS, FC, FG, &
         TROO, ROFO, TROF, ROF, ROFN, PCPG, HTCS, WSNO, &
         NML, &
-        fls, shd, cm)
+        fls, shd)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         !> Input variables from driver.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
         !> Input/output variables.
         integer, intent(in) :: NML
@@ -256,16 +250,14 @@ module PBSM_module
 
     !> Description:
     !>  Finalize routine.
-    subroutine PSBM_finalize(fls, shd, cm)
+    subroutine PSBM_finalize(fls, shd)
 
         use model_files_variables
         use sa_mesh_common
-        use climate_forcing
 
         !> Input variables from driver.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
     end subroutine
 

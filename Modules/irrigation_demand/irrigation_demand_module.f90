@@ -53,15 +53,13 @@ module irrigation_module
 
     end subroutine
 
-    subroutine irrigation_init(fls, shd, cm)
+    subroutine irrigation_init(fls, shd)
 
         use model_files_variabletypes
         use sa_mesh_common
-        use climate_forcing
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(clim_info) :: cm
 
         integer ierr
 
@@ -92,16 +90,15 @@ module irrigation_module
 
     end subroutine
 
-    subroutine irrigation_within_tile(fls, shd, cm)
+    subroutine irrigation_within_tile(fls, shd)
 
         use mpi_module
         use model_files_variabletypes
         use sa_mesh_common
-        use climate_forcing
+        use model_dates
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(clim_info) :: cm
 
         integer n, l, k, j
         real smin, fsmin, ir, lqsum, check
@@ -233,16 +230,14 @@ module irrigation_module
 
     end subroutine
 
-    subroutine irrigation_open_output(fls, shd, cm)
+    subroutine irrigation_open_output(fls, shd)
 
         use mpi_module
         use model_files_variabletypes
         use sa_mesh_common
-        use climate_forcing
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(clim_info) :: cm
 
         character(len = 200) fn
         character(len = 3) ffmti
@@ -267,16 +262,15 @@ module irrigation_module
 
     end subroutine
 
-    subroutine irrigation_write_output(fls, shd, cm)
+    subroutine irrigation_write_output(fls, shd)
 
         use mpi_module
         use model_files_variabletypes
         use sa_mesh_common
-        use climate_forcing
+        use model_dates
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(clim_info) :: cm
 
         real, dimension(:), allocatable :: SUMIRDMND, SUMIRAVAI, SUMOLDPRE, SUMNEWPRE, SUMDSCTAR
         real frac

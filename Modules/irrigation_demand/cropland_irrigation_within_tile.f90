@@ -6,17 +6,15 @@ module cropland_irrigation_within_tile
 
     contains
 
-    subroutine runci_within_tile(shd, fls, cm)
+    subroutine runci_within_tile(shd, fls)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(clim_info) :: cm
 
         real, external :: calc_ET0
 

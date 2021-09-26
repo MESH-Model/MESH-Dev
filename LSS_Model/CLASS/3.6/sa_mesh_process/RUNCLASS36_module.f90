@@ -7,13 +7,12 @@ module RUNCLASS36_module
 
     contains
 
-    subroutine RUNCLASS36_within_tile(shd, fls, cm)
+    subroutine RUNCLASS36_within_tile(shd, fls)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         !> For internal variables.
         use RUNCLASS36_config
@@ -28,7 +27,6 @@ module RUNCLASS36_module
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(clim_info) :: cm
 
         integer NA, NTYPE, NML, IGND, k, ik, j, i
         real FRAC
@@ -348,7 +346,7 @@ module RUNCLASS36_module
                 cdv%SFCT, cdv%SFCU, cdv%SFCQ, &
                 catv%ZRFM, ZOMLCS, ZOMLNS, &
                 NML, &
-                fls, shd, cm)
+                fls, shd)
 
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
@@ -374,7 +372,7 @@ module RUNCLASS36_module
                 WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                 cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, &
                 NML, &
-                fls, shd, cm)
+                fls, shd)
 
             cdv%ROF = cdv%ROF - UMQ
 

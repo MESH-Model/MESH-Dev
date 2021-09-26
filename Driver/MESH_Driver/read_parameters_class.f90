@@ -1,4 +1,4 @@
-subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
+subroutine READ_PARAMETERS_CLASS(shd, fls, ierr)
 
     !> Required for file object and CLASS.ini file index.
     use model_files_variables
@@ -14,7 +14,6 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
     use RUNCLASS36_save_output
 
     !> Used for starting date of climate forcing data.
-    use climate_forcing
     use input_forcing, only: forcing_file_start_date_override
     use date_utilities, only: jday_to_date
 
@@ -23,7 +22,6 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
     !> Input variables.
     type(ShedGridParams) :: shd
     type(fl_ids) :: fls
-    type(clim_info) :: cm
 
     !> Output variables.
     integer, intent(out) :: ierr
@@ -134,15 +132,6 @@ subroutine READ_PARAMETERS_CLASS(shd, fls, cm, ierr)
     end if
 
     !> Distribute the starting date of the forcing files.
-!-    do n = 1, cm%nclim
-!-        if (cm%dat(n)%start_date%year == 0 .and. cm%dat(n)%start_date%jday == 0 .and. &
-!-            cm%dat(n)%start_date%hour == 0 .and. cm%dat(n)%start_date%mins == 0) then
-!-            cm%dat(n)%start_date%year = IYEAR
-!-            cm%dat(n)%start_date%jday = IJDAY
-!-            cm%dat(n)%start_date%hour = IHOUR
-!-            cm%dat(n)%start_date%mins = IMINS
-!-        end if
-!-    end do
     forcing_file_start_date_override%year = IYEAR
     forcing_file_start_date_override%jday = IJDAY
     call jday_to_date(IYEAR, IJDAY, forcing_file_start_date_override%month, forcing_file_start_date_override%day)

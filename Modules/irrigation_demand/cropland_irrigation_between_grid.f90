@@ -45,17 +45,15 @@ module cropland_irrigation_between_grid
 
     end subroutine
 
-    subroutine runci_between_grid(shd, fls, cm)
+    subroutine runci_between_grid(shd, fls)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(clim_info) :: cm
 
         !> Return if the cropland irrigation module is not active or if not the head node.
         if (.not. cifg%PROCESS_ACTIVE .or. ipid /= 0) return

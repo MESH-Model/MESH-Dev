@@ -1,4 +1,4 @@
-subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
+subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
 
     use mpi_module
     use strings
@@ -6,7 +6,6 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     use projection_variables
     use model_files_variables
     use FLAGS
-    use climate_forcing
     use parse_utilities
     use mesh_io
     use basin_utilities
@@ -16,7 +15,6 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     !> Input variables.
     type(fl_ids) fls
     type(ShedGridParams) shd
-    type(CLIM_INFO) cm
     character(len = *), intent(in) :: release
 
     !> Output variables.
@@ -49,7 +47,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     !>  Run options are read at the beginning of the run from
     !>  MESH_input_run_options.ini.
     !>
-    call READ_RUN_OPTIONS(fls, shd, cm, ierr)
+    call READ_RUN_OPTIONS(fls, shd, ierr)
     if (ierr /= 0) return
 
     !> Check that the output folder exists.
@@ -867,7 +865,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     end if
 
     !> Read resume configuration.
-!-    call resumerun_config(fls, shd, cm, ierr)
+!-    call resumerun_config(fls, shd, ierr)
 !-    if (ierr /= 0) then
 !-        call program_abort()
 !-    end if
@@ -877,33 +875,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     call CLASSD
 
     !> Read parameters from file.
-    call read_parameters(fls, shd, cm, ierr)
+    call read_parameters(fls, shd, ierr)
     if (ierr /= 0) return
-
-    !> Distribute the starting date of the forcing files.
-!-    do n = 1, cm%nclim
-!-        if (cm%dat(n)%start_date%year == 0 .and. cm%dat(n)%start_date%jday == 0 .and. &
-!-            cm%dat(n)%start_date%hour == 0 .and. cm%dat(n)%start_date%mins == 0) then
-!-            cm%dat(n)%start_date%year = cm%start_date%year
-!-            cm%dat(n)%start_date%jday = cm%start_date%jday
-!-            cm%dat(n)%start_date%hour = cm%start_date%hour
-!-            cm%dat(n)%start_date%mins = cm%start_date%mins
-!-        end if
-!-    end do
-
-    !> Set the starting date from the forcing files if none is provided.
-!-    if (ic%start%year == 0 .and. ic%start%jday == 0 .and. ic%start%hour == 0 .and. ic%start%mins == 0) then
-!-        ic%start%year = cm%dat(1)%start_date%year
-!-        ic%start%jday = cm%dat(1)%start_date%jday
-!-        ic%start%hour = cm%dat(1)%start_date%hour
-!-        ic%start%mins = cm%dat(1)%start_date%mins
-!-        do n = 2, cm%nclim
-!-            ic%start%year = min(ic%start%year, cm%dat(n)%start_date%year)
-!-            ic%start%jday = min(ic%start%jday, cm%dat(n)%start_date%jday)
-!-            ic%start%hour = min(ic%start%hour, cm%dat(n)%start_date%hour)
-!-            ic%start%mins = min(ic%start%mins, cm%dat(n)%start_date%mins)
-!-        end do
-!-    end if
 
 !>>fews
     !> Read 'FEWS' configuration file if one exists.
@@ -911,12 +884,12 @@ subroutine READ_INITIAL_INPUTS(fls, shd, cm, release, ierr)
     if (ltest) then
         call reset_tab()
         call print_remark("A 'FEWS' configuration file 'runinfo.nc' exists and will override user-provided configuration.")
-        call read_fews_runinfo_nc('runinfo.nc', cm, ierr)
+        call read_fews_runinfo_nc('runinfo.nc', ierr)
     end if
 !<<fews
 
     !> Read resume configuration.
-    call resumerun_config(fls, shd, cm, ierr)
+    call resumerun_config(fls, shd, ierr)
     if (ierr /= 0) then
         call program_abort()
     end if

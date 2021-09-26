@@ -314,12 +314,11 @@ module mountain_module
 
     end subroutine
 
-    subroutine mountain_init(fls, shd, cm)
+    subroutine mountain_init(fls, shd)
 
         !> Required for MESH variables and options.
         use model_files_variables
         use sa_mesh_common
-        use climate_forcing
 
         !> Required for 'il1', 'il2', and 'iln'.
         !> Because 'il1' and 'il2' are not passed to the subroutine, the
@@ -329,7 +328,6 @@ module mountain_module
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
         !> Local variables.
         integer k, ierr
@@ -457,7 +455,7 @@ module mountain_module
             call print_error("Values of 'aspect' are less than zero.")
             ierr = 1
         end if
-        if (mountain_mesh%pm%iwind == 1 .and. .not. cm%dat(ck%WD)%factive) then
+        if (mountain_mesh%pm%iwind == 1 .and. .not. associated(vs%tile%wdir)) then
             call print_error("'iwind' option 1 requires wind direction, but the driving variable is not active.")
             ierr = 1
         end if
@@ -785,12 +783,12 @@ module mountain_module
 
     end subroutine
 
-    subroutine mountain_within_tile(fls, shd, cm)
+    subroutine mountain_within_tile(fls, shd)
 
         !> Required for MESH variables.
         use model_files_variables
         use sa_mesh_common
-        use climate_forcing
+        use model_dates
 
         !> Required for 'il1', 'il2', and 'iln'.
         !> Because 'il1' and 'il2' are not passed to subroutine, the
@@ -800,9 +798,6 @@ module mountain_module
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-
-        !> Input/output variables.
-        type(clim_info) :: cm
 
         !> Local variables.
         integer k

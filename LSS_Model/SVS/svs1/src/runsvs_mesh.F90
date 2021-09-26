@@ -8,8 +8,6 @@ module runsvs_mesh
     use mpi_module
     use model_files_variables
     use sa_mesh_common
-!todo: Replace 'cm' instance with 'vs' counterparts.
-    use climate_forcing
     use model_dates
 
     !> SVS modules (created for MESH).
@@ -172,7 +170,7 @@ module runsvs_mesh
 
     contains
 
-    subroutine runsvs_mesh_init(shd, fls, cm)
+    subroutine runsvs_mesh_init(shd, fls)
 
         !> MESH modules.
         !*  FLAGS: Required for 'RESUMEFLAG'.
@@ -188,7 +186,6 @@ module runsvs_mesh
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(clim_info) :: cm
 
 !#include "options.cdk"
 #include "isbapar.cdk"
@@ -925,7 +922,7 @@ module runsvs_mesh
 
     end subroutine
 
-    subroutine runsvs_mesh_within_tile(shd, fls, cm)
+    subroutine runsvs_mesh_within_tile(shd, fls)
 
         !> SVS modules.
 !        use runsvs_mod
@@ -936,7 +933,6 @@ module runsvs_mesh
 
         type(ShedGridParams) :: shd
         type(fl_ids) :: fls
-        type(clim_info) :: cm
 
 !#include "options.cdk"
 #include "isbapar.cdk"

@@ -2,33 +2,32 @@ module sa_mesh_run_within_grid
 
     !> 'model_files_variables' required for 'fls' object and file keys.
     !> 'sa_mesh_common' required for common SA_MESH variables and routines.
-    !> 'climate_forcing' required for 'cm' variable.
+    !> 'model_dates' required for 'ic' counter.
     !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
     use model_files_variables
     use sa_mesh_common
-    use climate_forcing
+    use model_dates
     use mpi_module
 
     implicit none
 
     contains
 
-    subroutine run_within_grid_init(fls, shd, cm)
+    subroutine run_within_grid_init(fls, shd)
 
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Update variables.
-        call run_within_grid_stas_update(fls, shd, cm)
+        call run_within_grid_stas_update(fls, shd)
 
     end subroutine
 
-    subroutine run_within_grid(fls, shd, cm)
+    subroutine run_within_grid(fls, shd)
 
         !> Process modules.
         use baseflow_module
@@ -36,25 +35,23 @@ module sa_mesh_run_within_grid
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Update variables.
-        call run_within_grid_stas_update(fls, shd, cm)
+        call run_within_grid_stas_update(fls, shd)
 
         !> Call processes.
-        call bflm_within_grid(fls, shd, cm)
+        call bflm_within_grid(fls, shd)
 
     end subroutine
 
-    subroutine run_within_grid_mpi_isend(fls, shd, cm)
+    subroutine run_within_grid_mpi_isend(fls, shd)
 
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Local variables.
         integer nvars, t, i, j, u, ii1, ii2, iin, z
@@ -128,12 +125,11 @@ module sa_mesh_run_within_grid
 
     end subroutine
 
-    subroutine run_within_grid_mpi_irecv(fls, shd, cm)
+    subroutine run_within_grid_mpi_irecv(fls, shd)
 
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Local variables.
         integer nvars, t, c, i, j, u, ii1, ii2, iin, z
@@ -232,12 +228,11 @@ module sa_mesh_run_within_grid
 
     end subroutine
 
-    subroutine run_within_grid_stas_update(fls, shd, cm)
+    subroutine run_within_grid_stas_update(fls, shd)
 
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Local variables.
         integer k, ki, kj
@@ -696,12 +691,11 @@ module sa_mesh_run_within_grid
 
     end subroutine
 
-    subroutine run_within_grid_finalize(fls, shd, cm)
+    subroutine run_within_grid_finalize(fls, shd)
 
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return

@@ -152,12 +152,12 @@ module save_basin_output
 
     !> Global routines.
 
-    subroutine run_save_basin_output_init(fls, shd, cm)
+    subroutine run_save_basin_output_init(fls, shd)
 
         use model_files_variables
         use sa_mesh_common
+        use model_dates
         use FLAGS
-        use climate_forcing
         use strings
 
         !> Process modules.
@@ -166,7 +166,6 @@ module save_basin_output
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(clim_info) :: cm
 
         !> Local variables.
         integer, parameter :: MaxLenField = 20, MaxArgs = 20, MaxLenLine = 100
@@ -660,15 +659,13 @@ module save_basin_output
 
     end subroutine
 
-    subroutine run_save_basin_update_stg_ini(fls, shd, cm)
+    subroutine run_save_basin_update_stg_ini(fls, shd)
 
         use model_files_variables
         use sa_mesh_common
-        use climate_forcing
 
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
 !-        integer ikey, ii, i
 
@@ -693,19 +690,17 @@ module save_basin_output
 
     end subroutine
 
-    subroutine run_save_basin_output(fls, shd, cm)
+    subroutine run_save_basin_output(fls, shd)
 
         use model_files_variables
         use sa_mesh_common
         use FLAGS
         use model_dates
-        use climate_forcing
         use txt_io
 
         !> Input variables.
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(clim_info) :: cm
 
         !> Local variables.
         integer nmth, ndy, n
@@ -723,7 +718,7 @@ module save_basin_output
         if (.not. ISHEADNODE) return
 
         !> Update the water balance.
-!-        call update_water_balance(shd, cm)
+!-        call update_water_balance(shd)
 
         !> For evaporation related outputs.
 !-        if (BASINAVGEVPFILEFLAG > 0) then
@@ -734,7 +729,7 @@ module save_basin_output
 !-        end if
 
         !> Update the energy balance.
-!-        call update_energy_balance(shd, cm)
+!-        call update_energy_balance(shd)
 
         !> Hourly: IKEY_HLY
         if (ic%now%hour /= ic%next%hour) then
@@ -1030,16 +1025,14 @@ module save_basin_output
 
     end subroutine
 
-    subroutine run_save_basin_output_finalize(fls, shd, cm)
+    subroutine run_save_basin_output_finalize(fls, shd)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
-        use climate_forcing
 
         type(fl_ids) :: fls
         type(ShedGridParams) :: shd
-        type(clim_info) :: cm
 
         !> Return if basin output has been disabled.
 !-        if (BASINBALANCEOUTFLAG == 0) return
@@ -1196,20 +1189,16 @@ module save_basin_output
 
     end subroutine
 
-!-    subroutine update_water_balance(shd, cm)
+!-    subroutine update_water_balance(shd)
 
         !> For 'shd' variable type and output variables.
 !-        use sa_mesh_common
-
-        !> For 'cm' variable type.
-!-        use climate_forcing
 
         !> For 'ic' variable.
 !-        use model_dates
 
         !> Input variables.
 !-        type(ShedGridParams) :: shd
-!-        type(clim_info) :: cm
 
         !> Local variables.
 !-        real, dimension(:), allocatable :: PRE, EVAP, ROF, ROFO, ROFS, ROFB, RCAN, SNCAN, SNO, WSNO, PNDW, LZS, DZS
@@ -1550,20 +1539,16 @@ module save_basin_output
 
     end subroutine
 
-!-    subroutine update_energy_balance(shd, cm)
+!-    subroutine update_energy_balance(shd)
 
         !> For 'shd' variable type and output variables.
 !-        use sa_mesh_common
-
-        !> For 'cm' variable type.
-!-        use climate_forcing
 
         !> For 'ic' variable.
 !-        use model_dates
 
         !> Input variables.
 !-        type(ShedGridParams) :: shd
-!-        type(clim_info) :: cm
 
         !> Local variables.
 !-        integer, dimension(:), allocatable :: &

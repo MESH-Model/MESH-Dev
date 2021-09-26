@@ -24,7 +24,6 @@ OBJECTS=
 VPATH+=	$(DIR_REPO)/Driver/MESH_Driver: \
 		$(DIR_REPO)/Modules/strings: \
 		$(DIR_REPO)/Modules/mpi_module: \
-		$(DIR_REPO)/Modules/climate_forcing_module: \
 		$(DIR_REPO)/Modules/simulation_statistics: \
 		$(DIR_REPO)/Modules/irrigation_demand: \
 		$(DIR_REPO)/Modules/permafrost_outputs: \
@@ -43,15 +42,13 @@ OBJECTS+=	print_routines.o program_end.o program_abort.o \
 			mesh_io_options.o mesh_io_variables.o \
 			parse_utilities.o field_utilities.o date_utilities.o \
 			txt_io.o ensim_io.o nc_io.o \
-			climate_forcing_module_constants.o climate_forcing_module_variabletypes.o \
 			control_variables.o \
 			variable_names.o parameter_names.o \
 			projection_variables.o shd_variables.o fm_variables.o input_parameters.o model_variables.o \
 			mesh_io.o \
 			output_variables.o \
 			sa_mesh_common.o \
-			climate_forcing_module_config.o \
-			input_forcing.o climate_forcing_module_io.o climate_forcing_module.o \
+			input_forcing.o \
 			basin_utilities.o \
 			tile_connector.o resume_run.o
 # Process modules.

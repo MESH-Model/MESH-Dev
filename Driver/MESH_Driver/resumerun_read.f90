@@ -1,10 +1,9 @@
 !> Description:
 !>  Subroutine to resume the run state from file.
-subroutine resumerun_read(fls, shd, cm, ierr)
+subroutine resumerun_read(fls, shd, ierr)
 
     use mesh_io_options
     use sa_mesh_common
-    use climate_forcing
     use sa_mesh_run_within_tile
     use sa_mesh_run_within_grid
     use sa_mesh_run_between_grid
@@ -32,7 +31,6 @@ subroutine resumerun_read(fls, shd, cm, ierr)
     !> Input variables.
     type(fl_ids) fls
     type(ShedGridParams) shd
-    type(clim_info) cm
 
     !> Output variables.
     integer, intent(out) :: ierr
@@ -160,7 +158,6 @@ subroutine resumerun_read(fls, shd, cm, ierr)
                 fls%fl(mfk%f883)%fn = trim(fname(1:index(fname, '.'))) // trim(adjustl(line)) // trim(fname(index(fname, '.'):))
             end if
             if (index(resume_options%resume%bin, '+STASONLY') == 0 .and. index(resume_options%resume%bin, '+CLASSPROG') == 0) then
-                lstate = climate_module_resume_read(fls, shd, cm)
                 call read_init_prog_variables_class(fls, shd)
                 call runsvs_mesh_resume_states_seq(fls, shd, resume_ts = .true.)
                 call bflm_resume_read(fls, shd)
@@ -229,8 +226,8 @@ subroutine resumerun_read(fls, shd, cm, ierr)
     end if
 
     !> Update derived values.
-    call run_within_tile_stas_update(fls, shd, cm)
-    call run_within_grid_stas_update(fls, shd, cm)
-    call run_within_grid_stas_basin_update(fls, shd, cm)
+    call run_within_tile_stas_update(fls, shd)
+    call run_within_grid_stas_update(fls, shd)
+    call run_within_grid_stas_basin_update(fls, shd)
 
 end subroutine

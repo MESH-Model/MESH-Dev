@@ -54,18 +54,16 @@ module baseflow_module
 
     contains
 
-    subroutine bflm_init(fls, shd, cm)
+    subroutine bflm_init(fls, shd)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
         !> Local variables.
         integer NA, NML, NTYPE, NRVR, iun, n, i, ierr
@@ -211,18 +209,16 @@ module baseflow_module
 
     end subroutine
 
-    subroutine bflm_within_tile(fls, shd, cm)
+    subroutine bflm_within_tile(fls, shd)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
         !> Local variables.
         integer k
@@ -247,18 +243,16 @@ module baseflow_module
 
     end subroutine
 
-    subroutine bflm_within_grid(fls, shd, cm)
+    subroutine bflm_within_grid(fls, shd)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
         !> Local variables.
         integer k
@@ -331,18 +325,16 @@ module baseflow_module
 
     end subroutine
 
-    subroutine bflm_finalize(fls, shd, cm)
+    subroutine bflm_finalize(fls, shd)
 
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
-        use climate_forcing
 
         !> Input variables.
         type(fl_ids), intent(in) :: fls
         type(ShedGridParams), intent(in) :: shd
-        type(clim_info), intent(in) :: cm
 
         !> Return if BASEFLOWFLAG is not active.
         if (bflm%BASEFLOWFLAG == 0) return

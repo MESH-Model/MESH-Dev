@@ -2,11 +2,11 @@ module sa_mesh_run_between_grid
 
     !> 'model_files_variables' required for 'fls' object and file keys.
     !> 'sa_mesh_common' required for common SA_MESH variables and routines.
-    !> 'climate_forcing' required for 'cm' variable.
+    !> 'model_dates' required for 'ic' counter.
     !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
     use model_files_variables
     use sa_mesh_common
-    use climate_forcing
+    use model_dates
     use mpi_module
 
 !temp: Outputs.
@@ -73,7 +73,7 @@ module sa_mesh_run_between_grid
 
     contains
 
-    subroutine run_between_grid_init(fls, shd, cm)
+    subroutine run_between_grid_init(fls, shd)
 
         !> Process modules.
 !-        use SA_RTE_module
@@ -94,7 +94,6 @@ module sa_mesh_run_between_grid
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Local variables.
 !-        integer, parameter :: MaxLenField = 20, MaxArgs = 20, MaxLenLine = 100
@@ -376,13 +375,13 @@ module sa_mesh_run_between_grid
 !<<<temp_diversion
 
         !> Update basin variables.
-        call run_within_grid_stas_basin_update(fls, shd, cm)
+        call run_within_grid_stas_basin_update(fls, shd)
 
 !-1010    format(9999(g15.7e2, ','))
 
     end subroutine
 
-    subroutine run_between_grid(fls, shd, cm)
+    subroutine run_between_grid(fls, shd)
 
         !> Process modules.
 !-        use SA_RTE_module
@@ -397,7 +396,6 @@ module sa_mesh_run_between_grid
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Local variables.
 !-        integer k, ki
@@ -551,10 +549,10 @@ module sa_mesh_run_between_grid
 !-        call SA_RTE(shd)
         call WF_ROUTE_between_grid(fls, shd)
         call run_rte_between_grid(fls, shd)
-        call runci_between_grid(shd, fls, cm)
+        call runci_between_grid(shd, fls)
 
         !> Update basin variables.
-        call run_within_grid_stas_basin_update(fls, shd, cm)
+        call run_within_grid_stas_basin_update(fls, shd)
 
         !> Update output variables.
 !todo: remove this when code for output files has moved.
@@ -661,12 +659,11 @@ module sa_mesh_run_between_grid
 
     end subroutine
 
-    subroutine run_within_grid_stas_basin_update(fls, shd, cm)
+    subroutine run_within_grid_stas_basin_update(fls, shd)
 
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Local variables.
         integer j, ii, i
@@ -1892,7 +1889,7 @@ module sa_mesh_run_between_grid
 
     end subroutine
 
-    subroutine run_between_grid_finalize(fls, shd, cm)
+    subroutine run_between_grid_finalize(fls, shd)
 
         !> Process modules.
         use WF_ROUTE_config
@@ -1901,7 +1898,6 @@ module sa_mesh_run_between_grid
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Return if not the head node or if grid processes are not active.
         if (ipid /= 0 .or. .not. ro%RUNGRID) return

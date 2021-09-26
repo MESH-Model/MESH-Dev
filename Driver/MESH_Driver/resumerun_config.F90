@@ -1,12 +1,12 @@
 !> Description:
 !>  Subroutine to read the resume configuration.
-subroutine resumerun_config(fls, shd, cm, ierr)
+subroutine resumerun_config(fls, shd, ierr)
 
     use strings
     use mesh_io_options
     use model_files_variables
     use sa_mesh_common
-    use climate_forcing
+    use model_dates
     use resume_run
 
     implicit none
@@ -14,7 +14,6 @@ subroutine resumerun_config(fls, shd, cm, ierr)
     !> Input variables.
     type(fl_ids) fls
     type(ShedGridParams) shd
-    type(clim_info) cm
 
     !> Output variables.
     integer, intent(out) :: ierr

@@ -102,7 +102,6 @@ program RUNMESH
     use sa_mesh_run_within_grid
     use sa_mesh_run_between_grid
     use model_dates
-    use climate_forcing
     use output_files
     use save_basin_output
     use SIMSTATS
@@ -115,7 +114,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.4'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1814'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1815'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -150,7 +149,6 @@ program RUNMESH
 
     type(fl_ids) fls
     type(ShedGridParams) shd
-    type(CLIM_INFO) cm
 
     !> Basin totals for the run from RESUMEFLAG.
     integer(kind = 4) &
@@ -242,7 +240,7 @@ program RUNMESH
 
     !> Read inputs.
     ierr = 0
-    call READ_INITIAL_INPUTS(fls, shd, cm, RELEASE_STRING, ierr)
+    call READ_INITIAL_INPUTS(fls, shd, RELEASE_STRING, ierr)
 
     !> Stop if an error occured.
     call reset_tab()
@@ -260,8 +258,6 @@ program RUNMESH
 
     !> Initialize climate forcing module.
     if (ro%RUNCLIM) then
-!-        ENDDATA = climate_module_init(fls, shd, il1, il2, cm)
-!-        if (ENDDATA) goto 97
         call open_input_forcing_files(ierr)
         if (ierr /= 0) then
             call reset_tab()
@@ -324,10 +320,10 @@ program RUNMESH
 
     !> Initialize process modules.
     if (ro%RUNTILE) then
-        call run_within_tile_init(fls, shd, cm)
-        call run_within_grid_init(fls, shd, cm)
+        call run_within_tile_init(fls, shd)
+        call run_within_grid_init(fls, shd)
     end if
-    if (ro%RUNGRID) call run_between_grid_init(fls, shd, cm)
+    if (ro%RUNGRID) call run_between_grid_init(fls, shd)
 
     !> Initialize basin totals for the run.
 !-    if (ISHEADNODE) then
@@ -342,17 +338,17 @@ program RUNMESH
     !> Open output files.
     if (ISHEADNODE) then
         call output_files_init(fls, shd)
-        call run_save_basin_output_init(fls, shd, cm)
+        call run_save_basin_output_init(fls, shd)
     end if
 
     if (ISHEADNODE .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_init(fls)
 
     !> Read resume configuration.
-!?    call resumerun_config(fls, shd, cm, ierr)
+!?    call resumerun_config(fls, shd, ierr)
 !?    if (ierr /= 0) call program_abort()
 
     !> Read resume files.
-    call resumerun_read(fls, shd, cm, ierr)
+    call resumerun_read(fls, shd, ierr)
 
 !-    FRAME_NO_NEW = 1
 
@@ -369,13 +365,6 @@ program RUNMESH
 !            write(ECHO_TXT_IUN, "('Configuration flags - specified by user or default values')")
 
 !todo: this list should be updated (dgp: 2015-01-09)
-!-            write(ECHO_TXT_IUN, *) 'BASINSHORTWAVEFLAG   = ', cm%dat(ck%FB)%ffmt
-!-            write(ECHO_TXT_IUN, *) 'BASINLONGWAVEFLAG    = ', cm%dat(ck%FI)%ffmt
-!-            write(ECHO_TXT_IUN, *) 'BASINRAINFLAG        = ', cm%dat(ck%RT)%ffmt
-!-            write(ECHO_TXT_IUN, *) 'BASINTEMPERATUREFLAG = ', cm%dat(ck%TT)%ffmt
-!-            write(ECHO_TXT_IUN, *) 'BASINWINDFLAG        = ', cm%dat(ck%UV)%ffmt
-!-            write(ECHO_TXT_IUN, *) 'BASINPRESFLAG        = ', cm%dat(ck%P0)%ffmt
-!-            write(ECHO_TXT_IUN, *) 'BASINHUMIDITYFLAG    = ', cm%dat(ck%HU)%ffmt
 !-            write(ECHO_TXT_IUN, *) 'RESUMEFLAG           = ', RESUMEFLAG
 !-            write(ECHO_TXT_IUN, *) 'SAVERESUMEFLAG       = ', SAVERESUMEFLAG
 !            write(ECHO_TXT_IUN, *) 'SHDFILEFLAG          = ', SHDFILEFMT
@@ -929,7 +918,7 @@ program RUNMESH
         !> Close the file to free the unit.
         close(iun)
 !-    else
-!-        call run_save_basin_update_stg_ini(fls, shd, cm)
+!-        call run_save_basin_update_stg_ini(fls, shd)
     end if
 
     !> Update 'next' counter.
@@ -960,26 +949,24 @@ program RUNMESH
 
         !> Load or update climate forcing input.
         if (ro%RUNCLIM) then
-!-            ENDDATA = climate_module_update_data(fls, shd, il1, il2, cm)
-!-            if (ENDDATA) exit
             call read_input_forcing_frame(ierr)
             if (ierr /= 0) exit
         end if
 
         !> Distribute grid states (e.g., channel storage) to worker nodes.
-        if (ro%RUNGRID) call run_within_grid_mpi_irecv(fls, shd, cm)
+        if (ro%RUNGRID) call run_within_grid_mpi_irecv(fls, shd)
 
         !> Run tile-based processes.
         if (ro%RUNTILE) then
-            call run_within_tile(fls, shd, cm)
-            call run_within_grid(fls, shd, cm)
+            call run_within_tile(fls, shd)
+            call run_within_grid(fls, shd)
         end if
 
         !> Update grid states (e.g., channel storage) from worker nodes.
-        if (ro%RUNGRID) call run_within_grid_mpi_isend(fls, shd, cm)
+        if (ro%RUNGRID) call run_within_grid_mpi_isend(fls, shd)
 
         !> Run grid-based processes.
-        if (ro%RUNGRID) call run_between_grid(fls, shd, cm)
+        if (ro%RUNGRID) call run_between_grid(fls, shd)
 
         !> Update output variables.
 !todo: Enable this when the one in 'run_between_grid' is removed.
@@ -1040,7 +1027,7 @@ program RUNMESH
 
             !> Update output files.
             call output_files_update(fls, shd)
-            call run_save_basin_output(fls, shd, cm)
+            call run_save_basin_output(fls, shd)
 
             !> Metrics and pre-emption.
             if (ic%now%day /= ic%next%day .and. mtsflg%AUTOCALIBRATIONFLAG > 0) then
@@ -1099,7 +1086,7 @@ program RUNMESH
             end if
 
             !> Save resume files.
-            call resumerun_save(fls, shd, cm)
+            call resumerun_save(fls, shd)
         end if
 
         !> Update the current time-step and counter.
@@ -1207,7 +1194,7 @@ program RUNMESH
 
     !> Close output files.
     call output_files_finalize(fls, shd)
-    call run_save_basin_output_finalize(fls, shd, cm)
+    call run_save_basin_output_finalize(fls, shd)
 
     !> *********************************************************************
     !> Run is now over, print final results to the screen and close files
@@ -1223,11 +1210,10 @@ program RUNMESH
 
     !> Call finalization routines.
     if (ro%RUNTILE) then
-        call run_within_tile_finalize(fls, shd, cm)
-        call run_within_grid_finalize(fls, shd, cm)
+        call run_within_tile_finalize(fls, shd)
+        call run_within_grid_finalize(fls, shd)
     end if
-    if (ro%RUNGRID) call run_between_grid_finalize(fls, shd, cm)
-    if (ro%RUNCLIM) call climate_module_finalize(fls, shd, cm)
+    if (ro%RUNGRID) call run_between_grid_finalize(fls, shd)
 
     !> Save resume files.
     !> Force the save frequency to 'now' to force saving the files.

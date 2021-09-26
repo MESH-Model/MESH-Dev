@@ -2,11 +2,11 @@ module sa_mesh_run_within_tile
 
     !> 'model_files_variables' required for 'fls' object and file keys.
     !> 'sa_mesh_common' required for common SA_MESH variables and routines.
-    !> 'climate_forcing' required for 'cm' variable.
+    !> 'model_dates' required for 'ic' counter.
     !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
     use model_files_variables
     use sa_mesh_common
-    use climate_forcing
+    use model_dates
     use mpi_module
 
     implicit none
@@ -17,7 +17,7 @@ module sa_mesh_run_within_tile
 
     contains
 
-    subroutine run_within_tile_init(fls, shd, cm)
+    subroutine run_within_tile_init(fls, shd)
 
         !> Process modules.
         use RUNCLASS36_config
@@ -30,7 +30,6 @@ module sa_mesh_run_within_tile
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Local variables.
         integer n, j
@@ -39,18 +38,18 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
         !> Call processes.
-        call irrigation_init(fls, shd, cm)
-        call mountain_init(fls, shd, cm)
-        call RUNCLASS36_init(shd, fls, cm)
-        call runsvs_mesh_init(shd, fls, cm)
-        call bflm_init(fls, shd, cm)
+        call irrigation_init(fls, shd)
+        call mountain_init(fls, shd)
+        call RUNCLASS36_init(shd, fls)
+        call runsvs_mesh_init(shd, fls)
+        call bflm_init(fls, shd)
         call runci_init(shd, fls)
 
         !> Update variables.
-        call run_within_tile_stas_update(fls, shd, cm)
+        call run_within_tile_stas_update(fls, shd)
 
         !> Output files.
-        call irrigation_open_output(fls, shd, cm)
+        call irrigation_open_output(fls, shd)
 
         !> Build MPI lists.
         if (inp > 0) then
@@ -329,7 +328,7 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile(fls, shd, cm)
+    subroutine run_within_tile(fls, shd)
 
         !> Process modules.
         use RUNCLASS36_module
@@ -342,39 +341,38 @@ module sa_mesh_run_within_tile
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Reset variables non-prognostic variables.
-        call run_within_tile_stas_reset(fls, shd, cm)
+        call run_within_tile_stas_reset(fls, shd)
 
         !> Call processes.
-        call irrigation_within_tile(fls, shd, cm)
+        call irrigation_within_tile(fls, shd)
 
         !> MPI exchange.
-        call run_within_tile_mpi_irecv(fls, shd, cm)
+        call run_within_tile_mpi_irecv(fls, shd)
 
         !> Call processes.
-        call mountain_within_tile(fls, shd, cm)
-        call RUNCLASS36_within_tile(shd, fls, cm)
-        call runsvs_mesh_within_tile(shd, fls, cm)
-        call bflm_within_tile(fls, shd, cm)
-        call runci_within_tile(shd, fls, cm)
+        call mountain_within_tile(fls, shd)
+        call RUNCLASS36_within_tile(shd, fls)
+        call runsvs_mesh_within_tile(shd, fls)
+        call bflm_within_tile(fls, shd)
+        call runci_within_tile(shd, fls)
 
         !> MPI exchange.
-        call run_within_tile_mpi_isend(fls, shd, cm)
+        call run_within_tile_mpi_isend(fls, shd)
 
         !> Update variables.
-        call run_within_tile_stas_update(fls, shd, cm)
+        call run_within_tile_stas_update(fls, shd)
 
         !> Output files.
-        call irrigation_write_output(fls, shd, cm)
+        call irrigation_write_output(fls, shd)
 
     end subroutine
 
-    subroutine run_within_tile_mpi_isend(fls, shd, cm)
+    subroutine run_within_tile_mpi_isend(fls, shd)
 
         !> Process modules.
 !-        use baseflow_module
@@ -383,7 +381,6 @@ module sa_mesh_run_within_tile
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Local variables.
 !-        integer nvars, t, j, s
@@ -676,7 +673,7 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile_mpi_irecv(fls, shd, cm)
+    subroutine run_within_tile_mpi_irecv(fls, shd)
 
         !> Process modules.
 !-        use irrigation_module
@@ -684,7 +681,6 @@ module sa_mesh_run_within_tile
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Local variables.
 !-        integer nvars, t, j
@@ -797,12 +793,11 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile_stas_reset(fls, shd, cm)
+    subroutine run_within_tile_stas_reset(fls, shd)
 
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
@@ -906,7 +901,7 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile_stas_update(fls, shd, cm)
+    subroutine run_within_tile_stas_update(fls, shd)
 
 !+todo: There's a dependency on CLASSBD.f.
         use RUNCLASS36_constants, only: RHOW, RHOICE
@@ -914,7 +909,6 @@ module sa_mesh_run_within_tile
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
@@ -975,7 +969,7 @@ module sa_mesh_run_within_tile
 
     end subroutine
 
-    subroutine run_within_tile_finalize(fls, shd, cm)
+    subroutine run_within_tile_finalize(fls, shd)
 
         !> Process modules.
         use RUNCLASS36_config
@@ -985,14 +979,13 @@ module sa_mesh_run_within_tile
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
-        type(clim_info) cm
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
 
         !> Call processes.
-        call RUNCLASS36_finalize(fls, shd, cm)
-        call bflm_finalize(fls, shd, cm)
+        call RUNCLASS36_finalize(fls, shd)
+        call bflm_finalize(fls, shd)
         call runsvs_mesh_finalize(shd, fls)
 
     end subroutine

@@ -4,14 +4,14 @@
 !>  by SA_MESH are accessible by 'sa_mesh_variables'. Other
 !>  parameters are accessible by their respecitve process module(s).
 !>
-subroutine read_parameters(fls, shd, cm, ierr)
+subroutine read_parameters(fls, shd, ierr)
 
     use strings
     use mpi_module
     use model_files_variables
     use sa_mesh_common
+    use model_dates
     use FLAGS
-    use climate_forcing_variabletypes
 
     use RUNCLASS36_variables
     use runsvs_mesh
@@ -27,7 +27,6 @@ subroutine read_parameters(fls, shd, cm, ierr)
     !> Input variables.
     type(fl_ids):: fls
     type(ShedGridParams) :: shd
-    type(CLIM_INFO) :: cm
 
     !> Output variables.
     integer, intent(out) :: ierr
@@ -217,7 +216,7 @@ subroutine read_parameters(fls, shd, cm, ierr)
     if (btest(INPUTPARAMSFORMFLAG, 0)) then
         z = 0
         if (ro%RUNLSS) then
-            call READ_PARAMETERS_CLASS(shd, fls, cm, z); if (z /= 0) ierr = z
+            call READ_PARAMETERS_CLASS(shd, fls, z); if (z /= 0) ierr = z
         end if
         if (ro%RUNLSS .or. ro%RUNCHNL) then
             call READ_PARAMETERS_HYDROLOGY(shd, fls, z); if (z /= 0) ierr = z
