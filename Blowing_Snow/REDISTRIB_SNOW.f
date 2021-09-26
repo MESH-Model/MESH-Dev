@@ -101,83 +101,83 @@ C
         total=0.0
 
         DO 400 nn=1,GRUsInGS
-          !First GRU
-          IF(nn.EQ.1) THEN
-            IF(distrib(nn).GT.0.) THEN
-             IF(Drift(nn).GT.0.) THEN
-              transport=Drift(nn)*distrib(nn)
-              !Redistribute transport within first GRU and calculate snowpack properties at subarea-level
-                 IF(FCS(nn).GT.0.) THEN
-                   HTCS(nn)=HTCS(nn)-FCS(nn)*HCPSCS(nn)*(TSNOCS(nn)
-     1                  +TFREZ)*ZSNOCS(nn)/DELT
-                   ZSNOCS(nn)=ZSNOCS(nn)+transport/RHOSNOSumDrift
-                   HCPSCS(nn)=HCPICE*RHOSCS(nn)/RHOICE+HCPW*WSNOCS(nn)/
-     1                  (RHOW*ZSNOCS(nn))
-                   HTCS(nn)=HTCS(nn)+FCS(nn)*HCPSCS(nn)*(TSNOCS(nn)
-     1                  +TFREZ)*ZSNOCS(nn)/DELT
-                   IF(FCS(nn).GT.0. .AND. ZSNOCS(nn).GT.0.) XSNOCS=1.0
-                 ENDIF
-                 IF(FGS(nn).GT.0.) THEN
-                   HTCS(nn)=HTCS(nn)-FGS(nn)*HCPSGS(nn)*(TSNOGS(nn)
-     1                  +TFREZ)*ZSNOGS(nn)/DELT
-                   ZSNOGS(nn)=ZSNOGS(nn)+transport/RHOSNOSumDrift
-                   HCPSGS(nn)=HCPICE*RHOSGS(nn)/RHOICE+HCPW*WSNOGS(nn)/
-     1                  (RHOW*ZSNOGS(nn))
-                   HTCS(nn)=HTCS(nn)+FGS(nn)*HCPSGS(nn)*(TSNOGS(nn)
-     1                  +TFREZ)*ZSNOGS(nn)/DELT
-                   IF(FGS(nn).GT.0. .AND. ZSNOGS(nn).GT.0.) XSNOGS=1.0
-                 ENDIF
-                 IF(FC(nn).GT.0.) THEN
-                   HTCS(nn)=HTCS(nn)-FC(nn)*HCPSC(nn)*(TSNOWC(nn)+TFREZ)
-     1                  *ZSNOWC(nn)/DELT
-                   ZSNOWC(nn)=ZSNOWC(nn)+transport/RHOSNOSumDrift
-                   HCPSC(nn)=HCPICE*RHOSC(nn)/RHOICE
-                   HTCS(nn)=HTCS(nn)+FC(nn)*HCPSC(nn)*(TSNOWC(nn)+TFREZ)
-     1                  *ZSNOWC(nn)/DELT
-                   IF(FC(nn).GT.0. .AND. ZSNOWC(nn).GT.0.) XSNOWC=1.0
-                 ENDIF
-                 IF(FG(nn).GT.0.) THEN
-                   HTCS(nn)=HTCS(nn)-FG(nn)*HCPSG(nn)*(TSNOWG(nn)+TFREZ)
-     1                  *ZSNOWG(nn)/DELT
-                   ZSNOWG(nn)=ZSNOWG(nn)+transport/RHOSNOSumDrift
-                   HCPSG(nn)=HCPICE*RHOSG(nn)/RHOICE
-                   HTCS(nn)=HTCS(nn)+FG(nn)*HCPSG(nn)*(TSNOWG(nn)+TFREZ)
-     1                  *ZSNOWG(nn)/DELT
-                   IF(FG(nn).GT.0. .AND. ZSNOWG(nn).GT.0.) XSNOWG=1.0
-                 ENDIF
-	    	     !> Calculate snowpack properties & add drift at GRU-level
-                 TSNOW(nn)=(FCS(nn)*(TSNOCS(nn)+TFREZ)*HCPSCS(nn)*
-     1                  ZSNOCS(nn)*XSNOCS +
-     2                  FGS(nn)*(TSNOGS(nn)+TFREZ)*HCPSGS(nn)*
-     3                  ZSNOGS(nn)*XSNOGS +
-     4                  FC (nn)*(TSNOWC(nn)+TFREZ)*HCPSC(nn)*
-     5                  ZSNOWC(nn)*XSNOWC +
-     6                  FG (nn)*(TSNOWG(nn)+TFREZ)*HCPSG(nn)*
-     7                  ZSNOWG(nn)*XSNOWG)/
-     8                 (FCS(nn)*HCPSCS(nn)*ZSNOCS(nn)*XSNOCS +
-     9                  FGS(nn)*HCPSGS(nn)*ZSNOGS(nn)*XSNOGS +
-     A                  FC (nn)*HCPSC(nn)*ZSNOWC(nn)*XSNOWC +
-     B                  FG (nn)*HCPSG(nn)*ZSNOWG(nn)*XSNOWG)
-                 RHOSNO(nn)=(FCS(nn)*RHOSCS(nn)*ZSNOCS(nn)*XSNOCS +   
-     1                   FGS(nn)*RHOSGS(nn)*ZSNOGS(nn)*XSNOGS +   
-     2                   FC (nn)*RHOSC(nn)*ZSNOWC(nn)*XSNOWC +   
-     3                   FG (nn)*RHOSG(nn)*ZSNOWG(nn)*XSNOWG)/    
-     4                  (FCS(nn)*ZSNOCS(nn)*XSNOCS +
-     5                   FGS(nn)*ZSNOGS(nn)*XSNOGS +                 
-     6                   FC (nn)*ZSNOWC(nn)*XSNOWC +
-     7                   FG (nn)*ZSNOWG(nn)*XSNOWG)
-                 ZSNOW(nn)=FCS(nn)*ZSNOCS(nn) + FGS(nn)*ZSNOGS(nn) +
-     1                 FC (nn)*ZSNOWC(nn) + FG (nn)*ZSNOWG(nn)
-                 SNO(nn)=ZSNOW(nn)*RHOSNO(nn)
-                 Deposition(nn)=transport
-             ELSE
-              Deposition(nn)=0.0
-             ENDIF !(Drift(nn).GT.0.)
-            ELSE
-              Deposition(nn)=0.0
-            ENDIF !(distrib(nn).GT.0.)
-          !Not first GRU
-          ELSE
+C          !First GRU
+C          IF(nn.EQ.1) THEN
+C            IF(distrib(nn).GT.0.) THEN
+C             IF(Drift(nn).GT.0.) THEN
+C              transport=Drift(nn)*distrib(nn)
+C              !Redistribute transport within first GRU and calculate snowpack properties at subarea-level
+C                 IF(FCS(nn).GT.0.) THEN
+C                   HTCS(nn)=HTCS(nn)-FCS(nn)*HCPSCS(nn)*(TSNOCS(nn)
+C     1                  +TFREZ)*ZSNOCS(nn)/DELT
+C                   ZSNOCS(nn)=ZSNOCS(nn)+transport/RHOSNOSumDrift
+C                   HCPSCS(nn)=HCPICE*RHOSCS(nn)/RHOICE+HCPW*WSNOCS(nn)/
+C     1                  (RHOW*ZSNOCS(nn))
+C                   HTCS(nn)=HTCS(nn)+FCS(nn)*HCPSCS(nn)*(TSNOCS(nn)
+C     1                  +TFREZ)*ZSNOCS(nn)/DELT
+C                   IF(FCS(nn).GT.0. .AND. ZSNOCS(nn).GT.0.) XSNOCS=1.0
+C                 ENDIF
+C                 IF(FGS(nn).GT.0.) THEN
+C                   HTCS(nn)=HTCS(nn)-FGS(nn)*HCPSGS(nn)*(TSNOGS(nn)
+C     1                  +TFREZ)*ZSNOGS(nn)/DELT
+C                   ZSNOGS(nn)=ZSNOGS(nn)+transport/RHOSNOSumDrift
+C                   HCPSGS(nn)=HCPICE*RHOSGS(nn)/RHOICE+HCPW*WSNOGS(nn)/
+C     1                  (RHOW*ZSNOGS(nn))
+C                   HTCS(nn)=HTCS(nn)+FGS(nn)*HCPSGS(nn)*(TSNOGS(nn)
+C     1                  +TFREZ)*ZSNOGS(nn)/DELT
+C                   IF(FGS(nn).GT.0. .AND. ZSNOGS(nn).GT.0.) XSNOGS=1.0
+C                 ENDIF
+C                 IF(FC(nn).GT.0.) THEN
+C                   HTCS(nn)=HTCS(nn)-FC(nn)*HCPSC(nn)*(TSNOWC(nn)+TFREZ)
+C     1                  *ZSNOWC(nn)/DELT
+C                   ZSNOWC(nn)=ZSNOWC(nn)+transport/RHOSNOSumDrift
+C                   HCPSC(nn)=HCPICE*RHOSC(nn)/RHOICE
+C                   HTCS(nn)=HTCS(nn)+FC(nn)*HCPSC(nn)*(TSNOWC(nn)+TFREZ)
+C     1                  *ZSNOWC(nn)/DELT
+C                   IF(FC(nn).GT.0. .AND. ZSNOWC(nn).GT.0.) XSNOWC=1.0
+C                 ENDIF
+C                 IF(FG(nn).GT.0.) THEN
+C                   HTCS(nn)=HTCS(nn)-FG(nn)*HCPSG(nn)*(TSNOWG(nn)+TFREZ)
+C     1                  *ZSNOWG(nn)/DELT
+C                   ZSNOWG(nn)=ZSNOWG(nn)+transport/RHOSNOSumDrift
+C                   HCPSG(nn)=HCPICE*RHOSG(nn)/RHOICE
+C                   HTCS(nn)=HTCS(nn)+FG(nn)*HCPSG(nn)*(TSNOWG(nn)+TFREZ)
+C     1                  *ZSNOWG(nn)/DELT
+C                   IF(FG(nn).GT.0. .AND. ZSNOWG(nn).GT.0.) XSNOWG=1.0
+C                 ENDIF
+C	    	     !> Calculate snowpack properties & add drift at GRU-level
+C                 TSNOW(nn)=(FCS(nn)*(TSNOCS(nn)+TFREZ)*HCPSCS(nn)*
+C     1                  ZSNOCS(nn)*XSNOCS +
+C     2                  FGS(nn)*(TSNOGS(nn)+TFREZ)*HCPSGS(nn)*
+C     3                  ZSNOGS(nn)*XSNOGS +
+C     4                  FC (nn)*(TSNOWC(nn)+TFREZ)*HCPSC(nn)*
+C     5                  ZSNOWC(nn)*XSNOWC +
+C     6                  FG (nn)*(TSNOWG(nn)+TFREZ)*HCPSG(nn)*
+C     7                  ZSNOWG(nn)*XSNOWG)/
+C     8                 (FCS(nn)*HCPSCS(nn)*ZSNOCS(nn)*XSNOCS +
+C     9                  FGS(nn)*HCPSGS(nn)*ZSNOGS(nn)*XSNOGS +
+C     A                  FC (nn)*HCPSC(nn)*ZSNOWC(nn)*XSNOWC +
+C     B                  FG (nn)*HCPSG(nn)*ZSNOWG(nn)*XSNOWG)
+C                 RHOSNO(nn)=(FCS(nn)*RHOSCS(nn)*ZSNOCS(nn)*XSNOCS +   
+C     1                   FGS(nn)*RHOSGS(nn)*ZSNOGS(nn)*XSNOGS +   
+C     2                   FC (nn)*RHOSC(nn)*ZSNOWC(nn)*XSNOWC +   
+C     3                   FG (nn)*RHOSG(nn)*ZSNOWG(nn)*XSNOWG)/    
+C     4                  (FCS(nn)*ZSNOCS(nn)*XSNOCS +
+C     5                   FGS(nn)*ZSNOGS(nn)*XSNOGS +                 
+C     6                   FC (nn)*ZSNOWC(nn)*XSNOWC +
+C     7                   FG (nn)*ZSNOWG(nn)*XSNOWG)
+C                 ZSNOW(nn)=FCS(nn)*ZSNOCS(nn) + FGS(nn)*ZSNOGS(nn) +
+C     1                 FC (nn)*ZSNOWC(nn) + FG (nn)*ZSNOWG(nn)
+C                 SNO(nn)=ZSNOW(nn)*RHOSNO(nn)
+C                 Deposition(nn)=transport
+C             ELSE
+C              Deposition(nn)=0.0
+C             ENDIF !(Drift(nn).GT.0.)
+C            ELSE
+C              Deposition(nn)=0.0
+C            ENDIF !(distrib(nn).GT.0.)
+C          !Not first GRU
+C          ELSE
           J=nn+PrevNumTiles
           total=0.
            IF(SumDrift.GT.0.0) THEN
@@ -291,7 +291,7 @@ C
 	     ELSE
 	       Deposition(J)=0.
 	     ENDIF !>(SumDrift.GT.0.0)
-	    ENDIF !(nn.EQ.1) THEN
+C	    ENDIF !(nn.EQ.1) THEN
 	   !ELSE
 	   !  Deposition(J)=0.
 	   !ENDIF !>(distrib(J).GE.0.0 AND nn+1.LT.nhru)
