@@ -11,6 +11,6 @@ subroutine program_abort()
     call print_message('Abnormal exit.')
 
     !> Stop with non-zero exit.
-    stop -1
+    stop 1
 
 end subroutine

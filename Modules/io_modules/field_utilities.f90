@@ -2413,10 +2413,11 @@ module field_utilities
             !> Transfer fields.
             do i = 1, size(field_list)
                 if (allocated(field_list(i)%field)) then
-                    allocate(temp(i)%field, source = field_list(i)%field)
+!                    allocate(temp(i)%field, source = field_list(i)%field)
+                    call move_alloc(field_list(i)%field, temp(i)%field)
 
                     !> Clean-up of source array.
-                    deallocate(field_list(i)%field)
+!                    deallocate(field_list(i)%field)
                 end if
             end do
 
@@ -2427,8 +2428,9 @@ module field_utilities
             allocate(field_list(size(temp)))
             do i = 1, size(temp)
                 if (allocated(temp(i)%field)) then
-                    allocate(field_list(i)%field, source = temp(i)%field)
-                    deallocate(temp(i)%field)
+!                    allocate(field_list(i)%field, source = temp(i)%field)
+!                    deallocate(temp(i)%field)
+                    call move_alloc(temp(i)%field, field_list(i)%field)
                 end if
             end do
             deallocate(temp)
@@ -2460,38 +2462,51 @@ module field_utilities
         if (.not. allocated(field_list)) then
 
             !> No need to combine if 'field_list' is not allocated, just transfer.
+            j = 1
             allocate(field_list(n))
             do i = 1, size(buffer)
                 if (allocated(buffer(i)%field)) then
-                    allocate(field_list(i)%field, source = buffer(i)%field)
-                    deallocate(buffer(i)%field)
-                end if
-            end do
-        else if (n > 0) then
-
-            !> Combine the arrays.
-            allocate(temp(size(field_list) + n))
-            j = 1
-            do i = 1, size(field_list)
-                allocate(temp(j)%field, source = field_list(i)%field)
-                deallocate(field_list(i)%field)
-                j = j + 1
-            end do
-            deallocate(field_list)
-            do i = 1, size(buffer)
-                if (allocated(buffer(i)%field)) then
-                    allocate(temp(j)%field, source = buffer(i)%field)
-                    deallocate(buffer(i)%field)
+!                    allocate(field_list(j)%field, source = buffer(i)%field)
+!                    deallocate(buffer(i)%field)
+                    call move_alloc(buffer(i)%field, field_list(j)%field)
                     j = j + 1
                 end if
             end do
             deallocate(buffer)
+        else if (n > 0) then
+
+            !> Count allocated fields in 'field_list'.
+            do i = 1, size(field_list)
+                if (allocated(field_list(i)%field)) n = n + 1
+            end do
+
+            !> Combine the arrays.
+            allocate(temp(n))
+            j = 1
+            do i = 1, size(field_list)
+                if (allocated(field_list(i)%field)) then
+!                    allocate(temp(j)%field, source = field_list(i)%field)
+!                    deallocate(field_list(i)%field)
+                    call move_alloc(field_list(i)%field, temp(j)%field)
+                    j = j + 1
+                end if
+            end do
+            do i = 1, size(buffer)
+                if (allocated(buffer(i)%field)) then
+!                    allocate(temp(j)%field, source = buffer(i)%field)
+!                    deallocate(buffer(i)%field)
+                    call move_alloc(buffer(i)%field, temp(j)%field)
+                    j = j + 1
+                end if
+            end do
+            deallocate(field_list, buffer)
 
             !> Transfer back to 'field_list'.
-            allocate(field_list(size(temp)))
+            allocate(field_list(n))
             do i = 1, size(temp)
-                allocate(field_list(i)%field, source = temp(i)%field)
-                deallocate(temp(i)%field)
+!                allocate(field_list(i)%field, source = temp(i)%field)
+!                deallocate(temp(i)%field)
+                call move_alloc(temp(i)%field, field_list(i)%field)
             end do
             deallocate(temp)
         end if
@@ -2506,28 +2521,29 @@ module field_utilities
 
         !> Local variables.
         type(io_field_wrapper), dimension(:), allocatable :: temp
-        integer field_count, n, i
+        integer n, j, i
 
         !> Status.
         error_status = 0
 
         !> Count the number of valid fields.
-        field_count = 0
+        n = 0
         do i = 1, size(field_list)
-            if (allocated(field_list(i)%field)) field_count = field_count + 1
+            if (allocated(field_list(i)%field)) n = n + 1
         end do
 
         !> Compact the list.
-        if (field_count > 0) then
+        if (n > 0) then
 
             !> Transfer valid fields to a temporary list.
-            allocate(temp(field_count))
-            n = 1
+            allocate(temp(n))
+            j = 1
             do i = 1, size(field_list)
                 if (allocated(field_list(i)%field)) then
-                    allocate(temp(n)%field, source = field_list(i)%field)
-                    deallocate(field_list(i)%field)
-                    n = n + 1
+!                    allocate(temp(j)%field, source = field_list(i)%field)
+!                    deallocate(field_list(i)%field)
+                    call move_alloc(field_list(i)%field, temp(j)%field)
+                    j = j + 1
                 end if
             end do
 
@@ -2535,18 +2551,19 @@ module field_utilities
             deallocate(field_list)
 
             !> Rebuild the source list with only the valid fields.
-            allocate(field_list(field_count))
-            do i = 1, field_count
-                allocate(field_list(i)%field, source = temp(i)%field)
-                deallocate(temp(i)%field)
+            allocate(field_list(n))
+            do i = 1, n
+!                allocate(field_list(i)%field, source = temp(i)%field)
+!                deallocate(temp(i)%field)
+                call move_alloc(temp(i)%field, field_list(i)%field)
             end do
             deallocate(temp)
         else
 
             !> Deallocate the list.
-            do i = 1, size(field_list)
-                if (allocated(field_list(i)%field)) deallocate(field_list(i)%field)
-            end do
+!            do i = 1, size(field_list)
+!                if (allocated(field_list(i)%field)) deallocate(field_list(i)%field)
+!            end do
             deallocate(field_list)
         end if
 

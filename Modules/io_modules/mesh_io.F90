@@ -608,7 +608,7 @@ module mesh_io
                                     allocate(file_buffer(n)%field, source = io_field_real2d( &
                                         mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
                                         cell_map = null(), tile_map = null(), &
-                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
+                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
                                         dim_names = dim_names, dat = vattr(i)%val))
                                 case default
                                     if (v) call print_warning( &
@@ -1438,6 +1438,10 @@ module mesh_io
         if (allocated(input_file%fields)) then
             do i = 1, size(input_file%fields)
 
+                !> Allocate the mapped dimension order.
+                allocate(input_file%fields(i)%field%mapped_dim_order(size(MAP_ORDER_LIST)))
+                input_file%fields(i)%field%mapped_dim_order = 0
+
                 !> Map dimension orders.
                 select type (this => input_file%fields(i)%field)
                     class is (io_field_Nd)
@@ -1447,8 +1451,6 @@ module mesh_io
                             if (this%time_order == 1 .and. size(this%dim_names) == 1) then
 
                                 !> Identify the field as a basin-wide value 'DIM_NAME_B' if the only dimension is time 'DIM_NAME_T'.
-                                allocate(this%mapped_dim_order(len(MAP_ORDER_LIST)))
-                                this%mapped_dim_order = 0
                                 this%mapped_dim_order(MAP_ORDER_B) = 1
                             else
 
@@ -1465,19 +1467,15 @@ module mesh_io
                         end if
 
                         !> Derive field name and level from ID.
-                        call get_field_name_and_level( &
-                            input_file%fields(i)%field%label, input_file%fields(i)%field%field_name, &
-                            input_file%fields(i)%field%level, input_file%fields(i)%field%level_id, ierr)
+                        call get_field_name_and_level(this%label, this%field_name, this%level, this%level_id, ierr)
                         if (ierr /= 0) then
                             call print_warning( &
                                 "An error occurred identifying the label associated with the '" // &
-                                trim(input_file%fields(i)%field%label) // "' variable.")
+                                trim(this%label) // "' variable.")
                         end if
                     class default
 
                         !> Assume a basin-wide value 'DIM_NAME_B' for scalar fields.
-                        allocate(this%mapped_dim_order(len(MAP_ORDER_LIST)))
-                        this%mapped_dim_order = 0
                         this%mapped_dim_order(MAP_ORDER_B) = 1
                 end select
 

@@ -80,28 +80,18 @@ module mesh_io_variables
     end type
     type, extends(io_field_realNd) :: io_field_real1d
         real, dimension(:), allocatable :: dat
-!        contains
-!        final :: io_field_real1d_destructor
     end type
     type, extends(io_field_realNd) :: io_field_real2d
         real, dimension(:, :), allocatable :: dat
-!        contains
-!        final :: io_field_real2d_destructor
     end type
     type, extends(io_field_realNd) :: io_field_real3d
         real, dimension(:, :, :), allocatable :: dat
-!        contains
-!        final :: io_field_real3d_destructor
     end type
     type, extends(io_field_realNd) :: io_field_real4d
         real, dimension(:, :, :, :), allocatable :: dat
-!        contains
-!        final :: io_field_real4d_destructor
     end type
     type, extends(io_field_realNd) :: io_field_real5d
         real, dimension(:, :, :, :, :), allocatable :: dat
-!        contains
-!        final :: io_field_real5d_destructor
     end type
     type, extends(io_field) :: io_field_int
         integer, dimension(:), allocatable :: mapped_dat_cell
@@ -117,28 +107,18 @@ module mesh_io_variables
     end type
     type, extends(io_field_intNd) :: io_field_int1d
         integer, dimension(:), allocatable :: dat
-!        contains
-!        final :: io_field_int1d_destructor
     end type
     type, extends(io_field_intNd) :: io_field_int2d
         integer, dimension(:, :), allocatable :: dat
-!        contains
-!        final :: io_field_int2d_destructor
     end type
     type, extends(io_field_intNd) :: io_field_int3d
         integer, dimension(:, :, :), allocatable :: dat
-!        contains
-!        final :: io_field_int3d_destructor
     end type
     type, extends(io_field_intNd) :: io_field_int4d
         integer, dimension(:, :, :, :), allocatable :: dat
-!        contains
-!        final :: io_field_int4d_destructor
     end type
     type, extends(io_field_intNd) :: io_field_int5d
         integer, dimension(:, :, :, :, :), allocatable :: dat
-!        contains
-!        final :: io_field_int5d_destructor
     end type
     type, extends(io_field) :: io_field_char
         real, dimension(:), allocatable :: mapped_dat_cell
@@ -150,8 +130,6 @@ module mesh_io_variables
         real, dimension(:), allocatable :: mapped_dat_tile
         character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dat
         character :: no_data_value = achar(0)
-!        contains
-!        final :: io_field_char1d_destructor
     end type
 
     !> Description:
@@ -159,14 +137,6 @@ module mesh_io_variables
     type io_field_wrapper
         class(io_field), allocatable :: field
     end type
-
-    !> Destructors.
-    private &
-        io_field_real1d_destructor, io_field_int1d_destructor, io_field_char1d_destructor, &
-        io_field_real2d_destructor, io_field_int2d_destructor, &
-        io_field_real3d_destructor, io_field_int3d_destructor, &
-        io_field_real4d_destructor, io_field_int4d_destructor, &
-        io_field_real5d_destructor, io_field_int5d_destructor
 
     !> Description:
     !>  Structure for storing date components.
@@ -235,8 +205,6 @@ module mesh_io_variables
         integer :: ipos = 1
         type(io_field_wrapper), dimension(:), allocatable :: fields
         character(len = SHORT_FIELD_LENGTH), dimension(:, :), allocatable :: field_map
-!        contains
-!        final :: io_file_destructor
     end type
 
     !> Description:
@@ -315,151 +283,5 @@ module mesh_io_variables
     type io_file_wrapper
         class(io_file), allocatable :: file
     end type
-
-    !> Destructors.
-    private io_file_destructor
-
-    contains
-
-    subroutine io_field_real1d_destructor(this)
-
-        !> Input/output variables.
-        type(io_field_real1d) this
-
-        !> Deallocate array.
-        if (allocated(this%dim_names)) deallocate(this%dim_names)
-        if (allocated(this%dat)) deallocate(this%dat)
-
-    end subroutine
-
-    subroutine io_field_real2d_destructor(this)
-
-        !> Input/output variables.
-        type(io_field_real2d) this
-
-        !> Deallocate array.
-        if (allocated(this%dim_names)) deallocate(this%dim_names)
-        if (allocated(this%dat)) deallocate(this%dat)
-
-    end subroutine
-
-    subroutine io_field_real3d_destructor(this)
-
-        !> Input/output variables.
-        type(io_field_real3d) this
-
-        !> Deallocate array.
-        if (allocated(this%dim_names)) deallocate(this%dim_names)
-        if (allocated(this%dat)) deallocate(this%dat)
-
-    end subroutine
-
-    subroutine io_field_real4d_destructor(this)
-
-        !> Input/output variables.
-        type(io_field_real4d) this
-
-        !> Deallocate array.
-        if (allocated(this%dim_names)) deallocate(this%dim_names)
-        if (allocated(this%dat)) deallocate(this%dat)
-
-    end subroutine
-
-    subroutine io_field_real5d_destructor(this)
-
-        !> Input/output variables.
-        type(io_field_real5d) this
-
-        !> Deallocate array.
-        if (allocated(this%dim_names)) deallocate(this%dim_names)
-        if (allocated(this%dat)) deallocate(this%dat)
-
-    end subroutine
-
-    subroutine io_field_int1d_destructor(this)
-
-        !> Input/output variables.
-        type(io_field_int1d) this
-
-        !> Deallocate array.
-        if (allocated(this%dim_names)) deallocate(this%dim_names)
-        if (allocated(this%dat)) deallocate(this%dat)
-
-    end subroutine
-
-    subroutine io_field_int2d_destructor(this)
-
-        !> Input/output variables.
-        type(io_field_int2d) this
-
-        !> Deallocate array.
-        if (allocated(this%dim_names)) deallocate(this%dim_names)
-        if (allocated(this%dat)) deallocate(this%dat)
-
-    end subroutine
-
-    subroutine io_field_int3d_destructor(this)
-
-        !> Input/output variables.
-        type(io_field_int3d) this
-
-        !> Deallocate array.
-        if (allocated(this%dim_names)) deallocate(this%dim_names)
-        if (allocated(this%dat)) deallocate(this%dat)
-
-    end subroutine
-
-    subroutine io_field_int4d_destructor(this)
-
-        !> Input/output variables.
-        type(io_field_int4d) this
-
-        !> Deallocate array.
-        if (allocated(this%dim_names)) deallocate(this%dim_names)
-        if (allocated(this%dat)) deallocate(this%dat)
-
-    end subroutine
-
-    subroutine io_field_int5d_destructor(this)
-
-        !> Input/output variables.
-        type(io_field_int5d) this
-
-        !> Deallocate array.
-        if (allocated(this%dim_names)) deallocate(this%dim_names)
-        if (allocated(this%dat)) deallocate(this%dat)
-
-    end subroutine
-
-    subroutine io_field_char1d_destructor(this)
-
-        !> Input/output variables.
-        type(io_field_char1d) this
-
-        !> Deallocate array.
-        if (allocated(this%dim_names)) deallocate(this%dim_names)
-        if (allocated(this%dat)) deallocate(this%dat)
-
-    end subroutine
-
-    subroutine io_file_destructor(this)
-
-        !> Input/output variables.
-        type(io_file) this
-
-        !> Local variables.
-        integer i
-
-        !> Deallocate field objects.
-        if (allocated(this%subset_ids)) deallocate(this%subset_ids)
-        if (allocated(this%field_map)) deallocate(this%field_map)
-!-        if (allocated(this%fields)) then
-!-            do i = 1, size(this%fields)
-!-                if (allocated(this%fields(i)%field)) deallocate(this%fields(i)%field)
-!-            end do
-!-            deallocate(this%fields)
-!-        end if
-
-    end subroutine
 
 end module
