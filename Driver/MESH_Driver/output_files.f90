@@ -589,7 +589,8 @@ module output_files
 
         !> Local variables.
         integer t, j, i
-        real dat_grid(shd%yCount*shd%xCount), dat_tsi(size(field%tsi)), dat_tsk(size(field%tsk))
+        real, dimension(:), allocatable :: dat_grid, dat_tsi, dat_tsk
+!-        real dat_grid(shd%yCount*shd%xCount), dat_tsi(size(field%tsi)), dat_tsk(size(field%tsk))
         character(len = DEFAULT_FIELD_LENGTH) delim, fmt
 
         !> Assign the delimiter.
@@ -602,6 +603,16 @@ module output_files
                     delim = trim(sep)
             end select
         end if
+
+        !> Allocate temporary variables.
+        select case (field%order)
+            case ('tsi')
+                allocate(dat_tsi(size(field%tsi)))
+            case ('tsk')
+                allocate(dat_tsk(size(field%tsk)))
+            case ('shedorder')
+                allocate(dat_grid(shd%yCount*shd%xCount))
+        end select
 
         !> Write series.
         do t = 1, size(dat, 2)
