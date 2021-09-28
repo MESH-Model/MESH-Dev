@@ -354,6 +354,9 @@ module model_dates
 
         integer i, int_i, int_f
 
+        month = 0
+        day = 0
+
         do i = 2, 12
 
             if (leap_year(year) == 365) then
@@ -463,6 +466,7 @@ module model_dates
         integer day, i
 
         iy = 0
+        im = 0
         id = iday
         if (iyear == ic%start%year) id = iday - ic%start%jday + 1
         do i = ic%start%year, ic%stop%year
