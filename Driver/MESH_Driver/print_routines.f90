@@ -240,7 +240,7 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Flush the message.
-        call print_message('INFO: ' // trim(message), level)
+        if (DIAGNOSEMODE) call print_message('INFO: ' // trim(message), level)
 
     end subroutine
 
