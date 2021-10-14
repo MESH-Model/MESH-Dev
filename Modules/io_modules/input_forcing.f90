@@ -535,9 +535,6 @@ module input_forcing
 
                     !> Attach the field list to the file.
                     call combine_field_list(this%fields, field_list, error_status)
-
-                    !> Clean-up.
-                    deallocate(field_list)
                 class is (io_file_txt_delimited)
 
                     !> Allocate temporary variables.
@@ -551,9 +548,6 @@ module input_forcing
                         label = trim(this%field_map(1, 2)), dim_names = this%dim_names, const_mul = const_mul, &
                         const_add = const_add, time_order = 2, dat = null(), id = 1))
                     call combine_field_list(this%fields, field_list, error_status)
-
-                    !> Clean-up.
-                    deallocate(field_list)
                 class is (io_file_seq)
 
                     !> Allocate temporary variables.
@@ -567,9 +561,6 @@ module input_forcing
                         label = trim(this%field_map(1, 2)), dim_names = this%dim_names, const_mul = const_mul, &
                         const_add = const_add, time_order = 2, dat = null(), id = 1))
                     call combine_field_list(this%fields, field_list, error_status)
-
-                    !> Clean-up.
-                    deallocate(field_list)
                 class is (io_file_nc)
 
                     !> Set multiplicative and additive factors.

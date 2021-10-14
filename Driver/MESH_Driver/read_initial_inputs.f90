@@ -766,6 +766,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
         allocate(shd%lc%ILMOS(vs%tile%dim_length), source = vs%tile%from_cell)
         allocate(shd%lc%JLMOS(vs%tile%dim_length), source = vs%tile%from_gru)
         allocate(shd%lc%ACLASS(vs%grid%dim_length, maxval(vs%tile%from_gru) + 1))
+        shd%lc%ACLASS = 0.0
         do k = 1, vs%tile%dim_length
             shd%lc%ACLASS(vs%tile%from_cell(k), vs%tile%from_gru(k)) = vs%tile%area_weight(k)
         end do

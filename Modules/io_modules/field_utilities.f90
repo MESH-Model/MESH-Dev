@@ -8,455 +8,418 @@ module field_utilities
 
     implicit none
 
+    interface allocate_field
+        module procedure allocate_field_real5d
+        module procedure allocate_field_real4d
+        module procedure allocate_field_real3d
+        module procedure allocate_field_real2d
+        module procedure allocate_field_real1d
+        module procedure allocate_field_int5d
+        module procedure allocate_field_int4d
+        module procedure allocate_field_int3d
+        module procedure allocate_field_int2d
+        module procedure allocate_field_int1d
+        module procedure allocate_field_char1d
+    end interface
+
     interface map_dimensions
-        module procedure map_dimensions_real2d
-        module procedure map_dimensions_real3d
-        module procedure map_dimensions_real4d
-        module procedure map_dimensions_real5d
-        module procedure map_dimensions_int2d
-        module procedure map_dimensions_int3d
-        module procedure map_dimensions_int4d
-        module procedure map_dimensions_int5d
+        module procedure map_dimensions_5d_to_real5d
+        module procedure map_dimensions_5d_to_int5d
+        module procedure map_dimensions_4d_to_real4d
+        module procedure map_dimensions_4d_to_int4d
+        module procedure map_dimensions_3d_to_real3d
+        module procedure map_dimensions_3d_to_int3d
+        module procedure map_dimensions_2d_to_real2d
+        module procedure map_dimensions_2d_to_int2d
     end interface
 
     interface compact_field
-        module procedure compact_field_real1d_from_real2d
-        module procedure compact_field_real1d_from_real3d
-        module procedure compact_field_real1d_from_real4d
-        module procedure compact_field_real1d_from_real5d
-        module procedure compact_field_real2d_from_real3d
-        module procedure compact_field_real2d_from_real4d
-        module procedure compact_field_real2d_from_real5d
-        module procedure compact_field_real3d_from_real4d
-        module procedure compact_field_real3d_from_real5d
-        module procedure compact_field_real4d_from_real5d
+        module procedure compact_5d_to_real4d
+        module procedure compact_5d_to_int4d
+        module procedure compact_5d_to_real3d
+        module procedure compact_5d_to_int3d
+        module procedure compact_5d_to_real2d
+        module procedure compact_5d_to_int2d
+        module procedure compact_5d_to_real1d
+        module procedure compact_5d_to_int1d
+        module procedure compact_4d_to_real3d
+        module procedure compact_4d_to_int3d
+        module procedure compact_4d_to_real2d
+        module procedure compact_4d_to_int2d
+        module procedure compact_4d_to_real1d
+        module procedure compact_4d_to_int1d
+        module procedure compact_3d_to_real2d
+        module procedure compact_3d_to_int2d
+        module procedure compact_3d_to_real1d
+        module procedure compact_3d_to_int1d
+        module procedure compact_2d_to_real1d
+        module procedure compact_2d_to_int1d
+    end interface
+
+    interface copy_field
+        module procedure copy_field_5d_to_real5d
+        module procedure copy_field_5d_to_int5d
+        module procedure copy_field_4d_to_real4d
+        module procedure copy_field_4d_to_int4d
+        module procedure copy_field_3d_to_real3d
+        module procedure copy_field_3d_to_int3d
+        module procedure copy_field_2d_to_real2d
+        module procedure copy_field_2d_to_int2d
+        module procedure copy_field_1d_to_real1d
+        module procedure copy_field_1d_to_int1d
+        module procedure copy_field_1d_to_char1d
+    end interface
+
+    interface explode_dimensions
+        module procedure explode_dimensions_4d_to_real5d
+        module procedure explode_dimensions_4d_to_int5d
+        module procedure explode_dimensions_3d_to_real5d
+        module procedure explode_dimensions_3d_to_int5d
+        module procedure explode_dimensions_3d_to_real4d
+        module procedure explode_dimensions_3d_to_int4d
+        module procedure explode_dimensions_2d_to_real5d
+        module procedure explode_dimensions_2d_to_int5d
+        module procedure explode_dimensions_2d_to_real4d
+        module procedure explode_dimensions_2d_to_int4d
+        module procedure explode_dimensions_2d_to_real3d
+        module procedure explode_dimensions_2d_to_int3d
+        module procedure explode_dimensions_1d_to_real5d
+        module procedure explode_dimensions_1d_to_int5d
+        module procedure explode_dimensions_1d_to_real4d
+        module procedure explode_dimensions_1d_to_int4d
+        module procedure explode_dimensions_1d_to_real3d
+        module procedure explode_dimensions_1d_to_int3d
+        module procedure explode_dimensions_1d_to_real2d
+        module procedure explode_dimensions_1d_to_int2d
+    end interface
+
+    interface check_field_dimensions
+        module procedure check_field_dimensions_5d
+        module procedure check_field_dimensions_4d
+        module procedure check_field_dimensions_3d
+        module procedure check_field_dimensions_2d
+        module procedure check_field_dimensions_1d
     end interface
 
     interface assign_field
-        module procedure assign_field_real
-        module procedure assign_field_int
-        module procedure assign_field_char
-        module procedure assign_field_real1d
-        module procedure assign_field_real2d
-        module procedure assign_field_real3d
-        module procedure assign_field_real4d
-        module procedure assign_field_real5d
-        module procedure assign_field_int1d
-        module procedure assign_field_int2d
-        module procedure assign_field_int3d
-        module procedure assign_field_int4d
-        module procedure assign_field_int5d
-        module procedure assign_field_char1d
+        module procedure assign_field_5d_to_real5d
+        module procedure assign_field_5d_to_int5d
+        module procedure assign_field_5d_to_real4d
+        module procedure assign_field_5d_to_int4d
+        module procedure assign_field_5d_to_real3d
+        module procedure assign_field_5d_to_int3d
+        module procedure assign_field_5d_to_real2d
+        module procedure assign_field_5d_to_int2d
+        module procedure assign_field_5d_to_real1d
+        module procedure assign_field_5d_to_int1d
+        module procedure assign_field_5d_to_scalar
+        module procedure assign_field_4d_to_real4d
+        module procedure assign_field_4d_to_int4d
+        module procedure assign_field_4d_to_real3d
+        module procedure assign_field_4d_to_int3d
+        module procedure assign_field_4d_to_real2d
+        module procedure assign_field_4d_to_int2d
+        module procedure assign_field_4d_to_real1d
+        module procedure assign_field_4d_to_int1d
+        module procedure assign_field_4d_to_scalar
+        module procedure assign_field_4d_to_real5d
+        module procedure assign_field_4d_to_int5d
+        module procedure assign_field_3d_to_real3d
+        module procedure assign_field_3d_to_int3d
+        module procedure assign_field_3d_to_real2d
+        module procedure assign_field_3d_to_int2d
+        module procedure assign_field_3d_to_real1d
+        module procedure assign_field_3d_to_int1d
+        module procedure assign_field_3d_to_scalar
+        module procedure assign_field_3d_to_real5d
+        module procedure assign_field_3d_to_int5d
+        module procedure assign_field_3d_to_real4d
+        module procedure assign_field_3d_to_int4d
+        module procedure assign_field_2d_to_real2d
+        module procedure assign_field_2d_to_int2d
+        module procedure assign_field_2d_to_real1d
+        module procedure assign_field_2d_to_int1d
+        module procedure assign_field_2d_to_scalar
+        module procedure assign_field_2d_to_real5d
+        module procedure assign_field_2d_to_int5d
+        module procedure assign_field_2d_to_real4d
+        module procedure assign_field_2d_to_int4d
+        module procedure assign_field_2d_to_real3d
+        module procedure assign_field_2d_to_int3d
+        module procedure assign_field_1d_to_real1d
+        module procedure assign_field_1d_to_int1d
+        module procedure assign_field_1d_to_char1d
+        module procedure assign_field_1d_to_scalar
+        module procedure assign_field_1d_to_real5d
+        module procedure assign_field_1d_to_int5d
+        module procedure assign_field_1d_to_real4d
+        module procedure assign_field_1d_to_int4d
+        module procedure assign_field_1d_to_real3d
+        module procedure assign_field_1d_to_int3d
+        module procedure assign_field_1d_to_real2d
+        module procedure assign_field_1d_to_int2d
+        module procedure assign_field_scalar_to_real5d
+        module procedure assign_field_scalar_to_int5d
+        module procedure assign_field_scalar_to_real4d
+        module procedure assign_field_scalar_to_int4d
+        module procedure assign_field_scalar_to_real3d
+        module procedure assign_field_scalar_to_int3d
+        module procedure assign_field_scalar_to_real2d
+        module procedure assign_field_scalar_to_int2d
+        module procedure assign_field_scalar_to_real1d
+        module procedure assign_field_scalar_to_int1d
+        module procedure assign_field_scalar_to_char1d
+        module procedure assign_field_scalar_to_scalar
     end interface
 
     contains
 
-    subroutine map_dimensions_real2d(input_field, desired_order, output_field, error_status)
+    subroutine allocate_field_real5d(output_field, dim_sizes, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :), intent(in) :: input_field
-        integer, intent(in) :: desired_order(2)
-        real, dimension(:, :), allocatable :: output_field
+        real, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(in) :: dim_sizes(5)
         integer, intent(out) :: error_status
 
-        !> Status.
-        error_status = 0
+        !> Local variables.
+        integer ierr
 
-        !> Allocate output variables.
-        if (.not. allocated(output_field)) then
-            allocate(output_field(size(input_field, desired_order(1)), size(input_field, desired_order(2))))
-        end if
-
-        !> Reset output field.
-        output_field = huge(output_field)
-
-        !> Map the field.
-        if (desired_order(1) == 1 .and. desired_order(2) == 2) then
-            output_field = input_field
+        !> Allocate and initialize field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4), dim_sizes(5)), stat = ierr)
+        if (ierr /= 0) then
+            error_status = 1
         else
-            output_field = transpose(input_field)
+            output_field = huge(0.0)
         end if
 
     end subroutine
 
-    subroutine map_dimensions_real3d(input_field, desired_order, output_field, error_status)
+    subroutine allocate_field_int5d(output_field, dim_sizes, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :), intent(in) :: input_field
-        integer, intent(in) :: desired_order(3)
-        real, dimension(:, :, :), allocatable :: output_field
+        integer, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(in) :: dim_sizes(5)
         integer, intent(out) :: error_status
 
-        !> Local variables
-        integer order(3), d3, d2, d1
+        !> Local variables.
+        integer ierr
 
-        !> Status.
-        error_status = 0
-
-        !> Allocate output variables.
-        if (.not. allocated(output_field)) then
-            allocate(output_field(size(input_field, order(1)), size(input_field, order(2)), size(input_field, order(3))))
-        end if
-
-        !> Reset output field.
-        output_field = huge(output_field)
-
-        !> Map the field.
-        order = desired_order
-        if (order(1) == 1 .and. order(2) == 2 .and. order(3) == 3) then
-            do d3 = 1, size(input_field, order(3))
-                do d2 = 1, size(input_field, order(2))
-                    do d1 = 1, size(input_field, order(1))
-                        output_field(d1, d2, d3) = input_field(d1, d2, d3)
-                    end do
-                end do
-            end do
-        else if (order(1) == 2 .and. order(2) == 1 .and. order(3) == 3) then
-            do d3 = 1, size(input_field, order(3))
-                do d1 = 1, size(input_field, order(1))
-                    do d2 = 1, size(input_field, order(2))
-                        output_field(d1, d2, d3) = input_field(d2, d1, d3)
-                    end do
-                end do
-            end do
-        else if (order(1) == 1 .and. order(2) == 3 .and. order(3) == 2) then
-            do d2 = 1, size(input_field, order(2))
-                do d3 = 1, size(input_field, order(3))
-                    do d1 = 1, size(input_field, order(1))
-                        output_field(d1, d2, d3) = input_field(d1, d3, d2)
-                    end do
-                end do
-            end do
-        else if (order(1) == 3 .and. order(2) == 1 .and. order(3) == 2) then
-            do d1 = 1, size(input_field, order(1))
-                do d3 = 1, size(input_field, order(3))
-                    do d2 = 1, size(input_field, order(2))
-                        output_field(d1, d2, d3) = input_field(d2, d3, d1)
-                    end do
-                end do
-            end do
-        else if (order(1) == 2 .and. order(2) == 3 .and. order(3) == 1) then
-            do d2 = 1, size(input_field, order(2))
-                do d1 = 1, size(input_field, order(1))
-                    do d3 = 1, size(input_field, order(3))
-                        output_field(d1, d2, d3) = input_field(d3, d1, d2)
-                    end do
-                end do
-            end do
-        else if (order(1) == 3 .and. order(2) == 2 .and. order(3) == 1) then
-            do d1 = 1, size(input_field, order(1))
-                do d2 = 1, size(input_field, order(2))
-                    do d3 = 1, size(input_field, order(3))
-                        output_field(d1, d2, d3) = input_field(d3, d2, d1)
-                    end do
-                end do
-            end do
+        !> Allocate and initialize field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4), dim_sizes(5)), stat = ierr)
+        if (ierr /= 0) then
+            error_status = 1
+        else
+            output_field = huge(0)
         end if
 
     end subroutine
 
-    subroutine map_dimensions_real4d(input_field, desired_order, output_field, error_status)
+    subroutine allocate_field_real4d(output_field, dim_sizes, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :, :), intent(in) :: input_field
-        integer, intent(in) :: desired_order(4)
-        real, dimension(:, :, :, :), allocatable :: output_field
+        real, allocatable :: output_field(:, :, :, :)
+        integer, intent(in) :: dim_sizes(4)
         integer, intent(out) :: error_status
 
-        !> Local variables
-        integer order(4), d4, d3, d2, d1
+        !> Local variables.
+        integer ierr
 
-        !> Status.
-        error_status = 0
-
-        !> Allocate output variables.
-        if (.not. allocated(output_field)) then
-            allocate(output_field( &
-                size(input_field, order(1)), size(input_field, order(2)), size(input_field, order(3)), size(input_field, order(4))))
-        end if
-
-        !> Reset output field.
-        output_field = huge(output_field)
-
-        !> Map the field.
-        order = desired_order
-        if (order(1) == 1 .and. order(2) == 2 .and. order(3) == 3 .and. order(4) == 4) then
-            do d4 = 1, size(input_field, order(4))
-                do d3 = 1, size(input_field, order(3))
-                    do d2 = 1, size(input_field, order(2))
-                        do d1 = 1, size(input_field, order(1))
-                            output_field(d1, d2, d3, d4) = input_field(d1, d2, d3, d4)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 2 .and. order(2) == 1 .and. order(3) == 3 .and. order(4) == 4) then
-            do d4 = 1, size(input_field, order(4))
-                do d3 = 1, size(input_field, order(3))
-                    do d1 = 1, size(input_field, order(1))
-                        do d2 = 1, size(input_field, order(2))
-                            output_field(d1, d2, d3, d4) = input_field(d2, d1, d3, d4)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 1 .and. order(2) == 3 .and. order(3) == 2 .and. order(4) == 4) then
-            do d4 = 1, size(input_field, order(4))
-                do d2 = 1, size(input_field, order(2))
-                    do d3 = 1, size(input_field, order(3))
-                        do d1 = 1, size(input_field, order(1))
-                            output_field(d1, d2, d3, d4) = input_field(d1, d3, d2, d4)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 3 .and. order(2) == 1 .and. order(3) == 2 .and. order(4) == 4) then
-            do d4 = 1, size(input_field, order(4))
-                do d1 = 1, size(input_field, order(1))
-                    do d3 = 1, size(input_field, order(3))
-                        do d2 = 1, size(input_field, order(2))
-                            output_field(d1, d2, d3, d4) = input_field(d2, d3, d1, d4)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 2 .and. order(2) == 3 .and. order(3) == 1 .and. order(4) == 4) then
-            do d4 = 1, size(input_field, order(4))
-                do d2 = 1, size(input_field, order(2))
-                    do d1 = 1, size(input_field, order(1))
-                        do d3 = 1, size(input_field, order(3))
-                            output_field(d1, d2, d3, d4) = input_field(d3, d1, d2, d4)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 3 .and. order(2) == 2 .and. order(3) == 1 .and. order(4) == 4) then
-            do d4 = 1, size(input_field, order(4))
-                do d1 = 1, size(input_field, order(1))
-                    do d2 = 1, size(input_field, order(2))
-                        do d3 = 1, size(input_field, order(3))
-                            output_field(d1, d2, d3, d4) = input_field(d3, d2, d1, d4)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 1 .and. order(2) == 2 .and. order(3) == 4 .and. order(4) == 3) then
-            do d3 = 1, size(input_field, order(3))
-                do d4 = 1, size(input_field, order(4))
-                    do d2 = 1, size(input_field, order(2))
-                        do d1 = 1, size(input_field, order(1))
-                            output_field(d1, d2, d3, d4) = input_field(d1, d2, d4, d3)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 2 .and. order(2) == 1 .and. order(3) == 4 .and. order(4) == 3) then
-            do d3 = 1, size(input_field, order(3))
-                do d4 = 1, size(input_field, order(4))
-                    do d1 = 1, size(input_field, order(1))
-                        do d2 = 1, size(input_field, order(2))
-                            output_field(d1, d2, d3, d4) = input_field(d2, d1, d4, d3)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 1 .and. order(2) == 4 .and. order(3) == 2 .and. order(4) == 3) then
-            do d2 = 1, size(input_field, order(2))
-                do d4 = 1, size(input_field, order(4))
-                    do d3 = 1, size(input_field, order(3))
-                        do d1 = 1, size(input_field, order(1))
-                            output_field(d1, d2, d3, d4) = input_field(d1, d3, d4, d2)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 4 .and. order(2) == 1 .and. order(3) == 2 .and. order(4) == 3) then
-            do d1 = 1, size(input_field, order(1))
-                do d4 = 1, size(input_field, order(4))
-                    do d3 = 1, size(input_field, order(3))
-                        do d2 = 1, size(input_field, order(2))
-                            output_field(d1, d2, d3, d4) = input_field(d2, d3, d4, d1)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 2 .and. order(2) == 4 .and. order(3) == 1 .and. order(4) == 3) then
-            do d2 = 1, size(input_field, order(2))
-                do d4 = 1, size(input_field, order(4))
-                    do d1 = 1, size(input_field, order(1))
-                        do d3 = 1, size(input_field, order(3))
-                            output_field(d1, d2, d3, d4) = input_field(d3, d1, d4, d2)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 4 .and. order(2) == 2 .and. order(3) == 1 .and. order(4) == 3) then
-            do d1 = 1, size(input_field, order(1))
-                do d4 = 1, size(input_field, order(4))
-                    do d2 = 1, size(input_field, order(2))
-                        do d3 = 1, size(input_field, order(3))
-                            output_field(d1, d2, d3, d4) = input_field(d3, d2, d4, d1)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 1 .and. order(2) == 4 .and. order(3) == 3 .and. order(4) == 2) then
-            do d2 = 1, size(input_field, order(2))
-                do d3 = 1, size(input_field, order(3))
-                    do d4 = 1, size(input_field, order(4))
-                        do d1 = 1, size(input_field, order(1))
-                            output_field(d1, d2, d3, d4) = input_field(d1, d4, d3, d2)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 4 .and. order(2) == 1 .and. order(3) == 3 .and. order(4) == 2) then
-            do d1 = 1, size(input_field, order(1))
-                do d3 = 1, size(input_field, order(3))
-                    do d4 = 1, size(input_field, order(4))
-                        do d2 = 1, size(input_field, order(2))
-                            output_field(d1, d2, d3, d4) = input_field(d2, d4, d3, d1)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 1 .and. order(2) == 3 .and. order(3) == 4 .and. order(4) == 2) then
-            do d3 = 1, size(input_field, order(3))
-                do d2 = 1, size(input_field, order(2))
-                    do d4 = 1, size(input_field, order(4))
-                        do d1 = 1, size(input_field, order(1))
-                            output_field(d1, d2, d3, d4) = input_field(d1, d4, d2, d3)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 3 .and. order(2) == 1 .and. order(3) == 4 .and. order(4) == 2) then
-            do d3 = 1, size(input_field, order(3))
-                do d1 = 1, size(input_field, order(1))
-                    do d4 = 1, size(input_field, order(4))
-                        do d2 = 1, size(input_field, order(2))
-                            output_field(d1, d2, d3, d4) = input_field(d2, d4, d1, d3)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 4 .and. order(2) == 3 .and. order(3) == 1 .and. order(4) == 2) then
-            do d1 = 1, size(input_field, order(1))
-                do d2 = 1, size(input_field, order(2))
-                    do d4 = 1, size(input_field, order(4))
-                        do d3 = 1, size(input_field, order(3))
-                            output_field(d1, d2, d3, d4) = input_field(d3, d4, d2, d1)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 3 .and. order(2) == 4 .and. order(3) == 1 .and. order(4) == 2) then
-            do d2 = 1, size(input_field, order(2))
-                do d1 = 1, size(input_field, order(1))
-                    do d4 = 1, size(input_field, order(4))
-                        do d3 = 1, size(input_field, order(3))
-                            output_field(d1, d2, d3, d4) = input_field(d3, d4, d1, d2)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 4 .and. order(2) == 2 .and. order(3) == 3 .and. order(4) == 1) then
-            do d1 = 1, size(input_field, order(1))
-                do d3 = 1, size(input_field, order(3))
-                    do d2 = 1, size(input_field, order(2))
-                        do d4 = 1, size(input_field, order(4))
-                            output_field(d1, d2, d3, d4) = input_field(d4, d2, d3, d1)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 2 .and. order(2) == 4 .and. order(3) == 3 .and. order(4) == 1) then
-            do d2 = 1, size(input_field, order(2))
-                do d3 = 1, size(input_field, order(3))
-                    do d1 = 1, size(input_field, order(1))
-                        do d4 = 1, size(input_field, order(4))
-                            output_field(d1, d2, d3, d4) = input_field(d4, d1, d3, d2)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 4 .and. order(2) == 3 .and. order(3) == 2 .and. order(4) == 1) then
-            do d1 = 1, size(input_field, order(1))
-                do d2 = 1, size(input_field, order(2))
-                    do d3 = 1, size(input_field, order(3))
-                        do d4 = 1, size(input_field, order(4))
-                            output_field(d1, d2, d3, d4) = input_field(d4, d3, d2, d1)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 3 .and. order(2) == 4 .and. order(3) == 2 .and. order(4) == 1) then
-            do d2 = 1, size(input_field, order(2))
-                do d1 = 1, size(input_field, order(1))
-                    do d3 = 1, size(input_field, order(3))
-                        do d4 = 1, size(input_field, order(4))
-                            output_field(d1, d2, d3, d4) = input_field(d4, d3, d1, d2)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 2 .and. order(2) == 3 .and. order(3) == 4 .and. order(4) == 1) then
-            do d3 = 1, size(input_field, order(3))
-                do d2 = 1, size(input_field, order(2))
-                    do d1 = 1, size(input_field, order(1))
-                        do d4 = 1, size(input_field, order(4))
-                            output_field(d1, d2, d3, d4) = input_field(d4, d1, d2, d3)
-                        end do
-                    end do
-                end do
-            end do
-        else if (order(1) == 3 .and. order(2) == 2 .and. order(3) == 4 .and. order(4) == 1) then
-            do d3 = 1, size(input_field, order(3))
-                do d1 = 1, size(input_field, order(1))
-                    do d2 = 1, size(input_field, order(2))
-                        do d4 = 1, size(input_field, order(4))
-                            output_field(d1, d2, d3, d4) = input_field(d4, d2, d1, d3)
-                        end do
-                    end do
-                end do
-            end do
+        !> Allocate and initialize field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4)), stat = ierr)
+        if (ierr /= 0) then
+            error_status = 1
+        else
+            output_field = huge(0.0)
         end if
 
     end subroutine
 
-    subroutine map_dimensions_real5d(input_field, desired_order, output_field, error_status)
+    subroutine allocate_field_int4d(output_field, dim_sizes, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :, :, :), intent(in) :: input_field
+        integer, allocatable :: output_field(:, :, :, :)
+        integer, intent(in) :: dim_sizes(4)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Allocate and initialize field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4)), stat = ierr)
+        if (ierr /= 0) then
+            error_status = 1
+        else
+            output_field = huge(0)
+        end if
+
+    end subroutine
+
+    subroutine allocate_field_real3d(output_field, dim_sizes, error_status)
+
+        !> Input/output variables.
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(in) :: dim_sizes(3)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Allocate and initialize field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3)), stat = ierr)
+        if (ierr /= 0) then
+            error_status = 1
+        else
+            output_field = huge(0.0)
+        end if
+
+    end subroutine
+
+    subroutine allocate_field_int3d(output_field, dim_sizes, error_status)
+
+        !> Input/output variables.
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(in) :: dim_sizes(3)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Allocate and initialize field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3)), stat = ierr)
+        if (ierr /= 0) then
+            error_status = 1
+        else
+            output_field = huge(0)
+        end if
+
+    end subroutine
+
+    subroutine allocate_field_real2d(output_field, dim_sizes, error_status)
+
+        !> Input/output variables.
+        real, allocatable :: output_field(:, :)
+        integer, intent(in) :: dim_sizes(2)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Allocate and initialize field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2)), stat = ierr)
+        if (ierr /= 0) then
+            error_status = 1
+        else
+            output_field = huge(0.0)
+        end if
+
+    end subroutine
+
+    subroutine allocate_field_int2d(output_field, dim_sizes, error_status)
+
+        !> Input/output variables.
+        integer, allocatable :: output_field(:, :)
+        integer, intent(in) :: dim_sizes(2)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Allocate and initialize field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2)), stat = ierr)
+        if (ierr /= 0) then
+            error_status = 1
+        else
+            output_field = huge(0)
+        end if
+
+    end subroutine
+
+    subroutine allocate_field_real1d(output_field, dim_sizes, error_status)
+
+        !> Input/output variables.
+        real, allocatable :: output_field(:)
+        integer, intent(in) :: dim_sizes(1)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Allocate and initialize field.
+        allocate(output_field(dim_sizes(1)), stat = ierr)
+        if (ierr /= 0) then
+            error_status = 1
+        else
+            output_field = huge(0.0)
+        end if
+
+    end subroutine
+
+    subroutine allocate_field_int1d(output_field, dim_sizes, error_status)
+
+        !> Input/output variables.
+        integer, allocatable :: output_field(:)
+        integer, intent(in) :: dim_sizes(1)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Allocate and initialize field.
+        allocate(output_field(dim_sizes(1)), stat = ierr)
+        if (ierr /= 0) then
+            error_status = 1
+        else
+            output_field = huge(0)
+        end if
+
+    end subroutine
+
+    subroutine allocate_field_char1d(output_field, dim_sizes, error_status)
+
+        !> Input/output variables.
+        character(len = *), allocatable :: output_field(:)
+        integer, intent(in) :: dim_sizes(1)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Allocate and initialize field.
+        allocate(output_field(dim_sizes(1)), stat = ierr)
+        if (ierr /= 0) then
+            error_status = 1
+        else
+            output_field = ''
+        end if
+
+    end subroutine
+
+    subroutine map_dimensions_5d(input_field, desired_order, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
         integer, intent(in) :: desired_order(5)
-        real, dimension(:, :, :, :, :), allocatable :: output_field
+        class(*) output_field(:, :, :, :, :)
         integer, intent(out) :: error_status
 
         !> Local variables
-        integer order(5), d5, d4, d3, d2, d1
+        integer order(5), d5, d4, d3, d2, d1, ierr
 
         !> Status.
         error_status = 0
 
-        !> Allocate output variables.
-        if (.not. allocated(output_field)) then
-            allocate(output_field( &
-                size(input_field, order(1)), size(input_field, order(2)), size(input_field, order(3)), &
-                size(input_field, order(4)), size(input_field, order(5))))
-        end if
-
-        !> Reset output field.
-        output_field = huge(output_field)
+        !> Update temporary variables.
+        order = desired_order
 
         !> Map the field.
-        order = desired_order
         if (order(1) == 1 .and. order(2) == 2 .and. order(3) == 3 .and. order(4) == 4 .and. order(5) == 5) then
             do d5 = 1, size(input_field, order(5))
                 do d4 = 1, size(input_field, order(4))
                     do d3 = 1, size(input_field, order(3))
                         do d2 = 1, size(input_field, order(2))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d2, d3, d4, d5)
+                                call assign_field(input_field(d1, d2, d3, d4, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -466,9 +429,10 @@ module field_utilities
             do d5 = 1, size(input_field, order(5))
                 do d4 = 1, size(input_field, order(4))
                     do d3 = 1, size(input_field, order(3))
-                         do d1 = 1, size(input_field, order(1))
+                        do d1 = 1, size(input_field, order(1))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d1, d3, d4, d5)
+                                call assign_field(input_field(d2, d1, d3, d4, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -480,7 +444,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d3 = 1, size(input_field, order(3))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d3, d2, d4, d5)
+                                call assign_field(input_field(d1, d3, d2, d4, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -492,7 +457,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d3 = 1, size(input_field, order(3))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d3, d1, d4, d5)
+                                call assign_field(input_field(d2, d3, d1, d4, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -504,7 +470,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d1 = 1, size(input_field, order(1))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d1, d2, d4, d5)
+                                call assign_field(input_field(d3, d1, d2, d4, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -516,7 +483,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d2 = 1, size(input_field, order(2))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d2, d1, d4, d5)
+                                call assign_field(input_field(d3, d2, d1, d4, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -528,7 +496,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d2 = 1, size(input_field, order(2))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d2, d4, d3, d5)
+                                call assign_field(input_field(d1, d2, d4, d3, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -540,7 +509,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d1 = 1, size(input_field, order(1))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d1, d4, d3, d5)
+                                call assign_field(input_field(d2, d1, d4, d3, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -552,7 +522,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d3 = 1, size(input_field, order(3))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d3, d4, d2, d5)
+                                call assign_field(input_field(d1, d3, d4, d2, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -564,7 +535,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d3 = 1, size(input_field, order(3))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d3, d4, d1, d5)
+                                call assign_field(input_field(d2, d3, d4, d1, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -576,7 +548,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d1 = 1, size(input_field, order(1))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d1, d4, d2, d5)
+                                call assign_field(input_field(d3, d1, d4, d2, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -588,7 +561,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d2 = 1, size(input_field, order(2))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d2, d4, d1, d5)
+                                call assign_field(input_field(d3, d2, d4, d1, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -600,7 +574,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d4 = 1, size(input_field, order(4))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d4, d3, d2, d5)
+                                call assign_field(input_field(d1, d4, d3, d2, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -612,7 +587,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d4 = 1, size(input_field, order(4))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d4, d3, d1, d5)
+                                call assign_field(input_field(d2, d4, d3, d1, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -624,7 +600,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d4 = 1, size(input_field, order(4))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d4, d2, d3, d5)
+                                call assign_field(input_field(d1, d4, d2, d3, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -636,7 +613,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d4 = 1, size(input_field, order(4))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d4, d1, d3, d5)
+                                call assign_field(input_field(d2, d4, d1, d3, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -648,7 +626,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d4 = 1, size(input_field, order(4))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d4, d2, d1, d5)
+                                call assign_field(input_field(d3, d4, d2, d1, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -660,7 +639,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d4 = 1, size(input_field, order(4))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d4, d1, d2, d5)
+                                call assign_field(input_field(d3, d4, d1, d2, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -672,7 +652,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d2 = 1, size(input_field, order(2))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d2, d3, d1, d5)
+                                call assign_field(input_field(d4, d2, d3, d1, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -684,7 +665,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d1 = 1, size(input_field, order(1))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d1, d3, d2, d5)
+                                call assign_field(input_field(d4, d1, d3, d2, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -696,7 +678,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d3 = 1, size(input_field, order(3))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d3, d2, d1, d5)
+                                call assign_field(input_field(d4, d3, d2, d1, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -708,7 +691,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d3 = 1, size(input_field, order(3))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d3, d1, d2, d5)
+                                call assign_field(input_field(d4, d3, d1, d2, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -720,7 +704,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d1 = 1, size(input_field, order(1))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d1, d2, d3, d5)
+                                call assign_field(input_field(d4, d1, d2, d3, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -732,7 +717,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d2 = 1, size(input_field, order(2))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d2, d1, d3, d5)
+                                call assign_field(input_field(d4, d2, d1, d3, d5), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -744,7 +730,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d2 = 1, size(input_field, order(2))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d2, d3, d5, d4)
+                                call assign_field(input_field(d1, d2, d3, d5, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -756,7 +743,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d1 = 1, size(input_field, order(1))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d1, d3, d5, d4)
+                                call assign_field(input_field(d2, d1, d3, d5, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -768,7 +756,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d3 = 1, size(input_field, order(3))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d3, d2, d5, d4)
+                                call assign_field(input_field(d1, d3, d2, d5, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -780,7 +769,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d3 = 1, size(input_field, order(3))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d3, d1, d5, d4)
+                                call assign_field(input_field(d2, d3, d1, d5, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -792,7 +782,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d1 = 1, size(input_field, order(1))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d1, d2, d5, d4)
+                                call assign_field(input_field(d3, d1, d2, d5, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -804,7 +795,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d2 = 1, size(input_field, order(2))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d2, d1, d5, d4)
+                                call assign_field(input_field(d3, d2, d1, d5, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -816,7 +808,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d2 = 1, size(input_field, order(2))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d2, d4, d5, d3)
+                                call assign_field(input_field(d1, d2, d4, d5, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -828,7 +821,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d1 = 1, size(input_field, order(1))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d1, d4, d5, d3)
+                                call assign_field(input_field(d2, d1, d4, d5, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -840,7 +834,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d3 = 1, size(input_field, order(3))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d3, d4, d5, d2)
+                                call assign_field(input_field(d1, d3, d4, d5, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -852,7 +847,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d3 = 1, size(input_field, order(3))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d3, d4, d5, d1)
+                                call assign_field(input_field(d2, d3, d4, d5, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -864,7 +860,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d1 = 1, size(input_field, order(1))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d1, d4, d5, d2)
+                                call assign_field(input_field(d3, d1, d4, d5, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -876,7 +873,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d2 = 1, size(input_field, order(2))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d2, d4, d5, d1)
+                                call assign_field(input_field(d3, d2, d4, d5, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -888,7 +886,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d4 = 1, size(input_field, order(4))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d4, d3, d5, d2)
+                                call assign_field(input_field(d1, d4, d3, d5, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -900,7 +899,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d4 = 1, size(input_field, order(4))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d4, d3, d5, d1)
+                                call assign_field(input_field(d2, d4, d3, d5, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -912,7 +912,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d4 = 1, size(input_field, order(4))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d4, d2, d5, d3)
+                                call assign_field(input_field(d1, d4, d2, d5, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -924,7 +925,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d4 = 1, size(input_field, order(4))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d4, d1, d5, d3)
+                                call assign_field(input_field(d2, d4, d1, d5, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -936,7 +938,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d4 = 1, size(input_field, order(4))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d4, d2, d5, d1)
+                                call assign_field(input_field(d3, d4, d2, d5, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -948,7 +951,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d4 = 1, size(input_field, order(4))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d4, d1, d5, d2)
+                                call assign_field(input_field(d3, d4, d1, d5, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -960,7 +964,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d2 = 1, size(input_field, order(2))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d2, d3, d5, d1)
+                                call assign_field(input_field(d4, d2, d3, d5, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -972,7 +977,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d1 = 1, size(input_field, order(1))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d1, d3, d5, d2)
+                                call assign_field(input_field(d4, d1, d3, d5, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -984,7 +990,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d3 = 1, size(input_field, order(3))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d3, d2, d5, d1)
+                                call assign_field(input_field(d4, d3, d2, d5, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -996,7 +1003,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d3 = 1, size(input_field, order(3))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d3, d1, d5, d2)
+                                call assign_field(input_field(d4, d3, d1, d5, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1008,7 +1016,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d1 = 1, size(input_field, order(1))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d1, d2, d5, d3)
+                                call assign_field(input_field(d4, d1, d2, d5, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1020,7 +1029,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d2 = 1, size(input_field, order(2))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d2, d1, d5, d3)
+                                call assign_field(input_field(d4, d2, d1, d5, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1032,7 +1042,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d2 = 1, size(input_field, order(2))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d2, d5, d4, d3)
+                                call assign_field(input_field(d1, d2, d5, d4, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1044,7 +1055,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d1 = 1, size(input_field, order(1))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d1, d5, d4, d3)
+                                call assign_field(input_field(d2, d1, d5, d4, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1056,7 +1068,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d3 = 1, size(input_field, order(3))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d3, d5, d4, d2)
+                                call assign_field(input_field(d1, d3, d5, d4, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1068,7 +1081,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d3 = 1, size(input_field, order(3))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d3, d5, d4, d1)
+                                call assign_field(input_field(d2, d3, d5, d4, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1080,7 +1094,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d1 = 1, size(input_field, order(1))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d1, d5, d4, d2)
+                                call assign_field(input_field(d3, d1, d5, d4, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1092,7 +1107,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d2 = 1, size(input_field, order(2))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d2, d5, d4, d1)
+                                call assign_field(input_field(d3, d2, d5, d4, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1104,7 +1120,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d2 = 1, size(input_field, order(2))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d2, d5, d3, d4)
+                                call assign_field(input_field(d1, d2, d5, d3, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1116,7 +1133,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d1 = 1, size(input_field, order(1))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d1, d5, d3, d4)
+                                call assign_field(input_field(d2, d1, d5, d3, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1128,7 +1146,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d3 = 1, size(input_field, order(3))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d3, d5, d2, d4)
+                                call assign_field(input_field(d1, d3, d5, d2, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1140,7 +1159,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d3 = 1, size(input_field, order(3))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d3, d5, d1, d4)
+                                call assign_field(input_field(d2, d3, d5, d1, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1152,7 +1172,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d1 = 1, size(input_field, order(1))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d1, d5, d2, d4)
+                                call assign_field(input_field(d3, d1, d5, d2, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1164,7 +1185,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d2 = 1, size(input_field, order(2))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d2, d5, d1, d4)
+                                call assign_field(input_field(d3, d2, d5, d1, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1176,7 +1198,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d4 = 1, size(input_field, order(4))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d4, d5, d2, d3)
+                                call assign_field(input_field(d1, d4, d5, d2, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1188,7 +1211,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d4 = 1, size(input_field, order(4))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d4, d5, d1, d3)
+                                call assign_field(input_field(d2, d4, d5, d1, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1200,7 +1224,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d4 = 1, size(input_field, order(4))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d4, d5, d3, d2)
+                                call assign_field(input_field(d1, d4, d5, d3, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1212,7 +1237,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d4 = 1, size(input_field, order(4))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d4, d5, d3, d1)
+                                call assign_field(input_field(d2, d4, d5, d3, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1224,7 +1250,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d4 = 1, size(input_field, order(4))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d4, d5, d1, d2)
+                                call assign_field(input_field(d3, d4, d5, d1, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1236,7 +1263,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d4 = 1, size(input_field, order(4))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d4, d5, d2, d1)
+                                call assign_field(input_field(d3, d4, d5, d2, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1248,7 +1276,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d2 = 1, size(input_field, order(2))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d2, d5, d1, d3)
+                                call assign_field(input_field(d4, d2, d5, d1, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1260,7 +1289,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d1 = 1, size(input_field, order(1))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d1, d5, d2, d3)
+                                call assign_field(input_field(d4, d1, d5, d2, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1272,7 +1302,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d3 = 1, size(input_field, order(3))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d3, d5, d1, d2)
+                                call assign_field(input_field(d4, d3, d5, d1, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1284,7 +1315,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d3 = 1, size(input_field, order(3))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d3, d5, d2, d1)
+                                call assign_field(input_field(d4, d3, d5, d2, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1296,7 +1328,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d1 = 1, size(input_field, order(1))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d1, d5, d3, d2)
+                                call assign_field(input_field(d4, d1, d5, d3, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1308,7 +1341,8 @@ module field_utilities
                     do d5 = 1, size(input_field, order(5))
                         do d2 = 1, size(input_field, order(2))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d2, d5, d3, d1)
+                                call assign_field(input_field(d4, d2, d5, d3, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1320,7 +1354,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d5 = 1, size(input_field, order(5))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d5, d3, d4, d2)
+                                call assign_field(input_field(d1, d5, d3, d4, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1332,7 +1367,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d5 = 1, size(input_field, order(5))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d5, d3, d4, d1)
+                                call assign_field(input_field(d2, d5, d3, d4, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1344,7 +1380,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d5 = 1, size(input_field, order(5))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d5, d2, d4, d3)
+                                call assign_field(input_field(d1, d5, d2, d4, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1356,7 +1393,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d5 = 1, size(input_field, order(5))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d5, d1, d4, d3)
+                                call assign_field(input_field(d2, d5, d1, d4, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1368,7 +1406,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d5 = 1, size(input_field, order(5))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d5, d2, d4, d1)
+                                call assign_field(input_field(d3, d5, d2, d4, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1380,7 +1419,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d5 = 1, size(input_field, order(5))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d5, d1, d4, d2)
+                                call assign_field(input_field(d3, d5, d1, d4, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1392,7 +1432,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d5 = 1, size(input_field, order(5))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d5, d4, d3, d2)
+                                call assign_field(input_field(d1, d5, d4, d3, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1404,7 +1445,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d5 = 1, size(input_field, order(5))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d5, d4, d3, d1)
+                                call assign_field(input_field(d2, d5, d4, d3, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1416,7 +1458,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d5 = 1, size(input_field, order(5))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d5, d4, d2, d3)
+                                call assign_field(input_field(d1, d5, d4, d2, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1428,7 +1471,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d5 = 1, size(input_field, order(5))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d5, d4, d1, d3)
+                                call assign_field(input_field(d2, d5, d4, d1, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1440,7 +1484,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d5 = 1, size(input_field, order(5))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d5, d4, d2, d1)
+                                call assign_field(input_field(d3, d5, d4, d2, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1452,7 +1497,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d5 = 1, size(input_field, order(5))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d5, d4, d1, d2)
+                                call assign_field(input_field(d3, d5, d4, d1, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1464,7 +1510,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d5 = 1, size(input_field, order(5))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d5, d3, d2, d4)
+                                call assign_field(input_field(d1, d5, d3, d2, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1476,7 +1523,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d5 = 1, size(input_field, order(5))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d5, d3, d1, d4)
+                                call assign_field(input_field(d2, d5, d3, d1, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1488,7 +1536,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d5 = 1, size(input_field, order(5))
                             do d1 = 1, size(input_field, order(1))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d1, d5, d2, d3, d4)
+                                call assign_field(input_field(d1, d5, d2, d3, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1500,7 +1549,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d5 = 1, size(input_field, order(5))
                             do d2 = 1, size(input_field, order(2))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d2, d5, d1, d3, d4)
+                                call assign_field(input_field(d2, d5, d1, d3, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1512,7 +1562,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d5 = 1, size(input_field, order(5))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d5, d2, d1, d4)
+                                call assign_field(input_field(d3, d5, d2, d1, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1524,7 +1575,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d5 = 1, size(input_field, order(5))
                             do d3 = 1, size(input_field, order(3))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d3, d5, d1, d2, d4)
+                                call assign_field(input_field(d3, d5, d1, d2, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1536,7 +1588,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d5 = 1, size(input_field, order(5))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d5, d3, d1, d2)
+                                call assign_field(input_field(d4, d5, d3, d1, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1548,7 +1601,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d5 = 1, size(input_field, order(5))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d5, d3, d2, d1)
+                                call assign_field(input_field(d4, d5, d3, d2, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1560,7 +1614,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d5 = 1, size(input_field, order(5))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d5, d2, d1, d3)
+                                call assign_field(input_field(d4, d5, d2, d1, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1572,7 +1627,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d5 = 1, size(input_field, order(5))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d5, d1, d2, d3)
+                                call assign_field(input_field(d4, d5, d1, d2, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1584,7 +1640,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d5 = 1, size(input_field, order(5))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d5, d2, d3, d1)
+                                call assign_field(input_field(d4, d5, d2, d3, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1596,7 +1653,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d5 = 1, size(input_field, order(5))
                             do d4 = 1, size(input_field, order(4))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d4, d5, d1, d3, d2)
+                                call assign_field(input_field(d4, d5, d1, d3, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1608,7 +1666,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d2 = 1, size(input_field, order(2))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d2, d3, d4, d1)
+                                call assign_field(input_field(d5, d2, d3, d4, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1618,9 +1677,10 @@ module field_utilities
             do d2 = 1, size(input_field, order(2))
                 do d4 = 1, size(input_field, order(4))
                     do d3 = 1, size(input_field, order(3))
-                         do d1 = 1, size(input_field, order(1))
+                        do d1 = 1, size(input_field, order(1))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d1, d3, d4, d2)
+                                call assign_field(input_field(d5, d1, d3, d4, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1632,7 +1692,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d3 = 1, size(input_field, order(3))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d3, d2, d4, d1)
+                                call assign_field(input_field(d5, d3, d2, d4, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1644,7 +1705,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d3 = 1, size(input_field, order(3))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d3, d1, d4, d2)
+                                call assign_field(input_field(d5, d3, d1, d4, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1656,7 +1718,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d1 = 1, size(input_field, order(1))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d1, d2, d4, d3)
+                                call assign_field(input_field(d5, d1, d2, d4, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1668,7 +1731,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d2 = 1, size(input_field, order(2))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d2, d1, d4, d3)
+                                call assign_field(input_field(d5, d2, d1, d4, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1680,7 +1744,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d2 = 1, size(input_field, order(2))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d2, d4, d3, d1)
+                                call assign_field(input_field(d5, d2, d4, d3, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1692,7 +1757,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d1 = 1, size(input_field, order(1))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d1, d4, d3, d2)
+                                call assign_field(input_field(d5, d1, d4, d3, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1704,7 +1770,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d3 = 1, size(input_field, order(3))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d3, d4, d2, d1)
+                                call assign_field(input_field(d5, d3, d4, d2, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1716,7 +1783,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d3 = 1, size(input_field, order(3))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d3, d4, d1, d2)
+                                call assign_field(input_field(d5, d3, d4, d1, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1728,7 +1796,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d1 = 1, size(input_field, order(1))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d1, d4, d2, d3)
+                                call assign_field(input_field(d5, d1, d4, d2, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1740,7 +1809,8 @@ module field_utilities
                     do d4 = 1, size(input_field, order(4))
                         do d2 = 1, size(input_field, order(2))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d2, d4, d1, d3)
+                                call assign_field(input_field(d5, d2, d4, d1, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1752,7 +1822,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d4 = 1, size(input_field, order(4))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d4, d3, d2, d1)
+                                call assign_field(input_field(d5, d4, d3, d2, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1764,7 +1835,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d4 = 1, size(input_field, order(4))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d4, d3, d1, d2)
+                                call assign_field(input_field(d5, d4, d3, d1, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1776,7 +1848,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d4 = 1, size(input_field, order(4))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d4, d2, d3, d1)
+                                call assign_field(input_field(d5, d4, d2, d3, d1), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1788,7 +1861,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d4 = 1, size(input_field, order(4))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d4, d1, d3, d2)
+                                call assign_field(input_field(d5, d4, d1, d3, d2), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1800,7 +1874,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d4 = 1, size(input_field, order(4))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d4, d2, d1, d3)
+                                call assign_field(input_field(d5, d4, d2, d1, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1812,7 +1887,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d4 = 1, size(input_field, order(4))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d4, d1, d2, d3)
+                                call assign_field(input_field(d5, d4, d1, d2, d3), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1824,7 +1900,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d2 = 1, size(input_field, order(2))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d2, d3, d1, d4)
+                                call assign_field(input_field(d5, d2, d3, d1, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1836,7 +1913,8 @@ module field_utilities
                     do d3 = 1, size(input_field, order(3))
                         do d1 = 1, size(input_field, order(1))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d1, d3, d2, d4)
+                                call assign_field(input_field(d5, d1, d3, d2, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1848,7 +1926,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d3 = 1, size(input_field, order(3))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d3, d2, d1, d4)
+                                call assign_field(input_field(d5, d3, d2, d1, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1860,7 +1939,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d3 = 1, size(input_field, order(3))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d3, d1, d2, d4)
+                                call assign_field(input_field(d5, d3, d1, d2, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1872,7 +1952,8 @@ module field_utilities
                     do d2 = 1, size(input_field, order(2))
                         do d1 = 1, size(input_field, order(1))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d1, d2, d3, d4)
+                                call assign_field(input_field(d5, d1, d2, d3, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1884,7 +1965,8 @@ module field_utilities
                     do d1 = 1, size(input_field, order(1))
                         do d2 = 1, size(input_field, order(2))
                             do d5 = 1, size(input_field, order(5))
-                                output_field(d1, d2, d3, d4, d5) = input_field(d5, d2, d1, d3, d4)
+                                call assign_field(input_field(d5, d2, d1, d3, d4), output_field(d1, d2, d3, d4, d5), ierr)
+                                if (ierr /= 0) error_status = ierr
                             end do
                         end do
                     end do
@@ -1894,496 +1976,1266 @@ module field_utilities
 
     end subroutine
 
-    subroutine map_dimensions_int2d(input_field, desired_order, output_field, error_status)
+    subroutine map_dimensions_5d_to_real5d(input_field, desired_order, output_field, error_status)
 
         !> Input/output variables.
-        integer, dimension(:, :), intent(in) :: input_field
-        integer, intent(in) :: desired_order(2)
-        integer, dimension(:, :), allocatable :: output_field
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer, intent(in) :: desired_order(size(shape(input_field)))
+        real, allocatable :: output_field(:, :, :, :, :)
         integer, intent(out) :: error_status
 
         !> Local variables.
-        real, dimension(size(input_field, 1), size(input_field, 2)) :: dat2_r_in
-        real, dimension(:, :), allocatable :: dat2_r_out
+        integer dim_size(size(desired_order)), i
 
-        !> Call 'real' version of function.
-        dat2_r_in = real(input_field)
-        call map_dimensions(dat2_r_in, desired_order, dat2_r_out, error_status)
-
-        !> Transfer output.
-        if (error_status == 0) then
-            if (.not. allocated(output_field)) then
-                allocate(output_field(size(dat2_r_out, 1), size(dat2_r_out, 2)))
-            end if
-            output_field = int(dat2_r_out)
+        !> Allocate field.
+        if (.not. allocated(output_field)) then
+            do i = 1, size(desired_order)
+                dim_size(i) = size(input_field, desired_order(i))
+            end do
+            call allocate_field(output_field, dim_size, error_status)
         end if
+
+        !> Map field.
+        call map_dimensions_5d(input_field, desired_order, output_field, error_status)
 
     end subroutine
 
-    subroutine map_dimensions_int3d(input_field, desired_order, output_field, error_status)
+    subroutine map_dimensions_5d_to_int5d(input_field, desired_order, output_field, error_status)
 
         !> Input/output variables.
-        integer, dimension(:, :, :), intent(in) :: input_field
-        integer, intent(in) :: desired_order(3)
-        integer, dimension(:, :, :), allocatable :: output_field
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer, intent(in) :: desired_order(size(shape(input_field)))
+        integer, allocatable :: output_field(:, :, :, :, :)
         integer, intent(out) :: error_status
 
         !> Local variables.
-        real, dimension(size(input_field, 1), size(input_field, 2), size(input_field, 3)) :: input_field_real
-        real, dimension(:, :, :), allocatable :: output_field_real
+        integer dim_size(size(desired_order)), i
 
-        !> Call 'real' version of function.
-        input_field_real = real(input_field)
-        call map_dimensions(input_field_real, desired_order, output_field_real, error_status)
-
-        !> Transfer output.
-        if (error_status == 0) then
-            if (.not. allocated(output_field)) then
-                allocate(output_field(size(output_field_real, 1), size(output_field_real, 2), size(output_field_real, 3)))
-            end if
-            output_field = int(output_field_real)
+        !> Allocate field.
+        if (.not. allocated(output_field)) then
+            do i = 1, size(desired_order)
+                dim_size(i) = size(input_field, desired_order(i))
+            end do
+            call allocate_field(output_field, dim_size, error_status)
         end if
+
+        !> Map field.
+        call map_dimensions_5d(input_field, desired_order, output_field, error_status)
 
     end subroutine
 
-    subroutine map_dimensions_int4d(input_field, desired_order, output_field, error_status)
+    subroutine map_dimensions_4d(input_field, desired_order, output_field, error_status)
 
         !> Input/output variables.
-        integer, dimension(:, :, :, :), intent(in) :: input_field
+        class(*), intent(in) :: input_field(:, :, :, :)
         integer, intent(in) :: desired_order(4)
-        integer, dimension(:, :, :, :), allocatable :: output_field
+        class(*) output_field(:, :, :, :)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        real, dimension(size(input_field, 1), size(input_field, 2), size(input_field, 3), size(input_field, 4)) :: input_field_real
-        real, dimension(:, :, :, :), allocatable :: output_field_real
-
-        !> Call 'real' version of function.
-        input_field_real = real(input_field)
-        call map_dimensions(input_field_real, desired_order, output_field_real, error_status)
-
-        !> Transfer output.
-        if (error_status == 0) then
-            if (.not. allocated(output_field)) then
-                allocate(output_field( &
-                    size(output_field_real, 1), size(output_field_real, 2), size(output_field_real, 3), size(output_field_real, 4)))
-            end if
-            output_field = int(output_field_real)
-        end if
-
-    end subroutine
-
-
-    subroutine map_dimensions_int5d(input_field, desired_order, output_field, error_status)
-
-        !> Input/output variables.
-        integer, dimension(:, :, :, :, :), intent(in) :: input_field
-        integer, intent(in) :: desired_order(5)
-        integer, dimension(:, :, :, :, :), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        real, dimension( &
-            size(input_field, 1), size(input_field, 2), size(input_field, 3), size(input_field, 4), size(input_field, 5)) :: &
-            input_field_real
-        real, dimension(:, :, :, :, :), allocatable :: output_field_real
-
-        !> Call 'real' version of function.
-        input_field_real = real(input_field)
-        call map_dimensions(input_field_real, desired_order, output_field_real, error_status)
-
-        !> Transfer output.
-        if (error_status == 0) then
-            if (.not. allocated(output_field)) then
-                allocate(output_field( &
-                    size(output_field_real, 1), size(output_field_real, 2), size(output_field_real, 3), &
-                    size(output_field_real, 4), size(output_field_real, 5)))
-            end if
-            output_field = int(output_field_real)
-        end if
-
-    end subroutine
-
-    subroutine compact_field_real1d_from_real2d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        real, dimension(:, :), intent(in) :: input_field
-        real, dimension(:), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        integer dim_size(2), d2
-        integer i
+        !> Local variables
+        integer order(4), d4, d3, d2, d1, ierr
 
         !> Status.
         error_status = 0
 
-        !> Get shape of input.
-        dim_size = shape(input_field)
+        !> Update temporary variables.
+        order = desired_order
 
-        !> Find if the array can be compacted to the desired dimensions (extra dimensions must have a size of one).
-        d2 = 0
-        do i = 1, 2
-            if (dim_size(i) == 1) d2 = i
+        !> Map the field.
+        if (order(1) == 1 .and. order(2) == 2 .and. order(3) == 3 .and. order(4) == 4) then
+            do d4 = 1, size(input_field, order(4))
+                do d3 = 1, size(input_field, order(3))
+                    do d2 = 1, size(input_field, order(2))
+                        do d1 = 1, size(input_field, order(1))
+                            call assign_field(input_field(d1, d2, d3, d4), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 2 .and. order(2) == 1 .and. order(3) == 3 .and. order(4) == 4) then
+            do d4 = 1, size(input_field, order(4))
+                do d3 = 1, size(input_field, order(3))
+                    do d1 = 1, size(input_field, order(1))
+                        do d2 = 1, size(input_field, order(2))
+                            call assign_field(input_field(d2, d1, d3, d4), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 1 .and. order(2) == 3 .and. order(3) == 2 .and. order(4) == 4) then
+            do d4 = 1, size(input_field, order(4))
+                do d2 = 1, size(input_field, order(2))
+                    do d3 = 1, size(input_field, order(3))
+                        do d1 = 1, size(input_field, order(1))
+                            call assign_field(input_field(d1, d3, d2, d4), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 3 .and. order(2) == 1 .and. order(3) == 2 .and. order(4) == 4) then
+            do d4 = 1, size(input_field, order(4))
+                do d1 = 1, size(input_field, order(1))
+                    do d3 = 1, size(input_field, order(3))
+                        do d2 = 1, size(input_field, order(2))
+                            call assign_field(input_field(d2, d3, d1, d4), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 2 .and. order(2) == 3 .and. order(3) == 1 .and. order(4) == 4) then
+            do d4 = 1, size(input_field, order(4))
+                do d2 = 1, size(input_field, order(2))
+                    do d1 = 1, size(input_field, order(1))
+                        do d3 = 1, size(input_field, order(3))
+                            call assign_field(input_field(d3, d1, d2, d4), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 3 .and. order(2) == 2 .and. order(3) == 1 .and. order(4) == 4) then
+            do d4 = 1, size(input_field, order(4))
+                do d1 = 1, size(input_field, order(1))
+                    do d2 = 1, size(input_field, order(2))
+                        do d3 = 1, size(input_field, order(3))
+                            call assign_field(input_field(d3, d2, d1, d4), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 1 .and. order(2) == 2 .and. order(3) == 4 .and. order(4) == 3) then
+            do d3 = 1, size(input_field, order(3))
+                do d4 = 1, size(input_field, order(4))
+                    do d2 = 1, size(input_field, order(2))
+                        do d1 = 1, size(input_field, order(1))
+                            call assign_field(input_field(d1, d2, d4, d3), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 2 .and. order(2) == 1 .and. order(3) == 4 .and. order(4) == 3) then
+            do d3 = 1, size(input_field, order(3))
+                do d4 = 1, size(input_field, order(4))
+                    do d1 = 1, size(input_field, order(1))
+                        do d2 = 1, size(input_field, order(2))
+                            call assign_field(input_field(d2, d1, d4, d3), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 1 .and. order(2) == 4 .and. order(3) == 2 .and. order(4) == 3) then
+            do d2 = 1, size(input_field, order(2))
+                do d4 = 1, size(input_field, order(4))
+                    do d3 = 1, size(input_field, order(3))
+                        do d1 = 1, size(input_field, order(1))
+                            call assign_field(input_field(d1, d3, d4, d2), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 4 .and. order(2) == 1 .and. order(3) == 2 .and. order(4) == 3) then
+            do d1 = 1, size(input_field, order(1))
+                do d4 = 1, size(input_field, order(4))
+                    do d3 = 1, size(input_field, order(3))
+                        do d2 = 1, size(input_field, order(2))
+                            call assign_field(input_field(d2, d3, d4, d1), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 2 .and. order(2) == 4 .and. order(3) == 1 .and. order(4) == 3) then
+            do d2 = 1, size(input_field, order(2))
+                do d4 = 1, size(input_field, order(4))
+                    do d1 = 1, size(input_field, order(1))
+                        do d3 = 1, size(input_field, order(3))
+                            call assign_field(input_field(d3, d1, d4, d2), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 4 .and. order(2) == 2 .and. order(3) == 1 .and. order(4) == 3) then
+            do d1 = 1, size(input_field, order(1))
+                do d4 = 1, size(input_field, order(4))
+                    do d2 = 1, size(input_field, order(2))
+                        do d3 = 1, size(input_field, order(3))
+                            call assign_field(input_field(d3, d2, d4, d1), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 1 .and. order(2) == 4 .and. order(3) == 3 .and. order(4) == 2) then
+            do d2 = 1, size(input_field, order(2))
+                do d3 = 1, size(input_field, order(3))
+                    do d4 = 1, size(input_field, order(4))
+                        do d1 = 1, size(input_field, order(1))
+                            call assign_field(input_field(d1, d4, d3, d2), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 4 .and. order(2) == 1 .and. order(3) == 3 .and. order(4) == 2) then
+            do d1 = 1, size(input_field, order(1))
+                do d3 = 1, size(input_field, order(3))
+                    do d4 = 1, size(input_field, order(4))
+                        do d2 = 1, size(input_field, order(2))
+                            call assign_field(input_field(d2, d4, d3, d1), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 1 .and. order(2) == 3 .and. order(3) == 4 .and. order(4) == 2) then
+            do d3 = 1, size(input_field, order(3))
+                do d2 = 1, size(input_field, order(2))
+                    do d4 = 1, size(input_field, order(4))
+                        do d1 = 1, size(input_field, order(1))
+                            call assign_field(input_field(d1, d4, d2, d3), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 3 .and. order(2) == 1 .and. order(3) == 4 .and. order(4) == 2) then
+            do d3 = 1, size(input_field, order(3))
+                do d1 = 1, size(input_field, order(1))
+                    do d4 = 1, size(input_field, order(4))
+                        do d2 = 1, size(input_field, order(2))
+                            call assign_field(input_field(d2, d4, d1, d3), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 4 .and. order(2) == 3 .and. order(3) == 1 .and. order(4) == 2) then
+            do d1 = 1, size(input_field, order(1))
+                do d2 = 1, size(input_field, order(2))
+                    do d4 = 1, size(input_field, order(4))
+                        do d3 = 1, size(input_field, order(3))
+                            call assign_field(input_field(d3, d4, d2, d1), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 3 .and. order(2) == 4 .and. order(3) == 1 .and. order(4) == 2) then
+            do d2 = 1, size(input_field, order(2))
+                do d1 = 1, size(input_field, order(1))
+                    do d4 = 1, size(input_field, order(4))
+                        do d3 = 1, size(input_field, order(3))
+                            call assign_field(input_field(d3, d4, d1, d2), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 4 .and. order(2) == 2 .and. order(3) == 3 .and. order(4) == 1) then
+            do d1 = 1, size(input_field, order(1))
+                do d3 = 1, size(input_field, order(3))
+                    do d2 = 1, size(input_field, order(2))
+                        do d4 = 1, size(input_field, order(4))
+                            call assign_field(input_field(d4, d2, d3, d1), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 2 .and. order(2) == 4 .and. order(3) == 3 .and. order(4) == 1) then
+            do d2 = 1, size(input_field, order(2))
+                do d3 = 1, size(input_field, order(3))
+                    do d1 = 1, size(input_field, order(1))
+                        do d4 = 1, size(input_field, order(4))
+                            call assign_field(input_field(d4, d1, d3, d2), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 4 .and. order(2) == 3 .and. order(3) == 2 .and. order(4) == 1) then
+            do d1 = 1, size(input_field, order(1))
+                do d2 = 1, size(input_field, order(2))
+                    do d3 = 1, size(input_field, order(3))
+                        do d4 = 1, size(input_field, order(4))
+                            call assign_field(input_field(d4, d3, d2, d1), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 3 .and. order(2) == 4 .and. order(3) == 2 .and. order(4) == 1) then
+            do d2 = 1, size(input_field, order(2))
+                do d1 = 1, size(input_field, order(1))
+                    do d3 = 1, size(input_field, order(3))
+                        do d4 = 1, size(input_field, order(4))
+                            call assign_field(input_field(d4, d3, d1, d2), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 2 .and. order(2) == 3 .and. order(3) == 4 .and. order(4) == 1) then
+            do d3 = 1, size(input_field, order(3))
+                do d2 = 1, size(input_field, order(2))
+                    do d1 = 1, size(input_field, order(1))
+                        do d4 = 1, size(input_field, order(4))
+                            call assign_field(input_field(d4, d1, d2, d3), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        else if (order(1) == 3 .and. order(2) == 2 .and. order(3) == 4 .and. order(4) == 1) then
+            do d3 = 1, size(input_field, order(3))
+                do d1 = 1, size(input_field, order(1))
+                    do d2 = 1, size(input_field, order(2))
+                        do d4 = 1, size(input_field, order(4))
+                            call assign_field(input_field(d4, d2, d1, d3), output_field(d1, d2, d3, d4), ierr)
+                            if (ierr /= 0) error_status = ierr
+                        end do
+                    end do
+                end do
+            end do
+        end if
+
+    end subroutine
+
+    subroutine map_dimensions_4d_to_real4d(input_field, desired_order, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer, intent(in) :: desired_order(size(shape(input_field)))
+        real, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer dim_size(size(desired_order)), i
+
+        !> Allocate field.
+        if (.not. allocated(output_field)) then
+            do i = 1, size(desired_order)
+                dim_size(i) = size(input_field, desired_order(i))
+            end do
+            call allocate_field(output_field, dim_size, error_status)
+        end if
+
+        !> Map field.
+        call map_dimensions_4d(input_field, desired_order, output_field, error_status)
+
+    end subroutine
+
+    subroutine map_dimensions_4d_to_int4d(input_field, desired_order, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer, intent(in) :: desired_order(size(shape(input_field)))
+        integer, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer dim_size(size(desired_order)), i
+
+        !> Allocate field.
+        if (.not. allocated(output_field)) then
+            do i = 1, size(desired_order)
+                dim_size(i) = size(input_field, desired_order(i))
+            end do
+            call allocate_field(output_field, dim_size, error_status)
+        end if
+
+        !> Map field.
+        call map_dimensions_4d(input_field, desired_order, output_field, error_status)
+
+    end subroutine
+
+    subroutine map_dimensions_3d(input_field, desired_order, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, intent(in) :: desired_order(3)
+        class(*) output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables
+        integer order(3), d3, d2, d1, ierr
+
+        !> Status.
+        error_status = 0
+
+        !> Update temporary variables.
+        order = desired_order
+
+        !> Map the field.
+        if (order(1) == 1 .and. order(2) == 2 .and. order(3) == 3) then
+            do d3 = 1, size(input_field, order(3))
+                do d2 = 1, size(input_field, order(2))
+                    do d1 = 1, size(input_field, order(1))
+                        call assign_field(input_field(d1, d2, d3), output_field(d1, d2, d3), ierr)
+                        if (ierr /= 0) error_status = ierr
+                    end do
+                end do
+            end do
+        else if (order(1) == 2 .and. order(2) == 1 .and. order(3) == 3) then
+            do d3 = 1, size(input_field, order(3))
+                do d1 = 1, size(input_field, order(1))
+                    do d2 = 1, size(input_field, order(2))
+                        call assign_field(input_field(d2, d1, d3), output_field(d1, d2, d3), ierr)
+                        if (ierr /= 0) error_status = ierr
+                    end do
+                end do
+            end do
+        else if (order(1) == 1 .and. order(2) == 3 .and. order(3) == 2) then
+            do d2 = 1, size(input_field, order(2))
+                do d3 = 1, size(input_field, order(3))
+                    do d1 = 1, size(input_field, order(1))
+                        call assign_field(input_field(d1, d3, d2), output_field(d1, d2, d3), ierr)
+                        if (ierr /= 0) error_status = ierr
+                    end do
+                end do
+            end do
+        else if (order(1) == 3 .and. order(2) == 1 .and. order(3) == 2) then
+            do d1 = 1, size(input_field, order(1))
+                do d3 = 1, size(input_field, order(3))
+                    do d2 = 1, size(input_field, order(2))
+                        call assign_field(input_field(d2, d3, d1), output_field(d1, d2, d3), ierr)
+                        if (ierr /= 0) error_status = ierr
+                    end do
+                end do
+            end do
+        else if (order(1) == 2 .and. order(2) == 3 .and. order(3) == 1) then
+            do d2 = 1, size(input_field, order(2))
+                do d1 = 1, size(input_field, order(1))
+                    do d3 = 1, size(input_field, order(3))
+                        call assign_field(input_field(d3, d1, d2), output_field(d1, d2, d3), ierr)
+                        if (ierr /= 0) error_status = ierr
+                    end do
+                end do
+            end do
+        else if (order(1) == 3 .and. order(2) == 2 .and. order(3) == 1) then
+            do d1 = 1, size(input_field, order(1))
+                do d2 = 1, size(input_field, order(2))
+                    do d3 = 1, size(input_field, order(3))
+                        call assign_field(input_field(d3, d2, d1), output_field(d1, d2, d3), ierr)
+                        if (ierr /= 0) error_status = ierr
+                    end do
+                end do
+            end do
+        end if
+
+    end subroutine
+
+    subroutine map_dimensions_3d_to_real3d(input_field, desired_order, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, intent(in) :: desired_order(size(shape(input_field)))
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer dim_size(size(desired_order)), i
+
+        !> Allocate field.
+        if (.not. allocated(output_field)) then
+            do i = 1, size(desired_order)
+                dim_size(i) = size(input_field, desired_order(i))
+            end do
+            call allocate_field(output_field, dim_size, error_status)
+        end if
+
+        !> Map field.
+        call map_dimensions_3d(input_field, desired_order, output_field, error_status)
+
+    end subroutine
+
+    subroutine map_dimensions_3d_to_int3d(input_field, desired_order, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, intent(in) :: desired_order(size(shape(input_field)))
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer dim_size(size(desired_order)), i
+
+        !> Allocate field.
+        if (.not. allocated(output_field)) then
+            do i = 1, size(desired_order)
+                dim_size(i) = size(input_field, desired_order(i))
+            end do
+            call allocate_field(output_field, dim_size, error_status)
+        end if
+
+        !> Map field.
+        call map_dimensions_3d(input_field, desired_order, output_field, error_status)
+
+    end subroutine
+
+    subroutine map_dimensions_2d(input_field, desired_order, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, intent(in) :: desired_order(2)
+        class(*) output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer d2, d1, ierr
+
+        !> Status.
+        error_status = 0
+
+        !> Map the field.
+        if (desired_order(1) == 1 .and. desired_order(2) == 2) then
+            do d2 = 1, size(input_field, desired_order(2))
+                do d1 = 1, size(input_field, desired_order(1))
+                    call assign_field(input_field(d1, d2), output_field(d1, d2), ierr)
+                    if (ierr /= 0) error_status = ierr
+                end do
+            end do
+        else
+            do d1 = 1, size(input_field, desired_order(1))
+                do d2 = 1, size(input_field, desired_order(2))
+                    call assign_field(input_field(d2, d1), output_field(d1, d2), ierr)
+                    if (ierr /= 0) error_status = ierr
+                end do
+            end do
+        end if
+
+    end subroutine
+
+    subroutine map_dimensions_2d_to_real2d(input_field, desired_order, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, intent(in) :: desired_order(size(shape(input_field)))
+        real, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer dim_size(size(desired_order)), i
+
+        !> Allocate field.
+        if (.not. allocated(output_field)) then
+            do i = 1, size(desired_order)
+                dim_size(i) = size(input_field, desired_order(i))
+            end do
+            call allocate_field(output_field, dim_size, error_status)
+        end if
+
+        !> Map field.
+        call map_dimensions_2d(input_field, desired_order, output_field, error_status)
+
+    end subroutine
+
+    subroutine map_dimensions_2d_to_int2d(input_field, desired_order, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, intent(in) :: desired_order(size(shape(input_field)))
+        integer, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer dim_size(size(desired_order)), i
+
+        !> Allocate field.
+        if (.not. allocated(output_field)) then
+            do i = 1, size(desired_order)
+                dim_size(i) = size(input_field, desired_order(i))
+            end do
+            call allocate_field(output_field, dim_size, error_status)
+        end if
+
+        !> Map field.
+        call map_dimensions_2d(input_field, desired_order, output_field, error_status)
+
+    end subroutine
+
+    subroutine map_flattened_dimensions(field_shape, target_order, flattened_dims, targeted_dims, error_status)
+
+        !> Input/output variables.
+        integer, intent(in) :: field_shape(:)
+        integer, intent(in) :: target_order
+        integer, intent(out) :: flattened_dims(max(size(field_shape) - target_order, 1))
+        integer, intent(out) :: targeted_dims(max(target_order, 1))
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer max_flattened_dims, k, j, i
+
+        !> Return status.
+        error_status = 0
+
+        !> Transfer local variables.
+        max_flattened_dims = size(field_shape) - target_order
+
+        !> Check if the field can be compacted (any dimensions in excess of 'target_order' must have a size of one).
+        flattened_dims = 0
+        targeted_dims = 0
+        k = 1
+        j = 1
+        do i = 1, size(field_shape)
+            if (j <= max_flattened_dims .and. field_shape(i) == 1) then
+                flattened_dims(j) = i
+                j = j + 1
+            else
+                targeted_dims(k) = i
+                k = k + 1
+            end if
         end do
 
-        !> Compact the array if the extra dimensions have a size of one.
-        if (d2 > 0) then
-            select case (d2)
-                case (1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2)))
-                    output_field = input_field(1, :)
-                case (2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1)))
-                    output_field = input_field(:, 1)
-            end select
-        else
-
-            !> Unable to compact the array.
+        !> Check if the field can be compacted.
+        if (all(flattened_dims == 0) .or. all(targeted_dims == 0)) then
+            flattened_dims = 0
+            targeted_dims = 0
             error_status = 1
         end if
 
     end subroutine
 
-    subroutine compact_field_real1d_from_real3d(input_field, output_field, error_status)
+    subroutine compact_dimensions(field_shape, target_order, bit_map, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :), intent(in) :: input_field
-        real, dimension(:), allocatable :: output_field
+        integer, intent(in) :: field_shape(:)
+        integer, intent(in) :: target_order
+        integer, intent(out) :: bit_map
         integer, intent(out) :: error_status
 
         !> Local variables.
-        integer dim_size(3), dtest, d2, d3
-        integer i
+        integer compacted_dims(max(size(field_shape) - target_order, 1)), targeted_dims(max(target_order, 1)), i
 
-        !> Status.
-        error_status = 0
-
-        !> Get shape of input.
-        dim_size = shape(input_field)
-
-        !> Find if the array can be compacted to the desired dimensions (extra dimensions must have a size of one).
-        d2 = 0
-        d3 = 0
-        do i = 1, 3
-            if (dim_size(i) == 1) then
-                if (d2 > 0) then
-                    d3 = i
-                else
-                    d2 = i
-                end if
-            end if
-        end do
-
-        !> Compact the array if the extra dimensions have a size of one.
-        if (d2 > 0 .and. d3 > 0) then
-
-            !> Calculate the bit value of active indices.
-            dtest = radix(d2)**d2 + radix(d3)**d3
-
-            !> Find the missing indices.
-            select case (dtest)
-                case (radix(dtest)**1 + radix(dtest)**2)
-                    !(d2 == 1 .and. d3 == 2)
-                    !(d2 == 2 .and. d3 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(3)))
-                    output_field = input_field(1, 1, :)
-                case (radix(dtest)**1 + radix(dtest)**3)
-                    !(d2 == 1 .and. d3 == 3)
-                    !(d2 == 3 .and. d3 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2)))
-                    output_field = input_field(1, :, 1)
-                case (radix(dtest)**2 + radix(dtest)**3)
-                    !(d2 == 2 .and. d3 == 3)
-                    !(d2 == 3 .and. d3 == 2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1)))
-                    output_field = input_field(:, 1, 1)
-            end select
+        !> Find flattened dimensions.
+        call map_flattened_dimensions(field_shape, target_order, compacted_dims, targeted_dims, error_status)
+        if (error_status /= 0) then
+            return
         else
 
-            !> Unable to compact the array.
-            error_status = 1
+            !> Calculate map.
+            bit_map = 0
+            do i = 1, size(targeted_dims)
+                bit_map = bit_map + 2**targeted_dims(i)
+            end do
         end if
 
     end subroutine
 
-    subroutine compact_field_real1d_from_real4d(input_field, output_field, error_status)
+    subroutine compact_5d_to_real4d(input_field, output_field, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :, :), intent(in) :: input_field
-        real, dimension(:), allocatable :: output_field
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        real, allocatable :: output_field(:, :, :, :)
         integer, intent(out) :: error_status
 
         !> Local variables.
-        integer dim_size(4), dtest, d2, d3, d4
-        integer i
+        integer :: target_order = 5, bit_map
 
-        !> Status.
-        error_status = 0
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
 
-        !> Get shape of input.
-        dim_size = shape(input_field)
-
-        !> Find if the array can be compacted to the desired dimensions (extra dimensions must have a size of one).
-        d2 = 0
-        d3 = 0
-        d4 = 0
-        do i = 1, 4
-            if (dim_size(i) == 1) then
-                if (d2 > 0) then
-                    if (d3 > 0) then
-                        d4 = i
-                    else
-                        d3 = i
-                    end if
-                else
-                    d2 = i
-                end if
-            end if
-        end do
-
-        !> Compact the array if the extra dimensions have a size of one.
-        if (d2 > 0 .and. d3 > 0 .and. d4 > 0) then
-
-            !> Calculate the bit value of active indices.
-            dtest = radix(d2)**d2 + radix(d3)**d3 + radix(d4)**d4
-
-            !> Find the missing indices.
-            select case (dtest)
-                case (radix(dtest)**1 + radix(dtest)**2 + radix(dtest)**3)
-                    !(d2 == 1 .and. d3 == 2 .and. d4 == 3)
-                    !(d2 == 1 .and. d3 == 3 .and. d4 == 2)
-                    !(d2 == 2 .and. d3 == 1 .and. d4 == 3)
-                    !(d2 == 2 .and. d3 == 3 .and. d4 == 1)
-                    !(d2 == 3 .and. d3 == 1 .and. d4 == 2)
-                    !(d2 == 3 .and. d3 == 2 .and. d4 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(4)))
-                    output_field = input_field(1, 1, 1, :)
-                case (radix(dtest)**1 + radix(dtest)**2 + radix(dtest)**4)
-                    !(d2 == 1 .and. d3 == 2 .and. d4 == 4)
-                    !(d2 == 1 .and. d3 == 4 .and. d4 == 2)
-                    !(d2 == 2 .and. d3 == 1 .and. d4 == 4)
-                    !(d2 == 2 .and. d3 == 4 .and. d4 == 1)
-                    !(d2 == 4 .and. d3 == 1 .and. d4 == 2)
-                    !(d2 == 4 .and. d3 == 2 .and. d4 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(3)))
-                    output_field = input_field(1, 1, :, 1)
-                case (radix(dtest)**1 + radix(dtest)**3 + radix(dtest)**4)
-                    !(d2 == 1 .and. d3 == 3 .and. d4 == 4)
-                    !(d2 == 1 .and. d3 == 4 .and. d4 == 3)
-                    !(d2 == 3 .and. d3 == 1 .and. d4 == 4)
-                    !(d2 == 3 .and. d3 == 4 .and. d4 == 1)
-                    !(d2 == 4 .and. d3 == 1 .and. d4 == 3)
-                    !(d2 == 4 .and. d3 == 3 .and. d4 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2)))
-                    output_field = input_field(1, :, 1, 1)
-                case (radix(dtest)**2 + radix(dtest)**3 + radix(dtest)**4)
-                    !(d2 == 2 .and. d3 == 3 .and. d4 == 4)
-                    !(d2 == 2 .and. d3 == 4 .and. d4 == 3)
-                    !(d2 == 3 .and. d3 == 2 .and. d4 == 4)
-                    !(d2 == 3 .and. d3 == 4 .and. d4 == 2)
-                    !(d2 == 4 .and. d3 == 2 .and. d4 == 3)
-                    !(d2 == 4 .and. d3 == 3 .and. d4 == 2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1)))
-                    output_field = input_field(:, 1, 1, 1)
-            end select
-        else
-
-            !> Unable to compact the array.
-            error_status = 1
-        end if
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2 + 2**3 + 2**4)
+                call assign_field(input_field(:, :, :, :, 1), output_field, error_status)
+            case (2**1 + 2**2 + 2**3 + 2**5)
+                call assign_field(input_field(:, :, :, 1, :), output_field, error_status)
+            case (2**1 + 2**2 + 2**4 + 2**5)
+                call assign_field(input_field(:, :, 1, :, :), output_field, error_status)
+            case (2**1 + 2**3 + 2**4 + 2**5)
+                call assign_field(input_field(:, 1, :, :, :), output_field, error_status)
+            case (2**2 + 2**3 + 2**4 + 2**5)
+                call assign_field(input_field(1, :, :, :, :), output_field, error_status)
+        end select
 
     end subroutine
 
-    subroutine compact_field_real1d_from_real5d(input_field, output_field, error_status)
+    subroutine compact_5d_to_int4d(input_field, output_field, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :, :, :), intent(in) :: input_field
-        real, dimension(:), allocatable :: output_field
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer, allocatable :: output_field(:, :, :, :)
         integer, intent(out) :: error_status
 
         !> Local variables.
-        integer dim_size(5), dtest, d2, d3, d4, d5
-        integer i
+        integer :: target_order = 5, bit_map
 
-        !> Status.
-        error_status = 0
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
 
-        !> Get shape of input.
-        dim_size = shape(input_field)
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2 + 2**3 + 2**4)
+                call assign_field(input_field(:, :, :, :, 1), output_field, error_status)
+            case (2**1 + 2**2 + 2**3 + 2**5)
+                call assign_field(input_field(:, :, :, 1, :), output_field, error_status)
+            case (2**1 + 2**2 + 2**4 + 2**5)
+                call assign_field(input_field(:, :, 1, :, :), output_field, error_status)
+            case (2**1 + 2**3 + 2**4 + 2**5)
+                call assign_field(input_field(:, 1, :, :, :), output_field, error_status)
+            case (2**2 + 2**3 + 2**4 + 2**5)
+                call assign_field(input_field(1, :, :, :, :), output_field, error_status)
+        end select
 
-        !> Find if the array can be compacted to the desired dimensions (extra dimensions must have a size of one).
-        d2 = 0
-        d3 = 0
-        d4 = 0
-        d5 = 0
-        do i = 1, 5
-            if (dim_size(i) == 1) then
-                if (d2 > 0) then
-                    if (d3 > 0) then
-                        if (d4 > 0) then
-                            d5 = i
-                        else
-                            d4 = i
-                        end if
-                    else
-                        d3 = i
-                    end if
-                else
-                    d2 = i
-                end if
-            end if
-        end do
+    end subroutine
 
-        !> Compact the array if the extra dimensions have a size of one.
-        if (d2 > 0 .and. d3 > 0 .and. d4 > 0 .and. d5 > 0) then
+    subroutine compact_5d_to_real3d(input_field, output_field, error_status)
 
-            !> Calculate the bit value of active indices.
-            dtest = radix(d2)**d2 + radix(d3)**d3 + radix(d4)**d4 + radix(d5)**d5
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
 
-            !> Find the missing indices.
-            select case (dtest)
-                case (radix(dtest)**1 + radix(dtest)**2 + radix(dtest)**3 + radix(dtest)**4)
-                    !(d2 == 1 .and. d3 == 2 .and. d4 == 3 .and. d5 == 4)
-                    !(d2 == 1 .and. d3 == 2 .and. d4 == 4 .and. d5 == 3)
-                    !(d2 == 1 .and. d3 == 3 .and. d4 == 2 .and. d5 == 4)
-                    !(d2 == 1 .and. d3 == 3 .and. d4 == 4 .and. d5 == 2)
-                    !(d2 == 1 .and. d3 == 4 .and. d4 == 2 .and. d5 == 3)
-                    !(d2 == 1 .and. d3 == 4 .and. d4 == 3 .and. d5 == 2)
-                    !(d2 == 2 .and. d3 == 1 .and. d4 == 3 .and. d5 == 4)
-                    !(d2 == 2 .and. d3 == 1 .and. d4 == 4 .and. d5 == 3)
-                    !(d2 == 2 .and. d3 == 3 .and. d4 == 1 .and. d5 == 4)
-                    !(d2 == 2 .and. d3 == 3 .and. d4 == 4 .and. d5 == 1)
-                    !(d2 == 2 .and. d3 == 4 .and. d4 == 1 .and. d5 == 3)
-                    !(d2 == 2 .and. d3 == 4 .and. d4 == 3 .and. d5 == 1)
-                    !(d2 == 3 .and. d3 == 1 .and. d4 == 2 .and. d5 == 4)
-                    !(d2 == 3 .and. d3 == 1 .and. d4 == 4 .and. d5 == 2)
-                    !(d2 == 3 .and. d3 == 2 .and. d4 == 1 .and. d5 == 4)
-                    !(d2 == 3 .and. d3 == 2 .and. d4 == 4 .and. d5 == 1)
-                    !(d2 == 3 .and. d3 == 4 .and. d4 == 1 .and. d5 == 2)
-                    !(d2 == 3 .and. d3 == 4 .and. d4 == 2 .and. d5 == 1)
-                    !(d2 == 4 .and. d3 == 1 .and. d4 == 2 .and. d5 == 3)
-                    !(d2 == 4 .and. d3 == 1 .and. d4 == 3 .and. d5 == 2)
-                    !(d2 == 4 .and. d3 == 2 .and. d4 == 1 .and. d5 == 3)
-                    !(d2 == 4 .and. d3 == 2 .and. d4 == 3 .and. d5 == 1)
-                    !(d2 == 4 .and. d3 == 3 .and. d4 == 1 .and. d5 == 2)
-                    !(d2 == 4 .and. d3 == 3 .and. d4 == 2 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(5)))
-                    output_field = input_field(1, 1, 1, 1, :)
-                case (radix(dtest)**1 + radix(dtest)**2 + radix(dtest)**3 + radix(dtest)**5)
-                    !(d2 == 1 .and. d3 == 2 .and. d4 == 3 .and. d5 == 5)
-                    !(d2 == 1 .and. d3 == 2 .and. d4 == 5 .and. d5 == 3)
-                    !(d2 == 1 .and. d3 == 3 .and. d4 == 2 .and. d5 == 5)
-                    !(d2 == 1 .and. d3 == 3 .and. d4 == 5 .and. d5 == 2)
-                    !(d2 == 1 .and. d3 == 5 .and. d4 == 2 .and. d5 == 3)
-                    !(d2 == 1 .and. d3 == 5 .and. d4 == 3 .and. d5 == 2)
-                    !(d2 == 2 .and. d3 == 1 .and. d4 == 3 .and. d5 == 5)
-                    !(d2 == 2 .and. d3 == 1 .and. d4 == 5 .and. d5 == 3)
-                    !(d2 == 2 .and. d3 == 3 .and. d4 == 1 .and. d5 == 5)
-                    !(d2 == 2 .and. d3 == 3 .and. d4 == 5 .and. d5 == 1)
-                    !(d2 == 2 .and. d3 == 5 .and. d4 == 1 .and. d5 == 3)
-                    !(d2 == 2 .and. d3 == 5 .and. d4 == 3 .and. d5 == 1)
-                    !(d2 == 3 .and. d3 == 1 .and. d4 == 2 .and. d5 == 5)
-                    !(d2 == 3 .and. d3 == 1 .and. d4 == 5 .and. d5 == 2)
-                    !(d2 == 3 .and. d3 == 2 .and. d4 == 1 .and. d5 == 5)
-                    !(d2 == 3 .and. d3 == 2 .and. d4 == 5 .and. d5 == 1)
-                    !(d2 == 3 .and. d3 == 5 .and. d4 == 1 .and. d5 == 2)
-                    !(d2 == 3 .and. d3 == 5 .and. d4 == 2 .and. d5 == 1)
-                    !(d2 == 5 .and. d3 == 1 .and. d4 == 2 .and. d5 == 3)
-                    !(d2 == 5 .and. d3 == 1 .and. d4 == 3 .and. d5 == 2)
-                    !(d2 == 5 .and. d3 == 2 .and. d4 == 1 .and. d5 == 3)
-                    !(d2 == 5 .and. d3 == 2 .and. d4 == 3 .and. d5 == 1)
-                    !(d2 == 5 .and. d3 == 3 .and. d4 == 1 .and. d5 == 2)
-                    !(d2 == 5 .and. d3 == 3 .and. d4 == 2 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(4)))
-                    output_field = input_field(1, 1, 1, :, 1)
-                case (radix(dtest)**1 + radix(dtest)**2 + radix(dtest)**4 + radix(dtest)**5)
-                    !(d2 == 1 .and. d3 == 2 .and. d4 == 4 .and. d5 == 5)
-                    !(d2 == 1 .and. d3 == 2 .and. d4 == 5 .and. d5 == 4)
-                    !(d2 == 1 .and. d3 == 4 .and. d4 == 2 .and. d5 == 5)
-                    !(d2 == 1 .and. d3 == 4 .and. d4 == 5 .and. d5 == 2)
-                    !(d2 == 1 .and. d3 == 5 .and. d4 == 2 .and. d5 == 4)
-                    !(d2 == 1 .and. d3 == 5 .and. d4 == 4 .and. d5 == 2)
-                    !(d2 == 2 .and. d3 == 1 .and. d4 == 4 .and. d5 == 5)
-                    !(d2 == 2 .and. d3 == 1 .and. d4 == 5 .and. d5 == 4)
-                    !(d2 == 2 .and. d3 == 4 .and. d4 == 1 .and. d5 == 5)
-                    !(d2 == 2 .and. d3 == 4 .and. d4 == 5 .and. d5 == 1)
-                    !(d2 == 2 .and. d3 == 5 .and. d4 == 1 .and. d5 == 4)
-                    !(d2 == 2 .and. d3 == 5 .and. d4 == 4 .and. d5 == 1)
-                    !(d2 == 4 .and. d3 == 1 .and. d4 == 2 .and. d5 == 5)
-                    !(d2 == 4 .and. d3 == 1 .and. d4 == 5 .and. d5 == 2)
-                    !(d2 == 4 .and. d3 == 2 .and. d4 == 1 .and. d5 == 5)
-                    !(d2 == 4 .and. d3 == 2 .and. d4 == 5 .and. d5 == 1)
-                    !(d2 == 4 .and. d3 == 5 .and. d4 == 1 .and. d5 == 2)
-                    !(d2 == 4 .and. d3 == 5 .and. d4 == 2 .and. d5 == 1)
-                    !(d2 == 5 .and. d3 == 1 .and. d4 == 2 .and. d5 == 4)
-                    !(d2 == 5 .and. d3 == 1 .and. d4 == 4 .and. d5 == 2)
-                    !(d2 == 5 .and. d3 == 2 .and. d4 == 1 .and. d5 == 4)
-                    !(d2 == 5 .and. d3 == 2 .and. d4 == 4 .and. d5 == 1)
-                    !(d2 == 5 .and. d3 == 4 .and. d4 == 1 .and. d5 == 2)
-                    !(d2 == 5 .and. d3 == 4 .and. d4 == 2 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(3)))
-                    output_field = input_field(1, 1, :, 1, 1)
-                case (radix(dtest)**1 + radix(dtest)**3 + radix(dtest)**4 + radix(dtest)**5)
-                    !(d2 == 1 .and. d3 == 3 .and. d4 == 4 .and. d5 == 5)
-                    !(d2 == 1 .and. d3 == 3 .and. d4 == 5 .and. d5 == 4)
-                    !(d2 == 1 .and. d3 == 4 .and. d4 == 3 .and. d5 == 5)
-                    !(d2 == 1 .and. d3 == 4 .and. d4 == 5 .and. d5 == 3)
-                    !(d2 == 1 .and. d3 == 5 .and. d4 == 3 .and. d5 == 4)
-                    !(d2 == 1 .and. d3 == 5 .and. d4 == 4 .and. d5 == 3)
-                    !(d2 == 3 .and. d3 == 1 .and. d4 == 4 .and. d5 == 5)
-                    !(d2 == 3 .and. d3 == 1 .and. d4 == 5 .and. d5 == 4)
-                    !(d2 == 3 .and. d3 == 4 .and. d4 == 1 .and. d5 == 5)
-                    !(d2 == 3 .and. d3 == 4 .and. d4 == 5 .and. d5 == 1)
-                    !(d2 == 3 .and. d3 == 5 .and. d4 == 1 .and. d5 == 4)
-                    !(d2 == 3 .and. d3 == 5 .and. d4 == 4 .and. d5 == 1)
-                    !(d2 == 4 .and. d3 == 1 .and. d4 == 3 .and. d5 == 5)
-                    !(d2 == 4 .and. d3 == 1 .and. d4 == 5 .and. d5 == 3)
-                    !(d2 == 4 .and. d3 == 3 .and. d4 == 1 .and. d5 == 5)
-                    !(d2 == 4 .and. d3 == 3 .and. d4 == 5 .and. d5 == 1)
-                    !(d2 == 4 .and. d3 == 5 .and. d4 == 1 .and. d5 == 3)
-                    !(d2 == 4 .and. d3 == 5 .and. d4 == 3 .and. d5 == 1)
-                    !(d2 == 5 .and. d3 == 1 .and. d4 == 3 .and. d5 == 4)
-                    !(d2 == 5 .and. d3 == 1 .and. d4 == 4 .and. d5 == 3)
-                    !(d2 == 5 .and. d3 == 3 .and. d4 == 1 .and. d5 == 4)
-                    !(d2 == 5 .and. d3 == 3 .and. d4 == 4 .and. d5 == 1)
-                    !(d2 == 5 .and. d3 == 4 .and. d4 == 1 .and. d5 == 3)
-                    !(d2 == 5 .and. d3 == 4 .and. d4 == 3 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2)))
-                    output_field = input_field(1, :, 1, 1, 1)
-                case (radix(dtest)**2 + radix(dtest)**3 + radix(dtest)**4 + radix(dtest)**5)
-                    !(d2 == 2 .and. d3 == 3 .and. d4 == 4 .and. d5 == 5)
-                    !(d2 == 2 .and. d3 == 3 .and. d4 == 5 .and. d5 == 4)
-                    !(d2 == 2 .and. d3 == 4 .and. d4 == 3 .and. d5 == 5)
-                    !(d2 == 2 .and. d3 == 4 .and. d4 == 5 .and. d5 == 3)
-                    !(d2 == 2 .and. d3 == 5 .and. d4 == 3 .and. d5 == 4)
-                    !(d2 == 2 .and. d3 == 5 .and. d4 == 4 .and. d5 == 3)
-                    !(d2 == 3 .and. d3 == 2 .and. d4 == 4 .and. d5 == 5)
-                    !(d2 == 3 .and. d3 == 2 .and. d4 == 5 .and. d5 == 4)
-                    !(d2 == 3 .and. d3 == 4 .and. d4 == 2 .and. d5 == 5)
-                    !(d2 == 3 .and. d3 == 4 .and. d4 == 5 .and. d5 == 2)
-                    !(d2 == 3 .and. d3 == 5 .and. d4 == 2 .and. d5 == 4)
-                    !(d2 == 3 .and. d3 == 5 .and. d4 == 4 .and. d5 == 2)
-                    !(d2 == 4 .and. d3 == 2 .and. d4 == 3 .and. d5 == 5)
-                    !(d2 == 4 .and. d3 == 2 .and. d4 == 5 .and. d5 == 3)
-                    !(d2 == 4 .and. d3 == 3 .and. d4 == 2 .and. d5 == 5)
-                    !(d2 == 4 .and. d3 == 3 .and. d4 == 5 .and. d5 == 2)
-                    !(d2 == 4 .and. d3 == 5 .and. d4 == 2 .and. d5 == 3)
-                    !(d2 == 4 .and. d3 == 5 .and. d4 == 3 .and. d5 == 2)
-                    !(d2 == 5 .and. d3 == 2 .and. d4 == 3 .and. d5 == 4)
-                    !(d2 == 5 .and. d3 == 2 .and. d4 == 4 .and. d5 == 3)
-                    !(d2 == 5 .and. d3 == 3 .and. d4 == 2 .and. d5 == 4)
-                    !(d2 == 5 .and. d3 == 3 .and. d4 == 4 .and. d5 == 2)
-                    !(d2 == 5 .and. d3 == 4 .and. d4 == 2 .and. d5 == 3)
-                    !(d2 == 5 .and. d3 == 4 .and. d4 == 3 .and. d5 == 2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1)))
-                    output_field = input_field(:, 1, 1, 1, 1)
-            end select
-        else
+        !> Local variables.
+        integer :: target_order = 5, bit_map
 
-            !> Unable to compact the array.
-            error_status = 1
-        end if
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2 + 2**3)
+                call assign_field(input_field(:, :, :, 1, 1), output_field, error_status)
+            case (2**1 + 2**2 + 2**4)
+                call assign_field(input_field(:, :, 1, :, 1), output_field, error_status)
+            case (2**1 + 2**2 + 2**5)
+                call assign_field(input_field(:, :, 1, 1, :), output_field, error_status)
+            case (2**1 + 2**3 + 2**4)
+                call assign_field(input_field(:, 1, :, :, 1), output_field, error_status)
+            case (2**1 + 2**3 + 2**5)
+                call assign_field(input_field(:, 1, :, 1, :), output_field, error_status)
+            case (2**1 + 2**4 + 2**5)
+                call assign_field(input_field(:, 1, 1, :, :), output_field, error_status)
+            case (2**2 + 2**3 + 2**4)
+                call assign_field(input_field(1, :, :, :, 1), output_field, error_status)
+            case (2**2 + 2**3 + 2**5)
+                call assign_field(input_field(1, :, :, 1, :), output_field, error_status)
+            case (2**2 + 2**4 + 2**5)
+                call assign_field(input_field(1, :, 1, :, :), output_field, error_status)
+            case (2**3 + 2**4 + 2**5)
+                call assign_field(input_field(1, 1, :, :, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_5d_to_int3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 5, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2 + 2**3)
+                call assign_field(input_field(:, :, :, 1, 1), output_field, error_status)
+            case (2**1 + 2**2 + 2**4)
+                call assign_field(input_field(:, :, 1, :, 1), output_field, error_status)
+            case (2**1 + 2**2 + 2**5)
+                call assign_field(input_field(:, :, 1, 1, :), output_field, error_status)
+            case (2**1 + 2**3 + 2**4)
+                call assign_field(input_field(:, 1, :, :, 1), output_field, error_status)
+            case (2**1 + 2**3 + 2**5)
+                call assign_field(input_field(:, 1, :, 1, :), output_field, error_status)
+            case (2**1 + 2**4 + 2**5)
+                call assign_field(input_field(:, 1, 1, :, :), output_field, error_status)
+            case (2**2 + 2**3 + 2**4)
+                call assign_field(input_field(1, :, :, :, 1), output_field, error_status)
+            case (2**2 + 2**3 + 2**5)
+                call assign_field(input_field(1, :, :, 1, :), output_field, error_status)
+            case (2**2 + 2**4 + 2**5)
+                call assign_field(input_field(1, :, 1, :, :), output_field, error_status)
+            case (2**3 + 2**4 + 2**5)
+                call assign_field(input_field(1, 1, :, :, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_5d_to_real2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        real, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 5, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2)
+                call assign_field(input_field(:, :, 1, 1, 1), output_field, error_status)
+            case (2**1 + 2**3)
+                call assign_field(input_field(:, 1, :, 1, 1), output_field, error_status)
+            case (2**1 + 2**4)
+                call assign_field(input_field(:, 1, 1, :, 1), output_field, error_status)
+            case (2**1 + 2**5)
+                call assign_field(input_field(:, 1, 1, 1, :), output_field, error_status)
+            case (2**2 + 2**3)
+                call assign_field(input_field(1, :, :, 1, 1), output_field, error_status)
+            case (2**2 + 2**4)
+                call assign_field(input_field(1, :, 1, :, 1), output_field, error_status)
+            case (2**2 + 2**5)
+                call assign_field(input_field(1, :, 1, 1, :), output_field, error_status)
+            case (2**3 + 2**4)
+                call assign_field(input_field(1, 1, :, :, 1), output_field, error_status)
+            case (2**3 + 2**5)
+                call assign_field(input_field(1, 1, :, 1, :), output_field, error_status)
+            case (2**4 + 2**5)
+                call assign_field(input_field(1, 1, 1, :, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_5d_to_int2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 5, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2)
+                call assign_field(input_field(:, :, 1, 1, 1), output_field, error_status)
+            case (2**1 + 2**3)
+                call assign_field(input_field(:, 1, :, 1, 1), output_field, error_status)
+            case (2**1 + 2**4)
+                call assign_field(input_field(:, 1, 1, :, 1), output_field, error_status)
+            case (2**1 + 2**5)
+                call assign_field(input_field(:, 1, 1, 1, :), output_field, error_status)
+            case (2**2 + 2**3)
+                call assign_field(input_field(1, :, :, 1, 1), output_field, error_status)
+            case (2**2 + 2**4)
+                call assign_field(input_field(1, :, 1, :, 1), output_field, error_status)
+            case (2**2 + 2**5)
+                call assign_field(input_field(1, :, 1, 1, :), output_field, error_status)
+            case (2**3 + 2**4)
+                call assign_field(input_field(1, 1, :, :, 1), output_field, error_status)
+            case (2**3 + 2**5)
+                call assign_field(input_field(1, 1, :, 1, :), output_field, error_status)
+            case (2**4 + 2**5)
+                call assign_field(input_field(1, 1, 1, :, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_5d_to_real1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        real, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 5, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1)
+                call assign_field(input_field(:, 1, 1, 1, 1), output_field, error_status)
+            case (2**2)
+                call assign_field(input_field(1, :, 1, 1, 1), output_field, error_status)
+            case (2**3)
+                call assign_field(input_field(1, 1, :, 1, 1), output_field, error_status)
+            case (2**4)
+                call assign_field(input_field(1, 1, 1, :, 1), output_field, error_status)
+            case (2**5)
+                call assign_field(input_field(1, 1, 1, 1, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_5d_to_int1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 5, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1)
+                call assign_field(input_field(:, 1, 1, 1, 1), output_field, error_status)
+            case (2**2)
+                call assign_field(input_field(1, :, 1, 1, 1), output_field, error_status)
+            case (2**3)
+                call assign_field(input_field(1, 1, :, 1, 1), output_field, error_status)
+            case (2**4)
+                call assign_field(input_field(1, 1, 1, :, 1), output_field, error_status)
+            case (2**5)
+                call assign_field(input_field(1, 1, 1, 1, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_4d_to_real3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 4, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2 + 2**3)
+                call assign_field(input_field(:, :, :, 1), output_field, error_status)
+            case (2**1 + 2**2 + 2**4)
+                call assign_field(input_field(:, :, 1, :), output_field, error_status)
+            case (2**1 + 2**3 + 2**4)
+                call assign_field(input_field(:, 1, :, :), output_field, error_status)
+            case (2**2 + 2**3 + 2**4)
+                call assign_field(input_field(1, :, :, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_4d_to_int3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 4, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2 + 2**3)
+                call assign_field(input_field(:, :, :, 1), output_field, error_status)
+            case (2**1 + 2**2 + 2**4)
+                call assign_field(input_field(:, :, 1, :), output_field, error_status)
+            case (2**1 + 2**3 + 2**4)
+                call assign_field(input_field(:, 1, :, :), output_field, error_status)
+            case (2**2 + 2**3 + 2**4)
+                call assign_field(input_field(1, :, :, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_4d_to_real2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        real, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 4, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2)
+                call assign_field(input_field(:, :, 1, 1), output_field, error_status)
+            case (2**1 + 2**3)
+                call assign_field(input_field(:, 1, :, 1), output_field, error_status)
+            case (2**1 + 2**4)
+                call assign_field(input_field(:, 1, 1, :), output_field, error_status)
+            case (2**2 + 2**3)
+                call assign_field(input_field(1, :, :, 1), output_field, error_status)
+            case (2**2 + 2**4)
+                call assign_field(input_field(1, :, 1, :), output_field, error_status)
+            case (2**3 + 2**4)
+                call assign_field(input_field(1, 1, :, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_4d_to_int2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 4, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2)
+                call assign_field(input_field(:, :, 1, 1), output_field, error_status)
+            case (2**1 + 2**3)
+                call assign_field(input_field(:, 1, :, 1), output_field, error_status)
+            case (2**1 + 2**4)
+                call assign_field(input_field(:, 1, 1, :), output_field, error_status)
+            case (2**2 + 2**3)
+                call assign_field(input_field(1, :, :, 1), output_field, error_status)
+            case (2**2 + 2**4)
+                call assign_field(input_field(1, :, 1, :), output_field, error_status)
+            case (2**3 + 2**4)
+                call assign_field(input_field(1, 1, :, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_4d_to_real1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        real, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 4, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1)
+                call assign_field(input_field(:, 1, 1, 1), output_field, error_status)
+            case (2**2)
+                call assign_field(input_field(1, :, 1, 1), output_field, error_status)
+            case (2**3)
+                call assign_field(input_field(1, 1, :, 1), output_field, error_status)
+            case (2**4)
+                call assign_field(input_field(1, 1, 1, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_4d_to_int1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 4, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1)
+                call assign_field(input_field(:, 1, 1, 1), output_field, error_status)
+            case (2**2)
+                call assign_field(input_field(1, :, 1, 1), output_field, error_status)
+            case (2**3)
+                call assign_field(input_field(1, 1, :, 1), output_field, error_status)
+            case (2**4)
+                call assign_field(input_field(1, 1, 1, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_3d_to_real2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        real, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 3, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2)
+                call assign_field(input_field(:, :, 1), output_field, error_status)
+            case (2**1 + 2**3)
+                call assign_field(input_field(:, 1, :), output_field, error_status)
+            case (2**2 + 2**3)
+                call assign_field(input_field(1, :, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_3d_to_int2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 3, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1 + 2**2)
+                call assign_field(input_field(:, :, 1), output_field, error_status)
+            case (2**1 + 2**3)
+                call assign_field(input_field(:, 1, :), output_field, error_status)
+            case (2**2 + 2**3)
+                call assign_field(input_field(1, :, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_3d_to_real1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        real, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 3, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1)
+                call assign_field(input_field(:, 1, 1), output_field, error_status)
+            case (2**2)
+                call assign_field(input_field(1, :, 1), output_field, error_status)
+            case (2**3)
+                call assign_field(input_field(1, 1, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_3d_to_int1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 3, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1)
+                call assign_field(input_field(:, 1, 1), output_field, error_status)
+            case (2**2)
+                call assign_field(input_field(1, :, 1), output_field, error_status)
+            case (2**3)
+                call assign_field(input_field(1, 1, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_2d_to_real1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        real, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 2, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1)
+                call assign_field(input_field(:, 1), output_field, error_status)
+            case (2**2)
+                call assign_field(input_field(1, :), output_field, error_status)
+        end select
+
+    end subroutine
+
+    subroutine compact_2d_to_int1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer :: target_order = 2, bit_map
+
+        !> Check if the field can be compacted.
+        call compact_dimensions(shape(input_field), target_order, bit_map, error_status)
+        if (error_status /= 0) return
+
+        !> Compact the field.
+        select case (bit_map)
+            case (2**1)
+                call assign_field(input_field(:, 1), output_field, error_status)
+            case (2**2)
+                call assign_field(input_field(1, :), output_field, error_status)
+        end select
 
     end subroutine
 
@@ -2569,1237 +3421,2703 @@ module field_utilities
 
     end subroutine
 
-    subroutine compact_field_real2d_from_real3d(input_field, output_field, error_status)
+    subroutine copy_field_5d_to_real5d(input_field, output_field, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :), intent(in) :: input_field
-        real, dimension(:, :), allocatable :: output_field
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        real output_field(:, :, :, :, :)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer dim_size(3), d3
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Get shape of input.
-        dim_size = shape(input_field)
-
-        !> Find if the array can be compacted to the desired dimensions (extra dimensions must have a size of one).
-        d3 = 0
-        do i = 1, 3
-            if (dim_size(i) == 1) d3 = i
-        end do
-
-        !> Compact the array if the extra dimensions have a size of one.
-        if (d3 > 0) then
-            select case (d3)
-                case (1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(3)))
-                    output_field = input_field(1, :, :)
-                case (2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(3)))
-                    output_field = input_field(:, 1, :)
-                case (3)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(2)))
-                    output_field = input_field(:, :, 1)
-            end select
+        !> Compare the shapes of the input and output fields.
+        if (any(shape(input_field) /= shape(output_field))) then
+            error_status = 1
+            return
         else
 
-            !> Unable to compact the array.
-            error_status = 1
+            !> Return status.
+            error_status = 0
         end if
+
+        !> Copy field.
+        select type (input_field)
+            type is (real)
+                output_field = input_field
+            type is (integer)
+                output_field = real(input_field)
+            class default
+                error_status = 1
+        end select
 
     end subroutine
 
-    subroutine compact_field_real2d_from_real4d(input_field, output_field, error_status)
+    subroutine copy_field_5d_to_int5d(input_field, output_field, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :, :), intent(in) :: input_field
-        real, dimension(:, :), allocatable :: output_field
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer output_field(:, :, :, :, :)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer dim_size(4), dtest, d3, d4
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Get shape of input.
-        dim_size = shape(input_field)
-
-        !> Find if the array can be compacted to the desired dimensions (extra dimensions must have a size of one).
-        d3 = 0
-        d4 = 0
-        do i = 1, 4
-            if (dim_size(i) == 1) then
-                if (d3 > 0) then
-                    d4 = i
-                else
-                    d3 = i
-                end if
-            end if
-        end do
-
-        !> Compact the array if the extra dimensions have a size of one.
-        if (d3 > 0 .and. d4 > 0) then
-
-            !> Calculate the bit value of active indices.
-            dtest = radix(d3)**d3 + radix(d4)**d4
-
-            !> Find the missing indices.
-            select case (dtest)
-                case (radix(dtest)**1 + radix(dtest)**2)
-                    !(d3 == 1 .and. d4 == 2)
-                    !(d3 == 2 .and. d4 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(3), dim_size(4)))
-                    output_field = input_field(1, 1, :, :)
-                case (radix(dtest)**1 + radix(dtest)**3)
-                    !(d3 == 1 .and. d4 == 3)
-                    !(d3 == 3 .and. d4 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(4)))
-                    output_field = input_field(1, :, 1, :)
-                case (radix(dtest)**1 + radix(dtest)**4)
-                    !(d3 == 1 .and. d4 == 4)
-                    !(d3 == 4 .and. d4 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(3)))
-                    output_field = input_field(1, :, :, 1)
-                case (radix(dtest)**2 + radix(dtest)**3)
-                    !(d3 == 2 .and. d4 == 3)
-                    !(d3 == 3 .and. d4 == 2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(4)))
-                    output_field = input_field(:, 1, 1, :)
-                case (radix(dtest)**2 + radix(dtest)**4)
-                    !(d3 == 2 .and. d4 == 4)
-                    !(d3 == 4 .and. d4 == 2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(3)))
-                    output_field = input_field(:, 1, :, 1)
-                case (radix(dtest)**3 + radix(dtest)**4)
-                    !(d3 == 3 .and. d4 == 4)
-                    !(d3 == 4 .and. d4 == 3)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(2)))
-                    output_field = input_field(:, :, 1, 1)
-            end select
+        !> Compare the shapes of the input and output fields.
+        if (any(shape(input_field) /= shape(output_field))) then
+            error_status = 1
+            return
         else
 
-            !> Unable to compact the array.
-            error_status = 1
+            !> Return status.
+            error_status = 0
         end if
+
+        !> Copy field.
+        select type (input_field)
+            type is (real)
+                output_field = int(input_field)
+            type is (integer)
+                output_field = input_field
+            class default
+                error_status = 1
+        end select
 
     end subroutine
 
-    subroutine compact_field_real2d_from_real5d(input_field, output_field, error_status)
+    subroutine copy_field_4d_to_real4d(input_field, output_field, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :, :, :), intent(in) :: input_field
-        real, dimension(:, :), allocatable :: output_field
+        class(*), intent(in) :: input_field(:, :, :, :)
+        real output_field(:, :, :, :)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer dim_size(5), dtest, d3, d4, d5
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Get shape of input.
-        dim_size = shape(input_field)
-
-        !> Find if the array can be compacted to the desired dimensions (extra dimensions must have a size of one).
-        d3 = 0
-        d4 = 0
-        d5 = 0
-        do i = 1, 5
-            if (dim_size(i) == 1) then
-                if (d3 > 0) then
-                    if (d4 > 0) then
-                        d5 = i
-                    else
-                        d4 = i
-                    end if
-                else
-                    d3 = i
-                end if
-            end if
-        end do
-
-        !> Compact the array if the extra dimensions have a size of one.
-        if (d3 > 0 .and. d4 > 0 .and. d5 > 0) then
-
-            !> Calculate the bit value of active indices.
-            dtest = radix(d3)**d3 + radix(d4)**d4 + radix(d5)**d5
-
-            !> Find the missing indices.
-            select case (dtest)
-                case (radix(dtest)**1 + radix(dtest)**2 + radix(dtest)**3)
-                    !(d3 == 1 .and. d4 == 2 .and. d5 == 3)
-                    !(d3 == 1 .and. d4 == 3 .and. d5 == 2)
-                    !(d3 == 2 .and. d4 == 1 .and. d5 == 3)
-                    !(d3 == 2 .and. d4 == 3 .and. d5 == 1)
-                    !(d3 == 3 .and. d4 == 1 .and. d5 == 2)
-                    !(d3 == 3 .and. d4 == 2 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(4), dim_size(5)))
-                    output_field = input_field(1, 1, 1, :, :)
-                case (radix(dtest)**1 + radix(dtest)**2 + radix(dtest)**4)
-                    !(d3 == 1 .and. d4 == 2 .and. d5 == 4)
-                    !(d3 == 1 .and. d4 == 4 .and. d5 == 2)
-                    !(d3 == 2 .and. d4 == 1 .and. d5 == 4)
-                    !(d3 == 2 .and. d4 == 4 .and. d5 == 1)
-                    !(d3 == 4 .and. d4 == 1 .and. d5 == 2)
-                    !(d3 == 4 .and. d4 == 2 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(3), dim_size(5)))
-                    output_field = input_field(1, 1, :, 1, :)
-                case (radix(dtest)**1 + radix(dtest)**2 + radix(dtest)**5)
-                    !(d3 == 1 .and. d4 == 2 .and. d5 == 5)
-                    !(d3 == 1 .and. d4 == 5 .and. d5 == 2)
-                    !(d3 == 2 .and. d4 == 1 .and. d5 == 5)
-                    !(d3 == 2 .and. d4 == 5 .and. d5 == 1)
-                    !(d3 == 5 .and. d4 == 1 .and. d5 == 2)
-                    !(d3 == 5 .and. d4 == 2 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(3), dim_size(4)))
-                    output_field = input_field(1, 1, :, :, 1)
-                case (radix(dtest)**1 + radix(dtest)**3 + radix(dtest)**4)
-                    !(d3 == 1 .and. d4 == 3 .and. d5 == 4)
-                    !(d3 == 1 .and. d4 == 4 .and. d5 == 3)
-                    !(d3 == 3 .and. d4 == 1 .and. d5 == 4)
-                    !(d3 == 3 .and. d4 == 4 .and. d5 == 1)
-                    !(d3 == 4 .and. d4 == 1 .and. d5 == 3)
-                    !(d3 == 4 .and. d4 == 3 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(5)))
-                    output_field = input_field(1, :, 1, 1, :)
-                case (radix(dtest)**1 + radix(dtest)**3 + radix(dtest)**5)
-                    !(d3 == 1 .and. d4 == 3 .and. d5 == 5)
-                    !(d3 == 1 .and. d4 == 5 .and. d5 == 3)
-                    !(d3 == 3 .and. d4 == 1 .and. d5 == 5)
-                    !(d3 == 3 .and. d4 == 5 .and. d5 == 1)
-                    !(d3 == 5 .and. d4 == 1 .and. d5 == 3)
-                    !(d3 == 5 .and. d4 == 3 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(4)))
-                    output_field = input_field(1, :, 1, :, 1)
-                case (radix(dtest)**1 + radix(dtest)**4 + radix(dtest)**5)
-                    !(d3 == 1 .and. d4 == 4 .and. d5 == 5)
-                    !(d3 == 1 .and. d4 == 5 .and. d5 == 4)
-                    !(d3 == 4 .and. d4 == 1 .and. d5 == 5)
-                    !(d3 == 4 .and. d4 == 5 .and. d5 == 1)
-                    !(d3 == 5 .and. d4 == 1 .and. d5 == 4)
-                    !(d3 == 5 .and. d4 == 4 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(3)))
-                    output_field = input_field(1, :, :, 1, 1)
-                case (radix(dtest)**2 + radix(dtest)**3 + radix(dtest)**4)
-                    !(d3 == 2 .and. d4 == 3 .and. d5 == 4)
-                    !(d3 == 2 .and. d4 == 4 .and. d5 == 3)
-                    !(d3 == 3 .and. d4 == 2 .and. d5 == 4)
-                    !(d3 == 3 .and. d4 == 4 .and. d5 == 2)
-                    !(d3 == 4 .and. d4 == 2 .and. d5 == 3)
-                    !(d3 == 4 .and. d4 == 3 .and. d5 == 2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(5)))
-                    output_field = input_field(:, 1, 1, 1, :)
-                case (radix(dtest)**2 + radix(dtest)**3 + radix(dtest)**5)
-                    !(d3 == 2 .and. d4 == 3 .and. d5 == 5)
-                    !(d3 == 2 .and. d4 == 5 .and. d5 == 3)
-                    !(d3 == 3 .and. d4 == 2 .and. d5 == 5)
-                    !(d3 == 3 .and. d4 == 5 .and. d5 == 2)
-                    !(d3 == 5 .and. d4 == 2 .and. d5 == 3)
-                    !(d3 == 5 .and. d4 == 3 .and. d5 == 2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(4)))
-                    output_field = input_field(:, 1, 1, :, 1)
-                case (radix(dtest)**2 + radix(dtest)**4 + radix(dtest)**5)
-                    !(d3 == 2 .and. d4 == 4 .and. d5 == 5)
-                    !(d3 == 2 .and. d4 == 5 .and. d5 == 4)
-                    !(d3 == 4 .and. d4 == 2 .and. d5 == 5)
-                    !(d3 == 4 .and. d4 == 5 .and. d5 == 2)
-                    !(d3 == 5 .and. d4 == 2 .and. d5 == 4)
-                    !(d3 == 5 .and. d4 == 4 .and. d5 == 2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(3)))
-                    output_field = input_field(:, 1, :, 1, 1)
-                case (radix(dtest)**3 + radix(dtest)**4 + radix(dtest)**5)
-                    !(d3 == 3 .and. d4 == 4 .and. d5 == 5)
-                    !(d3 == 3 .and. d4 == 5 .and. d5 == 4)
-                    !(d3 == 4 .and. d4 == 3 .and. d5 == 5)
-                    !(d3 == 4 .and. d4 == 5 .and. d5 == 3)
-                    !(d3 == 5 .and. d4 == 3 .and. d5 == 4)
-                    !(d3 == 5 .and. d4 == 4 .and. d5 == 3)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(2)))
-                    output_field = input_field(:, :, 1, 1, 1)
-            end select
+        !> Compare the shapes of the input and output fields.
+        if (any(shape(input_field) /= shape(output_field))) then
+            error_status = 1
+            return
         else
 
-            !> Unable to compact the array.
-            error_status = 1
+            !> Return status.
+            error_status = 0
         end if
+
+        !> Copy field.
+        select type (input_field)
+            type is (real)
+                output_field = input_field
+            type is (integer)
+                output_field = real(input_field)
+            class default
+                error_status = 1
+        end select
 
     end subroutine
 
-    subroutine compact_field_real3d_from_real4d(input_field, output_field, error_status)
+    subroutine copy_field_4d_to_int4d(input_field, output_field, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :, :), intent(in) :: input_field
-        real, dimension(:, :, :), allocatable :: output_field
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer output_field(:, :, :, :)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer dim_size(4), d4
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Get shape of input.
-        dim_size = shape(input_field)
-
-        !> Find if the array can be compacted to the desired dimensions (extra dimensions must have a size of one).
-        d4 = 0
-        do i = 1, 4
-            if (dim_size(i) == 1) d4 = i
-        end do
-
-        !> Compact the array if the extra dimensions have a size of one.
-        if (d4 > 0) then
-            select case (d4)
-                case (1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(3), dim_size(3)))
-                    output_field = input_field(1, :, :, :)
-                case (2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(3), dim_size(4)))
-                    output_field = input_field(:, 1, :, :)
-                case (3)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(2), dim_size(4)))
-                    output_field = input_field(:, :, 1, :)
-                case (4)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(2), dim_size(3)))
-                    output_field = input_field(:, :, :, 1)
-            end select
+        !> Compare the shapes of the input and output fields.
+        if (any(shape(input_field) /= shape(output_field))) then
+            error_status = 1
+            return
         else
 
-            !> Unable to compact the array.
-            error_status = 1
+            !> Return status.
+            error_status = 0
         end if
+
+        !> Copy field.
+        select type (input_field)
+            type is (real)
+                output_field = int(input_field)
+            type is (integer)
+                output_field = input_field
+            class default
+                error_status = 1
+        end select
 
     end subroutine
 
-    subroutine compact_field_real3d_from_real5d(input_field, output_field, error_status)
+    subroutine copy_field_3d_to_real3d(input_field, output_field, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :, :, :), intent(in) :: input_field
-        real, dimension(:, :, :), allocatable :: output_field
+        class(*), intent(in) :: input_field(:, :, :)
+        real output_field(:, :, :)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer dim_size(5), dtest, d4, d5
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Get shape of input.
-        dim_size = shape(input_field)
-
-        !> Find if the array can be compacted to the desired dimensions (extra dimensions must have a size of one).
-        d4 = 0
-        d5 = 0
-        do i = 1, 5
-            if (dim_size(i) == 1) then
-                if (d4 > 0) then
-                    d5 = i
-                else
-                    d4 = i
-                end if
-            end if
-        end do
-
-        !> Compact the array if the extra dimensions have a size of one.
-        if (d4 > 0 .and. d5 > 0) then
-
-            !> Calculate the bit value of active indices.
-            dtest = radix(d4)**d4 + radix(d5)**d5
-
-            !> Find the missing indices.
-            select case (dtest)
-                case (radix(dtest)**1 + radix(dtest)**2)
-                    !(d4 == 1 .and. d5 == 2)
-                    !(d4 == 2 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(3), dim_size(4), dim_size(5)))
-                    output_field = input_field(1, 1, :, :, :)
-                case (radix(dtest)**1 + radix(dtest)**3)
-                    !(d4 == 1 .and. d5 == 3)
-                    !(d4 == 3 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(4), dim_size(5)))
-                    output_field = input_field(1, :, 1, :, :)
-                case (radix(dtest)**1 + radix(dtest)**4)
-                    !(d4 == 1 .and. d5 == 4)
-                    !(d4 == 4 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(3), dim_size(5)))
-                    output_field = input_field(1, :, :, 1, :)
-                case (radix(dtest)**1 + radix(dtest)**5)
-                    !(d4 == 1 .and. d5 == 5)
-                    !(d4 == 5 .and. d5 == 1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(3), dim_size(4)))
-                    output_field = input_field(1, :, :, :, 1)
-                case (radix(dtest)**2 + radix(dtest)**3)
-                    !(d4 == 2 .and. d5 == 3)
-                    !(d4 == 3 .and. d5 == 2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(4), dim_size(5)))
-                    output_field = input_field(:, 1, 1, :, :)
-                case (radix(dtest)**2 + radix(dtest)**4)
-                    !(d4 == 2 .and. d5 == 4)
-                    !(d4 == 4 .and. d5 == 2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(3), dim_size(5)))
-                    output_field = input_field(:, 1, :, 1, :)
-                case (radix(dtest)**2 + radix(dtest)**5)
-                    !(d4 == 2 .and. d5 == 5)
-                    !(d4 == 5 .and. d5 == 2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(3), dim_size(4)))
-                    output_field = input_field(:, 1, :, :, 1)
-                case (radix(dtest)**3 + radix(dtest)**4)
-                    !(d4 == 3 .and. d5 == 4)
-                    !(d4 == 4 .and. d5 == 3)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(2), dim_size(5)))
-                    output_field = input_field(:, :, 1, 1, :)
-                case (radix(dtest)**3 + radix(dtest)**5)
-                    !(d4 == 3 .and. d5 == 5)
-                    !(d4 == 5 .and. d5 == 3)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(2), dim_size(4)))
-                    output_field = input_field(:, :, 1, :, 1)
-                case (radix(dtest)**4 + radix(dtest)**5)
-                    !(d4 == 4 .and. d5 == 5)
-                    !(d4 == 5 .and. d5 == 4)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(2), dim_size(3)))
-                    output_field = input_field(:, :, :, 1, 1)
-            end select
+        !> Compare the shapes of the input and output fields.
+        if (any(shape(input_field) /= shape(output_field))) then
+            error_status = 1
+            return
         else
 
-            !> Unable to compact the array.
-            error_status = 1
+            !> Return status.
+            error_status = 0
         end if
+
+        !> Copy field.
+        select type (input_field)
+            type is (real)
+                output_field = input_field
+            type is (integer)
+                output_field = real(input_field)
+            class default
+                error_status = 1
+        end select
 
     end subroutine
 
-    subroutine compact_field_real4d_from_real5d(input_field, output_field, error_status)
+    subroutine copy_field_3d_to_int3d(input_field, output_field, error_status)
 
         !> Input/output variables.
-        real, dimension(:, :, :, :, :), intent(in) :: input_field
-        real, dimension(:, :, :, :), allocatable :: output_field
+        class(*), intent(in) :: input_field(:, :, :)
+        integer output_field(:, :, :)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer dim_size(5), d5
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Get shape of input.
-        dim_size = shape(input_field)
-
-        !> Find if the array can be compacted to the desired dimensions (extra dimensions must have a size of one).
-        d5 = 0
-        do i = 1, 5
-            if (dim_size(i) == 1) d5 = i
-        end do
-
-        !> Compact the array if the extra dimensions have a size of one.
-        if (d5 > 0) then
-            select case (d5)
-                case (1)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(3), dim_size(4), dim_size(5)))
-                    output_field = input_field(1, :, :, :, :)
-                case (2)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(2), dim_size(3), dim_size(4), dim_size(5)))
-                    output_field = input_field(:, 1, :, :, :)
-                case (3)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(2), dim_size(4), dim_size(5)))
-                    output_field = input_field(:, :, 1, :, :)
-                case (4)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(2), dim_size(3), dim_size(5)))
-                    output_field = input_field(:, :, :, 1, :)
-                case (5)
-                    if (.not. allocated(output_field)) allocate(output_field(dim_size(1), dim_size(2), dim_size(3), dim_size(4)))
-                    output_field = input_field(:, :, :, :, 1)
-            end select
+        !> Compare the shapes of the input and output fields.
+        if (any(shape(input_field) /= shape(output_field))) then
+            error_status = 1
+            return
         else
 
-            !> Unable to compact the array.
+            !> Return status.
+            error_status = 0
+        end if
+
+        !> Copy field.
+        select type (input_field)
+            type is (real)
+                output_field = int(input_field)
+            type is (integer)
+                output_field = input_field
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    subroutine copy_field_2d_to_real2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        real output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Compare the shapes of the input and output fields.
+        if (any(shape(input_field) /= shape(output_field))) then
             error_status = 1
+            return
+        else
+
+            !> Return status.
+            error_status = 0
         end if
 
-    end subroutine
-
-    subroutine assign_field_real(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        real output_field
-        integer, intent(out) :: error_status
-
-        !> Status.
-        error_status = 0
-
-        !> Reset output field.
-        output_field = huge(output_field)
-
-        !> Check input variable.
+        !> Copy field.
         select type (input_field)
-            class is (io_field_real)
-                output_field = input_field%dat
-            class is (io_field_int)
-                output_field = real(input_field%dat)
-            class is (io_field_char)
-                read(input_field%dat, *, iostat = error_status) output_field
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real1d)
-                if (size(input_field%dat) > 0) then
-                    output_field = input_field%dat(1)
-                else
-                    error_status = 1
-                end if
-            class is (io_field_int1d)
-                if (size(input_field%dat) > 0) then
-                    output_field = real(input_field%dat(1))
-                else
-                    error_status = 1
-                end if
-            class is (io_field_char1d)
-                if (size(input_field%dat) > 0) then
-                read(input_field%dat(1), *, iostat = error_status) output_field
-                if (error_status /= 0) error_status = 1
-                else
-                    error_status = 1
-                end if
-            class is (io_field_real2d)
-                if (size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0) then
-                    output_field = input_field%dat(1, 1)
-                else
-                    error_status = 1
-                end if
-            class is (io_field_int2d)
-                if (size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0) then
-                    output_field = real(input_field%dat(1, 1))
-                else
-                    error_status = 1
-                end if
-            class is (io_field_real3d)
-                if (size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0) then
-                    output_field = input_field%dat(1, 1, 1)
-                else
-                    error_status = 1
-                end if
-            class is (io_field_int3d)
-                if (size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0) then
-                    output_field = real(input_field%dat(1, 1, 1))
-                else
-                    error_status = 1
-                end if
-            class is (io_field_real4d)
-                if ( &
-                    size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0 .and. &
-                    size(input_field%dat, 4) > 0) then
-                    output_field = input_field%dat(1, 1, 1, 1)
-                else
-                    error_status = 1
-                end if
-            class is (io_field_int4d)
-                if ( &
-                    size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0 .and. &
-                    size(input_field%dat, 4) > 0) then
-                    output_field = real(input_field%dat(1, 1, 1, 1))
-                else
-                    error_status = 1
-                end if
-            class is (io_field_real5d)
-                if ( &
-                    size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0 .and. &
-                    size(input_field%dat, 4) > 0 .and. size(input_field%dat, 5) > 0) then
-                    output_field = input_field%dat(1, 1, 1, 1, 1)
-                else
-                    error_status = 1
-                end if
-            class is (io_field_int5d)
-                if ( &
-                    size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0 .and. &
-                    size(input_field%dat, 4) > 0 .and. size(input_field%dat, 5) > 0) then
-                    output_field = real(input_field%dat(1, 1, 1, 1, 1))
-                else
-                    error_status = 1
-                end if
+            type is (real)
+                output_field = input_field
+            type is (integer)
+                output_field = real(input_field)
             class default
                 error_status = 1
         end select
 
     end subroutine
 
-    subroutine assign_field_int(input_field, output_field, error_status)
+    subroutine copy_field_2d_to_int2d(input_field, output_field, error_status)
 
         !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        integer output_field
+        class(*), intent(in) :: input_field(:, :)
+        integer output_field(:, :)
         integer, intent(out) :: error_status
 
-        !> Status.
-        error_status = 0
+        !> Compare the shapes of the input and output fields.
+        if (any(shape(input_field) /= shape(output_field))) then
+            error_status = 1
+            return
+        else
 
-        !> Reset output field.
-        output_field = huge(output_field)
-
-        !> Check input variable.
-        select type (input_field)
-            class is (io_field_real)
-                output_field = int(input_field%dat)
-            class is (io_field_int)
-                output_field = input_field%dat
-            class is (io_field_char)
-                read(input_field%dat, *, iostat = error_status) output_field
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real1d)
-                if (size(input_field%dat) > 0) then
-                    output_field = int(input_field%dat(1))
-                else
-                    error_status = 1
-                end if
-            class is (io_field_int1d)
-                if (size(input_field%dat) > 0) then
-                    output_field = input_field%dat(1)
-                else
-                    error_status = 1
-                end if
-            class is (io_field_char1d)
-                if (size(input_field%dat) > 0) then
-                read(input_field%dat(1), *, iostat = error_status) output_field
-                if (error_status /= 0) error_status = 1
-                else
-                    error_status = 1
-                end if
-            class is (io_field_real2d)
-                if (size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0) then
-                    output_field = int(input_field%dat(1, 1))
-                else
-                    error_status = 1
-                end if
-            class is (io_field_int2d)
-                if (size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0) then
-                    output_field = input_field%dat(1, 1)
-                else
-                    error_status = 1
-                end if
-            class is (io_field_real3d)
-                if (size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0) then
-                    output_field = int(input_field%dat(1, 1, 1))
-                else
-                    error_status = 1
-                end if
-            class is (io_field_int3d)
-                if (size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0) then
-                    output_field = input_field%dat(1, 1, 1)
-                else
-                    error_status = 1
-                end if
-            class is (io_field_real4d)
-                if ( &
-                    size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0 .and. &
-                    size(input_field%dat, 4) > 0) then
-                    output_field = int(input_field%dat(1, 1, 1, 1))
-                else
-                    error_status = 1
-                end if
-            class is (io_field_int4d)
-                if ( &
-                    size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0 .and. &
-                    size(input_field%dat, 4) > 0) then
-                    output_field = input_field%dat(1, 1, 1, 1)
-                else
-                    error_status = 1
-                end if
-            class is (io_field_real5d)
-                if ( &
-                    size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0 .and. &
-                    size(input_field%dat, 4) > 0 .and. size(input_field%dat, 5) > 0) then
-                    output_field = int(input_field%dat(1, 1, 1, 1, 1))
-                else
-                    error_status = 1
-                end if
-            class is (io_field_int5d)
-                if ( &
-                    size(input_field%dat, 1) > 0 .and. size(input_field%dat, 2) > 0 .and. size(input_field%dat, 3) > 0 .and. &
-                    size(input_field%dat, 4) > 0 .and. size(input_field%dat, 5) > 0) then
-                    output_field = input_field%dat(1, 1, 1, 1, 1)
-                else
-                    error_status = 1
-                end if
-            class default
-                error_status = 1
-        end select
-
-    end subroutine
-
-    subroutine assign_field_char(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        character(len = *) output_field
-        integer, intent(out) :: error_status
-
-        !> Status.
-        error_status = 0
-
-        !> Reset output field.
-        output_field = ''
-
-        !> Check input variable.
-        select type (input_field)
-            class is (io_field_real)
-                write(output_field, *, iostat = error_status) input_field%dat
-                if (error_status /= 0) error_status = 1
-            class is (io_field_int)
-                write(output_field, *, iostat = error_status) input_field%dat
-                if (error_status /= 0) error_status = 1
-            class is (io_field_char)
-                output_field = trim(input_field%dat)
-            class is (io_field_real1d)
-                if (size(input_field%dat) > 0) then
-                    write(output_field, *, iostat = error_status) input_field%dat(1)
-                    if (error_status /= 0) error_status = 1
-                else
-                    error_status = 1
-                end if
-            class is (io_field_int1d)
-                if (size(input_field%dat) > 0) then
-                    write(output_field, *, iostat = error_status) input_field%dat(1)
-                    if (error_status /= 0) error_status = 1
-                else
-                    error_status = 1
-                end if
-            class is (io_field_char1d)
-                if (size(input_field%dat) > 0) then
-                    output_field = trim(input_field%dat(1))
-                else
-                    error_status = 1
-                end if
-            class default
-                error_status = 1
-        end select
-
-        !> Readjust the output string.
-        output_field = trim(adjustl(output_field))
-
-    end subroutine
-
-    subroutine assign_field_real1d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        real, dimension(:), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        real, allocatable :: dat2_r(:, :), dat3_r(:, :, :), dat4_r(:, :, :, :), dat5_r(:, :, :, :, :)
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Check input variable.
-        select type (input_field)
-            class is (io_field_real)
-                if (.not. allocated(output_field)) allocate(output_field(1))
-                output_field = input_field%dat
-            class is (io_field_int)
-                if (.not. allocated(output_field)) allocate(output_field(1))
-                output_field = real(input_field%dat)
-            class is (io_field_char)
-                if (.not. allocated(output_field)) allocate(output_field(1))
-                read(input_field%dat, *, iostat = error_status) output_field(1)
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat)))
-                output_field = input_field%dat
-            class is (io_field_int1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat)))
-                output_field = real(input_field%dat)
-            class is (io_field_char1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat)))
-                read(input_field%dat, *, iostat = error_status) (output_field(i), i = 1, size(input_field%dat))
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real2d)
-                call compact_field(input_field%dat, output_field, error_status)
-            class is (io_field_int2d)
-                allocate(dat2_r(size(input_field%dat, 1), size(input_field%dat, 2)))
-                dat2_r = real(input_field%dat)
-                call compact_field(dat2_r, output_field, error_status)
-                deallocate(dat2_r)
-            class is (io_field_real3d)
-                call compact_field(input_field%dat, output_field, error_status)
-            class is (io_field_int3d)
-                allocate(dat3_r(size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3)))
-                dat3_r = real(input_field%dat)
-                call compact_field(dat3_r, output_field, error_status)
-                deallocate(dat3_r)
-            class is (io_field_real4d)
-                call compact_field(input_field%dat, output_field, error_status)
-            class is (io_field_int4d)
-                allocate(dat4_r( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4)))
-                dat4_r = real(input_field%dat)
-                call compact_field(dat4_r, output_field, error_status)
-                deallocate(dat4_r)
-            class is (io_field_real5d)
-                call compact_field(input_field%dat, output_field, error_status)
-            class is (io_field_int5d)
-                allocate(dat5_r( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4), &
-                    size(input_field%dat, 5)))
-                dat5_r = real(input_field%dat)
-                call compact_field(dat5_r, output_field, error_status)
-                deallocate(dat5_r)
-            class default
-                error_status = 1
-        end select
-
-    end subroutine
-
-    subroutine assign_field_real2d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        real, dimension(:, :), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        real, allocatable :: dat3_r(:, :, :), dat4_r(:, :, :, :), dat5_r(:, :, :, :, :)
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Check input variable.
-        select type (input_field)
-            class is (io_field_real)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1))
-                output_field = input_field%dat
-            class is (io_field_int)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1))
-                output_field = real(input_field%dat)
-            class is (io_field_char)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1))
-                read(input_field%dat, *, iostat = error_status) output_field(1, 1)
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), 1))
-                output_field(:, 1) = input_field%dat
-            class is (io_field_int1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), 1))
-                output_field(:, 1) = real(input_field%dat)
-            class is (io_field_char1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat), 1))
-                read(input_field%dat, *, iostat = error_status) (output_field(i, 1), i = 1, size(input_field%dat))
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real2d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), size(input_field%dat, 2)))
-                output_field = input_field%dat
-            class is (io_field_int2d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), size(input_field%dat, 2)))
-                output_field = real(input_field%dat)
-            class is (io_field_real3d)
-                call compact_field(input_field%dat, output_field, error_status)
-            class is (io_field_int3d)
-                allocate(dat3_r(size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3)))
-                dat3_r = real(input_field%dat)
-                call compact_field(dat3_r, output_field, error_status)
-                deallocate(dat3_r)
-            class is (io_field_real4d)
-                call compact_field(input_field%dat, output_field, error_status)
-            class is (io_field_int4d)
-                allocate(dat4_r( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4)))
-                dat4_r = real(input_field%dat)
-                call compact_field(dat4_r, output_field, error_status)
-                deallocate(dat4_r)
-            class is (io_field_real5d)
-                call compact_field(input_field%dat, output_field, error_status)
-            class is (io_field_int5d)
-                allocate(dat5_r( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4), &
-                    size(input_field%dat, 5)))
-                dat5_r = real(input_field%dat)
-                call compact_field(dat5_r, output_field, error_status)
-                deallocate(dat5_r)
-            class default
-                error_status = 1
-        end select
-
-    end subroutine
-
-    subroutine assign_field_real3d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        real, dimension(:, :, :), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        real, allocatable :: dat4_r(:, :, :, :), dat5_r(:, :, :, :, :)
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Check input variable.
-        select type (input_field)
-            class is (io_field_real)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1))
-                output_field = input_field%dat
-            class is (io_field_int)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1))
-                output_field = real(input_field%dat)
-            class is (io_field_char)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1))
-                read(input_field%dat, *, iostat = error_status) output_field(1, 1, 1)
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), 1, 1))
-                output_field(:, 1, 1) = input_field%dat
-            class is (io_field_int1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), 1, 1))
-                output_field(:, 1, 1) = real(input_field%dat)
-            class is (io_field_char1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat), 1, 1))
-                read(input_field%dat, *, iostat = error_status) (output_field(i, 1, 1), i = 1, size(input_field%dat))
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real2d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), size(input_field%dat, 2), 1))
-                output_field(:, :, 1) = input_field%dat
-            class is (io_field_int2d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), size(input_field%dat, 2), 1))
-                output_field(:, :, 1) = real(input_field%dat)
-            class is (io_field_real3d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3)))
-                output_field = input_field%dat
-            class is (io_field_int3d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3)))
-                output_field = real(input_field%dat)
-            class is (io_field_real4d)
-                call compact_field(input_field%dat, output_field, error_status)
-            class is (io_field_int4d)
-                allocate(dat4_r( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4)))
-                dat4_r = real(input_field%dat)
-                call compact_field(dat4_r, output_field, error_status)
-                deallocate(dat4_r)
-            class is (io_field_real5d)
-                call compact_field(input_field%dat, output_field, error_status)
-            class is (io_field_int5d)
-                allocate(dat5_r( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4), &
-                    size(input_field%dat, 5)))
-                dat5_r = real(input_field%dat)
-                call compact_field(dat5_r, output_field, error_status)
-                deallocate(dat5_r)
-            class default
-                error_status = 1
-        end select
-
-    end subroutine
-
-    subroutine assign_field_real4d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        real, dimension(:, :, :, :), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        real, allocatable :: dat5_r(:, :, :, :, :)
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Check input variable.
-        select type (input_field)
-            class is (io_field_real)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1))
-                output_field = input_field%dat
-            class is (io_field_int)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1))
-                output_field = real(input_field%dat)
-            class is (io_field_char)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1))
-                read(input_field%dat, *, iostat = error_status) output_field(1, 1, 1, 1)
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), 1, 1, 1))
-                output_field(:, 1, 1, 1) = input_field%dat
-            class is (io_field_int1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), 1, 1, 1))
-                output_field(:, 1, 1, 1) = real(input_field%dat)
-            class is (io_field_char1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat), 1, 1, 1))
-                read(input_field%dat, *, iostat = error_status) (output_field(i, 1, 1, 1), i = 1, size(input_field%dat))
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real2d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), size(input_field%dat, 2), 1, 1))
-                output_field(:, :, 1, 1) = input_field%dat
-            class is (io_field_int2d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), size(input_field%dat, 2), 1, 1))
-                output_field(:, :, 1, 1) = real(input_field%dat)
-            class is (io_field_real3d)
-                if (.not. allocated(output_field)) allocate( &
-                    output_field(size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), 1))
-                output_field(:, :, :, 1) = input_field%dat
-            class is (io_field_int3d)
-                if (.not. allocated(output_field)) allocate( &
-                    output_field(size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), 1))
-                output_field(:, :, :, 1) = real(input_field%dat)
-            class is (io_field_real4d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4)))
-                output_field = input_field%dat
-            class is (io_field_int4d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4)))
-                output_field = real(input_field%dat)
-            class is (io_field_real5d)
-                call compact_field(input_field%dat, output_field, error_status)
-            class is (io_field_int5d)
-                allocate(dat5_r( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4), &
-                    size(input_field%dat, 5)))
-                dat5_r = real(input_field%dat)
-                call compact_field(dat5_r, output_field, error_status)
-                deallocate(dat5_r)
-            class default
-                error_status = 1
-        end select
-
-    end subroutine
-
-    subroutine assign_field_real5d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        real, dimension(:, :, :, :, :), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Check input variable.
-        select type (input_field)
-            class is (io_field_real)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1, 1))
-                output_field = input_field%dat
-            class is (io_field_int)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1, 1))
-                output_field = real(input_field%dat)
-            class is (io_field_char)
-                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1, 1))
-                read(input_field%dat, *, iostat = error_status) output_field(1, 1, 1, 1, 1)
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), 1, 1, 1, 1))
-                output_field(:, 1, 1, 1, 1) = input_field%dat
-            class is (io_field_int1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat, 1), 1, 1, 1, 1))
-                output_field(:, 1, 1, 1, 1) = real(input_field%dat)
-            class is (io_field_char1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat), 1, 1, 1, 1))
-                read(input_field%dat, *, iostat = error_status) (output_field(i, 1, 1, 1, 1), i = 1, size(input_field%dat))
-                if (error_status /= 0) error_status = 1
-            class is (io_field_real2d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), 1, 1, 1))
-                output_field(:, :, 1, 1, 1) = input_field%dat
-            class is (io_field_int2d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), 1, 1, 1))
-                output_field(:, :, 1, 1, 1) = real(input_field%dat)
-            class is (io_field_real3d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), 1, 1))
-                output_field(:, :, :, 1, 1) = input_field%dat
-            class is (io_field_int3d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), 1, 1))
-                output_field(:, :, :, 1, 1) = real(input_field%dat)
-            class is (io_field_real4d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4), 1))
-                output_field(:, :, :, :, 1) = input_field%dat
-            class is (io_field_int4d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4), 1))
-                output_field(:, :, :, :, 1) = real(input_field%dat)
-            class is (io_field_real5d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4), &
-                    size(input_field%dat, 5)))
-                output_field = input_field%dat
-            class is (io_field_int5d)
-                if (.not. allocated(output_field)) allocate(output_field( &
-                    size(input_field%dat, 1), size(input_field%dat, 2), size(input_field%dat, 3), size(input_field%dat, 4), &
-                    size(input_field%dat, 5)))
-                output_field = real(input_field%dat)
-            class default
-                error_status = 1
-        end select
-
-    end subroutine
-
-    subroutine assign_field_int1d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        integer, dimension(:), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        real, dimension(:), allocatable :: dat_r
-
-        !> Call base-routine.
-        call assign_field(input_field, dat_r, error_status)
-        if (error_status == 0) then
-            if (.not. allocated(output_field)) allocate(output_field(size(dat_r)))
-            output_field = int(dat_r)
+            !> Return status.
+            error_status = 0
         end if
 
-    end subroutine
-
-    subroutine assign_field_int2d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        integer, dimension(:, :), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        real, dimension(:, :), allocatable :: dat_r
-
-        !> Call base-routine.
-        call assign_field(input_field, dat_r, error_status)
-        if (error_status == 0) then
-            if (.not. allocated(output_field)) allocate(output_field(size(dat_r, 1), size(dat_r, 2)))
-            output_field = int(dat_r)
-        end if
-
-    end subroutine
-
-    subroutine assign_field_int3d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        integer, dimension(:, :, :), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        real, dimension(:, :, :), allocatable :: dat_r
-
-        !> Call base-routine.
-        call assign_field(input_field, dat_r, error_status)
-        if (error_status == 0) then
-            if (.not. allocated(output_field)) allocate(output_field(size(dat_r, 1), size(dat_r, 2), size(dat_r, 3)))
-            output_field = int(dat_r)
-        end if
-
-    end subroutine
-
-    subroutine assign_field_int4d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        integer, dimension(:, :, :, :), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        real, dimension(:, :, :, :), allocatable :: dat_r
-
-        !> Call base-routine.
-        call assign_field(input_field, dat_r, error_status)
-        if (error_status == 0) then
-            if (.not. allocated(output_field)) allocate( &
-                output_field(size(dat_r, 1), size(dat_r, 2), size(dat_r, 3), size(dat_r, 4)))
-            output_field = int(dat_r)
-        end if
-
-    end subroutine
-
-    subroutine assign_field_int5d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        integer, dimension(:, :, :, :, :), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        real, dimension(:, :, :, :, :), allocatable :: dat_r
-
-        !> Call base-routine.
-        call assign_field(input_field, dat_r, error_status)
-        if (error_status == 0) then
-            if (.not. allocated(output_field)) allocate(output_field( &
-                size(dat_r, 1), size(dat_r, 2), size(dat_r, 3), size(dat_r, 4), size(dat_r, 5)))
-            output_field = int(dat_r)
-        end if
-
-    end subroutine
-
-    subroutine assign_field_char1d(input_field, output_field, error_status)
-
-        !> Input/output variables.
-        class(io_field), intent(in) :: input_field
-        character(len = *), dimension(:), allocatable :: output_field
-        integer, intent(out) :: error_status
-
-        !> Local variables.
-        integer i
-
-        !> Status.
-        error_status = 0
-
-        !> Check input variable.
+        !> Copy field.
         select type (input_field)
-            class is (io_field_real)
-                if (.not. allocated(output_field)) allocate(output_field(1))
-                write(output_field(1), *, iostat = error_status) input_field%dat
-                if (error_status /= 0) error_status = 1
-            class is (io_field_int)
-                if (.not. allocated(output_field)) allocate(output_field(1))
-                write(output_field(1), *, iostat = error_status) input_field%dat
-                if (error_status /= 0) error_status = 1
-            class is (io_field_char)
-                if (.not. allocated(output_field)) allocate(output_field(1))
-                output_field(1) = trim(input_field%dat)
-            class is (io_field_real1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat)))
-                do i = 1, size(input_field%dat)
-                    write(output_field(i), *, iostat = error_status) input_field%dat(i)
-                    if (error_status /= 0) then
+            type is (real)
+                output_field = int(input_field)
+            type is (integer)
+                output_field = input_field
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    subroutine copy_field_1d_to_real1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        real output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i, ierr
+
+        !> Compare the shapes of the input and output fields.
+        if (any(shape(input_field) /= shape(output_field))) then
+            error_status = 1
+            return
+        else
+
+            !> Return status.
+            error_status = 0
+        end if
+
+        !> Copy field.
+        select type (input_field)
+            type is (real)
+                output_field = input_field
+            type is (integer)
+                output_field = real(input_field)
+            type is (character(len = *))
+                do i = 1, size(output_field)
+                    read(input_field(i), *, iostat = ierr) output_field(i)
+                    if (ierr /= 0) error_status = 1
+                end do
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    subroutine copy_field_1d_to_int1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        integer output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i, ierr
+
+        !> Compare the shapes of the input and output fields.
+        if (any(shape(input_field) /= shape(output_field))) then
+            error_status = 1
+            return
+        else
+
+            !> Return status.
+            error_status = 0
+        end if
+
+        !> Copy field.
+        select type (input_field)
+            type is (real)
+                output_field = int(input_field)
+            type is (integer)
+                output_field = input_field
+            type is (character(len = *))
+                do i = 1, size(output_field)
+                    read(input_field(i), *, iostat = ierr) output_field(i)
+                    if (ierr /= 0) error_status = 1
+                end do
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    subroutine copy_field_1d_to_char1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        character(len = *) output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i, ierr
+
+        !> Compare the shapes of the input and output fields.
+        if (any(shape(input_field) /= shape(output_field))) then
+            error_status = 1
+            return
+        else
+
+            !> Return status.
+            error_status = 0
+        end if
+
+        !> Copy field.
+        select type (input_field)
+            type is (real)
+                do i = 1, size(output_field)
+                    write(output_field(i), *, iostat = ierr) input_field(i)
+                    if (ierr /= 0) then
                         error_status = 1
-                        exit
                     else
                         output_field(i) = trim(adjustl(output_field(i)))
                     end if
                 end do
-            class is (io_field_int1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat)))
-                do i = 1, size(input_field%dat)
-                    write(output_field(i), *, iostat = error_status) input_field%dat(i)
-                    if (error_status /= 0) then
+            type is (integer)
+                do i = 1, size(output_field)
+                    write(output_field(i), *, iostat = ierr) input_field(i)
+                    if (ierr /= 0) then
                         error_status = 1
-                        exit
                     else
                         output_field(i) = trim(adjustl(output_field(i)))
                     end if
                 end do
-            class is (io_field_char1d)
-                if (.not. allocated(output_field)) allocate(output_field(size(input_field%dat)))
-                do i = 1, size(input_field%dat)
-                    output_field(i) = trim(input_field%dat(i))
+            type is (character(len = *))
+                do i = 1, size(input_field)
+                    output_field(i) = trim(adjustl(input_field(i)))
                 end do
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_4d_to_real5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        real output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (flattened_dims(1))
+            case (5)
+                call copy_field(input_field, output_field(:, :, :, :, 1), error_status)
+            case (4)
+                call copy_field(input_field, output_field(:, :, :, 1, :), error_status)
+            case (3)
+                call copy_field(input_field, output_field(:, :, 1, :, :), error_status)
+            case (2)
+                call copy_field(input_field, output_field(:, 1, :, :, :), error_status)
+            case (1)
+                call copy_field(input_field, output_field(1, :, :, :, :), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_4d_to_int5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (flattened_dims(1))
+            case (5)
+                call copy_field(input_field, output_field(:, :, :, :, 1), error_status)
+            case (4)
+                call copy_field(input_field, output_field(:, :, :, 1, :), error_status)
+            case (3)
+                call copy_field(input_field, output_field(:, :, 1, :, :), error_status)
+            case (2)
+                call copy_field(input_field, output_field(:, 1, :, :, :), error_status)
+            case (1)
+                call copy_field(input_field, output_field(1, :, :, :, :), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_3d_to_real5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        real, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (2**flattened_dims(1) + 2**flattened_dims(2))
+            case (2**1 + 2**2)
+                call copy_field(input_field, output_field(1, 1, :, :, :), error_status)
+            case (2**1 + 2**3)
+                call copy_field(input_field, output_field(1, :, 1, :, :), error_status)
+            case (2**1 + 2**4)
+                call copy_field(input_field, output_field(1, :, :, 1, :), error_status)
+            case (2**1 + 2**5)
+                call copy_field(input_field, output_field(1, :, :, :, 1), error_status)
+            case (2**2 + 2**3)
+                call copy_field(input_field, output_field(:, 1, 1, :, :), error_status)
+            case (2**2 + 2**4)
+                call copy_field(input_field, output_field(:, 1, :, 1, :), error_status)
+            case (2**2 + 2**5)
+                call copy_field(input_field, output_field(:, 1, :, :, 1), error_status)
+            case (2**3 + 2**4)
+                call copy_field(input_field, output_field(:, :, 1, 1, :), error_status)
+            case (2**3 + 2**5)
+                call copy_field(input_field, output_field(:, :, 1, :, 1), error_status)
+            case (2**4 + 2**5)
+                call copy_field(input_field, output_field(:, :, :, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_3d_to_int5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (2**flattened_dims(1) + 2**flattened_dims(2))
+            case (2**1 + 2**2)
+                call copy_field(input_field, output_field(1, 1, :, :, :), error_status)
+            case (2**1 + 2**3)
+                call copy_field(input_field, output_field(1, :, 1, :, :), error_status)
+            case (2**1 + 2**4)
+                call copy_field(input_field, output_field(1, :, :, 1, :), error_status)
+            case (2**1 + 2**5)
+                call copy_field(input_field, output_field(1, :, :, :, 1), error_status)
+            case (2**2 + 2**3)
+                call copy_field(input_field, output_field(:, 1, 1, :, :), error_status)
+            case (2**2 + 2**4)
+                call copy_field(input_field, output_field(:, 1, :, 1, :), error_status)
+            case (2**2 + 2**5)
+                call copy_field(input_field, output_field(:, 1, :, :, 1), error_status)
+            case (2**3 + 2**4)
+                call copy_field(input_field, output_field(:, :, 1, 1, :), error_status)
+            case (2**3 + 2**5)
+                call copy_field(input_field, output_field(:, :, 1, :, 1), error_status)
+            case (2**4 + 2**5)
+                call copy_field(input_field, output_field(:, :, :, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_3d_to_real4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        real, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (flattened_dims(1))
+            case (4)
+                call copy_field(input_field, output_field(:, :, :, 1), error_status)
+            case (3)
+                call copy_field(input_field, output_field(:, :, 1, :), error_status)
+            case (2)
+                call copy_field(input_field, output_field(:, 1, :, :), error_status)
+            case (1)
+                call copy_field(input_field, output_field(1, :, :, :), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_3d_to_int4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (flattened_dims(1))
+            case (4)
+                call copy_field(input_field, output_field(:, :, :, 1), error_status)
+            case (3)
+                call copy_field(input_field, output_field(:, :, 1, :), error_status)
+            case (2)
+                call copy_field(input_field, output_field(:, 1, :, :), error_status)
+            case (1)
+                call copy_field(input_field, output_field(1, :, :, :), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_2d_to_real5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        real, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (2**flattened_dims(1) + 2**flattened_dims(2) + 2**flattened_dims(3))
+            case (2**1 + 2**2 + 2**3)
+                call copy_field(input_field, output_field(1, 1, 1, :, :), error_status)
+            case (2**1 + 2**2 + 2**4)
+                call copy_field(input_field, output_field(1, 1, :, 1, :), error_status)
+            case (2**1 + 2**2 + 2**5)
+                call copy_field(input_field, output_field(1, 1, :, :, 1), error_status)
+            case (2**1 + 2**3 + 2**4)
+                call copy_field(input_field, output_field(1, :, 1, 1, :), error_status)
+            case (2**1 + 2**3 + 2**5)
+                call copy_field(input_field, output_field(1, :, 1, :, 1), error_status)
+            case (2**1 + 2**4 + 2**5)
+                call copy_field(input_field, output_field(1, :, :, 1, 1), error_status)
+            case (2**2 + 2**3 + 2**4)
+                call copy_field(input_field, output_field(:, 1, 1, 1, :), error_status)
+            case (2**2 + 2**3 + 2**5)
+                call copy_field(input_field, output_field(:, 1, 1, :, 1), error_status)
+            case (2**2 + 2**4 + 2**5)
+                call copy_field(input_field, output_field(:, 1, :, 1, 1), error_status)
+            case (2**3 + 2**4 + 2**5)
+                call copy_field(input_field, output_field(:, :, 1, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_2d_to_int5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (2**flattened_dims(1) + 2**flattened_dims(2) + 2**flattened_dims(3))
+            case (2**1 + 2**2 + 2**3)
+                call copy_field(input_field, output_field(1, 1, 1, :, :), error_status)
+            case (2**1 + 2**2 + 2**4)
+                call copy_field(input_field, output_field(1, 1, :, 1, :), error_status)
+            case (2**1 + 2**2 + 2**5)
+                call copy_field(input_field, output_field(1, 1, :, :, 1), error_status)
+            case (2**1 + 2**3 + 2**4)
+                call copy_field(input_field, output_field(1, :, 1, 1, :), error_status)
+            case (2**1 + 2**3 + 2**5)
+                call copy_field(input_field, output_field(1, :, 1, :, 1), error_status)
+            case (2**1 + 2**4 + 2**5)
+                call copy_field(input_field, output_field(1, :, :, 1, 1), error_status)
+            case (2**2 + 2**3 + 2**4)
+                call copy_field(input_field, output_field(:, 1, 1, 1, :), error_status)
+            case (2**2 + 2**3 + 2**5)
+                call copy_field(input_field, output_field(:, 1, 1, :, 1), error_status)
+            case (2**2 + 2**4 + 2**5)
+                call copy_field(input_field, output_field(:, 1, :, 1, 1), error_status)
+            case (2**3 + 2**4 + 2**5)
+                call copy_field(input_field, output_field(:, :, 1, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_2d_to_real4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        real, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (2**flattened_dims(1) + 2**flattened_dims(2))
+            case (2**1 + 2**2)
+                call copy_field(input_field, output_field(1, 1, :, :), error_status)
+            case (2**1 + 2**3)
+                call copy_field(input_field, output_field(1, :, 1, :), error_status)
+            case (2**1 + 2**4)
+                call copy_field(input_field, output_field(1, :, :, 1), error_status)
+            case (2**2 + 2**3)
+                call copy_field(input_field, output_field(:, 1, 1, :), error_status)
+            case (2**2 + 2**4)
+                call copy_field(input_field, output_field(:, 1, :, 1), error_status)
+            case (2**3 + 2**4)
+                call copy_field(input_field, output_field(:, :, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_2d_to_int4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (2**flattened_dims(1) + 2**flattened_dims(2))
+            case (2**1 + 2**2)
+                call copy_field(input_field, output_field(1, 1, :, :), error_status)
+            case (2**1 + 2**3)
+                call copy_field(input_field, output_field(1, :, 1, :), error_status)
+            case (2**1 + 2**4)
+                call copy_field(input_field, output_field(1, :, :, 1), error_status)
+            case (2**2 + 2**3)
+                call copy_field(input_field, output_field(:, 1, 1, :), error_status)
+            case (2**2 + 2**4)
+                call copy_field(input_field, output_field(:, 1, :, 1), error_status)
+            case (2**3 + 2**4)
+                call copy_field(input_field, output_field(:, :, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_2d_to_real3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (flattened_dims(1))
+            case (3)
+                call copy_field(input_field, output_field(:, :, 1), error_status)
+            case (2)
+                call copy_field(input_field, output_field(:, 1, :), error_status)
+            case (1)
+                call copy_field(input_field, output_field(1, :, :), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_2d_to_int3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (flattened_dims(1))
+            case (3)
+                call copy_field(input_field, output_field(:, :, 1), error_status)
+            case (2)
+                call copy_field(input_field, output_field(:, 1, :), error_status)
+            case (1)
+                call copy_field(input_field, output_field(1, :, :), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_1d_to_real5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        real, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (targeted_dims(1))
+            case (5)
+                call copy_field(input_field, output_field(1, 1, 1, 1, :), error_status)
+            case (4)
+                call copy_field(input_field, output_field(1, 1, 1, :, 1), error_status)
+            case (3)
+                call copy_field(input_field, output_field(1, 1, :, 1, 1), error_status)
+            case (2)
+                call copy_field(input_field, output_field(1, :, 1, 1, 1), error_status)
+            case (1)
+                call copy_field(input_field, output_field(:, 1, 1, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_1d_to_int5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        integer, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (targeted_dims(1))
+            case (5)
+                call copy_field(input_field, output_field(1, 1, 1, 1, :), error_status)
+            case (4)
+                call copy_field(input_field, output_field(1, 1, 1, :, 1), error_status)
+            case (3)
+                call copy_field(input_field, output_field(1, 1, :, 1, 1), error_status)
+            case (2)
+                call copy_field(input_field, output_field(1, :, 1, 1, 1), error_status)
+            case (1)
+                call copy_field(input_field, output_field(:, 1, 1, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_1d_to_real4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        real, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (targeted_dims(1))
+            case (4)
+                call copy_field(input_field, output_field(1, 1, 1, :), error_status)
+            case (3)
+                call copy_field(input_field, output_field(1, 1, :, 1), error_status)
+            case (2)
+                call copy_field(input_field, output_field(1, :, 1, 1), error_status)
+            case (1)
+                call copy_field(input_field, output_field(:, 1, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_1d_to_int4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        integer, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (targeted_dims(1))
+            case (4)
+                call copy_field(input_field, output_field(1, 1, 1, :), error_status)
+            case (3)
+                call copy_field(input_field, output_field(1, 1, :, 1), error_status)
+            case (2)
+                call copy_field(input_field, output_field(1, :, 1, 1), error_status)
+            case (1)
+                call copy_field(input_field, output_field(:, 1, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_1d_to_real3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (targeted_dims(1))
+            case (3)
+                call copy_field(input_field, output_field(1, 1, :), error_status)
+            case (2)
+                call copy_field(input_field, output_field(1, :, 1), error_status)
+            case (1)
+                call copy_field(input_field, output_field(:, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_1d_to_int3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (targeted_dims(1))
+            case (3)
+                call copy_field(input_field, output_field(1, 1, :), error_status)
+            case (2)
+                call copy_field(input_field, output_field(1, :, 1), error_status)
+            case (1)
+                call copy_field(input_field, output_field(:, 1, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_1d_to_real2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        real, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (targeted_dims(1))
+            case (2)
+                call copy_field(input_field, output_field(1, :), error_status)
+            case (1)
+                call copy_field(input_field, output_field(:, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine explode_dimensions_1d_to_int2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        integer, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer flattened_dims(size(shape(output_field)) - size(shape(input_field))), targeted_dims(size(shape(input_field)))
+
+        !> Check for a flattended dimension.
+        call map_flattened_dimensions(shape(output_field), size(targeted_dims), flattened_dims, targeted_dims, error_status)
+        if (error_status /= 0) return
+
+        !> Assign the field.
+        select case (targeted_dims(1))
+            case (2)
+                call copy_field(input_field, output_field(1, :), error_status)
+            case (1)
+                call copy_field(input_field, output_field(:, 1), error_status)
+        end select
+
+    end subroutine
+
+    subroutine check_field_dimensions_5d(input_field_dat, ordered_map, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field_dat(:, :, :, :, :)
+        integer, intent(in), optional :: ordered_map(:, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Check map.
+        if (present(ordered_map)) then
+            if (.not. size(ordered_map, 1) == 5) error_status = 1
+        end if
+
+        !> Check dimensions.
+        if (.not. all(shape(input_field_dat) > 0)) error_status = 1
+
+    end subroutine
+
+    subroutine check_field_dimensions_4d(input_field_dat, ordered_map, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field_dat(:, :, :, :)
+        integer, intent(in), optional :: ordered_map(:, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Check map.
+        if (present(ordered_map)) then
+            if (.not. size(ordered_map, 1) == 4) error_status = 1
+        end if
+
+        !> Check dimensions.
+        if (.not. all(shape(input_field_dat) > 0)) error_status = 1
+
+    end subroutine
+
+    subroutine check_field_dimensions_3d(input_field_dat, ordered_map, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field_dat(:, :, :)
+        integer, intent(in), optional :: ordered_map(:, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Check map.
+        if (present(ordered_map)) then
+            if (.not. size(ordered_map, 1) == 3) error_status = 1
+        end if
+
+        !> Check dimensions.
+        if (.not. all(shape(input_field_dat) > 0)) error_status = 1
+
+    end subroutine
+
+    subroutine check_field_dimensions_2d(input_field_dat, ordered_map, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field_dat(:, :)
+        integer, intent(in), optional :: ordered_map(:, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Check map.
+        if (present(ordered_map)) then
+            if (.not. size(ordered_map, 1) == 2) error_status = 1
+        end if
+
+        !> Check dimensions.
+        if (.not. all(shape(input_field_dat) > 0)) error_status = 1
+
+    end subroutine
+
+    subroutine check_field_dimensions_1d(input_field_dat, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field_dat(:)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Check dimensions.
+        if (.not. all(shape(input_field_dat) > 0)) error_status = 1
+
+    end subroutine
+
+    subroutine assign_field_5d_to_real5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        real, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, shape(input_field), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign field.
+        call copy_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_5d_to_int5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, shape(input_field), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign field.
+        call copy_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_5d_to_real4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        real, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_5d_to_int4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_5d_to_real3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_5d_to_int3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_5d_to_real2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        real, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_5d_to_int2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_5d_to_real1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        real, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_5d_to_int1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        integer, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_5d_to_scalar(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :, :)
+        class(*) output_field
+        integer, intent(out) :: error_status
+
+        !> Check dimensions.
+        call check_field_dimensions(input_field, error_status = error_status)
+
+        !> Assign field.
+        call assign_field(input_field(1, 1, 1, 1, 1), output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_4d_to_real4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        real, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, shape(input_field), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign field.
+        call copy_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_4d_to_int4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, shape(input_field), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign field.
+        call copy_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_4d_to_real3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_4d_to_int3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_4d_to_real2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        real, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_4d_to_int2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_4d_to_real1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        real, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_4d_to_int1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_4d_to_scalar(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        class(*) output_field
+        integer, intent(out) :: error_status
+
+        !> Check dimensions.
+        call check_field_dimensions(input_field, error_status = error_status)
+
+        !> Assign field.
+        call assign_field(input_field(1, 1, 1, 1), output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_4d_to_real5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        real, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/ &
+                size(input_field, 1), size(input_field, 2), size(input_field, 3), size(input_field, 4), 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_4d_to_int5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :, :)
+        integer, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/ &
+                size(input_field, 1), size(input_field, 2), size(input_field, 3), size(input_field, 4), 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_3d_to_real3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, shape(input_field), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign field.
+        call copy_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_3d_to_int3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, shape(input_field), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign field.
+        call copy_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_3d_to_real2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        real, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_3d_to_int2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_3d_to_real1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        real, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_3d_to_int1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_3d_to_scalar(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        class(*) output_field
+        integer, intent(out) :: error_status
+
+        !> Check dimensions.
+        call check_field_dimensions(input_field, error_status = error_status)
+
+        !> Assign field.
+        call assign_field(input_field(1, 1, 1), output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_3d_to_real5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        real, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/ &
+                size(input_field, 1), size(input_field, 2), size(input_field, 3), 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_3d_to_int5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/ &
+                size(input_field, 1), size(input_field, 2), size(input_field, 3), 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_3d_to_real4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        real, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), size(input_field, 2), size(input_field, 3), 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_3d_to_int4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :, :)
+        integer, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), size(input_field, 2), size(input_field, 3), 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_2d_to_real2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        real, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, shape(input_field), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign field.
+        call copy_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_2d_to_int2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, shape(input_field), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign field.
+        call copy_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_2d_to_real1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        real, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_2d_to_int1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Compact field.
+        call compact_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_2d_to_scalar(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        class(*) output_field
+        integer, intent(out) :: error_status
+
+        !> Check dimensions.
+        call check_field_dimensions(input_field, error_status = error_status)
+
+        !> Assign field.
+        call assign_field(input_field(1, 1), output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_2d_to_real5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        real, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), size(input_field, 2), 1, 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_2d_to_int5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), size(input_field, 2), 1, 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_2d_to_real4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        real, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), size(input_field, 2), 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_2d_to_int4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), size(input_field, 2), 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_2d_to_real3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), size(input_field, 2), 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_2d_to_int3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:, :)
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), size(input_field, 2), 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_real1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        real, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, shape(input_field), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign field.
+        call copy_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_int1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        integer, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, shape(input_field), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign field.
+        call copy_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_char1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        character(len = *), allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, shape(input_field), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign field.
+        call copy_field(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_scalar(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        class(*) output_field
+        integer, intent(out) :: error_status
+
+        !> Check dimensions.
+        call check_field_dimensions(input_field, error_status = error_status)
+
+        !> Assign field.
+        call assign_field(input_field(1), output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_real5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        real, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), 1, 1, 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_int5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        integer, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), 1, 1, 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_real4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        real, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), 1, 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_int4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        integer, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), 1, 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_real3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_int3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), 1, 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_real2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        real, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    subroutine assign_field_1d_to_int2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field(:)
+        integer, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Allocate an unallocated field.
+        if (.not. allocated(output_field)) then
+            call allocate_field(output_field, (/size(input_field, 1), 1/), error_status)
+            if (error_status /= 0) return
+        end if
+
+        !> Assign the field.
+        call explode_dimensions(input_field, output_field, error_status)
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_real5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        real, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1, 1))
+                output_field = input_field
+            type is (integer)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1, 1))
+                output_field = real(input_field)
+
+            !> Unknown or unsupported object or scalar data type.
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_int5d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        integer, allocatable :: output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1, 1))
+                output_field = int(input_field)
+            type is (integer)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1, 1))
+                output_field = input_field
+
+            !> Unknown or unsupported object or scalar data type.
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_real4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        real, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1))
+                output_field = input_field
+            type is (integer)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1))
+                output_field = real(input_field)
+
+            !> Unknown or unsupported object or scalar data type.
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_int4d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        integer, allocatable :: output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1))
+                output_field = int(input_field)
+            type is (integer)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1, 1))
+                output_field = input_field
+
+            !> Unknown or unsupported object or scalar data type.
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_real3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        real, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1))
+                output_field = input_field
+            type is (integer)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1))
+                output_field = real(input_field)
+
+            !> Unknown or unsupported object or scalar data type.
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_int3d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        integer, allocatable :: output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1))
+                output_field = int(input_field)
+            type is (integer)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1, 1))
+                output_field = input_field
+
+            !> Unknown or unsupported object or scalar data type.
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_real2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        real, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1))
+                output_field = input_field
+            type is (integer)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1))
+                output_field = real(input_field)
+
+            !> Unknown or unsupported object or scalar data type.
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_int2d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        integer, allocatable :: output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1))
+                output_field = int(input_field)
+            type is (integer)
+                if (.not. allocated(output_field)) allocate(output_field(1, 1))
+                output_field = input_field
+
+            !> Unknown or unsupported object or scalar data type.
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_real1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        real, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                if (.not. allocated(output_field)) allocate(output_field(1))
+                output_field = input_field
+            type is (integer)
+                if (.not. allocated(output_field)) allocate(output_field(1))
+                output_field = real(input_field)
+            type is (character(len = *))
+                if (.not. allocated(output_field)) allocate(output_field(1))
+                if (size(output_field) > 0) then
+                    read(input_field, *, iostat = ierr) output_field(1)
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        output_field = output_field(1)
+                    end if
+                end if
+
+            !> Unknown or unsupported object or scalar data type.
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_int1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        integer, allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                if (.not. allocated(output_field)) allocate(output_field(1))
+                output_field = int(input_field)
+            type is (integer)
+                if (.not. allocated(output_field)) allocate(output_field(1))
+                output_field = input_field
+            type is (character(len = *))
+                if (.not. allocated(output_field)) allocate(output_field(1))
+                if (size(output_field) > 0) then
+                    read(input_field, *, iostat = ierr) output_field(1)
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        output_field = output_field(1)
+                    end if
+                end if
+
+            !> Unknown or unsupported object or scalar data type.
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_char1d(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        character(len = *), allocatable :: output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                if (.not. allocated(output_field)) allocate(output_field(1))
+                if (size(output_field) > 0) then
+                    write(output_field(1), *, iostat = ierr) input_field
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        output_field = trim(adjustl(output_field(1)))
+                    end if
+                end if
+            type is (integer)
+                if (.not. allocated(output_field)) allocate(output_field(1))
+                if (size(output_field) > 0) then
+                    write(output_field(1), *, iostat = ierr) input_field
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        output_field = trim(adjustl(output_field(1)))
+                    end if
+                end if
+            type is (character(len = *))
+                if (.not. allocated(output_field)) allocate(output_field(1))
+                output_field = trim(adjustl(input_field))
+
+            !> Unknown or unsupported object or scalar data type.
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    recursive subroutine assign_field_scalar_to_scalar(input_field, output_field, error_status)
+
+        !> Input/output variables.
+        class(*), intent(in) :: input_field
+        class(*) output_field
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer ierr
+
+        !> Return status.
+        error_status = 0
+
+        !> Assign field.
+        select type (input_field)
+
+            !> I/O field types.
+            class is (io_field_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            class is (io_field_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> Scalar data types.
+            type is (real)
+                select type (output_field)
+                    type is (real)
+                        output_field = input_field
+                    type is (integer)
+                        output_field = int(input_field)
+                    type is (character(len = *))
+                        write(output_field, *, iostat = ierr) input_field
+                        if (ierr /= 0) then
+                            error_status = 1
+                        else
+                            output_field = trim(adjustl(output_field))
+                        end if
+                    class default
+                        error_status = 1
+                end select
+            type is (integer)
+                select type (output_field)
+                    type is (real)
+                        output_field = real(input_field)
+                    type is (integer)
+                        output_field = input_field
+                    type is (character(len = *))
+                        write(output_field, *, iostat = ierr) input_field
+                        if (ierr /= 0) then
+                            error_status = 1
+                        else
+                            output_field = trim(adjustl(output_field))
+                        end if
+                    class default
+                        error_status = 1
+                end select
+            type is (character(len = *))
+                select type (output_field)
+                    type is (real)
+                        read(input_field, *, iostat = ierr) output_field
+                        if (ierr /= 0) error_status = 1
+                    type is (integer)
+                        read(input_field, *, iostat = ierr) output_field
+                        if (ierr /= 0) error_status = 1
+                    type is (character(len = *))
+                        output_field = trim(adjustl(input_field))
+                    class default
+                        error_status = 1
+                end select
+
+            !> Unknown or unsupported object or scalar data type.
             class default
                 error_status = 1
         end select

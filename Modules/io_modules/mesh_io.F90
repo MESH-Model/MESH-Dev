@@ -734,6 +734,9 @@ module mesh_io
                         if (ierr /= 0) cycle
                     end do
 
+                    !> Allocate 'dim_names'.
+                    allocate(dim_names(1), source = (/input_file%dim_names/))
+
                     !> Loop through the records.
                     do i = 1, nvars
 
@@ -746,9 +749,6 @@ module mesh_io
 
                         !> Cycle if the first argument does not start with a string character.
                         if (.not. is_letter(args(1)(1:1))) cycle
-
-                        !> Allocate 'dim_names'.
-                        allocate(dim_names(1), source = (/input_file%dim_names/))
 
                         !> Special cases.
                         select case (lowercase(args(1)))
@@ -1048,6 +1048,7 @@ module mesh_io
                                     if (allocated(dat2_r)) then
                                         select case (mapped_dim_order(1))
                                             case (2)
+                                                allocate(dat1_r(size(dat2_r, 1)))
                                                 dat1_r = (/dat2_r(:, j)/)
                                                 allocate(file_buffer(n)%field, source = io_field_real1d( &
                                                     mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
@@ -1056,6 +1057,7 @@ module mesh_io
                                                     dim_names = (/dim_names(1)/), dat = dat1_r))
                                                 deallocate(dat1_r)
                                             case default
+                                                allocate(dat1_r(size(dat2_r, 2)))
                                                 dat1_r = (/dat2_r(j, :)/)
                                                 allocate(file_buffer(n)%field, source = io_field_real1d( &
                                                     mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
@@ -1067,6 +1069,7 @@ module mesh_io
                                     else if (allocated(dat3_r)) then
                                         select case (mapped_dim_order(1))
                                             case (3)
+                                                allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 2)))
                                                 dat2_r = dat3_r(:, :, j)
                                                 allocate(file_buffer(n)%field, source = io_field_real2d( &
                                                     mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
@@ -1075,6 +1078,7 @@ module mesh_io
                                                     dim_names = (/dim_names(1), dim_names(2)/), dat = dat2_r))
                                                 deallocate(dat2_r)
                                             case (2)
+                                                allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 3)))
                                                 dat2_r = dat3_r(:, j, :)
                                                 allocate(file_buffer(n)%field, source = io_field_real2d( &
                                                     mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
@@ -1083,6 +1087,7 @@ module mesh_io
                                                     dim_names = (/dim_names(1), dim_names(3)/), dat = dat2_r))
                                                 deallocate(dat2_r)
                                             case default
+                                                allocate(dat2_r(size(dat3_r, 2), size(dat3_r, 3)))
                                                 dat2_r = dat3_r(j, :, :)
                                                 allocate(file_buffer(n)%field, source = io_field_real2d( &
                                                     mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
