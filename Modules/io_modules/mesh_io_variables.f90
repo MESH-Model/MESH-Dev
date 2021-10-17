@@ -3,6 +3,9 @@ module mesh_io_variables
     !> 'mesh_io_options': For I/O constants.
     use mesh_io_options
 
+    !> 'field_types': For field types, model variable types and I/O constants.
+    use field_types
+
     implicit none
 
     !> Description:
@@ -12,11 +15,11 @@ module mesh_io_variables
     !*  short_name: Short name (e.g., for labelling, variable and output file names).
     !*  description: Description.
     !*  units: Units.
-    type io_variable_info
-        character(len = SHORT_FIELD_LENGTH) :: short_name = ''
-        character(len = LONG_FIELD_LENGTH) :: description = ''
-        character(len = SHORT_FIELD_LENGTH) :: units = ''
-    end type
+!-    type io_variable_info
+!-        character(len = SHORT_FIELD_LENGTH) :: short_name = ''
+!-        character(len = LONG_FIELD_LENGTH) :: description = ''
+!-        character(len = SHORT_FIELD_LENGTH) :: units = ''
+!-    end type
 
     !> Description:
     !>  Generic structure for an instance of a variable.
@@ -43,100 +46,100 @@ module mesh_io_variables
     !*  no_data_value: No data value when used in an array (default: huge).
     !*  valid_max: Upper limit of reasonable values for numeric fields (default: huge).
     !*  valid_min: Lower limit of reasonable values for numeric fields (default: tiny).
-    type, extends(io_variable_info), abstract :: io_field
-        character(len = SHORT_FIELD_LENGTH) :: label = ''
-        integer :: id = -1
-        character(len = SHORT_FIELD_LENGTH) :: field_name = ''
-        character(len = SHORT_FIELD_LENGTH) :: level = ''
-        integer :: level_id = -1
-        character(len = SHORT_FIELD_LENGTH) :: mapped_name = ''
-        integer, dimension(:), allocatable :: mapped_dim_order
-    end type
+!-    type, extends(io_variable_info), abstract :: io_field
+!-        character(len = SHORT_FIELD_LENGTH) :: label = ''
+!-        integer :: id = -1
+!-        character(len = SHORT_FIELD_LENGTH) :: field_name = ''
+!-        character(len = SHORT_FIELD_LENGTH) :: level = ''
+!-        integer :: level_id = -1
+!-        character(len = SHORT_FIELD_LENGTH) :: mapped_name = ''
+!-        integer, dimension(:), allocatable :: mapped_dim_order
+!-    end type
 
     !> Extensions.
-    type, abstract, extends(io_field) :: io_field_Nd
-        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names
-        integer :: time_order = 0
-        integer, dimension(:, :), allocatable :: cell_map
-        integer, dimension(:, :), allocatable :: tile_map
-    end type
-    type, extends(io_field) :: io_field_real
-        real, dimension(:), allocatable :: mapped_dat_cell
-        real, dimension(:), allocatable :: mapped_dat_tile
-        real :: dat = huge(0.0)
-        real, dimension(:, :), allocatable :: mapped_dat_cell_interp
-        real, dimension(:, :), allocatable :: mapped_dat_tile_interp
-    end type
-    type, extends(io_field_Nd) :: io_field_realNd
-        real, dimension(:), allocatable :: mapped_dat_cell
-        real, dimension(:), allocatable :: mapped_dat_tile
-        real, dimension(:, :), allocatable :: mapped_dat_cell_interp
-        real, dimension(:, :), allocatable :: mapped_dat_tile_interp
-        real :: const_mul = 1.0
-        real :: const_add = 0.0
-        real :: no_data_value = huge(0.0)
-        real :: valid_max = huge(0.0)
-        real :: valid_min = tiny(0.0)
-    end type
-    type, extends(io_field_realNd) :: io_field_real1d
-        real, dimension(:), allocatable :: dat
-    end type
-    type, extends(io_field_realNd) :: io_field_real2d
-        real, dimension(:, :), allocatable :: dat
-    end type
-    type, extends(io_field_realNd) :: io_field_real3d
-        real, dimension(:, :, :), allocatable :: dat
-    end type
-    type, extends(io_field_realNd) :: io_field_real4d
-        real, dimension(:, :, :, :), allocatable :: dat
-    end type
-    type, extends(io_field_realNd) :: io_field_real5d
-        real, dimension(:, :, :, :, :), allocatable :: dat
-    end type
-    type, extends(io_field) :: io_field_int
-        integer, dimension(:), allocatable :: mapped_dat_cell
-        integer, dimension(:), allocatable :: mapped_dat_tile
-        integer :: dat = huge(0)
-    end  type
-    type, extends(io_field_Nd) :: io_field_intNd
-        integer, dimension(:), allocatable :: mapped_dat_cell
-        integer, dimension(:), allocatable :: mapped_dat_tile
-        integer :: no_data_value = huge(0)
-        integer :: valid_max = huge(0)
-        integer :: valid_min = 0
-    end type
-    type, extends(io_field_intNd) :: io_field_int1d
-        integer, dimension(:), allocatable :: dat
-    end type
-    type, extends(io_field_intNd) :: io_field_int2d
-        integer, dimension(:, :), allocatable :: dat
-    end type
-    type, extends(io_field_intNd) :: io_field_int3d
-        integer, dimension(:, :, :), allocatable :: dat
-    end type
-    type, extends(io_field_intNd) :: io_field_int4d
-        integer, dimension(:, :, :, :), allocatable :: dat
-    end type
-    type, extends(io_field_intNd) :: io_field_int5d
-        integer, dimension(:, :, :, :, :), allocatable :: dat
-    end type
-    type, extends(io_field) :: io_field_char
-        real, dimension(:), allocatable :: mapped_dat_cell
-        real, dimension(:), allocatable :: mapped_dat_tile
-        character(len = SHORT_FIELD_LENGTH) :: dat = ''
-    end type
-    type, extends(io_field_Nd) :: io_field_char1d
-        real, dimension(:), allocatable :: mapped_dat_cell
-        real, dimension(:), allocatable :: mapped_dat_tile
-        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dat
-        character :: no_data_value = achar(0)
-    end type
+!-    type, abstract, extends(io_field) :: io_field_Nd
+!-        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names
+!-        integer :: time_order = 0
+!-        integer, dimension(:, :), allocatable :: cell_map
+!-        integer, dimension(:, :), allocatable :: tile_map
+!-    end type
+!-    type, extends(io_field) :: io_field_real
+!-        real, dimension(:), allocatable :: mapped_dat_cell
+!-        real, dimension(:), allocatable :: mapped_dat_tile
+!-        real :: dat = huge(0.0)
+!-        real, dimension(:, :), allocatable :: mapped_dat_cell_interp
+!-        real, dimension(:, :), allocatable :: mapped_dat_tile_interp
+!-    end type
+!-    type, extends(io_field_Nd) :: io_field_realNd
+!-        real, dimension(:), allocatable :: mapped_dat_cell
+!-        real, dimension(:), allocatable :: mapped_dat_tile
+!-        real, dimension(:, :), allocatable :: mapped_dat_cell_interp
+!-        real, dimension(:, :), allocatable :: mapped_dat_tile_interp
+!-        real :: const_mul = 1.0
+!-        real :: const_add = 0.0
+!-        real :: no_data_value = huge(0.0)
+!-        real :: valid_max = huge(0.0)
+!-        real :: valid_min = tiny(0.0)
+!-    end type
+!-    type, extends(io_field_realNd) :: io_field_real1d
+!-        real, dimension(:), allocatable :: dat
+!-    end type
+!-    type, extends(io_field_realNd) :: io_field_real2d
+!-        real, dimension(:, :), allocatable :: dat
+!-    end type
+!-    type, extends(io_field_realNd) :: io_field_real3d
+!-        real, dimension(:, :, :), allocatable :: dat
+!-    end type
+!-    type, extends(io_field_realNd) :: io_field_real4d
+!-        real, dimension(:, :, :, :), allocatable :: dat
+!-    end type
+!-    type, extends(io_field_realNd) :: io_field_real5d
+!-        real, dimension(:, :, :, :, :), allocatable :: dat
+!-    end type
+!-    type, extends(io_field) :: io_field_int
+!-        integer, dimension(:), allocatable :: mapped_dat_cell
+!-        integer, dimension(:), allocatable :: mapped_dat_tile
+!-        integer :: dat = huge(0)
+!-    end type
+!-    type, extends(io_field_Nd) :: io_field_intNd
+!-        integer, dimension(:), allocatable :: mapped_dat_cell
+!-        integer, dimension(:), allocatable :: mapped_dat_tile
+!-        integer :: no_data_value = huge(0)
+!-        integer :: valid_max = huge(0)
+!-        integer :: valid_min = 0
+!-    end type
+!-    type, extends(io_field_intNd) :: io_field_int1d
+!-        integer, dimension(:), allocatable :: dat
+!-    end type
+!-    type, extends(io_field_intNd) :: io_field_int2d
+!-        integer, dimension(:, :), allocatable :: dat
+!-    end type
+!-    type, extends(io_field_intNd) :: io_field_int3d
+!-        integer, dimension(:, :, :), allocatable :: dat
+!-    end type
+!-    type, extends(io_field_intNd) :: io_field_int4d
+!-        integer, dimension(:, :, :, :), allocatable :: dat
+!-    end type
+!-    type, extends(io_field_intNd) :: io_field_int5d
+!-        integer, dimension(:, :, :, :, :), allocatable :: dat
+!-    end type
+!-    type, extends(io_field) :: io_field_char
+!-        real, dimension(:), allocatable :: mapped_dat_cell
+!-        real, dimension(:), allocatable :: mapped_dat_tile
+!-        character(len = SHORT_FIELD_LENGTH) :: dat = ''
+!-    end type
+!-    type, extends(io_field_Nd) :: io_field_char1d
+!-        real, dimension(:), allocatable :: mapped_dat_cell
+!-        real, dimension(:), allocatable :: mapped_dat_tile
+!-        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dat
+!-        character :: no_data_value = achar(0)
+!-    end type
 
     !> Description:
     !>  Wrapper for variables that extend 'io_field'.
-    type io_field_wrapper
-        class(io_field), allocatable :: field
-    end type
+!-    type io_field_wrapper
+!-        class(io_field), allocatable :: field
+!-    end type
 
     !> Description:
     !>  Structure for storing date components.
@@ -203,7 +206,7 @@ module mesh_io_variables
         integer :: temporal_interpolation = 0
         real, dimension(:), allocatable :: interp_weights
         integer :: ipos = 1
-        type(io_field_wrapper), dimension(:), allocatable :: fields
+        type(io_field), dimension(:), allocatable :: fields
         character(len = SHORT_FIELD_LENGTH), dimension(:, :), allocatable :: field_map
     end type
 

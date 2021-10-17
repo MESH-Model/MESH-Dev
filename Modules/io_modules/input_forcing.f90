@@ -70,7 +70,7 @@ module input_forcing
         integer, intent(out) :: error_status
 
         !> Local variables.
-        type(io_field_wrapper), allocatable :: field_list(:)
+        type(io_field), allocatable :: field_list(:)
         character(len = :), allocatable :: base_file_name, input_flag, flag_name, file_label
         character(len = SHORT_FIELD_LENGTH) :: field_map(1,2), code
         character(len = SHORT_FIELD_LENGTH), allocatable :: dim_names(:), values(:)
@@ -483,54 +483,54 @@ module input_forcing
                     dim_names = (/DIM_NAME_T/)
 
                     !> Add the standard fields of the CLASS MET file.
-                    allocate(field_list(1)%field, source = io_field_real1d( &
-                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                        cell_map = null(), tile_map = null(), &
-                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                        label = VN_FSIN, dim_names = dim_names, time_order = 1, dat = null(), id = 1))
-                    allocate(field_list(2)%field, source = io_field_real1d( &
-                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                        cell_map = null(), tile_map = null(), &
-                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                        label = VN_FLIN, dim_names = dim_names, time_order = 1, dat = null(), id = 2))
-                    allocate(field_list(3)%field, source = io_field_real1d( &
-                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                        cell_map = null(), tile_map = null(), &
-                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                        label = VN_PRE, dim_names = dim_names, time_order = 1, dat = null(), id = 3))
-                    allocate(field_list(4)%field, source = io_field_real1d( &
-                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                        cell_map = null(), tile_map = null(), &
-                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                        label = VN_TA, dim_names = dim_names, time_order = 1, const_add = 273.16, dat = null(), id = 4))
-                    allocate(field_list(5)%field, source = io_field_real1d( &
-                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                        cell_map = null(), tile_map = null(), &
-                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                        label = VN_QA, dim_names = dim_names, time_order = 1, dat = null(), id = 5))
-                    allocate(field_list(6)%field, source = io_field_real1d( &
-                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                        cell_map = null(), tile_map = null(), &
-                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                        label = VN_UV, dim_names = dim_names, time_order = 1, dat = null(), id = 6))
-                    allocate(field_list(7)%field, source = io_field_real1d( &
-                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                        cell_map = null(), tile_map = null(), &
-                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                        label = VN_PRES, dim_names = dim_names, time_order = 1, dat = null(), id = 7))
+                    field_list(1)%label = VN_FSIN
+                    field_list(1)%id = 1
+                    field_list(1)%mapping%time_order = 1
+                    allocate(field_list(1)%field, source = model_variable_real1d(dat = null()))
+                    allocate(field_list(1)%dim_names(1), source = dim_names)
+                    field_list(2)%label = VN_FLIN
+                    field_list(2)%id = 2
+                    field_list(2)%mapping%time_order = 1
+                    allocate(field_list(2)%field, source = model_variable_real1d(dat = null()))
+                    allocate(field_list(2)%dim_names(1), source = dim_names)
+                    field_list(3)%label = VN_PRE
+                    field_list(3)%id = 3
+                    field_list(3)%mapping%time_order = 1
+                    allocate(field_list(3)%field, source = model_variable_real1d(dat = null()))
+                    allocate(field_list(3)%dim_names(1), source = dim_names)
+                    field_list(4)%label = VN_TA
+                    field_list(4)%id = 4
+                    field_list(4)%mapping%time_order = 1
+                    allocate(field_list(4)%field, source = model_variable_real1d(dat = null(), const_add = 273.16))
+                    allocate(field_list(4)%dim_names(1), source = dim_names)
+                    field_list(5)%label = VN_QA
+                    field_list(5)%id = 5
+                    field_list(5)%mapping%time_order = 1
+                    allocate(field_list(5)%field, source = model_variable_real1d(dat = null()))
+                    allocate(field_list(5)%dim_names(1), source = dim_names)
+                    field_list(6)%label = VN_UV
+                    field_list(6)%id = 6
+                    field_list(6)%mapping%time_order = 1
+                    allocate(field_list(6)%field, source = model_variable_real1d(dat = null()))
+                    allocate(field_list(6)%dim_names(1), source = dim_names)
+                    field_list(7)%label = VN_PRES
+                    field_list(7)%id = 7
+                    field_list(7)%mapping%time_order = 1
+                    allocate(field_list(7)%field, source = model_variable_real1d(dat = null()))
+                    allocate(field_list(7)%dim_names(1), source = dim_names)
 
                     !> Add the extended fields by the 'sr_rr' option.
                     if (this%rr_sr) then
-                        allocate(field_list(8)%field, source = io_field_real1d( &
-                            mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                            cell_map = null(), tile_map = null(), &
-                            mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                            label = VN_PRERN, dim_names = dim_names, time_order = 1, dat = null(), id = 8))
-                        allocate(field_list(9)%field, source = io_field_real1d( &
-                            mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                            cell_map = null(), tile_map = null(), &
-                            mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                            label = VN_PRESNO, dim_names = dim_names, time_order = 1, dat = null(), id = 9))
+                        field_list(8)%label = VN_PRERN
+                        field_list(8)%id = 8
+                        field_list(8)%mapping%time_order = 1
+                        allocate(field_list(8)%field, source = model_variable_real1d(dat = null()))
+                        allocate(field_list(8)%dim_names(1), source = dim_names)
+                        field_list(9)%label = VN_PRESNO
+                        field_list(9)%id = 9
+                        field_list(9)%mapping%time_order = 1
+                        allocate(field_list(9)%field, source = model_variable_real1d(dat = null()))
+                        allocate(field_list(9)%dim_names(1), source = dim_names)
                     end if
 
                     !> Attach the field list to the file.
@@ -541,12 +541,12 @@ module input_forcing
                     allocate(field_list(1))
 
                     !> Add the field.
-                    allocate(field_list(1)%field, source = io_field_real2d( &
-                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                        cell_map = null(), tile_map = null(), &
-                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                        label = trim(this%field_map(1, 2)), dim_names = this%dim_names, const_mul = const_mul, &
-                        const_add = const_add, time_order = 2, dat = null(), id = 1))
+                    field_list(1)%label = trim(this%field_map(1, 2))
+                    field_list(1)%id = 1
+                    field_list(1)%mapping%time_order = 2
+                    allocate(field_list(1)%field, source = model_variable_real2d( &
+                        dat = null(), const_mul = const_mul, const_add = const_add))
+                    allocate(field_list(1)%dim_names(size(this%dim_names)), source = this%dim_names)
                     call combine_field_list(this%fields, field_list, error_status)
                 class is (io_file_seq)
 
@@ -554,12 +554,12 @@ module input_forcing
                     allocate(field_list(1))
 
                     !> Add the field.
-                    allocate(field_list(1)%field, source = io_field_real2d( &
-                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                        cell_map = null(), tile_map = null(), &
-                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                        label = trim(this%field_map(1, 2)), dim_names = this%dim_names, const_mul = const_mul, &
-                        const_add = const_add, time_order = 2, dat = null(), id = 1))
+                    field_list(1)%label = trim(this%field_map(1, 2))
+                    field_list(1)%id = 1
+                    field_list(1)%mapping%time_order = 2
+                    allocate(field_list(1)%field, source = model_variable_real2d( &
+                        dat = null(), const_mul = const_mul, const_add = const_add))
+                    allocate(field_list(1)%dim_names(size(this%dim_names)), source = this%dim_names)
                     call combine_field_list(this%fields, field_list, error_status)
                 class is (io_file_nc)
 
@@ -587,8 +587,9 @@ module input_forcing
         integer, intent(out) :: error_status
 
         !> Local variables.
+        real, allocatable :: dat_cell_interp_r(:, :), dat_tile_interp_r(:, :)
         character(len = DEFAULT_FIELD_LENGTH) code
-        integer j, i
+        integer j, i, iwarn
 
         !> Status.
         error_status = 0
@@ -603,7 +604,7 @@ module input_forcing
                         select type (field => this%fields(j)%field)
 
                             !> Assume field type from known file format.
-                            class is (io_field_real1d)
+                            type is (model_variable_real1d)
                                 allocate(field%dat(this%block_interval))
                                 field%dat = huge(field%dat)
                         end select
@@ -613,9 +614,9 @@ module input_forcing
                         select type (field => this%fields(j)%field)
 
                             !> Assume number of dimensions and field type from known file format.
-                            class is (io_field_real2d)
-                                if (allocated(field%dim_names)) then
-                                    select case (field%dim_names(1))
+                            type is (model_variable_real2d)
+                                if (allocated(this%fields(j)%dim_names)) then
+                                    select case (this%fields(j)%dim_names(1))
                                         case (DIM_NAME_M)
                                             allocate(field%dat(maxval(vs%tile%from_gru), this%block_interval))
                                         case (DIM_NAME_N)
@@ -630,7 +631,7 @@ module input_forcing
                         select type (field => this%fields(j)%field)
 
                             !> Assume number of dimensions and field type from known file format.
-                            class is (io_field_real2d)
+                            type is (model_variable_real2d)
                                 allocate(field%dat(vs%grid%dim_length, this%block_interval))
                                 field%dat = huge(field%dat)
                         end select
@@ -657,13 +658,8 @@ module input_forcing
 
             !> Deactivate non-temporal fields.
             do j = 1, size(forcing_files(i)%file%fields)
-                if (allocated(forcing_files(i)%file%fields(j)%field)) then
-                    select type (this => forcing_files(i)%file%fields(j)%field)
-                        class is (io_field_Nd)
-                            if (.not. this%time_order > 0) deallocate(forcing_files(i)%file%fields(j)%field)
-                        class default
-                            deallocate(forcing_files(i)%file%fields(j)%field)
-                    end select
+                if (.not. forcing_files(i)%file%fields(j)%mapping%time_order > 0) then
+                    deallocate(forcing_files(i)%file%fields(j)%field)
                 end if
             end do
 
@@ -676,11 +672,10 @@ module input_forcing
                 error_status = 1
             else
 
-                !> Activate fields.
+                !> Activate fields and create field maps.
                 call activate_variables_from_field_list(forcing_files(i)%file%fields, error_status)
-                if (error_status /= 0) then
-                    call print_error("An error occurred activating variables based on the active forcing fields.")
-                end if
+                call create_mapped_output_from_field_list(forcing_files(i)%file%fields, error_status = error_status)
+                if (error_status /= 0) return
 
                 !> Allocate fields for temporal interpolation if enabled.
                 if (forcing_file_temporal_interpolation > 0) then
@@ -706,30 +701,37 @@ module input_forcing
 
                             !> Allocate field variables (temporal interpolation is only applied to 'real' type fields).
                             do j = 1, size(forcing_files(i)%file%fields)
-                                select type (this => forcing_files(i)%file%fields(j)%field)
-                                    class is (io_field_real)
-                                        if (associated(vs%grid)) then
-                                            allocate(this%mapped_dat_cell_interp(vs%grid%dim_length, 2))
-                                            this%mapped_dat_cell_interp = huge(this%mapped_dat_cell_interp)
-                                        end if
-                                        if (associated(vs%tile)) then
-                                            allocate(this%mapped_dat_tile_interp(vs%tile%dim_length, 2))
-                                            this%mapped_dat_tile_interp = huge(this%mapped_dat_tile_interp)
-                                        end if
-                                    class is (io_field_realNd)
-                                        if (associated(vs%grid)) then
-                                            allocate(this%mapped_dat_cell_interp(vs%grid%dim_length, 2))
-                                            this%mapped_dat_cell_interp = huge(this%mapped_dat_cell_interp)
-                                        end if
-                                        if (associated(vs%tile)) then
-                                            allocate(this%mapped_dat_tile_interp(vs%tile%dim_length, 2))
-                                            this%mapped_dat_tile_interp = huge(this%mapped_dat_tile_interp)
-                                        end if
-                                    class default
-                                        call print_warning( &
-                                            "INTERPOLATIONFLAG cannot be applied for the data type of the '" // &
-                                            trim(this%label) // "' variable. The option has no effect for this field.")
-                                end select
+                                iwarn = 0
+                                if (allocated(forcing_files(i)%file%fields(j)%mapping%mapped_to_cell)) then
+                                    select type (field => forcing_files(i)%file%fields(j)%mapping%mapped_to_cell)
+                                        type is (model_variable_real1d)
+                                            allocate(dat_cell_interp_r(vs%grid%dim_length, 2))
+                                            dat_cell_interp_r = huge(0.0)
+                                            allocate(forcing_files(i)%file%fields(j)%mapping%mapped_to_cell_interp, &
+                                                source = model_variable_real2d(dat = dat_cell_interp_r))
+                                            deallocate(dat_cell_interp_r)
+                                        class default
+                                            iwarn = 1
+                                    end select
+                                end if
+                                if (allocated(forcing_files(i)%file%fields(j)%mapping%mapped_to_tile)) then
+                                    select type (field => forcing_files(i)%file%fields(j)%mapping%mapped_to_tile)
+                                        type is (model_variable_real1d)
+                                            allocate(dat_tile_interp_r(vs%tile%dim_length, 2))
+                                            dat_tile_interp_r = huge(0.0)
+                                            allocate(forcing_files(i)%file%fields(j)%mapping%mapped_to_tile_interp, &
+                                                source = model_variable_real2d(dat = dat_tile_interp_r))
+                                            deallocate(dat_tile_interp_r)
+                                        class default
+                                            iwarn = 1
+                                    end select
+                                end if
+                                if (iwarn /= 0) then
+                                    call print_warning( &
+                                        "INTERPOLATIONFLAG cannot be applied for the data type of the '" // &
+                                        trim(forcing_files(i)%file%fields(j)%label) // &
+                                        "' variable. The option has no effect for this field.")
+                                end if
                             end do
                         end if
                     else
@@ -824,26 +826,26 @@ module input_forcing
 
                 !> Update fields for temporal linear interpolation if enabled.
                 do j = 1, size(input_file%fields)
-                    select type (this => input_file%fields(j)%field)
-                        class is (io_field_real)
-                            if (allocated(this%mapped_dat_cell)) then
-                                this%mapped_dat_cell_interp(:, 1) = this%mapped_dat_cell_interp(:, 2)
-                                this%mapped_dat_cell_interp(:, 2) = this%mapped_dat_cell
-                            end if
-                            if (allocated(this%mapped_dat_tile)) then
-                                this%mapped_dat_tile_interp(:, 1) = this%mapped_dat_tile_interp(:, 2)
-                                this%mapped_dat_tile_interp(:, 2) = this%mapped_dat_tile
-                            end if
-                        class is (io_field_realNd)
-                            if (allocated(this%mapped_dat_cell)) then
-                                this%mapped_dat_cell_interp(:, 1) = this%mapped_dat_cell_interp(:, 2)
-                                this%mapped_dat_cell_interp(:, 2) = this%mapped_dat_cell
-                            end if
-                            if (allocated(this%mapped_dat_tile)) then
-                                this%mapped_dat_tile_interp(:, 1) = this%mapped_dat_tile_interp(:, 2)
-                                this%mapped_dat_tile_interp(:, 2) = this%mapped_dat_tile
-                            end if
-                    end select
+                    if (allocated(input_file%fields(j)%mapping%mapped_to_cell_interp)) then
+                        select type (interp => input_file%fields(j)%mapping%mapped_to_cell_interp)
+                            type is (model_variable_real2d)
+                                select type (field => input_file%fields(j)%mapping%mapped_to_cell)
+                                    type is (model_variable_real1d)
+                                        interp%dat(:, 1) = interp%dat(:, 2)
+                                        interp%dat(:, 2) = field%dat
+                                end select
+                        end select
+                    end if
+                    if (allocated(input_file%fields(j)%mapping%mapped_to_tile_interp)) then
+                        select type (interp => input_file%fields(j)%mapping%mapped_to_tile_interp)
+                            type is (model_variable_real2d)
+                                select type (field => input_file%fields(j)%mapping%mapped_to_tile)
+                                    type is (model_variable_real1d)
+                                        interp%dat(:, 1) = interp%dat(:, 2)
+                                        interp%dat(:, 2) = field%dat
+                                end select
+                        end select
+                    end if
                 end do
             end if
         end if
@@ -853,42 +855,30 @@ module input_forcing
             do j = 1, size(input_file%fields)
 
                 !> Calculate if only enough frames have been read that index '1' of the 'interp' field is assigned.
-                select type (this => input_file%fields(j)%field)
-                    class is (io_field_real)
-                        if (allocated(this%mapped_dat_cell)) then
-                            if (all(this%mapped_dat_cell_interp(:, 1) /= huge(this%mapped_dat_cell_interp))) then
-                                this%mapped_dat_cell = &
-                                    this%mapped_dat_cell_interp(:, 1) + &
-                                    input_file%interp_weights(input_file%istep)*( &
-                                        this%mapped_dat_cell_interp(:, 2) - this%mapped_dat_cell_interp(:, 1))
-                            end if
-                        end if
-                        if (allocated(this%mapped_dat_tile)) then
-                            if (all(this%mapped_dat_tile_interp(:, 1) /= huge(this%mapped_dat_tile_interp))) then
-                                this%mapped_dat_tile = &
-                                    this%mapped_dat_tile_interp(:, 1) + &
-                                    input_file%interp_weights(input_file%istep)*( &
-                                        this%mapped_dat_tile_interp(:, 2) - this%mapped_dat_tile_interp(:, 1))
-                            end if
-                        end if
-                    class is (io_field_realNd)
-                        if (allocated(this%mapped_dat_cell)) then
-                            if (all(this%mapped_dat_cell_interp(:, 1) /= huge(this%mapped_dat_cell_interp))) then
-                                this%mapped_dat_cell = &
-                                    this%mapped_dat_cell_interp(:, 1) + &
-                                    input_file%interp_weights(input_file%istep)*( &
-                                        this%mapped_dat_cell_interp(:, 2) - this%mapped_dat_cell_interp(:, 1))
-                            end if
-                        end if
-                        if (allocated(this%mapped_dat_tile)) then
-                            if (all(this%mapped_dat_tile_interp(:, 1) /= huge(this%mapped_dat_tile_interp))) then
-                                this%mapped_dat_tile = &
-                                    this%mapped_dat_tile_interp(:, 1) + &
-                                    input_file%interp_weights(input_file%istep)*( &
-                                        this%mapped_dat_tile_interp(:, 2) - this%mapped_dat_tile_interp(:, 1))
-                            end if
-                        end if
-                end select
+                if (allocated(input_file%fields(j)%mapping%mapped_to_cell_interp)) then
+                    select type (interp => input_file%fields(j)%mapping%mapped_to_cell_interp)
+                        type is (model_variable_real2d)
+                            select type (field => input_file%fields(j)%mapping%mapped_to_cell)
+                                type is (model_variable_real1d)
+                                    if (all(interp%dat(:, 1) /= huge(0.0))) then
+                                        field%dat = interp%dat(:, 1) + &
+                                            input_file%interp_weights(input_file%istep)*(interp%dat(:, 2) - interp%dat(:, 1))
+                                    end if
+                            end select
+                    end select
+                end if
+                if (allocated(input_file%fields(j)%mapping%mapped_to_tile_interp)) then
+                    select type (interp => input_file%fields(j)%mapping%mapped_to_tile_interp)
+                        type is (model_variable_real2d)
+                            select type (field => input_file%fields(j)%mapping%mapped_to_tile)
+                                type is (model_variable_real1d)
+                                    if (all(interp%dat(:, 1) /= huge(0.0))) then
+                                        field%dat = interp%dat(:, 1) + &
+                                            input_file%interp_weights(input_file%istep)*(interp%dat(:, 2) - interp%dat(:, 1))
+                                    end if
+                            end select
+                    end select
+                end if
             end do
         end if
 

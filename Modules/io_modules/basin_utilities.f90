@@ -24,7 +24,7 @@ module basin_utilities
         !> Input/output variables.
         !* field_list: List of fields (read from file).
         !* error_status: Status returned by the operation (optional; 0: normal).
-        type(io_field_wrapper), dimension(:), intent(in) :: field_list
+        type(io_field), dimension(:), intent(in) :: field_list
         integer, intent(out) :: error_status
 
         !> Local variables.
@@ -44,7 +44,7 @@ module basin_utilities
         nrvr = 0
         do i = 1, size(field_list)
             ierr = 0
-            select case (lowercase(field_list(i)%field%label))
+            select case (lowercase(field_list(i)%label))
 
                 !> Distributed 'Rank' field.
                 case ('rank')
@@ -57,7 +57,7 @@ module basin_utilities
                     end if
 
                     !> Extract the field.
-                    call assign_field(field_list(i)%field, dat2_i, ierr)
+                    call assign_field(field_list(i), dat2_i, ierr)
                     if (ierr /= 0) then
                         call print_error("Unknown or incompatible input variable format for 'Rank'.")
                         error_status = 1
@@ -67,9 +67,9 @@ module basin_utilities
                     !> Check the order of the X/Y dimensions.
                     ierr = 0
                     allocate(dat1_i(2))
-                    dat1_i(1) = field_list(i)%field%mapped_dim_order(MAP_ORDER_X)
-                    dat1_i(2) = field_list(i)%field%mapped_dim_order(MAP_ORDER_Y)
-                    if (dat1_i(1) == 0 .and. dat1_i(2) == 0 .and. field_list(i)%field%mapped_dim_order(MAP_ORDER_N) > 0) then
+                    dat1_i(1) = field_list(i)%mapping%mapped_dim_order(MAP_ORDER_X)
+                    dat1_i(2) = field_list(i)%mapping%mapped_dim_order(MAP_ORDER_Y)
+                    if (dat1_i(1) == 0 .and. dat1_i(2) == 0 .and. field_list(i)%mapping%mapped_dim_order(MAP_ORDER_N) > 0) then
 
                         !> Map the 1-D basin definition to the structure of the 2-D array.
                         dat1_i = (/1, 2/)
@@ -128,89 +128,79 @@ module basin_utilities
 
                 !> EnSim reference fields.
                 case ('xorigin')
-                    call assign_field(field_list(i)%field, pj%llc_x, ierr)
+                    call assign_field(field_list(i), pj%llc_x, ierr)
                 case ('yorigin')
-                    call assign_field(field_list(i)%field, pj%llc_y, ierr)
+                    call assign_field(field_list(i), pj%llc_y, ierr)
                 case ('xdelta')
-                    call assign_field(field_list(i)%field, pj%dx, ierr)
+                    call assign_field(field_list(i), pj%dx, ierr)
                 case ('ydelta')
-                    call assign_field(field_list(i)%field, pj%dy, ierr)
+                    call assign_field(field_list(i), pj%dy, ierr)
 
                 !> Projection.
                 case ('projection', 'grid_mapping_name')
-                    call assign_field(field_list(i)%field, pj%projection, ierr)
+                    call assign_field(field_list(i), pj%projection, ierr)
                     if (ierr == 0) then
                         if (pj%projection == 'latitude_longitude') pj%projection = 'LATLONG'
                     end if
                 case ('ellipsoid', 'datum')
-                    call assign_field(field_list(i)%field, pj%ellipsoid, ierr)
+                    call assign_field(field_list(i), pj%ellipsoid, ierr)
                 case ('semi_major_axis')
-                    call assign_field(field_list(i)%field, pj%semi_major_axis, ierr)
+                    call assign_field(field_list(i), pj%semi_major_axis, ierr)
                 case ('inverse_flattening')
-                    call assign_field(field_list(i)%field, pj%inverse_flattening, ierr)
+                    call assign_field(field_list(i), pj%inverse_flattening, ierr)
                 case ('zone')
-                    call assign_field(field_list(i)%field, pj%zone, ierr)
+                    call assign_field(field_list(i), pj%zone, ierr)
                 case ('centrelatitude')
-                    call assign_field(field_list(i)%field, pj%centre_latitude, ierr)
+                    call assign_field(field_list(i), pj%centre_latitude, ierr)
                 case ('centrelongitude')
-                    call assign_field(field_list(i)%field, pj%centre_longitude, ierr)
+                    call assign_field(field_list(i), pj%centre_longitude, ierr)
                 case ('rotationlatitude')
-                    call assign_field(field_list(i)%field, pj%rotation_latitude, ierr)
+                    call assign_field(field_list(i), pj%rotation_latitude, ierr)
                 case ('rotationlongitude')
-                    call assign_field(field_list(i)%field, pj%rotation_longitude, ierr)
+                    call assign_field(field_list(i), pj%rotation_longitude, ierr)
                 case ('earth_radius')
-                    call assign_field(field_list(i)%field, pj%earth_radius, ierr)
+                    call assign_field(field_list(i), pj%earth_radius, ierr)
                 case ('grid_north_pole_latitude')
-                    call assign_field(field_list(i)%field, pj%grid_north_pole_latitude, ierr)
+                    call assign_field(field_list(i), pj%grid_north_pole_latitude, ierr)
                 case ('grid_north_pole_longitude')
-                    call assign_field(field_list(i)%field, pj%grid_north_pole_longitude, ierr)
+                    call assign_field(field_list(i), pj%grid_north_pole_longitude, ierr)
 
                 !> Coordinates.
                 case ('classcount', 'ngru')
-                    call assign_field(field_list(i)%field, ngru, ierr)
+                    call assign_field(field_list(i), ngru, ierr)
                 case ('latitude', 'lat')
 
                     !> Check type.
-                    select type (this => field_list(i)%field)
-                        class is (io_field_Nd)
-                            select case (size(this%dim_names))
-                                case (1)
-                                    call assign_field(this, pj%lat, ierr)
-                                case (2)
-                                    call assign_field(this, pj%lat_xy, ierr)
-                            end select
-                        class is (io_field_real)
-                            call assign_field(this, pj%lat, ierr)
+                    select case (size(field_list(i)%dim_names))
+                        case (1)
+                            call assign_field(field_list(i), pj%lat, ierr)
+                        case (2)
+                            call assign_field(field_list(i), pj%lat_xy, ierr)
                     end select
                 case ('rlat')
-                    call assign_field(field_list(i)%field, pj%lat, ierr)
+                    call assign_field(field_list(i), pj%lat, ierr)
                 case ('longitude', 'lon')
 
                     !> Check type.
-                    select type(this => field_list(i)%field)
-                        class is (io_field_Nd)
-                            select case (size(this%dim_names))
-                                case (1)
-                                    call assign_field(this, pj%lon, ierr)
-                                case (2)
-                                    call assign_field(this, pj%lon_xy, ierr)
-                            end select
-                        class is (io_field_real)
-                            call assign_field(this, pj%lon, ierr)
+                    select case (size(field_list(i)%dim_names))
+                        case (1)
+                            call assign_field(field_list(i), pj%lon, ierr)
+                        case (2)
+                            call assign_field(field_list(i), pj%lon_xy, ierr)
                     end select
                 case ('rlon')
-                    call assign_field(field_list(i)%field, pj%lon, ierr)
+                    call assign_field(field_list(i), pj%lon, ierr)
                 case ('numriverclasses', 'nrvr')
-                    call assign_field(field_list(i)%field, nrvr, ierr)
+                    call assign_field(field_list(i), nrvr, ierr)
 
                 !> Attributes.
                 case ('nominalgridsize_al', 'size_length')
-                    call assign_field(field_list(i)%field, pj%nominal_side_length, ierr)
+                    call assign_field(field_list(i), pj%nominal_side_length, ierr)
             end select
 
             !> Check for errors.
             if (ierr /= 0) then
-                call print_warning("An error occurred parsing the variable '" // trim(field_list(i)%field%label) // "'.")
+                call print_warning("An error occurred parsing the variable '" // trim(field_list(i)%label) // "'.")
             end if
         end do
 
@@ -351,7 +341,7 @@ module basin_utilities
         do i = 1, size(field_list)
 
             !> Get field name and level (if applicable).
-            call get_field_name_and_level(lowercase(field_list(i)%field%label), field, level, ilvl, ierr)
+            call get_field_name_and_level(lowercase(field_list(i)%label), field, level, ilvl, ierr)
 
             !> Assign the field.
             ierr = 0
@@ -359,9 +349,9 @@ module basin_utilities
 
                 !> River class.
                 case ('irvr', 'iak')
-                    call create_ranked_field_and_maps(field_list(i)%field, ierr)
-                    if (ierr == 0) call map_field_to_ranked_output(field_list(i)%field, error_status = ierr)
-                    if (ierr == 0) call assign_cell_values(field_list(i)%field, vs%grid%from_riverclass, ierr)
+                    call create_ranked_field_and_maps(field_list(i), ierr)
+                    if (ierr == 0) call map_field_to_ranked_output(field_list(i), error_status = ierr)
+                    if (ierr == 0) call assign_cell_values(field_list(i), vs%grid%from_riverclass, ierr)
 
                 !> GRUs.
                 case ('gru', 'landcover')
@@ -370,9 +360,9 @@ module basin_utilities
                             allocate(gru_nm(ncell, ngru))
                             gru_nm = 0.0
                         end if
-                        call create_ranked_field_and_maps(field_list(i)%field, ierr)
-                        if (ierr == 0) call map_field_to_ranked_output(field_list(i)%field, error_status = ierr)
-                        if (ierr == 0) call assign_cell_values(field_list(i)%field, gru_n, ierr)
+                        call create_ranked_field_and_maps(field_list(i), ierr)
+                        if (ierr == 0) call map_field_to_ranked_output(field_list(i), error_status = ierr)
+                        if (ierr == 0) call assign_cell_values(field_list(i), gru_n, ierr)
                         if (ierr == 0) gru_nm(:, ilvl) = gru_n
                         if (allocated(gru_n)) deallocate(gru_n)
                     end if
@@ -380,7 +370,7 @@ module basin_utilities
 
             !> Check for errors.
             if (ierr /= 0) then
-                call print_warning("An error occurred assigning the '" // trim(field_list(i)%field%label) // "' variable.")
+                call print_warning("An error occurred assigning the '" // trim(field_list(i)%label) // "' variable.")
             end if
         end do
 

@@ -1,12 +1,9 @@
 module mesh_io
 
-    !> 'mesh_io_variables': For I/O field types, options and constants.
-    use mesh_io_variables
-
     !> 'print_routines': For print routines, format statements, and line lengths and limits.
     use print_routines
 
-    !> 'field_utilities': For mapping functions for I/O fields.
+    !> 'field_utilities': For mapping functions and field types.
     use field_utilities
 
     implicit none
@@ -448,7 +445,7 @@ module mesh_io
         integer, intent(out) :: error_status
 
         !> Local variables.
-        type(io_field_wrapper), dimension(:), allocatable :: file_buffer
+        type(io_field), dimension(:), allocatable :: file_buffer
         character(len = SHORT_FIELD_LENGTH) :: code
         integer n, j, i, natts, nvars, nplus, ierr
         logical v
@@ -529,9 +526,9 @@ module mesh_io
                                 do j = 1, size(vkeyword(i)%words)
                                     line_buffer = trim(line_buffer) // trim(vkeyword(i)%words(j))
                                 end do
-                                allocate(file_buffer(n)%field, source = io_field_char( &
-                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                    label = trim(vkeyword(i)%keyword(2:)), dat = trim(line_buffer), id = i))
+                                file_buffer(n)%label = trim(vkeyword(i)%keyword(2:))
+                                file_buffer(n)%id = i
+                                allocate(file_buffer(n)%field, source = model_variable_char(dat = trim(line_buffer)))
                                 n = n + 1
 
                                 !> Special cases.
@@ -584,12 +581,12 @@ module mesh_io
 
                                 !> Register the field (assuming 'attributetype' from known variable).
                                 write(code, *) (i - (nvars - class_count))
-                                allocate(file_buffer(n)%field, source = io_field_real2d( &
-                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                    cell_map = null(), tile_map = null(), &
-                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                    label = trim(DIM_NAME_GRU) // ' ' // trim(adjustl(code)), short_name = trim(vattr(i)%attr), &
-                                    units = trim(vattr(i)%units), dim_names = dim_names, dat = vattr(i)%val, id = i))
+                                file_buffer(n)%label = trim(DIM_NAME_GRU) // ' ' // trim(adjustl(code))
+                                file_buffer(n)%id = i
+                                file_buffer(n)%meta%label = trim(vattr(i)%attr)
+                                file_buffer(n)%meta%units = trim(vattr(i)%units)
+                                allocate(file_buffer(n)%field, source = model_variable_real2d(dat = vattr(i)%val))
+                                allocate(file_buffer(n)%dim_names(size(dim_names)), source = dim_names)
                                 n = n + 1
                             end do
                         end if
@@ -600,26 +597,20 @@ module mesh_io
                             !> Save the field.
                             select case (vattr(i)%type)
                                 case ('integer')
-                                    allocate(file_buffer(n)%field, source = io_field_int2d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        dim_names = dim_names, dat = int(vattr(i)%val)))
+                                    allocate(file_buffer(n)%field, source = model_variable_int2d(dat = int(vattr(i)%val)))
                                 case ('float', '')
-                                    allocate(file_buffer(n)%field, source = io_field_real2d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                        dim_names = dim_names, dat = vattr(i)%val))
+                                    allocate(file_buffer(n)%field, source = model_variable_real2d(dat = vattr(i)%val))
                                 case default
                                     if (v) call print_warning( &
                                         "The variable '" // trim(vattr(i)%attr) // "' is an unknown or unsupported data " // &
                                         "format '" // trim(vattr(i)%type) // "'.")
                             end select
                             if (allocated(file_buffer(n)%field)) then
-                                file_buffer(n)%field%label = trim(vattr(i)%attr)
-                                file_buffer(n)%field%id = i
-                                file_buffer(n)%field%short_name = trim(vattr(i)%attr)
-                                file_buffer(n)%field%units = trim(vattr(i)%units)
+                                file_buffer(n)%label = trim(vattr(i)%attr)
+                                file_buffer(n)%id = i
+                                file_buffer(n)%meta%label = trim(vattr(i)%attr)
+                                file_buffer(n)%meta%units = trim(vattr(i)%units)
+                                allocate(file_buffer(n)%dim_names(size(dim_names)), source = dim_names)
                                 n = n + 1
                             end if
                         end do
@@ -646,11 +637,8 @@ module mesh_io
                             case ('float', '')
                                 allocate(dat3_r(x, y, input_file%block_interval))
                                 dat3_r = huge(dat3_r)
-                                allocate(file_buffer(n)%field, source = io_field_real3d( &
-                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                    cell_map = null(), tile_map = null(), &
-                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                    dim_names = dim_names, dat = dat3_r, time_order = 3))
+                                file_buffer(n)%mapping%time_order = 3
+                                allocate(file_buffer(n)%field, source = model_variable_real3d(dat = dat3_r))
                                 deallocate(dat3_r)
                             case default
                                 if (v) call print_warning( &
@@ -663,10 +651,11 @@ module mesh_io
                                 !> Special condition: Override the source name in the field map with the one read from file.
                                 input_file%field_map(1, 1) = trim(vattr(i)%attr)
                             end if
-                            file_buffer(n)%field%label = trim(vattr(i)%attr)
-                            file_buffer(n)%field%id = i
-                            file_buffer(n)%field%short_name = trim(vattr(i)%attr)
-                            file_buffer(n)%field%units = trim(vattr(i)%units)
+                            file_buffer(n)%label = trim(vattr(i)%attr)
+                            file_buffer(n)%id = i
+                            file_buffer(n)%meta%label = trim(vattr(i)%attr)
+                            file_buffer(n)%meta%units = trim(vattr(i)%units)
+                            allocate(file_buffer(n)%dim_names(size(dim_names)), source = dim_names)
                             n = n + 1
                         end if
 
@@ -755,26 +744,23 @@ module mesh_io
 
                             !> GRUs.
                             case (DIM_NAME_GRU)
-                                allocate(file_buffer(n)%field, source = io_field_char1d( &
-                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                    cell_map = null(), tile_map = null(), &
-                                    label = trim(DIM_NAME_GRU) // ' ' // trim(args(2)), dim_names = dim_names, &
-                                    dat = args(3:), id = i))
+                                file_buffer(n)%label = trim(DIM_NAME_GRU) // ' ' // trim(args(2))
+                                file_buffer(n)%id = i
+                                allocate(file_buffer(n)%field, source = model_variable_char1d(dat = args(3:)))
+                                allocate(file_buffer(n)%dim_names(size(dim_names)), source = dim_names)
                                 n = n + 1
                                 cycle
                         end select
 
                         !> Save the field.
                         if (size(args) > 2) then
-                            allocate(file_buffer(n)%field, source = io_field_char1d( &
-                                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                cell_map = null(), tile_map = null(), &
-                                label = trim(args(1)), dim_names = dim_names, dat = args(2:), id = i))
+                            allocate(file_buffer(n)%field, source = model_variable_char1d(dat = args(2:)))
                         else
-                            allocate(file_buffer(n)%field, source = io_field_char( &
-                                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                label = trim(args(1)), dat = trim(args(2)), id = i))
+                            allocate(file_buffer(n)%field, source = model_variable_char(dat = trim(args(2))))
                         end if
+                        file_buffer(n)%label = trim(args(1))
+                        file_buffer(n)%id = i
+                        allocate(file_buffer(n)%dim_names(size(dim_names)), source = dim_names)
                         n = n + 1
                     end do
                 end if
@@ -836,31 +822,24 @@ module mesh_io
                         case (NF90_INT64, NF90_BYTE, NF90_SHORT, NF90_INT)
                             call nc4_get_attribute(input_file%iunit, aname, dat_i, ierr = ierr)
                             if (ierr == 0) then
-                                allocate(file_buffer(n)%field, source = io_field_int( &
-                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                    dat = dat_i))
+                                allocate(file_buffer(n)%field, source = model_variable_int(dat = dat_i))
                             end if
                         case (NF90_FLOAT, NF90_DOUBLE)
                             call nc4_get_attribute(input_file%iunit, aname, dat_r, ierr = ierr)
                             if (ierr == 0) then
-                                allocate(file_buffer(n)%field, source = io_field_real( &
-                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                    dat = dat_r))
+                                allocate(file_buffer(n)%field, source = model_variable_real(dat = dat_r))
                             end if
                         case (NF90_CHAR)
                             allocate(character(len = alength) :: dat_c)
                             call nc4_get_attribute(input_file%iunit, aname, dat_c, ierr = ierr)
                             if (ierr == 0) then
-                                allocate(file_buffer(n)%field, source = io_field_char( &
-                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                    dat = trim(dat_c)))
+                                allocate(file_buffer(n)%field, source = model_variable_char(dat = trim(dat_c)))
                             end if
                             deallocate(dat_c)
                     end select
                     if (allocated(file_buffer(n)%field)) then
-                        file_buffer(n)%field%label = trim(aname)
-                        file_buffer(n)%field%id = i
+                        file_buffer(n)%label = trim(aname)
+                        file_buffer(n)%id = i
                         n = n + 1
                     end if
                 end do
@@ -972,9 +951,7 @@ module mesh_io
                                             allocate(character(len = alength) :: dat_c)
                                             call nc4_get_attribute(input_file%iunit, aname, dat_c, vid = i, ierr = ierr)
                                             if (ierr == 0) then
-                                                allocate(file_buffer(n)%field, source = io_field_char( &
-                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                                    dat = trim(dat_c)))
+                                                allocate(file_buffer(n)%field, source = model_variable_char(dat = trim(dat_c)))
                                             end if
                                             deallocate(dat_c)
                                         end if
@@ -982,15 +959,12 @@ module mesh_io
                                         'grid_north_pole_latitude', 'grid_north_pole_longitude')
                                         call nc4_get_attribute(input_file%iunit, aname, dat_r, vid = i, ierr = ierr)
                                         if (ierr == 0) then
-                                            allocate(file_buffer(n)%field, source = io_field_real( &
-                                                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                                dat = dat_r))
+                                            allocate(file_buffer(n)%field, source = model_variable_real(dat = dat_r))
                                         end if
                                 end select
                                 if (allocated(file_buffer(n)%field)) then
-                                    file_buffer(n)%field%label = trim(aname)
-                                    file_buffer(n)%field%id = i
+                                    file_buffer(n)%label = trim(aname)
+                                    file_buffer(n)%id = i
                                     n = n + 1
                                     nplus = nplus + 1
                                 end if
@@ -1017,9 +991,9 @@ module mesh_io
                                 call expand_field_list(file_buffer, class_count + 1, ierr)
 
                                 !> Add a field for the dimension.
-                                allocate(file_buffer(n)%field, source = io_field_int( &
-                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                    label = trim(DIM_NAME_NGRU), dat = class_count, id = i))
+                                file_buffer(n)%label = trim(DIM_NAME_NGRU)
+                                file_buffer(n)%id = i
+                                allocate(file_buffer(n)%field, source = model_variable_int(dat = class_count))
                                 n = n + 1
 
                                 !> Read the variable from file (assuming possible shapes from known variable).
@@ -1048,61 +1022,46 @@ module mesh_io
                                     if (allocated(dat2_r)) then
                                         select case (mapped_dim_order(1))
                                             case (2)
-                                                allocate(dat1_r(size(dat2_r, 1)))
                                                 dat1_r = (/dat2_r(:, j)/)
-                                                allocate(file_buffer(n)%field, source = io_field_real1d( &
-                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                                    cell_map = null(), tile_map = null(), &
-                                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                                    dim_names = (/dim_names(1)/), dat = dat1_r))
+                                                allocate(file_buffer(n)%field, source = model_variable_real1d(dat = dat1_r))
                                                 deallocate(dat1_r)
+                                                allocate(file_buffer(n)%dim_names(1))
+                                                file_buffer(n)%dim_names = (/dim_names(1)/)
                                             case default
-                                                allocate(dat1_r(size(dat2_r, 2)))
                                                 dat1_r = (/dat2_r(j, :)/)
-                                                allocate(file_buffer(n)%field, source = io_field_real1d( &
-                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                                    cell_map = null(), tile_map = null(), &
-                                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                                    dim_names = (/dim_names(2)/), dat = dat1_r))
+                                                allocate(file_buffer(n)%field, source = model_variable_real1d(dat = dat1_r))
                                                 deallocate(dat1_r)
+                                                allocate(file_buffer(n)%dim_names(1))
+                                                file_buffer(n)%dim_names = (/dim_names(2)/)
                                         end select
                                     else if (allocated(dat3_r)) then
                                         select case (mapped_dim_order(1))
                                             case (3)
-                                                allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 2)))
                                                 dat2_r = dat3_r(:, :, j)
-                                                allocate(file_buffer(n)%field, source = io_field_real2d( &
-                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                                    cell_map = null(), tile_map = null(), &
-                                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                                    dim_names = (/dim_names(1), dim_names(2)/), dat = dat2_r))
+                                                allocate(file_buffer(n)%field, source = model_variable_real2d(dat = dat2_r))
                                                 deallocate(dat2_r)
+                                                allocate(file_buffer(n)%dim_names(2))
+                                                file_buffer(n)%dim_names = (/dim_names(1), dim_names(2)/)
                                             case (2)
-                                                allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 3)))
                                                 dat2_r = dat3_r(:, j, :)
-                                                allocate(file_buffer(n)%field, source = io_field_real2d( &
-                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                                    cell_map = null(), tile_map = null(), &
-                                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                                    dim_names = (/dim_names(1), dim_names(3)/), dat = dat2_r))
+                                                allocate(file_buffer(n)%field, source = model_variable_real2d(dat = dat2_r))
                                                 deallocate(dat2_r)
+                                                allocate(file_buffer(n)%dim_names(2))
+                                                file_buffer(n)%dim_names = (/dim_names(1), dim_names(3)/)
                                             case default
-                                                allocate(dat2_r(size(dat3_r, 2), size(dat3_r, 3)))
                                                 dat2_r = dat3_r(j, :, :)
-                                                allocate(file_buffer(n)%field, source = io_field_real2d( &
-                                                    mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                                    cell_map = null(), tile_map = null(), &
-                                                    mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                                    dim_names = (/dim_names(2), dim_names(3)/), dat = dat2_r))
+                                                allocate(file_buffer(n)%field, source = model_variable_real2d(dat = dat2_r))
                                                 deallocate(dat2_r)
+                                                allocate(file_buffer(n)%dim_names(2))
+                                                file_buffer(n)%dim_names = (/dim_names(2), dim_names(3)/)
                                         end select
                                     end if
                                     write(code, *) j
-                                    file_buffer(n)%field%label = trim(DIM_NAME_GRU) // ' ' // trim(adjustl(code))
-                                    file_buffer(n)%field%id = i
-                                    file_buffer(n)%field%short_name = 'GRU'
-                                    file_buffer(n)%field%description = description
-                                    file_buffer(n)%field%units = units
+                                    file_buffer(n)%label = trim(DIM_NAME_GRU) // ' ' // trim(adjustl(code))
+                                    file_buffer(n)%id = i
+                                    file_buffer(n)%meta%label = 'GRU'
+                                    file_buffer(n)%meta%description = description
+                                    file_buffer(n)%meta%units = units
                                     n = n + 1
                                     nplus = nplus + 1
                                 end do
@@ -1184,10 +1143,8 @@ module mesh_io
                                     if (time_order == 0) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat5_i, ierr = ierr)
                                     end if
-                                    allocate(file_buffer(n)%field, source = io_field_int5d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        dim_names = dim_names, time_order = time_order, dat = dat5_i, no_data_value = fill_i))
+                                    allocate(file_buffer(n)%field, source = model_variable_int5d( &
+                                        dat = dat5_i, no_data_value = fill_i))
                                     deallocate(dat5_i)
                                 case (4)
                                     allocate(dat4_i(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
@@ -1195,10 +1152,8 @@ module mesh_io
                                     if (time_order == 0) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat4_i, ierr = ierr)
                                     end if
-                                    allocate(file_buffer(n)%field, source = io_field_int4d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        dim_names = dim_names, time_order = time_order, dat = dat4_i, no_data_value = fill_i))
+                                    allocate(file_buffer(n)%field, source = model_variable_int4d( &
+                                        dat = dat4_i, no_data_value = fill_i))
                                     deallocate(dat4_i)
                                 case (3)
                                     allocate(dat3_i(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
@@ -1206,10 +1161,8 @@ module mesh_io
                                     if (time_order == 0) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat3_i, ierr = ierr)
                                     end if
-                                    allocate(file_buffer(n)%field, source = io_field_int3d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        dim_names = dim_names, time_order = time_order, dat = dat3_i, no_data_value = fill_i))
+                                    allocate(file_buffer(n)%field, source = model_variable_int3d( &
+                                        dat = dat3_i, no_data_value = fill_i))
                                     deallocate(dat3_i)
                                 case (2)
                                     allocate(dat2_i(dim_lengths(1), dim_lengths(2)))
@@ -1217,10 +1170,8 @@ module mesh_io
                                     if (time_order == 0) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat2_i, ierr = ierr)
                                     end if
-                                    allocate(file_buffer(n)%field, source = io_field_int2d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        dim_names = dim_names, time_order = time_order, dat = dat2_i, no_data_value = fill_i))
+                                    allocate(file_buffer(n)%field, source = model_variable_int2d( &
+                                        dat = dat2_i, no_data_value = fill_i))
                                     deallocate(dat2_i)
                                 case (1)
                                     allocate(dat1_i(dim_lengths(1)))
@@ -1228,17 +1179,13 @@ module mesh_io
                                     if (time_order == 0) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat1_i, ierr = ierr)
                                     end if
-                                    allocate(file_buffer(n)%field, source = io_field_int1d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        dim_names = dim_names, time_order = time_order, dat = dat1_i, no_data_value = fill_i))
+                                    allocate(file_buffer(n)%field, source = model_variable_int1d( &
+                                        dat = dat1_i, no_data_value = fill_i))
                                     deallocate(dat1_i)
                                 case default
                                     call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat_i, ierr = ierr)
                                     if (ierr == 0) then
-                                        allocate(file_buffer(n)%field, source = io_field_int( &
-                                            mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                            dat = dat_i))
+                                        allocate(file_buffer(n)%field, source = model_variable_int(dat = dat_i))
                                     end if
                             end select
                         case (NF90_FLOAT, NF90_DOUBLE)
@@ -1249,11 +1196,8 @@ module mesh_io
                                     if (time_order == 0) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat5_r, ierr = ierr)
                                     end if
-                                    allocate(file_buffer(n)%field, source = io_field_real5d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                        dim_names = dim_names, time_order = time_order, dat = dat5_r, no_data_value = fill_r))
+                                    allocate(file_buffer(n)%field, source = model_variable_real5d( &
+                                        dat = dat5_r, no_data_value = fill_r))
                                     deallocate(dat5_r)
                                 case (4)
                                     allocate(dat4_r(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
@@ -1261,11 +1205,8 @@ module mesh_io
                                     if (time_order == 0) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat4_r, ierr = ierr)
                                     end if
-                                    allocate(file_buffer(n)%field, source = io_field_real4d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                        dim_names = dim_names, time_order = time_order, dat = dat4_r, no_data_value = fill_r))
+                                    allocate(file_buffer(n)%field, source = model_variable_real4d( &
+                                        dat = dat4_r, no_data_value = fill_r))
                                     deallocate(dat4_r)
                                 case (3)
                                     allocate(dat3_r(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
@@ -1273,11 +1214,8 @@ module mesh_io
                                     if (time_order == 0) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat3_r, ierr = ierr)
                                     end if
-                                    allocate(file_buffer(n)%field, source = io_field_real3d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                        dim_names = dim_names, time_order = time_order, dat = dat3_r, no_data_value = fill_r))
+                                    allocate(file_buffer(n)%field, source = model_variable_real3d( &
+                                        dat = dat3_r, no_data_value = fill_r))
                                     deallocate(dat3_r)
                                 case (2)
                                     allocate(dat2_r(dim_lengths(1), dim_lengths(2)))
@@ -1285,11 +1223,8 @@ module mesh_io
                                     if (time_order == 0) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat2_r, ierr = ierr)
                                     end if
-                                    allocate(file_buffer(n)%field, source = io_field_real2d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                        dim_names = dim_names, time_order = time_order, dat = dat2_r, no_data_value = fill_r))
+                                    allocate(file_buffer(n)%field, source = model_variable_real2d( &
+                                        dat = dat2_r, no_data_value = fill_r))
                                     deallocate(dat2_r)
                                 case (1)
                                     allocate(dat1_r(dim_lengths(1)))
@@ -1297,19 +1232,13 @@ module mesh_io
                                     if (time_order == 0) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat1_r, ierr = ierr)
                                     end if
-                                    allocate(file_buffer(n)%field, source = io_field_real1d( &
-                                        mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                        cell_map = null(), tile_map = null(), &
-                                        mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                        dim_names = dim_names, time_order = time_order, dat = dat1_r, no_data_value = fill_r))
+                                    allocate(file_buffer(n)%field, source = model_variable_real1d( &
+                                        dat = dat1_r, no_data_value = fill_r))
                                     deallocate(dat1_r)
                                 case default
                                     call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat_r, ierr = ierr)
                                     if (ierr == 0) then
-                                        allocate(file_buffer(n)%field, source = io_field_real( &
-                                            mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                            mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                                            dat = dat_r))
+                                        allocate(file_buffer(n)%field, source = model_variable_real(dat = dat_r))
                                     end if
                             end select
                         case (NF90_CHAR)
@@ -1335,20 +1264,18 @@ module mesh_io
                                     if (allocated(dat1_c)) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat1_c, ierr = ierr)
                                         if (ierr == 0) then
-                                            allocate(file_buffer(n)%field, source = io_field_char1d( &
-                                                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                                cell_map = null(), tile_map = null(), &
-                                                dim_names = (/dim_names(j)/), dat = dat1_c, no_data_value = fill_c))
+                                            allocate(file_buffer(n)%field, source = model_variable_char1d( &
+                                                dat = dat1_c, no_data_value = fill_c))
                                         end if
                                         deallocate(dat1_c)
+                                        allocate(file_buffer(n)%dim_names(1))
+                                        file_buffer(n)%dim_names(1) = dim_names(j)
                                     end if
                                 case (1)
                                     allocate(character(len = dim_lengths(1)) :: dat_c)
                                     call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat_c, ierr = ierr)
                                     if (ierr == 0) then
-                                        allocate(file_buffer(n)%field, source = io_field_char( &
-                                            mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                                            dat = dat_c))
+                                        allocate(file_buffer(n)%field, source = model_variable_char(dat = dat_c))
                                     end if
                                     deallocate(dat_c)
                                 case default
@@ -1368,11 +1295,15 @@ module mesh_io
                             end if
                     end select
                     if (allocated(file_buffer(n)%field)) then
-                        file_buffer(n)%field%label = trim(vname)
-                        file_buffer(n)%field%id = i
-                        file_buffer(n)%field%short_name = vname
-                        file_buffer(n)%field%description = description
-                        file_buffer(n)%field%units = units
+                        file_buffer(n)%label = trim(vname)
+                        file_buffer(n)%id = i
+                        file_buffer(n)%meta%label = vname
+                        file_buffer(n)%meta%description = description
+                        file_buffer(n)%meta%units = units
+                        file_buffer(n)%mapping%time_order = time_order
+                        if (allocated(dim_names) .and. .not. allocated(file_buffer(n)%dim_names)) then
+                            allocate(file_buffer(n)%dim_names(size(dim_names)), source = dim_names)
+                        end if
                         n = n + 1
                     end if
                 end do
@@ -1444,65 +1375,58 @@ module mesh_io
             do i = 1, size(input_file%fields)
 
                 !> Allocate the mapped dimension order.
-                allocate(input_file%fields(i)%field%mapped_dim_order(size(MAP_ORDER_LIST)))
-                input_file%fields(i)%field%mapped_dim_order = 0
+                allocate(input_file%fields(i)%mapping%mapped_dim_order(size(MAP_ORDER_LIST)))
+                input_file%fields(i)%mapping%mapped_dim_order = 0
 
-                !> Map dimension orders.
-                select type (this => input_file%fields(i)%field)
-                    class is (io_field_Nd)
+                !> Assume a basin-wide value 'DIM_NAME_B' for scalar fields (or will get updated).
+                input_file%fields(i)%mapping%mapped_dim_order(MAP_ORDER_B) = 1
 
-                        !> Map dimensions of the variable.
-                        if (allocated(this%dim_names)) then
-                            if (this%time_order == 1 .and. size(this%dim_names) == 1) then
+                !> Map dimensions of the variable.
+                if (allocated(input_file%fields(i)%dim_names)) then
+                    if (input_file%fields(i)%mapping%time_order /= 1 .or. size(input_file%fields(i)%dim_names) /= 1) then
 
-                                !> Identify the field as a basin-wide value 'DIM_NAME_B' if the only dimension is time 'DIM_NAME_T'.
-                                this%mapped_dim_order(MAP_ORDER_B) = 1
-                            else
+                        !> Map spatial dimensions (if the only dimension is not time 'DIM_NAME_T').
+                        call get_dimension_order( &
+                            input_file%fields(i)%dim_names, MAP_ORDER_LIST, input_file%fields(i)%mapping%mapped_dim_order, ierr)
+                    end if
+!+                else if (.not. allocated(input_file%fields(i)%dim_lengths)) then
 
-                                !> Map spatial dimensions.
-                                call get_dimension_order(this%dim_names, MAP_ORDER_LIST, this%mapped_dim_order, ierr)
-                            end if
-                        else
+                    !> Print an error if the spatial dimensions of the multi-dimensional field cannot be derived.
+!+                    call print_error( &
+!+                        "The spatial dimensions of the field '" // trim(input_file%fields(i)%label) // &
+!+                        "' are not recognized or are undefined.")
+!+                    error_status = 1
+                end if
 
-                            !> Print an error if the spatial dimensions of the multi-dimensional field cannot be derived.
-                            call print_error( &
-                                "The spatial dimensions of the field '" // trim(this%label) // &
-                                "' are not recognized or are undefined.")
-                            error_status = 1
-                        end if
-
-                        !> Derive field name and level from ID.
-                        call get_field_name_and_level(this%label, this%field_name, this%level, this%level_id, ierr)
-                        if (ierr /= 0) then
-                            call print_warning( &
-                                "An error occurred identifying the label associated with the '" // &
-                                trim(this%label) // "' variable.")
-                        end if
-                    class default
-
-                        !> Assume a basin-wide value 'DIM_NAME_B' for scalar fields.
-                        this%mapped_dim_order(MAP_ORDER_B) = 1
-                end select
+                !> Derive field name and level from ID.
+                call get_field_name_and_level( &
+                    input_file%fields(i)%label, input_file%fields(i)%field_name, input_file%fields(i)%level, &
+                    input_file%fields(i)%level_id, ierr)
+                if (ierr /= 0) then
+                    call print_warning( &
+                        "An error occurred identifying the label associated with the '" // trim(input_file%fields(i)%label) // &
+                        "' variable.")
+                end if
 
                 !> Print message.
-                if (DIAGNOSEMODE) call print_info("Found the variable '" // trim(input_file%fields(i)%field%label) // "'.")
+                if (DIAGNOSEMODE) call print_info("Found the variable '" // trim(input_file%fields(i)%label) // "'.")
 
                 !> Check if the field is mapped to an external ID.
                 if (allocated(input_file%field_map)) then
                     do j = 1, size(input_file%field_map, 1)
-                        if (input_file%fields(i)%field%label == input_file%field_map(j, 1)) then
+                        if (input_file%fields(i)%label == input_file%field_map(j, 1)) then
 
                             !> Check if the field name is mapping to the same field name.
                             if (input_file%field_map(j, 1) /= input_file%field_map(j, 2)) then
 
                                 !> Save the internal name.
-                                input_file%fields(i)%field%mapped_name = trim(input_file%field_map(j, 2))
+                                input_file%fields(i)%mapping%mapped_name = trim(input_file%field_map(j, 2))
                                 call print_remark( &
-                                    "Mapping the field '" // trim(input_file%fields(i)%field%label) // "' to the '" // &
+                                    "Mapping the field '" // trim(input_file%fields(i)%label) // "' to the '" // &
                                     trim(input_file%field_map(j, 2)) // "' variable.")
 
                                 !> Update field name.
-                                input_file%fields(i)%field%field_name = input_file%fields(i)%field%mapped_name
+                                input_file%fields(i)%field_name = input_file%fields(i)%mapping%mapped_name
                             end if
                             exit
                         end if
@@ -1523,7 +1447,7 @@ module mesh_io
         !> Input/output variables.
         !*  input_field: Input field to assign to 'output_field'.
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        class(io_field), intent(in) :: input_field
+        type(io_field), intent(in) :: input_field
         integer, intent(out) :: error_status
 
         !> Local variables
@@ -1739,7 +1663,7 @@ module mesh_io
         !> Input/output variables.
         !*  field_list: List of fields (read from file).
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        type(io_field_wrapper), dimension(:), intent(in) :: field_list
+        type(io_field), dimension(:), intent(in) :: field_list
         integer, intent(out) :: error_status
 
         !> Local variables.
@@ -1751,7 +1675,7 @@ module mesh_io
         !> Loop through the fields to assign remaining variables.
         ierr = 0
         do i = 1, size(field_list)
-            call activate_variable_from_field(field_list(i)%field, ierr)
+            call activate_variable_from_field(field_list(i), ierr)
             if (ierr /= 0) error_status = ierr
         end do
 
@@ -1810,7 +1734,7 @@ module mesh_io
 
                 !> Read from the file (assume field type from known file type).
                 select type (this => input_file%fields(1)%field)
-                    class is (io_field_real3d)
+                    type is (model_variable_real3d)
                         do t = 1, input_file%block_interval
 
                             !> Read values.
@@ -1850,7 +1774,7 @@ module mesh_io
 
                         !> Assign values to the field (assume field type from known file type).
                         select type (this => input_file%fields(1)%field)
-                            class is (io_field_real2d)
+                            type is (model_variable_real2d)
 
                                 !> Read values (skipping the specified number of columns from the start of the line).
                                 read(input_file%iunit, *, iostat = ierr) &
@@ -1892,7 +1816,7 @@ module mesh_io
 
                         !> Assign values to the field (assume field type from known file type).
                         select type (this => input_file%fields(1)%field)
-                            class is (io_field_real2d)
+                            type is (model_variable_real2d)
 
                                 !> Read values.
                                 allocate(dat1_rk4(size(this%dat, 1)))
@@ -1932,75 +1856,95 @@ module mesh_io
                         start1 = 1
                         ierr = 0
                         select type (this => input_file%fields(i)%field)
-                            class is (io_field_int5d)
-                                if (this%time_order > 0) then
-                                    start5(this%time_order) = input_file%ipos
-                                    call nc4_get_data(input_file%iunit, this%label, this%id, this%dat, start = start5, ierr = ierr)
+                            type is (model_variable_int5d)
+                                if (input_file%fields(i)%mapping%time_order > 0) then
+                                    start5(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    call nc4_get_data( &
+                                        input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
+                                        start = start5, ierr = ierr)
                                 end if
-                            class is (io_field_int4d)
-                                if (this%time_order > 0) then
-                                    start4(this%time_order) = input_file%ipos
-                                    call nc4_get_data(input_file%iunit, this%label, this%id, this%dat, start = start4, ierr = ierr)
+                            type is (model_variable_int4d)
+                                if (input_file%fields(i)%mapping%time_order > 0) then
+                                    start4(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    call nc4_get_data( &
+                                        input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
+                                        start = start4, ierr = ierr)
                                 end if
-                            class is (io_field_int3d)
-                                if (this%time_order > 0) then
-                                    start3(this%time_order) = input_file%ipos
-                                    call nc4_get_data(input_file%iunit, this%label, this%id, this%dat, start = start3, ierr = ierr)
+                            type is (model_variable_int3d)
+                                if (input_file%fields(i)%mapping%time_order > 0) then
+                                    start3(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    call nc4_get_data( &
+                                        input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
+                                        start = start3, ierr = ierr)
                                 end if
-                            class is (io_field_int2d)
-                                if (this%time_order > 0) then
-                                    start2(this%time_order) = input_file%ipos
-                                    call nc4_get_data(input_file%iunit, this%label, this%id, this%dat, start = start2, ierr = ierr)
+                            type is (model_variable_int2d)
+                                if (input_file%fields(i)%mapping%time_order > 0) then
+                                    start2(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    call nc4_get_data( &
+                                        input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
+                                        start = start2, ierr = ierr)
                                 end if
-                            class is (io_field_int1d)
-                                if (this%time_order > 0) then
-                                    start1(this%time_order) = input_file%ipos
-                                    call nc4_get_data(input_file%iunit, this%label, this%id, this%dat, start = start1, ierr = ierr)
+                            type is (model_variable_int1d)
+                                if (input_file%fields(i)%mapping%time_order > 0) then
+                                    start1(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    call nc4_get_data( &
+                                        input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
+                                        start = start1, ierr = ierr)
                                 end if
-                            class is (io_field_real5d)
-                                if (this%time_order > 0) then
-                                    start5(this%time_order) = input_file%ipos
-                                    call nc4_get_data(input_file%iunit, this%label, this%id, this%dat, start = start5, ierr = ierr)
+                            type is (model_variable_real5d)
+                                if (input_file%fields(i)%mapping%time_order > 0) then
+                                    start5(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    call nc4_get_data( &
+                                        input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
+                                        start = start5, ierr = ierr)
                                     if (ierr == 0) then
 
                                         !> Apply conversions.
                                         this%dat = this%const_mul*this%dat + this%const_add
                                     end if
                                 end if
-                            class is (io_field_real4d)
-                                if (this%time_order > 0) then
-                                    start4(this%time_order) = input_file%ipos
-                                    call nc4_get_data(input_file%iunit, this%label, this%id, this%dat, start = start4, ierr = ierr)
+                            type is (model_variable_real4d)
+                                if (input_file%fields(i)%mapping%time_order > 0) then
+                                    start4(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    call nc4_get_data( &
+                                        input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
+                                        start = start4, ierr = ierr)
                                     if (ierr == 0) then
 
                                         !> Apply conversions.
                                         this%dat = this%const_mul*this%dat + this%const_add
                                     end if
                                 end if
-                            class is (io_field_real3d)
-                                if (this%time_order > 0) then
-                                    start3(this%time_order) = input_file%ipos
-                                    call nc4_get_data(input_file%iunit, this%label, this%id, this%dat, start = start3, ierr = ierr)
+                            type is (model_variable_real3d)
+                                if (input_file%fields(i)%mapping%time_order > 0) then
+                                    start3(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    call nc4_get_data( &
+                                        input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
+                                        start = start3, ierr = ierr)
                                     if (ierr == 0) then
 
                                         !> Apply conversions.
                                         this%dat = this%const_mul*this%dat + this%const_add
                                     end if
                                 end if
-                            class is (io_field_real2d)
-                                if (this%time_order > 0) then
-                                    start2(this%time_order) = input_file%ipos
-                                    call nc4_get_data(input_file%iunit, this%label, this%id, this%dat, start = start2, ierr = ierr)
+                            type is (model_variable_real2d)
+                                if (input_file%fields(i)%mapping%time_order > 0) then
+                                    start2(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    call nc4_get_data( &
+                                        input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
+                                        start = start2, ierr = ierr)
                                     if (ierr == 0) then
 
                                         !> Apply conversions.
                                         this%dat = this%const_mul*this%dat + this%const_add
                                     end if
                                 end if
-                            class is (io_field_real1d)
-                                if (this%time_order > 0) then
-                                    start1(this%time_order) = input_file%ipos
-                                    call nc4_get_data(input_file%iunit, this%label, this%id, this%dat, start = start1, ierr = ierr)
+                            type is (model_variable_real1d)
+                                if (input_file%fields(i)%mapping%time_order > 0) then
+                                    start1(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    call nc4_get_data( &
+                                        input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
+                                        start = start1, ierr = ierr)
                                     if (ierr == 0) then
 
                                         !> Apply conversions.
@@ -2055,10 +1999,10 @@ module mesh_io
                             !> Assign fields.
                             do i = 1, size(input_file%fields)
                                 select type (this => input_file%fields(i)%field)
-                                    class is (io_field_real1d)
+                                    type is (model_variable_real1d)
 
                                         !> Apply conversions.
-                                        this%dat(t) = this%const_mul*dat1_r(this%id) + this%const_add
+                                        this%dat(t) = this%const_mul*dat1_r(input_file%fields(i)%id) + this%const_add
                                 end select
                             end do
 
@@ -2080,11 +2024,13 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
-        class(io_field) input_field
+        type(io_field) input_field
         integer, intent(out) :: error_status
 
         !> Local variables.
-        integer, dimension(:), allocatable :: dim_lengths
+        real, allocatable :: dat_cell_r(:), dat_tile_r(:)
+        integer, allocatable :: dat_cell_i(:), dat_tile_i(:), dim_lengths(:)
+        character(len = LONG_FIELD_LENGTH), allocatable :: dat_cell_c(:), dat_tile_c(:)
         integer j, i
 
         !> Status.
@@ -2096,230 +2042,248 @@ module mesh_io
             return
         end if
 
-        !> Return if the dimensions of the field are not defined.
-        select type (input_field)
-            class is (io_field_Nd)
-                if (.not. allocated(input_field%dim_names)) then
-                    error_status = 1
-                    return
-                end if
-        end select
+        !> Allocate temporary variables.
+        if (associated(vs%grid)) then
+            allocate(dat_cell_r(vs%grid%dim_length), dat_cell_i(vs%grid%dim_length), dat_cell_c(vs%grid%dim_length))
+            dat_cell_r = huge(0.0)
+            dat_cell_i = huge(0)
+            dat_cell_c = ''
+        end if
+        if (associated(vs%tile)) then
+            allocate(dat_tile_r(vs%tile%dim_length), dat_tile_i(vs%tile%dim_length), dat_tile_c(vs%tile%dim_length))
+            dat_tile_r = huge(0.0)
+            dat_tile_i = huge(0)
+            dat_tile_c = ''
+        end if
 
         !> Allocate the map.
-        select type (input_field)
-            class is (io_field_real5d)
+        select type (this => input_field%field)
+            type is (model_variable_real5d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%cell_map(5, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_real1d(dat = dat_cell_r))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%tile_map(5, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_real1d(dat = dat_tile_r))
                 end if
-                allocate(dim_lengths(5), source = shape(input_field%dat))
-            class is (io_field_real4d)
+                allocate(dim_lengths(5), source = shape(this%dat))
+            type is (model_variable_real4d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%cell_map(4, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_real1d(dat = dat_cell_r))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%tile_map(4, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_real1d(dat = dat_tile_r))
                 end if
-                allocate(dim_lengths(4), source = shape(input_field%dat))
-            class is (io_field_real3d)
+                allocate(dim_lengths(4), source = shape(this%dat))
+            type is (model_variable_real3d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%cell_map(3, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_real1d(dat = dat_cell_r))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%tile_map(3, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_real1d(dat = dat_tile_r))
                 end if
-                allocate(dim_lengths(3), source = shape(input_field%dat))
-            class is (io_field_real2d)
+                allocate(dim_lengths(3), source = shape(this%dat))
+            type is (model_variable_real2d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%cell_map(2, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_real1d(dat = dat_cell_r))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%tile_map(2, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_real1d(dat = dat_tile_r))
                 end if
-                allocate(dim_lengths(2), source = shape(input_field%dat))
-            class is (io_field_real1d)
+                allocate(dim_lengths(2), source = shape(this%dat))
+            type is (model_variable_real1d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%cell_map(1, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_real1d(dat = dat_cell_r))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%tile_map(1, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_real1d(dat = dat_tile_r))
                 end if
-                allocate(dim_lengths(1), source = shape(input_field%dat))
-            class is (io_field_real)
+                allocate(dim_lengths(1), source = shape(this%dat))
+            type is (model_variable_real)
                 if (associated(vs%grid)) then
-                    allocate(input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_real1d(dat = dat_cell_r))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_real1d(dat = dat_tile_r))
                 end if
-
-                !> Return since mapping is necessary.
-                return
-            class is (io_field_int5d)
+            type is (model_variable_int5d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%cell_map(5, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_int1d(dat = dat_cell_i))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%tile_map(5, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_int1d(dat = dat_tile_i))
                 end if
-                allocate(dim_lengths(5), source = shape(input_field%dat))
-            class is (io_field_int4d)
+                allocate(dim_lengths(5), source = shape(this%dat))
+            type is (model_variable_int4d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%cell_map(4, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_int1d(dat = dat_cell_i))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%tile_map(4, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_int1d(dat = dat_tile_i))
                 end if
-                allocate(dim_lengths(4), source = shape(input_field%dat))
-            class is (io_field_int3d)
+                allocate(dim_lengths(4), source = shape(this%dat))
+            type is (model_variable_int3d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%cell_map(3, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_int1d(dat = dat_cell_i))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%tile_map(3, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_int1d(dat = dat_tile_i))
                 end if
-                allocate(dim_lengths(3), source = shape(input_field%dat))
-            class is (io_field_int2d)
+                allocate(dim_lengths(3), source = shape(this%dat))
+            type is (model_variable_int2d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%cell_map(2, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_int1d(dat = dat_cell_i))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%tile_map(2, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_int1d(dat = dat_tile_i))
                 end if
-                allocate(dim_lengths(2), source = shape(input_field%dat))
-            class is (io_field_int1d)
+                allocate(dim_lengths(2), source = shape(this%dat))
+            type is (model_variable_int1d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%cell_map(1, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_int1d(dat = dat_cell_i))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%tile_map(1, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_int1d(dat = dat_tile_i))
                 end if
-                allocate(dim_lengths(1), source = shape(input_field%dat))
-            class is (io_field_int)
+                allocate(dim_lengths(1), source = shape(this%dat))
+            type is (model_variable_int)
                 if (associated(vs%grid)) then
-                    allocate(input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_int1d(dat = dat_cell_i))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_int1d(dat = dat_tile_i))
                 end if
-
-                !> Return since mapping is necessary.
-                return
-            class is (io_field_char1d)
+            type is (model_variable_char1d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%cell_map(1, vs%grid%dim_length), input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_char1d(dat = dat_cell_c))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%tile_map(1, vs%tile%dim_length), input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_char1d(dat = dat_tile_c))
                 end if
-                allocate(dim_lengths(1), source = shape(input_field%dat))
-            class is (io_field_char)
+                allocate(dim_lengths(1), source = shape(this%dat))
+            type is (model_variable_char)
                 if (associated(vs%grid)) then
-                    allocate(input_field%mapped_dat_cell(vs%grid%dim_length))
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_char1d(dat = dat_cell_c))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%mapped_dat_tile(vs%tile%dim_length))
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_char1d(dat = dat_tile_c))
                 end if
-
-                !> Return since mapping is necessary.
-                return
             class default
 
                 !> Return since not a field that requires allocation or mapping.
                 return
         end select
 
-        !> Attach the maps of known dimensions.
-        select type (input_field)
-            class is (io_field_Nd)
-                if ( &
-                    (associated(vs%grid) .and. .not. allocated(input_field%cell_map)) .or. &
-                    (associated(vs%tile) .and. .not. allocated(input_field%tile_map))) then
+        !> Allocate the mapping and target variables.
+        if (associated(vs%grid)) then
+            select type (this => input_field%mapping%mapped_to_cell)
+                type is (model_variable_real1d)
+                    this%dat = huge(0.0)
+                type is (model_variable_int1d)
+                    this%dat = huge(0)
+                type is (model_variable_char1d)
+                    this%dat = ''
+            end select
+            if (allocated(dim_lengths)) then
+                allocate(input_field%mapping%cell_map(size(dim_lengths), vs%grid%dim_length))
+                input_field%mapping%cell_map = 0
+            end if
+        end if
+        if (associated(vs%tile)) then
+            select type (this => input_field%mapping%mapped_to_tile)
+                type is (model_variable_real1d)
+                    this%dat = huge(0.0)
+                type is (model_variable_int1d)
+                    this%dat = huge(0)
+                type is (model_variable_char1d)
+                    this%dat = ''
+            end select
+            if (allocated(dim_lengths)) then
+                allocate(input_field%mapping%tile_map(size(dim_lengths), vs%tile%dim_length))
+                input_field%mapping%tile_map = 0
+            end if
+        end if
 
-                    !> Return if the mapping variable has not been allocated.
-                    error_status = 1
-                    return
+        !> Return if no multi-dimensional mapping is required.
+        if (.not. allocated(dim_lengths)) return
+
+        !> Map known dimensions.
+        do i = 1, size(input_field%mapping%mapped_dim_order)
+
+            !> Identify the map.
+            if ( &
+                input_field%mapping%mapped_dim_order(MAP_ORDER_X) > 0 .and. &
+                input_field%mapping%mapped_dim_order(MAP_ORDER_Y) > 0) then
+                if (allocated(input_field%mapping%cell_map)) then
+                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_X), :) = vs%grid%from_grid_x
+                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_Y), :) = vs%grid%from_grid_y
                 end if
-                if (allocated(input_field%cell_map)) input_field%cell_map = 0
-                if (allocated(input_field%tile_map)) input_field%tile_map = 0
-                do i = 1, size(input_field%mapped_dim_order)
+                if (allocated(input_field%mapping%tile_map)) then
+                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_X), :) = vs%tile%from_grid_x
+                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_Y), :) = vs%tile%from_grid_y
+                end if
+            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_M) > 0) then
+                if (allocated(input_field%mapping%tile_map)) then
+                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_M), :) = vs%tile%from_gru
+                end if
+            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_K) > 0) then
+                if (allocated(input_field%mapping%cell_map)) then
+                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_K), :) = vs%grid%from_riverclass
+                end if
+                if (allocated(input_field%mapping%tile_map)) then
+                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_K), :) = vs%tile%from_riverclass
+                end if
+            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_N) > 0) then
+                if (allocated(input_field%mapping%cell_map)) then
+                    do j = 1, vs%grid%dim_length
+                        input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_N), j) = j
+                    end do
+                end if
+                if (allocated(input_field%mapping%tile_map)) then
+                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_N), :) = vs%tile%from_cell
+                end if
+            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_B) > 0) then
+                if (allocated(input_field%mapping%cell_map)) then
+                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_B), :) = 1
+                end if
+                if (allocated(input_field%mapping%tile_map)) then
+                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_B), :) = 1
+                end if
+            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_G) > 0) then
+                if (allocated(input_field%mapping%tile_map)) then
+                    do j = 1, vs%tile%dim_length
+                        input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_G), j) = j
+                    end do
+                end if
+            end if
+        end do
 
-                    !> Identify the map.
-                    if (input_field%mapped_dim_order(MAP_ORDER_X) > 0 .and. input_field%mapped_dim_order(MAP_ORDER_y) > 0) then
-                        if (allocated(input_field%cell_map)) then
-                            input_field%cell_map(input_field%mapped_dim_order(MAP_ORDER_X), :) = vs%grid%from_grid_x
-                            input_field%cell_map(input_field%mapped_dim_order(MAP_ORDER_Y), :) = vs%grid%from_grid_y
-                        end if
-                        if (allocated(input_field%tile_map)) then
-                            input_field%tile_map(input_field%mapped_dim_order(MAP_ORDER_X), :) = vs%tile%from_grid_x
-                            input_field%tile_map(input_field%mapped_dim_order(MAP_ORDER_Y), :) = vs%tile%from_grid_y
-                        end if
-                    else if (input_field%mapped_dim_order(MAP_ORDER_M) > 0) then
-                        if (allocated(input_field%tile_map)) then
-                            input_field%tile_map(input_field%mapped_dim_order(MAP_ORDER_M), :) = vs%tile%from_gru
-                        end if
-                    else if (input_field%mapped_dim_order(MAP_ORDER_K) > 0) then
-                        if (allocated(input_field%cell_map)) then
-                            input_field%cell_map(input_field%mapped_dim_order(MAP_ORDER_K), :) = vs%grid%from_riverclass
-                        end if
-                        if (allocated(input_field%tile_map)) then
-                            input_field%tile_map(input_field%mapped_dim_order(MAP_ORDER_K), :) = vs%tile%from_riverclass
-                        end if
-                    else if (input_field%mapped_dim_order(MAP_ORDER_N) > 0) then
-                        if (allocated(input_field%cell_map)) then
-                            do j = 1, vs%grid%dim_length
-                                input_field%cell_map(input_field%mapped_dim_order(MAP_ORDER_N), j) = j
-                            end do
-                        end if
-                        if (allocated(input_field%tile_map)) then
-                            input_field%tile_map(input_field%mapped_dim_order(MAP_ORDER_N), :) = vs%tile%from_cell
-                        end if
-                    else if (input_field%mapped_dim_order(MAP_ORDER_B) > 0) then
-                        if (allocated(input_field%cell_map)) then
-                            input_field%cell_map(input_field%mapped_dim_order(MAP_ORDER_B), :) = 1
-                        end if
-                        if (allocated(input_field%tile_map)) then
-                            input_field%tile_map(input_field%mapped_dim_order(MAP_ORDER_B), :) = 1
-                        end if
-                    else if (input_field%mapped_dim_order(MAP_ORDER_G) > 0) then
-                        if (allocated(input_field%tile_map)) then
-                            do j = 1, vs%tile%dim_length
-                                input_field%tile_map(input_field%mapped_dim_order(MAP_ORDER_G), j) = j
-                            end do
-                        end if
-                    end if
-                end do
+        !> Check for unmapped dimensions.
+        do i = 1, size(dim_lengths)
+            if (i == input_field%mapping%time_order) then
 
-                !> Check for unmapped dimensions.
-                do i = 1, size(dim_lengths)
-                    if (i == input_field%time_order) then
+                !> Set an initial index to the 'time' dimension.
+                if (associated(vs%grid)) input_field%mapping%cell_map(i, :) = 1
+                if (associated(vs%tile)) input_field%mapping%tile_map(i, :) = 1
+            else if (dim_lengths(i) == 1) then
 
-                        !> Set an initial index to the 'time' dimension.
-                        if (associated(vs%grid)) input_field%cell_map(i, :) = 1
-                        if (associated(vs%tile)) input_field%tile_map(i, :) = 1
-                    else if (dim_lengths(i) == 1) then
+                !> Allow a map if the size of the unmapped dimensions is one.
+                if (associated(vs%grid)) then
+                    if (all(input_field%mapping%cell_map(i, :) == 0)) input_field%mapping%cell_map(i, :) = 1
+                end if
+                if (associated(vs%tile)) then
+                    if (all(input_field%mapping%tile_map(i, :) == 0)) input_field%mapping%tile_map(i, :) = 1
+                end if
+            else
 
-                        !> Allow a map if the size of the unmapped dimensions is one.
-                        if (associated(vs%grid)) then
-                            if (all(input_field%cell_map(i, :) == 0)) input_field%cell_map(i, :) = 1
-                        end if
-                        if (associated(vs%tile)) then
-                            if (all(input_field%tile_map(i, :) == 0)) input_field%tile_map(i, :) = 1
-                        end if
-                    else
-
-                        !> Check for unassigned field.
-                        if (associated(vs%grid)) then
-                            if (all(input_field%cell_map(i, :) == 0)) error_status = 1
-                        end if
-                        if (associated(vs%tile)) then
-                            if (all(input_field%tile_map(i, :) == 0)) error_status = 1
-                        end if
-                    end if
-                end do
-        end select
+                !> Check for unassigned field.
+                if (associated(vs%grid)) then
+                    if (all(input_field%mapping%cell_map(i, :) == 0)) error_status = 1
+                end if
+                if (associated(vs%tile)) then
+                    if (all(input_field%mapping%tile_map(i, :) == 0)) error_status = 1
+                end if
+            end if
+        end do
 
     end subroutine
 
@@ -2329,7 +2293,7 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
-        class(io_field) input_field
+        type(io_field) input_field
         integer, intent(in), optional :: time_id
         integer, intent(out) :: error_status
 
@@ -2340,341 +2304,56 @@ module mesh_io
         !> Status.
         error_status = 0
 
+        !> Create field maps (if not already created).
+        if (allocated(input_field%dim_names)) then
+            if (.not. (allocated(input_field%mapping%mapped_to_cell) .or. allocated(input_field%mapping%mapped_to_tile))) then
+                call create_ranked_field_and_maps(input_field, error_status)
+                if (error_status /= 0) then
+                    call print_error( &
+                        "An error occurred identifying and mapping the spatial dimensions of the '" // &
+                        trim(input_field%label) // "' variable.")
+                    return
+                end if
+            end if
+        end if
+
         !> Reset fields.
-        select type (input_field)
-            class is (io_field_real)
-                if (allocated(input_field%mapped_dat_cell)) input_field%mapped_dat_cell = huge(input_field%mapped_dat_cell)
-                if (allocated(input_field%mapped_dat_tile)) input_field%mapped_dat_tile = huge(input_field%mapped_dat_tile)
-            class is (io_field_real1d)
-                if (allocated(input_field%mapped_dat_cell)) input_field%mapped_dat_cell = huge(input_field%mapped_dat_cell)
-                if (allocated(input_field%mapped_dat_tile)) input_field%mapped_dat_tile = huge(input_field%mapped_dat_tile)
-            class is (io_field_int)
-                if (allocated(input_field%mapped_dat_cell)) input_field%mapped_dat_cell = huge(input_field%mapped_dat_cell)
-                if (allocated(input_field%mapped_dat_tile)) input_field%mapped_dat_tile = huge(input_field%mapped_dat_tile)
-            class is (io_field_int1d)
-                if (allocated(input_field%mapped_dat_cell)) input_field%mapped_dat_cell = huge(input_field%mapped_dat_cell)
-                if (allocated(input_field%mapped_dat_tile)) input_field%mapped_dat_tile = huge(input_field%mapped_dat_tile)
-            class is (io_field_char)
-                if (allocated(input_field%mapped_dat_cell)) input_field%mapped_dat_cell = huge(input_field%mapped_dat_cell)
-                if (allocated(input_field%mapped_dat_tile)) input_field%mapped_dat_tile = huge(input_field%mapped_dat_tile)
-            class is (io_field_char1d)
-                if (allocated(input_field%mapped_dat_cell)) input_field%mapped_dat_cell = huge(input_field%mapped_dat_cell)
-                if (allocated(input_field%mapped_dat_tile)) input_field%mapped_dat_tile = huge(input_field%mapped_dat_tile)
-        end select
+        if (allocated(input_field%mapping%mapped_to_cell)) then
+            select type (this => input_field%mapping%mapped_to_cell)
+                type is (model_variable_real1d)
+                    this%dat = huge(0.0)
+                type is (model_variable_int1d)
+                    this%dat = huge(0)
+                type is (model_variable_char1d)
+                    this%dat = ''
+            end select
+        end if
+        if (allocated(input_field%mapping%mapped_to_tile)) then
+            select type (this => input_field%mapping%mapped_to_tile)
+                type is (model_variable_real1d)
+                    this%dat = huge(0.0)
+                type is (model_variable_int1d)
+                    this%dat = huge(0)
+                type is (model_variable_char1d)
+                    this%dat = ''
+            end select
+        end if
 
         !> Return if maps are not defined.
-        select type (input_field)
-            class is (io_field_Nd)
-                if (allocated(input_field%cell_map)) then
-                    if (all(input_field%cell_map == 0)) return
-                else if (allocated(input_field%tile_map)) then
-                    if (all(input_field%tile_map == 0)) return
-                end if
-        end select
+        if (.not. allocated(input_field%mapping%cell_map) .and. .not. allocated(input_field%mapping%tile_map)) return
 
         !> Time index.
         t = 1
         if (present(time_id)) t = time_id
 
         !> Map the field.
-        select type (input_field)
-
-            !> real.
-            class is (io_field_real)
-                if (allocated(input_field%mapped_dat_cell)) input_field%mapped_dat_cell = input_field%dat
-                if (allocated(input_field%mapped_dat_tile)) input_field%mapped_dat_tile = input_field%dat
-
-            !> real(:).
-            class is (io_field_real1d)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    if (allocated(input_field%cell_map)) then
-                        if (input_field%time_order > 0) input_field%cell_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_cell)
-                            input_field%mapped_dat_cell(i) = input_field%dat(input_field%cell_map(1, i))
-                        end do
-                    else
-                        input_field%mapped_dat_cell = input_field%dat
-                    end if
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    if (allocated(input_field%tile_map)) then
-                        if (input_field%time_order > 0) input_field%tile_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_tile)
-                            input_field%mapped_dat_tile(i) = input_field%dat(input_field%tile_map(1, i))
-                        end do
-                    else
-                        input_field%mapped_dat_tile = input_field%dat
-                    end if
-                end if
-
-            !> real(:, :).
-            class is (io_field_real2d)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    if (allocated(input_field%cell_map)) then
-                        if (input_field%time_order > 0) input_field%cell_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_cell)
-                            input_field%mapped_dat_cell(i) = input_field%dat(input_field%cell_map(1, i), input_field%cell_map(2, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_cell, error_status)
-                    end if
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    if (allocated(input_field%tile_map)) then
-                        if (input_field%time_order > 0) input_field%tile_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_tile)
-                            input_field%mapped_dat_tile(i) = input_field%dat(input_field%tile_map(1, i), input_field%tile_map(2, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_tile, error_status)
-                    end if
-                end if
-
-            !> real(:, :, :).
-            class is (io_field_real3d)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    if (allocated(input_field%cell_map)) then
-                        if (input_field%time_order > 0) input_field%cell_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_cell)
-                            input_field%mapped_dat_cell(i) = input_field%dat( &
-                                input_field%cell_map(1, i), input_field%cell_map(2, i), input_field%cell_map(3, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_cell, error_status)
-                    end if
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    if (allocated(input_field%tile_map)) then
-                        if (input_field%time_order > 0) input_field%tile_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_tile)
-                            input_field%mapped_dat_tile(i) = input_field%dat( &
-                                input_field%tile_map(1, i), input_field%tile_map(2, i), input_field%tile_map(3, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_tile, error_status)
-                    end if
-                end if
-
-            !> real(:, :, :, :).
-            class is (io_field_real4d)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    if (allocated(input_field%cell_map)) then
-                        if (input_field%time_order > 0) input_field%cell_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_cell)
-                            input_field%mapped_dat_cell(i) = input_field%dat( &
-                                input_field%cell_map(1, i), input_field%cell_map(2, i), input_field%cell_map(3, i), &
-                                input_field%cell_map(4, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_cell, error_status)
-                    end if
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    if (allocated(input_field%tile_map)) then
-                        if (input_field%time_order > 0) input_field%tile_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_tile)
-                            input_field%mapped_dat_tile(i) = input_field%dat( &
-                                input_field%tile_map(1, i), input_field%tile_map(2, i), input_field%tile_map(3, i), &
-                                input_field%tile_map(4, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_tile, error_status)
-                    end if
-                end if
-
-            !> real(:, :, :, :, :).
-            class is (io_field_real5d)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    if (allocated(input_field%cell_map)) then
-                        if (input_field%time_order > 0) input_field%cell_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_cell)
-                            input_field%mapped_dat_cell(i) = input_field%dat( &
-                                input_field%cell_map(1, i), input_field%cell_map(2, i), input_field%cell_map(3, i), &
-                                input_field%cell_map(4, i), input_field%cell_map(5, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_cell, error_status)
-                    end if
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    if (allocated(input_field%tile_map)) then
-                        if (input_field%time_order > 0) input_field%tile_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_tile)
-                            input_field%mapped_dat_tile(i) = input_field%dat( &
-                                input_field%tile_map(1, i), input_field%tile_map(2, i), input_field%tile_map(3, i), &
-                                input_field%tile_map(4, i), input_field%tile_map(5, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_tile, error_status)
-                    end if
-                end if
-
-            !> integer.
-            class is (io_field_int)
-                if (allocated(input_field%mapped_dat_cell)) input_field%mapped_dat_cell = input_field%dat
-                if (allocated(input_field%mapped_dat_tile)) input_field%mapped_dat_tile = input_field%dat
-
-            !> integer(:).
-            class is (io_field_int1d)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    if (allocated(input_field%cell_map)) then
-                        if (input_field%time_order > 0) input_field%cell_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_cell)
-                            input_field%mapped_dat_cell(i) = input_field%dat(input_field%cell_map(1, i))
-                        end do
-                    else
-                        input_field%mapped_dat_cell = input_field%dat
-                    end if
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    if (allocated(input_field%tile_map)) then
-                        if (input_field%time_order > 0) input_field%tile_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_tile)
-                            input_field%mapped_dat_tile(i) = input_field%dat(input_field%tile_map(1, i))
-                        end do
-                    else
-                        input_field%mapped_dat_tile = input_field%dat
-                    end if
-                end if
-
-            !> integer(:, :).
-            class is (io_field_int2d)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    if (allocated(input_field%cell_map)) then
-                        if (input_field%time_order > 0) input_field%cell_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_cell)
-                            input_field%mapped_dat_cell(i) = input_field%dat(input_field%cell_map(1, i), input_field%cell_map(2, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_cell, error_status)
-                    end if
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    if (allocated(input_field%tile_map)) then
-                        if (input_field%time_order > 0) input_field%tile_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_tile)
-                            input_field%mapped_dat_tile(i) = input_field%dat(input_field%tile_map(1, i), input_field%tile_map(2, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_tile, error_status)
-                    end if
-                end if
-
-            !> integer(:, :, :).
-            class is (io_field_int3d)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    if (allocated(input_field%cell_map)) then
-                        if (input_field%time_order > 0) input_field%cell_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_cell)
-                            input_field%mapped_dat_cell(i) = input_field%dat( &
-                                input_field%cell_map(1, i), input_field%cell_map(2, i), input_field%cell_map(3, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_cell, error_status)
-                    end if
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    if (allocated(input_field%tile_map)) then
-                        if (input_field%time_order > 0) input_field%tile_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_tile)
-                            input_field%mapped_dat_tile(i) = input_field%dat( &
-                                input_field%tile_map(1, i), input_field%tile_map(2, i), input_field%tile_map(3, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_tile, error_status)
-                    end if
-                end if
-
-            !> integer(:, :, :, :).
-            class is (io_field_int4d)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    if (allocated(input_field%cell_map)) then
-                        if (input_field%time_order > 0) input_field%cell_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_cell)
-                            input_field%mapped_dat_cell(i) = input_field%dat( &
-                                input_field%cell_map(1, i), input_field%cell_map(2, i), input_field%cell_map(3, i), &
-                                input_field%cell_map(4, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_cell, error_status)
-                    end if
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    if (allocated(input_field%tile_map)) then
-                        if (input_field%time_order > 0) input_field%tile_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_tile)
-                            input_field%mapped_dat_tile(i) = input_field%dat( &
-                                input_field%tile_map(1, i), input_field%tile_map(2, i), input_field%tile_map(3, i), &
-                                input_field%tile_map(4, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_tile, error_status)
-                    end if
-                end if
-
-            !> integer(:, :, :, :, :).
-            class is (io_field_int5d)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    if (allocated(input_field%cell_map)) then
-                        if (input_field%time_order > 0) input_field%cell_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_cell)
-                            input_field%mapped_dat_cell(i) = input_field%dat( &
-                                input_field%cell_map(1, i), input_field%cell_map(2, i), input_field%cell_map(3, i), &
-                                input_field%cell_map(4, i), input_field%cell_map(5, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_cell, error_status)
-                    end if
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    if (allocated(input_field%tile_map)) then
-                        if (input_field%time_order > 0) input_field%tile_map(input_field%time_order, :) = t
-                        do i = 1, size(input_field%mapped_dat_tile)
-                            input_field%mapped_dat_tile(i) = input_field%dat( &
-                                input_field%tile_map(1, i), input_field%tile_map(2, i), input_field%tile_map(3, i), &
-                                input_field%tile_map(4, i), input_field%tile_map(5, i))
-                        end do
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_tile, error_status)
-                    end if
-                end if
-
-            !> character(:)
-            class is (io_field_char1d)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    if (allocated(input_field%cell_map)) then
-                        call assign_field(input_field, dat1_r, error_status)
-                        if (error_status == 0) then
-                            do i = 1, size(input_field%mapped_dat_cell)
-                                input_field%mapped_dat_cell(i) = dat1_r(input_field%cell_map(1, i))
-                            end do
-                        end if
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_cell, error_status)
-                    end if
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    if (allocated(input_field%tile_map)) then
-                        call assign_field(input_field, dat1_r, error_status)
-                        if (error_status == 0) then
-                            do i = 1, size(input_field%mapped_dat_tile)
-                                input_field%mapped_dat_tile(i) = dat1_r(input_field%tile_map(1, i))
-                            end do
-                        end if
-                    else
-                        call assign_field(input_field, input_field%mapped_dat_tile, error_status)
-                    end if
-                end if
-
-            !> character.
-            class is (io_field_char)
-                if (allocated(input_field%mapped_dat_cell)) then
-                    call assign_field(input_field, input_field%mapped_dat_cell, error_status)
-                end if
-                if (allocated(input_field%mapped_dat_tile)) then
-                    call assign_field(input_field, input_field%mapped_dat_tile, error_status)
-                end if
-        end select
+        if (allocated(input_field%mapping%cell_map)) then
+            if (input_field%mapping%time_order > 0) input_field%mapping%cell_map(input_field%mapping%time_order, :) = t
+        end if
+        if (allocated(input_field%mapping%tile_map)) then
+            if (input_field%mapping%time_order > 0) input_field%mapping%tile_map(input_field%mapping%time_order, :) = t
+        end if
+        call assign_field_to_mapped_value(input_field, error_status)
 
     end subroutine
 
@@ -2686,70 +2365,44 @@ module mesh_io
         !> Input/output variables.
         !*  input_field: Input field to assign to 'output_field'.
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        class(io_field) input_field
+        type(io_field) input_field
         integer, intent(in), optional :: time_id
         integer, intent(out) :: error_status
 
         !> Local variables.
-        integer i, time_order, iwarn, ierr
-
-        !> Map dimensions and transfer the time order to a local variable (for diagnostic output).
-        time_order = 0
-        iwarn = 0
-        ierr = 0
-        select type (input_field)
-            class is (io_field_Nd)
-                time_order = input_field%time_order
-                if (.not. allocated(input_field%cell_map) .and. .not. allocated(input_field%tile_map)) then
-
-                    !> Map the dimensions.
-                    call create_ranked_field_and_maps(input_field, ierr)
-                    if (ierr /= 0) iwarn = 2
-                end if
-        end select
+        integer i
 
         !> Map the variable.
-        call map_field_to_ranked_output(input_field, time_id, ierr)
-        if (ierr /= 0) iwarn = 1
-
-        !> Special conditions not covered by mapping alone.
-        if (input_field%mapped_dim_order(MAP_ORDER_M) > 0) then
-            select type (input_field)
-                class is (io_field_realNd)
-                    if (all(input_field%mapped_dat_tile /= huge(input_field%mapped_dat_tile))) then
-                        input_field%mapped_dat_cell = 0.0
-                        do i = 1, vs%tile%dim_length
-                            input_field%mapped_dat_cell(vs%tile%from_cell(i)) = &
-                                input_field%mapped_dat_cell(vs%tile%from_cell(i)) + &
-                                input_field%mapped_dat_tile(i)*vs%tile%area_weight(i)
-                        end do
-                    end if
-            end select
-        else if (input_field%mapped_dim_order(MAP_ORDER_G) > 0) then
-            select type (input_field)
-                class is (io_field_realNd)
-                    if (all(input_field%mapped_dat_tile /= huge(input_field%mapped_dat_tile))) then
-                        input_field%mapped_dat_cell = 0.0
-                        do i = 1, vs%tile%dim_length
-                            input_field%mapped_dat_cell(vs%tile%from_cell(i)) = &
-                                input_field%mapped_dat_cell(vs%tile%from_cell(i)) + &
-                                input_field%mapped_dat_tile(i)*vs%tile%area_weight(i)
-                        end do
-                    end if
-            end select
+        call map_field_to_ranked_output(input_field, time_id, error_status)
+        if (error_status /= 0 .and. input_field%mapping%time_order == 0) then
+            call print_error("An error occurred mapping the '" // trim(input_field%label) // "' variable.")
+            return
         end if
 
-        !> Check status.
-        if (.not. time_order > 0) then
-            select case (iwarn)
-                case (2)
-                    call print_error( &
-                        "An error occurred identifying and mapping the spatial dimensions of the '" // trim(input_field%label) // &
-                        "' variable.")
-                    error_status = 1
-                case (1)
-                    call print_error("An error occurred mapping the '" // trim(input_field%label) // "' variable.")
-                    error_status = 1
+        !> Special conditions not covered by mapping alone.
+        if (allocated(input_field%mapping%cell_map) .and. allocated(input_field%mapping%tile_map)) then
+            select type (cell => input_field%mapping%mapped_to_cell)
+                type is (model_variable_real1d)
+                    select type (tile => input_field%mapping%mapped_to_tile)
+                        type is (model_variable_real1d)
+                            if (input_field%mapping%mapped_dim_order(MAP_ORDER_M) > 0) then
+                                if (all(tile%dat /= huge(tile%dat))) then
+                                    cell%dat = 0.0
+                                    do i = 1, vs%tile%dim_length
+                                        cell%dat(vs%tile%from_cell(i)) = &
+                                            cell%dat(vs%tile%from_cell(i)) + tile%dat(i)*vs%tile%area_weight(i)
+                                    end do
+                                end if
+                            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_G) > 0) then
+                                if (all(tile%dat /= huge(tile%dat))) then
+                                    cell%dat = 0.0
+                                    do i = 1, vs%tile%dim_length
+                                        cell%dat(vs%tile%from_cell(i)) = &
+                                            cell%dat(vs%tile%from_cell(i)) + tile%dat(i)*vs%tile%area_weight(i)
+                                    end do
+                                end if
+                            end if
+                    end select
             end select
         end if
 
@@ -2760,7 +2413,7 @@ module mesh_io
         !> Input/output variables.
         !*  field_list: List of fields (read from file).
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        type(io_field_wrapper), dimension(:), intent(in) :: field_list
+        type(io_field), dimension(:), intent(in) :: field_list
         integer, intent(in), optional :: time_id
         integer, intent(out) :: error_status
 
@@ -2773,7 +2426,7 @@ module mesh_io
         !> Loop through the fields to assign remaining variables.
         ierr = 0
         do i = 1, size(field_list)
-            call create_mapped_output_from_field(field_list(i)%field, time_id, ierr)
+            call create_mapped_output_from_field(field_list(i), time_id, ierr)
             if (ierr /= 0) error_status = ierr
         end do
 
@@ -2785,28 +2438,41 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
-        class(io_field), intent(in) :: input_field
+        type(io_field), intent(in) :: input_field
         real, dimension(:), allocatable :: ranked_output
         integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i, ierr
 
         !> Reset variable.
         if (.not. allocated(ranked_output)) allocate(ranked_output(vs%grid%dim_length))
         ranked_output = huge(ranked_output)
 
         !> Assign 'cell' value from field.
-        select type (input_field)
-            class is (io_field_real)
-                ranked_output = input_field%mapped_dat_cell
-            class is (io_field_realNd)
-                ranked_output = input_field%mapped_dat_cell
-            class is (io_field_int)
-                ranked_output = real(input_field%mapped_dat_cell)
-            class is (io_field_intNd)
-                ranked_output = real(input_field%mapped_dat_cell)
-            class is (io_field_char)
-                ranked_output = input_field%mapped_dat_cell
-            class is (io_field_char1d)
-                ranked_output = input_field%mapped_dat_cell
+        select type (this => input_field%mapping%mapped_to_cell)
+            type is (model_variable_real1d)
+                ranked_output = this%dat
+            type is (model_variable_real)
+                ranked_output(:) = this%dat
+            type is (model_variable_int1d)
+                ranked_output = real(this%dat)
+            type is (model_variable_int)
+                ranked_output(:) = real(this%dat)
+            type is (model_variable_char1d)
+                do i = 1, size(ranked_output)
+                    read(this%dat(i), *, iostat = ierr) ranked_output(i)
+                    if (ierr /= 0) error_status = 1
+                end do
+            type is (model_variable_char)
+                if (size(ranked_output) > 0) then
+                    read(this%dat, *, iostat = ierr) ranked_output(i)
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        ranked_output(:) = ranked_output(1)
+                    end if
+                end if
         end select
 
         !> Check for errors.
@@ -2820,28 +2486,41 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
-        class(io_field), intent(in) :: input_field
+        type(io_field), intent(in) :: input_field
         real, dimension(:), pointer :: ranked_output_pntr
         integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i, ierr
 
         !> Reset variable.
         if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%grid%dim_length))
         ranked_output_pntr = huge(ranked_output_pntr)
 
         !> Assign 'cell' value from field.
-        select type (input_field)
-            class is (io_field_real)
-                ranked_output_pntr = input_field%mapped_dat_cell
-            class is (io_field_realNd)
-                ranked_output_pntr = input_field%mapped_dat_cell
-            class is (io_field_int)
-                ranked_output_pntr = real(input_field%mapped_dat_cell)
-            class is (io_field_intNd)
-                ranked_output_pntr = real(input_field%mapped_dat_cell)
-            class is (io_field_char)
-                ranked_output_pntr = input_field%mapped_dat_cell
-            class is (io_field_char1d)
-                ranked_output_pntr = input_field%mapped_dat_cell
+        select type (this => input_field%mapping%mapped_to_cell)
+            type is (model_variable_real1d)
+                ranked_output_pntr = this%dat
+            type is (model_variable_real)
+                ranked_output_pntr(:) = this%dat
+            type is (model_variable_int1d)
+                ranked_output_pntr = real(this%dat)
+            type is (model_variable_int)
+                ranked_output_pntr(:) = real(this%dat)
+            type is (model_variable_char1d)
+                do i = 1, size(ranked_output_pntr)
+                    read(this%dat(i), *, iostat = ierr) ranked_output_pntr(i)
+                    if (ierr /= 0) error_status = 1
+                end do
+            type is (model_variable_char)
+                if (size(ranked_output_pntr) > 0) then
+                    read(this%dat, *, iostat = ierr) ranked_output_pntr(i)
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        ranked_output_pntr(:) = ranked_output_pntr(1)
+                    end if
+                end if
         end select
 
         !> Check for errors.
@@ -2855,28 +2534,41 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
-        class(io_field), intent(in) :: input_field
+        type(io_field), intent(in) :: input_field
         integer, dimension(:), allocatable :: ranked_output
         integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i, ierr
 
         !> Reset variable.
         if (.not. allocated(ranked_output)) allocate(ranked_output(vs%grid%dim_length))
         ranked_output = huge(ranked_output)
 
         !> Assign 'cell' value from field.
-        select type (input_field)
-            class is (io_field_real)
-                ranked_output = int(input_field%mapped_dat_cell)
-            class is (io_field_realNd)
-                ranked_output = int(input_field%mapped_dat_cell)
-            class is (io_field_int)
-                ranked_output = input_field%mapped_dat_cell
-            class is (io_field_intNd)
-                ranked_output = input_field%mapped_dat_cell
-            class is (io_field_char)
-                ranked_output = int(input_field%mapped_dat_cell)
-            class is (io_field_char1d)
-                ranked_output = int(input_field%mapped_dat_cell)
+        select type (this => input_field%mapping%mapped_to_cell)
+            type is (model_variable_real1d)
+                ranked_output = int(this%dat)
+            type is (model_variable_real)
+                ranked_output(:) = int(this%dat)
+            type is (model_variable_int1d)
+                ranked_output = this%dat
+            type is (model_variable_int)
+                ranked_output(:) = this%dat
+            type is (model_variable_char1d)
+                do i = 1, size(ranked_output)
+                    read(this%dat(i), *, iostat = ierr) ranked_output(i)
+                    if (ierr /= 0) error_status = 1
+                end do
+            type is (model_variable_char)
+                if (size(ranked_output) > 0) then
+                    read(this%dat, *, iostat = ierr) ranked_output(i)
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        ranked_output(:) = ranked_output(1)
+                    end if
+                end if
         end select
 
         !> Check for errors.
@@ -2890,28 +2582,41 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
-        class(io_field), intent(in) :: input_field
+        type(io_field), intent(in) :: input_field
         integer, dimension(:), pointer :: ranked_output_pntr
         integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i, ierr
 
         !> Reset variable.
         if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%grid%dim_length))
         ranked_output_pntr = huge(ranked_output_pntr)
 
         !> Assign 'cell' value from field.
-        select type (input_field)
-            class is (io_field_real)
-                ranked_output_pntr = int(input_field%mapped_dat_cell)
-            class is (io_field_realNd)
-                ranked_output_pntr = int(input_field%mapped_dat_cell)
-            class is (io_field_int)
-                ranked_output_pntr = input_field%mapped_dat_cell
-            class is (io_field_intNd)
-                ranked_output_pntr = input_field%mapped_dat_cell
-            class is (io_field_char)
-                ranked_output_pntr = int(input_field%mapped_dat_cell)
-            class is (io_field_char1d)
-                ranked_output_pntr = int(input_field%mapped_dat_cell)
+        select type (this => input_field%mapping%mapped_to_cell)
+            type is (model_variable_real1d)
+                ranked_output_pntr = int(this%dat)
+            type is (model_variable_real)
+                ranked_output_pntr(:) = int(this%dat)
+            type is (model_variable_int1d)
+                ranked_output_pntr = this%dat
+            type is (model_variable_int)
+                ranked_output_pntr(:) = this%dat
+            type is (model_variable_char1d)
+                do i = 1, size(ranked_output_pntr)
+                    read(this%dat(i), *, iostat = ierr) ranked_output_pntr(i)
+                    if (ierr /= 0) error_status = 1
+                end do
+            type is (model_variable_char)
+                if (size(ranked_output_pntr) > 0) then
+                    read(this%dat, *, iostat = ierr) ranked_output_pntr(i)
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        ranked_output_pntr(:) = ranked_output_pntr(1)
+                    end if
+                end if
         end select
 
         !> Check for errors.
@@ -2925,28 +2630,41 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
-        class(io_field), intent(in) :: input_field
+        type(io_field), intent(in) :: input_field
         real, dimension(:), allocatable :: ranked_output
         integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i, ierr
 
         !> Reset variable.
         if (.not. allocated(ranked_output)) allocate(ranked_output(vs%tile%dim_length))
         ranked_output = huge(ranked_output)
 
         !> Assign 'cell' value from field.
-        select type (input_field)
-            class is (io_field_real)
-                ranked_output = input_field%mapped_dat_tile
-            class is (io_field_realNd)
-                ranked_output = input_field%mapped_dat_tile
-            class is (io_field_int)
-                ranked_output = real(input_field%mapped_dat_tile)
-            class is (io_field_intNd)
-                ranked_output = real(input_field%mapped_dat_tile)
-            class is (io_field_char)
-                ranked_output = input_field%mapped_dat_tile
-            class is (io_field_char1d)
-                ranked_output = input_field%mapped_dat_tile
+        select type (this => input_field%mapping%mapped_to_tile)
+            type is (model_variable_real1d)
+                ranked_output = this%dat
+            type is (model_variable_real)
+                ranked_output(:) = this%dat
+            type is (model_variable_int1d)
+                ranked_output = real(this%dat)
+            type is (model_variable_int)
+                ranked_output(:) = real(this%dat)
+            type is (model_variable_char1d)
+                do i = 1, size(ranked_output)
+                    read(this%dat(i), *, iostat = ierr) ranked_output(i)
+                    if (ierr /= 0) error_status = 1
+                end do
+            type is (model_variable_char)
+                if (size(ranked_output) > 0) then
+                    read(this%dat, *, iostat = ierr) ranked_output(i)
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        ranked_output(:) = ranked_output(1)
+                    end if
+                end if
         end select
 
         !> Check for errors.
@@ -2960,28 +2678,41 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
-        class(io_field), intent(in) :: input_field
+        type(io_field), intent(in) :: input_field
         real, dimension(:), pointer :: ranked_output_pntr
         integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i, ierr
 
         !> Reset variable.
         if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%tile%dim_length))
         ranked_output_pntr = huge(ranked_output_pntr)
 
         !> Assign 'cell' value from field.
-        select type (input_field)
-            class is (io_field_real)
-                ranked_output_pntr = input_field%mapped_dat_tile
-            class is (io_field_realNd)
-                ranked_output_pntr = input_field%mapped_dat_tile
-            class is (io_field_int)
-                ranked_output_pntr = real(input_field%mapped_dat_tile)
-            class is (io_field_intNd)
-                ranked_output_pntr = real(input_field%mapped_dat_tile)
-            class is (io_field_char)
-                ranked_output_pntr = input_field%mapped_dat_tile
-            class is (io_field_char1d)
-                ranked_output_pntr = input_field%mapped_dat_tile
+        select type (this => input_field%mapping%mapped_to_tile)
+            type is (model_variable_real1d)
+                ranked_output_pntr = this%dat
+            type is (model_variable_real)
+                ranked_output_pntr(:) = this%dat
+            type is (model_variable_int1d)
+                ranked_output_pntr = real(this%dat)
+            type is (model_variable_int)
+                ranked_output_pntr(:) = real(this%dat)
+            type is (model_variable_char1d)
+                do i = 1, size(ranked_output_pntr)
+                    read(this%dat(i), *, iostat = ierr) ranked_output_pntr(i)
+                    if (ierr /= 0) error_status = 1
+                end do
+            type is (model_variable_char)
+                if (size(ranked_output_pntr) > 0) then
+                    read(this%dat, *, iostat = ierr) ranked_output_pntr(i)
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        ranked_output_pntr(:) = ranked_output_pntr(1)
+                    end if
+                end if
         end select
 
         !> Check for errors.
@@ -2995,28 +2726,41 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
-        class(io_field), intent(in) :: input_field
+        type(io_field), intent(in) :: input_field
         integer, dimension(:), allocatable :: ranked_output
         integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i, ierr
 
         !> Reset variable.
         if (.not. allocated(ranked_output)) allocate(ranked_output(vs%tile%dim_length))
         ranked_output = huge(ranked_output)
 
         !> Assign 'cell' value from field.
-        select type (input_field)
-            class is (io_field_real)
-                ranked_output = int(input_field%mapped_dat_tile)
-            class is (io_field_realNd)
-                ranked_output = int(input_field%mapped_dat_tile)
-            class is (io_field_int)
-                ranked_output = input_field%mapped_dat_tile
-            class is (io_field_intNd)
-                ranked_output = input_field%mapped_dat_tile
-            class is (io_field_char)
-                ranked_output = int(input_field%mapped_dat_tile)
-            class is (io_field_char1d)
-                ranked_output = int(input_field%mapped_dat_tile)
+        select type (this => input_field%mapping%mapped_to_tile)
+            type is (model_variable_real1d)
+                ranked_output = int(this%dat)
+            type is (model_variable_real)
+                ranked_output(:) = int(this%dat)
+            type is (model_variable_int1d)
+                ranked_output = this%dat
+            type is (model_variable_int)
+                ranked_output(:) = this%dat
+            type is (model_variable_char1d)
+                do i = 1, size(ranked_output)
+                    read(this%dat(i), *, iostat = ierr) ranked_output(i)
+                    if (ierr /= 0) error_status = 1
+                end do
+            type is (model_variable_char)
+                if (size(ranked_output) > 0) then
+                    read(this%dat, *, iostat = ierr) ranked_output(i)
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        ranked_output(:) = ranked_output(1)
+                    end if
+                end if
         end select
 
         !> Check for errors.
@@ -3030,28 +2774,41 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
-        class(io_field), intent(in) :: input_field
+        type(io_field), intent(in) :: input_field
         integer, dimension(:), pointer :: ranked_output_pntr
         integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i, ierr
 
         !> Reset variable.
         if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%tile%dim_length))
         ranked_output_pntr = huge(ranked_output_pntr)
 
         !> Assign 'cell' value from field.
-        select type (input_field)
-            class is (io_field_real)
-                ranked_output_pntr = int(input_field%mapped_dat_tile)
-            class is (io_field_realNd)
-                ranked_output_pntr = int(input_field%mapped_dat_tile)
-            class is (io_field_int)
-                ranked_output_pntr = input_field%mapped_dat_tile
-            class is (io_field_intNd)
-                ranked_output_pntr = input_field%mapped_dat_tile
-            class is (io_field_char)
-                ranked_output_pntr = int(input_field%mapped_dat_tile)
-            class is (io_field_char1d)
-                ranked_output_pntr = int(input_field%mapped_dat_tile)
+        select type (this => input_field%mapping%mapped_to_tile)
+            type is (model_variable_real1d)
+                ranked_output_pntr = int(this%dat)
+            type is (model_variable_real)
+                ranked_output_pntr(:) = int(this%dat)
+            type is (model_variable_int1d)
+                ranked_output_pntr = this%dat
+            type is (model_variable_int)
+                ranked_output_pntr(:) = this%dat
+            type is (model_variable_char1d)
+                do i = 1, size(ranked_output_pntr)
+                    read(this%dat(i), *, iostat = ierr) ranked_output_pntr(i)
+                    if (ierr /= 0) error_status = 1
+                end do
+            type is (model_variable_char)
+                if (size(ranked_output_pntr) > 0) then
+                    read(this%dat, *, iostat = ierr) ranked_output_pntr(i)
+                    if (ierr /= 0) then
+                        error_status = 1
+                    else
+                        ranked_output_pntr(:) = ranked_output_pntr(1)
+                    end if
+                end if
         end select
 
         !> Check for errors.
@@ -3069,7 +2826,7 @@ module mesh_io
         !> Input/output variables.
         !*  input_field: Input field to assign to 'output_field'.
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        class(io_field) input_field
+        type(io_field) input_field
         integer, intent(out) :: error_status
 
         !> Local variables.
@@ -3080,10 +2837,9 @@ module mesh_io
 
         !> Transfer the time order to a local variable (for diagnostic output).
         time_order = 0
-        select type (input_field)
-            class is (io_field_Nd)
-                time_order = input_field%time_order
-        end select
+        if (allocated(input_field%dim_names)) then
+            time_order = input_field%mapping%time_order
+        end if
 
         !> Identify and assign variables.
         isaved = 1
@@ -3186,7 +2942,7 @@ module mesh_io
         !> Input/output variables.
         !*  field_list: List of fields (read from file).
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        type(io_field_wrapper), dimension(:), intent(in) :: field_list
+        type(io_field), dimension(:), intent(in) :: field_list
         integer, intent(out) :: error_status
 
         !> Local variables.
@@ -3198,7 +2954,7 @@ module mesh_io
         !> Loop through the fields to assign remaining variables.
         ierr = 0
         do i = 1, size(field_list)
-            call assign_variable_from_field(field_list(i)%field, ierr)
+            call assign_variable_from_field(field_list(i), ierr)
             if (ierr /= 0) error_status = ierr
         end do
 
@@ -3208,10 +2964,10 @@ module mesh_io
 
         !> Input variables.
         !*  output_file: Output file definition ('io_file_info' structure).
-        !*  field_list: Fields to be written to file (list of 'io_field_wrapper').
+        !*  field_list: Fields to be written to file (list of 'io_field').
         !*  quiet: .true. to suppress block formatting (optional, default: .false.).
-        type(io_file_info), intent(in) :: output_file
-        type(io_field_wrapper), dimension(:), intent(in) :: field_list
+        class(io_file), intent(in) :: output_file
+        type(io_field), dimension(:), intent(in) :: field_list
         logical, intent(in), optional :: quiet
 
         !> Output variables.
@@ -3253,7 +3009,7 @@ module mesh_io
         !*  file_format: Key specifying file format (must be one from 'mesh_io_options').
         !*  file_unit: Unit associated with the opened file.
         !*  quiet: .true. to suppress block formatting (optional, default: .false.).
-        type(io_field_wrapper), dimension(:), intent(in) :: field_list
+        type(io_field), dimension(:), intent(in) :: field_list
         integer, intent(in) :: file_format
         integer, intent(out) :: file_unit
         logical, intent(in), optional :: quiet

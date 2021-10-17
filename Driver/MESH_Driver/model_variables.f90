@@ -234,29 +234,6 @@ module model_variables
     !*  vs: Group of variables (e.g., tile, grid).
     type(model_variables_groups), save :: vs
 
-    !> Description:
-    !>  Generic structure for an instance of a variable in a list.
-    !>
-    !> Variables:
-    !*  dat: Data frame.
-    type, abstract :: model_variable
-        character(len = SHORT_FIELD_LENGTH) :: id = ''
-    end type
-
-    !> Extensions.
-    type, extends(model_variable) :: model_variable_real1d
-        real, dimension(:), pointer :: dat => null()
-    end type
-    type, extends(model_variable) :: model_variable_int1d
-        integer, dimension(:), pointer :: dat => null()
-    end type
-
-    !> Description:
-    !>  Wrapper for variables that extend 'model_variable'.
-    type model_variable_wrapper
-        class(model_variable), allocatable :: var
-    end type
-
     contains
 
     !> Description:

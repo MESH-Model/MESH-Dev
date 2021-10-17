@@ -30,6 +30,9 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
 !<<fews
 !>>
     class(io_file), allocatable :: db
+    real, allocatable :: dat1_r(:)
+    integer, allocatable :: dat1_i(:)
+    character(len = SHORT_FIELD_LENGTH), allocatable :: dim_names(:)
 !-    type(io_field_wrapper), dimension(:), allocatable :: field_list
 !<<
 
@@ -339,50 +342,41 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
             call reset_tab()
             call print_message("READING: (creating basin for point mode)")
             call increase_tab()
-            allocate(db)
+            allocate(db, dim_names(1), dat1_r(2), dat1_i(2))
+            dim_names = (/DIM_NAME_SUBBASIN/)
             allocate(db%fields(10))
-            allocate(db%fields(1)%field, source = io_field_char( &
-                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                label = 'projection', dat = 'LATLONG'))
-            allocate(db%fields(2)%field, source = io_field_char( &
-                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                label = 'ellipsoid', dat = 'GRS80'))
-            allocate(db%fields(3)%field, source = io_field_int1d( &
-                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                cell_map = null(), tile_map = null(), &
-                label = 'Rank', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1, 2/)))
-            allocate(db%fields(4)%field, source = io_field_int1d( &
-                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                cell_map = null(), tile_map = null(), &
-                label = 'Next', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/2, 0/)))
-            allocate(db%fields(5)%field, source = io_field_real1d( &
-                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                cell_map = null(), tile_map = null(), &
-                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                label = 'lat', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/)))
-            allocate(db%fields(6)%field, source = io_field_real1d( &
-                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                cell_map = null(), tile_map = null(), &
-                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                label = 'lon', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/)))
-            allocate(db%fields(7)%field, source = io_field_real1d( &
-                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                cell_map = null(), tile_map = null(), &
-                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                label = 'GridArea', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1.0, 0.0/)))
-            allocate(db%fields(8)%field, source = io_field_int( &
-                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                label = 'ngru', dat = 2))
-            allocate(db%fields(9)%field, source = io_field_real1d( &
-                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                cell_map = null(), tile_map = null(), &
-                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                label = 'gru 1', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/1.0, 0.0/)))
-            allocate(db%fields(10)%field, source = io_field_real1d( &
-                mapped_dim_order = null(), mapped_dat_cell = null(), mapped_dat_tile = null(), &
-                cell_map = null(), tile_map = null(), &
-                mapped_dat_cell_interp = null(), mapped_dat_tile_interp = null(), &
-                label = 'gru 2', dim_names = (/DIM_NAME_SUBBASIN/), dat = (/0.0, 0.0/)))
+            db%fields(1)%label = 'projection'
+            allocate(db%fields(1)%field, source = model_variable_char(dat = 'LATLONG'))
+            db%fields(2)%label = 'ellipsoid'
+            allocate(db%fields(2)%field, source = model_variable_char(dat = 'GRS80'))
+            db%fields(3)%label = 'Rank'
+            dat1_i = (/1, 2/)
+            allocate(db%fields(3)%field, source = model_variable_int1d(dat = dat1_i))
+            allocate(db%fields(3)%dim_names(1), source = dim_names)
+            db%fields(4)%label = 'Next'
+            dat1_i = (/2, 0/)
+            allocate(db%fields(4)%field, source = model_variable_int1d(dat = dat1_i))
+            allocate(db%fields(4)%dim_names(1), source = dim_names)
+            db%fields(5)%label = 'lat'
+            dat1_r = (/0.0, 0.0/)
+            allocate(db%fields(5)%field, source = model_variable_real1d(dat = dat1_r))
+            allocate(db%fields(5)%dim_names(1), source = dim_names)
+            db%fields(6)%label = 'lon'
+            allocate(db%fields(6)%field, source = model_variable_real1d(dat = dat1_r))
+            allocate(db%fields(6)%dim_names(1), source = dim_names)
+            db%fields(7)%label = 'GridArea'
+            dat1_r = (/1.0, 0.0/)
+            allocate(db%fields(7)%field, source = model_variable_real1d(dat = dat1_r))
+            allocate(db%fields(7)%dim_names(1), source = dim_names)
+            db%fields(8)%label = 'ngru'
+            allocate(db%fields(8)%field, source = model_variable_int(dat = 2))
+            db%fields(9)%label = 'gru 1'
+            allocate(db%fields(9)%field, source = model_variable_real1d(dat = dat1_r))
+            allocate(db%fields(9)%dim_names(1), source = dim_names)
+            db%fields(10)%label = 'gru 2'
+            dat1_r = (/0.0, 0.0/)
+            allocate(db%fields(10)%field, source = model_variable_real1d(dat = dat1_r))
+            allocate(db%fields(10)%dim_names(1), source = dim_names)
 
             !> Force 'RUNMODE noroute' (overrides the run option).
 !-            ro%RUNCHNL = .false.

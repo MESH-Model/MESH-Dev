@@ -4,16 +4,18 @@ module sa_mesh_run_within_tile
     !> 'sa_mesh_common' required for common SA_MESH variables and routines.
     !> 'model_dates' required for 'ic' counter.
     !> 'mpi_module' required for MPI variables, tile/grid parsing utility, barrier flag.
+    !> 'variable_types' for model variable types.
     use model_files_variables
     use sa_mesh_common
     use model_dates
     use mpi_module
+    use variable_types
 
     implicit none
 
     !> Description:
     !>  Variable lists for MPI exchanges.
-    type(model_variable_wrapper), dimension(:), allocatable, private :: nodes_to_head_real1d, head_to_nodes_real1d
+    class(model_variable), dimension(:), allocatable, private :: model_variables_to_head, model_variables_to_node
 
     contains
 
@@ -105,205 +107,205 @@ module sa_mesh_run_within_tile
                 if (associated(Qb)) n = n + 1
             end if
             if (n > 0) then
-                allocate(nodes_to_head_real1d(n))
+                allocate(model_variables_to_head(n))
 
                 !> Assign to the list.
                 n = 1
                 if (associated(vs%tile%prern)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%prern))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%prern))
                     n = n + 1
                 end if
                 if (associated(vs%tile%presno)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%presno))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%presno))
                     n = n + 1
                 end if
                 if (associated(vs%tile%lqwscan)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%lqwscan))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%lqwscan))
                     n = n + 1
                 end if
                 if (associated(vs%tile%fzwscan)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%fzwscan))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%fzwscan))
                     n = n + 1
                 end if
                 if (associated(vs%tile%cmas)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%cmas))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%cmas))
                     n = n + 1
                 end if
                 if (associated(vs%tile%tacan)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%tacan))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tacan))
                     n = n + 1
                 end if
                 if (associated(vs%tile%qacan)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%qacan))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%qacan))
                     n = n + 1
                 end if
                 if (associated(vs%tile%tcan)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%tcan))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tcan))
                     n = n + 1
                 end if
                 if (associated(vs%tile%gro)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%gro))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%gro))
                     n = n + 1
                 end if
                 if (associated(vs%tile%sno)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%sno))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%sno))
                     n = n + 1
                 end if
                 if (associated(vs%tile%rhosno)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%rhosno))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%rhosno))
                     n = n + 1
                 end if
                 if (associated(vs%tile%fsno)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%fsno))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%fsno))
                     n = n + 1
                 end if
                 if (associated(vs%tile%albsno)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%albsno))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%albsno))
                     n = n + 1
                 end if
                 if (associated(vs%tile%lqwssno)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%lqwssno))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%lqwssno))
                     n = n + 1
                 end if
                 if (associated(vs%tile%tsno)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%tsno))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tsno))
                     n = n + 1
                 end if
                 if (associated(vs%tile%drainsno)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%drainsno))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%drainsno))
                     n = n + 1
                 end if
                 if (associated(vs%tile%albt)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%albt))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%albt))
                     n = n + 1
                 end if
                 if (associated(vs%tile%alvs)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%alvs))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%alvs))
                     n = n + 1
                 end if
                 if (associated(vs%tile%alir)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%alir))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%alir))
                     n = n + 1
                 end if
                 if (associated(vs%tile%gte)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%gte))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%gte))
                     n = n + 1
                 end if
                 if (associated(vs%tile%zpnd)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%zpnd))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%zpnd))
                     n = n + 1
                 end if
                 if (associated(vs%tile%tpnd)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%tpnd))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tpnd))
                     n = n + 1
                 end if
                 if (associated(vs%tile%pndcaf)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%pndcaf))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%pndcaf))
                     n = n + 1
                 end if
                 if (associated(vs%tile%potevp)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%potevp))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%potevp))
                     n = n + 1
                 end if
                 if (associated(vs%tile%et)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%et))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%et))
                     n = n + 1
                 end if
                 if (associated(vs%tile%ovrflw)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%ovrflw))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%ovrflw))
                     n = n + 1
                 end if
                 if (associated(vs%tile%qevp)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%qevp))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%qevp))
                     n = n + 1
                 end if
                 if (associated(vs%tile%qsens)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%qsens))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%qsens))
                     n = n + 1
                 end if
                 if (associated(vs%tile%gzero)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%gzero))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%gzero))
                     n = n + 1
                 end if
                 if (associated(vs%tile%tsurf)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%tsurf))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tsurf))
                     n = n + 1
                 end if
                 if (associated(vs%tile%tsfs)) then
                     do j = 1, size(vs%tile%tsfs, 2)
-                        allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%tsfs(:, j)))
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tsfs(:, j)))
                         n = n + 1
                     end do
                 end if
                 if (associated(vs%tile%lqwsice)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%lqwsice))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%lqwsice))
                     n = n + 1
                 end if
                 if (associated(vs%tile%tice)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%tice))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tice))
                     n = n + 1
                 end if
                 if (associated(vs%tile%zsolsat)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%zsolsat))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%zsolsat))
                     n = n + 1
                 end if
                 if (associated(vs%tile%ggeo)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%ggeo))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%ggeo))
                     n = n + 1
                 end if
                 if (associated(vs%tile%tbas)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%tbas))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tbas))
                     n = n + 1
                 end if
                 if (associated(vs%tile%drainsol)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%drainsol))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%drainsol))
                     n = n + 1
                 end if
                 if (associated(vs%tile%thlqsol)) then
                     do j = 1, size(vs%tile%thlqsol, 2)
-                        allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%thlqsol(:, j)))
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%thlqsol(:, j)))
                         n = n + 1
                     end do
                 end if
                 if (associated(vs%tile%thicsol)) then
                     do j = 1, size(vs%tile%thicsol, 2)
-                        allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%thicsol(:, j)))
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%thicsol(:, j)))
                         n = n + 1
                     end do
                 end if
                 if (associated(vs%tile%tsol)) then
                     do j = 1, size(vs%tile%tsol, 2)
-                        allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%tsol(:, j)))
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tsol(:, j)))
                         n = n + 1
                     end do
                 end if
                 if (associated(vs%tile%gflx)) then
                     do j = 1, size(vs%tile%gflx, 2)
-                        allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%gflx(:, j)))
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%gflx(:, j)))
                         n = n + 1
                     end do
                 end if
                 if (associated(vs%tile%latflw)) then
                     do j = 1, size(vs%tile%latflw, 2)
-                        allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%latflw(:, j)))
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%latflw(:, j)))
                         n = n + 1
                     end do
                 end if
                 if (associated(vs%tile%rchg)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%rchg))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%rchg))
                     n = n + 1
                 end if
                 if (associated(vs%tile%stggw)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%stggw))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%stggw))
                     n = n + 1
                 end if
                 if (associated(vs%tile%lkg)) then
-                    allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%lkg))
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%lkg))
                     n = n + 1
                 end if
                 if (bflm%BASEFLOWFLAG == 1) then
                     if (associated(Qb)) then
-                        allocate(nodes_to_head_real1d(n)%var, source = model_variable_real1d(dat = Qb))
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = Qb))
                         n = n + 1
                     end if
                 end if
@@ -313,13 +315,13 @@ module sa_mesh_run_within_tile
                 if (associated(vs%tile%pre)) n = n + 1
             end if
             if (n > 0) then
-                allocate(head_to_nodes_real1d(n))
+                allocate(model_variables_to_node(n))
 
                 !> Assign to the list.
                 n = 1
                 if (irrm%PROCESS_ACTIVE) then
                     if (associated(vs%tile%pre)) then
-                        allocate(head_to_nodes_real1d(n)%var, source = model_variable_real1d(dat = vs%tile%pre))
+                        allocate(model_variables_to_node(n)%field, source = model_variable_pointer_1d(dat = vs%tile%pre))
                         n = n + 1
                     end if
                 end if
@@ -391,7 +393,7 @@ module sa_mesh_run_within_tile
         real, dimension(:), allocatable :: mpi_buffer_real1d
 
         !> Return if tile processes are not active or if no variables are active in the exchange.
-        if (.not. ro%RUNTILE .or. .not. allocated(nodes_to_head_real1d)) return
+        if (.not. ro%RUNTILE .or. .not. allocated(model_variables_to_head)) return
 
         !> Count the number of active variables included in the exchange.
 !-        nvars = 7
@@ -425,10 +427,10 @@ module sa_mesh_run_within_tile
 !-            i = 1
 
             !> Send data back to head-node.
-            allocate(mpi_buffer_real1d(size(nodes_to_head_real1d)*iin))
-            do i = 1, size(nodes_to_head_real1d)
-                select type (this => nodes_to_head_real1d(i)%var)
-                    class is (model_variable_real1d)
+            allocate(mpi_buffer_real1d(size(model_variables_to_head)*iin))
+            do i = 1, size(model_variables_to_head)
+                select type (this => model_variables_to_head(i)%field)
+                    type is (model_variable_pointer_1d)
                         mpi_buffer_real1d((1 + iin*(i - 1)):(iin*i)) = this%dat(ii1:ii2)
                 end select
             end do
@@ -545,7 +547,7 @@ module sa_mesh_run_within_tile
                 call mpi_split_nml(inp, izero, u, shd%lc%NML, shd%lc%ILMOS, ii1, ii2, iin)
 
                 !> Allocate temporary arrays.
-                allocate(mpi_buffer_real1d(size(nodes_to_head_real1d)*iin))
+                allocate(mpi_buffer_real1d(size(model_variables_to_head)*iin))
 !-                allocate(met(2*iin))
 !-                allocate(cnpy(7*iin))
 !-                allocate(sno(7*iin))
@@ -648,9 +650,9 @@ module sa_mesh_run_within_tile
 !-                vs%tile%dzs(ii1:ii2) = lz((1 + iin*2):(iin*3))
 
                 !> Transfer variables.
-                do i = 1, size(nodes_to_head_real1d)
-                    select type (this => nodes_to_head_real1d(i)%var)
-                        class is (model_variable_real1d)
+                do i = 1, size(model_variables_to_head)
+                    select type (this => model_variables_to_head(i)%field)
+                        type is (model_variable_pointer_1d)
                             this%dat(ii1:ii2) = mpi_buffer_real1d((1 + iin*(i - 1)):(iin*i))
                     end select
                 end do
@@ -690,7 +692,7 @@ module sa_mesh_run_within_tile
         real, dimension(:), allocatable :: mpi_buffer_real1d
 
         !> Return if tile processes are not active or if no variables are active in the exchange.
-        if (.not. ro%RUNTILE .or. .not. allocated(head_to_nodes_real1d)) return
+        if (.not. ro%RUNTILE .or. .not. allocated(model_variables_to_node)) return
 
         !> Count the number of active variables included in the exchange.
 !-        nvars = 0
@@ -716,7 +718,7 @@ module sa_mesh_run_within_tile
         iin = shd%lc%NML
 
         !> Allocate temporary array.
-        allocate(mpi_buffer_real1d(size(head_to_nodes_real1d)*iin))
+        allocate(mpi_buffer_real1d(size(model_variables_to_node)*iin))
 
         if (inp > 1 .and. ipid == 0) then
 
@@ -735,9 +737,9 @@ module sa_mesh_run_within_tile
 !-                end if
 
                 !> Send data to the worker nodes.
-                do i = 1, size(head_to_nodes_real1d)
-                    select type (this => head_to_nodes_real1d(i)%var)
-                        class is (model_variable_real1d)
+                do i = 1, size(model_variables_to_node)
+                    select type (this => model_variables_to_node(i)%field)
+                        type is (model_variable_pointer_1d)
                             mpi_buffer_real1d((1 + iin*(i - 1)):(iin*i)) = this%dat(ii1:ii2)
                     end select
                 end do
@@ -774,9 +776,9 @@ module sa_mesh_run_within_tile
             end do
 
             !> Transfer variables.
-            do i = 1, size(head_to_nodes_real1d)
-                select type (this => head_to_nodes_real1d(i)%var)
-                    class is (model_variable_real1d)
+            do i = 1, size(model_variables_to_node)
+                select type (this => model_variables_to_node(i)%field)
+                    type is (model_variable_pointer_1d)
                         this%dat(ii1:ii2) = mpi_buffer_real1d((1 + iin*(i - 1)):(iin*i))
                 end select
             end do
