@@ -209,10 +209,12 @@ C
 C
       DO 450 J=1,IGP1
       DO 450 I=IL1,IL2
-          IF(IGRN(I).GT.0. AND. WMOVE(I,J).GT.0.0)                  THEN
+          IF(IGRN(I).GT.0) THEN
+            IF(WMOVE(I,J).GT.0.0) THEN
               TPOND(I)=(TPOND(I)*ZPOND(I)+TMOVE(I,J)*WMOVE(I,J))/
      1            (ZPOND(I)+WMOVE(I,J))
               ZPOND(I)=ZPOND(I)+WMOVE(I,J)
+            ENDIF
           ENDIF
  450  CONTINUE
 C

@@ -245,8 +245,8 @@ C
       IPTBAD=0                                        
       DO 250 J=1,IG                                                               
       DO 250 I=IL1,IL2
-          IF(IGRD(I).GT.0 .AND. J.EQ.1 .AND. FDT(I,J).LT.0. .AND.
-     1                          DELZW(I,J).GT.0.0)             THEN 
+          IF(IGRD(I).GT.0 .AND. J.EQ.1 .AND. DELZW(I,J).GT.0.0) THEN
+            IF(FDT(I,J).LT.0.) THEN
               THTEST(I,J)=THLIQ(I,J)+FDT(I,J)/DELZW(I,J)
               IF(THTEST(I,J).LT.THLMIN(I,J))             THEN
                   FDT(I,J)=FDT(I,J)+(THLIQ(I,J)-THLMIN(I,J))*
@@ -270,6 +270,7 @@ C
                   ENDIF
               ENDIF
               IF(THICE(I,J).LT.0.) IPTBAD=I
+            ENDIF
           ENDIF
 C                                                    
 C     * ENSURE THAT CALCULATED WATER FLOWS BETWEEN SOIL LAYERS DO NOT
