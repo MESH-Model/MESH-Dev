@@ -83,6 +83,7 @@ module mesh_io_constants
     integer, parameter :: FREQ_IC = 14
 
     !> Constants for dimension names.
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NUL = ''
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LAT = 'lat'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LATITUDE = 'latitude'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_RLAT = 'rlat'
@@ -96,6 +97,7 @@ module mesh_io_constants
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_CRS = 'crs'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_SUBBASIN = 'subbasin'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NSUBBASIN = 'nsubbasin'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_CELL = 'cell'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_N = 'n'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_BASIN = 'basin'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_B = 'b'
@@ -111,6 +113,23 @@ module mesh_io_constants
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NML = 'nml'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LANDTILE = 'landtile'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_G = 'g'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LEVEL = 'level'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LAYER = 'layer'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_SOIL = 'soil'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_SOL = 'sol'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NSOL = 'nsol'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NSL = 'nsl'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_SURFACE = 'surface'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_SURF = 'surf'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NSURF = 'nsurf'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_SUBTILETYPES = 'subtiletypes'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_SUBTYPE = 'subtype'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_CANOPY = 'canopy'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NCAN = 'ncan'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_VEGID = 'vegid'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_VF = 'vf'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NVF = 'nvf'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_L = 'l'
 
     !> Constants for units.
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_UNITS_DEGREES = 'degrees'
@@ -119,16 +138,27 @@ module mesh_io_constants
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_UNITS_DEGREES_NORTH = 'degrees_north'
 
     !> Constants for MESH variable dimension order (derived).
+    !* MAP_ORDER_X: Cartesian 'x'-dimension (horizontal).
+    !* MAP_ORDER_Y: Cartesian 'y'-dimension (vertical).
+    !* MAP_ORDER_T: Time dimension.
+    !* MAP_ORDER_M: GRU/land cover dimension.
+    !* MAP_ORDER_K: River class dimension.
+    !* MAP_ORDER_N: Subbasin/cell dimension.
+    !* MAP_ORDER_B: Basin dimension (uniform).
+    !* MAP_ORDER_G: Tile dimension.
+    !* MAP_ORDER_L: Layer dimension.
     integer, parameter :: MAP_ORDER_X = 1
     integer, parameter :: MAP_ORDER_Y = 2
-    integer, parameter :: MAP_ORDER_M = 3
-    integer, parameter :: MAP_ORDER_K = 4
-    integer, parameter :: MAP_ORDER_N = 5
-    integer, parameter :: MAP_ORDER_B = 6
-    integer, parameter :: MAP_ORDER_G = 7
+    integer, parameter :: MAP_ORDER_T = 3
+    integer, parameter :: MAP_ORDER_M = 4
+    integer, parameter :: MAP_ORDER_K = 5
+    integer, parameter :: MAP_ORDER_N = 6
+    integer, parameter :: MAP_ORDER_B = 7
+    integer, parameter :: MAP_ORDER_G = 8
+    integer, parameter :: MAP_ORDER_L = 9
 
     !> List of dimension order names.
-    character(len = SHORT_FIELD_LENGTH), parameter :: MAP_ORDER_LIST(7) = (/ &
-        DIM_NAME_X, DIM_NAME_Y, DIM_NAME_M, DIM_NAME_K, DIM_NAME_N, DIM_NAME_B, DIM_NAME_G/)
+    character(len = SHORT_FIELD_LENGTH), parameter :: MAP_ORDER_LIST(9) = (/ &
+        DIM_NAME_X, DIM_NAME_Y, DIM_NAME_T, DIM_NAME_M, DIM_NAME_K, DIM_NAME_N, DIM_NAME_B, DIM_NAME_G, DIM_NAME_L/)
 
 end module

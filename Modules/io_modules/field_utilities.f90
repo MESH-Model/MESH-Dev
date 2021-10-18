@@ -6609,10 +6609,10 @@ module field_utilities
                                 exit
                         end select
                     end do
-                case (DIM_NAME_SUBBASIN, DIM_NAME_NSUBBASIN, DIM_NAME_N)
+                case (DIM_NAME_SUBBASIN, DIM_NAME_NSUBBASIN, DIM_NAME_CELL, DIM_NAME_N)
                     do j = 1, size(field_dim_names)
                         select case (lowercase(field_dim_names(j)))
-                            case (DIM_NAME_SUBBASIN, DIM_NAME_NSUBBASIN, DIM_NAME_N)
+                            case (DIM_NAME_SUBBASIN, DIM_NAME_NSUBBASIN, DIM_NAME_CELL, DIM_NAME_N)
                                 mapped_dim_order(i) = j
                                 exit
                         end select
@@ -6645,6 +6645,20 @@ module field_utilities
                     do j = 1, size(field_dim_names)
                         select case (lowercase(field_dim_names(j)))
                             case (DIM_NAME_NML, DIM_NAME_LANDTILE, DIM_NAME_G)
+                                mapped_dim_order(i) = j
+                                exit
+                        end select
+                    end do
+                case ( &
+                    DIM_NAME_LEVEL, DIM_NAME_LAYER, DIM_NAME_SOIL, DIM_NAME_SOL, DIM_NAME_NSOL, DIM_NAME_NSL, &
+                    DIM_NAME_SURFACE, DIM_NAME_SURF, DIM_NAME_NSURF, DIM_NAME_SUBTILETYPES, DIM_NAME_SUBTYPE, &
+                    DIM_NAME_CANOPY, DIM_NAME_NCAN, DIM_NAME_VEGID, DIM_NAME_VF, DIM_NAME_NVF, DIM_NAME_L)
+                    do j = 1, size(field_dim_names)
+                        select case (lowercase(field_dim_names(j)))
+                            case ( &
+                                DIM_NAME_LEVEL, DIM_NAME_LAYER, DIM_NAME_SOIL, DIM_NAME_SOL, DIM_NAME_NSOL, DIM_NAME_NSL, &
+                                DIM_NAME_SURFACE, DIM_NAME_SURF, DIM_NAME_NSURF, DIM_NAME_SUBTILETYPES, DIM_NAME_SUBTYPE, &
+                                DIM_NAME_CANOPY, DIM_NAME_NCAN, DIM_NAME_VEGID, DIM_NAME_VF, DIM_NAME_NVF, DIM_NAME_L)
                                 mapped_dim_order(i) = j
                                 exit
                         end select

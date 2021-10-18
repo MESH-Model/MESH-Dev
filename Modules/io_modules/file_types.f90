@@ -110,12 +110,10 @@ module file_types
     !>
     !> Variables.
     !*  dim_names: The ordered dimension names for all fields in the file.
-    !*  dim_lengths: The ordered dimension lengths for all fields in the file.
     !*  const_mul: Multiplicative factor to apply to all fields in the file (default: 1.0).
     !*  const_add: Additive factor to apply to all fields in the file (default: 0.0).
     type field_overrides
         character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names
-        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_lengths
         real :: const_mul = 1.0
         real :: const_add = 0.0
     end type

@@ -192,34 +192,29 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
             allocate(basin_database%fields(1)%field, source = model_variable_char(dat = 'LATLONG'))
             basin_database%fields(2)%label = 'ellipsoid'
             allocate(basin_database%fields(2)%field, source = model_variable_char(dat = 'GRS80'))
-            basin_database%fields(3)%label = 'Rank'
+            basin_database%fields(3)%label = 'ngru'
+            allocate(basin_database%fields(3)%field, source = model_variable_int(dat = 2))
             dat1_i = (/1, 2/)
-            allocate(basin_database%fields(3)%field, source = model_variable_int1d(dat = dat1_i))
-            allocate(basin_database%fields(3)%dim_names(1), source = dim_names)
-            basin_database%fields(4)%label = 'Next'
-            dat1_i = (/2, 0/)
+            basin_database%fields(4)%label = 'Rank'
             allocate(basin_database%fields(4)%field, source = model_variable_int1d(dat = dat1_i))
-            allocate(basin_database%fields(4)%dim_names(1), source = dim_names)
-            basin_database%fields(5)%label = 'lat'
-            dat1_r = (/0.0, 0.0/)
-            allocate(basin_database%fields(5)%field, source = model_variable_real1d(dat = dat1_r))
-            allocate(basin_database%fields(5)%dim_names(1), source = dim_names)
-            basin_database%fields(6)%label = 'lon'
-            allocate(basin_database%fields(6)%field, source = model_variable_real1d(dat = dat1_r))
-            allocate(basin_database%fields(6)%dim_names(1), source = dim_names)
-            basin_database%fields(7)%label = 'GridArea'
+            dat1_i = (/2, 0/)
+            basin_database%fields(5)%label = 'Next'
+            allocate(basin_database%fields(5)%field, source = model_variable_int1d(dat = dat1_i))
             dat1_r = (/1.0, 0.0/)
+            basin_database%fields(6)%label = 'GridArea'
+            allocate(basin_database%fields(6)%field, source = model_variable_real1d(dat = dat1_r))
+            basin_database%fields(7)%label = 'gru 1'
             allocate(basin_database%fields(7)%field, source = model_variable_real1d(dat = dat1_r))
-            allocate(basin_database%fields(7)%dim_names(1), source = dim_names)
-            basin_database%fields(8)%label = 'ngru'
-            allocate(basin_database%fields(8)%field, source = model_variable_int(dat = 2))
-            basin_database%fields(9)%label = 'gru 1'
-            allocate(basin_database%fields(9)%field, source = model_variable_real1d(dat = dat1_r))
-            allocate(basin_database%fields(9)%dim_names(1), source = dim_names)
-            basin_database%fields(10)%label = 'gru 2'
             dat1_r = (/0.0, 0.0/)
+            basin_database%fields(8)%label = 'gru 2'
+            allocate(basin_database%fields(8)%field, source = model_variable_real1d(dat = dat1_r))
+            basin_database%fields(9)%label = 'lat'
+            allocate(basin_database%fields(9)%field, source = model_variable_real1d(dat = dat1_r))
+            basin_database%fields(10)%label = 'lon'
             allocate(basin_database%fields(10)%field, source = model_variable_real1d(dat = dat1_r))
-            allocate(basin_database%fields(10)%dim_names(1), source = dim_names)
+            do i = 4, 10
+                allocate(basin_database%fields(i)%dim_names(size(dim_names)), source = dim_names)
+            end do
             deallocate(dim_names)
         case (3, 5)
 

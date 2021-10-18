@@ -478,7 +478,7 @@ module mesh_io
         real dat_r, fill_r
         integer, dimension(:), allocatable :: dimids, dim_lengths, mapped_dim_order
         integer, allocatable :: dat2_i(:, :), dat3_i(:, :, :), dat4_i(:, :, :, :), dat5_i(:, :, :, :, :)
-        integer dtype, time_order, atype, alength, ndims, dat_i, fill_i
+        integer dtype, time_order, level_order, atype, alength, ndims, dat_i, fill_i
 #endif
 
         !> Error status.
@@ -742,7 +742,13 @@ module mesh_io
                     end do
 
                     !> Allocate 'dim_names'.
-                    allocate(dim_names(1), source = (/input_file%overrides%dim_names/))
+                    if (allocated(input_file%overrides%dim_names)) then
+                        allocate(dim_names(size(input_file%overrides%dim_names)))
+                        dim_names = input_file%overrides%dim_names
+                    else
+                        allocate(dim_names(1))
+                        dim_names = (/DIM_NAME_NUL/)
+                    end if
 
                     !> Loop through the records.
                     do i = 1, nvars
@@ -756,6 +762,44 @@ module mesh_io
 
                         !> Cycle if the first argument does not start with a string character.
                         if (.not. is_letter(args(1)(1:1))) cycle
+
+                        !> Level-based dimensions.
+                        if (size(dim_names) == 1) then
+                            select case (dim_names(1))
+                                case ( &
+                                    DIM_NAME_LEVEL, DIM_NAME_LAYER, DIM_NAME_SOIL, DIM_NAME_SOL, DIM_NAME_NSOL, DIM_NAME_NSL, &
+                                    DIM_NAME_SURFACE, DIM_NAME_SURF, DIM_NAME_NSURF, DIM_NAME_SUBTILETYPES, DIM_NAME_SUBTYPE, &
+                                    DIM_NAME_CANOPY, DIM_NAME_NCAN, DIM_NAME_VEGID, DIM_NAME_VF, DIM_NAME_NVF, DIM_NAME_L)
+
+                                    !> Expand variable list.
+                                    call expand_field_list(file_buffer, (size(args) - 1), ierr)
+
+                                    !> Assign the last level as the background field.
+                                    write(code, *) (size(args))
+                                    call print_remark( &
+                                        "Identifying the last level '" // trim(args(1)) // "(" // trim(adjustl(code)) // &
+                                        ")' as the background field '" // trim(args(1)) // &
+                                        "' in case more levels exist in the model than in the field.")
+                                    file_buffer(n)%label = trim(args(1))
+                                    file_buffer(n)%id = i
+                                    allocate(file_buffer(n)%field, source = model_variable_char(dat = args(size(args))))
+                                    n = n + 1
+
+                                    !> Add a variable for each other level.
+                                    do j = 2, (size(args) - 1)
+
+                                        !> Assign the fields in reverse order to assign the last as the background field.
+                                        write(code, *) (j - 1)
+                                        file_buffer(n)%label = trim(args(1)) // ' ' // trim(adjustl(code))
+                                        file_buffer(n)%id = i
+                                        allocate(file_buffer(n)%field, source = model_variable_char(dat = args(j)))
+                                        n = n + 1
+                                    end do
+
+                                    !> Cycle to skip assigning the variable itself.
+                                    cycle
+                            end select
+                        end if
 
                         !> Special cases.
                         select case (lowercase(args(1)))
@@ -879,6 +923,7 @@ module mesh_io
                     if (allocated(dim_names)) deallocate(dim_names)
                     if (allocated(dim_lengths)) deallocate(dim_lengths)
                     time_order = 0
+                    level_order = 0
                     if (ndims > 5) then
                         if (v) then
                             write(code, *) ndims
@@ -896,11 +941,23 @@ module mesh_io
                             if (ierr /= 0) then
                                 dim_names(j) = ''
                             else
-
-                                !> Check for time dimension.
                                 select case (dim_names(j))
                                     case (DIM_NAME_TIME, DIM_NAME_T)
+
+                                        !> Check for time dimension.
                                         time_order = j
+                                    case ( &
+                                        DIM_NAME_LEVEL, DIM_NAME_LAYER, DIM_NAME_SOIL, DIM_NAME_SOL, DIM_NAME_NSOL, DIM_NAME_NSL, &
+                                        DIM_NAME_SURFACE, DIM_NAME_SURF, DIM_NAME_NSURF, DIM_NAME_SUBTILETYPES, DIM_NAME_SUBTYPE, &
+                                        DIM_NAME_CANOPY, DIM_NAME_NCAN, DIM_NAME_VEGID, DIM_NAME_VF, DIM_NAME_NVF, DIM_NAME_L)
+
+                                        !> Check for level ID.
+                                        if (level_order > 0) then
+                                            call print_warning( &
+                                                "Multiple dimensions of the variable '" // trim(vname) // &
+                                                "' are associated with a model level. An error may occur while mapping the field.")
+                                        end if
+                                        level_order = j
                                 end select
                             end if
                         end do
@@ -1312,6 +1369,8 @@ module mesh_io
                                     trim(adjustl(code)) // ").")
                             end if
                     end select
+
+                    !> Update and assign general attributes.
                     if (allocated(file_buffer(n)%field)) then
                         file_buffer(n)%label = trim(vname)
                         file_buffer(n)%id = i
@@ -1319,6 +1378,7 @@ module mesh_io
                         file_buffer(n)%meta%description = description
                         file_buffer(n)%meta%units = units
                         file_buffer(n)%mapping%time_order = time_order
+                        file_buffer(n)%mapping%level_order = level_order
                         if (allocated(dim_names) .and. .not. allocated(file_buffer(n)%dim_names)) then
                             allocate(file_buffer(n)%dim_names(size(dim_names)), source = dim_names)
                         end if
@@ -1374,13 +1434,14 @@ module mesh_io
                 write(code, *) nvars + nplus
                 call print_message(trim(adjustl(code)) // " variables found in the file.")
             end if
+        end if
+        if (v) then
             if (n > 0) then
                 write(code, *) n
                 call print_message(trim(adjustl(code)) // " valid fields found in the file.")
+            else
+                call print_warning("No valid fields were found in the file.")
             end if
-        end if
-        if (n == 0 .and. v) then
-            call print_warning("No valid fields were found in the file.")
         end if
 
         !> Combine list to 'input_file'.
@@ -1414,13 +1475,6 @@ module mesh_io
                         call get_dimension_order( &
                             input_file%fields(i)%dim_names, MAP_ORDER_LIST, input_file%fields(i)%mapping%mapped_dim_order, ierr)
                     end if
-!+                else if (.not. allocated(input_file%fields(i)%dim_lengths)) then
-
-                    !> Print an error if the spatial dimensions of the multi-dimensional field cannot be derived.
-!+                    call print_error( &
-!+                        "The spatial dimensions of the field '" // trim(input_file%fields(i)%label) // &
-!+                        "' are not recognized or are undefined.")
-!+                    error_status = 1
                 end if
 
                 !> Derive field name and level from ID.
@@ -1434,7 +1488,7 @@ module mesh_io
                 end if
 
                 !> Print message.
-                if (DIAGNOSEMODE) call print_info("Found the variable '" // trim(input_file%fields(i)%label) // "'.")
+                call print_info("Found the variable '" // trim(input_file%fields(i)%label) // "'.")
 
                 !> Check if the field is mapped to an external ID.
                 if (allocated(input_file%field_map)) then
@@ -1678,7 +1732,7 @@ module mesh_io
 
         !> Check 'isaved' status.
         if (isaved == 1) then
-            if (DIAGNOSEMODE) call print_info("Activated the variable '" // trim(input_field%label) // "'.")
+            call print_info("Activated the variable '" // trim(input_field%label) // "'.")
         end if
 
     end subroutine
@@ -2053,6 +2107,8 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
+        !*  input_field: Input field to update.
+        !*  error_status: Status returned by the operation (0: normal).
         type(io_field) input_field
         integer, intent(out) :: error_status
 
@@ -2316,19 +2372,24 @@ module mesh_io
 
     end subroutine
 
-    subroutine map_field_to_ranked_output(input_field, time_id, error_status)
+    subroutine map_field_to_ranked_output(input_field, time_id, level_id, error_status)
 
         !> Modules.
         use model_variables, only: vs
 
         !> Input/output variables.
+        !*  input_field: Input field to update.
+        !*  time_id: Current index in the 'time' dimension (optional).
+        !*  level_id: Current index in the 'level' dimension (optional).
+        !*  error_status: Status returned by the operation (0: normal).
         type(io_field) input_field
         integer, intent(in), optional :: time_id
+        integer, intent(in), optional :: level_id
         integer, intent(out) :: error_status
 
         !> Local variables.
         real, allocatable :: dat1_r(:)
-        integer t, i
+        integer t, s, i
 
         !> Status.
         error_status = 0
@@ -2374,35 +2435,42 @@ module mesh_io
         !> Time index.
         t = 1
         if (present(time_id)) t = time_id
+        s = 1
+        if (present(level_id)) s = level_id
 
         !> Map the field.
         if (allocated(input_field%mapping%cell_map)) then
             if (input_field%mapping%time_order > 0) input_field%mapping%cell_map(input_field%mapping%time_order, :) = t
+            if (input_field%mapping%level_order > 0) input_field%mapping%cell_map(input_field%mapping%level_order, :) = s
         end if
         if (allocated(input_field%mapping%tile_map)) then
             if (input_field%mapping%time_order > 0) input_field%mapping%tile_map(input_field%mapping%time_order, :) = t
+            if (input_field%mapping%level_order > 0) input_field%mapping%tile_map(input_field%mapping%level_order, :) = s
         end if
         call assign_field_to_mapped_value(input_field, error_status)
 
     end subroutine
 
-    subroutine create_mapped_output_from_field(input_field, time_id, error_status)
+    subroutine create_mapped_output_from_field(input_field, time_id, level_id, error_status)
 
         !> Modules.
         use model_variables, only: vs
 
         !> Input/output variables.
-        !*  input_field: Input field to assign to 'output_field'.
-        !*  error_status: Status returned by the operation (optional; 0: normal).
+        !*  input_field: Input field to update.
+        !*  time_id: Current index in the 'time' dimension (optional).
+        !*  level_id: Current index in the 'level' dimension (optional).
+        !*  error_status: Status returned by the operation (0: normal).
         type(io_field) input_field
         integer, intent(in), optional :: time_id
+        integer, intent(in), optional :: level_id
         integer, intent(out) :: error_status
 
         !> Local variables.
         integer i
 
         !> Map the variable.
-        call map_field_to_ranked_output(input_field, time_id, error_status)
+        call map_field_to_ranked_output(input_field, time_id, level_id, error_status)
         if (error_status /= 0 .and. input_field%mapping%time_order == 0) then
             call print_error("An error occurred mapping the '" // trim(input_field%label) // "' variable.")
             return
@@ -2437,13 +2505,16 @@ module mesh_io
 
     end subroutine
 
-    subroutine create_mapped_output_from_field_list(field_list, time_id, error_status)
+    subroutine create_mapped_output_from_field_list(field_list, time_id, level_id, error_status)
 
         !> Input/output variables.
         !*  field_list: List of fields (read from file).
-        !*  error_status: Status returned by the operation (optional; 0: normal).
+        !*  time_id: Current index in the 'time' dimension (optional).
+        !*  level_id: Current index in the 'level' dimension (optional).
+        !*  error_status: Status returned by the operation (0: normal).
         type(io_field), dimension(:), intent(in) :: field_list
         integer, intent(in), optional :: time_id
+        integer, intent(in), optional :: level_id
         integer, intent(out) :: error_status
 
         !> Local variables.
@@ -2455,7 +2526,7 @@ module mesh_io
         !> Loop through the fields to assign remaining variables.
         ierr = 0
         do i = 1, size(field_list)
-            call create_mapped_output_from_field(field_list(i), time_id, ierr)
+            call create_mapped_output_from_field(field_list(i), time_id, level_id, ierr)
             if (ierr /= 0) error_status = ierr
         end do
 
@@ -2853,7 +2924,7 @@ module mesh_io
         use model_variables, only: vs
 
         !> Input/output variables.
-        !*  input_field: Input field to assign to 'output_field'.
+        !*  input_field: Input field to update.
         !*  error_status: Status returned by the operation (optional; 0: normal).
         type(io_field) input_field
         integer, intent(out) :: error_status

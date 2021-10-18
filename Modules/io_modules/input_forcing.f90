@@ -612,7 +612,7 @@ module input_forcing
                                         case (DIM_NAME_N)
                                             allocate(field%dat(vs%grid%dim_length, forcing_files(i)%series%block_interval))
                                     end select
-                                    field%dat = huge(field%dat)
+                                    if (allocated(field%dat)) field%dat = huge(field%dat)
                                 end if
                         end select
                     end do
@@ -812,7 +812,7 @@ module input_forcing
             end if
 
             !> Update mapped output.
-            call create_mapped_output_from_field_list(input_file%fields, input_file%series%iblock, error_status)
+            call create_mapped_output_from_field_list(input_file%fields, input_file%series%iblock, error_status = error_status)
             if (error_status == 0 .and. input_file%temporal_interp%scheme == 1) then
 
                 !> Update fields for temporal linear interpolation if enabled.
