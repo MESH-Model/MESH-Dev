@@ -3,7 +3,7 @@ module mesh_io
     !> 'print_routines': For print routines, format statements, and line lengths and limits.
     use print_routines
 
-    !> 'field_utilities': For mapping functions and field types.
+    !> 'field_utilities': For I/O field types, options and routines.
     use field_utilities
 
     !> 'file_types': For I/O file types.
@@ -992,7 +992,7 @@ module mesh_io
                             cycle
 
                         !> GRUs.
-                        case (DIM_NAME_GRU, DIM_NANE_LANDCOVER)
+                        case (DIM_NAME_GRU, DIM_NAME_LANDCOVER)
 
                             !> Get dimensions (assuming 'ndims' from known variable).
                             call get_dimension_order(dim_names, (/DIM_NAME_M/), mapped_dim_order, ierr)

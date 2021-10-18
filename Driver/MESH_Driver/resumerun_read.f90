@@ -2,7 +2,7 @@
 !>  Subroutine to resume the run state from file.
 subroutine resumerun_read(fls, shd, ierr)
 
-    use mesh_io_options
+    use mesh_io_constants
     use sa_mesh_common
     use sa_mesh_run_within_tile
     use sa_mesh_run_within_grid

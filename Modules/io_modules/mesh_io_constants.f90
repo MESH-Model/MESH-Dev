@@ -1,4 +1,6 @@
-module mesh_io_options
+!> Description:
+!>  Module containing I/O (input/output) related constants.
+module mesh_io_constants
 
     implicit none
 
@@ -98,7 +100,7 @@ module mesh_io_options
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_BASIN = 'basin'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_B = 'b'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_GRU = 'gru'
-    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NANE_LANDCOVER = 'landcover'
+    character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_LANDCOVER = 'landcover'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_NGRU = 'ngru'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_M = 'm'
     character(len = SHORT_FIELD_LENGTH), parameter :: DIM_NAME_RVR = 'rvr'

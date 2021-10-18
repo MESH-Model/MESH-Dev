@@ -1,7 +1,7 @@
 module resume_run
 
-    use mesh_io_options
-    use mesh_io_variables, only: file_info
+    !> 'mesh_io': For I/O field and file types, options and routines.
+    use mesh_io
 
     implicit none
 

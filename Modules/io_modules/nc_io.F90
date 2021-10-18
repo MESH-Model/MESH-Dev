@@ -1,13 +1,13 @@
 module nc_io
 
     !> 'print_routines': For print routines, format statements, and line lengths and limits.
-    !* 'mesh_io_options': For I/O constants.
+    !* 'mesh_io_constants': For I/O constants.
     !* 'model_dates': For 'ic' counter.
     !* 'netcdf': For netCDF library.
     !* 'typesizes': For data types used by netCDF library.
     use print_routines
     use parse_utilities
-    use mesh_io_options
+    use mesh_io_constants
     use model_dates
 #ifdef NETCDF
     use netcdf

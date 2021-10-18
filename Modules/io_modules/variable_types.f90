@@ -2,8 +2,8 @@
 !>  Module containing model variable types.
 module variable_types
 
-    !> 'mesh_io_options' for character lengths.
-    use mesh_io_options, only: SHORT_FIELD_LENGTH, LONG_FIELD_LENGTH
+    !> 'mesh_io_constants' for character lengths.
+    use mesh_io_constants, only: SHORT_FIELD_LENGTH, LONG_FIELD_LENGTH
 
     implicit none
 

@@ -1,6 +1,6 @@
 module input_forcing
 
-    !> 'mesh_io': For I/O field types, options and routines.
+    !> 'mesh_io': For I/O field and file types, options and routines.
     use mesh_io
 
     implicit none

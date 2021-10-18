@@ -3,7 +3,7 @@
 subroutine resumerun_config(fls, shd, ierr)
 
     use strings
-    use mesh_io_options
+    use mesh_io_constants
     use model_files_variables
     use sa_mesh_common
     use model_dates

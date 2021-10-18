@@ -5,6 +5,7 @@ module output_files
     use model_dates
     use model_files_variables
     use variable_names
+    use mesh_io_constants
 
     !> MESH file format modules.
 #ifdef NETCDF

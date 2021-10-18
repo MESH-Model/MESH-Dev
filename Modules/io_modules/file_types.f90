@@ -2,10 +2,7 @@
 !>  Module containing file types.
 module file_types
 
-    !> 'mesh_io_options': For I/O constants.
-    use mesh_io_options
-
-    !> 'field_types': For field types.
+    !> 'field_types': For I/O field types, options and routines.
     use field_types
 
     !> 'datetime_types': For 'io_datetime' structure.

@@ -1,13 +1,7 @@
 module field_utilities
 
-    !> 'mesh_io': For I/O field types, options and constants.
-    use mesh_io_variables
-
     !> 'field_types': For field types, model variable types and I/O constants.
     use field_types
-
-    !> 'strings': For 'lowercase' function.
-    use strings, only: lowercase
 
     implicit none
 
@@ -3706,7 +3700,6 @@ module field_utilities
 
         !> Local variables.
         type(io_field), dimension(:), allocatable :: temp_list
-        integer i
 
         !> Status.
         error_status = 0
@@ -6569,6 +6562,9 @@ module field_utilities
     end subroutine
 
     subroutine get_dimension_order(field_dim_names, desired_dim_names, mapped_dim_order, error_status)
+
+        !> 'strings': For 'lowercase' function.
+        use strings, only: lowercase
 
         !> Input variables.
         character(len = *), dimension(:), intent(in) :: field_dim_names

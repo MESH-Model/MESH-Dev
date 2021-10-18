@@ -2,8 +2,8 @@
 !>  Module containing field types.
 module field_types
 
-    !> 'mesh_io_options': For I/O constants.
-    use mesh_io_options
+    !> 'mesh_io_constants': For I/O constants.
+    use mesh_io_constants
 
     !> 'variable_types': For model variable types.
     use variable_types

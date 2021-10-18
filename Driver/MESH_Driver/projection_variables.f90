@@ -1,6 +1,7 @@
 module projection_variables
 
-    use mesh_io_options
+    !> 'mesh_io_constants' for character lengths.
+    use mesh_io_constants, only: SHORT_FIELD_LENGTH, LONG_FIELD_LENGTH
 
     implicit none
 
