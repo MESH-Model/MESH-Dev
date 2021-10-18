@@ -1,7 +1,7 @@
 module resume_run
 
     use mesh_io_options
-    use mesh_io_variables, only: io_file_info
+    use mesh_io_variables, only: file_info
 
     implicit none
 
@@ -36,7 +36,7 @@ module resume_run
         integer :: state = FLAG_OFF
         integer :: freq = FREQ_NUL
         character(len = LONG_FIELD_LENGTH) :: bin = ''
-        type(io_file_info) flo
+        type(file_info) flo
     end type
 
     !> Type: io_state_flags

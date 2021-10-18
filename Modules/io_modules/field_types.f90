@@ -11,7 +11,7 @@ module field_types
     implicit none
 
     !> Description:
-    !>  Generic structure for a mapped field (e.g., to dimensions of a model variable).
+    !>  Generic attributes for a mapped field (e.g., to dimensions of a model variable).
     !>
     !> Variables:
     !*  mapped_name: Name if mapped to an internal variable.
@@ -24,7 +24,7 @@ module field_types
     !*  tile_map: Pre-derived mapping of the multi-dimensional field to 'tile' field.
     !*  mapped_to_tile: Mapped values by 'tile_map'.
     !*  mapped_dat_tile_interp: Previous mapped 'tile' values used for temporal interpolation.
-    type mapped_field
+    type map_info
         character(len = SHORT_FIELD_LENGTH) :: mapped_name = ''
         integer, dimension(:), allocatable :: mapped_dim_order
         integer :: time_order = 0
@@ -55,10 +55,10 @@ module field_types
         integer :: id = -1
         character(len = SHORT_FIELD_LENGTH) :: field_name = ''
         character(len = SHORT_FIELD_LENGTH) :: level = ''
-        type(model_variable_info) :: meta
+        type(model_variable_info) meta
         integer :: level_id = -1
         class(*), allocatable :: field
-        type(mapped_field) :: mapping
+        type(map_info) mapping
         character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names
         integer, dimension(:), allocatable :: dim_lengths
     end type

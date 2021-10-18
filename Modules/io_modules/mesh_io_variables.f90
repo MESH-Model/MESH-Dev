@@ -6,6 +6,9 @@ module mesh_io_variables
     !> 'field_types': For field types, model variable types and I/O constants.
     use field_types
 
+    !> 'file_types': For I/O file types.
+    use file_types
+
     implicit none
 
     !> Description:
@@ -151,14 +154,14 @@ module mesh_io_variables
     !*  jday: Day of year.
     !*  hour: Hour of day (0-23).
     !*  minutes: Minutes in hour (0-59).
-    type io_date
-        integer :: year = 0
-        integer :: month = 0
-        integer :: day = 0
-        integer :: jday = 0
-        integer :: hour = 0
-        integer :: minutes = 0
-    end type
+!-    type io_date
+!-        integer :: year = 0
+!-        integer :: month = 0
+!-        integer :: day = 0
+!-        integer :: jday = 0
+!-        integer :: hour = 0
+!-        integer :: minutes = 0
+!-    end type
 
     !> Description:
     !>  Structure to store file information.
@@ -167,11 +170,11 @@ module mesh_io_variables
     !*  full_path: Full file path, including extension.
     !*  ext: Extension type (if cannot be determined from 'io_file' extension, default: unknown).
     !*  iunit: File handle/unit.
-    type io_file_info
-        character(len = LONG_FIELD_LENGTH) :: full_path = ''
-        integer :: ext = FILE_TYPE_NUL
-        integer :: iunit = -1
-    end type
+!-    type io_file_info
+!-        character(len = LONG_FIELD_LENGTH) :: full_path = ''
+!-        integer :: ext = FILE_TYPE_NUL
+!-        integer :: iunit = -1
+!-    end type
 
     !> Description:
     !>  Structure to store file information and fields.
@@ -192,23 +195,23 @@ module mesh_io_variables
     !*  ipos: Current I/O position in file for multi-frame file (start: 1).
     !*  fields: List of fields in the file.
     !*  field_map: Map of file field name to internal field name (in list, 1: field name; 2: internal name).
-    type, extends(io_file_info) :: io_file
-        character(len = SHORT_FIELD_LENGTH) :: label = ''
-        integer, dimension(:), allocatable :: subset_ids
-        logical :: multi_frame = .false.
-        integer :: freq = FREQ_NUL
-        integer :: freq_interval = 0
-        integer :: istep = 1
-        type(io_date) :: start = io_date()
-        real :: time_offset = 0.0
-        integer :: block_interval = 1
-        integer :: iblock = 1
-        integer :: temporal_interpolation = 0
-        real, dimension(:), allocatable :: interp_weights
-        integer :: ipos = 1
-        type(io_field), dimension(:), allocatable :: fields
-        character(len = SHORT_FIELD_LENGTH), dimension(:, :), allocatable :: field_map
-    end type
+!-    type, extends(io_file_info) :: io_file
+!-        character(len = SHORT_FIELD_LENGTH) :: label = ''
+!-        integer, dimension(:), allocatable :: subset_ids
+!-        logical :: multi_frame = .false.
+!-        integer :: freq = FREQ_NUL
+!-        integer :: freq_interval = 0
+!-        integer :: istep = 1
+!-        type(io_date) :: start = io_date()
+!-        real :: time_offset = 0.0
+!-        integer :: block_interval = 1
+!-        integer :: iblock = 1
+!-        integer :: temporal_interpolation = 0
+!-        real, dimension(:), allocatable :: interp_weights
+!-        integer :: ipos = 1
+!-        type(io_field), dimension(:), allocatable :: fields
+!-        character(len = SHORT_FIELD_LENGTH), dimension(:, :), allocatable :: field_map
+!-    end type
 
     !> Description:
     !>  Structure for space- or comma-separated file.
@@ -218,30 +221,30 @@ module mesh_io_variables
     !*  n_skip_cols: Number of columns to skip (default: 0).
     !*  dim_names: Names of dimensions of fields in the file.
     !*  delimiter: Delimiter (default: ' ').
-    type, extends(io_file) :: io_file_txt_delimited
-        integer :: n_skip_rows = 0
-        integer :: n_skip_cols = 0
-        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names
-        character :: delimiter = ' '
-    end type
+!-    type, extends(io_file) :: io_file_txt_delimited
+!-        integer :: n_skip_rows = 0
+!-        integer :: n_skip_cols = 0
+!-        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names
+!-        character :: delimiter = ' '
+!-    end type
 
     !> Description:
     !>  Structure for EnSim Hydrologic/Green Kenue r2c file.
     !>
     !> Variables:
     !*  binary: .true. if data is stored in binary format.
-    type, extends(io_file) :: io_file_r2c
-        logical :: binary = .false.
-    end type
+!-    type, extends(io_file) :: io_file_r2c
+!-        logical :: binary = .false.
+!-    end type
 
     !> Description:
     !>  Structure for sequential binary format file.
     !>
     !> Variables:
     !*  dim_names: Names of dimensions of fields in the file.
-    type, extends(io_file) :: io_file_seq
-        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names
-    end type
+!-    type, extends(io_file) :: io_file_seq
+!-        character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names
+!-    end type
 
     !> Description:
     !>  Structure for NetCDF file.
@@ -259,32 +262,32 @@ module mesh_io_variables
     !*  dim_name_g: Override for 'g' dimension.
     !*  const_mul: Multiplicative factor applied uniformly to fields in the file (default: 1.0).
     !*  const_add: Additive factor applied uniformly to fields in the file (default: 0.0).
-    type, extends(io_file) :: io_file_nc
-        logical :: flatten_output = .false.
-        character(len = SHORT_FIELD_LENGTH) :: dim_name_x = ''
-        character(len = SHORT_FIELD_LENGTH) :: dim_name_y = ''
-        character(len = SHORT_FIELD_LENGTH) :: dim_name_t = ''
-        character(len = SHORT_FIELD_LENGTH) :: dim_name_m = ''
-        character(len = SHORT_FIELD_LENGTH) :: dim_name_s = ''
-        character(len = SHORT_FIELD_LENGTH) :: dim_name_c = ''
-        character(len = SHORT_FIELD_LENGTH) :: dim_name_g = ''
-        real :: const_mul = 1.0
-        real :: const_add = 0.0
-    end type
+!-    type, extends(io_file) :: io_file_nc
+!-        logical :: flatten_output = .false.
+!-        character(len = SHORT_FIELD_LENGTH) :: dim_name_x = ''
+!-        character(len = SHORT_FIELD_LENGTH) :: dim_name_y = ''
+!-        character(len = SHORT_FIELD_LENGTH) :: dim_name_t = ''
+!-        character(len = SHORT_FIELD_LENGTH) :: dim_name_m = ''
+!-        character(len = SHORT_FIELD_LENGTH) :: dim_name_s = ''
+!-        character(len = SHORT_FIELD_LENGTH) :: dim_name_c = ''
+!-        character(len = SHORT_FIELD_LENGTH) :: dim_name_g = ''
+!-        real :: const_mul = 1.0
+!-        real :: const_add = 0.0
+!-    end type
 
     !> Description:
     !>  Structure for CLASS MET format file.
     !>
     !> Variables:
     !*  rr_sr: .true. to read extra columns from the file for PRERN/PRESNO.
-    type, extends(io_file) :: io_file_met
-        logical :: rr_sr = .false.
-    end type
+!-    type, extends(io_file) :: io_file_met
+!-        logical :: rr_sr = .false.
+!-    end type
 
     !> Description:
     !>  Wrapper for variables that extend 'io_file'.
-    type io_file_wrapper
-        class(io_file), allocatable :: file
-    end type
+!-    type io_file_wrapper
+!-        class(io_file), allocatable :: file
+!-    end type
 
 end module

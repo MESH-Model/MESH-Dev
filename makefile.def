@@ -39,7 +39,7 @@ OBJECTS+=	precmod.o stringmod.o
 OBJECTS+=	print_routines.o program_end.o program_abort.o \
 			module_files_variabletypes.o module_files_variables.o \
 			module_dates.o FLAGS.o \
-			mesh_io_options.o variable_types.o field_types.o mesh_io_variables.o \
+			mesh_io_options.o variable_types.o field_types.o datetime_types.o file_types.o mesh_io_variables.o \
 			parse_utilities.o field_utilities.o date_utilities.o \
 			txt_io.o ensim_io.o nc_io.o \
 			control_variables.o \

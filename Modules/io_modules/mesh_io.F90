@@ -6,6 +6,9 @@ module mesh_io
     !> 'field_utilities': For mapping functions and field types.
     use field_utilities
 
+    !> 'file_types': For I/O file types.
+    use file_types
+
     implicit none
 
     !> Local variables.
@@ -37,6 +40,9 @@ module mesh_io
     contains
 
     subroutine check_projection(reference_projection, file_projection, quiet, error_status)
+
+        !> Parsing utilities.
+        use strings, only: lowercase
 
         !> Input/output variables.
         character(len = *), intent(in) :: reference_projection, file_projection
@@ -70,6 +76,9 @@ module mesh_io
 
     subroutine check_dimension( &
         file_label, reference_label, file_values, reference_values, file_units, reference_units, null_value, quiet, error_status)
+
+        !> Parsing utilities.
+        use strings, only: lowercase
 
         !> Input/output variables.
         character(len = *), intent(in) :: file_label
@@ -165,7 +174,7 @@ module mesh_io
         !*  input_file: Input file object ('io_file').
         !*  quiet: .true. to suppress block formatting (optional, default: .false.).
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        class(io_file), intent(in) :: input_file
+        type(io_file), intent(in) :: input_file
         logical, intent(in), optional :: quiet
         integer, intent(out) :: error_status
 
@@ -185,7 +194,11 @@ module mesh_io
 #endif
 
         !> Error status.
-        error_status = 0
+        if (.not. allocated(input_file%container)) then
+            error_status = 1
+        else
+            error_status = 0
+        end if
 
         !> Check verbosity (override if 'DIAGNOSEMODE' is enabled).
         v = .true.
@@ -194,10 +207,10 @@ module mesh_io
 
         !> Validate the spatial reference of the file (compared to 'pj').
         ierr = 0
-        select type (input_file)
+        select type (file_type => input_file%container)
 
             !> r2c ASCII format.
-            class is (io_file_r2c)
+            type is (io_type_r2c)
 
                 !> Rewind the file.
                 rewind(input_file%iunit)
@@ -218,7 +231,7 @@ module mesh_io
 #ifdef NETCDF
 
             !> NetCDF format.
-            class is (io_file_nc)
+            type is (io_type_nc)
 
                 !> Read the projection from the file.
                 if (v) call print_message("Checking the spatial reference of the file.")
@@ -319,7 +332,7 @@ module mesh_io
         !*  input_file: Input file object ('io_file').
         !*  quiet: .true. to suppress block formatting (optional, default: .false.).
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        class(io_file) input_file
+        type(io_file) input_file
         logical, intent(in), optional :: quiet
         integer, intent(out) :: error_status
 
@@ -328,22 +341,20 @@ module mesh_io
         integer iun, ierr
         logical v
 
-        !> Error status.
-        error_status = 0
-
         !> Check verbosity (override if 'DIAGNOSEMODE' is enabled).
         v = .true.
         if (present(quiet)) v = .not. quiet
         if (DIAGNOSEMODE) v = .true.
 
         !> Check for a valid path.
-        if (len_trim(input_file%full_path) == 0) then
-            if (v) call print_error("Missing file name in 'open_input_file'. Unable to open file.")
+        if (len_trim(input_file%full_path) == 0 .or. .not. allocated(input_file%container)) then
+            if (v) call print_error("Unable to open a file with no file name or no associated format.")
             error_status = 1
             return
         else
 
             !> Print a message (if not quiet).
+            error_status = 0
             if (v) then
                 call reset_tab()
                 call print_message("READING: " // trim(input_file%full_path))
@@ -353,10 +364,10 @@ module mesh_io
 
         !> Open the file with read access.
         ierr = 0
-        select type (input_file)
+        select type (file_type => input_file%container)
 
             !> r2c ASCII format.
-            class is (io_file_r2c)
+            type is (io_type_r2c)
                 call open_ensim_input(BASE_FILE_IUNIT, input_file%full_path, ierr)
                 if (ierr == 0) then
                     input_file%iunit = BASE_FILE_IUNIT
@@ -364,7 +375,7 @@ module mesh_io
                 end if
 
             !> Simple text formats (txt, asc, CSV).
-            class is (io_file_txt_delimited)
+            type is (io_type_char_delimited)
                 open(BASE_FILE_IUNIT, file = input_file%full_path, action = 'read', status = 'old', iostat = ierr)
                 if (ierr == 0) then
                     input_file%iunit = BASE_FILE_IUNIT
@@ -372,7 +383,7 @@ module mesh_io
                 end if
 
             !> Binary sequential format (seq).
-            class is (io_file_seq)
+            type is (io_type_seq)
                 open( &
                     BASE_FILE_IUNIT, file = input_file%full_path, action = 'read', status = 'old', form = 'unformatted', &
                     access = 'sequential', iostat = ierr)
@@ -382,7 +393,7 @@ module mesh_io
                 end if
 
             !> NetCDF format.
-            class is (io_file_nc)
+            type is (io_type_nc)
 #ifdef NETCDF
                 call nc4_open_input(input_file%full_path, .true., iun, ierr)
                 if (ierr == 0) then
@@ -398,7 +409,7 @@ module mesh_io
 #endif
 
             !> CLASS MET format.
-            class is (io_file_met)
+            type is (io_type_met)
                 open(BASE_FILE_IUNIT, file = input_file%full_path, action = 'read', status = 'old', iostat = ierr)
                 if (ierr == 0) then
                     input_file%iunit = BASE_FILE_IUNIT
@@ -440,7 +451,7 @@ module mesh_io
         !*  input_file: Input file object ('io_file').
         !*  quiet: .true. to suppress block formatting (optional, default: .false.).
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        class(io_file) input_file
+        type(io_file) input_file
         logical, intent(in), optional :: quiet
         integer, intent(out) :: error_status
 
@@ -470,6 +481,13 @@ module mesh_io
         integer dtype, time_order, atype, alength, ndims, dat_i, fill_i
 #endif
 
+        !> Error status.
+        if (.not. allocated(input_file%container)) then
+            error_status = 1
+        else
+            error_status = 0
+        end if
+
         !> Check verbosity (override if 'DIAGNOSEMODE' is enabled).
         v = .true.
         if (present(quiet)) v = .not. quiet
@@ -489,10 +507,10 @@ module mesh_io
             n = 1
         end if
         ierr = 0
-        select type (input_file)
+        select type (file_type => input_file%container)
 
             !> r2c ASCII format.
-            type is (io_file_r2c)
+            type is (io_type_r2c)
 
                 !> Rewind the file.
                 rewind(input_file%iunit)
@@ -504,7 +522,7 @@ module mesh_io
                 if (ierr == 0) call parse_header_attribute_ensim(input_file%iunit, vkeyword, nattrs, vattr, nvars, ierr)
 
                 !> Determine type of file.
-                input_file%multi_frame = is_multi_frame(input_file%iunit)
+                input_file%series%multi_frame = is_multi_frame(input_file%iunit)
 
                 !> Read and save the attributes and variables to the list of fields.
                 if (ierr == 0) then
@@ -564,7 +582,7 @@ module mesh_io
                     if (ierr == 0) call advance_past_header(input_file%iunit, input_file%full_path, ierr)
 
                     !> Load data.
-                    if (.not. input_file%multi_frame) then
+                    if (.not. input_file%series%multi_frame) then
 
                         !> Read and parse the variable data.
                         if (ierr == 0) call load_data_r2c(input_file%iunit, input_file%full_path, vattr, nvars, x, y, .false., ierr)
@@ -616,7 +634,7 @@ module mesh_io
                         end do
 
                         !> Invalidate the current position in the file.
-                        input_file%ipos = -1
+                        input_file%series%ipos = -1
                     else if (nvars /= 1) then
 
                         !> Print an error if the multi-frame file does not contain one variable.
@@ -635,7 +653,7 @@ module mesh_io
                         i = 1
                         select case (vattr(i)%type)
                             case ('float', '')
-                                allocate(dat3_r(x, y, input_file%block_interval))
+                                allocate(dat3_r(x, y, input_file%series%block_interval))
                                 dat3_r = huge(dat3_r)
                                 file_buffer(n)%mapping%time_order = 3
                                 allocate(file_buffer(n)%field, source = model_variable_real3d(dat = dat3_r))
@@ -660,7 +678,7 @@ module mesh_io
                         end if
 
                         !> Set the current position in the file.
-                        input_file%ipos = 1
+                        input_file%series%ipos = 1
                     end if
 
                     !> Adjust the number of attributes in the file.
@@ -668,13 +686,13 @@ module mesh_io
                 end if
 
             !> Simple text formats (txt, asc, CSV).
-            type is (io_file_txt_delimited)
+            type is (io_type_char_delimited)
 
                 !> Rewind the file.
                 rewind(input_file%iunit)
 
                 !> Skip leading lines.
-                do i = 1, input_file%n_skip_rows
+                do i = 1, file_type%n_skip_rows
                     call read_txt_line(input_file%iunit, ierr = ierr)
                     if (ierr /= 0) then
                         error_status = 1
@@ -683,7 +701,7 @@ module mesh_io
                 end do
 
                 !> Check if a multi-frame file.
-                if (input_file%multi_frame) then
+                if (input_file%series%multi_frame) then
 
                     !> Set the number of active variables based on existing field definitions in the file.
                     if (allocated(input_file%fields)) n = size(input_file%fields)
@@ -701,7 +719,7 @@ module mesh_io
                     end if
 
                     !> Set the current position in the file and return.
-                    input_file%ipos = 1
+                    input_file%series%ipos = 1
                 else
 
                     !> Count the number of lines in the file.
@@ -718,19 +736,19 @@ module mesh_io
                     rewind(input_file%iunit)
 
                     !> Skip leading lines.
-                    do i = 1, input_file%n_skip_rows
+                    do i = 1, file_type%n_skip_rows
                         call read_txt_line(input_file%iunit, ierr = ierr)
                         if (ierr /= 0) cycle
                     end do
 
                     !> Allocate 'dim_names'.
-                    allocate(dim_names(1), source = (/input_file%dim_names/))
+                    allocate(dim_names(1), source = (/input_file%overrides%dim_names/))
 
                     !> Loop through the records.
                     do i = 1, nvars
 
                         !> Read the line.
-                        call read_txt_line(input_file%iunit, args, input_file%delimiter, ierr = ierr)
+                        call read_txt_line(input_file%iunit, args, file_type%delimiter, ierr = ierr)
                         if (ierr /= 0) cycle
 
                         !> Cycle if no argments exist.
@@ -766,10 +784,10 @@ module mesh_io
                 end if
 
             !> Binary sequential format (seq).
-            class is (io_file_seq)
+            type is (io_type_seq)
 
                 !> Check if a multi-frame file.
-                if (input_file%multi_frame) then
+                if (input_file%series%multi_frame) then
 
                     !> Set the number of active variables based on existing field definitions in the file.
                     if (allocated(input_file%fields)) n = size(input_file%fields)
@@ -787,12 +805,12 @@ module mesh_io
                     end if
 
                     !> Set the current position in the file and return.
-                    input_file%ipos = 1
+                    input_file%series%ipos = 1
                 end if
 #ifdef NETCDF
 
             !> NetCDF format.
-            type is (io_file_nc)
+            type is (io_type_nc)
 
                 !> Get the number of attribute and variables.
                 call nc4_inquire_file(input_file%iunit, natts = natts, nvars = nvars, ierr = ierr)
@@ -888,7 +906,7 @@ module mesh_io
                         end do
 
                         !> Overwrite the size of the 'time' dimension.
-                        if (time_order > 0) dim_lengths(time_order) = input_file%block_interval
+                        if (time_order > 0) dim_lengths(time_order) = input_file%series%block_interval
                     end if
 
                     !> Check for standard attributes.
@@ -1100,10 +1118,10 @@ module mesh_io
                             end if
 
                             !> Mark file as multi-frame.
-                            input_file%multi_frame = .true.
+                            input_file%series%multi_frame = .true.
 
                             !> Set the current position in the file.
-                            input_file%ipos = 1
+                            input_file%series%ipos = 1
 
                             !> Derive the start-time (from the first record of the 'time' variable).
                             if (ndims /= 1) then
@@ -1117,10 +1135,10 @@ module mesh_io
                             else
                                 call nc4_get_time( &
                                     input_file%iunit, &
-                                    year = input_file%start%year, month = input_file%start%month, day = input_file%start%day, &
-                                    jday = input_file%start%jday, &
-                                    hour = input_file%start%hour, minutes = input_file%start%minutes, &
-                                    time_shift = input_file%time_offset, &
+                                    year = input_file%series%start%year, month = input_file%series%start%month, &
+                                    day = input_file%series%start%day, jday = input_file%series%start%jday, &
+                                    hour = input_file%series%start%hour, minutes = input_file%series%start%minutes, &
+                                    time_shift = input_file%series%time_offset, &
                                     ierr = ierr)
                                 if (ierr /= 0) then
                                     error_status = 1
@@ -1310,29 +1328,29 @@ module mesh_io
 #endif
 
             !> CLASS MET format.
-            class is (io_file_met)
+            type is (io_type_met)
 
                 !> Rewind the file.
                 rewind(input_file%iunit)
 
                 !> Check if a multi-frame file.
-                if (input_file%multi_frame) then
+                if (input_file%series%multi_frame) then
 
                     !> Set the number of active variables based on existing field definitions in the file.
                     if (allocated(input_file%fields)) n = size(input_file%fields) + 1
 
                     !> Set the current position in the file and return.
-                    input_file%ipos = 1
+                    input_file%series%ipos = 1
 
                     !> Read the start date.
                     allocate(dat1_i(4))
                     read(input_file%iunit, *, iostat = ierr) dat1_i
                     if (ierr == 0) then
-                        input_file%start%year = dat1_i(4)
-                        input_file%start%jday = dat1_i(3)
-                        call jday_to_date(dat1_i(4), dat1_i(3), input_file%start%month, input_file%start%day)
-                        input_file%start%hour = dat1_i(1)
-                        input_file%start%minutes = dat1_i(2)
+                        input_file%series%start%year = dat1_i(4)
+                        input_file%series%start%jday = dat1_i(3)
+                        call jday_to_date(dat1_i(4), dat1_i(3), input_file%series%start%month, input_file%series%start%day)
+                        input_file%series%start%hour = dat1_i(1)
+                        input_file%series%start%minutes = dat1_i(2)
                     else
                         call print_warning("Unable to read the time associated with the first frame in the file.")
                         ierr = 0
@@ -1380,6 +1398,13 @@ module mesh_io
 
                 !> Assume a basin-wide value 'DIM_NAME_B' for scalar fields (or will get updated).
                 input_file%fields(i)%mapping%mapped_dim_order(MAP_ORDER_B) = 1
+
+                !> Overrides.
+                select type (field => input_file%fields(i)%field)
+                    class is (model_variable_real_base)
+                        if (field%const_mul == 1.0) field%const_mul = input_file%overrides%const_mul
+                        if (field%const_add == 0.0) field%const_add = input_file%overrides%const_add
+                end select
 
                 !> Map dimensions of the variable.
                 if (allocated(input_file%fields(i)%dim_names)) then
@@ -1693,7 +1718,7 @@ module mesh_io
         !*  skip_data: .true. to skip data and just move the 'ipos' position in the file.
         !*  quiet: .true. to suppress block formatting (optional, default: .false.).
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        class(io_file) input_file
+        type(io_file) input_file
         logical, intent(in), optional :: skip_data
         logical, intent(in), optional :: quiet
         integer, intent(out) :: error_status
@@ -1711,7 +1736,11 @@ module mesh_io
 #endif
 
         !> Error status.
-        error_status = 0
+        if (.not. allocated(input_file%container)) then
+            error_status = 1
+        else
+            error_status = 0
+        end if
 
         !> Check verbosity (override if 'DIAGNOSEMODE' is enabled).
         v = .true.
@@ -1719,7 +1748,7 @@ module mesh_io
         if (DIAGNOSEMODE) v = .true.
 
         !> Return if not a multi-frame file or the file contains no fields.
-        if (.not. input_file%multi_frame .or. .not. allocated(input_file%fields)) return
+        if (.not. input_file%series%multi_frame .or. .not. allocated(input_file%fields)) return
 
         !> Check if skipping data.
         s = .false.
@@ -1727,15 +1756,15 @@ module mesh_io
 
         !> Read data in the file.
         nrecs = 0
-        select type (input_file)
+        select type (file_type => input_file%container)
 
             !> r2c ASCII format.
-            class is (io_file_r2c)
+            type is (io_type_r2c)
 
                 !> Read from the file (assume field type from known file type).
                 select type (this => input_file%fields(1)%field)
                     type is (model_variable_real3d)
-                        do t = 1, input_file%block_interval
+                        do t = 1, input_file%series%block_interval
 
                             !> Read values.
                             read(input_file%iunit, *, iostat = ierr) !frame marker
@@ -1754,7 +1783,7 @@ module mesh_io
                 end select
 
             !> Simple text formats (txt, asc, CSV).
-            class is (io_file_txt_delimited)
+            type is (io_type_char_delimited)
 
                 !> Read from the file.
                 ierr = 0
@@ -1770,7 +1799,7 @@ module mesh_io
                 else
 
                     !> Read blocks.
-                    do t = 1, input_file%block_interval
+                    do t = 1, input_file%series%block_interval
 
                         !> Assign values to the field (assume field type from known file type).
                         select type (this => input_file%fields(1)%field)
@@ -1778,7 +1807,7 @@ module mesh_io
 
                                 !> Read values (skipping the specified number of columns from the start of the line).
                                 read(input_file%iunit, *, iostat = ierr) &
-                                    (str, i = 1, input_file%n_skip_cols), (this%dat(i, t), i = 1, size(this%dat))
+                                    (str, i = 1, file_type%n_skip_cols), (this%dat(i, t), i = 1, size(this%dat))
                                 if (ierr /= 0) then
                                     error_status = 1
                                     exit
@@ -1795,7 +1824,7 @@ module mesh_io
                 end if
 
             !> Binary sequential format (seq).
-            class is (io_file_seq)
+            type is (io_type_seq)
 
                 !> Read from the file.
                 ierr = 0
@@ -1812,7 +1841,7 @@ module mesh_io
                 else
 
                     !> Read blocks.
-                    do t = 1, input_file%block_interval
+                    do t = 1, input_file%series%block_interval
 
                         !> Assign values to the field (assume field type from known file type).
                         select type (this => input_file%fields(1)%field)
@@ -1840,7 +1869,7 @@ module mesh_io
 #ifdef NETCDF
 
             !> NetCDF format.
-            class is (io_file_nc)
+            type is (io_type_nc)
 
                 !> Loop through each registered field.
                 if (s) then
@@ -1858,42 +1887,42 @@ module mesh_io
                         select type (this => input_file%fields(i)%field)
                             type is (model_variable_int5d)
                                 if (input_file%fields(i)%mapping%time_order > 0) then
-                                    start5(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    start5(input_file%fields(i)%mapping%time_order) = input_file%series%ipos
                                     call nc4_get_data( &
                                         input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
                                         start = start5, ierr = ierr)
                                 end if
                             type is (model_variable_int4d)
                                 if (input_file%fields(i)%mapping%time_order > 0) then
-                                    start4(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    start4(input_file%fields(i)%mapping%time_order) = input_file%series%ipos
                                     call nc4_get_data( &
                                         input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
                                         start = start4, ierr = ierr)
                                 end if
                             type is (model_variable_int3d)
                                 if (input_file%fields(i)%mapping%time_order > 0) then
-                                    start3(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    start3(input_file%fields(i)%mapping%time_order) = input_file%series%ipos
                                     call nc4_get_data( &
                                         input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
                                         start = start3, ierr = ierr)
                                 end if
                             type is (model_variable_int2d)
                                 if (input_file%fields(i)%mapping%time_order > 0) then
-                                    start2(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    start2(input_file%fields(i)%mapping%time_order) = input_file%series%ipos
                                     call nc4_get_data( &
                                         input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
                                         start = start2, ierr = ierr)
                                 end if
                             type is (model_variable_int1d)
                                 if (input_file%fields(i)%mapping%time_order > 0) then
-                                    start1(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    start1(input_file%fields(i)%mapping%time_order) = input_file%series%ipos
                                     call nc4_get_data( &
                                         input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
                                         start = start1, ierr = ierr)
                                 end if
                             type is (model_variable_real5d)
                                 if (input_file%fields(i)%mapping%time_order > 0) then
-                                    start5(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    start5(input_file%fields(i)%mapping%time_order) = input_file%series%ipos
                                     call nc4_get_data( &
                                         input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
                                         start = start5, ierr = ierr)
@@ -1905,7 +1934,7 @@ module mesh_io
                                 end if
                             type is (model_variable_real4d)
                                 if (input_file%fields(i)%mapping%time_order > 0) then
-                                    start4(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    start4(input_file%fields(i)%mapping%time_order) = input_file%series%ipos
                                     call nc4_get_data( &
                                         input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
                                         start = start4, ierr = ierr)
@@ -1917,7 +1946,7 @@ module mesh_io
                                 end if
                             type is (model_variable_real3d)
                                 if (input_file%fields(i)%mapping%time_order > 0) then
-                                    start3(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    start3(input_file%fields(i)%mapping%time_order) = input_file%series%ipos
                                     call nc4_get_data( &
                                         input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
                                         start = start3, ierr = ierr)
@@ -1929,7 +1958,7 @@ module mesh_io
                                 end if
                             type is (model_variable_real2d)
                                 if (input_file%fields(i)%mapping%time_order > 0) then
-                                    start2(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    start2(input_file%fields(i)%mapping%time_order) = input_file%series%ipos
                                     call nc4_get_data( &
                                         input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
                                         start = start2, ierr = ierr)
@@ -1941,7 +1970,7 @@ module mesh_io
                                 end if
                             type is (model_variable_real1d)
                                 if (input_file%fields(i)%mapping%time_order > 0) then
-                                    start1(input_file%fields(i)%mapping%time_order) = input_file%ipos
+                                    start1(input_file%fields(i)%mapping%time_order) = input_file%series%ipos
                                     call nc4_get_data( &
                                         input_file%iunit, input_file%fields(i)%label, input_file%fields(i)%id, this%dat, &
                                         start = start1, ierr = ierr)
@@ -1957,17 +1986,17 @@ module mesh_io
                         if (ierr /= 0) then
                             error_status = 1
                         else
-                            nrecs = input_file%block_interval
+                            nrecs = input_file%series%block_interval
                         end if
                     end do
                 end if
 #endif
 
             !> CLASS MET format.
-            class is (io_file_met)
+            type is (io_type_met)
 
                 !> Allocate the temporary variable.
-                if (input_file%rr_sr) then
+                if (file_type%rr_sr) then
                     allocate(dat1_r(9))
                 else
                     allocate(dat1_r(7))
@@ -1987,7 +2016,7 @@ module mesh_io
                 else
 
                     !> Read blocks.
-                    do t = 1, input_file%block_interval
+                    do t = 1, input_file%series%block_interval
 
                         !> Read fields from the line (skipping the first four columns of date information).
                         read(input_file%iunit, *, iostat = ierr) (str, i = 1, 4), (dat1_r(i), i = 1, size(dat1_r))
@@ -2014,7 +2043,7 @@ module mesh_io
         end select
 
         !> Increment the positional counter.
-        input_file%ipos = input_file%ipos + nrecs
+        input_file%series%ipos = input_file%series%ipos + nrecs
 
     end subroutine
 
@@ -2960,19 +2989,15 @@ module mesh_io
 
     end subroutine
 
-    subroutine create_output_file(output_file, field_list, quiet, error_status)
+    subroutine create_output_file(output_file, quiet, error_status)
 
-        !> Input variables.
-        !*  output_file: Output file definition ('io_file_info' structure).
-        !*  field_list: Fields to be written to file (list of 'io_field').
+        !> Input/output variables.
+        !*  output_file: Output file containing field definitions.
         !*  quiet: .true. to suppress block formatting (optional, default: .false.).
-        class(io_file), intent(in) :: output_file
-        type(io_field), dimension(:), intent(in) :: field_list
-        logical, intent(in), optional :: quiet
-
-        !> Output variables.
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        integer, intent(out), optional :: error_status
+        type(io_file), intent(in) :: output_file
+        logical, intent(in), optional :: quiet
+        integer, intent(out) :: error_status
 
         !> Local variables.
         logical v, ltest
@@ -2990,6 +3015,7 @@ module mesh_io
         else
 
             !> Print a message (if not quiet).
+            error_status = 0
             if (v) then
                 call reset_tab()
                 call print_message("SAVING: " // trim(output_file%full_path))
@@ -3002,24 +3028,21 @@ module mesh_io
 
     end subroutine
 
-    subroutine append_output_frame(field_list, file_format, file_unit, quiet, error_status)
+    subroutine append_output_frame(output_file, quiet, error_status)
 
-        !> Input variables.
-        !*  field_list: Variables to save to file (list of 'io_field' types).
-        !*  file_format: Key specifying file format (must be one from 'mesh_io_options').
-        !*  file_unit: Unit associated with the opened file.
+        !> Input/output variables.
+        !*  output_file: Output file containing field definitions, already associated with an output unit.
         !*  quiet: .true. to suppress block formatting (optional, default: .false.).
-        type(io_field), dimension(:), intent(in) :: field_list
-        integer, intent(in) :: file_format
-        integer, intent(out) :: file_unit
-        logical, intent(in), optional :: quiet
-
-        !> Output variables.
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        integer, intent(out), optional :: error_status
+        type(io_file), intent(in) :: output_file
+        logical, intent(in), optional :: quiet
+        integer, intent(out) :: error_status
 
         !> Local variables.
         logical v
+
+        !> Return status.
+        error_status = 0
 
         !> Check verbosity (override if 'DIAGNOSEMODE' is enabled).
         v = .true.

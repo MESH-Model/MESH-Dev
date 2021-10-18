@@ -6,10 +6,10 @@ module input_forcing
     implicit none
 
     !* forcing_files: List of forcing files (of type 'io_file', private).
-    type(io_file_wrapper), dimension(:), allocatable, private, save :: forcing_files
+    type(io_file), dimension(:), allocatable, private, save :: forcing_files
 
     !* forcing_file_start_date_override: File start date read from other configuration files (override).
-    type(io_date), save :: forcing_file_start_date_override
+    type(io_datetime), save :: forcing_file_start_date_override
 
     !* forcing_file_hourly_flag_override: Record length read from other configuration files.
     integer, save :: forcing_file_hourly_flag_override = 30
@@ -22,37 +22,36 @@ module input_forcing
 
     contains
 
-    subroutine add_input_forcing_file(input_file, error_status)
+    subroutine expand_forcing_files_list(error_status)
 
         !> Input/output variables.
-        class(io_file), intent(in) :: input_file
         integer, intent(out) :: error_status
 
         !> Local variables.
-        type(io_file_wrapper), dimension(:), allocatable :: temp_list
-        integer i
+        type(io_file), dimension(:), allocatable :: temp_list
+        integer, parameter :: increment = 1
 
         !> Status.
         error_status = 0
 
-        !> Allocate the working list and transfer fields.
-        if (allocated(forcing_files)) then
-            allocate(temp_list(size(forcing_files) + 1))
+        !> Transfer fields.
+        if (.not. allocated(forcing_files)) then
+
+            !> No need to transfer if 'forcing_files' is not allocated.
+            allocate(forcing_files(increment))
+        else
+            !> Allocate temporary field.
+            allocate(temp_list(size(forcing_files) + increment))
+
+            !> Transfer fields.
             temp_list(1:size(forcing_files)) = forcing_files
 
-            !> Deallocate the main list.
+            !> Deallocate source array.
             deallocate(forcing_files)
-        else
-            allocate(temp_list(1))
+
+            !> Reallocate source array and transfer fields.
+            call move_alloc(from = temp_list, to = forcing_files)
         end if
-
-        !> Assign the new object.
-        allocate(temp_list(size(temp_list))%file, source = input_file)
-
-        !> Transfer back to the main list.
-        allocate(forcing_files(size(temp_list)))
-        forcing_files = temp_list
-        deallocate(temp_list)
 
     end subroutine
 
@@ -74,7 +73,6 @@ module input_forcing
         character(len = :), allocatable :: base_file_name, input_flag, flag_name, file_label
         character(len = SHORT_FIELD_LENGTH) :: field_map(1,2), code
         character(len = SHORT_FIELD_LENGTH), allocatable :: dim_names(:), values(:)
-        real const_mul, const_add
         integer j, i, block_interval
         logical v, no_clim_flag
 
@@ -114,7 +112,7 @@ module input_forcing
                 forcing_file_preset_options = input_flag((len(flag_name) + 1):)
                 if (index(input_flag, ' met') > 0) then
 
-                    !> Continue to read the flag if a CLASS MET format file.
+                    !> Continue to read the flag if a CLASS 'MET' format file.
                     field_map(1, 2) = 'CLASSMET'
                 else
 
@@ -251,7 +249,7 @@ module input_forcing
             if (allocated(forcing_files)) then
                 i = 0
                 do j = 1, size(forcing_files)
-                    if (forcing_files(j)%file%label == file_label) then
+                    if (forcing_files(j)%label == file_label) then
                         i = j
                         exit
                     end if
@@ -263,67 +261,64 @@ module input_forcing
 
             !> Or else register the file.
             if (.not. allocated(forcing_files) .or. i > size(forcing_files)) then
+
+                !> Expand the list of forcing files.
+                call expand_forcing_files_list(error_status)
+
+                !> Specify the file type/container.
                 select case (file_label((index(file_label, '_') + 1):))
                     case ('r2c')
 
                         !> ASCII R2C format.
-                        call add_input_forcing_file(io_file_r2c( &
-                            label = file_label, full_path = base_file_name // '.r2c', fields = null(), &
-                            subset_ids = null(), interp_weights = null(), field_map = null(), &
-                            freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, &
-                            block_interval = block_interval), error_status)
+                        allocate(forcing_files(i)%container, source = io_type_r2c())
                     case ('csv')
 
                         !> CSV format.
                         allocate(dim_names(2))
                         dim_names = (/DIM_NAME_M, DIM_NAME_T/)
-                        call add_input_forcing_file(io_file_txt_delimited( &
-                            label = file_label, full_path = base_file_name // '.csv', fields = null(), &
-                            subset_ids = null(), interp_weights = null(), field_map = null(), &
-                            freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, multi_frame = .true., &
-                            block_interval = block_interval, dim_names = dim_names, delimiter = ','), error_status)
+                        allocate(forcing_files(i)%container, source = io_type_char_delimited(delimiter = ','))
                     case ('seq')
 
                         !> Rank-ordered binary sequential format.
                         allocate(dim_names(2))
                         dim_names = (/DIM_NAME_N, DIM_NAME_T/)
-                        call add_input_forcing_file(io_file_seq( &
-                            label = file_label, full_path = base_file_name // '.seq', fields = null(), &
-                            subset_ids = null(), interp_weights = null(), field_map = null(), &
-                            freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, multi_frame = .true., &
-                            block_interval = block_interval, dim_names = dim_names), error_status)
+                        allocate(forcing_files(i)%container, source = io_type_seq())
                     case ('asc')
 
                         !> Rank-ordered text (ASCII) format.
                         allocate(dim_names(2))
                         dim_names = (/DIM_NAME_N, DIM_NAME_T/)
-                        call add_input_forcing_file(io_file_txt_delimited( &
-                            label = file_label, full_path = base_file_name // '.asc', fields = null(), &
-                            subset_ids = null(), interp_weights = null(), field_map = null(), &
-                            freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, multi_frame = .true., &
-                            block_interval = block_interval, dim_names = dim_names), error_status)
+                        allocate(forcing_files(i)%container, source = io_type_char_delimited())
                     case ('met')
 
                         !> CLASS 'MET' file.
-                        call add_input_forcing_file(io_file_met( &
-                            label = file_label, full_path = base_file_name // '.met', fields = null(), &
-                            subset_ids = null(), interp_weights = null(), field_map = null(), &
-                            freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, multi_frame = .true., &
-                            block_interval = block_interval), error_status)
+                        allocate(dim_names(1))
+                        dim_names = (/DIM_NAME_T/)
+                        allocate(forcing_files(i)%container, source = io_type_met())
                     case ('nc')
 
                         !> netCDF format.
-                        call add_input_forcing_file(io_file_nc( &
-                            label = file_label, full_path = base_file_name // '.nc', fields = null(), &
-                            subset_ids = null(), interp_weights = null(), field_map = null(), &
-                            freq = FREQ_MINUTES, freq_interval = forcing_file_hourly_flag_override, block_interval = block_interval), &
-                            error_status)
+                        allocate(forcing_files(i)%container, source = io_type_nc())
                     case default
+
+                        !> Unknown or unsupported format.
                         error_status = 1
                 end select
 
                 !> Transfer field map.
-                allocate(forcing_files(i)%file%field_map(1, 2), source = field_map)
+                allocate(forcing_files(i)%field_map(1, 2), source = field_map)
+
+                !> Assign other attributes.
+                forcing_files(i)%label = file_label
+                forcing_files(i)%full_path = base_file_name // '.' // file_label((index(file_label, '_') + 1):)
+                forcing_files(i)%series%multi_frame = .true.
+                forcing_files(i)%series%freq = FREQ_MINUTES
+                forcing_files(i)%series%freq_interval = forcing_file_hourly_flag_override
+                forcing_files(i)%series%block_interval = block_interval
+                if (allocated(dim_names)) then
+                    allocate(forcing_files(i)%overrides%dim_names(size(dim_names)), source = dim_names)
+                    deallocate(dim_names)
+                end if
             end if
         end if
 
@@ -334,123 +329,144 @@ module input_forcing
         end if
 
         !> Parse the other options to update the file definition.
-        const_mul = 1.0
-        const_add = 0.0
         no_clim_flag = .false.
         do j = 2, size(values)
             if (values(j)(1:3) == 'hf=') then
 
                 !> Frame length/file time-stepping.
-                read(values(j)(4:), *, iostat = error_status) forcing_files(i)%file%freq_interval
+                read(values(j)(4:), *, iostat = error_status) forcing_files(i)%series%freq_interval
             else if (values(j)(1:11) == 'start_date=') then
 
                 !> First date of record.
                 if (len_trim(values(j)) >= 15) then
-                    read(values(j)(12:15), *, iostat = error_status) forcing_files(i)%file%start%year
+                    read(values(j)(12:15), *, iostat = error_status) forcing_files(i)%series%start%year
                     if (error_status == 0) then
                         if (len_trim(values(j)) >= 17) then
-                            read(values(j)(16:17), *, iostat = error_status) forcing_files(i)%file%start%month
+                            read(values(j)(16:17), *, iostat = error_status) forcing_files(i)%series%start%month
                             if (error_status == 0) then
                                 if (len_trim(values(j)) >= 19) then
-                                    read(values(j)(18:19), *, iostat = error_status) forcing_files(i)%file%start%day
+                                    read(values(j)(18:19), *, iostat = error_status) forcing_files(i)%series%start%day
                                     if (error_status == 0) then
                                         if (len_trim(values(j)) >= 21) then
-                                            read(values(j)(20:21), *, iostat = error_status) forcing_files(i)%file%start%hour
+                                            read(values(j)(20:21), *, iostat = error_status) forcing_files(i)%series%start%hour
                                             if (error_status == 0) then
                                                 if (len_trim(values(j)) >= 23) then
                                                     read(values(j)(22:23), *, iostat = error_status) &
-                                                        forcing_files(i)%file%start%minutes
+                                                        forcing_files(i)%series%start%minutes
                                                 else
-                                                    forcing_files(i)%file%start%minutes = 0
+                                                    forcing_files(i)%series%start%minutes = 0
                                                 end if
                                             end if
                                         else
-                                            forcing_files(i)%file%start%hour = 0
+                                            forcing_files(i)%series%start%hour = 0
                                         end if
                                     end if
                                 else
-                                    forcing_files(i)%file%start%day = 1
+                                    forcing_files(i)%series%start%day = 1
                                 end if
-                                forcing_files(i)%file%start%jday = &
-                                    date_to_jday( &
-                                        forcing_files(i)%file%start%year, forcing_files(i)%file%start%month, &
-                                        forcing_files(i)%file%start%day)
+                                forcing_files(i)%series%start%jday = date_to_jday( &
+                                        forcing_files(i)%series%start%year, forcing_files(i)%series%start%month, &
+                                        forcing_files(i)%series%start%day)
                             end if
                         else
-                            forcing_files(i)%file%start%month = 1
+                            forcing_files(i)%series%start%month = 1
                         end if
                     end if
                 end if
             else if (values(j)(1:4) == 'nts=') then
 
                 !> Number of frames to read in to memory.
-                read(values(j)(5:), *, iostat = error_status) forcing_files(i)%file%block_interval
+                read(values(j)(5:), *, iostat = error_status) forcing_files(i)%series%block_interval
             else if (values(j)(1:6) == 'fname=') then
 
                 !> Base file name (without extension).
-                forcing_files(i)%file%full_path = trim(values(j)(7:)) // &
-                    forcing_files(i)%file%full_path(index(forcing_files(i)%file%full_path, '.', back = .true.):)
+                forcing_files(i)%full_path = trim(values(j)(7:)) // &
+                    forcing_files(i)%full_path(index(forcing_files(i)%full_path, '.', back = .true.):)
             else if (values(j)(1:6) == 'fpath=') then
 
                 !> Full path including file name and extension.
-                forcing_files(i)%file%full_path = trim(values(j)(7:))
+                forcing_files(i)%full_path = trim(values(j)(7:))
             else if (values(j)(1:9) == 'name_var=') then
 
                 !> Variable name.
-                forcing_files(i)%file%field_map(1, 1) = trim(values(j)(10:))
+                forcing_files(i)%field_map(1, 1) = trim(values(j)(10:))
             else if (values(j)(1:9) == 'name_lat=') then
 
                 !> Name of latitude dimension (for specific formats).
-                select type (this => forcing_files(i)%file)
-                    class is (io_file_nc)
-                        this%dim_name_y = trim(values(j)(10:))
+                select type (file_type => forcing_files(i)%container)
+                    type is (io_type_nc)
+                        file_type%dim_name_y = trim(values(j)(10:))
+                    class default
+                        call print_warning( &
+                            "The option 'name_lat=' on '" // flag_name // "' has no effect on '" // &
+                            trim(forcing_files(i)%full_path) // "'.")
                 end select
             else if (values(j)(1:9) == 'name_lon=') then
 
                 !> Name of longitude dimension (for specific formats).
-                select type (this => forcing_files(i)%file)
-                    class is (io_file_nc)
-                        this%dim_name_x = trim(values(j)(10:))
+                select type (file_type => forcing_files(i)%container)
+                    type is (io_type_nc)
+                        file_type%dim_name_x = trim(values(j)(10:))
+                    class default
+                        call print_warning( &
+                            "The option 'name_lon=' on '" // flag_name // "' has no effect on '" // &
+                            trim(forcing_files(i)%full_path) // "'.")
                 end select
             else if (values(j)(1:10) == 'name_time=') then
 
                 !> Name of time dimension (for specific formats).
-                select type (this => forcing_files(i)%file)
-                    class is (io_file_nc)
-                        this%dim_name_t = trim(values(j)(11:))
+                select type (file_type => forcing_files(i)%container)
+                    type is (io_type_nc)
+                        file_type%dim_name_t = trim(values(j)(11:))
+                    class default
+                        call print_warning( &
+                            "The option 'name_time=' on '" // flag_name // "' has no effect on '" // &
+                            trim(forcing_files(i)%full_path) // "'.")
                 end select
             else if (values(j)(1:3) == 'cm=') then
 
                 !> Data multiplier.
-                read(values(j)(4:), *, iostat = error_status) const_mul
+                read(values(j)(4:), *, iostat = error_status) forcing_files(i)%overrides%const_mul
             else if (values(j)(1:3) == 'ca=') then
 
                 !> Data additive factor.
-                read(values(j)(4:), *, iostat = error_status) const_add
+                read(values(j)(4:), *, iostat = error_status) forcing_files(i)%overrides%const_add
             else if (values(j)(1:12) == 'n_skip_cols=') then
 
                 !> Number of leading columns (to skip).
-                select type (this => forcing_files(i)%file)
-                    class is (io_file_txt_delimited)
-                        read(values(j)(13:), *, iostat = error_status) this%n_skip_cols
+                select type (file_type => forcing_files(i)%container)
+                    type is (io_type_char_delimited)
+                        read(values(j)(13:), *, iostat = error_status) file_type%n_skip_cols
+                    class default
+                        call print_warning( &
+                            "The option 'n_skip_cols=' on '" // flag_name // "' has no effect on '" // &
+                            trim(forcing_files(i)%full_path) // "'.")
                 end select
             else if (values(j)(1:12) == 'n_skip_rows=') then
 
                 !> Number of leading rows (to skip).
-                select type (this => forcing_files(i)%file)
-                    class is (io_file_txt_delimited)
-                        read(values(j)(13:), *, iostat = error_status) this%n_skip_rows
+                select type (file_type => forcing_files(i)%container)
+                    type is (io_type_char_delimited)
+                        read(values(j)(13:), *, iostat = error_status) file_type%n_skip_rows
+                    class default
+                        call print_warning( &
+                            "The option 'n_skip_rows=' on '" // flag_name // "' has no effect on '" // &
+                            trim(forcing_files(i)%full_path) // "'.")
                 end select
             else if (values(j)(1:11) == 'time_shift=') then
 
                 !> Time shift to apply to time-stamps (for specific formats).
-                read(values(j)(12:), *, iostat = error_status) forcing_files(i)%file%time_offset
+                read(values(j)(12:), *, iostat = error_status) forcing_files(i)%series%time_offset
             else if (values(j) == 'rr_sr') then
 
-                !> Separate liquid/solid precipitation fields (for CLASS MET format).
-                select type (this => forcing_files(i)%file)
-                    class is (io_file_met)
-                        this%rr_sr = .true.
+                !> Separate liquid/solid precipitation fields (for CLASS 'MET' format).
+                select type (file_type => forcing_files(i)%container)
+                    type is (io_type_met)
+                        file_type%rr_sr = .true.
+                    class default
+                        call print_warning( &
+                            "The option 'rr_sr=' on '" // flag_name // "' has no effect on '" // &
+                            trim(forcing_files(i)%full_path) // "'.")
                 end select
             else if (values(j) == 'no_clim') then
 
@@ -469,103 +485,77 @@ module input_forcing
         end do
 
         !> Add fields (for formats that will not read them from file).
-        if (.not. allocated(forcing_files(i)%file%fields)) then
-            select type (this => forcing_files(i)%file)
-                class is (io_file_met)
+        if (.not. allocated(forcing_files(i)%fields)) then
+            select type (file_type => forcing_files(i)%container)
+                type is (io_type_met)
 
                     !> Allocate temporary variables.
-                    if (this%rr_sr) then
+                    if (file_type%rr_sr) then
                         allocate(field_list(9))
                     else
                         allocate(field_list(7))
                     end if
-                    allocate(dim_names(1))
-                    dim_names = (/DIM_NAME_T/)
 
-                    !> Add the standard fields of the CLASS MET file.
+                    !> Add the standard fields of the CLASS 'MET' file.
                     field_list(1)%label = VN_FSIN
-                    field_list(1)%id = 1
-                    field_list(1)%mapping%time_order = 1
-                    allocate(field_list(1)%field, source = model_variable_real1d(dat = null()))
-                    allocate(field_list(1)%dim_names(1), source = dim_names)
                     field_list(2)%label = VN_FLIN
-                    field_list(2)%id = 2
-                    field_list(2)%mapping%time_order = 1
-                    allocate(field_list(2)%field, source = model_variable_real1d(dat = null()))
-                    allocate(field_list(2)%dim_names(1), source = dim_names)
                     field_list(3)%label = VN_PRE
-                    field_list(3)%id = 3
-                    field_list(3)%mapping%time_order = 1
-                    allocate(field_list(3)%field, source = model_variable_real1d(dat = null()))
-                    allocate(field_list(3)%dim_names(1), source = dim_names)
                     field_list(4)%label = VN_TA
-                    field_list(4)%id = 4
-                    field_list(4)%mapping%time_order = 1
                     allocate(field_list(4)%field, source = model_variable_real1d(dat = null(), const_add = 273.16))
-                    allocate(field_list(4)%dim_names(1), source = dim_names)
                     field_list(5)%label = VN_QA
-                    field_list(5)%id = 5
-                    field_list(5)%mapping%time_order = 1
-                    allocate(field_list(5)%field, source = model_variable_real1d(dat = null()))
-                    allocate(field_list(5)%dim_names(1), source = dim_names)
                     field_list(6)%label = VN_UV
-                    field_list(6)%id = 6
-                    field_list(6)%mapping%time_order = 1
-                    allocate(field_list(6)%field, source = model_variable_real1d(dat = null()))
-                    allocate(field_list(6)%dim_names(1), source = dim_names)
                     field_list(7)%label = VN_PRES
-                    field_list(7)%id = 7
-                    field_list(7)%mapping%time_order = 1
-                    allocate(field_list(7)%field, source = model_variable_real1d(dat = null()))
-                    allocate(field_list(7)%dim_names(1), source = dim_names)
 
                     !> Add the extended fields by the 'sr_rr' option.
-                    if (this%rr_sr) then
+                    if (file_type%rr_sr) then
                         field_list(8)%label = VN_PRERN
-                        field_list(8)%id = 8
-                        field_list(8)%mapping%time_order = 1
                         allocate(field_list(8)%field, source = model_variable_real1d(dat = null()))
-                        allocate(field_list(8)%dim_names(1), source = dim_names)
                         field_list(9)%label = VN_PRESNO
-                        field_list(9)%id = 9
-                        field_list(9)%mapping%time_order = 1
                         allocate(field_list(9)%field, source = model_variable_real1d(dat = null()))
-                        allocate(field_list(9)%dim_names(1), source = dim_names)
                     end if
 
+                    !> Update common attributes.
+                    do j = 1, size(field_list)
+                        field_list(j)%id = j
+                        field_list(j)%mapping%time_order = 1
+                        if (.not. allocated(field_list(j)%field)) then
+                            allocate(field_list(j)%field, source = model_variable_real1d(dat = null()))
+                        end if
+                        allocate( &
+                            field_list(j)%dim_names(size(forcing_files(i)%overrides%dim_names)), &
+                            source = forcing_files(i)%overrides%dim_names)
+                    end do
+
                     !> Attach the field list to the file.
-                    call combine_field_list(this%fields, field_list, error_status)
-                class is (io_file_txt_delimited)
+                    call combine_field_list(forcing_files(i)%fields, field_list, error_status)
+                type is (io_type_char_delimited)
 
                     !> Allocate temporary variables.
                     allocate(field_list(1))
 
                     !> Add the field.
-                    field_list(1)%label = trim(this%field_map(1, 2))
+                    field_list(1)%label = trim(forcing_files(i)%field_map(1, 2))
                     field_list(1)%id = 1
                     field_list(1)%mapping%time_order = 2
-                    allocate(field_list(1)%field, source = model_variable_real2d( &
-                        dat = null(), const_mul = const_mul, const_add = const_add))
-                    allocate(field_list(1)%dim_names(size(this%dim_names)), source = this%dim_names)
-                    call combine_field_list(this%fields, field_list, error_status)
-                class is (io_file_seq)
+                    allocate(field_list(1)%field, source = model_variable_real2d(dat = null(), &
+                        const_mul = forcing_files(i)%overrides%const_mul, const_add = forcing_files(i)%overrides%const_add))
+                    allocate(field_list(1)%dim_names(size(forcing_files(i)%overrides%dim_names)), source = forcing_files(i)%overrides%dim_names)
+                    call combine_field_list(forcing_files(i)%fields, field_list, error_status)
+                type is (io_type_seq)
 
                     !> Allocate temporary variables.
                     allocate(field_list(1))
 
                     !> Add the field.
-                    field_list(1)%label = trim(this%field_map(1, 2))
+                    field_list(1)%label = trim(forcing_files(i)%field_map(1, 2))
                     field_list(1)%id = 1
                     field_list(1)%mapping%time_order = 2
-                    allocate(field_list(1)%field, source = model_variable_real2d( &
-                        dat = null(), const_mul = const_mul, const_add = const_add))
-                    allocate(field_list(1)%dim_names(size(this%dim_names)), source = this%dim_names)
-                    call combine_field_list(this%fields, field_list, error_status)
-                class is (io_file_nc)
-
-                    !> Set multiplicative and additive factors.
-                    this%const_mul = const_mul
-                    this%const_add = const_add
+                    allocate(field_list(1)%field, source = model_variable_real2d(dat = null(), &
+                        const_mul = forcing_files(i)%overrides%const_mul, const_add = forcing_files(i)%overrides%const_add))
+                    allocate( &
+                        field_list(1)%dim_names(size(forcing_files(i)%overrides%dim_names)), &
+                        source = forcing_files(i)%overrides%dim_names)
+                    call combine_field_list(forcing_files(i)%fields, field_list, error_status)
             end select
         end if
 
@@ -598,83 +588,79 @@ module input_forcing
         do i = 1, size(forcing_files)
 
             !> Pre-allocate the data field for file formats that do not read the information from file.
-            select type (this => forcing_files(i)%file)
-                class is (io_file_met)
-                    do j = 1, size(this%fields)
-                        select type (field => this%fields(j)%field)
+            select type (file_type => forcing_files(i)%container)
+                type is (io_type_met)
+                    do j = 1, size(forcing_files(i)%fields)
+                        select type (field => forcing_files(i)%fields(j)%field)
 
                             !> Assume field type from known file format.
                             type is (model_variable_real1d)
-                                allocate(field%dat(this%block_interval))
+                                allocate(field%dat(forcing_files(i)%series%block_interval))
                                 field%dat = huge(field%dat)
                         end select
                     end do
-                class is (io_file_txt_delimited)
-                    do j = 1, size(this%fields)
-                        select type (field => this%fields(j)%field)
+                type is (io_type_char_delimited)
+                    do j = 1, size(forcing_files(i)%fields)
+                        select type (field => forcing_files(i)%fields(j)%field)
 
                             !> Assume number of dimensions and field type from known file format.
                             type is (model_variable_real2d)
-                                if (allocated(this%fields(j)%dim_names)) then
-                                    select case (this%fields(j)%dim_names(1))
+                                if (allocated(forcing_files(i)%fields(j)%dim_names)) then
+                                    select case (forcing_files(i)%fields(j)%dim_names(1))
                                         case (DIM_NAME_M)
-                                            allocate(field%dat(maxval(vs%tile%from_gru), this%block_interval))
+                                            allocate(field%dat(maxval(vs%tile%from_gru), forcing_files(i)%series%block_interval))
                                         case (DIM_NAME_N)
-                                            allocate(field%dat(vs%grid%dim_length, this%block_interval))
+                                            allocate(field%dat(vs%grid%dim_length, forcing_files(i)%series%block_interval))
                                     end select
                                     field%dat = huge(field%dat)
                                 end if
                         end select
                     end do
-                class is (io_file_seq)
-                    do j = 1, size(this%fields)
-                        select type (field => this%fields(j)%field)
+                type is (io_type_seq)
+                    do j = 1, size(forcing_files(i)%fields)
+                        select type (field => forcing_files(i)%fields(j)%field)
 
                             !> Assume number of dimensions and field type from known file format.
                             type is (model_variable_real2d)
-                                allocate(field%dat(vs%grid%dim_length, this%block_interval))
+                                allocate(field%dat(vs%grid%dim_length, forcing_files(i)%series%block_interval))
                                 field%dat = huge(field%dat)
                         end select
                     end do
             end select
 
             !> Open the file.
-            call open_input_file(forcing_files(i)%file, error_status = error_status)
+            call open_input_file(forcing_files(i), error_status = error_status)
             if (error_status /= 0) exit
 
             !> Validate spatial reference.
             if (.true.) then
-                call validate_input_file_spatial_reference(forcing_files(i)%file, error_status = error_status)
+                call validate_input_file_spatial_reference(forcing_files(i), error_status = error_status)
                 if (error_status /= 0) exit
             end if
 
-            !> For special cases, define the field list or else read the variables in the file.
-            error_status = 0
-            select type (this => forcing_files(i)%file)
-                class default
-                    call read_file_fields_to_buffer(forcing_files(i)%file, error_status = error_status)
-            end select
+            !> Identify fields in the file.
+            call read_file_fields_to_buffer(forcing_files(i), error_status = error_status)
             if (error_status /= 0) exit
 
             !> Deactivate non-temporal fields.
-            do j = 1, size(forcing_files(i)%file%fields)
-                if (.not. forcing_files(i)%file%fields(j)%mapping%time_order > 0) then
-                    deallocate(forcing_files(i)%file%fields(j)%field)
+            do j = 1, size(forcing_files(i)%fields)
+                if (.not. forcing_files(i)%fields(j)%mapping%time_order > 0) then
+                    deallocate(forcing_files(i)%fields(j)%field)
                 end if
             end do
 
             !> Compact the list.
-            call cleanup_field_list(forcing_files(i)%file%fields, error_status)
+            call cleanup_field_list(forcing_files(i)%fields, error_status)
 
             !> Check if the file still contains fields.
-            if (.not. allocated(forcing_files(i)%file%fields)) then
+            if (.not. allocated(forcing_files(i)%fields)) then
                 call print_error("The file contains no active temporal fields.")
                 error_status = 1
             else
 
                 !> Activate fields and create field maps.
-                call activate_variables_from_field_list(forcing_files(i)%file%fields, error_status)
-                call create_mapped_output_from_field_list(forcing_files(i)%file%fields, error_status = error_status)
+                call activate_variables_from_field_list(forcing_files(i)%fields, error_status)
+                call create_mapped_output_from_field_list(forcing_files(i)%fields, error_status = error_status)
                 if (error_status /= 0) return
 
                 !> Allocate fields for temporal interpolation if enabled.
@@ -682,44 +668,49 @@ module input_forcing
                     if (forcing_file_temporal_interpolation == 1) then
 
                         !> Set the flag for the file.
-                        forcing_files(i)%file%temporal_interpolation = forcing_file_temporal_interpolation
+                        forcing_files(i)%temporal_interp%scheme = forcing_file_temporal_interpolation
                         call print_remark("INTERPOLATIONFLAG is enabled.")
 
-                        !> Pre-calculate weights.
-                        select case (forcing_files(i)%file%freq)
+                        !> Determine the frequency interval.
+                        j = 0
+                        select case (forcing_files(i)%series%freq)
                             case (FREQ_MINUTES)
-                                allocate(forcing_files(i)%file%interp_weights(forcing_files(i)%file%freq_interval/ic%dtmins))
+                                j = forcing_files(i)%series%freq_interval/ic%dtmins
                             case (FREQ_HOURS)
-                                allocate(forcing_files(i)%file%interp_weights(forcing_files(i)%file%freq_interval*60/ic%dtmins))
+                                j = forcing_files(i)%series%freq_interval*60/ic%dtmins
                             case (FREQ_DAYS)
-                                allocate(forcing_files(i)%file%interp_weights(forcing_files(i)%file%freq_interval*24*60/ic%dtmins))
+                                j = forcing_files(i)%series%freq_interval*24*60/ic%dtmins
                         end select
-                        if (allocated(forcing_files(i)%file%interp_weights)) then
-                            do j = 1, size(forcing_files(i)%file%interp_weights)
-                                forcing_files(i)%file%interp_weights(j) = real(j - 1)/size(forcing_files(i)%file%interp_weights)
+                        if (j > 0) then
+
+                            !> Pre-calculate weights.
+                            allocate(forcing_files(i)%temporal_interp%interp_weights(j))
+                            do j = 1, size(forcing_files(i)%temporal_interp%interp_weights)
+                                forcing_files(i)%temporal_interp%interp_weights(j) = &
+                                    real(j - 1)/size(forcing_files(i)%temporal_interp%interp_weights)
                             end do
 
                             !> Allocate field variables (temporal interpolation is only applied to 'real' type fields).
-                            do j = 1, size(forcing_files(i)%file%fields)
+                            do j = 1, size(forcing_files(i)%fields)
                                 iwarn = 0
-                                if (allocated(forcing_files(i)%file%fields(j)%mapping%mapped_to_cell)) then
-                                    select type (field => forcing_files(i)%file%fields(j)%mapping%mapped_to_cell)
+                                if (allocated(forcing_files(i)%fields(j)%mapping%mapped_to_cell)) then
+                                    select type (field => forcing_files(i)%fields(j)%mapping%mapped_to_cell)
                                         type is (model_variable_real1d)
                                             allocate(dat_cell_interp_r(vs%grid%dim_length, 2))
                                             dat_cell_interp_r = huge(0.0)
-                                            allocate(forcing_files(i)%file%fields(j)%mapping%mapped_to_cell_interp, &
+                                            allocate(forcing_files(i)%fields(j)%mapping%mapped_to_cell_interp, &
                                                 source = model_variable_real2d(dat = dat_cell_interp_r))
                                             deallocate(dat_cell_interp_r)
                                         class default
                                             iwarn = 1
                                     end select
                                 end if
-                                if (allocated(forcing_files(i)%file%fields(j)%mapping%mapped_to_tile)) then
-                                    select type (field => forcing_files(i)%file%fields(j)%mapping%mapped_to_tile)
+                                if (allocated(forcing_files(i)%fields(j)%mapping%mapped_to_tile)) then
+                                    select type (field => forcing_files(i)%fields(j)%mapping%mapped_to_tile)
                                         type is (model_variable_real1d)
                                             allocate(dat_tile_interp_r(vs%tile%dim_length, 2))
                                             dat_tile_interp_r = huge(0.0)
-                                            allocate(forcing_files(i)%file%fields(j)%mapping%mapped_to_tile_interp, &
+                                            allocate(forcing_files(i)%fields(j)%mapping%mapped_to_tile_interp, &
                                                 source = model_variable_real2d(dat = dat_tile_interp_r))
                                             deallocate(dat_tile_interp_r)
                                         class default
@@ -729,7 +720,7 @@ module input_forcing
                                 if (iwarn /= 0) then
                                     call print_warning( &
                                         "INTERPOLATIONFLAG cannot be applied for the data type of the '" // &
-                                        trim(forcing_files(i)%file%fields(j)%label) // &
+                                        trim(forcing_files(i)%fields(j)%label) // &
                                         "' variable. The option has no effect for this field.")
                                 end if
                             end do
@@ -768,27 +759,27 @@ module input_forcing
 
             !> Check forcing file start date.
             if ( &
-                forcing_files(i)%file%start%year == 0 .and. forcing_files(i)%file%start%jday == 0 .and. &
-                forcing_files(i)%file%start%hour == 0 .and. forcing_files(i)%file%start%minutes == 0) then
-                forcing_files(i)%file%start%year = forcing_file_start_date_override%year
-                forcing_files(i)%file%start%month = forcing_file_start_date_override%month
-                forcing_files(i)%file%start%day = forcing_file_start_date_override%day
-                forcing_files(i)%file%start%jday = forcing_file_start_date_override%jday
-                forcing_files(i)%file%start%hour = forcing_file_start_date_override%hour
-                forcing_files(i)%file%start%minutes = forcing_file_start_date_override%minutes
+                forcing_files(i)%series%start%year == 0 .and. forcing_files(i)%series%start%jday == 0 .and. &
+                forcing_files(i)%series%start%hour == 0 .and. forcing_files(i)%series%start%minutes == 0) then
+                forcing_files(i)%series%start%year = forcing_file_start_date_override%year
+                forcing_files(i)%series%start%month = forcing_file_start_date_override%month
+                forcing_files(i)%series%start%day = forcing_file_start_date_override%day
+                forcing_files(i)%series%start%jday = forcing_file_start_date_override%jday
+                forcing_files(i)%series%start%hour = forcing_file_start_date_override%hour
+                forcing_files(i)%series%start%minutes = forcing_file_start_date_override%minutes
             end if
 
             !> Check if forcing file start date is later than the provided components.
             if (( &
-                forcing_files(i)%file%start%year*10000 + forcing_files(i)%file%start%month*100 + &
-                forcing_files(i)%file%start%day) > (year*10000 + month*100 + day) .or. (&
-                forcing_files(i)%file%start%year*1000 + forcing_files(i)%file%start%jday) > (year*1000 + jday)) then
-                year = forcing_files(i)%file%start%year
-                month = forcing_files(i)%file%start%month
-                day = forcing_files(i)%file%start%day
-                jday = forcing_files(i)%file%start%jday
-                hour = forcing_files(i)%file%start%hour
-                minutes = forcing_files(i)%file%start%minutes
+                forcing_files(i)%series%start%year*10000 + forcing_files(i)%series%start%month*100 + &
+                forcing_files(i)%series%start%day) > (year*10000 + month*100 + day) .or. (&
+                forcing_files(i)%series%start%year*1000 + forcing_files(i)%series%start%jday) > (year*1000 + jday)) then
+                year = forcing_files(i)%series%start%year
+                month = forcing_files(i)%series%start%month
+                day = forcing_files(i)%series%start%day
+                jday = forcing_files(i)%series%start%jday
+                hour = forcing_files(i)%series%start%hour
+                minutes = forcing_files(i)%series%start%minutes
             end if
         end do
 
@@ -801,7 +792,7 @@ module input_forcing
 
         !> Input/output variables.
         !*  error_status: Status returned by the operation (optional; 0: normal).
-        class(io_file) input_file
+        type(io_file) input_file
         integer, intent(out) :: error_status
 
         !> Local variables.
@@ -811,18 +802,18 @@ module input_forcing
         error_status = 0
 
         !> Read data if at the beginning of a new interval.
-        if (input_file%istep == 1) then
+        if (input_file%series%istep == 1) then
 
             !> Read frame.
-            if (input_file%iblock == 1) call read_frame_from_file(input_file, error_status = error_status)
+            if (input_file%series%iblock == 1) call read_frame_from_file(input_file, error_status = error_status)
             if (error_status /= 0) then
                 call print_remark("Reached the of the file in '" // trim(input_file%full_path) // "'.")
                 return
             end if
 
             !> Update mapped output.
-            call create_mapped_output_from_field_list(input_file%fields, input_file%iblock, error_status)
-            if (error_status == 0 .and. input_file%temporal_interpolation == 1) then
+            call create_mapped_output_from_field_list(input_file%fields, input_file%series%iblock, error_status)
+            if (error_status == 0 .and. input_file%temporal_interp%scheme == 1) then
 
                 !> Update fields for temporal linear interpolation if enabled.
                 do j = 1, size(input_file%fields)
@@ -851,7 +842,7 @@ module input_forcing
         end if
 
         !> Override the mapped 'dat' values if temporal interpolation is enabled.
-        if (input_file%temporal_interpolation == 1) then
+        if (input_file%temporal_interp%scheme == 1) then
             do j = 1, size(input_file%fields)
 
                 !> Calculate if only enough frames have been read that index '1' of the 'interp' field is assigned.
@@ -862,7 +853,8 @@ module input_forcing
                                 type is (model_variable_real1d)
                                     if (all(interp%dat(:, 1) /= huge(0.0))) then
                                         field%dat = interp%dat(:, 1) + &
-                                            input_file%interp_weights(input_file%istep)*(interp%dat(:, 2) - interp%dat(:, 1))
+                                            input_file%temporal_interp%interp_weights(input_file%series%istep)* &
+                                            (interp%dat(:, 2) - interp%dat(:, 1))
                                     end if
                             end select
                     end select
@@ -874,7 +866,8 @@ module input_forcing
                                 type is (model_variable_real1d)
                                     if (all(interp%dat(:, 1) /= huge(0.0))) then
                                         field%dat = interp%dat(:, 1) + &
-                                            input_file%interp_weights(input_file%istep)*(interp%dat(:, 2) - interp%dat(:, 1))
+                                            input_file%temporal_interp%interp_weights(input_file%series%istep)* &
+                                            (interp%dat(:, 2) - interp%dat(:, 1))
                                     end if
                             end select
                     end select
@@ -892,32 +885,32 @@ module input_forcing
         else
 
             !> Increment block counter.
-            if (input_file%block_interval > 1) then
-                input_file%iblock = input_file%iblock + 1
-                if (input_file%iblock > input_file%block_interval) then
+            if (input_file%series%block_interval > 1) then
+                input_file%series%iblock = input_file%series%iblock + 1
+                if (input_file%series%iblock > input_file%series%block_interval) then
 
                     !> Reset the block counter.
-                    input_file%iblock = 1
+                    input_file%series%iblock = 1
                 end if
             end if
         end if
 
         !> Increment the interval timer.
-        input_file%istep = input_file%istep + 1
+        input_file%series%istep = input_file%series%istep + 1
 
         !> Check if the interval should be reset.
-        select case (input_file%freq)
+        select case (input_file%series%freq)
             case (FREQ_MINUTES)
-                if (input_file%istep*ic%dtmins > input_file%freq_interval) then
-                    input_file%istep = 1
+                if (input_file%series%istep*ic%dtmins > input_file%series%freq_interval) then
+                    input_file%series%istep = 1
                 end if
             case (FREQ_HOURS)
-                if (input_file%istep*ic%dtmins > input_file%freq_interval*60) then
-                    input_file%istep = 1
+                if (input_file%series%istep*ic%dtmins > input_file%series%freq_interval*60) then
+                    input_file%series%istep = 1
                 end if
             case (FREQ_DAYS)
-                if (input_file%istep*ic%dtmins > input_file%freq_interval*24*60) then
-                    input_file%istep = 1
+                if (input_file%series%istep*ic%dtmins > input_file%series%freq_interval*24*60) then
+                    input_file%series%istep = 1
                 end if
         end select
 
@@ -966,14 +959,14 @@ module input_forcing
 
             !> Get the file start time.
             t0 = date_components_to_time( &
-                forcing_files(i)%file%start%year, &
-                forcing_files(i)%file%start%month, &
-                forcing_files(i)%file%start%day, &
-                forcing_files(i)%file%start%hour, &
-                forcing_files(i)%file%start%minutes, error_status = error_status)
+                forcing_files(i)%series%start%year, &
+                forcing_files(i)%series%start%month, &
+                forcing_files(i)%series%start%day, &
+                forcing_files(i)%series%start%hour, &
+                forcing_files(i)%series%start%minutes, error_status = error_status)
             if (error_status /= 0) then
                 call print_error( &
-                    "An error occurred getting the start time from the '" // trim(forcing_files(i)%file%full_path) // "' file.")
+                    "An error occurred getting the start time from the '" // trim(forcing_files(i)%full_path) // "' file.")
                 return
             else
 
@@ -986,13 +979,13 @@ module input_forcing
             frame_length_minutes = 0
 
             !> Check the file time-stepping.
-            select case (forcing_files(i)%file%freq)
+            select case (forcing_files(i)%series%freq)
                 case (FREQ_MINUTES)
-                    frame_length_minutes = forcing_files(i)%file%freq_interval
+                    frame_length_minutes = forcing_files(i)%series%freq_interval
                 case (FREQ_HOURS)
-                    frame_length_minutes = forcing_files(i)%file%freq_interval*60
+                    frame_length_minutes = forcing_files(i)%series%freq_interval*60
                 case (FREQ_DAYS)
-                    frame_length_minutes = forcing_files(i)%file%freq_interval*24*60
+                    frame_length_minutes = forcing_files(i)%series%freq_interval*24*60
                 case default
                     call print_warning("The units of the file frame length are unknown or unsupported.")
             end select
@@ -1022,17 +1015,17 @@ module input_forcing
             !> Forcing record.
             if (DIAGNOSEMODE) then
                 write(line, FMT_DATETIME_SLASHES_YMD) &
-                    forcing_files(i)%file%start%year, forcing_files(i)%file%start%month, forcing_files(i)%file%start%day, &
-                    forcing_files(i)%file%start%hour, forcing_files(i)%file%start%minutes, 0
+                    forcing_files(i)%series%start%year, forcing_files(i)%series%start%month, forcing_files(i)%series%start%day, &
+                    forcing_files(i)%series%start%hour, forcing_files(i)%series%start%minutes, 0
                 call print_info( &
-                    "The records in '" // trim(forcing_files(i)%file%full_path) // "' start at: " // trim(adjustl(line)))
+                    "The records in '" // trim(forcing_files(i)%full_path) // "' start at: " // trim(adjustl(line)))
             end if
 
             !> Check start time.
             if (t0 < t1) then
 
                 !> Calculate the difference.
-                select case (forcing_files(i)%file%freq)
+                select case (forcing_files(i)%series%freq)
                     case (FREQ_MINUTES)
                         skip_count = int(t1 - t0)
                     case (FREQ_HOURS)
@@ -1042,20 +1035,20 @@ module input_forcing
                 end select
 
                 !> Divide by the frame-length to determine the number of records.
-                skip_count = skip_count/forcing_files(i)%file%freq_interval
+                skip_count = skip_count/forcing_files(i)%series%freq_interval
 
                 !> Skip records.
                 if (skip_count > 0) then
                     write(line, *) skip_count
                     call print_message( &
-                        "Skipping " // trim(adjustl(line)) // " records in '" // trim(forcing_files(i)%file%full_path) // "'.")
+                        "Skipping " // trim(adjustl(line)) // " records in '" // trim(forcing_files(i)%full_path) // "'.")
                     do j = 1, skip_count
-                        call read_frame_from_file(forcing_files(i)%file, skip_data = .true., error_status = error_status)
+                        call read_frame_from_file(forcing_files(i), skip_data = .true., error_status = error_status)
                         if (error_status /= 0) exit
                     end do
                     n = n + 1
                 else if (DIAGNOSEMODE) then
-                    call print_info("Skipping no records in '" // trim(forcing_files(i)%file%full_path) // "'.")
+                    call print_info("Skipping no records in '" // trim(forcing_files(i)%full_path) // "'.")
                 end if
             else if (t0 > t1) then
                 call print_error("The start time of the forcing file occurs after the simulation start time.")
@@ -1064,18 +1057,18 @@ module input_forcing
             end if
 
             !> Compare the frame length to model time-step for temporal interpolation.
-            if (forcing_files(i)%file%temporal_interpolation > 0 .and. frame_length_minutes == ic%dtmins) then
+            if (forcing_files(i)%temporal_interp%scheme > 0 .and. frame_length_minutes == ic%dtmins) then
                 call print_remark( &
                     "INTERPOLATIONFLAG is enabled but the frame length in the file is the same as the model time-step. " // &
                     "The option has no effect.")
             end if
 
             !> Read and map the first frame if temporal interpolation is enabled.
-            if (forcing_files(i)%file%temporal_interpolation == 1) then
-                call read_input_forcing_frame_from_file(forcing_files(i)%file, error_status)
+            if (forcing_files(i)%temporal_interp%scheme == 1) then
+                call read_input_forcing_frame_from_file(forcing_files(i), error_status)
 
                 !> Reset the file stepping so data is still be read in the first model time-step.
-                forcing_files(i)%file%istep = 1
+                forcing_files(i)%series%istep = 1
             end if
         end do
 
@@ -1101,7 +1094,7 @@ module input_forcing
         !> Read frames in all files.
         ierr = 0
         do i = 1, size(forcing_files)
-            call read_input_forcing_frame_from_file(forcing_files(i)%file, ierr)
+            call read_input_forcing_frame_from_file(forcing_files(i), ierr)
             if (ierr /= 0) error_status = ierr
         end do
 
