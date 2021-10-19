@@ -213,36 +213,36 @@ module runsvs_mesh
 
         !> Check for required variables.
         z = 0
-        if (.not. associated(vs%tile%fsin)) then
+        if (.not. allocated(vs%tile%fsin)) then
             call print_error("The driving variable '" // VN_FSIN // "' is not active or not associated with an input file.")
             z = 1
         end if
-        if (.not. associated(vs%tile%flin)) then
+        if (.not. allocated(vs%tile%flin)) then
             call print_error("The driving variable '" // VN_FLIN // "' is not active or not associated with an input file.")
             z = 1
         end if
-        if (.not. associated(vs%tile%ta)) then
+        if (.not. allocated(vs%tile%ta)) then
             call print_error("The driving variable '" // VN_TA // "' is not active or not associated with an input file.")
             z = 1
         end if
-        if (.not. associated(vs%tile%qa)) then
+        if (.not. allocated(vs%tile%qa)) then
             call print_error("The driving variable '" // VN_QA // "' is not active or not associated with an input file.")
             z = 1
         end if
-        if (.not. associated(vs%tile%pres)) then
+        if (.not. allocated(vs%tile%pres)) then
             call print_error("The driving variable '" // VN_PRES // "' is not active or not associated with an input file.")
             z = 1
         end if
-        if (.not. associated(vs%tile%uv)) then
+        if (.not. allocated(vs%tile%uv)) then
             call print_error("The driving variable '" // VN_UV // "' is not active or not associated with an input file.")
             z = 1
         end if
-        if (.not. (associated(vs%tile%prern) .and. associated(vs%tile%presno)) .and. .not. associated(vs%tile%pre)) then
+        if (.not. (allocated(vs%tile%prern) .and. allocated(vs%tile%presno)) .and. .not. allocated(vs%tile%pre)) then
             call print_error( &
                 "No driving variable for precipitation is active nor associated with an input file. The '" // VN_PRE // &
                 "' variable or both the '" // VN_PRERN // "' and '" // VN_PRESNO // "' variables are required.")
             z = 1
-        else if (associated(vs%tile%prern) .and. associated(vs%tile%presno) .and. associated(vs%tile%pre)) then
+        else if (allocated(vs%tile%prern) .and. allocated(vs%tile%presno) .and. allocated(vs%tile%pre)) then
             call print_info( &
                 "The '" // VN_PRERN // "' and '" // VN_PRESNO // "' variables are active. The '" // VN_PRE // &
                 "' variable is also active but inputs on the field are not being used.")
@@ -987,7 +987,7 @@ module runsvs_mesh
         do k = 0, NG - 1
 
             !> Transfer driving variables.
-            if (associated(vs%tile%prern) .and. associated(vs%tile%presno)) then
+            if (allocated(vs%tile%prern) .and. allocated(vs%tile%presno)) then
                 bus(rainrate + k) = vs%tile%prern(il1 + k)/1000.0
                 bus(snowrate + k) = vs%tile%presno(il1 + k)/1000.0
             else if (vs%tile%ta(il1 + k) > tcdk) then

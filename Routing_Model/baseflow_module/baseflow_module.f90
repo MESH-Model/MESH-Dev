@@ -31,7 +31,7 @@ module baseflow_module
 
     !> BASEFLOWFLAG (1)
     real, dimension(:), allocatable :: Wseep, Wrchrg
-    real, dimension(:), pointer, save :: Qb
+    real, dimension(:), allocatable, target :: Qb
     real :: Wrchrg_new, Qb_new
 
     !> BASEFLOWFLAG (2)

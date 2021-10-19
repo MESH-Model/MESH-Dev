@@ -78,7 +78,7 @@ module permafrost_outputs_module
         na = shd%NA; nml = shd%lc%NML; nsl = shd%lc%IGND
 
         !> Check if model dependencies are active.
-        if (.not. associated(vs%tile%tsol) .or. .not. associated(vs%grid%tsol)) then
+        if (.not. allocated(vs%tile%tsol) .or. .not. allocated(vs%grid%tsol)) then
             call print_error( &
                 "The active configuration for permafrost outputs is not valid. A necessary dependency for the output " // &
                 "of variable '" // trim(vname) // "' is not active.")

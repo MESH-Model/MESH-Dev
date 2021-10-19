@@ -119,13 +119,13 @@ subroutine read_initial_values_r2c(shd, iun, fname, ierr)
         select case (adjustl(tfield))
 
             case ('qi1')
-                if (associated(vs%grid%qi)) then
+                if (allocated(vs%grid%qi)) then
                     vs%grid%qi(1:shd%NA) = ffield
                 else
                     z = 3
                 end if
             case ('qo1')
-                if (associated(vs%grid%qo)) then
+                if (allocated(vs%grid%qo)) then
                     if (ilvl == 0) then
                         vs%grid%qo(1:shd%NA) = ffield
                     else
@@ -135,13 +135,13 @@ subroutine read_initial_values_r2c(shd, iun, fname, ierr)
                     z = 3
                 end if
             case ('stor')
-                if (associated(vs%grid%stgch)) then
+                if (allocated(vs%grid%stgch)) then
                     vs%grid%stgch(1:shd%NA) = ffield
                 else
                     z = 3
                 end if
             case ('lzs')
-                if (associated(vs%grid%stggw)) then
+                if (allocated(vs%grid%stggw)) then
                     vs%grid%stggw(1:shd%NA) = ffield
                 else
                     z = 3

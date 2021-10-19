@@ -58,253 +58,253 @@ module sa_mesh_run_within_tile
 
             !> Count the number of active variables.
             n = 0
-            if (associated(vs%tile%prern)) n = n + 1
-            if (associated(vs%tile%presno)) n = n + 1
-            if (associated(vs%tile%lqwscan)) n = n + 1
-            if (associated(vs%tile%fzwscan)) n = n + 1
-            if (associated(vs%tile%cmas)) n = n + 1
-            if (associated(vs%tile%tacan)) n = n + 1
-            if (associated(vs%tile%qacan)) n = n + 1
-            if (associated(vs%tile%tcan)) n = n + 1
-            if (associated(vs%tile%gro)) n = n + 1
-            if (associated(vs%tile%sno)) n = n + 1
-            if (associated(vs%tile%rhosno)) n = n + 1
-            if (associated(vs%tile%fsno)) n = n + 1
-            if (associated(vs%tile%albsno)) n = n + 1
-            if (associated(vs%tile%lqwssno)) n = n + 1
-            if (associated(vs%tile%tsno)) n = n + 1
-            if (associated(vs%tile%drainsno)) n = n + 1
-            if (associated(vs%tile%albt)) n = n + 1
-            if (associated(vs%tile%alvs)) n = n + 1
-            if (associated(vs%tile%alir)) n = n + 1
-            if (associated(vs%tile%gte)) n = n + 1
-            if (associated(vs%tile%zpnd)) n = n + 1
-            if (associated(vs%tile%tpnd)) n = n + 1
-            if (associated(vs%tile%pndcaf)) n = n + 1
-            if (associated(vs%tile%potevp)) n = n + 1
-            if (associated(vs%tile%et)) n = n + 1
-            if (associated(vs%tile%ovrflw)) n = n + 1
-            if (associated(vs%tile%qevp)) n = n + 1
-            if (associated(vs%tile%qsens)) n = n + 1
-            if (associated(vs%tile%gzero)) n = n + 1
-            if (associated(vs%tile%tsurf)) n = n + 1
-            if (associated(vs%tile%tsfs)) n = n + size(vs%tile%tsfs, 2)
-            if (associated(vs%tile%lqwsice)) n = n + 1
-            if (associated(vs%tile%tice)) n = n + 1
-            if (associated(vs%tile%zsolsat)) n = n + 1
-            if (associated(vs%tile%ggeo)) n = n + 1
-            if (associated(vs%tile%tbas)) n = n + 1
-            if (associated(vs%tile%drainsol)) n = n + 1
-            if (associated(vs%tile%thlqsol)) n = n + size(vs%tile%thlqsol, 2)
-            if (associated(vs%tile%thicsol)) n = n + size(vs%tile%thicsol, 2)
-            if (associated(vs%tile%tsol)) n = n + size(vs%tile%tsol, 2)
-            if (associated(vs%tile%gflx)) n = n + size(vs%tile%gflx, 2)
-            if (associated(vs%tile%latflw)) n = n + size(vs%tile%latflw, 2)
-            if (associated(vs%tile%rchg)) n = n + 1
-            if (associated(vs%tile%stggw)) n = n + 1
-            if (associated(vs%tile%lkg)) n = n + 1
+            if (allocated(vs%tile%prern)) n = n + 1
+            if (allocated(vs%tile%presno)) n = n + 1
+            if (allocated(vs%tile%lqwscan)) n = n + 1
+            if (allocated(vs%tile%fzwscan)) n = n + 1
+            if (allocated(vs%tile%cmas)) n = n + 1
+            if (allocated(vs%tile%tacan)) n = n + 1
+            if (allocated(vs%tile%qacan)) n = n + 1
+            if (allocated(vs%tile%tcan)) n = n + 1
+            if (allocated(vs%tile%gro)) n = n + 1
+            if (allocated(vs%tile%sno)) n = n + 1
+            if (allocated(vs%tile%rhosno)) n = n + 1
+            if (allocated(vs%tile%fsno)) n = n + 1
+            if (allocated(vs%tile%albsno)) n = n + 1
+            if (allocated(vs%tile%lqwssno)) n = n + 1
+            if (allocated(vs%tile%tsno)) n = n + 1
+            if (allocated(vs%tile%drainsno)) n = n + 1
+            if (allocated(vs%tile%albt)) n = n + 1
+            if (allocated(vs%tile%alvs)) n = n + 1
+            if (allocated(vs%tile%alir)) n = n + 1
+            if (allocated(vs%tile%gte)) n = n + 1
+            if (allocated(vs%tile%zpnd)) n = n + 1
+            if (allocated(vs%tile%tpnd)) n = n + 1
+            if (allocated(vs%tile%pndcaf)) n = n + 1
+            if (allocated(vs%tile%potevp)) n = n + 1
+            if (allocated(vs%tile%et)) n = n + 1
+            if (allocated(vs%tile%ovrflw)) n = n + 1
+            if (allocated(vs%tile%qevp)) n = n + 1
+            if (allocated(vs%tile%qsens)) n = n + 1
+            if (allocated(vs%tile%gzero)) n = n + 1
+            if (allocated(vs%tile%tsurf)) n = n + 1
+            if (allocated(vs%tile%tsfs)) n = n + size(vs%tile%tsfs, 2)
+            if (allocated(vs%tile%lqwsice)) n = n + 1
+            if (allocated(vs%tile%tice)) n = n + 1
+            if (allocated(vs%tile%zsolsat)) n = n + 1
+            if (allocated(vs%tile%ggeo)) n = n + 1
+            if (allocated(vs%tile%tbas)) n = n + 1
+            if (allocated(vs%tile%drainsol)) n = n + 1
+            if (allocated(vs%tile%thlqsol)) n = n + size(vs%tile%thlqsol, 2)
+            if (allocated(vs%tile%thicsol)) n = n + size(vs%tile%thicsol, 2)
+            if (allocated(vs%tile%tsol)) n = n + size(vs%tile%tsol, 2)
+            if (allocated(vs%tile%gflx)) n = n + size(vs%tile%gflx, 2)
+            if (allocated(vs%tile%latflw)) n = n + size(vs%tile%latflw, 2)
+            if (allocated(vs%tile%rchg)) n = n + 1
+            if (allocated(vs%tile%stggw)) n = n + 1
+            if (allocated(vs%tile%lkg)) n = n + 1
             if (bflm%BASEFLOWFLAG == 1) then
-                if (associated(Qb)) n = n + 1
+                if (allocated(Qb)) n = n + 1
             end if
             if (n > 0) then
                 allocate(model_variables_to_head(n))
 
                 !> Assign to the list.
                 n = 1
-                if (associated(vs%tile%prern)) then
+                if (allocated(vs%tile%prern)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%prern))
                     n = n + 1
                 end if
-                if (associated(vs%tile%presno)) then
+                if (allocated(vs%tile%presno)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%presno))
                     n = n + 1
                 end if
-                if (associated(vs%tile%lqwscan)) then
+                if (allocated(vs%tile%lqwscan)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%lqwscan))
                     n = n + 1
                 end if
-                if (associated(vs%tile%fzwscan)) then
+                if (allocated(vs%tile%fzwscan)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%fzwscan))
                     n = n + 1
                 end if
-                if (associated(vs%tile%cmas)) then
+                if (allocated(vs%tile%cmas)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%cmas))
                     n = n + 1
                 end if
-                if (associated(vs%tile%tacan)) then
+                if (allocated(vs%tile%tacan)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tacan))
                     n = n + 1
                 end if
-                if (associated(vs%tile%qacan)) then
+                if (allocated(vs%tile%qacan)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%qacan))
                     n = n + 1
                 end if
-                if (associated(vs%tile%tcan)) then
+                if (allocated(vs%tile%tcan)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tcan))
                     n = n + 1
                 end if
-                if (associated(vs%tile%gro)) then
+                if (allocated(vs%tile%gro)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%gro))
                     n = n + 1
                 end if
-                if (associated(vs%tile%sno)) then
+                if (allocated(vs%tile%sno)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%sno))
                     n = n + 1
                 end if
-                if (associated(vs%tile%rhosno)) then
+                if (allocated(vs%tile%rhosno)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%rhosno))
                     n = n + 1
                 end if
-                if (associated(vs%tile%fsno)) then
+                if (allocated(vs%tile%fsno)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%fsno))
                     n = n + 1
                 end if
-                if (associated(vs%tile%albsno)) then
+                if (allocated(vs%tile%albsno)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%albsno))
                     n = n + 1
                 end if
-                if (associated(vs%tile%lqwssno)) then
+                if (allocated(vs%tile%lqwssno)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%lqwssno))
                     n = n + 1
                 end if
-                if (associated(vs%tile%tsno)) then
+                if (allocated(vs%tile%tsno)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tsno))
                     n = n + 1
                 end if
-                if (associated(vs%tile%drainsno)) then
+                if (allocated(vs%tile%drainsno)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%drainsno))
                     n = n + 1
                 end if
-                if (associated(vs%tile%albt)) then
+                if (allocated(vs%tile%albt)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%albt))
                     n = n + 1
                 end if
-                if (associated(vs%tile%alvs)) then
+                if (allocated(vs%tile%alvs)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%alvs))
                     n = n + 1
                 end if
-                if (associated(vs%tile%alir)) then
+                if (allocated(vs%tile%alir)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%alir))
                     n = n + 1
                 end if
-                if (associated(vs%tile%gte)) then
+                if (allocated(vs%tile%gte)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%gte))
                     n = n + 1
                 end if
-                if (associated(vs%tile%zpnd)) then
+                if (allocated(vs%tile%zpnd)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%zpnd))
                     n = n + 1
                 end if
-                if (associated(vs%tile%tpnd)) then
+                if (allocated(vs%tile%tpnd)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tpnd))
                     n = n + 1
                 end if
-                if (associated(vs%tile%pndcaf)) then
+                if (allocated(vs%tile%pndcaf)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%pndcaf))
                     n = n + 1
                 end if
-                if (associated(vs%tile%potevp)) then
+                if (allocated(vs%tile%potevp)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%potevp))
                     n = n + 1
                 end if
-                if (associated(vs%tile%et)) then
+                if (allocated(vs%tile%et)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%et))
                     n = n + 1
                 end if
-                if (associated(vs%tile%ovrflw)) then
+                if (allocated(vs%tile%ovrflw)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%ovrflw))
                     n = n + 1
                 end if
-                if (associated(vs%tile%qevp)) then
+                if (allocated(vs%tile%qevp)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%qevp))
                     n = n + 1
                 end if
-                if (associated(vs%tile%qsens)) then
+                if (allocated(vs%tile%qsens)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%qsens))
                     n = n + 1
                 end if
-                if (associated(vs%tile%gzero)) then
+                if (allocated(vs%tile%gzero)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%gzero))
                     n = n + 1
                 end if
-                if (associated(vs%tile%tsurf)) then
+                if (allocated(vs%tile%tsurf)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tsurf))
                     n = n + 1
                 end if
-                if (associated(vs%tile%tsfs)) then
+                if (allocated(vs%tile%tsfs)) then
                     do j = 1, size(vs%tile%tsfs, 2)
                         allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tsfs(:, j)))
                         n = n + 1
                     end do
                 end if
-                if (associated(vs%tile%lqwsice)) then
+                if (allocated(vs%tile%lqwsice)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%lqwsice))
                     n = n + 1
                 end if
-                if (associated(vs%tile%tice)) then
+                if (allocated(vs%tile%tice)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tice))
                     n = n + 1
                 end if
-                if (associated(vs%tile%zsolsat)) then
+                if (allocated(vs%tile%zsolsat)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%zsolsat))
                     n = n + 1
                 end if
-                if (associated(vs%tile%ggeo)) then
+                if (allocated(vs%tile%ggeo)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%ggeo))
                     n = n + 1
                 end if
-                if (associated(vs%tile%tbas)) then
+                if (allocated(vs%tile%tbas)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tbas))
                     n = n + 1
                 end if
-                if (associated(vs%tile%drainsol)) then
+                if (allocated(vs%tile%drainsol)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%drainsol))
                     n = n + 1
                 end if
-                if (associated(vs%tile%thlqsol)) then
+                if (allocated(vs%tile%thlqsol)) then
                     do j = 1, size(vs%tile%thlqsol, 2)
                         allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%thlqsol(:, j)))
                         n = n + 1
                     end do
                 end if
-                if (associated(vs%tile%thicsol)) then
+                if (allocated(vs%tile%thicsol)) then
                     do j = 1, size(vs%tile%thicsol, 2)
                         allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%thicsol(:, j)))
                         n = n + 1
                     end do
                 end if
-                if (associated(vs%tile%tsol)) then
+                if (allocated(vs%tile%tsol)) then
                     do j = 1, size(vs%tile%tsol, 2)
                         allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tsol(:, j)))
                         n = n + 1
                     end do
                 end if
-                if (associated(vs%tile%gflx)) then
+                if (allocated(vs%tile%gflx)) then
                     do j = 1, size(vs%tile%gflx, 2)
                         allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%gflx(:, j)))
                         n = n + 1
                     end do
                 end if
-                if (associated(vs%tile%latflw)) then
+                if (allocated(vs%tile%latflw)) then
                     do j = 1, size(vs%tile%latflw, 2)
                         allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%latflw(:, j)))
                         n = n + 1
                     end do
                 end if
-                if (associated(vs%tile%rchg)) then
+                if (allocated(vs%tile%rchg)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%rchg))
                     n = n + 1
                 end if
-                if (associated(vs%tile%stggw)) then
+                if (allocated(vs%tile%stggw)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%stggw))
                     n = n + 1
                 end if
-                if (associated(vs%tile%lkg)) then
+                if (allocated(vs%tile%lkg)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%lkg))
                     n = n + 1
                 end if
                 if (bflm%BASEFLOWFLAG == 1) then
-                    if (associated(Qb)) then
+                    if (allocated(Qb)) then
                         allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = Qb))
                         n = n + 1
                     end if
@@ -312,7 +312,7 @@ module sa_mesh_run_within_tile
             end if
             n = 0
             if (irrm%PROCESS_ACTIVE) then
-                if (associated(vs%tile%pre)) n = n + 1
+                if (allocated(vs%tile%pre)) n = n + 1
             end if
             if (n > 0) then
                 allocate(model_variables_to_node(n))
@@ -320,7 +320,7 @@ module sa_mesh_run_within_tile
                 !> Assign to the list.
                 n = 1
                 if (irrm%PROCESS_ACTIVE) then
-                    if (associated(vs%tile%pre)) then
+                    if (allocated(vs%tile%pre)) then
                         allocate(model_variables_to_node(n)%field, source = model_variable_pointer_1d(dat = vs%tile%pre))
                         n = n + 1
                     end if
@@ -805,101 +805,101 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
         !> Meteorology/climatology variables.
-!        if (associated(vs%tile%fsin)) vs%tile%fsin(il1:il2) = 0.0
-!        if (associated(vs%tile%fsvs)) vs%tile%fsvs(il1:il2) = 0.0
-!        if (associated(vs%tile%fsir)) vs%tile%fsir(il1:il2) = 0.0
-!        if (associated(vs%tile%fsdr)) vs%tile%fsdr(il1:il2) = 0.0
-!        if (associated(vs%tile%fsdff)) vs%tile%fsdff(il1:il2) = 0.0
-!        if (associated(vs%tile%flin)) vs%tile%flin(il1:il2) = 0.0
-!        if (associated(vs%tile%ta)) vs%tile%ta(il1:il2) = 0.0
-!        if (associated(vs%tile%qa)) vs%tile%qa(il1:il2) = 0.0
-!        if (associated(vs%tile%pres)) vs%tile%pres(il1:il2) = 0.0
-!        if (associated(vs%tile%uu)) vs%tile%uu(il1:il2) = 0.0
-!        if (associated(vs%tile%vv)) vs%tile%vv(il1:il2) = 0.0
-!        if (associated(vs%tile%uv)) vs%tile%uv(il1:il2) = 0.0
-!        if (associated(vs%tile%wdir)) vs%tile%wdir(il1:il2) = 0.0
-!        if (associated(vs%tile%prern)) vs%tile%prern(il1:il2) = 0.0
-!        if (associated(vs%tile%presno)) vs%tile%presno(il1:il2) = 0.0
-!        if (associated(vs%tile%pre)) vs%tile%pre(il1:il2) = 0.0
+!        if (allocated(vs%tile%fsin)) vs%tile%fsin(il1:il2) = 0.0
+!        if (allocated(vs%tile%fsvs)) vs%tile%fsvs(il1:il2) = 0.0
+!        if (allocated(vs%tile%fsir)) vs%tile%fsir(il1:il2) = 0.0
+!        if (allocated(vs%tile%fsdr)) vs%tile%fsdr(il1:il2) = 0.0
+!        if (allocated(vs%tile%fsdff)) vs%tile%fsdff(il1:il2) = 0.0
+!        if (allocated(vs%tile%flin)) vs%tile%flin(il1:il2) = 0.0
+!        if (allocated(vs%tile%ta)) vs%tile%ta(il1:il2) = 0.0
+!        if (allocated(vs%tile%qa)) vs%tile%qa(il1:il2) = 0.0
+!        if (allocated(vs%tile%pres)) vs%tile%pres(il1:il2) = 0.0
+!        if (allocated(vs%tile%uu)) vs%tile%uu(il1:il2) = 0.0
+!        if (allocated(vs%tile%vv)) vs%tile%vv(il1:il2) = 0.0
+!        if (allocated(vs%tile%uv)) vs%tile%uv(il1:il2) = 0.0
+!        if (allocated(vs%tile%wdir)) vs%tile%wdir(il1:il2) = 0.0
+!        if (allocated(vs%tile%prern)) vs%tile%prern(il1:il2) = 0.0
+!        if (allocated(vs%tile%presno)) vs%tile%presno(il1:il2) = 0.0
+!        if (allocated(vs%tile%pre)) vs%tile%pre(il1:il2) = 0.0
 
         !> Canopy variables.
-!        if (associated(vs%tile%lqwscan)) vs%tile%lqwscan(il1:il2) = 0.0
-!        if (associated(vs%tile%fzwscan)) vs%tile%fzwscan(il1:il2) = 0.0
-!        if (associated(vs%tile%cmas)) vs%tile%cmas(il1:il2) = 0.0
-!        if (associated(vs%tile%tacan)) vs%tile%tacan(il1:il2) = 0.0
-!        if (associated(vs%tile%qacan)) vs%tile%qacan(il1:il2) = 0.0
-!        if (associated(vs%tile%tcan)) vs%tile%tcan(il1:il2) = 0.0
-!        if (associated(vs%tile%gro)) vs%tile%gro(il1:il2) = 0.0
+!        if (allocated(vs%tile%lqwscan)) vs%tile%lqwscan(il1:il2) = 0.0
+!        if (allocated(vs%tile%fzwscan)) vs%tile%fzwscan(il1:il2) = 0.0
+!        if (allocated(vs%tile%cmas)) vs%tile%cmas(il1:il2) = 0.0
+!        if (allocated(vs%tile%tacan)) vs%tile%tacan(il1:il2) = 0.0
+!        if (allocated(vs%tile%qacan)) vs%tile%qacan(il1:il2) = 0.0
+!        if (allocated(vs%tile%tcan)) vs%tile%tcan(il1:il2) = 0.0
+!        if (allocated(vs%tile%gro)) vs%tile%gro(il1:il2) = 0.0
 
         !> Snow variables.
-        if (associated(vs%tile%fsno)) vs%tile%fsno(il1:il2) = 0.0
-!        if (associated(vs%tile%sno)) vs%tile%sno(il1:il2) = 0.0
-!        if (associated(vs%tile%rhosno)) vs%tile%rhosno(il1:il2) = 0.0
-!-        if (associated(vs%tile%zsno)) vs%tile%zsno(il1:il2) = 0.0
-!        if (associated(vs%tile%lqwssno)) vs%tile%lqwssno(il1:il2) = 0.0
-!        if (associated(vs%tile%tsno)) vs%tile%tsno(il1:il2) = 0.0
-!        if (associated(vs%tile%albsno)) vs%tile%albsno(il1:il2) = 0.0
-        if (associated(vs%tile%drainsno)) vs%tile%drainsno(il1:il2) = 0.0
+        if (allocated(vs%tile%fsno)) vs%tile%fsno(il1:il2) = 0.0
+!        if (allocated(vs%tile%sno)) vs%tile%sno(il1:il2) = 0.0
+!        if (allocated(vs%tile%rhosno)) vs%tile%rhosno(il1:il2) = 0.0
+!-        if (allocated(vs%tile%zsno)) vs%tile%zsno(il1:il2) = 0.0
+!        if (allocated(vs%tile%lqwssno)) vs%tile%lqwssno(il1:il2) = 0.0
+!        if (allocated(vs%tile%tsno)) vs%tile%tsno(il1:il2) = 0.0
+!        if (allocated(vs%tile%albsno)) vs%tile%albsno(il1:il2) = 0.0
+        if (allocated(vs%tile%drainsno)) vs%tile%drainsno(il1:il2) = 0.0
 
         !> Surface variables.
-        if (associated(vs%tile%albt)) vs%tile%albt(il1:il2) = 0.0
-        if (associated(vs%tile%alvs)) vs%tile%alvs(il1:il2) = 0.0
-        if (associated(vs%tile%alir)) vs%tile%alir(il1:il2) = 0.0
-        if (associated(vs%tile%gte)) vs%tile%gte(il1:il2) = 0.0
-!        if (associated(vs%tile%zpnd)) vs%tile%zpnd(il1:il2) = 0.0
-!-        if (associated(vs%tile%lqwspnd)) vs%tile%lqwspnd(il1:il2) = 0.0
-!        if (associated(vs%tile%tpnd)) vs%tile%tpnd(il1:il2) = 0.0
-        if (associated(vs%tile%pndcaf)) vs%tile%pndcaf(il1:il2) = 0.0
-        if (associated(vs%tile%potevp)) vs%tile%potevp(il1:il2) = 0.0
-        if (associated(vs%tile%et)) vs%tile%et(il1:il2) = 0.0
-!-        if (associated(vs%tile%evpb)) vs%tile%evpb(il1:il2) = 0.0
-!-        if (associated(vs%tile%arrd)) vs%tile%arrd(il1:il2) = 0.0
-        if (associated(vs%tile%ovrflw)) vs%tile%ovrflw(il1:il2) = 0.0
-        if (associated(vs%tile%qevp)) vs%tile%qevp(il1:il2) = 0.0
-        if (associated(vs%tile%qsens)) vs%tile%qsens(il1:il2) = 0.0
-        if (associated(vs%tile%gzero)) vs%tile%gzero(il1:il2) = 0.0
-!        if (associated(vs%tile%tsfs)) vs%tile%tsfs(il1:il2, :) = 0.0
-!        if (associated(vs%tile%tsurf)) vs%tile%tsurf(il1:il2) = 0.0
+        if (allocated(vs%tile%albt)) vs%tile%albt(il1:il2) = 0.0
+        if (allocated(vs%tile%alvs)) vs%tile%alvs(il1:il2) = 0.0
+        if (allocated(vs%tile%alir)) vs%tile%alir(il1:il2) = 0.0
+        if (allocated(vs%tile%gte)) vs%tile%gte(il1:il2) = 0.0
+!        if (allocated(vs%tile%zpnd)) vs%tile%zpnd(il1:il2) = 0.0
+!-        if (allocated(vs%tile%lqwspnd)) vs%tile%lqwspnd(il1:il2) = 0.0
+!        if (allocated(vs%tile%tpnd)) vs%tile%tpnd(il1:il2) = 0.0
+        if (allocated(vs%tile%pndcaf)) vs%tile%pndcaf(il1:il2) = 0.0
+        if (allocated(vs%tile%potevp)) vs%tile%potevp(il1:il2) = 0.0
+        if (allocated(vs%tile%et)) vs%tile%et(il1:il2) = 0.0
+!-        if (allocated(vs%tile%evpb)) vs%tile%evpb(il1:il2) = 0.0
+!-        if (allocated(vs%tile%arrd)) vs%tile%arrd(il1:il2) = 0.0
+        if (allocated(vs%tile%ovrflw)) vs%tile%ovrflw(il1:il2) = 0.0
+        if (allocated(vs%tile%qevp)) vs%tile%qevp(il1:il2) = 0.0
+        if (allocated(vs%tile%qsens)) vs%tile%qsens(il1:il2) = 0.0
+        if (allocated(vs%tile%gzero)) vs%tile%gzero(il1:il2) = 0.0
+!        if (allocated(vs%tile%tsfs)) vs%tile%tsfs(il1:il2, :) = 0.0
+!        if (allocated(vs%tile%tsurf)) vs%tile%tsurf(il1:il2) = 0.0
 
         !> Ice/glacier variables.
-        if (associated(vs%tile%lqwsice)) vs%tile%lqwsice(il1:il2) = 0.0
-        if (associated(vs%tile%tice)) vs%tile%tice(il1:il2) = 0.0
+        if (allocated(vs%tile%lqwsice)) vs%tile%lqwsice(il1:il2) = 0.0
+        if (allocated(vs%tile%tice)) vs%tile%tice(il1:il2) = 0.0
 
         !> Subsurface/soil variables.
-!        if (associated(vs%tile%dzsol)) vs%tile%dzsol(il1:il2) = 0.0
-!        if (associated(vs%tile%dzsolhyd)) vs%tile%dzsolhyd(il1:il2) = 0.0
-!        if (associated(vs%tile%thlqsol)) vs%tile%thlqsol(il1:il2, :) = 0.0
-!        if (associated(vs%tile%thicsol)) vs%tile%thicsol(il1:il2, :) = 0.0
-!-        if (associated(vs%tile%lqwssol)) vs%tile%lqwssol(il1:il2, :) = 0.0
-!-        if (associated(vs%tile%fzwssol)) vs%tile%fzwssol(il1:il2, :) = 0.0
-!        if (associated(vs%tile%tsol)) vs%tile%tsol(il1:il2, :) = 0.0
-        if (associated(vs%tile%gflx)) vs%tile%gflx(il1:il2, :) = 0.0
-        if (associated(vs%tile%latflw)) vs%tile%latflw(il1:il2, :) = 0.0
-!        if (associated(vs%tile%zsol)) vs%tile%zsol(il1:il2, :) = 0.0
-!        if (associated(vs%tile%zsolhyd)) vs%tile%zsolhyd(il1:il2, :) = 0.0
-        if (associated(vs%tile%zsolsat)) vs%tile%zsolsat(il1:il2) = 0.0
-!        if (associated(vs%tile%ggeo)) vs%tile%ggeo(il1:il2) = 0.0
-!        if (associated(vs%tile%tbas)) vs%tile%tbas(il1:il2) = 0.0
-        if (associated(vs%tile%drainsol)) vs%tile%drainsol(il1:il2) = 0.0
+!        if (allocated(vs%tile%dzsol)) vs%tile%dzsol(il1:il2) = 0.0
+!        if (allocated(vs%tile%dzsolhyd)) vs%tile%dzsolhyd(il1:il2) = 0.0
+!        if (allocated(vs%tile%thlqsol)) vs%tile%thlqsol(il1:il2, :) = 0.0
+!        if (allocated(vs%tile%thicsol)) vs%tile%thicsol(il1:il2, :) = 0.0
+!-        if (allocated(vs%tile%lqwssol)) vs%tile%lqwssol(il1:il2, :) = 0.0
+!-        if (allocated(vs%tile%fzwssol)) vs%tile%fzwssol(il1:il2, :) = 0.0
+!        if (allocated(vs%tile%tsol)) vs%tile%tsol(il1:il2, :) = 0.0
+        if (allocated(vs%tile%gflx)) vs%tile%gflx(il1:il2, :) = 0.0
+        if (allocated(vs%tile%latflw)) vs%tile%latflw(il1:il2, :) = 0.0
+!        if (allocated(vs%tile%zsol)) vs%tile%zsol(il1:il2, :) = 0.0
+!        if (allocated(vs%tile%zsolhyd)) vs%tile%zsolhyd(il1:il2, :) = 0.0
+        if (allocated(vs%tile%zsolsat)) vs%tile%zsolsat(il1:il2) = 0.0
+!        if (allocated(vs%tile%ggeo)) vs%tile%ggeo(il1:il2) = 0.0
+!        if (allocated(vs%tile%tbas)) vs%tile%tbas(il1:il2) = 0.0
+        if (allocated(vs%tile%drainsol)) vs%tile%drainsol(il1:il2) = 0.0
 
         !> Groundwater/lower zone storage variables.
-        if (associated(vs%tile%rchg)) vs%tile%rchg(il1:il2) = 0.0
-!        if (associated(vs%tile%stggw)) vs%tile%stggw(il1:il2) = 0.0
-        if (associated(vs%tile%lkg)) vs%tile%lkg(il1:il2) = 0.0
-!-       if (associated(vs%tile%dzs)) vs%tile%dzs(il1:il2) = 0.0
+        if (allocated(vs%tile%rchg)) vs%tile%rchg(il1:il2) = 0.0
+!        if (allocated(vs%tile%stggw)) vs%tile%stggw(il1:il2) = 0.0
+        if (allocated(vs%tile%lkg)) vs%tile%lkg(il1:il2) = 0.0
+!-       if (allocated(vs%tile%dzs)) vs%tile%dzs(il1:il2) = 0.0
 
         !> Diagnostic variables.
-!-        if (associated(vs%tile%stge)) vs%tile%stge(il1:il2) = 0.0
-!-        if (associated(vs%tile%stgw)) vs%tile%stgw(il1:il2) = 0.0
+!-        if (allocated(vs%tile%stge)) vs%tile%stge(il1:il2) = 0.0
+!-        if (allocated(vs%tile%stgw)) vs%tile%stgw(il1:il2) = 0.0
 
         !> Routing variables.
-        if (associated(vs%tile%rff)) vs%tile%rff(il1:il2) = 0.0
-!        if (associated(vs%tile%qi)) vs%tile%qi(il1:il2) = 0.0
-!        if (associated(vs%tile%qo)) vs%tile%qo(il1:il2) = 0.0
-!        if (associated(vs%tile%stgch)) vs%tile%stgch(il1:il2) = 0.0
-!        if (associated(vs%tile%zlvl)) vs%tile%zlvl(il1:il2) = 0.0
-!        if (associated(vs%tile%div)) vs%tile%div(il1:il2) = 0.0
-!        if (associated(vs%tile%abstr)) vs%tile%abstr(il1:il2) = 0.0
+        if (allocated(vs%tile%rff)) vs%tile%rff(il1:il2) = 0.0
+!        if (allocated(vs%tile%qi)) vs%tile%qi(il1:il2) = 0.0
+!        if (allocated(vs%tile%qo)) vs%tile%qo(il1:il2) = 0.0
+!        if (allocated(vs%tile%stgch)) vs%tile%stgch(il1:il2) = 0.0
+!        if (allocated(vs%tile%zlvl)) vs%tile%zlvl(il1:il2) = 0.0
+!        if (allocated(vs%tile%div)) vs%tile%div(il1:il2) = 0.0
+!        if (allocated(vs%tile%abstr)) vs%tile%abstr(il1:il2) = 0.0
 
     end subroutine
 
@@ -916,20 +916,20 @@ module sa_mesh_run_within_tile
         if (.not. ro%RUNTILE) return
 
         !> Update variables.
-        if (associated(vs%tile%sno)) then
-            if (associated(vs%tile%lqwssno)) then
+        if (allocated(vs%tile%sno)) then
+            if (allocated(vs%tile%lqwssno)) then
                 where (vs%tile%sno(il1:il2) == 0.0) vs%tile%lqwssno(il1:il2) = 0.0
             end if
-            if (associated(vs%tile%tsno)) then
+            if (allocated(vs%tile%tsno)) then
                 where (vs%tile%sno(il1:il2) == 0.0) vs%tile%tsno(il1:il2) = 0.0
             end if
-!-            if (associated(vs%tile%zsno) .and. associated(vs%tile%rhosno)) then
+!-            if (allocated(vs%tile%zsno) .and. allocated(vs%tile%rhosno)) then
 !-                if (all(vs%tile%zsno(il1:il2) == 0.0)) then
 !-                    where (vs%tile%rhosno(il1:il2) > 0.0) vs%tile%zsno(il1:il2) = vs%tile%sno(il1:il2)/vs%tile%rhosno(il1:il2)
 !-                end if
 !-            end if
         end if
-        if (associated(vs%tile%albt) .and. associated(vs%tile%alvs) .and. associated(vs%tile%alir)) then
+        if (allocated(vs%tile%albt) .and. allocated(vs%tile%alvs) .and. allocated(vs%tile%alir)) then
             if (all(vs%tile%albt(il1:il2) == 0.0)) then
                 where (vs%tile%alvs(il1:il2) > 0.0 .and. vs%tile%alir(il1:il2) > 0.0)
                     vs%tile%albt(il1:il2) = (vs%tile%alvs(il1:il2) + vs%tile%alir(il1:il2))/2.0
@@ -938,21 +938,21 @@ module sa_mesh_run_within_tile
                 end where
             end if
         end if
-        if (associated(vs%tile%zpnd)) then
-!-            if (associated(vs%tile%lqwspnd)) vs%tile%lqwspnd(il1:il2) = vs%tile%zpnd(il1:il2)*RHOW
-            if (associated(vs%tile%tpnd)) then
+        if (allocated(vs%tile%zpnd)) then
+!-            if (allocated(vs%tile%lqwspnd)) vs%tile%lqwspnd(il1:il2) = vs%tile%zpnd(il1:il2)*RHOW
+            if (allocated(vs%tile%tpnd)) then
                 where (vs%tile%zpnd(il1:il2) == 0.0) vs%tile%tpnd(il1:il2) = 0.0
             end if
         end if
-!-        if (associated(vs%tile%et)) then
-!-            if (associated(vs%tile%evpb) .and. associated(vs%tile%potevp)) then
+!-        if (allocated(vs%tile%et)) then
+!-            if (allocated(vs%tile%evpb) .and. allocated(vs%tile%potevp)) then
 !-                where (vs%tile%et(il1:il2) > 0.0 .and. vs%tile%potevp(il1:il2) /= 0.0)
 !-                    vs%tile%evpb(il1:il2) = vs%tile%et(il1:il2)/vs%tile%potevp(il1:il2)
 !-                elsewhere
 !-                    vs%tile%evpb(il1:il2) = 0.0
 !-                end where
 !-            end if
-!-            if (associated(vs%tile%arrd) .and. associated(vs%tile%pre)) then
+!-            if (allocated(vs%tile%arrd) .and. allocated(vs%tile%pre)) then
 !-                where (vs%tile%potevp(il1:il2) /= 0.0)
 !-                    vs%tile%arrd(il1:il2) = vs%tile%pre(il1:il2)/vs%tile%potevp(il1:il2)
 !-                elsewhere
@@ -960,11 +960,11 @@ module sa_mesh_run_within_tile
 !-                end where
 !-            end if
 !-        end if
-!-        if (associated(vs%tile%dzwat)) then
-!-            if (associated(vs%tile%lqwssol) .and. associated(vs%tile%thlqsol)) then
+!-        if (allocated(vs%tile%dzwat)) then
+!-            if (allocated(vs%tile%lqwssol) .and. allocated(vs%tile%thlqsol)) then
 !-                vs%tile%lqwssol(il1:il2, :) = vs%tile%thlqsol(il1:il2, :)*vs%tile%dzwat(il1:il2, :)*RHOW
 !-            end if
-!-            if (associated(vs%tile%fzwssol) .and. associated(vs%tile%thicsol)) then
+!-            if (allocated(vs%tile%fzwssol) .and. allocated(vs%tile%thicsol)) then
 !-                vs%tile%fzwssol(il1:il2, :) = vs%tile%thicsol(il1:il2, :)*vs%tile%dzwat(il1:il2, :)*RHOICE
 !-            end if
 !-        end if

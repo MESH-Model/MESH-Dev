@@ -104,42 +104,42 @@ module RUNCLASS36_config
 
         !> Check for required variables.
         ierr = 0
-        if (.not. associated(vs%tile%fsin)) then
+        if (.not. allocated(vs%tile%fsin)) then
             call print_error("The driving variable '" // VN_FSIN // "' is not active or not associated with an input file.")
             ierr = 1
         end if
-        if (.not. associated(vs%tile%flin)) then
+        if (.not. allocated(vs%tile%flin)) then
             call print_error("The driving variable '" // VN_FLIN // "' is not active or not associated with an input file.")
             ierr = 1
         end if
-        if (.not. associated(vs%tile%ta)) then
+        if (.not. allocated(vs%tile%ta)) then
             call print_error("The driving variable '" // VN_TA // "' is not active or not associated with an input file.")
             ierr = 1
         end if
-        if (.not. associated(vs%tile%qa)) then
+        if (.not. allocated(vs%tile%qa)) then
             call print_error("The driving variable '" // VN_QA // "' is not active or not associated with an input file.")
             ierr = 1
         end if
-        if (.not. associated(vs%tile%pres)) then
+        if (.not. allocated(vs%tile%pres)) then
             call print_error("The driving variable '" // VN_PRES // "' is not active or not associated with an input file.")
             ierr = 1
         end if
-        if (.not. associated(vs%tile%uv)) then
+        if (.not. allocated(vs%tile%uv)) then
             call print_error("The driving variable '" // VN_UV // "' is not active or not associated with an input file.")
             ierr = 1
         end if
         if (IPCP == 4) then
-            if (.not. associated(vs%tile%prern) .or. .not. associated(vs%tile%presno)) then
+            if (.not. allocated(vs%tile%prern) .or. .not. allocated(vs%tile%presno)) then
                 call print_error( &
                     "'IPCP 4' is active but the driving variables '" // VN_PRERN // "' and '" // VN_PRESNO // &
                     "' are not active or not associated with an input file.")
                 ierr = 1
-            else if (associated(vs%tile%pre)) then
+            else if (allocated(vs%tile%pre)) then
                 call print_info( &
                     "'IPCP 4' is active with the '" // VN_PRERN // "' and '" // VN_PRESNO // "' variables. The '" // VN_PRE // &
                     "' variable is also active but inputs on the field are not being used.")
             end if
-        else if (.not. associated(vs%tile%pre)) then
+        else if (.not. allocated(vs%tile%pre)) then
             call print_error("The driving variable '" // VN_PRE // "' is not active or not associated with an input file.")
             ierr = 1
         end if

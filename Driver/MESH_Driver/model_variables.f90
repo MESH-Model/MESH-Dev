@@ -30,22 +30,22 @@ module model_variables
         !* prern: Total incoming liquid precipitation rate. [kg m**-2 s**-1].
         !* presno: Total incoming solid precipitation rate. [kg m**-2 s**-1].
         !* pre: Total incoming precipitation rate. [kg m**-2 s**-1].
-        real, dimension(:), pointer :: fsin => null()
-        real, dimension(:), pointer :: fsvs => null()
-        real, dimension(:), pointer :: fsir => null()
-        real, dimension(:), pointer :: fsdr => null()
-        real, dimension(:), pointer :: fsdff => null()
-        real, dimension(:), pointer :: flin => null()
-        real, dimension(:), pointer :: ta => null()
-        real, dimension(:), pointer :: qa => null()
-        real, dimension(:), pointer :: pres => null()
-        real, dimension(:), pointer :: uu => null()
-        real, dimension(:), pointer :: vv => null()
-        real, dimension(:), pointer :: uv => null()
-        real, dimension(:), pointer :: wdir => null()
-        real, dimension(:), pointer :: prern => null()
-        real, dimension(:), pointer :: presno => null()
-        real, dimension(:), pointer :: pre => null()
+        real, dimension(:), allocatable :: fsin
+        real, dimension(:), allocatable :: fsvs
+        real, dimension(:), allocatable :: fsir
+        real, dimension(:), allocatable :: fsdr
+        real, dimension(:), allocatable :: fsdff
+        real, dimension(:), allocatable :: flin
+        real, dimension(:), allocatable :: ta
+        real, dimension(:), allocatable :: qa
+        real, dimension(:), allocatable :: pres
+        real, dimension(:), allocatable :: uu
+        real, dimension(:), allocatable :: vv
+        real, dimension(:), allocatable :: uv
+        real, dimension(:), allocatable :: wdir
+        real, dimension(:), allocatable :: prern
+        real, dimension(:), allocatable :: presno
+        real, dimension(:), allocatable :: pre
 
         !> Canopy variables.
         !* lqwscan: Liquid water interception in the canopy. [kg m**-2].
@@ -55,13 +55,13 @@ module model_variables
         !* qacan: Specific humidity of air in the canopy. [kg kg**-1].
         !* tcan: Vegetation canopy temperature. [K].
         !* gro: Vegetation growth index. [--].
-        real, dimension(:), pointer :: lqwscan => null()
-        real, dimension(:), pointer :: fzwscan => null()
-        real, dimension(:), pointer :: cmas => null()
-        real, dimension(:), pointer :: tacan => null()
-        real, dimension(:), pointer :: qacan => null()
-        real, dimension(:), pointer :: tcan => null()
-        real, dimension(:), pointer :: gro => null()
+        real, dimension(:), allocatable :: lqwscan
+        real, dimension(:), allocatable :: fzwscan
+        real, dimension(:), allocatable :: cmas
+        real, dimension(:), allocatable :: tacan
+        real, dimension(:), allocatable :: qacan
+        real, dimension(:), allocatable :: tcan
+        real, dimension(:), allocatable :: gro
 
         !> Snow variables.
         !* fsno: Fraction of fully snow covered area. [fraction].
@@ -72,14 +72,14 @@ module model_variables
         !* tsno: Snowpack temperature. [K].
         !* albsno: Snow albedo. [fraction].
         !* drainsno: Drainage from the bottom of the snowpack (runoff rate). [kg m**-2 s**-1].
-        real, dimension(:), pointer :: fsno => null()
-        real, dimension(:), pointer :: sno => null()
-        real, dimension(:), pointer :: rhosno => null()
-!-        real, dimension(:), pointer :: zsno => null()
-        real, dimension(:), pointer :: lqwssno => null()
-        real, dimension(:), pointer :: tsno => null()
-        real, dimension(:), pointer :: albsno => null()
-        real, dimension(:), pointer :: drainsno => null()
+        real, dimension(:), allocatable :: fsno
+        real, dimension(:), allocatable :: sno
+        real, dimension(:), allocatable :: rhosno
+!-        real, dimension(:), allocatable :: zsno
+        real, dimension(:), allocatable :: lqwssno
+        real, dimension(:), allocatable :: tsno
+        real, dimension(:), allocatable :: albsno
+        real, dimension(:), allocatable :: drainsno
 
         !> Surface variables.
         !* albt: Total albedo of the surface (visible and near-infrared). [fraction].
@@ -100,30 +100,30 @@ module model_variables
         !* gzero: Heat flux into the ground. [W m**-2].
         !* tsfs: Ground surface temperature over subarea. [K].
         !* tsurf: Surface temperature. [K].
-        real, dimension(:), pointer :: albt => null()
-        real, dimension(:), pointer :: alvs => null()
-        real, dimension(:), pointer :: alir => null()
-        real, dimension(:), pointer :: gte => null()
-        real, dimension(:), pointer :: zpnd => null()
-!-        real, dimension(:), pointer :: lqwspnd => null()
-        real, dimension(:), pointer :: tpnd => null()
-        real, dimension(:), pointer :: pndcaf => null()
-        real, dimension(:), pointer :: potevp => null()
-        real, dimension(:), pointer :: et => null()
-!-        real, dimension(:), pointer :: evpb => null()
-!-        real, dimension(:), pointer :: arrd => null()
-        real, dimension(:), pointer :: ovrflw => null()
-        real, dimension(:), pointer :: qevp => null()
-        real, dimension(:), pointer :: qsens => null()
-        real, dimension(:), pointer :: gzero => null()
-        real, dimension(:, :), pointer :: tsfs => null()
-        real, dimension(:), pointer :: tsurf => null()
+        real, dimension(:), allocatable :: albt
+        real, dimension(:), allocatable :: alvs
+        real, dimension(:), allocatable :: alir
+        real, dimension(:), allocatable :: gte
+        real, dimension(:), allocatable :: zpnd
+!-        real, dimension(:), allocatable :: lqwspnd
+        real, dimension(:), allocatable :: tpnd
+        real, dimension(:), allocatable :: pndcaf
+        real, dimension(:), allocatable :: potevp
+        real, dimension(:), allocatable :: et
+!-        real, dimension(:), allocatable :: evpb
+!-        real, dimension(:), allocatable :: arrd
+        real, dimension(:), allocatable :: ovrflw
+        real, dimension(:), allocatable :: qevp
+        real, dimension(:), allocatable :: qsens
+        real, dimension(:), allocatable :: gzero
+        real, dimension(:, :), allocatable :: tsfs
+        real, dimension(:), allocatable :: tsurf
 
         !> Ice/glacier variables.
         !* lqwsice: Liquid water storage of ice. [kg m**-2].
         !* tice: Temperature of ice. [K].
-        real, dimension(:), pointer :: lqwsice => null()
-        real, dimension(:), pointer :: tice => null()
+        real, dimension(:), allocatable :: lqwsice
+        real, dimension(:), allocatable :: tice
 
         !> Subsurface/soil variables.
         !* dzsol: Thickness of the soil layer. [m].
@@ -141,37 +141,37 @@ module model_variables
         !* ggeo: Geothermal heat flux. [W m**-2].
         !* tbas: Temperature of bedrock in third soil layer. [K].
         !* drainsol: Drainage from the bottom of the permeable soil column (runoff rate). [kg m**-2 s**-1].
-        real, dimension(:, :), pointer :: dzsol => null()
-        real, dimension(:, :), pointer :: dzsolhyd => null()
-        real, dimension(:, :), pointer :: thlqsol => null()
-        real, dimension(:, :), pointer :: thicsol => null()
-!-        real, dimension(:, :), pointer :: lqwssol => null()
-!-        real, dimension(:, :), pointer :: fzwssol => null()
-        real, dimension(:, :), pointer :: tsol => null()
-        real, dimension(:, :), pointer :: gflx => null()
-        real, dimension(:, :), pointer :: latflw => null()
-        real, dimension(:), pointer :: zsol => null()
-        real, dimension(:), pointer :: zsolhyd => null()
-        real, dimension(:), pointer :: zsolsat => null()
-        real, dimension(:), pointer :: ggeo => null()
-        real, dimension(:), pointer :: tbas => null()
-        real, dimension(:), pointer :: drainsol => null()
+        real, dimension(:, :), allocatable :: dzsol
+        real, dimension(:, :), allocatable :: dzsolhyd
+        real, dimension(:, :), allocatable :: thlqsol
+        real, dimension(:, :), allocatable :: thicsol
+!-        real, dimension(:, :), allocatable :: lqwssol
+!-        real, dimension(:, :), allocatable :: fzwssol
+        real, dimension(:, :), allocatable :: tsol
+        real, dimension(:, :), allocatable :: gflx
+        real, dimension(:, :), allocatable :: latflw
+        real, dimension(:), allocatable :: zsol
+        real, dimension(:), allocatable :: zsolhyd
+        real, dimension(:), allocatable :: zsolsat
+        real, dimension(:), allocatable :: ggeo
+        real, dimension(:), allocatable :: tbas
+        real, dimension(:), allocatable :: drainsol
 
         !> Groundwater/lower zone storage variables.
         !* rchg: Drainage into groundwater/lower zone storage. [mm].
         !* stggw: Groundwater/lower zone storage. [mm].
         !* lkg: Leakage from groundwater/lower zone storage. [mm].
         !* dzs: Deep aquifer water storage. [mm].
-        real, dimension(:), pointer :: rchg => null()
-        real, dimension(:), pointer :: stggw => null()
-        real, dimension(:), pointer :: lkg => null()
-!-        real, dimension(:), pointer :: dzs => null()
+        real, dimension(:), allocatable :: rchg
+        real, dimension(:), allocatable :: stggw
+        real, dimension(:), allocatable :: lkg
+!-        real, dimension(:), allocatable :: dzs
 
         !> Diagnostic variables.
         !* stge: Total energy stored in the system. [W m**-2].
         !* stgw: Total liquid water storage in the land surface. [kg m**-2].
-!-        real, dimension(:), pointer :: stge => null()
-!-        real, dimension(:), pointer :: stgw => null()
+!-        real, dimension(:), allocatable :: stge
+!-        real, dimension(:), allocatable :: stgw
 
         !> Routing variables.
         !* rff: Total runoff (from all surface, subsurface, and groundwater components). [mm].
@@ -181,13 +181,13 @@ module model_variables
         !* zlvl: Stage level. [m].
         !* div: Storage diverted to a routing element. [m**3].
         !* abstr: Storage abstracted from a routing element. [m**3].
-        real, dimension(:), pointer :: rff => null()
-        real, dimension(:), pointer :: qi => null()
-        real, dimension(:), pointer :: qo => null()
-        real, dimension(:), pointer :: stgch => null()
-        real, dimension(:), pointer :: zlvl => null()
-        real, dimension(:), pointer :: div => null()
-        real, dimension(:), pointer :: abstr => null()
+        real, dimension(:), allocatable :: rff
+        real, dimension(:), allocatable :: qi
+        real, dimension(:), allocatable :: qo
+        real, dimension(:), allocatable :: stgch
+        real, dimension(:), allocatable :: zlvl
+        real, dimension(:), allocatable :: div
+        real, dimension(:), allocatable :: abstr
 
         !> Basin attributes (general).
         integer, dimension(:), allocatable :: next_id
@@ -255,101 +255,101 @@ module model_variables
         ierr = 0
 
         !> Meteorology/climatology variables.
-        if (associated(group%fsin)) group%fsin = 0.0
-        if (associated(group%fsvs)) group%fsvs = 0.0
-        if (associated(group%fsir)) group%fsir = 0.0
-        if (associated(group%fsdr)) group%fsdr = 0.0
-        if (associated(group%fsdff)) group%fsdff = 0.0
-        if (associated(group%flin)) group%flin = 0.0
-        if (associated(group%ta)) group%ta = 0.0
-        if (associated(group%qa)) group%qa = 0.0
-        if (associated(group%pres)) group%pres = 0.0
-        if (associated(group%uu)) group%uu = 0.0
-        if (associated(group%vv)) group%vv = 0.0
-        if (associated(group%uv)) group%uv = 0.0
-        if (associated(group%wdir)) group%wdir = 0.0
-        if (associated(group%prern)) group%prern = 0.0
-        if (associated(group%presno)) group%presno = 0.0
-        if (associated(group%pre)) group%pre = 0.0
+        if (allocated(group%fsin)) group%fsin = 0.0
+        if (allocated(group%fsvs)) group%fsvs = 0.0
+        if (allocated(group%fsir)) group%fsir = 0.0
+        if (allocated(group%fsdr)) group%fsdr = 0.0
+        if (allocated(group%fsdff)) group%fsdff = 0.0
+        if (allocated(group%flin)) group%flin = 0.0
+        if (allocated(group%ta)) group%ta = 0.0
+        if (allocated(group%qa)) group%qa = 0.0
+        if (allocated(group%pres)) group%pres = 0.0
+        if (allocated(group%uu)) group%uu = 0.0
+        if (allocated(group%vv)) group%vv = 0.0
+        if (allocated(group%uv)) group%uv = 0.0
+        if (allocated(group%wdir)) group%wdir = 0.0
+        if (allocated(group%prern)) group%prern = 0.0
+        if (allocated(group%presno)) group%presno = 0.0
+        if (allocated(group%pre)) group%pre = 0.0
 
         !> Canopy variables.
-        if (associated(group%lqwscan)) group%lqwscan = 0.0
-        if (associated(group%fzwscan)) group%fzwscan = 0.0
-        if (associated(group%cmas)) group%cmas = 0.0
-        if (associated(group%tacan)) group%tacan = 0.0
-        if (associated(group%qacan)) group%qacan = 0.0
-        if (associated(group%tcan)) group%tcan = 0.0
-        if (associated(group%gro)) group%gro = 0.0
+        if (allocated(group%lqwscan)) group%lqwscan = 0.0
+        if (allocated(group%fzwscan)) group%fzwscan = 0.0
+        if (allocated(group%cmas)) group%cmas = 0.0
+        if (allocated(group%tacan)) group%tacan = 0.0
+        if (allocated(group%qacan)) group%qacan = 0.0
+        if (allocated(group%tcan)) group%tcan = 0.0
+        if (allocated(group%gro)) group%gro = 0.0
 
         !> Snow variables.
-        if (associated(group%fsno)) group%fsno = 0.0
-        if (associated(group%sno)) group%sno = 0.0
-        if (associated(group%rhosno)) group%rhosno = 0.0
-!-        if (associated(group%zsno)) group%zsno = 0.0
-        if (associated(group%lqwssno)) group%lqwssno = 0.0
-        if (associated(group%tsno)) group%tsno = 0.0
-        if (associated(group%albsno)) group%albsno = 0.0
-        if (associated(group%drainsno)) group%drainsno = 0.0
+        if (allocated(group%fsno)) group%fsno = 0.0
+        if (allocated(group%sno)) group%sno = 0.0
+        if (allocated(group%rhosno)) group%rhosno = 0.0
+!-        if (allocated(group%zsno)) group%zsno = 0.0
+        if (allocated(group%lqwssno)) group%lqwssno = 0.0
+        if (allocated(group%tsno)) group%tsno = 0.0
+        if (allocated(group%albsno)) group%albsno = 0.0
+        if (allocated(group%drainsno)) group%drainsno = 0.0
 
         !> Surface variables.
-        if (associated(group%albt)) group%albt = 0.0
-        if (associated(group%alvs)) group%alvs = 0.0
-        if (associated(group%alir)) group%alir = 0.0
-        if (associated(group%gte)) group%gte = 0.0
-        if (associated(group%zpnd)) group%zpnd = 0.0
-!-        if (associated(group%lqwspnd)) group%lqwspnd = 0.0
-        if (associated(group%tpnd)) group%tpnd = 0.0
-        if (associated(group%pndcaf)) group%pndcaf = 0.0
-        if (associated(group%potevp)) group%potevp = 0.0
-        if (associated(group%et)) group%et = 0.0
-!-        if (associated(group%evpb)) group%evpb = 0.0
-!-        if (associated(group%arrd)) group%arrd = 0.0
-        if (associated(group%ovrflw)) group%ovrflw = 0.0
-        if (associated(group%qevp)) group%qevp = 0.0
-        if (associated(group%qsens)) group%qsens = 0.0
-        if (associated(group%gzero)) group%gzero = 0.0
-        if (associated(group%tsfs)) group%tsfs = 0.0
-        if (associated(group%tsurf)) group%tsurf = 0.0
+        if (allocated(group%albt)) group%albt = 0.0
+        if (allocated(group%alvs)) group%alvs = 0.0
+        if (allocated(group%alir)) group%alir = 0.0
+        if (allocated(group%gte)) group%gte = 0.0
+        if (allocated(group%zpnd)) group%zpnd = 0.0
+!-        if (allocated(group%lqwspnd)) group%lqwspnd = 0.0
+        if (allocated(group%tpnd)) group%tpnd = 0.0
+        if (allocated(group%pndcaf)) group%pndcaf = 0.0
+        if (allocated(group%potevp)) group%potevp = 0.0
+        if (allocated(group%et)) group%et = 0.0
+!-        if (allocated(group%evpb)) group%evpb = 0.0
+!-        if (allocated(group%arrd)) group%arrd = 0.0
+        if (allocated(group%ovrflw)) group%ovrflw = 0.0
+        if (allocated(group%qevp)) group%qevp = 0.0
+        if (allocated(group%qsens)) group%qsens = 0.0
+        if (allocated(group%gzero)) group%gzero = 0.0
+        if (allocated(group%tsfs)) group%tsfs = 0.0
+        if (allocated(group%tsurf)) group%tsurf = 0.0
 
         !> Ice/glacier variables.
-        if (associated(group%lqwsice)) group%lqwsice = 0.0
-        if (associated(group%tice)) group%tice = 0.0
+        if (allocated(group%lqwsice)) group%lqwsice = 0.0
+        if (allocated(group%tice)) group%tice = 0.0
 
         !> Subsurface/soil variables.
-        if (associated(group%dzsol)) group%dzsol = 0.0
-        if (associated(group%dzsolhyd)) group%dzsolhyd = 0.0
-        if (associated(group%thlqsol)) group%thlqsol = 0.0
-        if (associated(group%thicsol)) group%thicsol = 0.0
-!-        if (associated(group%lqwssol)) group%lqwssol = 0.0
-!-        if (associated(group%fzwssol)) group%fzwssol = 0.0
-        if (associated(group%tsol)) group%tsol = 0.0
-        if (associated(group%gflx)) group%gflx = 0.0
-        if (associated(group%latflw)) group%latflw = 0.0
-        if (associated(group%zsol)) group%zsol = 0.0
-        if (associated(group%zsolhyd)) group%zsolhyd = 0.0
-        if (associated(group%zsolsat)) group%zsolsat = 0.0
-        if (associated(group%ggeo)) group%ggeo = 0.0
-        if (associated(group%tbas)) group%tbas = 0.0
-        if (associated(group%drainsol)) group%drainsol = 0.0
+        if (allocated(group%dzsol)) group%dzsol = 0.0
+        if (allocated(group%dzsolhyd)) group%dzsolhyd = 0.0
+        if (allocated(group%thlqsol)) group%thlqsol = 0.0
+        if (allocated(group%thicsol)) group%thicsol = 0.0
+!-        if (allocated(group%lqwssol)) group%lqwssol = 0.0
+!-        if (allocated(group%fzwssol)) group%fzwssol = 0.0
+        if (allocated(group%tsol)) group%tsol = 0.0
+        if (allocated(group%gflx)) group%gflx = 0.0
+        if (allocated(group%latflw)) group%latflw = 0.0
+        if (allocated(group%zsol)) group%zsol = 0.0
+        if (allocated(group%zsolhyd)) group%zsolhyd = 0.0
+        if (allocated(group%zsolsat)) group%zsolsat = 0.0
+        if (allocated(group%ggeo)) group%ggeo = 0.0
+        if (allocated(group%tbas)) group%tbas = 0.0
+        if (allocated(group%drainsol)) group%drainsol = 0.0
 
         !> Groundwater/lower zone storage variables.
-        if (associated(group%rchg)) group%rchg = 0.0
-        if (associated(group%stggw)) group%stggw = 0.0
-        if (associated(group%lkg)) group%lkg = 0.0
-!-        if (associated(group%dzs)) group%dzs = 0.0
+        if (allocated(group%rchg)) group%rchg = 0.0
+        if (allocated(group%stggw)) group%stggw = 0.0
+        if (allocated(group%lkg)) group%lkg = 0.0
+!-        if (allocated(group%dzs)) group%dzs = 0.0
 
         !> Diagnostic variables.
-!-        if (associated(group%stge)) group%stge = 0.0
-!-        if (associated(group%stgw)) group%stgw = 0.0
+!-        if (allocated(group%stge)) group%stge = 0.0
+!-        if (allocated(group%stgw)) group%stgw = 0.0
 
         !> Routing variables.
-        if (associated(group%rff)) group%rff = 0.0
-        if (associated(group%qi)) group%qi = 0.0
-        if (associated(group%qo)) group%qo = 0.0
-        if (associated(group%stgch)) group%stgch = 0.0
-        if (associated(group%zlvl)) group%zlvl = 0.0
-        if (associated(group%div)) group%div = 0.0
-        if (associated(group%abstr)) group%abstr = 0.0
+        if (allocated(group%rff)) group%rff = 0.0
+        if (allocated(group%qi)) group%qi = 0.0
+        if (allocated(group%qo)) group%qo = 0.0
+        if (allocated(group%stgch)) group%stgch = 0.0
+        if (allocated(group%zlvl)) group%zlvl = 0.0
+        if (allocated(group%div)) group%div = 0.0
+        if (allocated(group%abstr)) group%abstr = 0.0
 
     end subroutine
 
