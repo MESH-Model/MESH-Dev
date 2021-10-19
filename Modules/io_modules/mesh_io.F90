@@ -1097,13 +1097,15 @@ module mesh_io
                                     if (allocated(dat2_r)) then
                                         select case (mapped_dim_order(1))
                                             case (2)
-                                                dat1_r = (/dat2_r(:, j)/)
+                                                allocate(dat1_r(size(dat2_r, 1)))
+                                                dat1_r = dat2_r(:, j)
                                                 allocate(file_buffer(n)%field, source = model_variable_real1d(dat = dat1_r))
                                                 deallocate(dat1_r)
                                                 allocate(file_buffer(n)%dim_names(1))
                                                 file_buffer(n)%dim_names = (/dim_names(1)/)
                                             case default
-                                                dat1_r = (/dat2_r(j, :)/)
+                                                allocate(dat1_r(size(dat2_r, 2)))
+                                                dat1_r = dat2_r(j, :)
                                                 allocate(file_buffer(n)%field, source = model_variable_real1d(dat = dat1_r))
                                                 deallocate(dat1_r)
                                                 allocate(file_buffer(n)%dim_names(1))
@@ -1112,18 +1114,21 @@ module mesh_io
                                     else if (allocated(dat3_r)) then
                                         select case (mapped_dim_order(1))
                                             case (3)
+                                                allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 2)))
                                                 dat2_r = dat3_r(:, :, j)
                                                 allocate(file_buffer(n)%field, source = model_variable_real2d(dat = dat2_r))
                                                 deallocate(dat2_r)
                                                 allocate(file_buffer(n)%dim_names(2))
                                                 file_buffer(n)%dim_names = (/dim_names(1), dim_names(2)/)
                                             case (2)
+                                                allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 3)))
                                                 dat2_r = dat3_r(:, j, :)
                                                 allocate(file_buffer(n)%field, source = model_variable_real2d(dat = dat2_r))
                                                 deallocate(dat2_r)
                                                 allocate(file_buffer(n)%dim_names(2))
                                                 file_buffer(n)%dim_names = (/dim_names(1), dim_names(3)/)
                                             case default
+                                                allocate(dat2_r(size(dat3_r, 2), size(dat3_r, 3)))
                                                 dat2_r = dat3_r(j, :, :)
                                                 allocate(file_buffer(n)%field, source = model_variable_real2d(dat = dat2_r))
                                                 deallocate(dat2_r)
@@ -1519,9 +1524,10 @@ module mesh_io
     subroutine activate_variable_from_field(input_field, error_status)
 
         !> Modules.
-        use strings, only: uppercase
-        use variable_names
+!-        use strings, only: uppercase
+!-        use variable_names
         use model_variables, only: vs
+        use variable_maps
 
         !> Input/output variables.
         !*  input_field: Input field to assign to 'output_field'.
@@ -1530,210 +1536,235 @@ module mesh_io
         integer, intent(out) :: error_status
 
         !> Local variables
-        integer i, isaved
+        integer ierr
+        logical variable_assigned, lsaved
+!-        integer i, isaved
 
         !> Status.
         error_status = 0
 
         !> Identify and assign variables.
-        isaved = 1
-        select case (uppercase(input_field%field_name))
+!-        isaved = 1
+!-        select case (uppercase(input_field%field_name))
 
             !> Meteorology/climatology variables.
-            case (VN_FSIN)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%fsin)) then
-                        allocate(vs%grid%fsin(vs%grid%dim_length))
-                        vs%grid%fsin = huge(vs%grid%fsin)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%fsin)) then
-                        allocate(vs%tile%fsin(vs%tile%dim_length))
-                        vs%tile%fsin = huge(vs%tile%fsin)
-                    end if
-                end if
-            case (VN_FLIN)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%flin)) then
-                        allocate(vs%grid%flin(vs%grid%dim_length))
-                        vs%grid%flin = huge(vs%grid%flin)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%flin)) then
-                        allocate(vs%tile%flin(vs%tile%dim_length))
-                        vs%tile%flin = huge(vs%tile%flin)
-                    end if
-                end if
-            case (VN_TA)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%ta)) then
-                        allocate(vs%grid%ta(vs%grid%dim_length))
-                        vs%grid%ta = huge(vs%grid%ta)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%ta)) then
-                        allocate(vs%tile%ta(vs%tile%dim_length))
-                        vs%tile%ta = huge(vs%tile%ta)
-                    end if
-                end if
-            case (VN_QA)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%qa)) then
-                        allocate(vs%grid%qa(vs%grid%dim_length))
-                        vs%grid%qa = huge(vs%grid%qa)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%qa)) then
-                        allocate(vs%tile%qa(vs%tile%dim_length))
-                        vs%tile%qa = huge(vs%tile%qa)
-                    end if
-                end if
-            case (VN_PRES)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%pres)) then
-                        allocate(vs%grid%pres(vs%grid%dim_length))
-                        vs%grid%pres = huge(vs%grid%pres)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%pres)) then
-                        allocate(vs%tile%pres(vs%tile%dim_length))
-                        vs%tile%pres = huge(vs%tile%pres)
-                    end if
-                end if
-            case (VN_UU)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%uu)) then
-                        allocate(vs%grid%uu(vs%grid%dim_length))
-                        vs%grid%uu = huge(vs%grid%uu)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%uu)) then
-                        allocate(vs%tile%uu(vs%tile%dim_length))
-                        vs%tile%uu = huge(vs%tile%uu)
-                    end if
-                end if
-            case (VN_VV)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%vv)) then
-                        allocate(vs%grid%vv(vs%grid%dim_length))
-                        vs%grid%vv = huge(vs%grid%vv)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%vv)) then
-                        allocate(vs%tile%vv(vs%tile%dim_length))
-                        vs%tile%vv = huge(vs%tile%vv)
-                    end if
-                end if
-            case (VN_UV)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%uv)) then
-                        allocate(vs%grid%uv(vs%grid%dim_length))
-                        vs%grid%uv = huge(vs%grid%uv)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%uv)) then
-                        allocate(vs%tile%uv(vs%tile%dim_length))
-                        vs%tile%uv = huge(vs%tile%uv)
-                    end if
-                end if
-            case (VN_WDIR)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%wdir)) then
-                        allocate(vs%grid%wdir(vs%grid%dim_length))
-                        vs%grid%wdir = huge(vs%grid%wdir)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%wdir)) then
-                        allocate(vs%tile%wdir(vs%tile%dim_length))
-                        vs%tile%wdir = huge(vs%tile%wdir)
-                    end if
-                end if
-            case (VN_PRERN)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%prern)) then
-                        allocate(vs%grid%prern(vs%grid%dim_length))
-                        vs%grid%prern = huge(vs%grid%prern)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%prern)) then
-                        allocate(vs%tile%prern(vs%tile%dim_length))
-                        vs%tile%prern = huge(vs%tile%prern)
-                    end if
-                end if
-            case (VN_PRESNO)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%presno)) then
-                        allocate(vs%grid%presno(vs%grid%dim_length))
-                        vs%grid%presno = huge(vs%grid%presno)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%presno)) then
-                        allocate(vs%tile%presno(vs%tile%dim_length))
-                        vs%tile%presno = huge(vs%tile%presno)
-                    end if
-                end if
-            case (VN_PRE)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%pre)) then
-                        allocate(vs%grid%pre(vs%grid%dim_length))
-                        vs%grid%pre = huge(vs%grid%pre)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%pre)) then
-                        allocate(vs%tile%pre(vs%tile%dim_length))
-                        vs%tile%pre = huge(vs%tile%pre)
-                    end if
-                end if
+!-            case (VN_FSIN)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%fsin)) then
+!-                        allocate(vs%grid%fsin(vs%grid%dim_length))
+!-                        vs%grid%fsin = huge(vs%grid%fsin)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%fsin)) then
+!-                        allocate(vs%tile%fsin(vs%tile%dim_length))
+!-                        vs%tile%fsin = huge(vs%tile%fsin)
+!-                    end if
+!-                end if
+!-            case (VN_FLIN)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%flin)) then
+!-                        allocate(vs%grid%flin(vs%grid%dim_length))
+!-                        vs%grid%flin = huge(vs%grid%flin)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%flin)) then
+!-                        allocate(vs%tile%flin(vs%tile%dim_length))
+!-                        vs%tile%flin = huge(vs%tile%flin)
+!-                    end if
+!-                end if
+!-            case (VN_TA)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%ta)) then
+!-                        allocate(vs%grid%ta(vs%grid%dim_length))
+!-                        vs%grid%ta = huge(vs%grid%ta)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%ta)) then
+!-                        allocate(vs%tile%ta(vs%tile%dim_length))
+!-                        vs%tile%ta = huge(vs%tile%ta)
+!-                    end if
+!-                end if
+!-            case (VN_QA)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%qa)) then
+!-                        allocate(vs%grid%qa(vs%grid%dim_length))
+!-                        vs%grid%qa = huge(vs%grid%qa)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%qa)) then
+!-                        allocate(vs%tile%qa(vs%tile%dim_length))
+!-                        vs%tile%qa = huge(vs%tile%qa)
+!-                    end if
+!-                end if
+!-            case (VN_PRES)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%pres)) then
+!-                        allocate(vs%grid%pres(vs%grid%dim_length))
+!-                        vs%grid%pres = huge(vs%grid%pres)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%pres)) then
+!-                        allocate(vs%tile%pres(vs%tile%dim_length))
+!-                        vs%tile%pres = huge(vs%tile%pres)
+!-                    end if
+!-                end if
+!-            case (VN_UU)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%uu)) then
+!-                        allocate(vs%grid%uu(vs%grid%dim_length))
+!-                        vs%grid%uu = huge(vs%grid%uu)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%uu)) then
+!-                        allocate(vs%tile%uu(vs%tile%dim_length))
+!-                        vs%tile%uu = huge(vs%tile%uu)
+!-                    end if
+!-                end if
+!-            case (VN_VV)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%vv)) then
+!-                        allocate(vs%grid%vv(vs%grid%dim_length))
+!-                        vs%grid%vv = huge(vs%grid%vv)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%vv)) then
+!-                        allocate(vs%tile%vv(vs%tile%dim_length))
+!-                        vs%tile%vv = huge(vs%tile%vv)
+!-                    end if
+!-                end if
+!-            case (VN_UV)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%uv)) then
+!-                        allocate(vs%grid%uv(vs%grid%dim_length))
+!-                        vs%grid%uv = huge(vs%grid%uv)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%uv)) then
+!-                        allocate(vs%tile%uv(vs%tile%dim_length))
+!-                        vs%tile%uv = huge(vs%tile%uv)
+!-                    end if
+!-                end if
+!-            case (VN_WDIR)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%wdir)) then
+!-                        allocate(vs%grid%wdir(vs%grid%dim_length))
+!-                        vs%grid%wdir = huge(vs%grid%wdir)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%wdir)) then
+!-                        allocate(vs%tile%wdir(vs%tile%dim_length))
+!-                        vs%tile%wdir = huge(vs%tile%wdir)
+!-                    end if
+!-                end if
+!-            case (VN_PRERN)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%prern)) then
+!-                        allocate(vs%grid%prern(vs%grid%dim_length))
+!-                        vs%grid%prern = huge(vs%grid%prern)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%prern)) then
+!-                        allocate(vs%tile%prern(vs%tile%dim_length))
+!-                        vs%tile%prern = huge(vs%tile%prern)
+!-                    end if
+!-                end if
+!-            case (VN_PRESNO)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%presno)) then
+!-                        allocate(vs%grid%presno(vs%grid%dim_length))
+!-                        vs%grid%presno = huge(vs%grid%presno)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%presno)) then
+!-                        allocate(vs%tile%presno(vs%tile%dim_length))
+!-                        vs%tile%presno = huge(vs%tile%presno)
+!-                    end if
+!-                end if
+!-            case (VN_PRE)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%pre)) then
+!-                        allocate(vs%grid%pre(vs%grid%dim_length))
+!-                        vs%grid%pre = huge(vs%grid%pre)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%pre)) then
+!-                        allocate(vs%tile%pre(vs%tile%dim_length))
+!-                        vs%tile%pre = huge(vs%tile%pre)
+!-                    end if
+!-                end if
+
+            !> Groundwater/lower zone storage variables.
+!-            case (VN_RCHG)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%rchg)) then
+!-                        allocate(vs%grid%rchg(vs%grid%dim_length))
+!-                        vs%grid%rchg = huge(vs%grid%rchg)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%rchg)) then
+!-                        allocate(vs%tile%rchg(vs%tile%dim_length))
+!-                        vs%tile%rchg = huge(vs%tile%rchg)
+!-                    end if
+!-                end if
 
             !> Routing variables.
-            case (VN_RFF)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%rff)) then
-                        allocate(vs%grid%rff(vs%grid%dim_length))
-                        vs%grid%rff = huge(vs%grid%rff)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%rff)) then
-                        allocate(vs%tile%rff(vs%tile%dim_length))
-                        vs%tile%rff = huge(vs%tile%rff)
-                    end if
-                end if
-            case (VN_RCHG)
-                if (associated(vs%grid)) then
-                    if (.not. allocated(vs%grid%rchg)) then
-                        allocate(vs%grid%rchg(vs%grid%dim_length))
-                        vs%grid%rchg = huge(vs%grid%rchg)
-                    end if
-                end if
-                if (associated(vs%tile)) then
-                    if (.not. allocated(vs%tile%rchg)) then
-                        allocate(vs%tile%rchg(vs%tile%dim_length))
-                        vs%tile%rchg = huge(vs%tile%rchg)
-                    end if
-                end if
+!-            case (VN_RFF)
+!-                if (associated(vs%grid)) then
+!-                    if (.not. allocated(vs%grid%rff)) then
+!-                        allocate(vs%grid%rff(vs%grid%dim_length))
+!-                        vs%grid%rff = huge(vs%grid%rff)
+!-                    end if
+!-                end if
+!-                if (associated(vs%tile)) then
+!-                    if (.not. allocated(vs%tile%rff)) then
+!-                        allocate(vs%tile%rff(vs%tile%dim_length))
+!-                        vs%tile%rff = huge(vs%tile%rff)
+!-                    end if
+!-                end if
 
             !> Others (not saved).
-            case default
-                isaved = 0
-        end select
+!-            case default
+!-                isaved = 0
+!-        end select
 
-        !> Check 'isaved' status.
-        if (isaved == 1) then
-            call print_info("Activated the variable '" // trim(input_field%label) // "'.")
+        !> Activate the variable.
+        variable_assigned = .false.
+        if (associated(vs%grid)) then
+            call model_variable_activate_from_name(vs%grid, input_field%field_name, variable_assigned = lsaved, error_status = ierr)
+            if (ierr /= 0) then
+                call print_error( &
+                    "An error occurred activating the 'grid' instance of the '" // trim(input_field%label) // "' variable.")
+                error_status = ierr
+            else
+                if (lsaved) variable_assigned = lsaved
+            end if
         end if
+        if (associated(vs%tile)) then
+            call model_variable_activate_from_name(vs%tile, input_field%field_name, variable_assigned = lsaved, error_status = ierr)
+            if (ierr /= 0) then
+                call print_error( &
+                    "An error occurred activating the 'tile' instance of the '" // trim(input_field%label) // "' variable.")
+                error_status = ierr
+            else
+                if (lsaved) variable_assigned = lsaved
+            end if
+        end if
+
+        !> Check status.
+        if (variable_assigned) call print_info("Activated the variable '" // trim(input_field%label) // "'.")
 
     end subroutine
 
@@ -2115,7 +2146,8 @@ module mesh_io
         !> Local variables.
         real, allocatable :: dat_cell_r(:), dat_tile_r(:)
         integer, allocatable :: dat_cell_i(:), dat_tile_i(:), dim_lengths(:)
-        character(len = LONG_FIELD_LENGTH), allocatable :: dat_cell_c(:), dat_tile_c(:)
+        character(len = SHORT_FIELD_LENGTH), allocatable :: dat_cell_short_c(:), dat_tile_short_c(:)
+        character(len = LONG_FIELD_LENGTH), allocatable :: dat_cell_long_c(:), dat_tile_long_c(:)
         integer j, i
 
         !> Status.
@@ -2129,16 +2161,14 @@ module mesh_io
 
         !> Allocate temporary variables.
         if (associated(vs%grid)) then
-            allocate(dat_cell_r(vs%grid%dim_length), dat_cell_i(vs%grid%dim_length), dat_cell_c(vs%grid%dim_length))
+            allocate(dat_cell_r(vs%grid%dim_length), dat_cell_i(vs%grid%dim_length))
             dat_cell_r = huge(0.0)
             dat_cell_i = huge(0)
-            dat_cell_c = ''
         end if
         if (associated(vs%tile)) then
-            allocate(dat_tile_r(vs%tile%dim_length), dat_tile_i(vs%tile%dim_length), dat_tile_c(vs%tile%dim_length))
+            allocate(dat_tile_r(vs%tile%dim_length), dat_tile_i(vs%tile%dim_length))
             dat_tile_r = huge(0.0)
             dat_tile_i = huge(0)
-            dat_tile_c = ''
         end if
 
         !> Allocate the map.
@@ -2239,18 +2269,26 @@ module mesh_io
                 end if
             type is (model_variable_char1d)
                 if (associated(vs%grid)) then
-                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_char1d(dat = dat_cell_c))
+                    allocate(dat_cell_short_c(vs%grid%dim_length))
+                    dat_cell_short_c = ''
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_char1d(dat = dat_cell_short_c))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_char1d(dat = dat_tile_c))
+                    allocate(dat_tile_short_c(vs%tile%dim_length))
+                    dat_tile_short_c = ''
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_char1d(dat = dat_tile_short_c))
                 end if
                 allocate(dim_lengths(1), source = shape(this%dat))
             type is (model_variable_char)
                 if (associated(vs%grid)) then
-                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_char1d(dat = dat_cell_c))
+                    allocate(dat_cell_long_c(vs%grid%dim_length))
+                    dat_cell_long_c = ''
+                    allocate(input_field%mapping%mapped_to_cell, source = model_variable_char1d(dat = dat_cell_long_c))
                 end if
                 if (associated(vs%tile)) then
-                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_char1d(dat = dat_tile_c))
+                    allocate(dat_tile_long_c(vs%tile%dim_length))
+                    dat_tile_long_c = ''
+                    allocate(input_field%mapping%mapped_to_tile, source = model_variable_char1d(dat = dat_tile_long_c))
                 end if
             class default
 
@@ -2545,6 +2583,9 @@ module mesh_io
         !> Local variables.
         integer i, ierr
 
+        !> Return status.
+        error_status = 0
+
         !> Reset variable.
         if (.not. allocated(ranked_output)) allocate(ranked_output(vs%grid%dim_length))
         ranked_output = huge(ranked_output)
@@ -2592,6 +2633,9 @@ module mesh_io
 
         !> Local variables.
 !-        integer i, ierr
+
+        !> Return status.
+!-        error_status = 0
 
         !> Reset variable.
 !-        if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%grid%dim_length))
@@ -2641,6 +2685,9 @@ module mesh_io
         !> Local variables.
         integer i, ierr
 
+        !> Return status.
+        error_status = 0
+
         !> Reset variable.
         if (.not. allocated(ranked_output)) allocate(ranked_output(vs%grid%dim_length))
         ranked_output = huge(ranked_output)
@@ -2688,6 +2735,9 @@ module mesh_io
 
         !> Local variables.
 !-        integer i, ierr
+
+        !> Return status.
+!-        error_status = 0
 
         !> Reset variable.
 !-        if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%grid%dim_length))
@@ -2737,6 +2787,9 @@ module mesh_io
         !> Local variables.
         integer i, ierr
 
+        !> Return status.
+        error_status = 0
+
         !> Reset variable.
         if (.not. allocated(ranked_output)) allocate(ranked_output(vs%tile%dim_length))
         ranked_output = huge(ranked_output)
@@ -2784,6 +2837,9 @@ module mesh_io
 
         !> Local variables.
 !-        integer i, ierr
+
+        !> Return status.
+!-        error_status = 0
 
         !> Reset variable.
 !-        if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%tile%dim_length))
@@ -2833,6 +2889,9 @@ module mesh_io
         !> Local variables.
         integer i, ierr
 
+        !> Return status.
+        error_status = 0
+
         !> Reset variable.
         if (.not. allocated(ranked_output)) allocate(ranked_output(vs%tile%dim_length))
         ranked_output = huge(ranked_output)
@@ -2881,6 +2940,9 @@ module mesh_io
         !> Local variables.
 !-        integer i, ierr
 
+        !> Return status.
+!-        error_status = 0
+
         !> Reset variable.
 !-        if (.not. associated(ranked_output_pntr)) allocate(ranked_output_pntr(vs%tile%dim_length))
 !-        ranked_output_pntr = huge(ranked_output_pntr)
@@ -2919,9 +2981,10 @@ module mesh_io
     subroutine assign_variable_from_field(input_field, error_status)
 
         !> Modules.
-        use strings, only: uppercase
-        use variable_names
+!-        use strings, only: uppercase
+!-        use variable_names
         use model_variables, only: vs
+        use variable_maps
 
         !> Input/output variables.
         !*  input_field: Input field to update.
@@ -2930,109 +2993,140 @@ module mesh_io
         integer, intent(out) :: error_status
 
         !> Local variables.
-        integer time_order, isaved
+        integer ierr
+        logical variable_assigned, lsaved
+!-        integer time_order, isaved
 
-        !> Status.
+        !> Return status.
         error_status = 0
 
         !> Transfer the time order to a local variable (for diagnostic output).
-        time_order = 0
-        if (allocated(input_field%dim_names)) then
-            time_order = input_field%mapping%time_order
-        end if
+!-        time_order = 0
+!-        if (allocated(input_field%dim_names)) then
+!-            time_order = input_field%mapping%time_order
+!-        end if
 
         !> Identify and assign variables.
-        isaved = 1
-        select case (uppercase(input_field%field_name))
+!-        isaved = 1
+!-        select case (uppercase(input_field%field_name))
 
             !> Basin attributes (general).
-            case (VN_NEXT)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%next_id, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%next_id, error_status)
-            case (VN_GRIDAREA)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%surface_area, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%surface_area, error_status)
-            case (VN_ELEV)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%topo_elev, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%topo_elev, error_status)
-            case (VN_TOPOSLOPE, 'INTSLOPE')
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%topo_slope, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%topo_slope, error_status)
+!-            case (VN_NEXT)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%next_id, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%next_id, error_status)
+!-            case (VN_GRIDAREA)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%surface_area, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%surface_area, error_status)
+!-            case (VN_ELEV)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%topo_elev, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%topo_elev, error_status)
+!-            case (VN_TOPOSLOPE, 'INTSLOPE')
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%topo_slope, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%topo_slope, error_status)
 
             !> Drainage/routing attributes.
-            case (VN_CHNLSLOPE)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%chnl_slope, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%chnl_slope, error_status)
-            case (VN_CHNLLENGTH)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%chnl_length, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%chnl_length, error_status)
-            case (VN_ICHNL, 'CHNL')
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%ichnl, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%ichnl, error_status)
-            case (VN_IREACH, 'REACH')
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%ireach, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%ireach, error_status)
-            case (VN_DA)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%drainage_area, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%drainage_area, error_status)
-            case (VN_BNKFLL, 'BANKFULL')
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%bankfull, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%bankfull, error_status)
+!-            case (VN_CHNLSLOPE)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%chnl_slope, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%chnl_slope, error_status)
+!-            case (VN_CHNLLENGTH)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%chnl_length, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%chnl_length, error_status)
+!-            case (VN_ICHNL, 'CHNL')
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%ichnl, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%ichnl, error_status)
+!-            case (VN_IREACH, 'REACH')
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%ireach, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%ireach, error_status)
+!-            case (VN_DA)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%drainage_area, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%drainage_area, error_status)
+!-            case (VN_BNKFLL, 'BANKFULL')
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%bankfull, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%bankfull, error_status)
 
             !> Meteorology/climatology variables.
-            case (VN_FSIN)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%fsin, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%fsin, error_status)
-            case (VN_FLIN)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%flin, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%flin, error_status)
-            case (VN_TA)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%ta, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%ta, error_status)
-            case (VN_QA)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%qa, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%qa, error_status)
-            case (VN_PRES)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%pres, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%pres, error_status)
-            case (VN_UU)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%uu, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%uu, error_status)
-            case (VN_VV)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%vv, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%vv, error_status)
-            case (VN_UV)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%uv, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%uv, error_status)
-            case (VN_WDIR)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%wdir, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%wdir, error_status)
-            case (VN_PRERN)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%prern, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%prern, error_status)
-            case (VN_PRESNO)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%presno, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%presno, error_status)
-            case (VN_PRE)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%pre, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%pre, error_status)
+!-            case (VN_FSIN)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%fsin, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%fsin, error_status)
+!-            case (VN_FLIN)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%flin, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%flin, error_status)
+!-            case (VN_TA)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%ta, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%ta, error_status)
+!-            case (VN_QA)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%qa, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%qa, error_status)
+!-            case (VN_PRES)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%pres, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%pres, error_status)
+!-            case (VN_UU)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%uu, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%uu, error_status)
+!-            case (VN_VV)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%vv, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%vv, error_status)
+!-            case (VN_UV)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%uv, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%uv, error_status)
+!-            case (VN_WDIR)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%wdir, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%wdir, error_status)
+!-            case (VN_PRERN)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%prern, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%prern, error_status)
+!-            case (VN_PRESNO)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%presno, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%presno, error_status)
+!-            case (VN_PRE)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%pre, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%pre, error_status)
+
+            !> Groundwater/lower zone storage variables.
+!-            case (VN_RCHG)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%rchg, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%rchg, error_status)
 
             !> Routing variables.
-            case (VN_RFF)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%rff, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%rff, error_status)
-            case (VN_RCHG)
-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%rchg, error_status)
-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%rchg, error_status)
+!-            case (VN_RFF)
+!-                if (associated(vs%grid)) call assign_cell_values(input_field, vs%grid%rff, error_status)
+!-                if (associated(vs%tile)) call assign_tile_values(input_field, vs%tile%rff, error_status)
 
             !> Others (not saved).
-            case default
-                isaved = 0
-        end select
+!-            case default
+!-                isaved = 0
+!-        end select
+
+        !> Assign field.
+        variable_assigned = .false.
+        if (associated(vs%grid) .and. allocated(input_field%mapping%mapped_to_cell)) then
+            call model_variable_assign_mapped_field_from_name( &
+                vs%grid, input_field%mapping%mapped_to_cell, input_field%field_name, &
+                variable_assigned = lsaved, error_status = ierr)
+            if (ierr /= 0) then
+                call print_error( &
+                    "An error occurred assigning the 'grid' instance of the '" // trim(input_field%label) // "' variable.")
+                error_status = ierr
+            else
+                if (lsaved) variable_assigned = lsaved
+            end if
+        end if
+        if (associated(vs%tile) .and. allocated(input_field%mapping%mapped_to_tile)) then
+            call model_variable_assign_mapped_field_from_name( &
+                vs%tile, input_field%mapping%mapped_to_tile, input_field%field_name, &
+                variable_assigned = lsaved, error_status = ierr)
+            if (ierr /= 0) then
+                call print_error( &
+                    "An error occurred assigning the 'tile' instance of the '" // trim(input_field%label) // "' variable.")
+                error_status = ierr
+            else
+                if (lsaved) variable_assigned = lsaved
+            end if
+        end if
 
         !> Check 'isaved' status.
-        if (isaved == 1 .and. .not. time_order > 0) then
-            if (DIAGNOSEMODE) call print_info("Assigned the variable '" // trim(input_field%label) // "'.")
+        if (variable_assigned .and. input_field%mapping%time_order == 0) then
+            call print_info("Assigned the variable '" // trim(input_field%label) // "'.")
         end if
 
     end subroutine

@@ -235,7 +235,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
             basin_database%full_path = 'MESH_drainage_database.asc'
             allocate(dim_names(1))
             dim_names = (/DIM_NAME_N/)
-            basin_database%overrides%dim_names = dim_names
+            allocate(basin_database%overrides%dim_names(size(dim_names)), source = dim_names)
             allocate(basin_database%container, source = io_type_char_delimited())
         case default
 

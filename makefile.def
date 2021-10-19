@@ -45,7 +45,7 @@ OBJECTS+=	mesh_io_constants.o variable_types.o field_types.o datetime_types.o fi
 			control_variables.o \
 			variable_names.o parameter_names.o \
 			projection_variables.o shd_variables.o fm_variables.o input_parameters.o model_variables.o \
-			mesh_io.o \
+			variable_maps.o mesh_io.o \
 			output_variables.o \
 			sa_mesh_common.o \
 			input_forcing.o \

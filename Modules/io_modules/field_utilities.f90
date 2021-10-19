@@ -5380,47 +5380,49 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Allocate an unallocated field.
@@ -5453,47 +5455,49 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Allocate an unallocated field.
@@ -5526,47 +5530,49 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Allocate an unallocated field.
@@ -5599,47 +5605,49 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Allocate an unallocated field.
@@ -5672,47 +5680,49 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Allocate an unallocated field.
@@ -5745,47 +5755,49 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Allocate an unallocated field.
@@ -5818,47 +5830,49 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Allocate an unallocated field.
@@ -5891,47 +5905,49 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Allocate an unallocated field.
@@ -5967,47 +5983,49 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Allocate an unallocated field.
@@ -6041,47 +6059,49 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Allocate an unallocated field.
@@ -6115,31 +6135,33 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Allocate an unallocated field.
@@ -6170,47 +6192,49 @@ module field_utilities
 
         !> Check field type.
         select type (input_field)
+
+            !> Model variable types.
+            type is (model_variable_real5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_real)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int5d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int4d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int3d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int2d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_int)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char1d)
+                call assign_field(input_field%dat, output_field, error_status)
+            type is (model_variable_char)
+                call assign_field(input_field%dat, output_field, error_status)
+
+            !> I/O field.
             type is (io_field)
 
                 !> Return if the field is empty.
                 if (.not. allocated(input_field%field)) then
                     error_status = 1
                     return
-                end if
+                else
 
-                !> Assign field.
-                select type (this => input_field%field)
-                    type is (model_variable_real5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_real)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int5d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int4d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int3d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int2d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_int)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char1d)
-                        call assign_field(this%dat, output_field, error_status)
-                    type is (model_variable_char)
-                        call assign_field(this%dat, output_field, error_status)
-                    class default
-                        error_status = 1
-                end select
+                    !> Assign field.
+                    call assign_field(input_field%field, output_field, error_status)
+                end if
             class default
 
                 !> Assign field.
