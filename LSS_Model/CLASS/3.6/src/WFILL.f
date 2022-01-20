@@ -3,6 +3,11 @@
      2                 DELZX,ZBOTX,DZF,TIMPND,WADJ,WADD,
      3                 IFILL,IFIND,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N )
 
+C     * JAN 20/22 - M.ELSHAMY.  REMOVED A CONSTRAINT ON ZF IN LOOP 250
+C                               THAT COULD LOSE WATER WHEN THE PERMEABLE
+C                               DEPTH OF THE SOIL IS > 10.0m.
+C                               SUPERFLUOUS NATURE OF CHECK CONFIRMED
+C                               WITH D.VERSEGHY.
 C     * JAN 06/09 - D.VERSEGHY. CORRECT LZF AND ZF ASSIGNMENTS IN LOOP 
 C     *                         100; ADDITIONAL DZF CHECK IN LOOP 400.
 C     * MAR 22/06 - D.VERSEGHY. MOVE IFILL TEST OUTSIDE ALL IF BLOCKS.
@@ -120,7 +125,7 @@ C     * WETTING FRONT AT THAT TIME.
               TIMPND(I)=(ZF(I)*(THLINF(I,LZF(I))-THLIQX(I,LZF(I)))+
      1                 WADJ(I))/R(I)                                 
               TIMPND(I)=MAX(TIMPND(I),0.0)
-              IF(ZF(I).GT.10.0) TIMPND(I)=1.0E+8
+C-M.E.              IF(ZF(I).GT.10.0) TIMPND(I)=1.0E+8
 C
 C     * IN THE CASE WHERE THE TIME TO PONDING EXCEEDS OR EQUALS THE
 C     * TIME REMAINING IN THE CURRENT MODEL STEP, RECALCULATE THE 
