@@ -53,7 +53,7 @@ subroutine read_shed_nc_subbasin(shd, fname, dim_n_name, dim_m_name, ierr)
 
     !> Open the file.
     call nc4_open_input(fname, iun = iun, ierr = ierr)
-    if (ierr /= 0) return\
+    if (ierr /= 0) return
 
     !> Get the projection.
     call nc4_get_projection( &
