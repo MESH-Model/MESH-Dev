@@ -6,6 +6,9 @@ module parse_utilities
     !> 'strings': For 'compact', 'parse' and 'value' functions.
     use strings
 
+    !> 'mesh_io_constants': For 'NODATA' constants.
+    use mesh_io_constants, only: NO_DATA_REAL, NO_DATA_INT, NO_DATA_CHAR
+
     implicit none
 
     !> Description:
@@ -188,7 +191,7 @@ module parse_utilities
         integer istat
 
         !> Check if the field is assigned.
-        if (field /= achar(0)) then
+        if (field /= NO_DATA_CHAR) then
             istat = istat + radix(istat)**pstat%ASSIGNED
         end if
 
@@ -245,7 +248,7 @@ module parse_utilities
         if (allocated(field)) then
 
             !> Check if the field is assigned.
-            if (all(field /= achar(0))) then
+            if (all(field /= NO_DATA_CHAR)) then
                 istat = istat + radix(istat)**pstat%ASSIGNED
             end if
 
@@ -413,7 +416,7 @@ module parse_utilities
         if (z /= 0) then
             istat = istat + radix(istat)**pstat%ALLOCATION_ERROR
         else
-            field = achar(0)
+            field = NO_DATA_CHAR
         end if
 
     end subroutine

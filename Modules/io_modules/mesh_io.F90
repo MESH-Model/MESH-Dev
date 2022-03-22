@@ -967,9 +967,9 @@ module mesh_io
                     end if
 
                     !> Check for standard attributes.
-                    fill_r = huge(0.0)
-                    fill_i = huge(0)
-                    fill_c = achar(0)
+                    fill_r = NO_DATA_REAL
+                    fill_i = NO_DATA_INT
+                    fill_c = NO_DATA_CHAR
                     do j = 1, nattrs
 
                         !> Get the attribute name.
@@ -2162,13 +2162,13 @@ module mesh_io
         !> Allocate temporary variables.
         if (associated(vs%grid)) then
             allocate(dat_cell_r(vs%grid%dim_length), dat_cell_i(vs%grid%dim_length))
-            dat_cell_r = huge(0.0)
-            dat_cell_i = huge(0)
+            dat_cell_r = NO_DATA_REAL
+            dat_cell_i = NO_DATA_INT
         end if
         if (associated(vs%tile)) then
             allocate(dat_tile_r(vs%tile%dim_length), dat_tile_i(vs%tile%dim_length))
-            dat_tile_r = huge(0.0)
-            dat_tile_i = huge(0)
+            dat_tile_r = NO_DATA_REAL
+            dat_tile_i = NO_DATA_INT
         end if
 
         !> Allocate the map.
@@ -2300,9 +2300,9 @@ module mesh_io
         if (associated(vs%grid)) then
             select type (this => input_field%mapping%mapped_to_cell)
                 type is (model_variable_real1d)
-                    this%dat = huge(0.0)
+                    this%dat = NO_DATA_REAL
                 type is (model_variable_int1d)
-                    this%dat = huge(0)
+                    this%dat = NO_DATA_INT
                 type is (model_variable_char1d)
                     this%dat = ''
             end select
@@ -2314,9 +2314,9 @@ module mesh_io
         if (associated(vs%tile)) then
             select type (this => input_field%mapping%mapped_to_tile)
                 type is (model_variable_real1d)
-                    this%dat = huge(0.0)
+                    this%dat = NO_DATA_REAL
                 type is (model_variable_int1d)
-                    this%dat = huge(0)
+                    this%dat = NO_DATA_INT
                 type is (model_variable_char1d)
                     this%dat = ''
             end select
@@ -2449,9 +2449,9 @@ module mesh_io
         if (allocated(input_field%mapping%mapped_to_cell)) then
             select type (this => input_field%mapping%mapped_to_cell)
                 type is (model_variable_real1d)
-                    this%dat = huge(0.0)
+                    this%dat = NO_DATA_REAL
                 type is (model_variable_int1d)
-                    this%dat = huge(0)
+                    this%dat = NO_DATA_INT
                 type is (model_variable_char1d)
                     this%dat = ''
             end select
@@ -2459,9 +2459,9 @@ module mesh_io
         if (allocated(input_field%mapping%mapped_to_tile)) then
             select type (this => input_field%mapping%mapped_to_tile)
                 type is (model_variable_real1d)
-                    this%dat = huge(0.0)
+                    this%dat = NO_DATA_REAL
                 type is (model_variable_int1d)
-                    this%dat = huge(0)
+                    this%dat = NO_DATA_INT
                 type is (model_variable_char1d)
                     this%dat = ''
             end select

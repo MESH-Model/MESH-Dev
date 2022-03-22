@@ -697,7 +697,7 @@ module input_forcing
                                     select type (field => forcing_files(i)%fields(j)%mapping%mapped_to_cell)
                                         type is (model_variable_real1d)
                                             allocate(dat_cell_interp_r(vs%grid%dim_length, 2))
-                                            dat_cell_interp_r = huge(0.0)
+                                            dat_cell_interp_r = NO_DATA_REAL
                                             allocate(forcing_files(i)%fields(j)%mapping%mapped_to_cell_interp, &
                                                 source = model_variable_real2d(dat = dat_cell_interp_r))
                                             deallocate(dat_cell_interp_r)
@@ -709,7 +709,7 @@ module input_forcing
                                     select type (field => forcing_files(i)%fields(j)%mapping%mapped_to_tile)
                                         type is (model_variable_real1d)
                                             allocate(dat_tile_interp_r(vs%tile%dim_length, 2))
-                                            dat_tile_interp_r = huge(0.0)
+                                            dat_tile_interp_r = NO_DATA_REAL
                                             allocate(forcing_files(i)%fields(j)%mapping%mapped_to_tile_interp, &
                                                 source = model_variable_real2d(dat = dat_tile_interp_r))
                                             deallocate(dat_tile_interp_r)
@@ -851,7 +851,7 @@ module input_forcing
                         type is (model_variable_real2d)
                             select type (field => input_file%fields(j)%mapping%mapped_to_cell)
                                 type is (model_variable_real1d)
-                                    if (all(interp%dat(:, 1) /= huge(0.0))) then
+                                    if (all(interp%dat(:, 1) /= NO_DATA_REAL)) then
                                         field%dat = interp%dat(:, 1) + &
                                             input_file%temporal_interp%interp_weights(input_file%series%istep)* &
                                             (interp%dat(:, 2) - interp%dat(:, 1))
@@ -864,7 +864,7 @@ module input_forcing
                         type is (model_variable_real2d)
                             select type (field => input_file%fields(j)%mapping%mapped_to_tile)
                                 type is (model_variable_real1d)
-                                    if (all(interp%dat(:, 1) /= huge(0.0))) then
+                                    if (all(interp%dat(:, 1) /= NO_DATA_REAL)) then
                                         field%dat = interp%dat(:, 1) + &
                                             input_file%temporal_interp%interp_weights(input_file%series%istep)* &
                                             (interp%dat(:, 2) - interp%dat(:, 1))

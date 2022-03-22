@@ -161,4 +161,12 @@ module mesh_io_constants
     character(len = SHORT_FIELD_LENGTH), parameter :: MAP_ORDER_LIST(9) = (/ &
         DIM_NAME_X, DIM_NAME_Y, DIM_NAME_T, DIM_NAME_M, DIM_NAME_K, DIM_NAME_N, DIM_NAME_B, DIM_NAME_G, DIM_NAME_L/)
 
+    !> Constants for 'NODATA' values.
+    !* NO_DATA_REAL: No data value for type of real (float).
+    !* NO_DATA_INT: No data value for type of integer (int).
+    !* NO_DATA_CHAR: No data value for type of character.
+    real, parameter :: NO_DATA_REAL = huge(0.0)
+    integer, parameter :: NO_DATA_INT = huge(0)
+    character(len = 1), parameter :: NO_DATA_CHAR = achar(0)
+
 end module

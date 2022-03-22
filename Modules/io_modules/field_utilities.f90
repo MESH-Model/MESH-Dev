@@ -5,6 +5,15 @@ module field_utilities
 
     implicit none
 
+    interface reset_field
+        module procedure reset_field_5d
+        module procedure reset_field_4d
+        module procedure reset_field_3d
+        module procedure reset_field_2d
+        module procedure reset_field_1d
+        module procedure reset_field_scalar
+    end interface
+
     interface allocate_field
         module procedure allocate_field_real5d
         module procedure allocate_field_real4d
@@ -180,6 +189,136 @@ module field_utilities
 
     contains
 
+    subroutine reset_field_5d(output_field, error_status)
+
+        !> Input/output variables
+        class(*) output_field(:, :, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Reset the return status.
+        error_status = 0
+
+        !> Assign default value.
+        select type (output_field)
+            type is (real)
+                output_field = NO_DATA_REAL
+            type is (integer)
+                output_field = NO_DATA_INT
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    subroutine reset_field_4d(output_field, error_status)
+
+        !> Input/output variables
+        class(*) output_field(:, :, :, :)
+        integer, intent(out) :: error_status
+
+        !> Reset the return status.
+        error_status = 0
+
+        !> Assign default value.
+        select type (output_field)
+            type is (real)
+                output_field = NO_DATA_REAL
+            type is (integer)
+                output_field = NO_DATA_INT
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    subroutine reset_field_3d(output_field, error_status)
+
+        !> Input/output variables
+        class(*) output_field(:, :, :)
+        integer, intent(out) :: error_status
+
+        !> Reset the return status.
+        error_status = 0
+
+        !> Assign default value.
+        select type (output_field)
+            type is (real)
+                output_field = NO_DATA_REAL
+            type is (integer)
+                output_field = NO_DATA_INT
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    subroutine reset_field_2d(output_field, error_status)
+
+        !> Input/output variables
+        class(*) output_field(:, :)
+        integer, intent(out) :: error_status
+
+        !> Reset the return status.
+        error_status = 0
+
+        !> Assign default value.
+        select type (output_field)
+            type is (real)
+                output_field = NO_DATA_REAL
+            type is (integer)
+                output_field = NO_DATA_INT
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    subroutine reset_field_1d(output_field, error_status)
+
+        !> Input/output variables
+        class(*) output_field(:)
+        integer, intent(out) :: error_status
+
+        !> Reset the return status.
+        error_status = 0
+
+        !> Assign default value.
+        select type (output_field)
+            type is (real)
+                output_field = NO_DATA_REAL
+            type is (integer)
+                output_field = NO_DATA_INT
+            type is (character(len = *))
+                output_field = NO_DATA_CHAR
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
+    subroutine reset_field_scalar(output_field, error_status)
+
+        !> Input/output variables
+        class(*) output_field
+        integer, intent(out) :: error_status
+
+        !> Reset the return status.
+        error_status = 0
+
+        !> Assign default value.
+        select type (output_field)
+            type is (real)
+                output_field = NO_DATA_REAL
+            type is (integer)
+                output_field = NO_DATA_INT
+            type is (character(len = *))
+                output_field = NO_DATA_CHAR
+            class default
+                error_status = 1
+        end select
+
+    end subroutine
+
     subroutine allocate_field_real5d(output_field, dim_sizes, error_status)
 
         !> Input/output variables.
@@ -187,16 +326,11 @@ module field_utilities
         integer, intent(in) :: dim_sizes(5)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer ierr
+        !> Allocate the field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4), dim_sizes(5)), stat = error_status)
 
-        !> Allocate and initialize field.
-        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4), dim_sizes(5)), stat = ierr)
-        if (ierr /= 0) then
-            error_status = 1
-        else
-            output_field = huge(0.0)
-        end if
+        !> Initialize the field.
+        if (error_status == 0) call reset_field(output_field, error_status)
 
     end subroutine
 
@@ -207,16 +341,11 @@ module field_utilities
         integer, intent(in) :: dim_sizes(5)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer ierr
+        !> Allocate the field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4), dim_sizes(5)), stat = error_status)
 
-        !> Allocate and initialize field.
-        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4), dim_sizes(5)), stat = ierr)
-        if (ierr /= 0) then
-            error_status = 1
-        else
-            output_field = huge(0)
-        end if
+        !> Initialize the field.
+        if (error_status == 0) call reset_field(output_field, error_status)
 
     end subroutine
 
@@ -227,16 +356,11 @@ module field_utilities
         integer, intent(in) :: dim_sizes(4)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer ierr
+        !> Allocate the field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4)), stat = error_status)
 
-        !> Allocate and initialize field.
-        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4)), stat = ierr)
-        if (ierr /= 0) then
-            error_status = 1
-        else
-            output_field = huge(0.0)
-        end if
+        !> Initialize the field.
+        if (error_status == 0) call reset_field(output_field, error_status)
 
     end subroutine
 
@@ -247,16 +371,11 @@ module field_utilities
         integer, intent(in) :: dim_sizes(4)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer ierr
+        !> Allocate the field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4)), stat = error_status)
 
-        !> Allocate and initialize field.
-        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3), dim_sizes(4)), stat = ierr)
-        if (ierr /= 0) then
-            error_status = 1
-        else
-            output_field = huge(0)
-        end if
+        !> Initialize the field.
+        if (error_status == 0) call reset_field(output_field, error_status)
 
     end subroutine
 
@@ -267,16 +386,11 @@ module field_utilities
         integer, intent(in) :: dim_sizes(3)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer ierr
+        !> Allocate the field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3)), stat = error_status)
 
-        !> Allocate and initialize field.
-        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3)), stat = ierr)
-        if (ierr /= 0) then
-            error_status = 1
-        else
-            output_field = huge(0.0)
-        end if
+        !> Initialize the field.
+        if (error_status == 0) call reset_field(output_field, error_status)
 
     end subroutine
 
@@ -287,16 +401,11 @@ module field_utilities
         integer, intent(in) :: dim_sizes(3)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer ierr
+        !> Allocate the field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3)), stat = error_status)
 
-        !> Allocate and initialize field.
-        allocate(output_field(dim_sizes(1), dim_sizes(2), dim_sizes(3)), stat = ierr)
-        if (ierr /= 0) then
-            error_status = 1
-        else
-            output_field = huge(0)
-        end if
+        !> Initialize the field.
+        if (error_status == 0) call reset_field(output_field, error_status)
 
     end subroutine
 
@@ -307,16 +416,11 @@ module field_utilities
         integer, intent(in) :: dim_sizes(2)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer ierr
+        !> Allocate the field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2)), stat = error_status)
 
-        !> Allocate and initialize field.
-        allocate(output_field(dim_sizes(1), dim_sizes(2)), stat = ierr)
-        if (ierr /= 0) then
-            error_status = 1
-        else
-            output_field = huge(0.0)
-        end if
+        !> Initialize the field.
+        if (error_status == 0) call reset_field(output_field, error_status)
 
     end subroutine
 
@@ -327,16 +431,11 @@ module field_utilities
         integer, intent(in) :: dim_sizes(2)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer ierr
+        !> Allocate the field.
+        allocate(output_field(dim_sizes(1), dim_sizes(2)), stat = error_status)
 
-        !> Allocate and initialize field.
-        allocate(output_field(dim_sizes(1), dim_sizes(2)), stat = ierr)
-        if (ierr /= 0) then
-            error_status = 1
-        else
-            output_field = huge(0)
-        end if
+        !> Initialize the field.
+        if (error_status == 0) call reset_field(output_field, error_status)
 
     end subroutine
 
@@ -347,16 +446,11 @@ module field_utilities
         integer, intent(in) :: dim_sizes(1)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer ierr
+        !> Allocate the field.
+        allocate(output_field(dim_sizes(1)), stat = error_status)
 
-        !> Allocate and initialize field.
-        allocate(output_field(dim_sizes(1)), stat = ierr)
-        if (ierr /= 0) then
-            error_status = 1
-        else
-            output_field = huge(0.0)
-        end if
+        !> Initialize the field.
+        if (error_status == 0) call reset_field(output_field, error_status)
 
     end subroutine
 
@@ -367,16 +461,11 @@ module field_utilities
         integer, intent(in) :: dim_sizes(1)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer ierr
+        !> Allocate the field.
+        allocate(output_field(dim_sizes(1)), stat = error_status)
 
-        !> Allocate and initialize field.
-        allocate(output_field(dim_sizes(1)), stat = ierr)
-        if (ierr /= 0) then
-            error_status = 1
-        else
-            output_field = huge(0)
-        end if
+        !> Initialize the field.
+        if (error_status == 0) call reset_field(output_field, error_status)
 
     end subroutine
 
@@ -387,16 +476,11 @@ module field_utilities
         integer, intent(in) :: dim_sizes(1)
         integer, intent(out) :: error_status
 
-        !> Local variables.
-        integer ierr
+        !> Allocate the field.
+        allocate(output_field(dim_sizes(1)), stat = error_status)
 
-        !> Allocate and initialize field.
-        allocate(output_field(dim_sizes(1)), stat = ierr)
-        if (ierr /= 0) then
-            error_status = 1
-        else
-            output_field = ''
-        end if
+        !> Initialize the field.
+        if (error_status == 0) call reset_field(output_field, error_status)
 
     end subroutine
 
@@ -424,7 +508,13 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        output_field = int(input_field)
+                        where (input_field > huge(output_field))
+                            output_field = huge(output_field)
+                        elsewhere (input_field < -huge(output_field))
+                            output_field = -huge(output_field)
+                        elsewhere
+                            output_field = int(input_field)
+                        end where
                     class default
                         error_status = 1
                 end select
@@ -467,7 +557,13 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        output_field = int(input_field)
+                        where (input_field > huge(output_field))
+                            output_field = huge(output_field)
+                        elsewhere (input_field < -huge(output_field))
+                            output_field = -huge(output_field)
+                        elsewhere
+                            output_field = int(input_field)
+                        end where
                     class default
                         error_status = 1
                 end select
@@ -510,7 +606,13 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        output_field = int(input_field)
+                        where (input_field > huge(output_field))
+                            output_field = huge(output_field)
+                        elsewhere (input_field < -huge(output_field))
+                            output_field = -huge(output_field)
+                        elsewhere
+                            output_field = int(input_field)
+                        end where
                     class default
                         error_status = 1
                 end select
@@ -553,7 +655,13 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        output_field = int(input_field)
+                        where (input_field > huge(output_field))
+                            output_field = huge(output_field)
+                        elsewhere (input_field < -huge(output_field))
+                            output_field = -huge(output_field)
+                        elsewhere
+                            output_field = int(input_field)
+                        end where
                     class default
                         error_status = 1
                 end select
@@ -599,7 +707,13 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        output_field = int(input_field)
+                        where (input_field > huge(output_field))
+                            output_field = huge(output_field)
+                        elsewhere (input_field < -huge(output_field))
+                            output_field = -huge(output_field)
+                        elsewhere
+                            output_field = int(input_field)
+                        end where
                     type is (character(len = *))
                         do i = 1, size(output_field)
                             write(output_field(i), *, iostat = ierr) input_field(i)
@@ -675,7 +789,13 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        output_field = int(input_field)
+                        if (input_field > huge(output_field)) then
+                            output_field = huge(output_field)
+                        else if (input_field < -huge(output_field)) then
+                            output_field = -huge(output_field)
+                        else
+                            output_field = int(input_field)
+                        end if
                     type is (character(len = *))
                         write(output_field, *, iostat = ierr) input_field
                         if (ierr /= 0) then

@@ -2,8 +2,8 @@
 !>  Module containing model variable types.
 module variable_types
 
-    !> 'mesh_io_constants' for character lengths.
-    use mesh_io_constants, only: SHORT_FIELD_LENGTH, LONG_FIELD_LENGTH
+    !> 'mesh_io_constants' for character lengths and 'NODATA' values.
+    use mesh_io_constants, only: SHORT_FIELD_LENGTH, LONG_FIELD_LENGTH, NO_DATA_REAL, NO_DATA_INT, NO_DATA_CHAR
 
     implicit none
 
@@ -12,9 +12,9 @@ module variable_types
     type, abstract :: model_variable_real_base
         real :: const_mul = 1.0
         real :: const_add = 0.0
-        real :: no_data_value = huge(0.0)
-        real :: valid_max = huge(0.0)
-        real :: valid_min = -huge(0.0)
+        real :: no_data_value = NO_DATA_REAL
+        real :: valid_max = NO_DATA_REAL
+        real :: valid_min = -NO_DATA_REAL
     end type
 
     !> Extension: real(:, :, :, :, :).
@@ -44,15 +44,15 @@ module variable_types
 
     !> Extension: real.
     type, extends(model_variable_real_base) :: model_variable_real
-        real :: dat = huge(0.0)
+        real :: dat = NO_DATA_REAL
     end type
 
     !> Description:
     !>  Model variable of type 'int' (base).
     type, abstract :: model_variable_int_base
-        integer :: no_data_value = huge(0)
-        integer :: valid_max = huge(0)
-        integer :: valid_min = -huge(0)
+        integer :: no_data_value = NO_DATA_INT
+        integer :: valid_max = NO_DATA_INT
+        integer :: valid_min = -NO_DATA_INT
     end type
 
     !> Extension: int(:, :, :, :, :).
@@ -82,13 +82,13 @@ module variable_types
 
     !> Extension: int.
     type, extends(model_variable_int_base) :: model_variable_int
-        integer :: dat = huge(0)
+        integer :: dat = NO_DATA_INT
     end type
 
     !> Description:
     !>  Model variable of type 'char' (base).
     type, abstract :: model_variable_char_base
-        character(len = 1) :: no_data_value = achar(0)
+        character(len = 1) :: no_data_value = NO_DATA_CHAR
     end type
 
     !> Extension: char(:).
@@ -98,7 +98,7 @@ module variable_types
 
     !> Extension: char.
     type, extends(model_variable_char_base) :: model_variable_char
-        character(len = LONG_FIELD_LENGTH) :: dat = ''
+        character(len = LONG_FIELD_LENGTH) :: dat = NO_DATA_CHAR
     end type
 
     !> Description:
