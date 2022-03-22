@@ -134,9 +134,10 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        logical :: q = .false.
+        logical q
 
         !> Print a message (if not quiet).
+        q = .false.
         if (present(quiet)) q = quiet
         if (.not. q) then
             call reset_tab()
@@ -3692,13 +3693,14 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        logical :: q = .false.
+        logical q
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat)
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 write(code, FMT_GEN) ierr
@@ -3735,13 +3737,14 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        logical :: q = .false.
+        logical q
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat)
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 write(code, FMT_GEN) ierr
@@ -3778,13 +3781,14 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        logical :: q = .false.
+        logical q
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat)
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 write(code, FMT_GEN) ierr
@@ -3822,13 +3826,14 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        logical :: q = .false.
+        logical q
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat, start = start)
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 if (ierr == NF90_EINVALCOORDS) then
@@ -3874,13 +3879,14 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        logical :: q = .false.
+        logical q
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat, start = start)
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 if (ierr == NF90_EINVALCOORDS) then
@@ -3926,13 +3932,14 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        logical :: q = .false.
+        logical q
 
         !> Read variable.
         ierr = nf90_get_var(iun, vid, dat, start = start)
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 if (ierr == NF90_EINVALCOORDS) then
@@ -3979,7 +3986,7 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         real, allocatable :: dat2(:, :)
-        logical :: q = .false.
+        logical q
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
         if (present(dim_lengths)) then
@@ -3993,6 +4000,7 @@ module nc_io
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 if (ierr == NF90_EINVALCOORDS) then
@@ -4046,7 +4054,7 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         integer, allocatable :: dat2(:, :)
-        logical :: q = .false.
+        logical q
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
         if (present(dim_lengths)) then
@@ -4060,6 +4068,7 @@ module nc_io
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 if (ierr == NF90_EINVALCOORDS) then
@@ -4113,7 +4122,7 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         real, allocatable :: dat3(:, :, :)
-        logical :: q = .false.
+        logical q
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
         if (present(dim_lengths)) then
@@ -4127,6 +4136,7 @@ module nc_io
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 if (ierr == NF90_EINVALCOORDS) then
@@ -4180,7 +4190,7 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         integer, allocatable :: dat3(:, :, :)
-        logical :: q = .false.
+        logical q
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
         if (present(dim_lengths)) then
@@ -4194,6 +4204,7 @@ module nc_io
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 if (ierr == NF90_EINVALCOORDS) then
@@ -4247,7 +4258,7 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         real, allocatable :: dat4(:, :, :, :)
-        logical :: q = .false.
+        logical q
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
         if (present(dim_lengths)) then
@@ -4261,6 +4272,7 @@ module nc_io
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 if (ierr == NF90_EINVALCOORDS) then
@@ -4314,7 +4326,7 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         integer, allocatable :: dat4(:, :, :, :)
-        logical :: q = .false.
+        logical q
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
         if (present(dim_lengths)) then
@@ -4328,6 +4340,7 @@ module nc_io
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 if (ierr == NF90_EINVALCOORDS) then
@@ -4381,7 +4394,7 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         real, allocatable :: dat5(:, :, :, :, :)
-        logical :: q = .false.
+        logical q
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
         if (present(dim_lengths)) then
@@ -4395,6 +4408,7 @@ module nc_io
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 if (ierr == NF90_EINVALCOORDS) then
@@ -4451,7 +4465,7 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
         integer, allocatable :: dat5(:, :, :, :, :)
-        logical :: q = .false.
+        logical q
 
         !> Allocate output variable (in the order of dimensions in the file, mapped to desired dimensions later).
         if (present(dim_lengths)) then
@@ -4465,6 +4479,7 @@ module nc_io
 
         !> Check for errors.
         if (ierr /= NF90_NOERR) then
+            q = .false.
             if (present(quiet)) q = quiet
             if (.not. q) then
                 if (ierr == NF90_EINVALCOORDS) then
@@ -5411,9 +5426,10 @@ module nc_io
         !> Local variables.
         character(len = DEFAULT_LINE_LENGTH) line
         character(len = DEFAULT_FIELD_LENGTH) code
-        logical :: q = .false.
+        logical q
 
         !> Print a message (if not quiet).
+        q = .false.
         if (present(quiet)) q = quiet
         if (.not. q) then
             call reset_tab()
@@ -7457,9 +7473,10 @@ module nc_io
 
         !> Local variables.
         character(len = DEFAULT_FIELD_LENGTH) code
-        logical :: q = .true.
+        logical q
 
         !> Close the file.
+        q = .true.
         if (present(quiet)) q = quiet
         ierr = nf90_close(iun)
         if (ierr /= NF90_NOERR) then
