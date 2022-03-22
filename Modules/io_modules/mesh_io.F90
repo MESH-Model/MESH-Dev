@@ -270,8 +270,8 @@ module mesh_io
                             end if
 
                             !> Check values.
-                            select case (lowercase(field))
-                                case ('lat', 'latitude')
+                            select case (uppercase(field))
+                                case (DIM_NAME_LAT, DIM_NAME_LATITUDE, DIM_NAME_DEGLAT)
                                     call nc4_get_data(input_file%iunit, field, vid = i, dat = dat_r, ierr = ierr)
                                     if (ierr == 0) then
                                         call check_dimension( &
@@ -280,7 +280,7 @@ module mesh_io
                                             quiet = .not. v, error_status = ierr)
                                         if (ierr /= 0) error_status = 1
                                     end if
-                                case ('rlat')
+                                case (DIM_NAME_RLAT)
                                     call nc4_get_data(input_file%iunit, field, vid = i, dat = dat_r, ierr = ierr)
                                     if (ierr == 0) then
                                         call check_dimension( &
@@ -289,7 +289,7 @@ module mesh_io
                                             quiet = .not. v, error_status = ierr)
                                         if (ierr /= 0) error_status = 1
                                     end if
-                                case ('lon', 'longitude')
+                                case (DIM_NAME_LON, DIM_NAME_LONGITUDE, DIM_NAME_DEGLON)
                                     call nc4_get_data(input_file%iunit, field, vid = i, dat = dat_r, ierr = ierr)
                                     if (ierr == 0) then
                                         call check_dimension( &
@@ -298,7 +298,7 @@ module mesh_io
                                             quiet = .not. v, error_status = ierr)
                                         if (ierr /= 0) error_status = 1
                                     end if
-                                case ('rlon')
+                                case (DIM_NAME_RLON)
                                     call nc4_get_data(input_file%iunit, field, vid = i, dat = dat_r, ierr = ierr)
                                     if (ierr == 0) then
                                         call check_dimension( &
@@ -745,9 +745,9 @@ module mesh_io
                     if (allocated(input_file%overrides%dim_names)) then
                         allocate(dim_names(size(input_file%overrides%dim_names)))
                         dim_names = input_file%overrides%dim_names
-                    else
-                        allocate(dim_names(1))
-                        dim_names = (/DIM_NAME_NUL/)
+!?                    else
+!?                        allocate(dim_names(1))
+!?                        dim_names = (/DIM_NAME_NUL/)
                     end if
 
                     !> Loop through the records.
@@ -765,44 +765,40 @@ module mesh_io
 
                         !> Level-based dimensions.
                         if (size(dim_names) == 1) then
-                            select case (dim_names(1))
-                                case ( &
-                                    DIM_NAME_LEVEL, DIM_NAME_LAYER, DIM_NAME_SOIL, DIM_NAME_SOL, DIM_NAME_NSOL, DIM_NAME_NSL, &
-                                    DIM_NAME_SURFACE, DIM_NAME_SURF, DIM_NAME_NSURF, DIM_NAME_SUBTILETYPES, DIM_NAME_SUBTYPE, &
-                                    DIM_NAME_CANOPY, DIM_NAME_NCAN, DIM_NAME_VEGID, DIM_NAME_VF, DIM_NAME_NVF, DIM_NAME_L)
+                            if (any(DIM_NAMES_OF_L == dim_names(1))) then
 
-                                    !> Expand variable list.
-                                    call expand_field_list(file_buffer, (size(args) - 1), ierr)
+                                !> Expand variable list.
+                                call expand_field_list(file_buffer, (size(args) - 1), ierr)
 
-                                    !> Assign the last level as the background field.
-                                    write(code, *) (size(args))
-                                    call print_remark( &
-                                        "Identifying the last level '" // trim(args(1)) // "(" // trim(adjustl(code)) // &
-                                        ")' as the background field '" // trim(args(1)) // &
-                                        "' in case more levels exist in the model than in the field.")
-                                    file_buffer(n)%label = trim(args(1))
+                                !> Assign the last level as the background field.
+                                write(code, *) (size(args))
+                                call print_remark( &
+                                    "Identifying the last level '" // trim(args(1)) // "(" // trim(adjustl(code)) // &
+                                    ")' as the background field '" // trim(args(1)) // &
+                                    "' in case more levels exist in the model than in the field.")
+                                file_buffer(n)%label = trim(args(1))
+                                file_buffer(n)%id = i
+                                allocate(file_buffer(n)%field, source = model_variable_char(dat = args(size(args))))
+                                n = n + 1
+
+                                !> Add a variable for each other level.
+                                do j = 2, (size(args) - 1)
+
+                                    !> Assign the fields in reverse order to assign the last as the background field.
+                                    write(code, *) (j - 1)
+                                    file_buffer(n)%label = trim(args(1)) // ' ' // trim(adjustl(code))
                                     file_buffer(n)%id = i
-                                    allocate(file_buffer(n)%field, source = model_variable_char(dat = args(size(args))))
+                                    allocate(file_buffer(n)%field, source = model_variable_char(dat = args(j)))
                                     n = n + 1
+                                end do
 
-                                    !> Add a variable for each other level.
-                                    do j = 2, (size(args) - 1)
-
-                                        !> Assign the fields in reverse order to assign the last as the background field.
-                                        write(code, *) (j - 1)
-                                        file_buffer(n)%label = trim(args(1)) // ' ' // trim(adjustl(code))
-                                        file_buffer(n)%id = i
-                                        allocate(file_buffer(n)%field, source = model_variable_char(dat = args(j)))
-                                        n = n + 1
-                                    end do
-
-                                    !> Cycle to skip assigning the variable itself.
-                                    cycle
-                            end select
+                                !> Cycle to skip assigning the variable itself.
+                                cycle
+                            end if
                         end if
 
                         !> Special cases.
-                        select case (lowercase(args(1)))
+                        select case (uppercase(args(1)))
 
                             !> GRUs.
                             case (DIM_NAME_GRU)
@@ -936,29 +932,32 @@ module mesh_io
                         allocate(dim_names(ndims), dim_lengths(ndims))
                         ierr = 0
                         do j = 1, ndims
+
+                            !> Get dimension information.
                             call nc4_get_dimension_name( &
                                 input_file%iunit, dimids(j), dim_name = dim_names(j), dim_length = dim_lengths(j), ierr = ierr)
                             if (ierr /= 0) then
                                 dim_names(j) = ''
                             else
-                                select case (dim_names(j))
-                                    case (DIM_NAME_TIME, DIM_NAME_T)
 
-                                        !> Check for time dimension.
-                                        time_order = j
-                                    case ( &
-                                        DIM_NAME_LEVEL, DIM_NAME_LAYER, DIM_NAME_SOIL, DIM_NAME_SOL, DIM_NAME_NSOL, DIM_NAME_NSL, &
-                                        DIM_NAME_SURFACE, DIM_NAME_SURF, DIM_NAME_NSURF, DIM_NAME_SUBTILETYPES, DIM_NAME_SUBTYPE, &
-                                        DIM_NAME_CANOPY, DIM_NAME_NCAN, DIM_NAME_VEGID, DIM_NAME_VF, DIM_NAME_NVF, DIM_NAME_L)
+                                !> Convert to uppercase.
+                                dim_names(j) = uppercase(dim_names(j))
 
-                                        !> Check for level ID.
-                                        if (level_order > 0) then
-                                            call print_warning( &
-                                                "Multiple dimensions of the variable '" // trim(vname) // &
-                                                "' are associated with a model level. An error may occur while mapping the field.")
-                                        end if
-                                        level_order = j
-                                end select
+                                !> Check for recognized/special levels/orders.
+                                if (any(DIM_NAMES_OF_T == dim_names(j)) .and. dim_lengths(j) > 1) then
+
+                                    !> Check for time dimension.
+                                    time_order = j
+                                else if (any(DIM_NAMES_OF_L == dim_names(j))) then
+
+                                    !> Check for level ID.
+                                    if (level_order > 0) then
+                                        call print_warning( &
+                                            "Multiple dimensions of the variable '" // trim(vname) // &
+                                            "' are associated with a model level. An error may occur while mapping the field.")
+                                    end if
+                                    level_order = j
+                                end if
                             end if
                         end do
 
@@ -1002,10 +1001,10 @@ module mesh_io
                     end do
 
                     !> Special cases.
-                    select case (lowercase(vname))
+                    select case (uppercase(vname))
 
                         !> CRS information (projection).
-                        case (DIM_NAME_CRS)
+                        case ('CRS')
 
                             !> Expand variable list.
                             call expand_field_list(file_buffer, nattrs, ierr)
@@ -1459,7 +1458,7 @@ module mesh_io
             do i = 1, size(input_file%fields)
 
                 !> Allocate the mapped dimension order.
-                allocate(input_file%fields(i)%mapping%mapped_dim_order(size(MAP_ORDER_LIST)))
+                allocate(input_file%fields(i)%mapping%mapped_dim_order(size(DIM_NAMES_OF_ORDERS)))
                 input_file%fields(i)%mapping%mapped_dim_order = 0
 
                 !> Assume a basin-wide value 'DIM_NAME_B' for scalar fields (or will get updated).
@@ -1478,7 +1477,8 @@ module mesh_io
 
                         !> Map spatial dimensions (if the only dimension is not time 'DIM_NAME_T').
                         call get_dimension_order( &
-                            input_file%fields(i)%dim_names, MAP_ORDER_LIST, input_file%fields(i)%mapping%mapped_dim_order, ierr)
+                            input_file%fields(i)%dim_names, DIM_NAMES_OF_ORDERS, input_file%fields(i)%mapping%mapped_dim_order, &
+                            ierr)
                     end if
                 end if
 

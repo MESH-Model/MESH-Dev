@@ -6707,14 +6707,12 @@ module field_utilities
 
     subroutine get_dimension_order(field_dim_names, desired_dim_names, mapped_dim_order, error_status)
 
-        !> 'strings': For 'lowercase' function.
-        use strings, only: lowercase
+        !> 'strings': For 'uppercase' function.
+        use strings, only: uppercase
 
-        !> Input variables.
+        !> Input/output variables.
         character(len = *), dimension(:), intent(in) :: field_dim_names
         character(len = *), dimension(:), intent(in) :: desired_dim_names
-
-        !> Output variables.
         integer, dimension(:), allocatable, intent(out) :: mapped_dim_order
         integer, intent(out) :: error_status
 
@@ -6728,93 +6726,77 @@ module field_utilities
         if (.not. allocated(mapped_dim_order)) allocate(mapped_dim_order(size(desired_dim_names)))
         mapped_dim_order = 0
         do i = 1, size(desired_dim_names)
-            select case (lowercase(desired_dim_names(i)))
-                case (DIM_NAME_LAT, DIM_NAME_LATITUDE, DIM_NAME_RLAT, DIM_NAME_Y)
-                    do j = 1, size(field_dim_names)
-                        select case (lowercase(field_dim_names(j)))
-                            case (DIM_NAME_LAT, DIM_NAME_LATITUDE, DIM_NAME_RLAT, DIM_NAME_Y)
-                                mapped_dim_order(i) = j
-                                exit
-                        end select
-                    end do
-                case (DIM_NAME_LON, DIM_NAME_LONGITUDE, DIM_NAME_RLON, DIM_NAME_X)
-                    do j = 1, size(field_dim_names)
-                        select case (lowercase(field_dim_names(j)))
-                            case (DIM_NAME_LON, DIM_NAME_LONGITUDE, DIM_NAME_RLON, DIM_NAME_X)
-                                mapped_dim_order(i) = j
-                                exit
-                        end select
-                    end do
-                case (DIM_NAME_TIME, DIM_NAME_T)
-                    do j = 1, size(field_dim_names)
-                        select case (lowercase(field_dim_names(j)))
-                            case (DIM_NAME_TIME, DIM_NAME_T)
-                                mapped_dim_order(i) = j
-                                exit
-                        end select
-                    end do
-                case (DIM_NAME_SUBBASIN, DIM_NAME_NSUBBASIN, DIM_NAME_CELL, DIM_NAME_N)
-                    do j = 1, size(field_dim_names)
-                        select case (lowercase(field_dim_names(j)))
-                            case (DIM_NAME_SUBBASIN, DIM_NAME_NSUBBASIN, DIM_NAME_CELL, DIM_NAME_N)
-                                mapped_dim_order(i) = j
-                                exit
-                        end select
-                    end do
-                case (DIM_NAME_GRU, DIM_NAME_NGRU, DIM_NAME_M)
-                    do j = 1, size(field_dim_names)
-                        select case (lowercase(field_dim_names(j)))
-                            case (DIM_NAME_GRU, DIM_NAME_NGRU, DIM_NAME_M)
-                                mapped_dim_order(i) = j
-                                exit
-                        end select
-                    end do
-                case (DIM_NAME_RVR, DIM_NAME_IAK, DIM_NAME_RIVERCLASS, DIM_NAME_NRVR, DIM_NAME_K)
-                    do j = 1, size(field_dim_names)
-                        select case (lowercase(field_dim_names(j)))
-                            case (DIM_NAME_RVR, DIM_NAME_IAK, DIM_NAME_RIVERCLASS, DIM_NAME_NRVR, DIM_NAME_K)
-                                mapped_dim_order(i) = j
-                                exit
-                        end select
-                    end do
-                case (DIM_NAME_BASIN, DIM_NAME_B)
-                    do j = 1, size(field_dim_names)
-                        select case (lowercase(field_dim_names(j)))
-                            case (DIM_NAME_BASIN, DIM_NAME_B)
-                                mapped_dim_order(i) = j
-                                exit
-                        end select
-                    end do
-                case (DIM_NAME_NML, DIM_NAME_LANDTILE, DIM_NAME_G)
-                    do j = 1, size(field_dim_names)
-                        select case (lowercase(field_dim_names(j)))
-                            case (DIM_NAME_NML, DIM_NAME_LANDTILE, DIM_NAME_G)
-                                mapped_dim_order(i) = j
-                                exit
-                        end select
-                    end do
-                case ( &
-                    DIM_NAME_LEVEL, DIM_NAME_LAYER, DIM_NAME_SOIL, DIM_NAME_SOL, DIM_NAME_NSOL, DIM_NAME_NSL, &
-                    DIM_NAME_SURFACE, DIM_NAME_SURF, DIM_NAME_NSURF, DIM_NAME_SUBTILETYPES, DIM_NAME_SUBTYPE, &
-                    DIM_NAME_CANOPY, DIM_NAME_NCAN, DIM_NAME_VEGID, DIM_NAME_VF, DIM_NAME_NVF, DIM_NAME_L)
-                    do j = 1, size(field_dim_names)
-                        select case (lowercase(field_dim_names(j)))
-                            case ( &
-                                DIM_NAME_LEVEL, DIM_NAME_LAYER, DIM_NAME_SOIL, DIM_NAME_SOL, DIM_NAME_NSOL, DIM_NAME_NSL, &
-                                DIM_NAME_SURFACE, DIM_NAME_SURF, DIM_NAME_NSURF, DIM_NAME_SUBTILETYPES, DIM_NAME_SUBTYPE, &
-                                DIM_NAME_CANOPY, DIM_NAME_NCAN, DIM_NAME_VEGID, DIM_NAME_VF, DIM_NAME_NVF, DIM_NAME_L)
-                                mapped_dim_order(i) = j
-                                exit
-                        end select
-                    end do
-                case default
-                    do j = 1, size(field_dim_names)
-                        if (lowercase(field_dim_names(j)) == lowercase(desired_dim_names(i))) then
-                            mapped_dim_order(i) = j
-                            exit
-                        end if
-                    end do
-            end select
+            if (any(DIM_NAMES_OF_Y == uppercase(desired_dim_names(i)))) then
+                do j = 1, size(field_dim_names)
+                    if (any(DIM_NAMES_OF_Y == uppercase(field_dim_names(j)))) then
+                        mapped_dim_order(i) = j
+                        exit
+                    end if
+                end do
+            else if (any(DIM_NAMES_OF_X == uppercase(desired_dim_names(i)))) then
+                do j = 1, size(field_dim_names)
+                    if (any(DIM_NAMES_OF_X == uppercase(field_dim_names(j)))) then
+                        mapped_dim_order(i) = j
+                        exit
+                    end if
+                end do
+            else if (any(DIM_NAMES_OF_T == uppercase(desired_dim_names(i)))) then
+                do j = 1, size(field_dim_names)
+                    if (any(DIM_NAMES_OF_T == uppercase(field_dim_names(j)))) then
+                        mapped_dim_order(i) = j
+                        exit
+                    end if
+                end do
+            else if (any(DIM_NAMES_OF_N == uppercase(desired_dim_names(i)))) then
+                do j = 1, size(field_dim_names)
+                    if (any(DIM_NAMES_OF_N == uppercase(field_dim_names(j)))) then
+                        mapped_dim_order(i) = j
+                        exit
+                    end if
+                end do
+            else if (any(DIM_NAMES_OF_M == uppercase(desired_dim_names(i)))) then
+                do j = 1, size(field_dim_names)
+                    if (any(DIM_NAMES_OF_M == uppercase(field_dim_names(j)))) then
+                        mapped_dim_order(i) = j
+                        exit
+                    end if
+                end do
+            else if (any(DIM_NAMES_OF_K == uppercase(desired_dim_names(i)))) then
+                do j = 1, size(field_dim_names)
+                    if (any(DIM_NAMES_OF_K == uppercase(field_dim_names(j)))) then
+                        mapped_dim_order(i) = j
+                        exit
+                    end if
+                end do
+            else if (any(DIM_NAMES_OF_B == uppercase(desired_dim_names(i)))) then
+                do j = 1, size(field_dim_names)
+                    if (any(DIM_NAMES_OF_B == uppercase(field_dim_names(j)))) then
+                        mapped_dim_order(i) = j
+                        exit
+                    end if
+                end do
+            else if (any(DIM_NAMES_OF_G == uppercase(desired_dim_names(i)))) then
+                do j = 1, size(field_dim_names)
+                    if (any(DIM_NAMES_OF_G == uppercase(field_dim_names(j)))) then
+                        mapped_dim_order(i) = j
+                        exit
+                    end if
+                end do
+            else if (any(DIM_NAMES_OF_L == uppercase(desired_dim_names(i)))) then
+                do j = 1, size(field_dim_names)
+                    if (any(DIM_NAMES_OF_L == uppercase(field_dim_names(j)))) then
+                        mapped_dim_order(i) = j
+                        exit
+                    end if
+                end do
+            else
+                do j = 1, size(field_dim_names)
+                    if (uppercase(field_dim_names(j)) == uppercase(desired_dim_names(i))) then
+                        mapped_dim_order(i) = j
+                        exit
+                    end if
+                end do
+            end if
         end do
 
         !> Check for missing dimensions.
