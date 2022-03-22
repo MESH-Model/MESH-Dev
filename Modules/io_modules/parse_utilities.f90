@@ -521,6 +521,237 @@ module parse_utilities
 
     end subroutine
 
+    !> Description:
+    !>  Convert characters within the two limit by the supplied offset.
+    !>
+    !> Variables:
+    !*  input_string: Input string to apply the offset.
+    !*  lower_limit: Lower character limit.
+    !*  upper_limit: Upper character limit.
+    !*  character_offset: Offset to apply to characters within the lower and upper limits.
+    !*  (returns): Converted input string.
+    function switch_case(input_string, lower_limit, upper_limit, character_offset) result(converted_string)
+
+        !> Input/output variables.
+        character(len = *), intent(in) :: input_string
+        integer, intent(in) :: lower_limit
+        integer, intent(in) :: upper_limit
+        integer, intent(in) :: character_offset
+        character(len = len(input_string)) converted_string
+
+        !> Local variables.
+        integer i, j
+        logical in_blank
+
+        !> Reset the returned string.
+        converted_string = ''
+
+        !> Convert to uppercase.
+        in_blank = .false.
+        j = 1
+        do i = 1, len_trim(input_string)
+
+            !> Check character.
+            if (input_string(i:i) == ' ' .or. input_string(i:i) == achar(9)) then
+
+                !> Append a space if following a non-blank character.
+                if (.not. in_blank) then
+                    converted_string(j:j) = ' '
+
+                    !> Update the current location in the converted string.
+                    j = j + 1
+                end if
+
+                !> In blank space.
+                in_blank = .true.
+            else
+
+                !> Append the character.
+                if (iachar(input_string(i:i)) >= lower_limit .and. iachar(input_string(i:i)) <= upper_limit) then
+
+                    !> Convert case.
+                    converted_string(j:j) = achar(iachar(input_string(i:i)) + character_offset)
+                else
+                    converted_string(j:j) = input_string(i:i)
+                end if
+
+                !> Update the current location in the converted string.
+                j = j + 1
+
+                !> Not in blank space.
+                in_blank = .false.
+            end if
+        end do
+
+    end function
+
+    !> Description:
+    !>  Convert applicable characters of the string to uppercase. Removes excess blank space.
+    !>
+    !> Variables:
+    !*  input_string: Input string to convert to uppercase.
+    !*  (returns): 'input_string' converted to uppercase.
+    function to_uppercase(input_string)
+
+        !> Input/output variables.
+        character(len = *), intent(in) :: input_string
+        character(len = len(input_string)) to_uppercase
+
+        !> Local variables.
+        integer, parameter :: a = iachar('a')
+        integer, parameter :: z = iachar('z')
+        integer, parameter :: case_offset = iachar('A') - iachar('a')
+
+        !> Call base routine.
+        to_uppercase = switch_case(input_string, a, z, case_offset)
+
+    end function
+
+    !> Description:
+    !>  Convert applicable characters of the string to lowercase. Removes excess blank space.
+    !>
+    !> Variables:
+    !*  input_string: Input string to convert to lowercase.
+    !*  (returns): 'input_string' converted to lowercase.
+    function to_lowercase(input_string)
+
+        !> Input/output variables.
+        character(len = *), intent(in) :: input_string
+        character(len = len(input_string)) to_lowercase
+
+        !> Local variables.
+        integer, parameter :: A = iachar('A')
+        integer, parameter :: Z = iachar('Z')
+        integer, parameter :: case_offset = iachar('a') - iachar('A')
+
+        !> Call base routine.
+        to_lowercase = switch_case(input_string, A, Z, case_offset)
+
+    end function
+
+    !> Description:
+    !>  Check if the provided string is numeric. Accepts a single 'p' or '.' as decimal.
+    !>
+    !> Variables:
+    !*  input_string: String to check if it is numeric.
+    !*  (returns): .true. if the string is numeric.
+    function is_numeric(input_string)
+
+        !> Input/output variables.
+        character(len = *), intent(in) :: input_string
+        logical is_numeric
+
+        !> Local variables.
+        real dat_r
+        integer ierr
+        character(len = len(input_string)) buffer
+
+        !> Transfer to the string to a local variable.
+        buffer = input_string
+
+        !> Check for the use of 'p' as a decimal.
+        if (len_trim(buffer) > 1 .and. index(buffer, 'p') > 1) then
+            buffer(index(buffer, 'p'):index(buffer, 'p')) = '.'
+        end if
+
+        !> Try to convert the string.
+        read(buffer, *, iostat = ierr) dat_r
+
+        !> Return the status.
+        is_numeric = (ierr == 0)
+
+    end function
+
+    !> Description:
+    !>  Convert the provided string to a number (generalized to type 'real').
+    !>
+    !> Variables:
+    !*  input_string: String to convert.
+    !*  output_field: Converted field (returns 'huge(0.0)' if conversion fails).
+    !*  error_status: Conversion status (0: normal).
+    subroutine to_real(input_string, output_field, error_status)
+
+        !> Input/output variables.
+        character(len = *), intent(in) :: input_string
+        real, intent(out) :: output_field
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i
+        character(len = len(input_string)) buffer
+
+        !> Transfer the string to a local variable (in case it should be modified).
+        buffer = input_string
+
+        !> Check if the field contains a 'p' in-place of a decimal ('.').
+        i = index(input_string, 'p')
+        if (i > 0) then
+
+            !> Convert to a decimal '.'.
+            buffer(i:i) = '.'
+        end if
+
+        !> Try to convert the field.
+        read(buffer, *, iostat = error_status) output_field
+
+        !> Check the status.
+        if (error_status /= 0) then
+
+            !> Reset the output field to 'huge(0.0)'.
+            output_field = huge(0.0)
+        end if
+
+    end subroutine
+
+    !> Description:
+    !>  Check if the provided string is an integer (properly formed, without any decimal).
+    !>
+    !> Variables:
+    !*  input_string: String to check if it is numeric.
+    !*  (returns): .true. if the string is an integer (properly formed, without any decimal).
+    function is_integer(input_string) result(ltest)
+
+        !> Input/output variables.
+        character(len = *), intent(in) :: input_string
+
+        !> Local variables.
+        integer i, ierr
+        logical ltest
+
+        !> Try to convert the field.
+        read(input_string, *, iostat = ierr) i
+
+        !> Check the status.
+        ltest = (ierr == 0)
+
+    end function
+
+    !> Description:
+    !>  Convert the provided string to an integer (properly formed, without any decimal).
+    !>
+    !> Variables:
+    !*  input_string: String to convert.
+    !*  output_field: Converted field (returns 'huge(0)' if conversion fails).
+    !*  error_status: Conversion status (0: normal).
+    subroutine to_integer(input_string, output_field, error_status)
+
+        !> Input/output variables.
+        character(len = *), intent(in) :: input_string
+        integer, intent(out) :: output_field
+        integer, intent(out) :: error_status
+
+        !> Try to convert the field.
+        read(input_string, *, iostat = error_status) output_field
+
+        !> Check the status.
+        if (error_status /= 0) then
+
+            !> Reset the output field to 'huge(0)'.
+            output_field = huge(0)
+        end if
+
+    end subroutine
+
     subroutine parse_line_values_char1d(line, delimiter, n_skip_cols, keep_alloc, quiet, values, error_status)
 
         !> 'print_routines': For print routines, format statements, and line lengths and limits.
