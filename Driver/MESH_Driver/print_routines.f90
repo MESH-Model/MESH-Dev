@@ -52,6 +52,19 @@ module print_routines
     integer, parameter :: DEFAULT_FIELD_LENGTH = 1000
     integer, parameter :: DEFAULT_FIELD_COUNT = 100
 
+    !> Message constants.
+    character(len = *), parameter :: MSG_INFO = 'INFO'
+    character(len = *), parameter :: MSG_DEBUG = 'DEBUG'
+    character(len = *), parameter :: MSG_WARNING = 'WARNING'
+    character(len = *), parameter :: MSG_REMARK = 'REMARK'
+    character(len = *), parameter :: MSG_ERROR = 'ERROR'
+    character(len = *), parameter :: MSG_CONFIGURING = 'CONFIGURING'
+    character(len = *), parameter :: MSG_OPENING = 'OPENING'
+    character(len = *), parameter :: MSG_READING = 'READING'
+    character(len = *), parameter :: MSG_ASSIGNING = 'ASSIGNING'
+    character(len = *), parameter :: MSG_WRITING = 'WRITING'
+    character(len = *), parameter :: MSG_SAVING = 'SAVING'
+
     !> Format constants (general).
     character(len = *), parameter :: FMT_GEN = "(99999(g15.7e2, 1x))"
     character(len = *), parameter :: FMT_CSV = "(99999(g15.7e2, ','))"
@@ -202,7 +215,7 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Flush the message.
-        call print_message('WARNING: ' // trim(message), level)
+        call print_message(MSG_WARNING // ': ' // trim(message), level)
 
     end subroutine
 
@@ -221,7 +234,7 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Flush the message.
-        call print_message('REMARK: ' // trim(message), level)
+        call print_message(MSG_REMARK // ': ' // trim(message), level)
 
     end subroutine
 
@@ -240,7 +253,7 @@ module print_routines
         integer, intent(in), optional :: level
 
         !> Flush the message.
-        if (DIAGNOSEMODE) call print_message('INFO: ' // trim(message), level)
+        if (DIAGNOSEMODE) call print_message(MSG_INFO // ': ' // trim(message), level)
 
     end subroutine
 
@@ -264,7 +277,7 @@ module print_routines
         if (.not. present(level) .and. PAD_NOW == PAD_LEAD) call print_message('')
 
         !> Flush the message.
-        call print_message('ERROR: ' // trim(message))
+        call print_message(MSG_ERROR // ': ' // trim(message))
 
     end subroutine
 
@@ -313,6 +326,46 @@ module print_routines
 
         !> Print to the summary file.
         call print_echo_txt(message)
+
+    end subroutine
+
+    !> Description:
+    !>  Print the provided message to screen and to the summary file
+    !>  with leading "CONFIGURING:" with reset padding and preceeded by
+    !>  an empty line.
+    !>
+    !> Variables:
+    !>  message: Message to output.
+    subroutine print_configuring(message)
+
+        !> Input variables.
+        character(len = *), intent(in) :: message
+
+        !> Print new section.
+        call print_new_section(MSG_CONFIGURING // ': ' // trim(message))
+
+    end subroutine
+
+    !> Description:
+    !>  Print the provided message to screen and to the summary file
+    !>  with leading "ASSIGNING:" with reset padding, then increase
+    !>  padding.
+    !>
+    !> Variables:
+    !>  message: Message to output.
+    subroutine print_assigning(message)
+
+        !> Input variables.
+        character(len = *), intent(in) :: message
+
+        !> Reset the tab spacing.
+        call reset_tab()
+
+        !> Flush the message.
+        call print_message(MSG_ASSIGNING // ': ' // trim(message))
+
+        !> Increase padding.
+        call increase_tab()
 
     end subroutine
 
