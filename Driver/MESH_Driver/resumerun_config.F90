@@ -7,6 +7,7 @@ subroutine resumerun_config(fls, shd, ierr)
     use model_files_variables
     use sa_mesh_common
     use model_dates
+    use date_utilities, only: jday_to_date
     use resume_run
 
     implicit none
@@ -39,14 +40,22 @@ subroutine resumerun_config(fls, shd, ierr)
 
     !> Parse RESUMEFLAG.
     call parse(RESUMEFLAG, ' ', args, n)
-    do i = 1, n
+    do i = 2, n
         select case (lowercase(args(i)))
 
-            !> Operational state.
+            !> Operational state (active or auto).
             case ('on')
                 resume_options%resume%state = FLAG_ON
             case ('auto')
                 resume_options%resume%state = FLAG_AUTO
+
+            !> Operational state (inactive).
+            case ('0', 'off')
+
+                !> Disable options that could re-enable the flag and exit.
+                resume_options%resume%state = FLAG_OFF
+                resume_options%resume%flo%ext = FILE_TYPE_NUL
+                exit
 
             !> Legacy options.
             case ('2', '1')
@@ -92,16 +101,16 @@ subroutine resumerun_config(fls, shd, ierr)
 #endif
 
             !> File formats.
-            case ('r2c')
-                resume_options%resume%flo%ext = resume_options%resume%flo%ext + radix(FILE_TYPE_R2C)**FILE_TYPE_R2C
+!+            case ('r2c')
+!+                resume_options%resume%flo%ext = resume_options%resume%flo%ext + radix(FILE_TYPE_R2C)**FILE_TYPE_R2C
             case ('seq', 'binseq')
                 if (.not. btest(resume_options%resume%flo%ext, FILE_TYPE_SEQ)) then
                     resume_options%resume%flo%ext = resume_options%resume%flo%ext + radix(FILE_TYPE_SEQ)**FILE_TYPE_SEQ
                 end if
-            case ('txt')
-                resume_options%resume%flo%ext = resume_options%resume%flo%ext + radix(FILE_TYPE_TXT)**FILE_TYPE_TXT
-            case ('csv')
-                resume_options%resume%flo%ext = resume_options%resume%flo%ext + radix(FILE_TYPE_CSV)**FILE_TYPE_CSV
+!+            case ('txt')
+!+                resume_options%resume%flo%ext = resume_options%resume%flo%ext + radix(FILE_TYPE_TXT)**FILE_TYPE_TXT
+!+            case ('csv')
+!+                resume_options%resume%flo%ext = resume_options%resume%flo%ext + radix(FILE_TYPE_CSV)**FILE_TYPE_CSV
 
             !> Directives.
             case ('only')
@@ -114,6 +123,10 @@ subroutine resumerun_config(fls, shd, ierr)
                 if (index(resume_options%resume%bin, '+STASONLY') == 0) then
                     resume_options%resume%bin = trim(resume_options%resume%bin) // '+STASONLY'
                 end if
+            case default
+
+                !> Unknown or unsupported option.
+                call print_warning("Unknown or unsupported option '" // trim(args(i)) // "'.")
         end select
     end do
 
@@ -124,6 +137,15 @@ subroutine resumerun_config(fls, shd, ierr)
         call print_error("RESUMEFLAG is active with no file format specified.")
         ierr = 1
         return
+    else if (resume_options%resume%flo%ext /= FILE_TYPE_NUL .and. resume_options%resume%state == FLAG_OFF) then
+        call print_remark( &
+            "A file extension is active without directives to control the variables to resume. " // &
+            "Model states only '+STASONLY' for all active modules without preservation of simulation statistics or totals " // &
+            "will be resumed.")
+        if (resume_options%resume%state == FLAG_OFF) resume_options%resume%state = FLAG_ON
+        if (index(resume_options%resume%bin, '+STASONLY') == 0) then
+            resume_options%resume%bin = trim(resume_options%resume%bin) // '+STASONLY'
+        end if
     end if
 
     !> Echo configuration.
@@ -157,12 +179,21 @@ subroutine resumerun_config(fls, shd, ierr)
 
     !> Parse SAVERESUMEFLAG.
     call parse(SAVERESUMEFLAG, ' ', args, n)
-    do i = 1, n
+    do i = 2, n
         select case (lowercase(args(i)))
 
-            !> Operational state.
+            !> Operational state (active).
             case ('on')
                 resume_options%save%state = FLAG_ON
+
+            !> Operational state (inactive).
+            case ('0', 'off')
+
+                !> Disable options that could re-enable the flag and exit.
+                resume_options%save%state = FLAG_OFF
+                resume_options%save%freq = FREQ_NUL
+                resume_options%save%flo%ext = FILE_TYPE_NUL
+                exit
 
             !> Legacy options.
             case ('2', '1')
@@ -214,16 +245,16 @@ subroutine resumerun_config(fls, shd, ierr)
                 resume_options%save%freq = FREQ_MONTHLY
 
             !> File formats.
-            case ('r2c')
-                resume_options%save%flo%ext = resume_options%save%flo%ext + radix(FILE_TYPE_R2C)**FILE_TYPE_R2C
+!+            case ('r2c')
+!+                resume_options%save%flo%ext = resume_options%save%flo%ext + radix(FILE_TYPE_R2C)**FILE_TYPE_R2C
             case ('seq', 'binseq')
                 if (.not. btest(resume_options%save%flo%ext, FILE_TYPE_SEQ)) then
                     resume_options%save%flo%ext = resume_options%save%flo%ext + radix(FILE_TYPE_SEQ)**FILE_TYPE_SEQ
                 end if
-            case ('txt')
-                resume_options%save%flo%ext = resume_options%save%flo%ext + radix(FILE_TYPE_TXT)**FILE_TYPE_TXT
-            case ('csv')
-                resume_options%save%flo%ext = resume_options%save%flo%ext + radix(FILE_TYPE_CSV)**FILE_TYPE_CSV
+!+            case ('txt')
+!+                resume_options%save%flo%ext = resume_options%save%flo%ext + radix(FILE_TYPE_TXT)**FILE_TYPE_TXT
+!+            case ('csv')
+!+                resume_options%save%flo%ext = resume_options%save%flo%ext + radix(FILE_TYPE_CSV)**FILE_TYPE_CSV
 
             !> Directives.
             case ('only')
@@ -236,6 +267,10 @@ subroutine resumerun_config(fls, shd, ierr)
                 if (index(resume_options%save%bin, '+STASONLY') == 0) then
                     resume_options%save%bin = trim(resume_options%save%bin) // '+STASONLY'
                 end if
+            case default
+
+                !> Unknown or unsupported option.
+                call print_warning("Unknown or unsupported option '" // trim(args(i)) // "'.")
         end select
     end do
 
@@ -249,6 +284,15 @@ subroutine resumerun_config(fls, shd, ierr)
         call print_error("SAVERESUMEFLAG is active with no file format specified.")
         ierr = 1
         return
+    else if (resume_options%save%flo%ext /= FILE_TYPE_NUL .and. resume_options%save%state == FLAG_OFF) then
+        call print_remark( &
+            "A file extension is active without directives to control the variables to save. " // &
+            "Model states only '+STASONLY' for all active modules without preservation of simulation statistics or totals " // &
+            "will be saved.")
+        if (resume_options%save%state == FLAG_OFF) resume_options%save%state = FLAG_ON
+        if (index(resume_options%save%bin, '+STASONLY') == 0) then
+            resume_options%save%bin = trim(resume_options%save%bin) // '+STASONLY'
+        end if
     end if
 
     !> Echo configuration.
@@ -312,6 +356,7 @@ subroutine resumerun_config(fls, shd, ierr)
 
             !> Read the simulation start date from the file.
             read(iun, *, iostat = z) ic%start%year, ic%start%jday, ic%start%hour, ic%start%mins
+            call jday_to_date(ic%start%year, ic%start%jday, ic%start%month, ic%start%day)
             if (z /= 0) then
                 call print_error("Unable to read the resume date from the file.")
                 call program_abort()
