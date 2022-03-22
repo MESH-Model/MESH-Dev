@@ -136,7 +136,7 @@ module txt_io
         do i = 1, len_trim(line_buffer)
 
             !> Convert tabs to spaces.
-            if (line_buffer(i:i) == achar(9)) line_buffer(:) = ' '
+            if (line_buffer(i:i) == achar(9)) line_buffer(i:i) = ' '
 
             !> Check character.
             if (line_buffer(i:i) == sep .and. .not. in_quotes) then
