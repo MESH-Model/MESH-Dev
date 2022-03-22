@@ -326,11 +326,11 @@ module RUNCLASS36_save_output
                 else
                     TPN = 0.0
                 end if
-                if (shd%wc%ILG == 1) then
+!-                if (shd%wc%ILG == 1) then
                     GTOUT = cdv%GTE(k) - TFREZ
-                else
-                    GTOUT = 0.0
-                end if
+!-                else
+!-                    GTOUT = 0.0
+!-                end if
                 ZPND = ZPNDPRECS(k)*cdv%FCS(k) + ZPONDPREC(k)*cdv%FC(k) + ZPONDPREG(k)*cdv%FG(k) + ZPNDPREGS(k)*cdv%FGS(k)
                 FSTR = FSTRCS(k)*cdv%FCS(k) + FSTRC(k)*cdv%FC(k) + FSTRG(k)*cdv%FG(k) + FSTRGS(k)*cdv%FGS(k)
 
@@ -491,11 +491,11 @@ module RUNCLASS36_save_output
                     else
                         TSN = 0.0
                     end if
-                    if (shd%wc%ILG == 1) then
+!-                    if (shd%wc%ILG == 1) then
                         GTOUT = co%GTACC(i) - TFREZ
-                    else
-                        GTOUT = 0.0
-                    end if
+!-                    else
+!-                        GTOUT = 0.0
+!-                    end if
 
                     !> Variables that accumulate.
 !                    co%PREACC(i) = co%PREACC(i)
