@@ -238,7 +238,7 @@ c     Work back upstream, filling basins with no data
                if( daflow(n).gt.0.0 ) then
 c                 Scale outlet element flow
                   qda(n)=qda(n)*datemp(n)/daflow(n)
-               else
+               elseif( daUngauged.gt.0.0 ) then
 c                 Best guess at ungauged sub-basin outlet element
                   qda(n)=qUngauged*datemp(n)/daUngauged
                endif
