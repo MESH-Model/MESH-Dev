@@ -6804,47 +6804,80 @@ module field_utilities
 
     end subroutine
 
-    subroutine get_field_name_and_level(label, field_name, level_name, level_id, error_status)
+    subroutine get_field_name_and_level(label, field_name, level, level_dim_name, level_id, error_status)
+
+        !> 'strings': For 'uppercase' function.
+        use strings, only: uppercase
 
         !> Input/output variables.
         character(len = *), intent(in) :: label
         character(len = *), intent(out), optional :: field_name
-        character(len = *), intent(out), optional :: level_name
+        character(len = *), intent(out), optional :: level
+        character(len = *), intent(out), optional :: level_dim_name
         integer, intent(out), optional :: level_id
         integer, intent(out) :: error_status
 
         !> Local variables.
-        character(len = SHORT_FIELD_LENGTH) fld, lvl
+        character(len = SHORT_FIELD_LENGTH) fld_name, lvl, lvl_dim_name
         integer a1, a2, ilvl, ierr
 
         !> Status.
         error_status = 0
 
-        !> Transfer the label to a temporary field.
-        fld = trim(label)
+        !> Transfer the label to a temporary field and convert to uppercase.
+        fld_name = trim(uppercase(label))
 
         !> Subset the field ID.
-        a1 = index(trim(fld), ' ')
-        a2 = index(trim(fld), ' ', back = .true.)
+        a1 = index(trim(fld_name), ' ')
+        a2 = index(trim(fld_name), ' ', back = .true.)
         lvl = ''
+        lvl_dim_name = ''
         ilvl = 0
         if (a1 > 0) then
 
             !> Slice out the level ID.
             if (a2 /= a1) then
-                a2 = index(fld((a1 + 1):), ' ')
-                lvl = fld((a1 + 1):(a2 + a1))
+                a2 = index(fld_name((a1 + 1):), ' ')
+                lvl = fld_name((a1 + 1):(a2 + a1))
             else
-                lvl = fld((a1 + 1):)
+                lvl = fld_name((a1 + 1):)
             end if
-            fld = fld(1:a1)
+            if (index(lvl, '=') > 0) then
+                lvl_dim_name = lvl(1:(index(lvl, '=') - 1))
+                lvl = lvl((index(lvl, '=') + 1):)
+            end if
+            fld_name = fld_name(1:a1)
             read(lvl, *, iostat = ierr) ilvl
             if (ierr /= 0) ilvl = 0
         end if
 
+        !> Check the dimension.
+        if (len_trim(lvl_dim_name) > 0) then
+            if (any(DIM_NAMES_OF_Y == lvl_dim_name)) then
+                lvl_dim_name = DIM_NAME_Y
+            else if (any(DIM_NAMES_OF_X == lvl_dim_name)) then
+                lvl_dim_name = DIM_NAME_X
+            else if (any(DIM_NAMES_OF_T == lvl_dim_name)) then
+                lvl_dim_name = DIM_NAME_T
+            else if (any(DIM_NAMES_OF_N == lvl_dim_name)) then
+                lvl_dim_name = DIM_NAME_N
+            else if (any(DIM_NAMES_OF_M == lvl_dim_name)) then
+                lvl_dim_name = DIM_NAME_M
+            else if (any(DIM_NAMES_OF_K == lvl_dim_name)) then
+                lvl_dim_name = DIM_NAME_K
+            else if (any(DIM_NAMES_OF_B == lvl_dim_name)) then
+                lvl_dim_name = DIM_NAME_B
+            else if (any(DIM_NAMES_OF_G == lvl_dim_name)) then
+                lvl_dim_name = DIM_NAME_G
+            else if (any(DIM_NAMES_OF_L == lvl_dim_name)) then
+                lvl_dim_name = DIM_NAME_L
+            end if
+        end if
+
         !> Assign to output variables.
-        if (present(field_name)) field_name = trim(fld)
-        if (present(level_name)) level_name = trim(lvl)
+        if (present(field_name)) field_name = trim(fld_name)
+        if (present(level)) level = trim(lvl)
+        if (present(level_dim_name)) level_dim_name = trim(lvl_dim_name)
         if (present(level_id)) level_id = ilvl
 
     end subroutine

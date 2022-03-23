@@ -1448,21 +1448,24 @@ module mesh_io
             end if
         end if
 
-        !> Combine list to 'input_file'.
+        !> Combine the buffer and input file lists.
         if (allocated(file_buffer)) then
             call combine_field_list(input_file%fields, file_buffer, error_status)
         end if
+
+        !> Populate field metadata.
+        call create_field_maps_from_list(input_file%fields, error_status)
 
         !> Print a diagnostic summary of active fields in the file.
         if (allocated(input_file%fields)) then
             do i = 1, size(input_file%fields)
 
                 !> Allocate the mapped dimension order.
-                allocate(input_file%fields(i)%mapping%mapped_dim_order(size(DIM_NAMES_OF_ORDERS)))
-                input_file%fields(i)%mapping%mapped_dim_order = 0
+!-                allocate(input_file%fields(i)%mapping%mapped_dim_order(size(DIM_NAMES_OF_ORDERS)))
+!-                input_file%fields(i)%mapping%mapped_dim_order = 0
 
                 !> Assume a basin-wide value 'DIM_NAME_B' for scalar fields (or will get updated).
-                input_file%fields(i)%mapping%mapped_dim_order(MAP_ORDER_B) = 1
+!-                input_file%fields(i)%mapping%mapped_dim_order(MAP_ORDER_B) = 1
 
                 !> Overrides.
                 select type (field => input_file%fields(i)%field)
@@ -1472,25 +1475,25 @@ module mesh_io
                 end select
 
                 !> Map dimensions of the variable.
-                if (allocated(input_file%fields(i)%dim_names)) then
-                    if (input_file%fields(i)%mapping%time_order /= 1 .or. size(input_file%fields(i)%dim_names) /= 1) then
+!-                if (allocated(input_file%fields(i)%dim_names)) then
+!-                    if (input_file%fields(i)%mapping%time_order /= 1 .or. size(input_file%fields(i)%dim_names) /= 1) then
 
                         !> Map spatial dimensions (if the only dimension is not time 'DIM_NAME_T').
-                        call get_dimension_order( &
-                            input_file%fields(i)%dim_names, DIM_NAMES_OF_ORDERS, input_file%fields(i)%mapping%mapped_dim_order, &
-                            ierr)
-                    end if
-                end if
+!-                        call get_dimension_order( &
+!-                            input_file%fields(i)%dim_names, DIM_NAMES_OF_ORDERS, input_file%fields(i)%mapping%mapped_dim_order, &
+!-                            ierr)
+!-                    end if
+!-                end if
 
                 !> Derive field name and level from ID.
-                call get_field_name_and_level( &
-                    input_file%fields(i)%label, input_file%fields(i)%field_name, input_file%fields(i)%level, &
-                    input_file%fields(i)%level_id, ierr)
-                if (ierr /= 0) then
-                    call print_warning( &
-                        "An error occurred identifying the label associated with the '" // trim(input_file%fields(i)%label) // &
-                        "' variable.")
-                end if
+!-                call get_field_name_and_level( &
+!-                    input_file%fields(i)%label, input_file%fields(i)%field_name, input_file%fields(i)%level, &
+!-                    input_file%fields(i)%level_id, ierr)
+!-                if (ierr /= 0) then
+!-                    call print_warning( &
+!-                        "An error occurred identifying the label associated with the '" // trim(input_file%fields(i)%label) // &
+!-                        "' variable.")
+!-                end if
 
                 !> Print message.
                 call print_info("Found the variable '" // trim(input_file%fields(i)%label) // "'.")
@@ -1518,6 +1521,114 @@ module mesh_io
                 end if
             end do
         end if
+
+    end subroutine
+
+    subroutine create_field_maps_from_list(field_list, error_status)
+
+        !> Parsing utilities.
+        use parse_utilities, only: to_uppercase
+
+        !> Input/output variables.
+        type(io_field) field_list(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer j, i, ierr
+
+        !> Return status.
+        error_status = 0
+
+        !> Loop through fields.
+        do i = 1, size(field_list)
+            associate(input_field => field_list(i))
+                associate(maps => input_field%mapping)
+                    if (.not. allocated(maps%mapped_dim_order)) then
+
+                        !> Allocate the mapped dimension order.
+                        allocate(maps%mapped_dim_order(size(DIM_NAMES_OF_ORDERS)))
+                        maps%mapped_dim_order = 0
+
+                        !> Assume a basin-wide value 'DIM_NAME_B' for scalar fields (or will get updated).
+                        maps%mapped_dim_order(MAP_ORDER_B) = 1
+
+                        !> Map dimensions of the variable.
+                        if (allocated(field_list(i)%dim_names)) then
+                            if (maps%time_order == 0 .or. size(field_list(i)%dim_names) > 1) then
+
+                                !> Map spatial dimensions (if the only dimension is not time 'DIM_NAME_T').
+                                call get_dimension_order(field_list(i)%dim_names, DIM_NAMES_OF_ORDERS, maps%mapped_dim_order, ierr)
+                            end if
+
+                            !> Rename dimensions.
+                            do j = 1, size(field_list(i)%dim_names)
+                                if (any(DIM_NAMES_OF_Y == to_uppercase(field_list(i)%dim_names(j)))) then
+                                    field_list(i)%dim_names(j) = DIM_NAME_Y
+                                else if (any(DIM_NAMES_OF_X == to_uppercase(field_list(i)%dim_names(j)))) then
+                                    field_list(i)%dim_names(j) = DIM_NAME_X
+                                else if (any(DIM_NAMES_OF_T == to_uppercase(field_list(i)%dim_names(j)))) then
+                                    field_list(i)%dim_names(j) = DIM_NAME_T
+                                else if (any(DIM_NAMES_OF_N == to_uppercase(field_list(i)%dim_names(j)))) then
+                                    field_list(i)%dim_names(j) = DIM_NAME_N
+                                else if (any(DIM_NAMES_OF_M == to_uppercase(field_list(i)%dim_names(j)))) then
+                                    field_list(i)%dim_names(j) = DIM_NAME_M
+                                else if (any(DIM_NAMES_OF_K == to_uppercase(field_list(i)%dim_names(j)))) then
+                                    field_list(i)%dim_names(j) = DIM_NAME_K
+                                else if (any(DIM_NAMES_OF_B == to_uppercase(field_list(i)%dim_names(j)))) then
+                                    field_list(i)%dim_names(j) = DIM_NAME_B
+                                else if (any(DIM_NAMES_OF_G == to_uppercase(field_list(i)%dim_names(j)))) then
+                                    field_list(i)%dim_names(j) = DIM_NAME_G
+                                else if (any(DIM_NAMES_OF_L == to_uppercase(field_list(i)%dim_names(j)))) then
+                                    field_list(i)%dim_names(j) = DIM_NAME_L
+                                else
+                                    field_list(i)%dim_names(j) = to_uppercase(field_list(i)%dim_names(j))
+                                end if
+                            end do
+
+                            !> Get dimension lengths.
+                            select type (field => input_field%field)
+                                type is (model_variable_real5d)
+                                    allocate(input_field%dim_lengths(5), source = shape(field%dat))
+                                type is (model_variable_real4d)
+                                    allocate(input_field%dim_lengths(4), source = shape(field%dat))
+                                type is (model_variable_real3d)
+                                    allocate(input_field%dim_lengths(3), source = shape(field%dat))
+                                type is (model_variable_real2d)
+                                    allocate(input_field%dim_lengths(2), source = shape(field%dat))
+                                type is (model_variable_real1d)
+                                    allocate(input_field%dim_lengths(1), source = shape(field%dat))
+                                type is (model_variable_int5d)
+                                    allocate(input_field%dim_lengths(5), source = shape(field%dat))
+                                type is (model_variable_int4d)
+                                    allocate(input_field%dim_lengths(4), source = shape(field%dat))
+                                type is (model_variable_int3d)
+                                    allocate(input_field%dim_lengths(3), source = shape(field%dat))
+                                type is (model_variable_int2d)
+                                    allocate(input_field%dim_lengths(2), source = shape(field%dat))
+                                type is (model_variable_int1d)
+                                    allocate(input_field%dim_lengths(1), source = shape(field%dat))
+                                type is (model_variable_char1d)
+                                    allocate(input_field%dim_lengths(1), source = shape(field%dat))
+                            end select
+                        end if
+                    end if
+                end associate
+
+                !> Derive the field name and level from the label.
+                call get_field_name_and_level( &
+                    input_field%label, input_field%field_name, input_field%level, input_field%level_dim_name, &
+                    input_field%level_id, ierr)
+                if (ierr /= 0) then
+                    call print_warning( &
+                        "An error occurred identifying the label associated with the '" // trim(input_field%label) // &
+                        "' variable.")
+                end if
+
+                !> Convert the field name and level label to uppercase.
+!-                input_field%field_name = to_uppercase(input_field%field_name)
+!-                input_field%level = to_uppercase(input_field%level)
+            end associate
+        end do
 
     end subroutine
 

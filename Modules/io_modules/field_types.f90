@@ -45,7 +45,8 @@ module field_types
     !*  id: Variable ID (e.g., if from an indexed input file).
     !*  field_name: Field name derived from label or ID.
     !*  level: Level or category derived from label or ID.
-    !*  level_id: Level ID for numeric level derived from label or ID.
+    !*  level_dim_name: Name of the dimension associated with the level ID.
+    !*  level_id: Level ID for a numeric level derived from label or ID.
     !*  field_type: Data frame.
     !*  var: Mapped model variable (and related indices).
     !*  dim_names: Names of the field dimensions.
@@ -55,6 +56,7 @@ module field_types
         integer :: id = -1
         character(len = SHORT_FIELD_LENGTH) :: field_name = ''
         character(len = SHORT_FIELD_LENGTH) :: level = ''
+        character(len = SHORT_FIELD_LENGTH) :: level_dim_name = ''
         type(model_variable_info) meta
         integer :: level_id = -1
         class(*), allocatable :: field
