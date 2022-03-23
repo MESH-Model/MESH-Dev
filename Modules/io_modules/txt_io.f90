@@ -25,49 +25,72 @@ module txt_io
     !> Variables:
     !*  iun: Unit of opened file.
     !*  line: Line returned (optional).
-    !*  quiet: .true. to suppress messages (optional).
+    !*  n_skip_rows: Number of rows to skip (default: zero; optional).
+    !*  preserve_blank: .true. to preserve and not skip blank lines and comments (default: .false.; optional).
+    !*  quiet: .true. to suppress messages (default: .false.; optional).
+    !*  line_count: Number of lines read (optional).
     !*  ierr: Status (0: normal).
-    subroutine read_txt_line(iun, line, quiet, ierr)
+    subroutine read_txt_line(iun, line, n_skip_rows, preserve_blank, quiet, line_count, ierr)
 
         !> Input/output variables.
         integer, intent(in) :: iun
         character(len = *), intent(out), optional :: line
+        integer, intent(in), optional :: n_skip_rows
+        logical, intent(in), optional :: preserve_blank
         logical, intent(in), optional :: quiet
+        integer, optional :: line_count
         integer, intent(out) :: ierr
 
         !> Local variables.
+        integer n, i
         character(len = DEFAULT_LINE_LENGTH) line_buffer
-        logical v
+        logical v, p
 
         !> Verbosity.
         v = .true.
         if (present(quiet)) v = (.not. quiet)
 
         !> Loop until a valid line has been read.
+        p = .false.
+        if (present(preserve_blank)) p = preserve_blank
+        n = 0
+        if (present(n_skip_rows)) n = n_skip_rows
         ierr = 0
         do while (.true.)
 
             !> Read line.
             read(iun, '(a)', iostat = ierr) line_buffer
+            if (present(line_count)) line_count = line_count + 1
 
             !> Exit if non-zero status.
             if (ierr /= 0) exit
 
             !> Cycle if the first character in the line is a comment.
-            if (line_buffer(1:1) == '!' .or. line_buffer(1:1) == '#') cycle
+            if (line_buffer(1:1) == '!' .or. line_buffer(1:1) == '#' .and. .not. p) cycle
 
             !> Trim inline comments.
             if (index(line_buffer, '#') > 2) line_buffer = line_buffer(1:index(line_buffer, '#') - 1)
             if (index(line_buffer, '!') > 2) line_buffer = line_buffer(1:index(line_buffer, '!') - 1)
 
             !> Exit if a line has been read.
-            if (len_trim(line_buffer) > 0) exit
+            if (len_trim(line_buffer) > 0 .or. p) then
+                if (n > 0) then
+                    n = n - 1
+                else
+                    exit
+                end if
+            end if
+        end do
+
+        !> Convert tabs to spaces.
+        do i = 1, len_trim(line_buffer)
+            if (line_buffer(i:i) == achar(9)) line_buffer(i:i) = ' '
         end do
 
         !> Copy the line read from file.
         if (present(line)) then
             if (ierr == 0) then
-                line = trim(line_buffer)
+                line = trim(adjustl(line_buffer))
             else
                 line = ''
             end if
@@ -84,9 +107,13 @@ module txt_io
     !*  delimiter: Field delimiter (optional, default: space).
     !*  n_skip_cols: Number of columns to skip from the beginning of the line (optional).
     !*  keep_alloc: Preserve the existing allocation of 'values' (optional).
+    !*  n_skip_rows: Number of rows to skip (default: zero; optional).
+    !*  preserve_blank: .true. to preserve and not skip blank lines and comments (default: .false.; optional).
     !*  quiet: .true. to suppress messages (optional).
+    !*  line_count: Number of lines read (optional).
     !*  ierr: Status (0: normal).
-    subroutine read_txt_line_args_char(iun, values, delimiter, n_skip_cols, keep_alloc, quiet, ierr)
+    subroutine read_txt_line_args_char( &
+        iun, values, delimiter, n_skip_cols, keep_alloc, n_skip_rows, preserve_blank, quiet, line_count, ierr)
 
         !> Input/output variables.
         integer, intent(in) :: iun
@@ -94,7 +121,10 @@ module txt_io
         character, intent(in), optional :: delimiter
         integer, intent(in), optional :: n_skip_cols
         logical, intent(in), optional :: keep_alloc
+        integer, intent(in), optional :: n_skip_rows
+        logical, intent(in), optional :: preserve_blank
         logical, intent(in), optional :: quiet
+        integer, optional :: line_count
         integer, intent(out) :: ierr
 
         !> Local variables.
@@ -103,7 +133,7 @@ module txt_io
         character(len = DEFAULT_FIELD_LENGTH) code1, code2
         character sep
         integer j, i, iskip_cols, word_count
-        logical v, in_whitespace, in_quotes, realloc
+        logical v, in_blank, in_quotes, realloc
 
         !> Status.
         ierr = 0
@@ -113,8 +143,12 @@ module txt_io
         if (present(quiet)) v = (.not. quiet)
 
         !> Read line.
-        call read_txt_line(iun, line_buffer, quiet, ierr)
-        if (ierr /= 0) return
+        call read_txt_line(iun, line_buffer, n_skip_rows, preserve_blank, quiet, line_count, ierr)
+        if (ierr /= 0) then
+            return
+        else
+            line_buffer = adjustl(line_buffer)
+        end if
 
         !> Deallocate input variable if allocated.
         realloc = .true.
@@ -129,20 +163,17 @@ module txt_io
 
         !> Count the number of values in the line.
         in_quotes = .false.
-        in_whitespace = .false.
+        in_blank = .false.
         word_count = 1
         j = 1
         vals = ''
         do i = 1, len_trim(line_buffer)
 
-            !> Convert tabs to spaces.
-            if (line_buffer(i:i) == achar(9)) line_buffer(i:i) = ' '
-
             !> Check character.
             if (line_buffer(i:i) == sep .and. .not. in_quotes) then
 
                 !> In whitespace.
-                in_whitespace = .true.
+                in_blank = .true.
             else if (line_buffer(i:i) == '"' .or. line_buffer(i:i) == "'") then
 
                 !> Entering or exiting quote.
@@ -150,10 +181,10 @@ module txt_io
             else
 
                 !> Start of new word if was in whitespace.
-                if (in_whitespace) then
+                if (in_blank) then
                     word_count = word_count + 1
                     j = 1
-                    in_whitespace = .false.
+                    in_blank = .false.
                 end if
 
                 !> Add character to current value.
@@ -205,9 +236,13 @@ module txt_io
     !*  delimiter: Field delimiter (optional, default: space).
     !*  n_skip_cols: Number of columns to skip from the beginning of the line (optional).
     !*  keep_alloc: Preserve the existing allocation of 'values' (optional).
+    !*  n_skip_rows: Number of rows to skip (default: zero; optional).
+    !*  preserve_blank: .true. to preserve and not skip blank lines and comments (default: .false.; optional).
     !*  quiet: .true. to suppress messages (optional).
+    !*  line_count: Number of lines read (optional).
     !*  ierr: Status (0: normal).
-    subroutine read_txt_line_args_real(iun, values, delimiter, n_skip_cols, keep_alloc, quiet, ierr)
+    subroutine read_txt_line_args_real( &
+        iun, values, delimiter, n_skip_cols, keep_alloc, n_skip_rows, preserve_blank, quiet, line_count, ierr)
 
         !> Input/output variables.
         integer, intent(in) :: iun
@@ -215,7 +250,10 @@ module txt_io
         character, intent(in), optional :: delimiter
         integer, intent(in), optional :: n_skip_cols
         logical, intent(in), optional :: keep_alloc
+        integer, intent(in), optional :: n_skip_rows
+        logical, intent(in), optional :: preserve_blank
         logical, intent(in), optional :: quiet
+        integer, optional :: line_count
         integer, intent(out) :: ierr
 
         !> Local variables.
@@ -237,7 +275,7 @@ module txt_io
         end if
 
         !> Call base routine.
-        call read_txt_line(iun, vals, delimiter, n_skip_cols, keep_alloc, quiet, ierr)
+        call read_txt_line(iun, vals, delimiter, n_skip_cols, keep_alloc, n_skip_rows, preserve_blank, quiet, line_count, ierr)
         if (ierr /= 0) return
 
         !> Convert and assign values.
@@ -262,9 +300,13 @@ module txt_io
     !*  delimiter: Field delimiter (optional, default: space).
     !*  n_skip_cols: Number of columns to skip from the beginning of the line (optional).
     !*  keep_alloc: Preserve the existing allocation of 'values' (optional).
+    !*  n_skip_rows: Number of rows to skip (default: zero; optional).
+    !*  preserve_blank: .true. to preserve and not skip blank lines and comments (default: .false.; optional).
     !*  quiet: .true. to suppress messages (optional).
+    !*  line_count: Number of lines read (optional).
     !*  ierr: Status (0: normal).
-    subroutine read_txt_line_args_int(iun, values, delimiter, n_skip_cols, keep_alloc, quiet, ierr)
+    subroutine read_txt_line_args_int( &
+        iun, values, delimiter, n_skip_cols, keep_alloc, n_skip_rows, preserve_blank, quiet, line_count, ierr)
 
         !> Input/output variables.
         integer, intent(in) :: iun
@@ -272,7 +314,10 @@ module txt_io
         character, intent(in), optional :: delimiter
         integer, intent(in), optional :: n_skip_cols
         logical, intent(in), optional :: keep_alloc
+        integer, intent(in), optional :: n_skip_rows
+        logical, intent(in), optional :: preserve_blank
         logical, intent(in), optional :: quiet
+        integer, optional :: line_count
         integer, intent(out) :: ierr
 
         !> Local variables.
@@ -294,7 +339,7 @@ module txt_io
         end if
 
         !> Call base routine.
-        call read_txt_line(iun, vals, delimiter, n_skip_cols, keep_alloc, quiet, ierr)
+        call read_txt_line(iun, vals, delimiter, n_skip_cols, keep_alloc, n_skip_rows, preserve_blank, quiet, line_count, ierr)
         if (ierr /= 0) return
 
         !> Convert and assign values.
