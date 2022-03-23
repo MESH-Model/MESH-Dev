@@ -475,10 +475,10 @@ module mesh_io
         character fill_c
         real(kind = kind(0.0d0)), allocatable :: dat1_d(:)
         real, allocatable :: dat5_r(:, :, :, :, :), dat4_r(:, :, :, :), dat2_r(:, :), dat1_r(:)
-        real dat_r, fill_r
+        real const_mul_r, const_add_r, valid_max_r, valid_min_r, dat_r, fill_r
         integer, dimension(:), allocatable :: dimids, dim_lengths, mapped_dim_order
         integer, allocatable :: dat2_i(:, :), dat3_i(:, :, :), dat4_i(:, :, :, :), dat5_i(:, :, :, :, :)
-        integer dtype, time_order, level_order, atype, alength, ndims, dat_i, fill_i
+        integer dtype, time_order, level_order, atype, alength, ndims, valid_max_i, valid_min_i, dat_i, fill_i
 #endif
 
         !> Error status.
@@ -541,26 +541,28 @@ module mesh_io
 
                                 !> Save the field (omit the leading ':' from the name).
                                 line_buffer = ''
-                                do j = 1, size(vkeyword(i)%words)
-                                    line_buffer = trim(line_buffer) // trim(vkeyword(i)%words(j))
-                                end do
+                                if (allocated(vkeyword(i)%words)) then
+                                    do j = 1, size(vkeyword(i)%words)
+                                        line_buffer = trim(line_buffer) // trim(vkeyword(i)%words(j))
+                                    end do
+                                end if
                                 file_buffer(n)%label = trim(vkeyword(i)%keyword(2:))
                                 file_buffer(n)%id = i
                                 allocate(file_buffer(n)%field, source = model_variable_char(dat = trim(line_buffer)))
                                 n = n + 1
 
                                 !> Special cases.
-                                if (lowercase(vkeyword(i)%keyword(2:)) == 'classcount' .and. size(vkeyword(i)%words) > 0) then
+                                if (lowercase(vkeyword(i)%keyword(2:)) == 'classcount' .and. allocated(vkeyword(i)%words)) then
 
                                     !> Number of GRUs (land cover).
                                     read(vkeyword(i)%words(1), *, iostat = ierr) class_count
                                     if (ierr /= 0) class_count = 0
-                                else if (lowercase(vkeyword(i)%keyword(2:)) == 'xcount' .and. size(vkeyword(i)%words) > 0) then
+                                else if (lowercase(vkeyword(i)%keyword(2:)) == 'xcount' .and. allocated(vkeyword(i)%words)) then
 
                                     !> Number of cells in the 'x' dimension.
                                     read(vkeyword(i)%words(1), *, iostat = ierr) x
                                     if (ierr /= 0) x = 0
-                                else if (lowercase(vkeyword(i)%keyword(2:)) == 'ycount' .and. size(vkeyword(i)%words) > 0) then
+                                else if (lowercase(vkeyword(i)%keyword(2:)) == 'ycount' .and. allocated(vkeyword(i)%words)) then
 
                                     !> Number of cells in the 'y' dimension.
                                     read(vkeyword(i)%words(1), *, iostat = ierr) y
@@ -635,6 +637,9 @@ module mesh_io
 
                         !> Invalidate the current position in the file.
                         input_file%series%ipos = -1
+
+                        !> Close the file.
+                        close(input_file%iunit)
                     else if (nvars /= 1) then
 
                         !> Print an error if the multi-frame file does not contain one variable.
@@ -720,7 +725,7 @@ module mesh_io
 
                     !> Set the current position in the file and return.
                     input_file%series%ipos = 1
-                else
+                else if (.not. allocated(input_file%fields)) then
 
                     !> Count the number of lines in the file.
                     call count_txt_lines(input_file%iunit, nvars, ierr)
@@ -821,6 +826,9 @@ module mesh_io
                         allocate(file_buffer(n)%dim_names(size(dim_names)), source = dim_names)
                         n = n + 1
                     end do
+
+                    !> Close the file.
+                    close(input_file%iunit)
                 end if
 
             !> Binary sequential format (seq).
@@ -969,6 +977,12 @@ module mesh_io
                     fill_r = NO_DATA_REAL
                     fill_i = NO_DATA_INT
                     fill_c = NO_DATA_CHAR
+                    const_mul_r = 1.0
+                    const_add_r = 0.0
+                    valid_max_r = NO_DATA_REAL
+                    valid_min_r = -NO_DATA_REAL
+                    valid_max_i = NO_DATA_INT
+                    valid_min_i = -NO_DATA_INT
                     do j = 1, nattrs
 
                         !> Get the attribute name.
@@ -984,16 +998,49 @@ module mesh_io
                                 case ('units')
                                     call nc4_get_attribute(input_file%iunit, aname, units, vid = i, ierr = ierr)
                                     if (ierr /= 0) units = ''
+                                case ('scale_factor')
+                                    call nc4_get_attribute(input_file%iunit, aname, const_mul_r, vid = i, ierr = ierr)
+                                    if (ierr /= 0) const_mul_r = 1.0
+                                case ('add_offset')
+                                    call nc4_get_attribute(input_file%iunit, aname, const_add_r, vid = i, ierr = ierr)
+                                    if (ierr /= 0) const_add_r = 0.0
+                                case ('valid_max')
+                                    call nc4_get_attribute_type(input_file%iunit, i, aname, dtype = atype, ierr = ierr)
+                                    if (ierr == 0) then
+                                        select case (atype)
+                                            case (NF90_INT64, NF90_BYTE, NF90_SHORT, NF90_INT)
+                                                call nc4_get_attribute(input_file%iunit, aname, valid_max_i, vid = i, ierr = ierr)
+                                                if (ierr /= 0) valid_max_i = NO_DATA_INT
+                                            case (NF90_FLOAT, NF90_DOUBLE)
+                                                call nc4_get_attribute(input_file%iunit, aname, valid_max_r, vid = i, ierr = ierr)
+                                                if (ierr /= 0) valid_max_r = NO_DATA_REAL
+                                        end select
+                                    end if
+                                case ('valid_min')
+                                    call nc4_get_attribute_type(input_file%iunit, i, aname, dtype = atype, ierr = ierr)
+                                    if (ierr == 0) then
+                                        select case (atype)
+                                            case (NF90_INT64, NF90_BYTE, NF90_SHORT, NF90_INT)
+                                                call nc4_get_attribute(input_file%iunit, aname, valid_min_i, vid = i, ierr = ierr)
+                                                if (ierr /= 0) valid_min_i = NO_DATA_INT
+                                            case (NF90_FLOAT, NF90_DOUBLE)
+                                                call nc4_get_attribute(input_file%iunit, aname, valid_min_r, vid = i, ierr = ierr)
+                                                if (ierr /= 0) valid_min_r = NO_DATA_REAL
+                                        end select
+                                    end if
                                 case ('_fillvalue')
                                     call nc4_get_attribute_type(input_file%iunit, i, aname, dtype = atype, ierr = ierr)
                                     if (ierr == 0) then
                                         select case (atype)
                                             case (NF90_INT64, NF90_BYTE, NF90_SHORT, NF90_INT)
                                                 call nc4_get_attribute(input_file%iunit, aname, fill_i, vid = i, ierr = ierr)
+                                                if (ierr /= 0) fill_i = NO_DATA_INT
                                             case (NF90_FLOAT, NF90_DOUBLE)
                                                 call nc4_get_attribute(input_file%iunit, aname, fill_r, vid = i, ierr = ierr)
+                                                if (ierr /= 0) fill_r = NO_DATA_REAL
                                             case (NF90_CHAR)
                                                 call nc4_get_attribute(input_file%iunit, aname, fill_c, vid = i, ierr = ierr)
+                                                if (ierr /= 0) fill_c = NO_DATA_CHAR
                                         end select
                                     end if
                             end select
@@ -1098,14 +1145,18 @@ module mesh_io
                                             case (2)
                                                 allocate(dat1_r(size(dat2_r, 1)))
                                                 dat1_r = dat2_r(:, j)
-                                                allocate(file_buffer(n)%field, source = model_variable_real1d(dat = dat1_r))
+                                                allocate(file_buffer(n)%field, source = model_variable_real1d( &
+                                                    dat = dat1_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                                    valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
                                                 deallocate(dat1_r)
                                                 allocate(file_buffer(n)%dim_names(1))
                                                 file_buffer(n)%dim_names = (/dim_names(1)/)
                                             case default
                                                 allocate(dat1_r(size(dat2_r, 2)))
                                                 dat1_r = dat2_r(j, :)
-                                                allocate(file_buffer(n)%field, source = model_variable_real1d(dat = dat1_r))
+                                                allocate(file_buffer(n)%field, source = model_variable_real1d( &
+                                                    dat = dat1_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                                    valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
                                                 deallocate(dat1_r)
                                                 allocate(file_buffer(n)%dim_names(1))
                                                 file_buffer(n)%dim_names = (/dim_names(2)/)
@@ -1115,21 +1166,27 @@ module mesh_io
                                             case (3)
                                                 allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 2)))
                                                 dat2_r = dat3_r(:, :, j)
-                                                allocate(file_buffer(n)%field, source = model_variable_real2d(dat = dat2_r))
+                                                allocate(file_buffer(n)%field, source = model_variable_real2d( &
+                                                    dat = dat2_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                                    valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
                                                 deallocate(dat2_r)
                                                 allocate(file_buffer(n)%dim_names(2))
                                                 file_buffer(n)%dim_names = (/dim_names(1), dim_names(2)/)
                                             case (2)
                                                 allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 3)))
                                                 dat2_r = dat3_r(:, j, :)
-                                                allocate(file_buffer(n)%field, source = model_variable_real2d(dat = dat2_r))
+                                                allocate(file_buffer(n)%field, source = model_variable_real2d( &
+                                                    dat = dat2_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                                    valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
                                                 deallocate(dat2_r)
                                                 allocate(file_buffer(n)%dim_names(2))
                                                 file_buffer(n)%dim_names = (/dim_names(1), dim_names(3)/)
                                             case default
                                                 allocate(dat2_r(size(dat3_r, 2), size(dat3_r, 3)))
                                                 dat2_r = dat3_r(j, :, :)
-                                                allocate(file_buffer(n)%field, source = model_variable_real2d(dat = dat2_r))
+                                                allocate(file_buffer(n)%field, source = model_variable_real2d( &
+                                                    dat = dat2_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                                    valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
                                                 deallocate(dat2_r)
                                                 allocate(file_buffer(n)%dim_names(2))
                                                 file_buffer(n)%dim_names = (/dim_names(2), dim_names(3)/)
@@ -1179,7 +1236,7 @@ module mesh_io
                             end if
 
                             !> Mark file as multi-frame.
-                            input_file%series%multi_frame = .true.
+                            if (time_order > 0) input_file%series%multi_frame = .true.
 
                             !> Set the current position in the file.
                             input_file%series%ipos = 1
@@ -1223,7 +1280,7 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat5_i, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = model_variable_int5d( &
-                                        dat = dat5_i, no_data_value = fill_i))
+                                        dat = dat5_i, valid_max = valid_max_i, valid_min = valid_min_i, no_data_value = fill_i))
                                     deallocate(dat5_i)
                                 case (4)
                                     allocate(dat4_i(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
@@ -1232,7 +1289,7 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat4_i, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = model_variable_int4d( &
-                                        dat = dat4_i, no_data_value = fill_i))
+                                        dat = dat4_i, valid_max = valid_max_i, valid_min = valid_min_i, no_data_value = fill_i))
                                     deallocate(dat4_i)
                                 case (3)
                                     allocate(dat3_i(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
@@ -1241,7 +1298,7 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat3_i, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = model_variable_int3d( &
-                                        dat = dat3_i, no_data_value = fill_i))
+                                        dat = dat3_i, valid_max = valid_max_i, valid_min = valid_min_i, no_data_value = fill_i))
                                     deallocate(dat3_i)
                                 case (2)
                                     allocate(dat2_i(dim_lengths(1), dim_lengths(2)))
@@ -1250,7 +1307,7 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat2_i, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = model_variable_int2d( &
-                                        dat = dat2_i, no_data_value = fill_i))
+                                        dat = dat2_i, valid_max = valid_max_i, valid_min = valid_min_i, no_data_value = fill_i))
                                     deallocate(dat2_i)
                                 case (1)
                                     allocate(dat1_i(dim_lengths(1)))
@@ -1259,12 +1316,13 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat1_i, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = model_variable_int1d( &
-                                        dat = dat1_i, no_data_value = fill_i))
+                                        dat = dat1_i, valid_max = valid_max_i, valid_min = valid_min_i, no_data_value = fill_i))
                                     deallocate(dat1_i)
                                 case default
                                     call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat_i, ierr = ierr)
                                     if (ierr == 0) then
-                                        allocate(file_buffer(n)%field, source = model_variable_int(dat = dat_i))
+                                        allocate(file_buffer(n)%field, source = model_variable_int( &
+                                            dat = dat_i, valid_max = valid_max_i, valid_min = valid_min_i, no_data_value = fill_i))
                                     end if
                             end select
                         case (NF90_FLOAT, NF90_DOUBLE)
@@ -1276,7 +1334,8 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat5_r, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = model_variable_real5d( &
-                                        dat = dat5_r, no_data_value = fill_r))
+                                        dat = dat5_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                        valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
                                     deallocate(dat5_r)
                                 case (4)
                                     allocate(dat4_r(dim_lengths(1), dim_lengths(2), dim_lengths(3), dim_lengths(4)))
@@ -1285,7 +1344,8 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat4_r, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = model_variable_real4d( &
-                                        dat = dat4_r, no_data_value = fill_r))
+                                        dat = dat4_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                        valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
                                     deallocate(dat4_r)
                                 case (3)
                                     allocate(dat3_r(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
@@ -1294,7 +1354,8 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat3_r, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = model_variable_real3d( &
-                                        dat = dat3_r, no_data_value = fill_r))
+                                        dat = dat3_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                        valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
                                     deallocate(dat3_r)
                                 case (2)
                                     allocate(dat2_r(dim_lengths(1), dim_lengths(2)))
@@ -1303,7 +1364,8 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat2_r, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = model_variable_real2d( &
-                                        dat = dat2_r, no_data_value = fill_r))
+                                        dat = dat2_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                        valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
                                     deallocate(dat2_r)
                                 case (1)
                                     allocate(dat1_r(dim_lengths(1)))
@@ -1312,12 +1374,15 @@ module mesh_io
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat1_r, ierr = ierr)
                                     end if
                                     allocate(file_buffer(n)%field, source = model_variable_real1d( &
-                                        dat = dat1_r, no_data_value = fill_r))
+                                        dat = dat1_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                        valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
                                     deallocate(dat1_r)
                                 case default
                                     call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat_r, ierr = ierr)
                                     if (ierr == 0) then
-                                        allocate(file_buffer(n)%field, source = model_variable_real(dat = dat_r))
+                                        allocate(file_buffer(n)%field, source = model_variable_real( &
+                                            dat = dat_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                            valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
                                     end if
                             end select
                         case (NF90_CHAR)
@@ -1389,6 +1454,9 @@ module mesh_io
                         n = n + 1
                     end if
                 end do
+
+                !> Close the file.
+                if (.not. input_file%series%multi_frame) call nc4_close_file(input_file%iunit, input_file%full_path, ierr = ierr)
 #endif
 
             !> CLASS MET format.
@@ -1425,8 +1493,14 @@ module mesh_io
                 end if
         end select
 
-        !> Adjust the total number of fields read (since it increments at the end of the loop).
-        n = n - 1
+        !> Check for errors.
+        if (error_status /= 0) then
+            return
+        else
+
+            !> Adjust the total number of fields read (since it increments at the end of the loop).
+            n = n - 1
+        end if
 
         !> Print diagnostic summary.
         if (DIAGNOSEMODE) then
