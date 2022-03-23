@@ -340,21 +340,18 @@ module basin_utilities
         !> Check for fields used for mapping.
         do i = 1, size(field_list)
 
-            !> Get field name and level (if applicable).
-            call get_field_name_and_level(lowercase(field_list(i)%label), field, level, ilvl, ierr)
-
             !> Assign the field.
             ierr = 0
-            select case (field)
+            select case (field_list(i)%field_name)
 
                 !> River class.
-                case ('irvr', 'iak')
+                case ('IRVR', 'IAK')
                     call create_ranked_field_and_maps(field_list(i), ierr)
                     if (ierr == 0) call map_field_to_ranked_output(field_list(i), error_status = ierr)
                     if (ierr == 0) call assign_cell_values(field_list(i), vs%grid%from_riverclass, ierr)
 
                 !> GRUs.
-                case ('gru', 'landcover')
+                case ('GRU', 'LANDCOVER')
                     if (ngru > 0 .and. ilvl > 0) then
                         if (.not. allocated(gru_nm)) then
                             allocate(gru_nm(ncell, ngru))
