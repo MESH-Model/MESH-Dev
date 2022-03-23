@@ -32,7 +32,7 @@ module basin_utilities
         character(len = :), allocatable :: message
         real, allocatable :: dat1_r(:), gru_n(:), gru_nm(:, :)
         integer, allocatable :: dat1_i(:), dat2_i(:, :), rank_xy(:, :)
-        integer y, x, n, m, k, i, ncell, ncell_active, ngru, nrvr, nlandtile, ilvl, ierr
+        integer y, x, n, m, k, i, ncell, ncell_active, ngru, nrvr, nlandtile, ierr
 
         !> Status.
         error_status = 0
@@ -352,7 +352,7 @@ module basin_utilities
 
                 !> GRUs.
                 case ('GRU', 'LANDCOVER')
-                    if (ngru > 0 .and. ilvl > 0) then
+                    if (ngru > 0 .and. field_list(i)%level_id > 0) then
                         if (.not. allocated(gru_nm)) then
                             allocate(gru_nm(ncell, ngru))
                             gru_nm = 0.0
@@ -360,7 +360,7 @@ module basin_utilities
                         call create_ranked_field_and_maps(field_list(i), ierr)
                         if (ierr == 0) call map_field_to_ranked_output(field_list(i), error_status = ierr)
                         if (ierr == 0) call assign_cell_values(field_list(i), gru_n, ierr)
-                        if (ierr == 0) gru_nm(:, ilvl) = gru_n
+                        if (ierr == 0) gru_nm(:, field_list(i)%level_id) = gru_n
                         if (allocated(gru_n)) deallocate(gru_n)
                     end if
             end select
