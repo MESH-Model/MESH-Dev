@@ -416,6 +416,9 @@ module mesh_io
                     BASE_FILE_IUNIT = BASE_FILE_IUNIT + 1
                 end if
 
+            !> Virtual file.
+            type is (io_type_virtual)
+
             !> Unknown file format.
             class default
                 if (v) call print_error("Unknown or unsupported file format.")

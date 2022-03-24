@@ -285,7 +285,7 @@ module input_forcing
                         allocate(forcing_files(i)%container, source = io_type_seq())
                     case ('asc')
 
-                        !> Rank-ordered text (ASCII) format.
+                        !> Rank-ordered simple text (ASCII) format.
                         allocate(dim_names(2))
                         dim_names = (/DIM_NAME_N, DIM_NAME_T/)
                         allocate(forcing_files(i)%container, source = io_type_char_delimited())
@@ -297,7 +297,7 @@ module input_forcing
                         allocate(forcing_files(i)%container, source = io_type_met())
                     case ('nc')
 
-                        !> netCDF format.
+                        !> NetCDF format.
                         allocate(forcing_files(i)%container, source = io_type_nc())
                     case default
 
@@ -669,7 +669,9 @@ module input_forcing
 
                         !> Set the flag for the file.
                         forcing_files(i)%temporal_interp%scheme = forcing_file_temporal_interpolation
-                        call print_remark("INTERPOLATIONFLAG is enabled.")
+                        call print_remark( &
+                            "'INTERPOLATIONFLAG' is enabled for temporal linear interpolation to the model time-step " // &
+                            "between records.")
 
                         !> Determine the frequency interval.
                         j = 0
@@ -719,7 +721,7 @@ module input_forcing
                                 end if
                                 if (iwarn /= 0) then
                                     call print_warning( &
-                                        "INTERPOLATIONFLAG cannot be applied for the data type of the '" // &
+                                        "'INTERPOLATIONFLAG' cannot be applied for the data type of the '" // &
                                         trim(forcing_files(i)%fields(j)%label) // &
                                         "' variable. The option has no effect for this field.")
                                 end if
@@ -730,8 +732,8 @@ module input_forcing
                         !> Print a warning if the flag is not recognized or unsupported.
                         write(code, *) forcing_file_temporal_interpolation
                         call print_warning( &
-                            "The value of INTERPOLATIONFLAG (" // trim(adjustl(code)) // ") is not recognized or unsupported. " // &
-                            "The option has no effect.")
+                            "The value of 'INTERPOLATIONFLAG' (" // trim(adjustl(code)) // &
+                            ") is not recognized or unsupported. The option has no effect.")
                     end if
                 end if
             end if
@@ -807,7 +809,7 @@ module input_forcing
             !> Read frame.
             if (input_file%series%iblock == 1) call read_frame_from_file(input_file, error_status = error_status)
             if (error_status /= 0) then
-                call print_remark("Reached the of the file in '" // trim(input_file%full_path) // "'.")
+                call print_remark("Reached the end of the file in '" // trim(input_file%full_path) // "'.")
                 return
             end if
 
@@ -1059,7 +1061,7 @@ module input_forcing
             !> Compare the frame length to model time-step for temporal interpolation.
             if (forcing_files(i)%temporal_interp%scheme > 0 .and. frame_length_minutes == ic%dtmins) then
                 call print_remark( &
-                    "INTERPOLATIONFLAG is enabled but the frame length in the file is the same as the model time-step. " // &
+                    "'INTERPOLATIONFLAG' is enabled but the frame length in the file is the same as the model time-step. " // &
                     "The option has no effect.")
             end if
 
