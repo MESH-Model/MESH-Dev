@@ -1103,24 +1103,24 @@ module sa_mesh_run_between_grid
                 vs%basin%thicsol = huge(vs%basin%thicsol)
             end if
         end if
-!-        if (allocated(vs%basin%lqwssol) .and. allocated(vs%grid%lqwssol)) then
-!-            if (all(vs%grid%lqwssol /= huge(vs%grid%lqwssol))) then
-!-                do j = 1, shd%lc%IGND
-!-                    vs%basin%lqwssol(:, j) = vs%grid%lqwssol(:, j)*shd%FRAC
-!-                end do
-!-            else
-!-                vs%basin%lqwssol = huge(vs%basin%lqwssol)
-!-            end if
-!-        end if
-!-        if (allocated(vs%basin%fzwssol) .and. allocated(vs%grid%fzwssol)) then
-!-            if (all(vs%grid%fzwssol /= huge(vs%grid%fzwssol))) then
-!-                do j = 1, shd%lc%IGND
-!-                    vs%basin%fzwssol(:, j) = vs%grid%fzwssol(:, j)*shd%FRAC
-!-                end do
-!-            else
-!-                vs%basin%fzwssol = huge(vs%basin%fzwssol)
-!-            end if
-!-        end if
+        if (allocated(vs%basin%lqwssol) .and. allocated(vs%grid%lqwssol)) then
+            if (all(vs%grid%lqwssol /= huge(vs%grid%lqwssol))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%lqwssol(:, j) = vs%grid%lqwssol(:, j)*shd%FRAC
+                end do
+            else
+                vs%basin%lqwssol = huge(vs%basin%lqwssol)
+            end if
+        end if
+        if (allocated(vs%basin%fzwssol) .and. allocated(vs%grid%fzwssol)) then
+            if (all(vs%grid%fzwssol /= huge(vs%grid%fzwssol))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%fzwssol(:, j) = vs%grid%fzwssol(:, j)*shd%FRAC
+                end do
+            else
+                vs%basin%fzwssol = huge(vs%basin%fzwssol)
+            end if
+        end if
         if (allocated(vs%basin%tsol) .and. allocated(vs%grid%tsol)) then
             if (all(vs%grid%tsol /= huge(vs%grid%tsol))) then
                 do j = 1, shd%lc%IGND
@@ -1505,16 +1505,16 @@ module sa_mesh_run_between_grid
                         vs%basin%thicsol(ii, :) = vs%basin%thicsol(ii, :) + vs%basin%thicsol(i, :)
                     end if
                 end if
-!-                if (allocated(vs%basin%lqwssol)) then
-!-                    if (all(vs%basin%lqwssol(i, :) /= huge(vs%basin%lqwssol))) then
-!-                        vs%basin%lqwssol(ii, :) = vs%basin%lqwssol(ii, :) + vs%basin%lqwssol(i, :)
-!-                    end if
-!-                end if
-!-                if (allocated(vs%basin%fzwssol)) then
-!-                    if (all(vs%basin%fzwssol(i, :) /= huge(vs%basin%fzwssol))) then
-!-                        vs%basin%fzwssol(ii, :) = vs%basin%fzwssol(ii, :) + vs%basin%fzwssol(i, :)
-!-                    end if
-!-                end if
+                if (allocated(vs%basin%lqwssol)) then
+                    if (all(vs%basin%lqwssol(i, :) /= huge(vs%basin%lqwssol))) then
+                        vs%basin%lqwssol(ii, :) = vs%basin%lqwssol(ii, :) + vs%basin%lqwssol(i, :)
+                    end if
+                end if
+                if (allocated(vs%basin%fzwssol)) then
+                    if (all(vs%basin%fzwssol(i, :) /= huge(vs%basin%fzwssol))) then
+                        vs%basin%fzwssol(ii, :) = vs%basin%fzwssol(ii, :) + vs%basin%fzwssol(i, :)
+                    end if
+                end if
                 if (allocated(vs%basin%tsol)) then
                     if (all(vs%basin%tsol(i, :) /= huge(vs%basin%tsol))) then
                         vs%basin%tsol(ii, :) = vs%basin%tsol(ii, :) + vs%basin%tsol(i, :)
@@ -1796,20 +1796,20 @@ module sa_mesh_run_between_grid
                 end do
             end if
         end if
-!-        if (allocated(vs%basin%lqwssol)) then
-!-            if (all(vs%basin%lqwssol /= huge(vs%basin%lqwssol))) then
-!-                do j = 1, shd%lc%IGND
-!-                    vs%basin%lqwssol(:, j) = vs%basin%lqwssol(:, j)/frac
-!-                end do
-!-            end if
-!-        end if
-!-        if (allocated(vs%basin%fzwssol)) then
-!-            if (all(vs%basin%fzwssol /= huge(vs%basin%fzwssol))) then
-!-                do j = 1, shd%lc%IGND
-!-                    vs%basin%fzwssol(:, j) = vs%basin%fzwssol(:, j)/frac
-!-                end do
-!-            end if
-!-        end if
+        if (allocated(vs%basin%lqwssol)) then
+            if (all(vs%basin%lqwssol /= huge(vs%basin%lqwssol))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%lqwssol(:, j) = vs%basin%lqwssol(:, j)/frac
+                end do
+            end if
+        end if
+        if (allocated(vs%basin%fzwssol)) then
+            if (all(vs%basin%fzwssol /= huge(vs%basin%fzwssol))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%fzwssol(:, j) = vs%basin%fzwssol(:, j)/frac
+                end do
+            end if
+        end if
         if (allocated(vs%basin%tsol)) then
             if (all(vs%basin%tsol /= huge(vs%basin%tsol))) then
                 do j = 1, shd%lc%IGND

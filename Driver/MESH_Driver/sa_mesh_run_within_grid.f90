@@ -307,8 +307,8 @@ module sa_mesh_run_within_grid
         if (allocated(vs%grid%dzsolhyd)) vs%grid%dzsolhyd(i1:i2, :) = 0.0
         if (allocated(vs%grid%thlqsol)) vs%grid%thlqsol(i1:i2, :) = 0.0
         if (allocated(vs%grid%thicsol)) vs%grid%thicsol(i1:i2, :) = 0.0
-!-        if (allocated(vs%grid%lqwssol)) vs%grid%lqwssol(i1:i2, :) = 0.0
-!-        if (allocated(vs%grid%fzwssol)) vs%grid%fzwssol(i1:i2, :) = 0.0
+        if (allocated(vs%grid%lqwssol)) vs%grid%lqwssol(i1:i2, :) = 0.0
+        if (allocated(vs%grid%fzwssol)) vs%grid%fzwssol(i1:i2, :) = 0.0
         if (allocated(vs%grid%tsol)) vs%grid%tsol(i1:i2, :) = 0.0
         if (allocated(vs%grid%gflx)) vs%grid%gflx(i1:i2, :) = 0.0
         if (allocated(vs%grid%latflw)) vs%grid%latflw(i1:i2, :) = 0.0
@@ -564,16 +564,16 @@ module sa_mesh_run_within_grid
                     vs%grid%thicsol(ki, :) = vs%grid%thicsol(ki, :) + vs%tile%thicsol(k, :)*frac
                 end if
             end if
-!-            if (allocated(vs%grid%lqwssol) .and. allocated(vs%tile%lqwssol)) then
-!-                if (all(vs%tile%lqwssol(k, :) /= huge(vs%tile%lqwssol))) then
-!-                    vs%grid%lqwssol(ki, :) = vs%grid%lqwssol(ki, :) + vs%tile%lqwssol(k, :)*frac
-!-                end if
-!-            end if
-!-            if (allocated(vs%grid%fzwssol) .and. allocated(vs%tile%fzwssol)) then
-!-                if (all(vs%tile%fzwssol(k, :) /= huge(vs%tile%fzwssol))) then
-!-                    vs%grid%fzwssol(ki, :) = vs%grid%fzwssol(ki, :) + vs%tile%fzwssol(k, :)*frac
-!-                end if
-!-            end if
+            if (allocated(vs%grid%lqwssol) .and. allocated(vs%tile%lqwssol)) then
+                if (all(vs%tile%lqwssol(k, :) /= huge(vs%tile%lqwssol))) then
+                    vs%grid%lqwssol(ki, :) = vs%grid%lqwssol(ki, :) + vs%tile%lqwssol(k, :)*frac
+                end if
+            end if
+            if (allocated(vs%grid%fzwssol) .and. allocated(vs%tile%fzwssol)) then
+                if (all(vs%tile%fzwssol(k, :) /= huge(vs%tile%fzwssol))) then
+                    vs%grid%fzwssol(ki, :) = vs%grid%fzwssol(ki, :) + vs%tile%fzwssol(k, :)*frac
+                end if
+            end if
             if (allocated(vs%grid%tsol) .and. allocated(vs%tile%tsol)) then
                 if (all(vs%tile%tsol(k, :) /= huge(vs%tile%tsol))) then
                     vs%grid%tsol(ki, :) = vs%grid%tsol(ki, :) + vs%tile%tsol(k, :)*frac

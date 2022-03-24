@@ -145,8 +145,8 @@ module model_variables
         real, dimension(:, :), allocatable :: dzsolhyd
         real, dimension(:, :), allocatable :: thlqsol
         real, dimension(:, :), allocatable :: thicsol
-!-        real, dimension(:, :), allocatable :: lqwssol
-!-        real, dimension(:, :), allocatable :: fzwssol
+        real, dimension(:, :), allocatable :: lqwssol
+        real, dimension(:, :), allocatable :: fzwssol
         real, dimension(:, :), allocatable :: tsol
         real, dimension(:, :), allocatable :: gflx
         real, dimension(:, :), allocatable :: latflw
@@ -320,8 +320,8 @@ module model_variables
         if (allocated(group%dzsolhyd)) group%dzsolhyd = 0.0
         if (allocated(group%thlqsol)) group%thlqsol = 0.0
         if (allocated(group%thicsol)) group%thicsol = 0.0
-!-        if (allocated(group%lqwssol)) group%lqwssol = 0.0
-!-        if (allocated(group%fzwssol)) group%fzwssol = 0.0
+        if (allocated(group%lqwssol)) group%lqwssol = 0.0
+        if (allocated(group%fzwssol)) group%fzwssol = 0.0
         if (allocated(group%tsol)) group%tsol = 0.0
         if (allocated(group%gflx)) group%gflx = 0.0
         if (allocated(group%latflw)) group%latflw = 0.0
@@ -486,8 +486,8 @@ module model_variables
         allocate(group%dzsolhyd(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%thlqsol(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%thicsol(n, nsl), stat = z); if (z /= 0) ierr = z
-!-        allocate(group%lqwssol(n, nsl), stat = z); if (z /= 0) ierr = z
-!-        allocate(group%fzwssol(n, nsl), stat = z); if (z /= 0) ierr = z
+        allocate(group%lqwssol(n, nsl), stat = z); if (z /= 0) ierr = z
+        allocate(group%fzwssol(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%tsol(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%gflx(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%latflw(n, nsl), stat = z); if (z /= 0) ierr = z

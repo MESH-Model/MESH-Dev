@@ -870,8 +870,8 @@ module sa_mesh_run_within_tile
 !        if (allocated(vs%tile%dzsolhyd)) vs%tile%dzsolhyd(il1:il2) = 0.0
 !        if (allocated(vs%tile%thlqsol)) vs%tile%thlqsol(il1:il2, :) = 0.0
 !        if (allocated(vs%tile%thicsol)) vs%tile%thicsol(il1:il2, :) = 0.0
-!-        if (allocated(vs%tile%lqwssol)) vs%tile%lqwssol(il1:il2, :) = 0.0
-!-        if (allocated(vs%tile%fzwssol)) vs%tile%fzwssol(il1:il2, :) = 0.0
+!        if (allocated(vs%tile%lqwssol)) vs%tile%lqwssol(il1:il2, :) = 0.0
+!        if (allocated(vs%tile%fzwssol)) vs%tile%fzwssol(il1:il2, :) = 0.0
 !        if (allocated(vs%tile%tsol)) vs%tile%tsol(il1:il2, :) = 0.0
         if (allocated(vs%tile%gflx)) vs%tile%gflx(il1:il2, :) = 0.0
         if (allocated(vs%tile%latflw)) vs%tile%latflw(il1:il2, :) = 0.0
@@ -960,14 +960,14 @@ module sa_mesh_run_within_tile
 !-                end where
 !-            end if
 !-        end if
-!-        if (allocated(vs%tile%dzwat)) then
-!-            if (allocated(vs%tile%lqwssol) .and. allocated(vs%tile%thlqsol)) then
-!-                vs%tile%lqwssol(il1:il2, :) = vs%tile%thlqsol(il1:il2, :)*vs%tile%dzwat(il1:il2, :)*RHOW
-!-            end if
-!-            if (allocated(vs%tile%fzwssol) .and. allocated(vs%tile%thicsol)) then
-!-                vs%tile%fzwssol(il1:il2, :) = vs%tile%thicsol(il1:il2, :)*vs%tile%dzwat(il1:il2, :)*RHOICE
-!-            end if
-!-        end if
+        if (allocated(vs%tile%dzsolhyd)) then
+            if (allocated(vs%tile%lqwssol) .and. allocated(vs%tile%thlqsol)) then
+                vs%tile%lqwssol(il1:il2, :) = vs%tile%thlqsol(il1:il2, :)*vs%tile%dzsolhyd(il1:il2, :)*RHOW
+            end if
+            if (allocated(vs%tile%fzwssol) .and. allocated(vs%tile%thicsol)) then
+                vs%tile%fzwssol(il1:il2, :) = vs%tile%thicsol(il1:il2, :)*vs%tile%dzsolhyd(il1:il2, :)*RHOICE
+            end if
+        end if
 
     end subroutine
 

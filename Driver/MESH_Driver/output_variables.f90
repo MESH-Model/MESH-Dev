@@ -624,13 +624,19 @@ module output_variables
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%thicsol, n1, n2)
             case (VN_LQWSSOL)
                 if (allocated(fields%vs%dzsolhyd)) then
-                    call output_variables_activate_pntr(fields, VN_THLQSOL)
+                    if (.not. allocated(fields%vs%lqwssol)) then
+                        allocate(fields%vs%lqwssol(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                        fields%vs%lqwssol = huge(fields%vs%lqwssol)
+                    end if
                     call output_variables_allocate(fields%lqwssol, n1, n2, pntr, ig)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%lqwssol, n1, n2)
                 end if
             case (VN_FZWSSOL)
                 if (allocated(fields%vs%dzsolhyd)) then
-                    call output_variables_activate_pntr(fields, VN_THICSOL)
+                    if (.not. allocated(fields%vs%fzwssol)) then
+                        allocate(fields%vs%fzwssol(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                        fields%vs%fzwssol = huge(fields%vs%fzwssol)
+                    end if
                     call output_variables_allocate(fields%fzwssol, n1, n2, pntr, ig)
                     if (associated(fields%ts)) call output_variables_allocate(fields%ts%fzwssol, n1, n2)
                 end if
@@ -1631,8 +1637,8 @@ module output_variables
         end if
         if (associated(group%lqwssol)) then
             if (all(group%lqwssol == out%NO_DATA)) then
-                if (all(group_vs%dzsolhyd /= huge(group_vs%dzsolhyd))) then
-                    group%lqwssol = group%thlqsol*group_vs%dzsolhyd*1000.0
+                if (all(group_vs%lqwssol /= huge(group_vs%lqwssol))) then
+                    group%lqwssol = group_vs%lqwssol
                 else
                     group%lqwssol = 0.0
                 end if
@@ -1640,8 +1646,8 @@ module output_variables
         end if
         if (associated(group%fzwssol)) then
             if (all(group%fzwssol == out%NO_DATA)) then
-                if (all(group_vs%dzsolhyd /= huge(group_vs%dzsolhyd))) then
-                    group%fzwssol = group%thicsol*group_vs%dzsolhyd*917.0
+                if (all(group_vs%fzwssol /= huge(group_vs%fzwssol))) then
+                    group%fzwssol = group_vs%fzwssol
                 else
                     group%fzwssol = 0.0
                 end if
