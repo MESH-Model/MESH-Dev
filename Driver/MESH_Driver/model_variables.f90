@@ -120,8 +120,8 @@ module model_variables
         real, dimension(:), allocatable :: tsurf
 
         !> Ice/glacier variables.
-        !* lqwsice: Liquid water storage of ice. [kg m**-2].
-        !* tice: Temperature of ice. [K].
+        !* lqwsice: Liquid water storage converted to ice in growing glaciers. [kg m**-2].
+        !* tice: Temperature of liquid water converted to ice in growing glaciers. [K].
         real, dimension(:), allocatable :: lqwsice
         real, dimension(:), allocatable :: tice
 

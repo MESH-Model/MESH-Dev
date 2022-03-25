@@ -730,6 +730,7 @@ module output_variables
                 call output_variables_activate_pntr(fields, VN_LQWSPND)
                 call output_variables_activate_pntr(fields, VN_LQWSSOL)
                 call output_variables_activate_pntr(fields, VN_FZWSSOL)
+                call output_variables_activate_pntr(fields, VN_LQWSICE)
                 call output_variables_activate_pntr(fields, VN_STGGW)
 !-                call output_variables_activate_pntr(fields, VN_DZS)
                 call output_variables_allocate(fields%stgw, n1, pntr)
@@ -1765,6 +1766,7 @@ module output_variables
                     where (group%lqwssol(:, j) /= out%NO_DATA) group%stgw = group%stgw + group%lqwssol(:, j)
                     where (group%fzwssol(:, j) /= out%NO_DATA) group%stgw = group%stgw + group%fzwssol(:, j)
                 end do
+                where (group%lqwsice /= out%NO_DATA) group%stgw = group%stgw + group%lqwsice
                 where (group%stggw /= out%NO_DATA) group%stgw = group%stgw + group%stggw
 !-                where (group%dzs /= out%NO_DATA) group%stgw = group%stgw + group%dzs
             end if

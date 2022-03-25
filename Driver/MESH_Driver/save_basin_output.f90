@@ -1185,7 +1185,7 @@ module save_basin_output
             series%basin, (/ &
                 VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
                 VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, &
-                VN_STGW /))
+                VN_LQWSICE, VN_STGW /))
 
     end subroutine
 
@@ -1347,7 +1347,7 @@ module save_basin_output
                 VN_LQWSSOL // trim(adjustl(ffmti)), VN_FZWSSOL // trim(adjustl(ffmti)), &
                 VN_ALWSSOL // trim(adjustl(ffmti))
         end do
-        write(fik, 1010) VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, VN_STGGW, 'DZS', VN_STGW, VN_DSTGW
+        write(fik, 1010) VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, VN_LQWSICE, VN_STGGW, VN_STGW, VN_DSTGW
 
 1010    format(9999(g15.7e2, ','))
 
@@ -1399,7 +1399,8 @@ module save_basin_output
             sum(series%basin%lqwssol(ina, :)), &
             sum(series%basin%fzwssol(ina, :)), &
             sum(series%basin%alwssol(ina, :)), &
-            series%basin%stggw(ina), 0.0, &
+            series%basin%lqwsice(ina), &
+            series%basin%stggw(ina), &
             series%basin%stgw(ina), &
             series%basin%dstgw(ina)
 
@@ -1535,7 +1536,7 @@ module save_basin_output
         call output_variables_activate( &
             series%basin, (/ &
                 VN_DUMMY_LENGTH, VN_FSIN, VN_FSOUT, VN_ALBT, VN_FLIN, VN_FLOUT, VN_GTE, VN_QEVP, VN_QSENS, VN_GZERO, &
-                VN_TA, VN_TCAN, VN_CMAS, VN_TSNO, VN_TPND, VN_TSOL, VN_QA, VN_UV, VN_PRES /))
+                VN_TA, VN_TCAN, VN_CMAS, VN_TSNO, VN_TPND, VN_TSOL, VN_TICE, VN_QA, VN_UV, VN_PRES /))
 
     end subroutine
 
@@ -1744,7 +1745,7 @@ module save_basin_output
             write(ffmti, '(i3)') j
             write(fik, 1010, advance = 'no') VN_TSOL // trim(adjustl(ffmti))
         end do
-        write(fik, 1010, advance = 'no') VN_QA, VN_UV, VN_PRES
+        write(fik, 1010, advance = 'no') VN_TICE, VN_QA, VN_UV, VN_PRES
         write(fik, 1010)
 
 1010    format(9999(g15.7e2, ','))
@@ -1812,7 +1813,8 @@ module save_basin_output
             series%basin%gzero(ina), &
             ta, tcan, cmas, &
             tsno, tpnd, &
-            (tbar(j), j = 1, shd%lc%IGND), series%basin%qa(ina), series%basin%uv(ina), series%basin%pres(ina)
+            (tbar(j), j = 1, shd%lc%IGND), series%basin%tice(ina), &
+            series%basin%qa(ina), series%basin%uv(ina), series%basin%pres(ina)
 
 1010    format(9999(g15.7e2, ','))
 
