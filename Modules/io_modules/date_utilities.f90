@@ -49,6 +49,9 @@ module date_utilities
         if (jday <= d(1)) then
             month = 1
             day = jday
+        else if (jday > d(12)) then
+            month = 12
+            day = d(12)
         else
             do i = 2, 12
                 if (jday > d(i - 1) .and. jday <= d(i)) then
