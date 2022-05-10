@@ -731,7 +731,7 @@ module rte_module
             qr(1:naa) = 0.0
         end if
         qr(1:naa) = qr(1:naa) + real(vs%grid%rff(1:naa)*shd%FRAC(1:naa), kind(qr))
-        qr(1:naa) = qr(1:naa) + real(vs%grid%rchg(1:naa)*shd%FRAC(1:naa), kind(qr))
+!-        qr(1:naa) = qr(1:naa) + real(vs%grid%rchg(1:naa)*shd%FRAC(1:naa), kind(qr))
 
         !> Reset SA_MESH output variables (for averaging).
         !> Setting these to zero also prevents updating from the state variables upon return.

@@ -797,6 +797,9 @@ module sa_mesh_run_within_tile
 
     subroutine run_within_tile_stas_reset(fls, shd)
 
+        !> 'mesh_io_constants' for 'NODATA' values.
+        use mesh_io_constants, only: NO_DATA_REAL
+
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
@@ -883,9 +886,9 @@ module sa_mesh_run_within_tile
         if (allocated(vs%tile%drainsol)) vs%tile%drainsol(il1:il2) = 0.0
 
         !> Groundwater/lower zone storage variables.
-        if (allocated(vs%tile%rchg)) vs%tile%rchg(il1:il2) = 0.0
-!        if (allocated(vs%tile%stggw)) vs%tile%stggw(il1:il2) = 0.0
-        if (allocated(vs%tile%lkg)) vs%tile%lkg(il1:il2) = 0.0
+        if (allocated(vs%tile%rchg)) vs%tile%rchg(il1:il2) = NO_DATA_REAL
+        if (allocated(vs%tile%stggw)) vs%tile%stggw(il1:il2) = 0.0
+        if (allocated(vs%tile%lkg)) vs%tile%lkg(il1:il2) = NO_DATA_REAL
 !-       if (allocated(vs%tile%dzs)) vs%tile%dzs(il1:il2) = 0.0
 
         !> Diagnostic variables.
@@ -893,7 +896,7 @@ module sa_mesh_run_within_tile
 !-        if (allocated(vs%tile%stgw)) vs%tile%stgw(il1:il2) = 0.0
 
         !> Routing variables.
-        if (allocated(vs%tile%rff)) vs%tile%rff(il1:il2) = 0.0
+        if (allocated(vs%tile%rff)) vs%tile%rff(il1:il2) = NO_DATA_REAL
 !        if (allocated(vs%tile%qi)) vs%tile%qi(il1:il2) = 0.0
 !        if (allocated(vs%tile%qo)) vs%tile%qo(il1:il2) = 0.0
 !        if (allocated(vs%tile%stgch)) vs%tile%stgch(il1:il2) = 0.0
@@ -911,6 +914,9 @@ module sa_mesh_run_within_tile
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
+
+        !> Local variables.
+        integer j
 
         !> Return if tile processes are not active.
         if (.not. ro%RUNTILE) return
@@ -966,6 +972,38 @@ module sa_mesh_run_within_tile
             end if
             if (allocated(vs%tile%fzwssol) .and. allocated(vs%tile%thicsol)) then
                 vs%tile%fzwssol(il1:il2, :) = vs%tile%thicsol(il1:il2, :)*vs%tile%dzsolhyd(il1:il2, :)*RHOICE
+            end if
+        end if
+        if (allocated(vs%tile%rchg) .and. allocated(vs%tile%drainsol)) then
+            if (all(vs%tile%rchg(il1:il2) == NO_DATA_REAL)) then
+                where (vs%tile%drainsol(il1:il2) /= NO_DATA_REAL) vs%tile%rchg(il1:il2) = vs%tile%drainsol(il1:il2)*ic%dts
+            end if
+        end if
+        if (allocated(vs%tile%lkg) .and. allocated(vs%tile%rchg)) then
+            if (all(vs%tile%lkg(il1:il2) == NO_DATA_REAL)) then
+                where (vs%tile%rchg(il1:il2) /= NO_DATA_REAL) vs%tile%lkg(il1:il2) = vs%tile%rchg(il1:il2)
+            end if
+        end if
+        if (allocated(vs%tile%rff)) then
+            if (all(vs%tile%rff(il1:il2) == NO_DATA_REAL)) then
+                vs%tile%rff = 0.0
+                if (allocated(vs%tile%ovrflw)) then
+                    where (vs%tile%ovrflw(il1:il2) /= NO_DATA_REAL)
+                        vs%tile%rff(il1:il2) = vs%tile%rff(il1:il2) + vs%tile%ovrflw(il1:il2)*ic%dts
+                    end where
+                end if
+                if (allocated(vs%tile%latflw)) then
+                    do j = 1, size(vs%tile%latflw, 2)
+                        where (vs%tile%latflw(il1:il2, j) /= NO_DATA_REAL)
+                            vs%tile%rff(il1:il2) = vs%tile%rff(il1:il2) + vs%tile%latflw(il1:il2, j)*ic%dts
+                        end where
+                    end do
+                end if
+                if (allocated(vs%tile%lkg)) then
+                    where (vs%tile%lkg(il1:il2) /= NO_DATA_REAL)
+                        vs%tile%rff(il1:il2) = vs%tile%rff(il1:il2) + vs%tile%lkg(il1:il2)
+                    end where
+                end if
             end if
         end if
 

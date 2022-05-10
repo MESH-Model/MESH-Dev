@@ -1180,11 +1180,11 @@ module save_basin_output
         !> Allocate output variables.
         call output_variables_activate( &
             out%tot%basin, (/ &
-                VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, VN_STGW /))
+                VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_RFF, VN_OVRFLW, VN_LATFLW, VN_LKG, VN_STGW /))
         call output_variables_activate( &
             series%basin, (/ &
-                VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, &
-                VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_STGGW, VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, &
+                VN_DUMMY_LENGTH, VN_PREC, VN_ET, VN_RFF, VN_OVRFLW, VN_LATFLW, VN_LKG, &
+                VN_LQWSCAN, VN_FZWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND, VN_DRAINSOL, VN_STGGW, VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, &
                 VN_LQWSICE, VN_STGW /))
 
     end subroutine
@@ -1338,16 +1338,16 @@ module save_basin_output
 
         !> Variables.
         write(fik, 1010, advance = 'no') &
-            VN_PREC // VN_ACC, VN_ET // VN_ACC, VN_ROF // VN_ACC, VN_OVRFLW // VN_ACC, &
-            VN_LATFLW // VN_ACC, VN_DRAINSOL // VN_ACC, VN_DSTGW // VN_ACC, &
-            VN_PREC, VN_ET, VN_ROF, VN_OVRFLW, VN_LATFLW, VN_DRAINSOL, VN_FZWSCAN, VN_LQWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND
+            VN_PREC // VN_ACC, VN_ET // VN_ACC, VN_RFF // VN_ACC, VN_OVRFLW // VN_ACC, &
+            VN_LATFLW // VN_ACC, VN_LKG // VN_ACC, VN_DSTGW // VN_ACC, &
+            VN_PREC, VN_ET, VN_RFF, VN_OVRFLW, VN_LATFLW, VN_LKG, VN_FZWSCAN, VN_LQWSCAN, VN_SNO, VN_LQWSSNO, VN_LQWSPND
         do j = 1, shd%lc%IGND
             write(ffmti, '(i3)') j
             write(fik, 1010, advance = 'no') &
                 VN_LQWSSOL // trim(adjustl(ffmti)), VN_FZWSSOL // trim(adjustl(ffmti)), &
                 VN_ALWSSOL // trim(adjustl(ffmti))
         end do
-        write(fik, 1010) VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, VN_LQWSICE, VN_STGGW, VN_STGW, VN_DSTGW
+        write(fik, 1010) VN_LQWSSOL, VN_FZWSSOL, VN_ALWSSOL, VN_LQWSICE, VN_DRAINSOL, VN_STGGW, VN_STGW, VN_DSTGW
 
 1010    format(9999(g15.7e2, ','))
 
@@ -1386,11 +1386,11 @@ module save_basin_output
 
         !> Write the water balance to file.
         write(fik, 1010) &
-            out%tot%basin%prec(ina), out%tot%basin%et(ina)*ic%dts, out%tot%basin%rof(ina)*ic%dts, &
-            out%tot%basin%ovrflw(ina)*ic%dts, sum(out%tot%basin%latflw(ina, :))*ic%dts, out%tot%basin%drainsol(ina)*ic%dts, &
+            out%tot%basin%prec(ina), out%tot%basin%et(ina)*ic%dts, out%tot%basin%rff(ina), &
+            out%tot%basin%ovrflw(ina)*ic%dts, sum(out%tot%basin%latflw(ina, :))*ic%dts, out%tot%basin%lkg(ina), &
             out%tot%basin%dstgw(ina), &
-            series%basin%prec(ina), series%basin%et(ina)*ic%dts, series%basin%rof(ina)*ic%dts, &
-            series%basin%ovrflw(ina)*ic%dts, sum(series%basin%latflw(ina, :))*ic%dts, series%basin%drainsol(ina)*ic%dts, &
+            series%basin%prec(ina), series%basin%et(ina)*ic%dts, series%basin%rff(ina), &
+            series%basin%ovrflw(ina)*ic%dts, sum(series%basin%latflw(ina, :))*ic%dts, series%basin%lkg(ina), &
             series%basin%fzwscan(ina), series%basin%lqwscan(ina), &
             series%basin%sno(ina), wsno, &
             pndw, &
@@ -1400,7 +1400,7 @@ module save_basin_output
             sum(series%basin%fzwssol(ina, :)), &
             sum(series%basin%alwssol(ina, :)), &
             series%basin%lqwsice(ina), &
-            series%basin%stggw(ina), &
+            series%basin%drainsol(ina)*ic%dts, series%basin%stggw(ina), &
             series%basin%stgw(ina), &
             series%basin%dstgw(ina)
 

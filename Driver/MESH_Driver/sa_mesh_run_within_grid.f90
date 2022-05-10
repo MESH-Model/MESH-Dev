@@ -29,6 +29,9 @@ module sa_mesh_run_within_grid
 
     subroutine run_within_grid(fls, shd)
 
+        !> 'mesh_io_constants' for 'NODATA' values.
+        use mesh_io_constants, only: NO_DATA_REAL
+
         !> Process modules.
         use baseflow_module
 
@@ -36,14 +39,46 @@ module sa_mesh_run_within_grid
         type(fl_ids) fls
         type(ShedGridParams) shd
 
+        !> Local variables.
+        integer j
+
         !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return
 
-        !> Update variables.
+        !> Pre-process update of variables.
         call run_within_grid_stas_update(fls, shd)
 
         !> Call processes.
         call bflm_within_grid(fls, shd)
+
+        !> Post-process update of variables.
+!        if (allocated(vs%grid%rchg) .and. allocated(vs%grid%drainsol)) then
+!            if (all(vs%grid%rchg(i1:i2) == NO_DATA_REAL)) then
+!                where (vs%grid%drainsol(i1:i2) /= NO_DATA_REAL) vs%grid%rchg(i1:i2) = vs%grid%drainsol(i1:i2)*ic%dts
+!            end if
+!        end if
+        if (allocated(vs%grid%rff)) then
+            if (all(vs%grid%rff(i1:i2) == NO_DATA_REAL)) then
+                vs%grid%rff = 0.0
+                if (allocated(vs%grid%ovrflw)) then
+                    where (vs%grid%ovrflw(i1:i2) /= NO_DATA_REAL)
+                        vs%grid%rff(i1:i2) = vs%grid%rff(i1:i2) + vs%grid%ovrflw(i1:i2)*ic%dts
+                    end where
+                end if
+                if (allocated(vs%grid%latflw)) then
+                    do j = 1, size(vs%grid%latflw, 2)
+                        where (vs%grid%latflw(i1:i2, j) /= NO_DATA_REAL)
+                            vs%grid%rff(i1:i2) = vs%grid%rff(i1:i2) + vs%grid%latflw(i1:i2, j)*ic%dts
+                        end where
+                    end do
+                end if
+                if (allocated(vs%grid%lkg)) then
+                    where (vs%grid%lkg(i1:i2) /= NO_DATA_REAL)
+                        vs%grid%rff(i1:i2) = vs%grid%rff(i1:i2) + vs%grid%lkg(i1:i2)
+                    end where
+                end if
+            end if
+        end if
 
     end subroutine
 
@@ -230,16 +265,22 @@ module sa_mesh_run_within_grid
 
     subroutine run_within_grid_stas_update(fls, shd)
 
+        !> 'mesh_io_constants' for 'NODATA' values.
+        use mesh_io_constants, only: NO_DATA_REAL
+
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
 
         !> Local variables.
-        integer k, ki, kj
+        integer outlets, k, ki, kj
         real tpndfrac(i1:i2), tsnofrac(i1:i2), tcanfrac(i1:i2), ticefrac(i1:i2), frac
 
         !> Return if tile and grid processes are not active.
         if (.not. ro%RUNTILE) return
+
+        !> Indices for outlets.
+        outlets = min(shd%NA + 1, shd%NAA)
 
         !> Meteorology/climatology variables.
 !        if (allocated(vs%grid%fsin)) vs%grid%fsin(i1:i2) = 0.0
@@ -320,9 +361,25 @@ module sa_mesh_run_within_grid
         if (allocated(vs%grid%drainsol)) vs%grid%drainsol(i1:i2) = 0.0
 
         !> Groundwater/lower zone storage variables.
-!+        if (allocated(vs%grid%rchg)) vs%grid%rchg(i1:i2) = 0.0
-        if (allocated(vs%grid%stggw)) vs%grid%stggw(i1:i2) = 0.0
-!+        if (allocated(vs%grid%lkg)) vs%grid%lkg(i1:i2) = 0.0
+        if (allocated(vs%grid%rchg)) then
+            vs%grid%rchg = NO_DATA_REAL
+            if (allocated(vs%tile%rchg)) then
+                if (any(vs%tile%rchg(il1:il2) /= NO_DATA_REAL)) then
+                    vs%grid%rchg(i1:i2) = 0.0
+                    if (ipid == 0) vs%grid%rchg(outlets:) = 0.0
+                end if
+            end if
+        end if
+!        if (allocated(vs%grid%stggw)) vs%grid%stggw = 0.0
+        if (allocated(vs%grid%lkg)) then
+            vs%grid%lkg = NO_DATA_REAL
+            if (allocated(vs%tile%lkg)) then
+                if (any(vs%tile%lkg(il1:il2) /= NO_DATA_REAL)) then
+                    vs%grid%lkg(i1:i2) = 0.0
+                    if (ipid == 0) vs%grid%lkg(outlets:) = 0.0
+                end if
+            end if
+        end if
 !-        if (allocated(vs%grid%dzs)) vs%grid%dzs(i1:i2) = 0.0
 
         !> Diagnostic variables.
@@ -330,7 +387,16 @@ module sa_mesh_run_within_grid
 !-        if (allocated(vs%grid%stgw)) vs%grid%stgw(i1:i2) = 0.0
 
         !> Routing variables.
-!+        if (allocated(vs%grid%rff)) vs%grid%rff(i1:i2) = 0.0
+        if (allocated(vs%grid%rff)) vs%grid%rff = NO_DATA_REAL
+!        if (allocated(vs%grid%rff)) then
+!            vs%grid%rff = NO_DATA_REAL
+!            if (allocated(vs%tile%rff)) then
+!                if (any(vs%tile%rff(il1:il2) /= NO_DATA_REAL)) then
+!                    vs%grid%rff(i1:i2) = 0.0
+!                    if (ipid == 0) vs%grid%rff(outlets:) = 0.0
+!                end if
+!            end if
+!        end if
 !        if (allocated(vs%grid%qi)) vs%grid%qi(i1:i2) = 0.0
 !        if (allocated(vs%grid%qo)) vs%grid%qo(i1:i2) = 0.0
 !        if (allocated(vs%grid%stgch)) vs%grid%stgch(i1:i2) = 0.0
@@ -615,23 +681,23 @@ module sa_mesh_run_within_grid
             end if
 
             !> Groundwater/lower zone storage variables.
-!+            if (allocated(vs%grid%rchg) .and. allocated(vs%tile%rchg)) then
-!+                if (vs%tile%rchg(k) /= huge(vs%tile%rchg)) vs%grid%rchg(ki) = vs%grid%rchg(ki) + vs%tile%rchg(k)*frac
-!+            end if
-            if (allocated(vs%grid%stggw) .and. allocated(vs%tile%stggw)) then
-                if (vs%tile%stggw(k) /= huge(vs%tile%stggw)) vs%grid%stggw(ki) = vs%grid%stggw(ki) + vs%tile%stggw(k)*frac
+            if (allocated(vs%grid%rchg) .and. allocated(vs%tile%rchg)) then
+                if (vs%tile%rchg(k) /= NO_DATA_REAL) vs%grid%rchg(ki) = vs%grid%rchg(ki) + vs%tile%rchg(k)*frac
             end if
-!+            if (allocated(vs%grid%lkg) .and. allocated(vs%tile%lkg)) then
-!+                if (vs%tile%lkg(k) /= huge(vs%tile%lkg)) vs%grid%lkg(ki) = vs%grid%lkg(ki) + vs%tile%lkg(k)*frac
-!+            end if
+            if (allocated(vs%grid%stggw) .and. allocated(vs%tile%stggw)) then
+                if (vs%tile%stggw(k) /= NO_DATA_REAL) vs%grid%stggw(ki) = vs%grid%stggw(ki) + vs%tile%stggw(k)*frac
+            end if
+            if (allocated(vs%grid%lkg) .and. allocated(vs%tile%lkg)) then
+                if (vs%tile%lkg(k) /= NO_DATA_REAL) vs%grid%lkg(ki) = vs%grid%lkg(ki) + vs%tile%lkg(k)*frac
+            end if
 !-            if (allocated(vs%grid%dzs) .and. allocated(vs%tile%dzs)) then
 !-                if (vs%tile%dzs(k) /= huge(vs%tile%dzs)) vs%grid%dzs(ki) = vs%grid%dzs(ki) + vs%tile%dzs(k)*frac
 !-            end if
 
             !> Routing variables.
-!+            if (allocated(vs%grid%rff) .and. allocated(vs%tile%rff)) then
-!+                if (vs%tile%rff(k) /= huge(vs%tile%rff)) vs%grid%rff(ki) = vs%grid%rff(ki) + vs%tile%rff(k)*frac
-!+            end if
+!            if (allocated(vs%grid%rff) .and. allocated(vs%tile%rff)) then
+!                if (vs%tile%rff(k) /= NO_DATA_REAL) vs%grid%rff(ki) = vs%grid%rff(ki) + vs%tile%rff(k)*frac
+!            end if
 !            if (allocated(vs%grid%qi) .and. allocated(vs%tile%qi)) then
 !                if (vs%tile%qi(k) /= huge(vs%tile%qi)) vs%grid%qi(ki) = vs%grid%qi(ki) + vs%tile%qi(k)*frac
 !            end if

@@ -245,6 +245,9 @@ module model_variables
     !*  ierr: Return status
     subroutine model_variables_group_reset(group, ierr)
 
+        !> 'mesh_io_constants' for 'NODATA' values.
+        use mesh_io_constants, only: NO_DATA_REAL
+
         !> Input/output variables.
         type(model_variables_fields) group
 
@@ -333,9 +336,9 @@ module model_variables
         if (allocated(group%drainsol)) group%drainsol = 0.0
 
         !> Groundwater/lower zone storage variables.
-        if (allocated(group%rchg)) group%rchg = 0.0
-        if (allocated(group%stggw)) group%stggw = 0.0
-        if (allocated(group%lkg)) group%lkg = 0.0
+        if (allocated(group%rchg)) group%rchg = NO_DATA_REAL
+        if (allocated(group%stggw)) group%stggw = NO_DATA_REAL
+        if (allocated(group%lkg)) group%lkg = NO_DATA_REAL
 !-        if (allocated(group%dzs)) group%dzs = 0.0
 
         !> Diagnostic variables.
@@ -343,7 +346,7 @@ module model_variables
 !-        if (allocated(group%stgw)) group%stgw = 0.0
 
         !> Routing variables.
-        if (allocated(group%rff)) group%rff = 0.0
+        if (allocated(group%rff)) group%rff = NO_DATA_REAL
         if (allocated(group%qi)) group%qi = 0.0
         if (allocated(group%qo)) group%qo = 0.0
         if (allocated(group%stgch)) group%stgch = 0.0

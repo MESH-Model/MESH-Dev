@@ -35,7 +35,7 @@ module WF_ROUTE_module
                       wfp%aa1, wfp%aa2, wfp%aa3, wfp%aa4, &
                       WF_STORE1, vs%grid%stgch, &
                       ic%dts, &
-                      (vs%grid%rff + vs%grid%rchg)/ic%dts*shd%FRAC, &
+                      vs%grid%rff/ic%dts*shd%FRAC, &
                       shd%NA, shd%NRVR, fms%rsvr%n, fms%stmg%n, shd%NA, &
                       fms%stmg%meta%rnk, JAN, ic%now%jday, ic%now%hour, ic%now%mins)
 

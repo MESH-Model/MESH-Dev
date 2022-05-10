@@ -540,10 +540,10 @@ module sa_mesh_run_between_grid
 !-        end if !(ipid == 0) then
 
         !> Update variables.
-        if (ro%RUNLSS) then
-            vs%grid%rff = (vs%grid%ovrflw + sum(vs%grid%latflw, 2))*ic%dts
-            vs%grid%rchg = vs%grid%drainsol*ic%dts
-        end if
+!-        if (ro%RUNLSS) then
+!-            vs%grid%rff = (vs%grid%ovrflw + sum(vs%grid%latflw, 2))*ic%dts
+!-            vs%grid%rchg = vs%grid%drainsol*ic%dts
+!-        end if
 
         !> Call processes.
 !-        call SA_RTE(shd)

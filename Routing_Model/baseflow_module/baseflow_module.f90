@@ -229,16 +229,22 @@ module baseflow_module
         !> Calculate contribution of baseflow to lower zone storage and redistribute runoff.
         select case (bflm%BASEFLOWFLAG)
             case (1)
-                Wseep(il1:il2) = vs%tile%drainsol(il1:il2)*3600.0
+                vs%tile%rchg(il1:il2) = vs%tile%drainsol(il1:il2)*ic%dts
+                Wseep(il1:il2) = vs%tile%rchg(il1:il2)
                 Wrchrg(il1:il2) = vs%tile%stggw(il1:il2)
                 do k = il1, il2
                     call baseFlow_luo2012(Wseep(k), bflm%pm%dgw(k), Wrchrg(k), bflm%pm%agw(k), Qb(k), 1.0, Wrchrg_new, Qb_new)
-                    vs%tile%drainsol(k) = Qb_new/3600.0
+                    vs%tile%lkg(k) = Qb_new
                     Qb(k) = Qb_new
                     vs%tile%stggw(k) = Wrchrg_new
                 end do
             case (2)
-                vs%tile%stggw(il1:il2) = vs%tile%stggw(il1:il2) + vs%tile%drainsol(il1:il2)*ic%dts
+                vs%tile%rchg(il1:il2) = vs%tile%drainsol(il1:il2)*ic%dts
+                vs%tile%stggw(il1:il2) = vs%tile%stggw(il1:il2) + vs%tile%rchg(il1:il2)
+!            case (0)
+!                vs%tile%rchg(il1:il2) = vs%tile%drainsol(il1:il2)*ic%dts
+!                vs%tile%stggw(il1:il2) = 0.0
+!                vs%tile%lkg(il1:il2) = vs%tile%rchg(il1:il2)
         end select
 
     end subroutine
@@ -268,11 +274,13 @@ module baseflow_module
                     call baseflow_wfqlz(bflm%pm_grid%flz, bflm%pm_grid%pwr, lzs, dlz, shd%NA, i1, i2)
                     dlz(i1:i2) = max(min(dlz(i1:i2), lzs(i1:i2)), 0.0)/real(bflm%dts/ic%dts)
                 end if
-                vs%grid%drainsol(i1:i2) = dlz(i1:i2)/real(ic%dts)
-                vs%grid%stggw(i1:i2) = vs%grid%stggw(i1:i2) - vs%grid%drainsol(i1:i2)*ic%dts
+                vs%grid%lkg(i1:i2) = dlz(i1:i2)
+                vs%grid%stggw(i1:i2) = vs%grid%stggw(i1:i2) - vs%grid%lkg(i1:i2)
+!                vs%grid%rff(i1:i2) = vs%grid%rff(i1:i2) + vs%grid%lkg(i1:i2)
                 do k = il1, il2
-                    vs%tile%drainsol(k) = vs%grid%drainsol(shd%lc%ILMOS(k))
+                    vs%tile%lkg(k) = vs%grid%lkg(shd%lc%ILMOS(k))
                     vs%tile%stggw(k) = vs%grid%stggw(shd%lc%ILMOS(k))
+!                    vs%tile%rff(k) = vs%grid%rff(shd%lc%ILMOS(k))
                 end do
         end select
 

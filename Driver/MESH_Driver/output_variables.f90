@@ -754,7 +754,7 @@ module output_variables
             case (VN_ROF)
                 call output_variables_activate_pntr(fields, VN_OVRFLW)
                 call output_variables_activate_pntr(fields, VN_LATFLW)
-                call output_variables_activate_pntr(fields, VN_DRAINSOL)
+                call output_variables_activate_pntr(fields, VN_LKG)
                 call output_variables_allocate(fields%rof, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%rof, n1)
             case (VN_QI)
@@ -1796,7 +1796,7 @@ module output_variables
                 do j = 1, shd%lc%IGND
                     where (group%latflw(:, j) /= out%NO_DATA) group%rof = group%rof + group%latflw(:, j)
                 end do
-                where (group%drainsol /= out%NO_DATA) group%rof = group%rof + group%drainsol
+                where (group%lkg /= out%NO_DATA) group%rof = group%rof + group%lkg/ic%dts
             end if
         end if
         if (associated(group%qi)) then
