@@ -1025,15 +1025,21 @@ module output_files
             if (field%basin_acc) then
                 if (field%ilvl > 0) then
                     call output_variables_activate_pntr(out_group%basin, field%vname, group%grid%src, field%ilvl)
+                    call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src, field%ilvl)
+                    if (ro%RUNTILE) call output_variables_activate_pntr(out_group%tile, field%vname, group%tile%src, field%ilvl)
                 else
                     call output_variables_activate_pntr(out_group%basin, field%vname, group%grid%src)
+                    call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src)
+                    if (ro%RUNTILE) call output_variables_activate_pntr(out_group%tile, field%vname, group%tile%src)
                 end if
                 fname = trim(fname) // '_basin_acc'
             else
                 if (field%ilvl > 0) then
                     call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src, field%ilvl)
+                    if (ro%RUNTILE) call output_variables_activate_pntr(out_group%tile, field%vname, group%tile%src, field%ilvl)
                 else
                     call output_variables_activate_pntr(out_group%grid, field%vname, group%grid%src)
+                    if (ro%RUNTILE) call output_variables_activate_pntr(out_group%tile, field%vname, group%tile%src)
                 end if
             end if
 
