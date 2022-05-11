@@ -30,20 +30,17 @@ module basin_utilities
         !> Local variables.
         character(len = SHORT_FIELD_LENGTH) field, level, code
         character(len = :), allocatable :: message
-        real, allocatable :: dat1_r(:), gru_n(:), gru_nm(:, :)
+        real, allocatable :: dat1_r(:), lat_xy(:, :), lon_xy(:, :), gru_n(:), gru_nm(:, :)
         integer, allocatable :: dat1_i(:), dat2_i(:, :), rank_xy(:, :)
         integer y, x, n, m, k, i, ncell, ncell_active, ngru, nrvr, nlandtile, ierr
 
         !> Status.
         error_status = 0
 
-        !> Find and assign reference attributes and variables from the list of fields.
+        !> Find and assign the 'RANK' field from the list of fields.
         ncell = 0
         ncell_active = 0
-        ngru = 0
-        nrvr = 0
         do i = 1, size(field_list)
-            ierr = 0
             select case (lowercase(field_list(i)%label))
 
                 !> Distributed 'Rank' field.
@@ -93,6 +90,9 @@ module basin_utilities
                         call print_error("The basin contains no active cells. All 'Rank' values are zero.")
                         error_status = 1
                         return
+                    else
+                        call allocate_field(lat_xy, shape(rank_xy), ierr)
+                        call allocate_field(lon_xy, shape(rank_xy), ierr)
                     end if
 
                     !> Allocate the 'cell' group of variables.
@@ -125,6 +125,22 @@ module basin_utilities
                         error_status = 1
                         return
                     end if
+            end select
+        end do
+
+        !> Check the 'Rank' field was assigned.
+        if (.not. associated(vs%grid)) then
+            call print_error("The 'Rank' field was not found.")
+            error_status = 1
+            return
+        end if
+
+        !> Find and assign reference attributes and variables from the list of fields.
+        ngru = 0
+        nrvr = 0
+        do i = 1, size(field_list)
+            ierr = 0
+            select case (lowercase(field_list(i)%label))
 
                 !> EnSim reference fields.
                 case ('xorigin')
@@ -169,25 +185,57 @@ module basin_utilities
                 case ('classcount', 'ngru')
                     call assign_field(field_list(i), ngru, ierr)
                 case ('latitude', 'lat')
+                    if (any(field_list(i)%dim_names == DIM_NAME_X) .and. any(field_list(i)%dim_names == DIM_NAME_Y)) then
+                        call assign_field(field_list(i), pj%lat_xy, ierr)
+                        if (ierr == 0) lat_xy = pj%lat_xy
+                    else
+                        call assign_field(field_list(i), pj%lat, ierr)
+                        if (ierr == 0) then
+                            if (any(field_list(i)%dim_names == DIM_NAME_N)) then
+                                lat_xy(:, 1) = pj%lat
+                            else if (size(pj%lat) == size(rank_xy, 2)) then
+                                do y = 1, size(pj%lat)
+                                    lat_xy(:, y) = pj%lat
+                                end do
+                            end if
+                        end if
+                    end if
+                    if (any(lat_xy == NO_DATA_REAL)) ierr = 1
 
                     !> Check type.
-                    select case (size(field_list(i)%dim_names))
-                        case (1)
-                            call assign_field(field_list(i), pj%lat, ierr)
-                        case (2)
-                            call assign_field(field_list(i), pj%lat_xy, ierr)
-                    end select
+!-                    select case (size(field_list(i)%dim_names))
+!-                        case (1)
+!-                            call assign_field(field_list(i), pj%lat, ierr)
+!-                        case (2)
+!-                            call assign_field(field_list(i), pj%lat_xy, ierr)
+!-                    end select
                 case ('rlat')
                     call assign_field(field_list(i), pj%lat, ierr)
                 case ('longitude', 'lon')
+                    if (any(field_list(i)%dim_names == DIM_NAME_X) .and. any(field_list(i)%dim_names == DIM_NAME_Y)) then
+                        call assign_field(field_list(i), pj%lon_xy, ierr)
+                        if (ierr == 0) lon_xy = pj%lon_xy
+                    else
+                        call assign_field(field_list(i), pj%lon, ierr)
+                        if (ierr == 0) then
+                            if (any(field_list(i)%dim_names == DIM_NAME_N)) then
+                                lon_xy(:, 1) = pj%lon
+                            else if (size(pj%lon) == size(rank_xy, 1)) then
+                                do x = 1, size(pj%lon)
+                                    lon_xy(x, :) = pj%lon
+                                end do
+                            end if
+                        end if
+                    end if
+                    if (any(lon_xy == NO_DATA_REAL)) ierr = 1
 
                     !> Check type.
-                    select case (size(field_list(i)%dim_names))
-                        case (1)
-                            call assign_field(field_list(i), pj%lon, ierr)
-                        case (2)
-                            call assign_field(field_list(i), pj%lon_xy, ierr)
-                    end select
+!-                    select case (size(field_list(i)%dim_names))
+!-                        case (1)
+!-                            call assign_field(field_list(i), pj%lon, ierr)
+!-                        case (2)
+!-                            call assign_field(field_list(i), pj%lon_xy, ierr)
+!-                    end select
                 case ('rlon')
                     call assign_field(field_list(i), pj%lon, ierr)
                 case ('numriverclasses', 'nrvr')
@@ -204,21 +252,38 @@ module basin_utilities
             end if
         end do
 
-        !> Check the 'Rank' field was assigned.
-        if (.not. associated(vs%grid)) then
-            call print_error("The 'Rank' field was not found.")
-            error_status = 1
-            return
-        end if
-
         !> Validate the spatial reference.
         select case (lowercase(pj%projection))
 
             !> Regular lat/lon projection.
             case ('latlong')
 
-                !> Try to derive missing EnSim Hydrologic/Green Kenue geometry (from alternate file formats).
-                if (size(rank_xy, 1) > 1 .and. size(rank_xy, 2) > 1) then
+                !> Try to derive missing coordinates (where inconsistent by file specification).
+                if (pj%llc_y /= 0.0 .and. pj%dy /= 0.0 .and. pj%llc_x /= 0.0 .and. pj%dx /= 0.0) then
+
+                    !> From EnSim Hydrologic/Green Kenue geometry (for outputs in alternate file formats).
+                    if (allocated(pj%lat_xy)) deallocate(pj%lat_xy)
+                    if (allocated(pj%lat)) deallocate(pj%lat)
+                    if (allocated(pj%lon_xy)) deallocate(pj%lon_xy)
+                    if (allocated(pj%lon)) deallocate(pj%lon)
+                    allocate( &
+                        pj%lat_xy(size(rank_xy, 1), size(rank_xy, 2)), pj%lat(size(rank_xy, 2)), &
+                        pj%lon_xy(size(rank_xy, 1), size(rank_xy, 2)), pj%lon(size(rank_xy, 1)))
+                    pj%lat_xy = 0.0
+                    do y = 1, size(rank_xy, 2)
+                        pj%lat_xy(:, y) = pj%llc_y + pj%dy*y - pj%dy/2.0
+                        pj%lat(y) = pj%lat_xy(1, y)
+                    end do
+                    lat_xy = pj%lat_xy
+                    pj%lon_xy = 0.0
+                    do x = 1, size(rank_xy, 1)
+                        pj%lon_xy(x, :) = pj%llc_x + pj%dx*x - pj%dx/2.0
+                        pj%lon(x) = pj%lon_xy(x, 1)
+                    end do
+                    lon_xy = pj%lon_xy
+                else
+
+                    !> From alternate file formats.
                     if (pj%dy == 0.0 .and. allocated(pj%lat)) then
                         do i = 2, size(pj%lat)
                             pj%dy = pj%dy + (pj%lat(i) - pj%lat(i - 1))
@@ -232,24 +297,6 @@ module basin_utilities
                         end do
                         pj%dx = pj%dx/(size(pj%lon) - 1)
                         pj%llc_x = pj%lon(1) - pj%dx/2.0
-                    end if
-
-                    !> Adjust lower-left corner by half-delta (EnSim Hydrologic/GreenKenue rectangular cell 'r2c' format).
-!-                    pj%llc_y = pj%llc_y - pj%dy/2.0
-!-                    pj%llc_x = pj%llc_x - pj%dx/2.0
-
-                    !> Try to derive missing coordinates (from alternate file formats).
-                    if (pj%llc_y /= 0.0 .and. pj%dy /= 0.0 .and. .not. allocated(pj%lat)) then
-                        allocate(pj%lat(size(rank_xy, 2)))
-                        do y = 1, size(rank_xy, 2)
-                            pj%lat(y) = pj%llc_y + pj%dy*y - pj%dy/2.0
-                        end do
-                    end if
-                    if (pj%llc_x /= 0.0 .and. pj%dx /= 0.0 .and. .not. allocated(pj%lon)) then
-                        allocate(pj%lon(size(rank_xy, 1)))
-                        do x = 1, size(rank_xy, 1)
-                            pj%lon(x) = pj%llc_x + pj%dx*x - pj%dx/2.0
-                        end do
                     end if
                 end if
 
@@ -301,31 +348,19 @@ module basin_utilities
 
         !> Assign the lat/lon variables.
         allocate(vs%grid%lat(ncell))
-        if (allocated(pj%lat_xy)) then
+        if (allocated(lat_xy)) then
             do n = 1, ncell
-                vs%grid%lat(n) = pj%lat_xy(vs%grid%from_grid_x(n), vs%grid%from_grid_y(n))
+                vs%grid%lat(n) = lat_xy(vs%grid%from_grid_x(n), vs%grid%from_grid_y(n))
             end do
-        else if (size(rank_xy, 1) > 1 .and. size(rank_xy, 2) > 1) then
-            do n = 1, ncell
-                vs%grid%lat(n) = pj%lat(vs%grid%from_grid_y(n))
-            end do
-        else if (allocated(pj%lat)) then
-            vs%grid%lat = pj%lat
         else
             call print_error("A latitudinal reference 'lat' was not found.")
             error_status = 1
         end if
         allocate(vs%grid%lon(ncell))
-        if (allocated(pj%lon_xy)) then
+        if (allocated(lon_xy)) then
             do n = 1, ncell
-                vs%grid%lon(n) = pj%lon_xy(vs%grid%from_grid_x(n), vs%grid%from_grid_y(n))
+                vs%grid%lon(n) = lon_xy(vs%grid%from_grid_x(n), vs%grid%from_grid_y(n))
             end do
-        else if (size(rank_xy, 1) > 1 .and. size(rank_xy, 2) > 1) then
-            do n = 1, ncell
-                vs%grid%lon(n) = pj%lon(vs%grid%from_grid_x(n))
-            end do
-        else if (allocated(pj%lon)) then
-            vs%grid%lon = pj%lon
         else
             call print_error("A longitudinal reference 'lon' was not found.")
             error_status = 1
