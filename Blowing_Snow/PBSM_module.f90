@@ -211,9 +211,10 @@ module PBSM_module
 
     !> Description:
     !>  Distribute blowing snow mass between GRUs.
+	!> ME 6/12/2021 changed FARE to Area_Weight for consistency
     subroutine PBSM_within_grid( &
         TSNO, ZSNOW, RHOS, SNO, TSNOCS, RHOSCS, TSNOGS, RHOSGS, &
-        GC, FARE, WSNOCS, WSNOGS, FCS, FGS, FC, FG, &
+        GC, Area_Weight, WSNOCS, WSNOGS, FCS, FGS, FC, FG, &
         TROO, ROFO, TROF, ROF, ROFN, PCPG, HTCS, WSNO, &
         NML, &
         fls, shd)
@@ -231,7 +232,7 @@ module PBSM_module
         integer, intent(in) :: NML
         real, dimension(NML) :: &
             TSNO, ZSNOW, RHOS, SNO, TSNOCS, RHOSCS, TSNOGS, RHOSGS, &
-            GC, FARE, WSNOCS, WSNOGS, FCS, FGS, FC, FG, &
+            GC, Area_Weight, WSNOCS, WSNOGS, FCS, FGS, FC, FG, &
             TROO, ROFO, TROF, ROF, ROFN, PCPG, HTCS, WSNO
 
         !> Return if PBSM is not active.
@@ -242,7 +243,7 @@ module PBSM_module
             shd%NA, shd%lc%NTYPE, shd%NA*shd%lc%NTYPE, NML, il1, il2, TSNO, ZSNOW, &
             RHOS, SNO, TSNOCS, ZSNOCS, HCPSCS, RHOSCS, TSNOGS, &
             ZSNOGS, HCPSGS, RHOSGS, TSNOWC, ZSNOWC, HCPSC, RHOSC, TSNOWG, &
-            ZSNOWG, HCPSG, RHOSG, GC, shd%lc%ILMOS, pbsm%vs%Drift, FARE, &
+            ZSNOWG, HCPSG, RHOSG, GC, shd%lc%ILMOS, pbsm%vs%Drift, Area_Weight, &
             pbsm%vs%TSNOds, pbsm%pm%Distrib, WSNOCS, WSNOGS, FCS, FGS, FC, FG, pbsm%vs%Deposition, &
             TROO, ROFO, TROF, ROF, ROFN, PCPG, HTCS, WSNO, ic%ts_count)
 

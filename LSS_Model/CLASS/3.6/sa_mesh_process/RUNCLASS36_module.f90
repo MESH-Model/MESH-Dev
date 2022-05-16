@@ -369,7 +369,7 @@ module RUNCLASS36_module
                 cpv%TSNO, ZSNOW, &
                 cpv%RHOS, cpv%SNO, TSNOCS, RHOSCS, TSNOGS, &
                 RHOSGS, &
-                catv%GC, csfv%FARE, &
+                catv%GC, vs%tile%area_weight, &
                 WSNOCS, WSNOGS, cdv%FCS, cdv%FGS, cdv%FC, cdv%FG, &
                 cdv%TROO, cdv%ROFO, cdv%TROF, cdv%ROF, cdv%ROFN, cdv%PCPG, cdv%HTCS, cpv%WSNO, &
                 NML, &
