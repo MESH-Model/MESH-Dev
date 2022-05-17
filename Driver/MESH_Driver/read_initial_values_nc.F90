@@ -26,7 +26,7 @@ subroutine read_initial_states_nc(fls, shd, fname, ierr)
 !-    real, dimension(:), allocatable :: dat1_r(:), dat2_r(:, :), dat3_r(:, :, :), dat4_r(:, :, :, :)
     real, dimension(:), allocatable :: dat_xy(:, :), dat_xym(:, :, :), dat_xylm(:, :, :, :), dat_xycm(:, :, :, :)
     real fill_r
-    real, parameter :: NO_DATA = -999.999
+!-    real, parameter :: NO_DATA = -999.999
     integer iun, m, x, y, v, k, j, i, z
 
     !> Initialize the return status.
