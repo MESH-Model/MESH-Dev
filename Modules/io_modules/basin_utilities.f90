@@ -31,15 +31,17 @@ module basin_utilities
         character(len = SHORT_FIELD_LENGTH) field, level, code
         character(len = :), allocatable :: message
         real, allocatable :: dat1_r(:), lat_xy(:, :), lon_xy(:, :), gru_n(:), gru_nm(:, :)
-        integer, allocatable :: dat1_i(:), dat2_i(:, :), rank_xy(:, :)
-        integer y, x, n, m, k, i, ncell, ncell_active, ngru, nrvr, nlandtile, ierr
+        integer, allocatable :: dat1_i(:), dat2_i(:, :)
+        integer y, x, n, m, k, i, ierr
 
         !> Status.
         error_status = 0
 
         !> Find and assign the 'RANK' field from the list of fields.
-        ncell = 0
-        ncell_active = 0
+        vs%cell_count = 0
+        vs%active_cell_count = 0
+        vs%grid_x = 0
+        vs%grid_y = 0
         do i = 1, size(field_list)
             select case (lowercase(field_list(i)%label))
 
@@ -79,44 +81,47 @@ module basin_utilities
                         call print_error("The 'Rank' field does not contain the necessary spatial dimensions.")
                         error_status = 1
                         return
+                    else
+
+                        !> Allocate the 'cell' group of variables.
+                        allocate(vs%grid)
+                        vs%grid%dim_name = 'cell'
+                        ro%RUNGRID = .true.
                     end if
 
                     !> Map the array of 'Rank' in the desired X/Y order.
-                    call map_dimensions(dat2_i, dat1_i, rank_xy, ierr)
+                    call map_dimensions(dat2_i, dat1_i, vs%grid%from_grid_xy, ierr)
 
                     !> Count the number of active cells.
-                    ncell = count(rank_xy > 0)
-                    if (.not. ncell > 0) then
+                    vs%cell_count = count(vs%grid%from_grid_xy > 0)
+                    vs%grid%dim_length = vs%cell_count
+                    if (.not. vs%cell_count > 0) then
                         call print_error("The basin contains no active cells. All 'Rank' values are zero.")
                         error_status = 1
                         return
                     else
-                        call allocate_field(lat_xy, shape(rank_xy), ierr)
-                        call allocate_field(lon_xy, shape(rank_xy), ierr)
+                        call allocate_field(lat_xy, shape(vs%grid%from_grid_xy), ierr)
+                        call allocate_field(lon_xy, shape(vs%grid%from_grid_xy), ierr)
                     end if
 
-                    !> Allocate the 'cell' group of variables.
-                    allocate(vs%grid)
-                    vs%grid%dim_name = 'cell'
-                    vs%grid%dim_length = ncell
-                    ro%RUNGRID = .true.
-
                     !> Assign maps.
-                    allocate(vs%grid%from_grid_x(ncell), vs%grid%from_grid_y(ncell))
+                    vs%grid_x = size(vs%grid%from_grid_xy, 1)
+                    vs%grid_y = size(vs%grid%from_grid_xy, 2)
+                    allocate(vs%grid%from_grid_x(vs%cell_count), vs%grid%from_grid_y(vs%cell_count))
                     vs%grid%from_grid_x = 0
                     vs%grid%from_grid_y = 0
-                    do x = 1, size(rank_xy, 1)
-                        do y = 1, size(rank_xy, 2)
-                            if (rank_xy(x, y) > 0) then
-                                vs%grid%from_grid_x(rank_xy(x, y)) = x
-                                vs%grid%from_grid_y(rank_xy(x, y)) = y
+                    do x = 1, vs%grid_x
+                        do y = 1, vs%grid_y
+                            if (vs%grid%from_grid_xy(x, y) > 0) then
+                                vs%grid%from_grid_x(vs%grid%from_grid_xy(x, y)) = x
+                                vs%grid%from_grid_y(vs%grid%from_grid_xy(x, y)) = y
                             end if
                         end do
                     end do
 
                     !> Check for errors.
                     if (any(vs%grid%from_grid_x == 0) .or. any(vs%grid%from_grid_y == 0)) then
-                        do n = 1, ncell
+                        do n = 1, vs%cell_count
                             if (vs%grid%from_grid_x(n) == 0 .or. vs%grid%from_grid_y(n) == 0) then
                                 write(code, *) n
                                 call print_error("'Rank' " // trim(adjustl(code)) // " has no X/Y location inside the basin.")
@@ -136,8 +141,8 @@ module basin_utilities
         end if
 
         !> Find and assign reference attributes and variables from the list of fields.
-        ngru = 0
-        nrvr = 0
+        vs%gru_count = 0
+        vs%riverclass_count = 0
         do i = 1, size(field_list)
             ierr = 0
             select case (lowercase(field_list(i)%label))
@@ -183,7 +188,7 @@ module basin_utilities
 
                 !> Coordinates.
                 case ('classcount', 'ngru')
-                    call assign_field(field_list(i), ngru, ierr)
+                    call assign_field(field_list(i), vs%gru_count, ierr)
                 case ('latitude', 'lat')
                     if (any(field_list(i)%dim_names == DIM_NAME_X) .and. any(field_list(i)%dim_names == DIM_NAME_Y)) then
                         call assign_field(field_list(i), pj%lat_xy, ierr)
@@ -193,7 +198,7 @@ module basin_utilities
                         if (ierr == 0) then
                             if (any(field_list(i)%dim_names == DIM_NAME_N)) then
                                 lat_xy(:, 1) = pj%lat
-                            else if (size(pj%lat) == size(rank_xy, 2)) then
+                            else if (size(pj%lat) == vs%grid_y) then
                                 do y = 1, size(pj%lat)
                                     lat_xy(:, y) = pj%lat
                                 end do
@@ -220,7 +225,7 @@ module basin_utilities
                         if (ierr == 0) then
                             if (any(field_list(i)%dim_names == DIM_NAME_N)) then
                                 lon_xy(:, 1) = pj%lon
-                            else if (size(pj%lon) == size(rank_xy, 1)) then
+                            else if (size(pj%lon) == vs%grid_x) then
                                 do x = 1, size(pj%lon)
                                     lon_xy(x, :) = pj%lon
                                 end do
@@ -239,7 +244,7 @@ module basin_utilities
                 case ('rlon')
                     call assign_field(field_list(i), pj%lon, ierr)
                 case ('numriverclasses', 'nrvr')
-                    call assign_field(field_list(i), nrvr, ierr)
+                    call assign_field(field_list(i), vs%riverclass_count, ierr)
 
                 !> Attributes.
                 case ('nominalgridsize_al', 'size_length')
@@ -267,16 +272,16 @@ module basin_utilities
                     if (allocated(pj%lon_xy)) deallocate(pj%lon_xy)
                     if (allocated(pj%lon)) deallocate(pj%lon)
                     allocate( &
-                        pj%lat_xy(size(rank_xy, 1), size(rank_xy, 2)), pj%lat(size(rank_xy, 2)), &
-                        pj%lon_xy(size(rank_xy, 1), size(rank_xy, 2)), pj%lon(size(rank_xy, 1)))
+                        pj%lat_xy(vs%grid_x, vs%grid_y), pj%lat(vs%grid_y), &
+                        pj%lon_xy(vs%grid_x, vs%grid_y), pj%lon(vs%grid_x))
                     pj%lat_xy = 0.0
-                    do y = 1, size(rank_xy, 2)
+                    do y = 1, vs%grid_y
                         pj%lat_xy(:, y) = pj%llc_y + pj%dy*y - pj%dy/2.0
                         pj%lat(y) = pj%lat_xy(1, y)
                     end do
                     lat_xy = pj%lat_xy
                     pj%lon_xy = 0.0
-                    do x = 1, size(rank_xy, 1)
+                    do x = 1, vs%grid_x
                         pj%lon_xy(x, :) = pj%llc_x + pj%dx*x - pj%dx/2.0
                         pj%lon(x) = pj%lon_xy(x, 1)
                     end do
@@ -347,18 +352,18 @@ module basin_utilities
         if (error_status /= 0) return
 
         !> Assign the lat/lon variables.
-        allocate(vs%grid%lat(ncell))
+        allocate(vs%grid%lat(vs%cell_count))
         if (allocated(lat_xy)) then
-            do n = 1, ncell
+            do n = 1, vs%cell_count
                 vs%grid%lat(n) = lat_xy(vs%grid%from_grid_x(n), vs%grid%from_grid_y(n))
             end do
         else
             call print_error("A latitudinal reference 'lat' was not found.")
             error_status = 1
         end if
-        allocate(vs%grid%lon(ncell))
+        allocate(vs%grid%lon(vs%cell_count))
         if (allocated(lon_xy)) then
-            do n = 1, ncell
+            do n = 1, vs%cell_count
                 vs%grid%lon(n) = lon_xy(vs%grid%from_grid_x(n), vs%grid%from_grid_y(n))
             end do
         else
@@ -387,9 +392,9 @@ module basin_utilities
 
                 !> GRUs.
                 case ('GRU', 'LANDCOVER')
-                    if (ngru > 0 .and. field_list(i)%level_id > 0) then
+                    if (vs%gru_count > 0 .and. field_list(i)%level_id > 0) then
                         if (.not. allocated(gru_nm)) then
-                            allocate(gru_nm(ncell, ngru))
+                            allocate(gru_nm(vs%cell_count, vs%gru_count))
                             gru_nm = 0.0
                         end if
                         call create_ranked_field_and_maps(field_list(i), ierr)
@@ -408,52 +413,52 @@ module basin_utilities
 
         !> Check if river classes were found (used for mapping).
         if (ro%RUNCHNL) then
-            if (nrvr == 0 .and. .not. allocated(vs%grid%from_riverclass)) then
+            if (vs%riverclass_count == 0 .and. .not. allocated(vs%grid%from_riverclass)) then
 
                 !> Define a single river class if none were found and channel routing is enabled.
                 call print_remark( &
                     "At least one river class is required when channel routing is enabled. " // &
                     "The number of river classes is not defined or the 'IAK' or 'IRVR' map is missing in the file. " // &
                     "Assuming one river class.")
-                nrvr = 1
-                allocate(vs%grid%from_riverclass(ncell))
+                vs%riverclass_count = 1
+                allocate(vs%grid%from_riverclass(vs%cell_count))
                 vs%grid%from_riverclass = 1
-            else if (nrvr /= maxval(vs%grid%from_riverclass)) then
+            else if (vs%riverclass_count /= maxval(vs%grid%from_riverclass)) then
 
                 !> Check the number of river classes.
                 call print_remark( &
                     "The number of river classes is adjusted to the maximum 'IAK' or 'IRVR' value. " // &
                     "Consider adjusting the input files.")
-                nrvr = maxval(vs%grid%from_riverclass)
+                vs%riverclass_count = maxval(vs%grid%from_riverclass)
             end if
         end if
 
         !> Check if GRUs (land cover) were found (used for mapping).
         ro%RUNTILE = .false.
         if (ro%RUNLSS) then
-            if (ngru == 0 .or. .not. allocated(gru_nm)) then
+            if (vs%gru_count == 0 .or. .not. allocated(gru_nm)) then
 
                 !> Define a single active GRU (and one for the inactive impervious cover) if none were found.
                 call print_remark( &
                     "At least one GRU (land cover) is required when tile-processing (HLSS) is enabled. " // &
                     "The number of GRUs is not defined or the 'GRU' or 'LandCover' map is missing in the file. " // &
                     "Assuming one active GRU.")
-                ngru = 2
-                allocate(gru_nm(ncell, ngru))
+                vs%gru_count = 2
+                allocate(gru_nm(vs%cell_count, vs%gru_count))
                 gru_nm(:, 1) = 1.0
                 gru_nm(:, 2) = 0.0
             end if
 
             !> Adjust the land cover count to exclude impervious areas (the last GRU).
-            ngru = ngru - 1
+            vs%gru_count = vs%gru_count - 1
 
             !> Derive the 'landtile' map if tile-processing (HLSS) is enabled.
-            nlandtile = 0
-            do m = 1, ngru
+            vs%landtile_count = 0
+            do m = 1, vs%gru_count
 
                 !> Count the number of tiles.
-                do n = 1, ncell
-                    if (gru_nm(n, m) > 0.0) nlandtile = nlandtile + 1
+                do n = 1, vs%cell_count
+                    if (gru_nm(n, m) > 0.0) vs%landtile_count = vs%landtile_count + 1
                 end do
 
                 !> Print a remark if the land cover is not active.
@@ -462,7 +467,7 @@ module basin_utilities
                     call print_remark("'GRU " // trim(adjustl(code)) // "' has zero coverage in the basin and is not active.")
                 end if
             end do
-            if (nlandtile == 0) then
+            if (vs%landtile_count == 0) then
                 call print_error( &
                     "The basin is configured to contain GRUs (land cover) but the fraction of cover of all GRUs is zero.")
                 error_status = 1
@@ -472,14 +477,14 @@ module basin_utilities
             !> Allocate 'tile' variables.
             allocate(vs%tile)
             vs%tile%dim_name = 'landtile'
-            vs%tile%dim_length = nlandtile
+            vs%tile%dim_length = vs%landtile_count
             ro%RUNTILE = .true.
 
             !> Allocate and assign maps.
             allocate( &
-                vs%tile%from_cell(nlandtile), vs%tile%from_gru(nlandtile), vs%tile%from_grid_x(nlandtile), &
-                vs%tile%from_grid_y(nlandtile), vs%tile%from_riverclass(nlandtile), &
-                vs%tile%lat(nlandtile), vs%tile%lon(nlandtile), vs%tile%area_weight(nlandtile))
+                vs%tile%from_cell(vs%landtile_count), vs%tile%from_gru(vs%landtile_count), vs%tile%from_grid_x(vs%landtile_count), &
+                vs%tile%from_grid_y(vs%landtile_count), vs%tile%from_riverclass(vs%landtile_count), &
+                vs%tile%lat(vs%landtile_count), vs%tile%lon(vs%landtile_count), vs%tile%area_weight(vs%landtile_count))
             k = 1
             do n = 1, size(gru_nm, 1)
 
@@ -531,22 +536,22 @@ module basin_utilities
         if (allocated(vs%grid%next_id)) then
             allocate(vs%basin)
             vs%basin%dim_name = 'basin'
-            vs%basin%dim_length = ncell
+            vs%basin%dim_length = vs%cell_count
 
             !> Derive the number of points inside the basin.
-            ncell_active = count(vs%grid%next_id /= 0)
+            vs%active_cell_count = count(vs%grid%next_id /= 0)
 
             !> Check the maximum number of cells and outlets, and print a warning if an adjustment is made.
-            if (ncell /= maxval(vs%grid%next_id)) then
+            if (vs%cell_count /= maxval(vs%grid%next_id)) then
                 call print_remark( &
                     "The total number of active cells is adjusted to the maximum 'Next' value. Consider adjusting the input files.")
                 vs%grid%dim_length = maxval(vs%grid%next_id)
             end if
-            if (ncell_active /= (maxval(vs%grid%next_id) - count(vs%grid%next_id == 0))) then
+            if (vs%active_cell_count /= (maxval(vs%grid%next_id) - count(vs%grid%next_id == 0))) then
                 call print_remark( &
                     "The number of outlets is adjusted to the number of cells where 'Next' is zero. " // &
                     "Consider adjusting the input files.")
-                ncell_active = maxval(vs%grid%next_id) - count(vs%grid%next_id == 0)
+                vs%active_cell_count = maxval(vs%grid%next_id) - count(vs%grid%next_id == 0)
             end if
         end if
 
@@ -581,9 +586,9 @@ module basin_utilities
                 call print_remark( &
                     "No drainage area 'DA' variable found. Accumulating areas from surface area 'GridArea' by " // &
                     "flow direction 'Next'.")
-                allocate(vs%grid%drainage_area(ncell))
+                allocate(vs%grid%drainage_area(vs%cell_count))
                 vs%grid%drainage_area = vs%grid%surface_area/1000000.0
-                do n = 1, ncell_active
+                do n = 1, vs%active_cell_count
                     vs%grid%drainage_area(vs%grid%next_id(n)) = vs%grid%drainage_area(vs%grid%next_id(n)) + vs%grid%drainage_area(n)
                 end do
             end if
@@ -592,21 +597,21 @@ module basin_utilities
             if (.not. allocated(vs%grid%ireach)) then
                 call print_remark( &
                     "No 'Reach' or 'IREACH' variable found. Assuming no reservoirs or routed lakes exist inside the basin.")
-                allocate(vs%grid%ireach(ncell))
+                allocate(vs%grid%ireach(vs%cell_count))
                 vs%grid%ireach = 0
             end if
 
             !> Set 'BNKFLL' to a dummy value if not provided.
             if (.not. allocated(vs%grid%bankfull)) then
                 call print_remark("No 'Bankfull' variable found. Setting the background field to zero.")
-                allocate(vs%grid%bankfull(ncell))
+                allocate(vs%grid%bankfull(vs%cell_count))
                 vs%grid%bankfull = 0.0
             end if
 
             !> Set 'ICHNL' to a dummy value if not provided (not used).
             if (.not. allocated(vs%grid%ichnl)) then
                 call print_remark("No 'Chnl' or 'ICHNL' variable found. Assuming a single channel class.")
-                allocate(vs%grid%ichnl(ncell))
+                allocate(vs%grid%ichnl(vs%cell_count))
                 vs%grid%ichnl = 1
             end if
         end if
@@ -614,7 +619,7 @@ module basin_utilities
         !> Assume a unit area weighting if 'GridArea' was not found.
         if (.not. allocated(vs%grid%surface_area)) then
             call print_remark("No 'GridArea' variable found. Assuming nominal 1.0 unit area.")
-            allocate(vs%grid%surface_area(ncell))
+            allocate(vs%grid%surface_area(vs%cell_count))
             vs%grid%surface_area = 1.0
         end if
 
@@ -622,7 +627,7 @@ module basin_utilities
         if (.not. pj%nominal_side_length > 0.0) pj%nominal_side_length = 1.0
 
         !> Calculate 'FRAC' for each cell.
-        allocate(dat1_r(ncell))
+        allocate(dat1_r(vs%cell_count))
         dat1_r = vs%grid%surface_area/pj%nominal_side_length/pj%nominal_side_length
         call move_alloc(dat1_r, vs%grid%area_weight)
 
@@ -634,7 +639,7 @@ module basin_utilities
 
         !> Validate individual values.
         ierr = 0
-        do n = 1, ncell_active
+        do n = 1, vs%active_cell_count
 
             !> Prepare 'Rank' ID for output.
             write(code, *) n
@@ -684,20 +689,20 @@ module basin_utilities
         end if
 
         !> Print a summary.
-        write(code, *) ncell
+        write(code, *) vs%cell_count
         call print_message("Total number of grids: " // trim(adjustl(code)))
-        write(code, *) ncell_active
+        write(code, *) vs%active_cell_count
         call print_message("Total number of grids inside the basin: " // trim(adjustl(code)))
         write(code, *) pj%nominal_side_length
         call print_message("Side length of grid: " // trim(adjustl(code)) // " m")
         if (ro%RUNLSS) then
-            write(code, *) ngru
+            write(code, *) vs%gru_count
             call print_message("Number of GRUs: " // trim(adjustl(code)))
-            write(code, *) nlandtile
+            write(code, *) vs%landtile_count
             call print_message("Number of land-based tiles: " // trim(adjustl(code)))
         end if
         if (ro%RUNCHNL) then
-            write(code, *) nrvr
+            write(code, *) vs%riverclass_count
             call print_message("Number of river classes: " // trim(adjustl(code)))
         end if
 

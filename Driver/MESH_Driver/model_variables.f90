@@ -209,6 +209,7 @@ module model_variables
         real, dimension(:), allocatable :: lat
 
         !> Maps.
+        integer, dimension(:, :), allocatable :: from_grid_xy
         integer, dimension(:), allocatable :: from_grid_x
         integer, dimension(:), allocatable :: from_grid_y
         integer, dimension(:), allocatable :: from_gru
@@ -228,7 +229,19 @@ module model_variables
     !*  gru: By GRU 1:NTYPE.
     !*  grid: Grid combined from contributing GRUs (by ACLASS) 1:NA.
     type model_variables_groups
+
+        !> Variable groups.
         type(model_variables_fields), pointer :: tile, gru, grid, basin
+
+        !> Dimension sizes/counts.
+        integer :: grid_x = 0
+        integer :: grid_y = 0
+        integer :: gru_count = 0
+        integer :: riverclass_count = 0
+        integer :: cell_count = 0
+        integer :: active_cell_count = 0
+        integer :: landtile_count = 0
+        integer :: sol_count = 0
     end type
 
     !> State of SA_MESH variables in the current time-step.
