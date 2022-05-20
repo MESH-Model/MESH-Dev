@@ -3814,12 +3814,17 @@ module field_utilities
     subroutine expand_field_list(field_list, increment, error_status)
 
         !> Input/output variables.
-        type(io_field), dimension(:), allocatable :: field_list
-        integer, intent(in) :: increment
+        type(io_field), allocatable :: field_list(:)
+        integer, intent(in), optional :: increment
         integer, intent(out) :: error_status
 
         !> Local variables.
-        type(io_field), dimension(:), allocatable :: temp_list
+        type(io_field), allocatable :: temp_list(:)
+        integer increment_size
+
+        !> Transfer the increment to a local variable (if present).
+        increment_size = 1
+        if (present(increment)) increment_size = max(increment, 1)
 
         !> Status.
         error_status = 0
@@ -3828,10 +3833,10 @@ module field_utilities
         if (.not. allocated(field_list)) then
 
             !> No need to transfer if 'field_list' is not allocated.
-            allocate(field_list(increment))
+            allocate(field_list(increment_size))
         else
             !> Allocate temporary field.
-            allocate(temp_list(size(field_list) + increment))
+            allocate(temp_list(size(field_list) + increment_size))
 
             !> Transfer fields.
             temp_list(1:size(field_list)) = field_list
@@ -3848,12 +3853,12 @@ module field_utilities
     subroutine combine_field_list(field_list, buffer, error_status)
 
         !> Input/output variables.
-        type(io_field), dimension(:), allocatable :: field_list
-        type(io_field), dimension(:), allocatable :: buffer
+        type(io_field), allocatable :: field_list(:)
+        type(io_field), allocatable :: buffer(:)
         integer, intent(out) :: error_status
 
         !> Local variables.
-        type(io_field), dimension(:), allocatable :: temp_list
+        type(io_field), allocatable :: temp_list(:)
         integer n, j, i
 
         !> Status.
@@ -3908,14 +3913,50 @@ module field_utilities
 
     end subroutine
 
-    subroutine cleanup_field_list(field_list, error_status)
+    subroutine copy_field_list(target_list, source_list, error_status)
 
         !> Input/output variables.
-        type(io_field), dimension(:), allocatable :: field_list
+        type(io_field), allocatable :: target_list(:)
+        type(io_field), intent(in) :: source_list(:)
         integer, intent(out) :: error_status
 
         !> Local variables.
-        type(io_field), dimension(:), allocatable :: temp_list
+        integer n, j, i
+
+        !> Count allocated fields in 'buffer'.
+        n = 0
+        do i = 1, size(source_list)
+            if (allocated(source_list(i)%field)) n = n + 1
+        end do
+
+        !> Expand field list.
+        if (.not. allocated(target_list)) then
+            j = 1
+        else
+            j = size(target_list) + 1
+        end if
+        call expand_field_list(target_list, n, error_status)
+        if (error_status == 0) then
+
+            !> Copy over fields.
+            do i = 1, size(source_list)
+                if (allocated(source_list(i)%field)) then
+                    target_list(j) = source_list(i)
+                    j = j + 1
+                end if
+            end do
+        end if
+
+    end subroutine
+
+    subroutine cleanup_field_list(field_list, error_status)
+
+        !> Input/output variables.
+        type(io_field), allocatable :: field_list(:)
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        type(io_field), allocatable :: temp_list(:)
         integer n, j, i
 
         !> Status.
