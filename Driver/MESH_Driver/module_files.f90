@@ -59,7 +59,7 @@ module model_files
         flg%fl(mfk%f54)%iun = 54
 
         flg%fl(mfk%f18)%fn = 'MESH_ggeo.ini'
-        flg%fl(mfk%f18)%iun = 18
+        flg%fl(mfk%f18)%iun = 100
 
         flg%fl(mfk%f900)%fn = 'Basin_average_water_balance.csv'
         flg%fl(mfk%f900)%iun = 900
