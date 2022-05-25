@@ -35,9 +35,11 @@ module PBSM_module
         RHOSC, RHOSG, &
         XSNOWC, XSNOWG, XSNOCS, XSNOGS
 
+    !> ME Dec 1, 2021 Added 'pbsm_fraction_threshold' to bypass snow redistrubution to tiny tiles.
     type pbsm_container
         type(pbsm_parameters) :: pm_gru, pm_grid, pm
         type(pbsm_variables) :: vs
+        real :: pbsm_fraction_threshold = 0.01
         logical :: PROCESS_ACTIVE = .false.
     end type
 
@@ -134,6 +136,9 @@ module PBSM_module
                 pbsm%vs%DrySnow(k) = 1.0
                 pbsm%vs%SnowAge(k) = 48.0
             end if
+
+            !> ME 30/11/2021 Keep Distrib = 0 if the fraction is less than 'pbsm_fraction_threshold'.
+            if (vs%tile%area_weight(k) < pbsm%pbsm_fraction_threshold) pbsm%pm%Distrib(k) = 0.0
         end do
 
         !> Write summary to output file.
