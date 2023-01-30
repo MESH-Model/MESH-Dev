@@ -30,6 +30,7 @@ module RUNCLASS36_module
 
         integer NA, NTYPE, NML, IGND, k, ik, j, i
         real FRAC
+        REAL SNOROF, WSNROF
 
         !* ierr: Diagnostic error/status return from various subroutines.
         integer :: ierr = 0
@@ -348,6 +349,31 @@ module RUNCLASS36_module
                 catv%ZRFM, ZOMLCS, ZOMLNS, &
                 NML, &
                 fls, shd)
+
+            !> LIMIT SNOW MASS TO A MAXIMUM OF 10 METRES TO AVOID
+            !>  SNOW PILING UP AT EDGES OF GLACIERS AT HIGH ELEVATIONS.
+            !>  THIS IS TARGETTED AS OVERLAND RUNOFF.
+            !> Ported from CLASS 3.6.2.
+            do i = il1, il2
+                if (ZSNOW(i) .GT. 10.0) then
+                    SNOROF = (ZSNOW(i) - 10.0)*cpv%RHOS(i)
+                    WSNROF = cpv%WSNO(i)*SNOROF/cpv%SNO(i)
+                    cdv%TROO(i) = &
+                        (cdv%TROO(i)*cdv%ROFO(i) + cpv%TSNO(i)*(SNOROF + WSNROF)/ic%dts)/(cdv%ROFO(i) + &
+                        (SNOROF + WSNROF)/ic%dts)
+                    cdv%ROFO(i) = cdv%ROFO(i) + (SNOROF + WSNROF)/ic%dts
+                    cdv%TROF(i) = &
+                        (cdv%TROF(i)*cdv%ROF(i) + cpv%TSNO(i)*(SNOROF + WSNROF)/ic%dts)/(cdv%ROF(i) + &
+                        (SNOROF + WSNROF)/ic%dts)
+                    cdv%ROF(i) = cdv%ROF(i) + (SNOROF+WSNROF)/ic%dts
+                    cdv%ROFN(i) = cdv%ROFN(i) + (SNOROF+WSNROF)/ic%dts
+                    cdv%PCPG(i) = cdv%PCPG(i) + (SNOROF+WSNROF)/ic%dts
+                    cdv%HTCS(i) = cdv%HTCS(i) - cpv%TSNO(i)*(SPHICE*SNOROF+SPHW*WSNROF)/ic%dts
+                    cpv%SNO(i) = cpv%SNO(i) - SNOROF
+                    cpv%WSNO(i) = cpv%WSNO(i) - WSNROF
+                    ZSNOW(i) = 10.0
+                end if
+            end do
 
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
