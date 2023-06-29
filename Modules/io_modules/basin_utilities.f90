@@ -809,12 +809,12 @@ module basin_utilities
             end do
 
 !>>temp
-            shd%lc%NTYPE = maxval(vs%tile%from_gru)
+            shd%lc%NTYPE = vs%gru_count
             shd%lc%NML = vs%tile%dim_length
             shd%lc%ILG = vs%tile%dim_length
             allocate(shd%lc%ILMOS(vs%tile%dim_length), source = vs%tile%from_cell)
             allocate(shd%lc%JLMOS(vs%tile%dim_length), source = vs%tile%from_gru)
-            allocate(shd%lc%ACLASS(vs%grid%dim_length, maxval(vs%tile%from_gru) + 1))
+            allocate(shd%lc%ACLASS(vs%grid%dim_length, vs%gru_count + 1))
             shd%lc%ACLASS = 0.0
             do k = 1, vs%tile%dim_length
                 shd%lc%ACLASS(vs%tile%from_cell(k), vs%tile%from_gru(k)) = vs%tile%area_weight(k)
