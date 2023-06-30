@@ -36,7 +36,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
 !<<
 
     !> SUBBASINFLAG.
-    integer, dimension(:), allocatable :: SUBBASIN
+!-    integer, dimension(:), allocatable :: SUBBASIN
 
     !> Initialize the return status.
     ierr = 0
@@ -259,7 +259,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
     if (ierr /= 0) return
 
     !> Assign fields.
-    call basin_info_from_field_list(basin_database%fields, ierr)
+    call basin_info_from_field_list(basin_database%fields, shd, ierr)
     if (ierr /= 0) return
 !<<
 
@@ -532,56 +532,56 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
 !-        end if
 !-    end do
 !>>temp
-    shd%CoordSys%Proj = trim(pj%projection)
-    shd%CoordSys%Ellips = trim(pj%ellipsoid)
-    allocate(shd%CoordSys%lon(size(pj%lon)), source = pj%lon)
-    shd%xCount = size(pj%lon)
-    shd%xOrigin = pj%llc_x
-    shd%xDelta = pj%dx
-    allocate(shd%CoordSys%lat(size(pj%lat)), source = pj%lat)
-    shd%yCount = size(pj%lat)
-    shd%yOrigin = pj%llc_y
-    shd%yDelta = pj%dy
-    shd%NA = vs%grid%dim_length
-    if (allocated(vs%grid%next_id)) then
-        shd%NAA = count(vs%grid%next_id > 0)
-        allocate(shd%NEXT(vs%grid%dim_length), source = vs%grid%next_id)
-    else
-        shd%NAA = 1
-    end if
-    allocate(shd%AREA(vs%grid%dim_length), source = vs%grid%surface_area)
-    if (ro%RUNCHNL) then
-        allocate(shd%IAK(vs%grid%dim_length), source = vs%grid%from_riverclass)
-        shd%NRVR = maxval(vs%grid%from_riverclass)
-        allocate(shd%SLOPE_CHNL(vs%grid%dim_length), source = vs%grid%chnl_slope)
-        allocate(shd%CHNL_LEN(vs%grid%dim_length), source = vs%grid%chnl_length)
-        allocate(shd%ICHNL(vs%grid%dim_length), source = vs%grid%ichnl)
-        allocate(shd%IREACH(vs%grid%dim_length), source = vs%grid%ireach)
-        allocate(shd%DA(vs%grid%dim_length), source = vs%grid%drainage_area)
-        allocate(shd%BNKFLL(vs%grid%dim_length), source = vs%grid%bankfull)
-        allocate(shd%IROUGH(vs%grid%dim_length))
-        shd%IROUGH = 0
-    end if
-    allocate(shd%ELEV(vs%grid%dim_length))
-    shd%ELEV = 0.0
-    shd%AL = pj%nominal_side_length
-    allocate(shd%xlng(vs%grid%dim_length), source = vs%grid%lon)
-    allocate(shd%ylat(vs%grid%dim_length), source = vs%grid%lat)
-    allocate(shd%xxx(vs%grid%dim_length), source = vs%grid%from_grid_x)
-    allocate(shd%yyy(vs%grid%dim_length), source = vs%grid%from_grid_y)
-    allocate(shd%FRAC(vs%grid%dim_length), source = vs%grid%area_weight)
-    if (ro%RUNLSS) then
-        shd%lc%NTYPE = maxval(vs%tile%from_gru)
-        shd%lc%NML = vs%tile%dim_length
-        shd%lc%ILG = vs%tile%dim_length
-        allocate(shd%lc%ILMOS(vs%tile%dim_length), source = vs%tile%from_cell)
-        allocate(shd%lc%JLMOS(vs%tile%dim_length), source = vs%tile%from_gru)
-        allocate(shd%lc%ACLASS(vs%grid%dim_length, maxval(vs%tile%from_gru) + 1))
-        shd%lc%ACLASS = 0.0
-        do k = 1, vs%tile%dim_length
-            shd%lc%ACLASS(vs%tile%from_cell(k), vs%tile%from_gru(k)) = vs%tile%area_weight(k)
-        end do
-    end if
+!-    shd%CoordSys%Proj = trim(pj%projection)
+!-    shd%CoordSys%Ellips = trim(pj%ellipsoid)
+!-    allocate(shd%CoordSys%lon(size(pj%lon)), source = pj%lon)
+!-    shd%xCount = size(pj%lon)
+!-    shd%xOrigin = pj%llc_x
+!-    shd%xDelta = pj%dx
+!-    allocate(shd%CoordSys%lat(size(pj%lat)), source = pj%lat)
+!-    shd%yCount = size(pj%lat)
+!-    shd%yOrigin = pj%llc_y
+!-    shd%yDelta = pj%dy
+!-    shd%NA = vs%grid%dim_length
+!-    if (allocated(vs%grid%next_id)) then
+!-        shd%NAA = count(vs%grid%next_id > 0)
+!-        allocate(shd%NEXT(vs%grid%dim_length), source = vs%grid%next_id)
+!-    else
+!-        shd%NAA = 1
+!-    end if
+!-    allocate(shd%AREA(vs%grid%dim_length), source = vs%grid%surface_area)
+!-    if (ro%RUNCHNL) then
+!-        allocate(shd%IAK(vs%grid%dim_length), source = vs%grid%from_riverclass)
+!-        shd%NRVR = maxval(vs%grid%from_riverclass)
+!-        allocate(shd%SLOPE_CHNL(vs%grid%dim_length), source = vs%grid%chnl_slope)
+!-        allocate(shd%CHNL_LEN(vs%grid%dim_length), source = vs%grid%chnl_length)
+!-        allocate(shd%ICHNL(vs%grid%dim_length), source = vs%grid%ichnl)
+!-        allocate(shd%IREACH(vs%grid%dim_length), source = vs%grid%ireach)
+!-        allocate(shd%DA(vs%grid%dim_length), source = vs%grid%drainage_area)
+!-        allocate(shd%BNKFLL(vs%grid%dim_length), source = vs%grid%bankfull)
+!-        allocate(shd%IROUGH(vs%grid%dim_length))
+!-        shd%IROUGH = 0
+!-    end if
+!-    allocate(shd%ELEV(vs%grid%dim_length))
+!-    shd%ELEV = 0.0
+!-    shd%AL = pj%nominal_side_length
+!-    allocate(shd%xlng(vs%grid%dim_length), source = vs%grid%lon)
+!-    allocate(shd%ylat(vs%grid%dim_length), source = vs%grid%lat)
+!-    allocate(shd%xxx(vs%grid%dim_length), source = vs%grid%from_grid_x)
+!-    allocate(shd%yyy(vs%grid%dim_length), source = vs%grid%from_grid_y)
+!-    allocate(shd%FRAC(vs%grid%dim_length), source = vs%grid%area_weight)
+!-    if (ro%RUNLSS) then
+!-        shd%lc%NTYPE = maxval(vs%tile%from_gru)
+!-        shd%lc%NML = vs%tile%dim_length
+!-        shd%lc%ILG = vs%tile%dim_length
+!-        allocate(shd%lc%ILMOS(vs%tile%dim_length), source = vs%tile%from_cell)
+!-        allocate(shd%lc%JLMOS(vs%tile%dim_length), source = vs%tile%from_gru)
+!-        allocate(shd%lc%ACLASS(vs%grid%dim_length, maxval(vs%tile%from_gru) + 1))
+!-        shd%lc%ACLASS = 0.0
+!-        do k = 1, vs%tile%dim_length
+!-            shd%lc%ACLASS(vs%tile%from_cell(k), vs%tile%from_gru(k)) = vs%tile%area_weight(k)
+!-        end do
+!-    end if
 !<<temp
 
     !> Map file (diagnostic).
@@ -851,46 +851,46 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
     !> READ BASIN STRUCTURES.
     !>
 
-    if (ro%RUNGRID) then
+!-    if (ro%RUNGRID) then
 
         !> Basin structures.
-        call read_basin_structures(shd, ierr)
-        if (ierr /= 0) return
+!-        call read_basin_structures(shd, ierr)
+!-        if (ierr /= 0) return
 
         !> SUBBASINFLAG.
         !>  Run only on squares that make up the watersheds listed in
         !>  the streamflow file.
-        if (SUBBASINFLAG > 0) then
+!-        if (SUBBASINFLAG > 0) then
 
             !> Print message to screen.
-            call reset_tab()
-            call print_message('SUBBASIN mask is ACTIVE.')
-            call increase_tab()
+!-            call reset_tab()
+!-            call print_message('SUBBASIN mask is ACTIVE.')
+!-            call increase_tab()
 
             !> Allocate and initialize local variables.
-            allocate(SUBBASIN(shd%NA))
-            SUBBASIN = 0
+!-            allocate(SUBBASIN(shd%NA))
+!-            SUBBASIN = 0
 
             !> Set gauge locations to 1.
-            do l = 1, fms%stmg%n
-                SUBBASIN(fms%stmg%meta%rnk(l)) = l
-            end do
-            if (DIAGNOSEMODE) then
-                write(line, FMT_GEN) fms%stmg%n
-                call print_message('Masking domains for ' // trim(adjustl(line)) // ' subbasins.')
-            end if
+!-            do l = 1, fms%stmg%n
+!-                SUBBASIN(fms%stmg%meta%rnk(l)) = l
+!-            end do
+!-            if (DIAGNOSEMODE) then
+!-                write(line, FMT_GEN) fms%stmg%n
+!-                call print_message('Masking domains for ' // trim(adjustl(line)) // ' subbasins.')
+!-            end if
 
             !> Mask grids upstream of gauge locations.
-            i = 1
-            do while (i > 0)
-                i = 0
-                do n = 1, shd%NAA
-                    if (SUBBASIN(shd%NEXT(n)) > 0 .and. SUBBASIN(n) == 0) then
-                        SUBBASIN(n) = SUBBASIN(shd%NEXT(n))
-                        i = 1
-                    end if
-                end do
-            end do
+!-            i = 1
+!-            do while (i > 0)
+!-                i = 0
+!-                do n = 1, shd%NAA
+!-                    if (SUBBASIN(shd%NEXT(n)) > 0 .and. SUBBASIN(n) == 0) then
+!-                        SUBBASIN(n) = SUBBASIN(shd%NEXT(n))
+!-                        i = 1
+!-                    end if
+!-                end do
+!-            end do
 
 !temp
 !            allocate(grid(shd%yCount, shd%xCount))
@@ -907,15 +907,15 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
 !?            where (SUBBASIN > 0) shd%FRAC = 0.0
 
             !> Print diagnostic information to screen.
-            if (DIAGNOSEMODE) then
-                write(line, FMT_GEN) 'SUBBASIN', 'GRIDS'
-                call print_message(line)
-                do l = 1, fms%stmg%n
-                    write(line, FMT_GEN) l, count(SUBBASIN == l)
-                    call print_message(line)
-                end do
-            end if
-        end if
-    end if
+!-            if (DIAGNOSEMODE) then
+!-                write(line, FMT_GEN) 'SUBBASIN', 'GRIDS'
+!-                call print_message(line)
+!-                do l = 1, fms%stmg%n
+!-                    write(line, FMT_GEN) l, count(SUBBASIN == l)
+!-                    call print_message(line)
+!-                end do
+!-            end if
+!-        end if
+!-    end if
 
 end subroutine
