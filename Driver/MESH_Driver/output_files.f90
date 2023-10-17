@@ -1155,14 +1155,24 @@ module output_files
                 lopen = .false.
                 inquire(file = trim(fname) // '_' // VN_GRD // '.nc', opened = lopen)
                 if (.not. lopen) then
-                    call nc4_define_output_variable_xyt( &
-                        trim(fname) // '_' // VN_GRD // '.nc', field%vname, shd%CoordSys%Proj, ffreq, &
-                        shd%CoordSys%lat, shd%CoordSys%lon, shd%CoordSys%rlat, shd%CoordSys%rlon, &
-                        shd%CoordSys%xylat, shd%CoordSys%xylon, &
-                        shd%CoordSys%Ellips, shd%CoordSys%Zone, shd%CoordSys%earth_radius, shd%CoordSys%grid_north_pole_latitude, &
-                        shd%CoordSys%grid_north_pole_longitude, &
-                        quiet = .true., fill = out%NO_DATA, &
-                        vid = group%grid%vid, vtime = group%grid%tid, iun = group%grid%nid, ierr = z)
+                    if (SHDFILEFMT == 5) then
+                        call nc4_define_output_variable_nt( &
+                            trim(fname) // '_' // VN_GRD // '.nc', field%vname, shd%CoordSys%Proj, ffreq, &
+                            shd%xxx, shd%CoordSys%lat, shd%CoordSys%lon, &
+                            shd%CoordSys%Ellips, shd%CoordSys%Zone, shd%CoordSys%earth_radius, &
+                            shd%CoordSys%grid_north_pole_latitude, shd%CoordSys%grid_north_pole_longitude, &
+                            quiet = .true., fill = out%NO_DATA, &
+                            vid = group%grid%vid, vtime = group%grid%tid, iun = group%grid%nid, ierr = z)
+                    else
+                        call nc4_define_output_variable_xyt( &
+                            trim(fname) // '_' // VN_GRD // '.nc', field%vname, shd%CoordSys%Proj, ffreq, &
+                            shd%CoordSys%lat, shd%CoordSys%lon, shd%CoordSys%rlat, shd%CoordSys%rlon, &
+                            shd%CoordSys%xylat, shd%CoordSys%xylon, &
+                            shd%CoordSys%Ellips, shd%CoordSys%Zone, shd%CoordSys%earth_radius, &
+                            shd%CoordSys%grid_north_pole_latitude, shd%CoordSys%grid_north_pole_longitude, &
+                            quiet = .true., fill = out%NO_DATA, &
+                            vid = group%grid%vid, vtime = group%grid%tid, iun = group%grid%nid, ierr = z)
+                    end if
                     if (ierr /= 0) then
                         call print_error("Unable to open file for output: " // trim(fname) // "_" // VN_GRD // ".nc")
                         ierr = z
@@ -2359,9 +2369,14 @@ module output_files
 #ifdef NETCDF
             if (btest(field%ffmt, FILE_TYPE_NC4)) then
                 z = 0
-                call nc4_add_data_xyt( &
-                    group%grid%nid, field%vname, ffreq, group%grid%tid, group%grid%vid, shd%xxx, shd%yyy, &
-                    shd%xCount, shd%yCount, out%NO_DATA, group%grid%dat, dates, z)
+                if (SHDFILEFMT == 5) then
+                    call nc4_add_data_nt( &
+                        group%grid%nid, field%vname, ffreq, group%grid%tid, group%grid%vid, out%NO_DATA, group%grid%dat, dates, z)
+                else
+                    call nc4_add_data_xyt( &
+                        group%grid%nid, field%vname, ffreq, group%grid%tid, group%grid%vid, shd%xxx, shd%yyy, &
+                        shd%xCount, shd%yCount, out%NO_DATA, group%grid%dat, dates, z)
+                end if
                 if (z /= 0) then
                     call print_error("Unable to write to output file: " // trim(group%grid%fname) // "_" // VN_GRD // ".nc")
                     call program_abort()
