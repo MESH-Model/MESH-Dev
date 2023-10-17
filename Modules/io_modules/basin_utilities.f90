@@ -610,6 +610,7 @@ module basin_utilities
         shd%yOrigin = pj%llc_y
         shd%yDelta = pj%dy
         shd%NA = vs%grid%dim_length
+        if (SHDFILEFMT == 5) shd%yCount = 1 !ME: adjustment for nc_subbasin
         if (allocated(vs%grid%next_id)) then
             shd%NAA = count(vs%grid%next_id > 0)
             allocate(shd%NEXT(vs%grid%dim_length), source = vs%grid%next_id)
@@ -707,6 +708,10 @@ module basin_utilities
         call print_message("Total number of grids: " // trim(adjustl(code)))
         write(code, *) vs%active_cell_count
         call print_message("Total number of grids inside the basin: " // trim(adjustl(code)))
+        write(field, FMT_GEN) vs%grid_x
+        call print_message('Total number of Columns: ' // trim(adjustl(field)))
+        write(field, FMT_GEN) vs%grid_y
+        call print_message('Total number of Rows: ' // trim(adjustl(field)))
         write(code, *) pj%nominal_side_length
         call print_message("Side length of grid: " // trim(adjustl(code)) // " m")
         if (ro%RUNCHNL) then
