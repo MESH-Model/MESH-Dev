@@ -7,9 +7,16 @@
 !>
 subroutine save_initial_states_nc(fls, shd, fname, ierr)
 
+    !> Common modules.
     use model_files_variables
     use sa_mesh_common
     use nc_io
+
+    !> Process modules.
+    use RUNCLASS36_variables
+    use runsvs_mesh
+    use WF_ROUTE_config
+    use rte_module
 
     implicit none
 
@@ -60,200 +67,212 @@ subroutine save_initial_states_nc(fls, shd, fname, ierr)
             dim1_id = y, dim2_id = x, &
             ierr = z)
     end if
-    if (z == 0) call nc4_define_dimension(iun, 'level', dim_length = shd%lc%IGND, did = l, ierr = z)
-    if (z == 0) call nc4_define_dimension(iun, 'subtile_types', dim_length = 4, did = c, ierr = z)
-    if (z == 0) call nc4_define_dimension(iun, 'gru', dim_length = shd%lc%NTYPE, did = m, ierr = z)
+    if (svs_mesh%PROCESS_ACTIVE .or. RUNCLASS36_flgs%PROCESS_ACTIVE) then
+        if (z == 0) call nc4_define_dimension(iun, 'level', dim_length = shd%lc%IGND, did = l, ierr = z)
+        if (z == 0) call nc4_define_dimension(iun, 'subtile_types', dim_length = 4, did = c, ierr = z)
+        if (z == 0) call nc4_define_dimension(iun, 'gru', dim_length = shd%lc%NTYPE, did = m, ierr = z)
+    end if
 
     !> 3-D variables (x, y, m).
-    allocate( &
-        dat_xym(shd%xCount, shd%yCount, shd%lc%NTYPE), dat_xylm(shd%xCount, shd%yCount, shd%lc%IGND, shd%lc%NTYPE), &
-        dat_xycm(shd%xCount, shd%yCount, 4, shd%lc%NTYPE))
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%albsno(i)
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_albs', x, y, m, dat_xym, long_name = 'Tile-based values for albs', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%cmas(i)
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_cmas', x, y, m, dat_xym, long_name = 'Tile-based values for cmas', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%gro(i)
-        end do
-        call nc4_add_variable(iun, 'tile_gro', x, y, m, dat_xym, long_name = 'Tile-based values for gro', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%qacan(i)
-        end do
-        call nc4_add_variable(iun, 'tile_qac', x, y, m, dat_xym, long_name = 'Tile-based values for qac', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%lqwscan(i)
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_rcan', x, y, m, dat_xym, long_name = 'Tile-based values for rcan', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%rhosno(i)
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_rhos', x, y, m, dat_xym, long_name = 'Tile-based values for rhos', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%fzwscan(i)
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_sncan', x, y, m, dat_xym, long_name = 'Tile-based values for sncan', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%sno(i)
-        end do
-        call nc4_add_variable(iun, 'tile_sno', x, y, m, dat_xym, long_name = 'Tile-based values for sno', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%tacan(i)
-        end do
-        call nc4_add_variable(iun, 'tile_tac', x, y, m, dat_xym, long_name = 'Tile-based values for tac', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xylm = NO_DATA
-        do j = 1, shd%lc%IGND
+    if (svs_mesh%PROCESS_ACTIVE .or. RUNCLASS36_flgs%PROCESS_ACTIVE) then
+        allocate( &
+            dat_xym(shd%xCount, shd%yCount, shd%lc%NTYPE), dat_xylm(shd%xCount, shd%yCount, shd%lc%IGND, shd%lc%NTYPE), &
+            dat_xycm(shd%xCount, shd%yCount, 4, shd%lc%NTYPE))
+        if (z == 0) then
+            dat_xym = NO_DATA
             do i = 1, shd%lc%NML
-                dat_xylm(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), j, shd%lc%JLMOS(i)) = vs%tile%tsol(i, j)
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%albsno(i)
             end do
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_tbar', x, y, l, m, dat_xylm, long_name = 'Tile-based values for tbar', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%tbas(i)
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_tbas', x, y, m, dat_xym, long_name = 'Tile-based values for tbas', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%tcan(i)
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_tcan', x, y, m, dat_xym, long_name = 'Tile-based values for tcan', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xylm = NO_DATA
-        do j = 1, shd%lc%IGND
+            call nc4_add_variable( &
+                iun, 'tile_albs', x, y, m, dat_xym, long_name = 'Tile-based values for albs', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
             do i = 1, shd%lc%NML
-                dat_xylm(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), j, shd%lc%JLMOS(i)) = vs%tile%thicsol(i, j)
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%cmas(i)
             end do
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_thic', x, y, l, m, dat_xylm, long_name = 'Tile-based values for thic', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xylm = NO_DATA
-        do j = 1, shd%lc%IGND
+            call nc4_add_variable( &
+                iun, 'tile_cmas', x, y, m, dat_xym, long_name = 'Tile-based values for cmas', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
             do i = 1, shd%lc%NML
-                dat_xylm(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), j, shd%lc%JLMOS(i)) = vs%tile%thlqsol(i, j)
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%gro(i)
             end do
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_thlq', x, y, l, m, dat_xylm, long_name = 'Tile-based values for thlq', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%tpnd(i)
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_tpnd', x, y, m, dat_xym, long_name = 'Tile-based values for tpnd', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xycm = NO_DATA
-        do j = 1, 4
+            call nc4_add_variable( &
+                iun, 'tile_gro', x, y, m, dat_xym, long_name = 'Tile-based values for gro', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
             do i = 1, shd%lc%NML
-                dat_xycm(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), j, shd%lc%JLMOS(i)) = vs%tile%tsfs(i, j)
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%qacan(i)
             end do
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_tsfs', x, y, c, m, dat_xycm, long_name = 'Tile-based values for tsfs', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%tsno(i)
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_tsno', x, y, m, dat_xym, long_name = 'Tile-based values for tsno', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%lqwssno(i)
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_wsno', x, y, m, dat_xym, long_name = 'Tile-based values for wsno', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%zpnd(i)
-        end do
-        call nc4_add_variable( &
-            iun, 'tile_zpnd', x, y, m, dat_xym, long_name = 'Tile-based values for zpnd', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xym = NO_DATA
-        do i = 1, shd%lc%NML
-            dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%stggw(i)
-        end do
-        call nc4_add_variable(iun, 'tile_lzs', x, y, m, dat_xym, long_name = 'Tile-based values for lzs', fill = NO_DATA, ierr = z)
+            call nc4_add_variable( &
+                iun, 'tile_qac', x, y, m, dat_xym, long_name = 'Tile-based values for qac', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%lqwscan(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_rcan', x, y, m, dat_xym, long_name = 'Tile-based values for rcan', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%rhosno(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_rhos', x, y, m, dat_xym, long_name = 'Tile-based values for rhos', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%fzwscan(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_sncan', x, y, m, dat_xym, long_name = 'Tile-based values for sncan', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%sno(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_sno', x, y, m, dat_xym, long_name = 'Tile-based values for sno', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%tacan(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_tac', x, y, m, dat_xym, long_name = 'Tile-based values for tac', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xylm = NO_DATA
+            do j = 1, shd%lc%IGND
+                do i = 1, shd%lc%NML
+                    dat_xylm(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), j, shd%lc%JLMOS(i)) = vs%tile%tsol(i, j)
+                end do
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_tbar', x, y, l, m, dat_xylm, long_name = 'Tile-based values for tbar', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%tbas(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_tbas', x, y, m, dat_xym, long_name = 'Tile-based values for tbas', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%tcan(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_tcan', x, y, m, dat_xym, long_name = 'Tile-based values for tcan', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xylm = NO_DATA
+            do j = 1, shd%lc%IGND
+                do i = 1, shd%lc%NML
+                    dat_xylm(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), j, shd%lc%JLMOS(i)) = vs%tile%thicsol(i, j)
+                end do
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_thic', x, y, l, m, dat_xylm, long_name = 'Tile-based values for thic', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xylm = NO_DATA
+            do j = 1, shd%lc%IGND
+                do i = 1, shd%lc%NML
+                    dat_xylm(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), j, shd%lc%JLMOS(i)) = vs%tile%thlqsol(i, j)
+                end do
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_thlq', x, y, l, m, dat_xylm, long_name = 'Tile-based values for thlq', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%tpnd(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_tpnd', x, y, m, dat_xym, long_name = 'Tile-based values for tpnd', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xycm = NO_DATA
+            do j = 1, 4
+                do i = 1, shd%lc%NML
+                    dat_xycm(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), j, shd%lc%JLMOS(i)) = vs%tile%tsfs(i, j)
+                end do
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_tsfs', x, y, c, m, dat_xycm, long_name = 'Tile-based values for tsfs', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%tsno(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_tsno', x, y, m, dat_xym, long_name = 'Tile-based values for tsno', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%lqwssno(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_wsno', x, y, m, dat_xym, long_name = 'Tile-based values for wsno', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%zpnd(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_zpnd', x, y, m, dat_xym, long_name = 'Tile-based values for zpnd', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xym = NO_DATA
+            do i = 1, shd%lc%NML
+                dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%stggw(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'tile_lzs', x, y, m, dat_xym, long_name = 'Tile-based values for lzs', fill = NO_DATA, ierr = z)
+        end if
     end if
 
     !> 2-D variables (x, y).
-    allocate(dat_xy(shd%xCount, shd%yCount))
-    if (z == 0) then
-        dat_xy = NO_DATA
-        do i = 1, shd%NA
-            dat_xy(shd%xxx(i), shd%yyy(i)) = vs%grid%qi(i)
-        end do
-        call nc4_add_variable(iun, 'grid_qi', x, y, dat_xy, long_name = 'Grid-based values for qi', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xy = NO_DATA
-        do i = 1, shd%NA
-            dat_xy(shd%xxx(i), shd%yyy(i)) = vs%grid%stgch(i)
-        end do
-        call nc4_add_variable(iun, 'grid_stgch', x, y, dat_xy, long_name = 'Grid-based values for stgch', fill = NO_DATA, ierr = z)
-    end if
-    if (z == 0) then
-        dat_xy = NO_DATA
-        do i = 1, shd%NA
-            dat_xy(shd%xxx(i), shd%yyy(i)) = vs%grid%qo(i)
-        end do
-        call nc4_add_variable(iun, 'grid_qo', x, y, dat_xy, long_name = 'Grid-based values for qo', fill = NO_DATA, ierr = z)
+    if (WF_RTE_flgs%PROCESS_ACTIVE .or. rteflg%PROCESS_ACTIVE) then
+        allocate(dat_xy(shd%xCount, shd%yCount))
+        if (z == 0) then
+            dat_xy = NO_DATA
+            do i = 1, shd%NA
+                dat_xy(shd%xxx(i), shd%yyy(i)) = vs%grid%qi(i)
+            end do
+            call nc4_add_variable(iun, 'grid_qi', x, y, dat_xy, long_name = 'Grid-based values for qi', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xy = NO_DATA
+            do i = 1, shd%NA
+                dat_xy(shd%xxx(i), shd%yyy(i)) = vs%grid%stgch(i)
+            end do
+            call nc4_add_variable( &
+                iun, 'grid_stgch', x, y, dat_xy, long_name = 'Grid-based values for stgch', fill = NO_DATA, ierr = z)
+        end if
+        if (z == 0) then
+            dat_xy = NO_DATA
+            do i = 1, shd%NA
+                dat_xy(shd%xxx(i), shd%yyy(i)) = vs%grid%qo(i)
+            end do
+            call nc4_add_variable(iun, 'grid_qo', x, y, dat_xy, long_name = 'Grid-based values for qo', fill = NO_DATA, ierr = z)
+        end if
     end if
 
     !> Close file.
