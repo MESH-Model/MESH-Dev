@@ -337,7 +337,7 @@ module rte_module
         !*  Nreaches: (rerout.f) Copy of noresv.
         noresv = fms%rsvr%n
         Nreaches = fms%rsvr%n
-!todo: fix fhr use (999999).
+        fhr = 1
         if (fms%rsvr%n > 0) then
 
             !> Book-keeping variables (when fhr > 1).
@@ -346,7 +346,7 @@ module rte_module
             !*  lake_stor: Copy of reservoir storage. [m3].
             !*  lake_outflow: Copy of reservoir outflow. [m3 s-1].
             !*  del_store: Storage change considering inflow minus outflow. [m3].
-            allocate(lake_inflow(noresv, 999999), lake_stor(noresv, 999999), lake_outflow(noresv, 999999), del_stor(noresv, 999999))
+            allocate(lake_inflow(noresv, 1), lake_stor(noresv, 1), lake_outflow(noresv, 1), del_stor(noresv, 1))
             lake_inflow = 0.0; lake_stor = 0.0; lake_outflow = 0.0; del_stor = 0.0
 
             !> Reservoir/lake meta-data (from file).
@@ -382,7 +382,7 @@ module rte_module
             !> Measured outflow (from file).
             !*  qrel: Measured outflow when reservoir releases are replaced with measured values. [m3 s-1].
             !*  qdwpr: (Local variable in route.f) Used to accumulate flow in reaches that span multiple cells to the reservoir outlet. [m3 s-1].
-            allocate(qdwpr(noresv, 999999), qrel(noresv, 999999))
+            allocate(qdwpr(noresv, 1), qrel(noresv, 1))
             qdwpr = 0.0
             if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
                 qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0)), kind(qrel))
@@ -394,7 +394,7 @@ module rte_module
             !*  reach_last: (Used in Great Lakes routing) Stores level of last time-step. [m].
             !*  lake_area: Used to convert reservoir storage to level (for diagnostic output). [m2].
             !*  lake_elv: Lake elevation (for diagnostic output). [m].
-            allocate(reach_last(noresv), lake_area(noresv), lake_elv(noresv, 999999))
+            allocate(reach_last(noresv), lake_area(noresv), lake_elv(noresv, 1))
             lake_area = real(fms%rsvr%rls%area, kind(lake_area))
             lake_elv(:, 1) = real(fms%rsvr%rls%zlvl0, kind(lake_elv))
         end if
@@ -404,8 +404,7 @@ module rte_module
         if (fms%stmg%n > 0) then
             allocate( &
                 iflowgrid(no), nopt(no), &
-!todo: fix this (999999).
-                qhyd(no, 999999))
+                qhyd(no, 1))
             iflowgrid = fms%stmg%meta%rnk
             nopt = -1
             qhyd(:, 1) = real(fms%stmg%qomeas%val, kind(qhyd))
@@ -594,7 +593,7 @@ module rte_module
 
         !> Read inital values from the file.
         read(iun) fhr_i4
-        fhr = int(fhr_i4)
+        fhr = 1
         read(iun) qo2
         read(iun) store2
         read(iun) qi2
@@ -743,7 +742,7 @@ module rte_module
         if (ic%now%hour == ic%next%hour) return
 
         !> Increment counters.
-        fhr = fhr + 1
+!-        fhr = fhr + 1
 
         !> Diversion data.
         if (nodiv > 0) then
