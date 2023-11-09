@@ -718,7 +718,7 @@ module rte_module
         integer indexi, no_dtold
 
         !> Local variables for output averaging.
-        real, dimension(:), allocatable :: inline_qi, inline_stgch, inline_qo
+        real, dimension(na) :: inline_qi, inline_stgch, inline_qo
 
         !> Local diagnostic variables.
 !        integer year_last, month_last, day_last, hour_last
@@ -886,9 +886,6 @@ module rte_module
         !> However, if the iteration loop in route is unstable, dtmin still decreases.
         dtmin = dtminusr
 
-        !> Allocate the local variables for output averaging.
-        allocate(inline_qi(na), inline_stgch(na), inline_qo(na))
-
         !> Let the time step be as small as mindtmin.
 17      dtmin = max(mindtmin, dtmin)
         no_dt = max(int(3599.0/dtmin) + 1, 1)
@@ -981,9 +978,6 @@ module rte_module
         if (associated(out%ts%grid%qi)) out%ts%grid%qi = inline_qi/no_dt*(3600/ic%dts)
         if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = inline_stgch/no_dt*(3600/ic%dts)
         if (associated(out%ts%grid%qo)) out%ts%grid%qo = inline_qo/no_dt*(3600/ic%dts) !same as avr_qo
-
-        !> Deallocate the local variables for output averaging.
-        deallocate(inline_qi, inline_stgch, inline_qo)
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.
