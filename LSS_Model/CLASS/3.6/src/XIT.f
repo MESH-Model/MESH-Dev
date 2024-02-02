@@ -11,7 +11,7 @@ C
 C     * N.GE.0 IS FOR A NORMAL END. THE LINE IS DASHED. 
 C     * NORMAL ENDS TERMINATE WITH   STOP.
 C 
-C     * N.LT.0 IS FOR AN ABNORMAL END. THE LINE IS DOTTED.
+C     * N.LT.0 IS FOR AN ABNORMAL END. THE LINE IS STARRED.
 C     * IF N IS LESS THAN -100 THE PROGRAM SIMPLY TERMINATES. 
 C     * OTHERWISE IF N IS LESS THAN ZERO THE PROGRAM ABORTS.
 C 
@@ -29,7 +29,7 @@ C
       IF ( N.GE.0 .OR. N.LT.-100 ) THEN
 	STOP 
       ELSE
-	CALL ABORT
+         call program_abort
       ENDIF
 C 
 C---------------------------------------------------------------------
