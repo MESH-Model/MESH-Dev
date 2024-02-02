@@ -554,25 +554,26 @@ subroutine read_parameters(fls, shd, ierr)
         end if
     end do
 
-    !> Check for impermeable soils.
-    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-
-        !> Check the first layer for impermeable soils.
-        where (pm%tile%sdep == 0.0 .and. pm%tile%sand(:, 1) > -2.5)
-            pm%tile%sand(:, 1) = -3.0
-            pm%tile%clay(:, 1) = -3.0
-            pm%tile%orgm(:, 1) = -3.0
-        end where
-
-        !> Check for impermeable soils.
-        do j = 2, shd%lc%IGND
-            where (pm%tile%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm%tile%sand(:, j) > -2.5)
-                pm%tile%sand(:, j) = -3.0
-                pm%tile%clay(:, j) = -3.0
-                pm%tile%orgm(:, j) = -3.0
-            end where
-        end do
-    end if
+!ME moved to after updating the soil texture if NUDGESDEPFLAG is active.
+!-    !> Check for impermeable soils.
+!-    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+!-
+!-        !> Check the first layer for impermeable soils.
+!-        where (pm%tile%sdep == 0.0 .and. pm%tile%sand(:, 1) > -2.5)
+!-            pm%tile%sand(:, 1) = -3.0
+!-            pm%tile%clay(:, 1) = -3.0
+!-            pm%tile%orgm(:, 1) = -3.0
+!-        end where
+!-
+!-        !> Check for impermeable soils.
+!-        do j = 2, shd%lc%IGND
+!-            where (pm%tile%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm%tile%sand(:, j) > -2.5)
+!-                pm%tile%sand(:, j) = -3.0
+!-                pm%tile%clay(:, j) = -3.0
+!-                pm%tile%orgm(:, j) = -3.0
+!-            end where
+!-        end do
+!-    end if
 
     !> Nudge SDEP to the nearest interface between soil layers in the profile.
     if (NUDGESDEPFLAG == 1 .and. shd%lc%IGND > 0) then
@@ -596,6 +597,28 @@ subroutine read_parameters(fls, shd, ierr)
             end where
         end do
 
+    end if
+
+    !> Check for impermeable soils.
+    !> ME moved to after updating the soil texture if NUDGESDEPFLAG is active.
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+
+        !> Check the first layer for impermeable soils.
+        where (pm%tile%sdep == 0.0 .and. pm%tile%sand(:, 1) > -2.5)
+            pm%tile%sand(:, 1) = -3.0
+            !pm%tile%clay(:, 1) = -3.0
+            !pm%tile%orgm(:, 1) = -3.0
+        end where
+
+        !> Check for impermeable soils
+        !> ME changed the accurcy threshold from 0.001 to be the same as in CLASSB/BG.
+        do j = 2, shd%lc%IGND
+            where (pm%tile%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.025) .and. pm%tile%sand(:, j) > -2.5)
+                pm%tile%sand(:, j) = -3.0
+                !pm%tile%clay(:, j) = -3.0
+                !pm%tile%orgm(:, j) = -3.0
+            end where
+        end do
     end if
 
     return
