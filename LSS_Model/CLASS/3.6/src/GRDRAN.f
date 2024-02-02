@@ -298,7 +298,7 @@ C
 C
       IF(IPTBAD.NE.0)                                           THEN
           WRITE(6,6500) IPTBAD,JL,IVEG,THICE(IPTBAD,1)
- 6500     FORMAT('0AT (I,J)=(',I3,',',I3,'), IVEG=',I2,' THICE(1)= ',
+ 6500     FORMAT('0AT (I,J)=(',I8,',',I8,'), IVEG=',I2,' THICE(1)= ',
      1            E13.5)
           CALL XIT('GRDRAN',-1)
       ENDIF
