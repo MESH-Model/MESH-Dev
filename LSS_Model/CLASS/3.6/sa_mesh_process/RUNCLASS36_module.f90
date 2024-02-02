@@ -254,7 +254,7 @@ module RUNCLASS36_module
                         cdv%SFCQ, SFRHGAT, cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, cdv%FLGG, &
                         cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, &
                         cdv%HTCC, cdv%HTCS, cdv%HTC, cdv%QFCF, cdv%QFCL, cdv%DR, cdv%WTAB, cdv%ILMO, &
-                        cdv%UE, cdv%HBL, cpv%TAC, cpv%QAC, catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, &
+                        cdv%UE, cdv%HBL, cpv%TAC, cpv%QAC, cpv%VAC, catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, &
                         catv%VPD, catv%TADP, catv%RHOA, cfi%FSVH, cfi%FSIH, cfi%FDL, cfi%UL, cfi%VL, &
                         cfi%TA, cfi%QA, catv%PADR, cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, RBCOEF, &
                         FSVF, FSVFS, cfi%PRES, cfi%VMOD, ALVSCN, ALIRCN, ALVSG, ALIRG, &
@@ -391,6 +391,7 @@ module RUNCLASS36_module
         vs%tile%tacan(il1:il2) = cpv%TAC(il1:il2)
         vs%tile%tcan(il1:il2) = cpv%TCAN(il1:il2)
         vs%tile%qacan(il1:il2) = cpv%QAC(il1:il2)
+        vs%tile%uvcan(il1:il2) = cpv%VAC(il1:il2)
         vs%tile%gro(il1:il2) = cpv%GRO(il1:il2)
         vs%tile%sno(il1:il2) = cpv%SNO(il1:il2)
         vs%tile%albsno(il1:il2) = cpv%ALBS(il1:il2)

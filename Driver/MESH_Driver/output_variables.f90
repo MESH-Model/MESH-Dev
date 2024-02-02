@@ -39,6 +39,9 @@ module output_variables
         real, dimension(:), pointer :: fzwscan => null()
         real, dimension(:), pointer :: cmas => null()
         real, dimension(:), pointer :: tcan => null()
+        real, dimension(:), pointer :: tacan => null()
+        real, dimension(:), pointer :: qacan => null()
+        real, dimension(:), pointer :: uvcan => null()
         real, dimension(:), pointer :: gro => null()
 
         !> Snow variables.
@@ -407,6 +410,33 @@ module output_variables
                 end if
                 call output_variables_allocate(fields%tcan, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%tcan, n1)
+                call output_variables_allocate(fields%ican, n1)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
+            case (VN_TACAN)
+                if (.not. allocated(fields%vs%tacan)) then
+                    allocate(fields%vs%tacan(fields%vs%dim_length))
+                    fields%vs%tacan = huge(fields%vs%tacan)
+                end if
+                call output_variables_allocate(fields%tacan, n1, pntr)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%tacan, n1)
+                call output_variables_allocate(fields%ican, n1)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
+            case (VN_QACAN)
+                if (.not. allocated(fields%vs%qacan)) then
+                    allocate(fields%vs%qacan(fields%vs%dim_length))
+                    fields%vs%qacan = huge(fields%vs%qacan)
+                end if
+                call output_variables_allocate(fields%qacan, n1, pntr)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%qacan, n1)
+                call output_variables_allocate(fields%ican, n1)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
+            case (VN_UVCAN)
+                if (.not. allocated(fields%vs%uvcan)) then
+                    allocate(fields%vs%uvcan(fields%vs%dim_length))
+                    fields%vs%uvcan = huge(fields%vs%uvcan)
+                end if
+                call output_variables_allocate(fields%uvcan, n1, pntr)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%uvcan, n1)
                 call output_variables_allocate(fields%ican, n1)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
             case (VN_GRO)
@@ -892,6 +922,9 @@ module output_variables
         if (associated(group%fzwscan)) group%fzwscan = out%NO_DATA
         if (associated(group%cmas)) group%cmas = out%NO_DATA
         if (associated(group%tcan)) group%tcan = out%NO_DATA
+        if (associated(group%tacan)) group%tacan = out%NO_DATA
+        if (associated(group%qacan)) group%qacan = out%NO_DATA
+        if (associated(group%uvcan)) group%uvcan = out%NO_DATA
         if (associated(group%gro)) group%gro = out%NO_DATA
 
         !> Snow variables.
@@ -1251,8 +1284,56 @@ module output_variables
                 end if
             end if
         end if
+        if (associated(group%tacan)) then
+            if (all(group%tacan == out%NO_DATA)) then
+                if (all(group_vs%tcan /= huge(group_vs%tacan))) then
+                    group%tacan = group_vs%tacan
+                else
+                    group%tacan = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%qacan)) then
+            if (all(group%qacan == out%NO_DATA)) then
+                if (all(group_vs%qacan /= huge(group_vs%qacan))) then
+                    group%qacan = group_vs%qacan
+                else
+                    group%qacan = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%uvcan)) then
+            if (all(group%uvcan == out%NO_DATA)) then
+                if (all(group_vs%uvcan /= huge(group_vs%uvcan))) then
+                    group%uvcan = group_vs%uvcan
+                else
+                    group%uvcan = 0.0
+                end if
+            end if
+        end if
         if (associated(group%ican)) then
             where (group%tcan > 0.0)
+                group%ican = 1.0
+            elsewhere
+                group%ican = 0.0
+            end where
+        end if
+        if (associated(group%ican)) then
+            where (group%tacan > 0.0)
+                group%ican = 1.0
+            elsewhere
+                group%ican = 0.0
+            end where
+        end if
+        if (associated(group%ican)) then
+            where (group%qacan > 0.0)
+                group%ican = 1.0
+            elsewhere
+                group%ican = 0.0
+            end where
+        end if
+        if (associated(group%ican)) then
+            where (group%uvcan > 0.0)
                 group%ican = 1.0
             elsewhere
                 group%ican = 0.0
@@ -2058,6 +2139,15 @@ module output_variables
         end if
         if (associated(group%tcan)) then
             call output_variables_field_icount_average(group%tcan, group_ts%tcan, group%ican, group_ts%ican)
+        end if
+        if (associated(group%tacan)) then
+            call output_variables_field_icount_average(group%tacan, group_ts%tacan, group%ican, group_ts%ican)
+        end if
+            if (associated(group%qacan)) then
+            call output_variables_field_icount_average(group%qacan, group_ts%qacan, group%ican, group_ts%ican)
+        end if
+        if (associated(group%uvcan)) then
+            call output_variables_field_icount_average(group%uvcan, group_ts%uvcan, group%ican, group_ts%ican)
         end if
         if (associated(group%gro)) then
             call output_variables_field_update(group%gro, group_ts%gro, its, 'avg')

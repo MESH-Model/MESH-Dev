@@ -1984,6 +1984,12 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_CMAS, args, nargs, z)
                 case (VN_TCAN)
                     call output_files_append_field(fls, shd, ts, VN_TCAN, args, nargs, z)
+                case (VN_TACAN)
+                    call output_files_append_field(fls, shd, ts, VN_TACAN, args, nargs, z)
+                case (VN_QACAN)
+                    call output_files_append_field(fls, shd, ts, VN_QACAN, args, nargs, z)
+                case (VN_UVCAN)
+                    call output_files_append_field(fls, shd, ts, VN_UVCAN, args, nargs, z)
                 case (VN_GRO)
                     call output_files_append_field(fls, shd, ts, VN_GRO, args, nargs, z)
 

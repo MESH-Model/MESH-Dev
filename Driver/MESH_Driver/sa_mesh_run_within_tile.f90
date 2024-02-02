@@ -65,6 +65,7 @@ module sa_mesh_run_within_tile
             if (allocated(vs%tile%cmas)) n = n + 1
             if (allocated(vs%tile%tacan)) n = n + 1
             if (allocated(vs%tile%qacan)) n = n + 1
+            if (allocated(vs%tile%uvcan)) n = n + 1
             if (allocated(vs%tile%tcan)) n = n + 1
             if (allocated(vs%tile%gro)) n = n + 1
             if (allocated(vs%tile%sno)) n = n + 1
@@ -137,6 +138,10 @@ module sa_mesh_run_within_tile
                 end if
                 if (allocated(vs%tile%qacan)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%qacan))
+                    n = n + 1
+                end if
+                if (allocated(vs%tile%uvcan)) then
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%uvcan))
                     n = n + 1
                 end if
                 if (allocated(vs%tile%tcan)) then
@@ -831,6 +836,7 @@ module sa_mesh_run_within_tile
 !        if (allocated(vs%tile%cmas)) vs%tile%cmas(il1:il2) = 0.0
 !        if (allocated(vs%tile%tacan)) vs%tile%tacan(il1:il2) = 0.0
 !        if (allocated(vs%tile%qacan)) vs%tile%qacan(il1:il2) = 0.0
+!        if (allocated(vs%tile%uvcan)) vs%tile%uvcan(il1:il2) = 0.0
 !        if (allocated(vs%tile%tcan)) vs%tile%tcan(il1:il2) = 0.0
 !        if (allocated(vs%tile%gro)) vs%tile%gro(il1:il2) = 0.0
 

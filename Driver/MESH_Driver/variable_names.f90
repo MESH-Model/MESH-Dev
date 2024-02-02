@@ -68,6 +68,9 @@ module variable_names
     character(len = *), parameter :: VN_FZWSCAN = 'FZWSCAN'
     character(len = *), parameter :: VN_CMAS = 'CMAS'
     character(len = *), parameter :: VN_TCAN = 'TCAN'
+    character(len = *), parameter :: VN_TACAN = 'TACAN'
+    character(len = *), parameter :: VN_QACAN = 'QACAN'
+    character(len = *), parameter :: VN_UVCAN = 'UVCAN'
     character(len = *), parameter :: VN_GRO = 'GRO'
 
     !> Snow variables.

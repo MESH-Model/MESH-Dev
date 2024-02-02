@@ -53,6 +53,7 @@ module model_variables
         !* cmas: Organic mass of the canopy. [kg m**-2].
         !* tacan: Air temperature in the canopy. [K].
         !* qacan: Specific humidity of air in the canopy. [kg kg**-1].
+        !* uvcan: Wind speed of air in the canopy. [m s**-1].
         !* tcan: Vegetation canopy temperature. [K].
         !* gro: Vegetation growth index. [--].
         real, dimension(:), allocatable :: lqwscan
@@ -60,6 +61,7 @@ module model_variables
         real, dimension(:), allocatable :: cmas
         real, dimension(:), allocatable :: tacan
         real, dimension(:), allocatable :: qacan
+        real, dimension(:), allocatable :: uvcan
         real, dimension(:), allocatable :: tcan
         real, dimension(:), allocatable :: gro
 
@@ -294,6 +296,7 @@ module model_variables
         if (allocated(group%cmas)) group%cmas = 0.0
         if (allocated(group%tacan)) group%tacan = 0.0
         if (allocated(group%qacan)) group%qacan = 0.0
+        if (allocated(group%uvcan)) group%uvcan = 0.0
         if (allocated(group%tcan)) group%tcan = 0.0
         if (allocated(group%gro)) group%gro = 0.0
 
@@ -460,6 +463,7 @@ module model_variables
         allocate(group%cmas(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tacan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qacan(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%uvcan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tcan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%gro(n), stat = z); if (z /= 0) ierr = z
 

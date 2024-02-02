@@ -306,6 +306,7 @@ module sa_mesh_run_within_grid
         if (allocated(vs%grid%cmas)) vs%grid%cmas(i1:i2) = 0.0
         if (allocated(vs%grid%tacan)) vs%grid%tacan(i1:i2) = 0.0
         if (allocated(vs%grid%qacan)) vs%grid%qacan(i1:i2) = 0.0
+        if (allocated(vs%grid%uvcan)) vs%grid%uvcan(i1:i2) = 0.0
         if (allocated(vs%grid%tcan)) vs%grid%tcan(i1:i2) = 0.0
         if (allocated(vs%grid%gro)) vs%grid%gro(i1:i2) = 0.0
 
@@ -485,6 +486,9 @@ module sa_mesh_run_within_grid
             end if
             if (allocated(vs%grid%qacan) .and. allocated(vs%tile%qacan)) then
                 if (vs%tile%qacan(k) /= huge(vs%tile%qacan)) vs%grid%qacan(ki) = vs%grid%qacan(ki) + vs%tile%qacan(k)*frac
+            end if
+            if (allocated(vs%grid%uvcan) .and. allocated(vs%tile%uvcan)) then
+                if (vs%tile%uvcan(k) /= huge(vs%tile%uvcan)) vs%grid%uvcan(ki) = vs%grid%uvcan(ki) + vs%tile%uvcan(k)*frac
             end if
             if (allocated(vs%tile%tcan)) then
                 if (vs%tile%tcan(k) > 0.0) then
