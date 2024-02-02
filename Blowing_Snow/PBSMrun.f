@@ -114,7 +114,10 @@ C
        DriftH=0.0
        SublH=0.0
 C
-       IF(ZSNOW(I).GT.1.0E-3) THEN
+C      ME changed the threhold to 3cm - Previously FY changed it to 1cm from 1mm originally
+C      ME to prevent blowing during the end of melt when snow is slushy
+C      ME based on dicussions with JP who mentioned it can go up to 5cm
+       IF(ZSNOW(I).GT.3.0E-2) THEN
 C
          !Set values for mB for partitioning shear stress over vegetation
          !(different for vegetation categories;
@@ -160,16 +163,15 @@ C
          IF(Prob.GT.0.001)  THEN
            Ut=Ut*0.8
 C
-	   !>Single column calculations of blowing snow transport & sublimation
-	   CALL PBSMrates(E_StubHt,Ut,DriftH,SublH,
+       !> Single column calculations of blowing snow transport & sublimation
+       CALL PBSMrates(E_StubHt,Ut,DriftH,SublH,
      1               ST(I),SU(I),SQ(I),fetch(I),N_S(I),A_S(I),
      2               mBeta,PRES(I),I,N)
 C
            Drift(I)=DriftH*Prob/fetch(I)
            Subl(I)=SublH*Prob
 C
-!>         handle insufficient snowpack
-C
+           !> Handle insufficient snowpack
            IF(Drift(I)+Subl(I).GT.SNO(I)) THEN
              Subl(I)=SNO(I)*Subl(I)/(Subl(I)+Drift(I))
              Drift(I)=SNO(I)-Subl(I)
@@ -189,21 +191,23 @@ C
            ENDIF
            TSNOWds(I)=TSNOW(I)
          ELSE
-         !>  calculations for non-blowing snow events
+
+           !> Calculations for non-blowing snow events
            Subl(I)=0.0
            Drift(I)=0.0
            ZSNOWds=0.0
            TSNOWds(I)=TSNOW(I)
          ENDIF !IF(Prob.GT.0.001)  THEN
        ELSE
-       !>  calculations for non-blowing snow events
+
+         !> Calculations for non-blowing snow events
          Subl(I)=0.0
          Drift(I)=0.0
          ZSNOWds=0.0
          TSNOWds(I)=TSNOW(I)
        ENDIF !IF(ZSNOW(I).GT.1.0E-3) THEN
 C
-    !> Recalculate subarea snow properties after snow transport for all four subareas
+          !> Recalculate subarea snow properties after snow transport for all four subareas
           !if blowing snow occured
           IF(Drift(I).GT.0. .OR. Subl(I).GT.0.) THEN 
                  !snow mass loss is sum of transport + sublimation
@@ -322,7 +326,7 @@ C
                    ENDIF
                    gru_loss=gru_loss-sub_loss
                    if(ZSNOGS(I).gt.0.)then
-                   HCPSGS(I)=HCPICE*RHOSGS(I)/RHOICE+HCPW*WSNOGS(I)/
+                     HCPSGS(I)=HCPICE*RHOSGS(I)/RHOICE+HCPW*WSNOGS(I)/
      1                  (RHOW*ZSNOGS(I))
                    else
                      HCPSGS(I)=0.
@@ -336,10 +340,11 @@ C
                      XSNOGS(I)=0.
                    ENDIF
                  ENDIF
-	    	     !> Calculate snowpack properties at GRU-level
+
+                 !> Calculate snowpack properties at tile-level
                  if(XSNOCS(I).gt.0.or.XSNOGS(I).gt.0.or. 
      +                XSNOWC(I).gt.0.or.XSNOWG(I).gt.0.)then
-                 TSNOW(I)=(FCS(I)*(TSNOCS(I)+TFREZ)*HCPSCS(I)*
+                   TSNOW(I)=(FCS(I)*(TSNOCS(I)+TFREZ)*HCPSCS(I)*
      1                  ZSNOCS(I)*XSNOCS(I) +
      2                  FGS(I)*(TSNOGS(I)+TFREZ)*HCPSGS(I)*
      3                  ZSNOGS(I)*XSNOGS(I) +
@@ -351,7 +356,7 @@ C
      9                  FGS(I)*HCPSGS(I)*ZSNOGS(I)*XSNOGS(I) +
      A                  FC(I) *HCPSC(I)*ZSNOWC(I)*XSNOWC(I) +
      B                  FG(I) *HCPSG(I)*ZSNOWG(I)*XSNOWG(I))
-                 RHOSNO(I)=(FCS(I)*RHOSCS(I)*ZSNOCS(I)*XSNOCS(I) +   
+                   RHOSNO(I)=(FCS(I)*RHOSCS(I)*ZSNOCS(I)*XSNOCS(I) +   
      1                   FGS(I)*RHOSGS(I)*ZSNOGS(I)*XSNOGS(I) +   
      2                   FC(I)*RHOSC(I)*ZSNOWC(I)*XSNOWC(I) +   
      3                   FG(I)*RHOSG(I)*ZSNOWG(I)*XSNOWG(I))/    
@@ -359,17 +364,17 @@ C
      5                   FGS(I)*ZSNOGS(I)*XSNOGS(I) +                 
      6                   FC(I)*ZSNOWC(I)*XSNOWC(I) +
      7                   FG(I)*ZSNOWG(I)*XSNOWG(I))
-                 ZSNOW(I)=FCS(I)*ZSNOCS(I) + FGS(I)*ZSNOGS(I) +
+                   ZSNOW(I)=FCS(I)*ZSNOCS(I) + FGS(I)*ZSNOGS(I) +
      1                 FC(I)*ZSNOWC(I) + FG(I)*ZSNOWG(I)
-                 SNO(I)=ZSNOW(I)*RHOSNO(I)
-                 WSNOW(I)=FCS(I)*WSNOCS(I) + FGS(I)*WSNOGS(I)
+                   SNO(I)=ZSNOW(I)*RHOSNO(I)
+                   WSNOW(I)=FCS(I)*WSNOCS(I) + FGS(I)*WSNOGS(I)
                  else
-                 TSNOW(I)=TFREZ
-                 RHOSNO(I)=0.
-                 ZSNOW(I)=0.
-                 SNO(I)=0.
-                 Subl(I)=Subl(I)+WSNOW(I)
-                 WSNOW(I)=0.
+                   TSNOW(I)=TFREZ
+                   RHOSNO(I)=0.
+                   ZSNOW(I)=0.
+                   SNO(I)=0.
+                   Subl(I)=Subl(I)+WSNOW(I)
+                   WSNOW(I)=0.
                  endif
           ENDIF !Drift(I).GT.0. .OR. Subl(I).GT.0.
   100 CONTINUE
