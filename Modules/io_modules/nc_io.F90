@@ -250,7 +250,7 @@ module nc_io
         ierr = nf90_inq_varid(iun, crs_name, vid)
         if (ierr /= NF90_NOERR) then
             write(code, FMT_GEN) ierr
-            call print_error( &
+            call print_warning( &
                 "A CRS projection '" // trim(crs_name) // "' was not found in the file (Code " // trim(adjustl(code)) // ").")
             ierr = 1
             return
@@ -7478,6 +7478,21 @@ module nc_io
         !> Close the file.
         q = .true.
         if (present(quiet)) q = quiet
+
+        !> Sync output.
+        ierr = nf90_sync(iun)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            if (q) then
+                call print_error("An error occurred closing the file (Code: " // trim(adjustl(code)) // "): " // trim(fpath))
+            else
+                call print_error("Unable to close the file (Code: " // trim(adjustl(code)) // ").")
+            end if
+            ierr = 1
+        else
+            ierr = 0
+        end if
+
         ierr = nf90_close(iun)
         if (ierr /= NF90_NOERR) then
             write(code, FMT_GEN) ierr
@@ -7708,6 +7723,7 @@ module nc_io
         real, dimension(size_x, size_y, size(dat, 2)) :: dat3
         real(kind = EightByteReal) t0_r8, t1_r8
         real f
+        character(len = DEFAULT_FIELD_LENGTH) code
 
         !> Get attributes from the file.
         ierr = 0
@@ -7771,6 +7787,16 @@ module nc_io
 
         !> Write data.
         if (ierr == 0) call nc4_add_data(iun, standard_name, vid, dat3, start = (/1, 1, dates(1, 1)/), ierr = ierr)
+
+        !> Sync output.
+        ierr = nf90_sync(iun)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error("Unable to close the file (Code: " // trim(adjustl(code)) // ").")
+            ierr = 1
+        else
+            ierr = 0
+        end if
 
     end subroutine
 #endif
