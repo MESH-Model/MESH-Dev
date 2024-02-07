@@ -20,6 +20,7 @@ module permafrost_outputs_module
     character(len = *), parameter :: PMFRSTVN_TMIN = 'TMIN'
     character(len = *), parameter :: PMFRSTVN_TRNG = 'TRNG'
     character(len = *), parameter :: PMFRSTVN_DZAA = 'DZAA'
+    character(len = *), parameter :: PMFRSTVN_TZAA = 'TZAA'
 
     !> Description:
     !>  Data type for parameters.
@@ -42,10 +43,11 @@ module permafrost_outputs_module
     !*  tmin: Annual minimum of daily soil temperature (1: Tile index; 2: Soil layer). [K].
     !*  trng: Range/envelope of the annual maximum and minimum soil temperatures (1: Tile index; 2: Soil layer). [K].
     !*  dzaa: Depth of zero annual amplitude, where the range/envelope of the annual maximum and minimum soil temperatures in within the threshold (1: Tile index; 2: TTOL). [m].
+    !*  tzaa: Temperature at the depth of zero annual amplitude, (1: Tile index; 2: TTOL). [K].
     type permafrost_outputs_fields
         type(output_fields_surrogate) alt, altdoy, altenv
         type(output_fields_surrogate), dimension(:), allocatable :: tavg, tmax, tmin, trng
-        type(output_fields_surrogate), dimension(:), allocatable :: dzaa
+        type(output_fields_surrogate), dimension(:), allocatable :: dzaa, tzaa
     end type
 
     !> Description:
@@ -130,10 +132,10 @@ module permafrost_outputs_module
             end if
         end if
 
-        !> DZAA.
-        if (vname == PMFRSTVN_DZAA) then
+        !> DZAA and TZAA.
+        if (vname == PMFRSTVN_DZAA .or. vname == PMFRSTVN_TZAA) then
 
-            !> Set zero tolerance if none were specified.
+            !> Set default tolerance if none were specified.
             if (.not. allocated(prmfst%pm%dzaa_ttol)) then
                 allocate(prmfst%pm%dzaa_ttol(1))
                 prmfst%pm%dzaa_ttol(1) = 0.1
@@ -144,6 +146,15 @@ module permafrost_outputs_module
                     if (.not. associated(prmfst%out%dzaa(j)%y_tile)) then
                         allocate(prmfst%out%dzaa(j)%y_tile(nml), prmfst%out%dzaa(j)%y_grid(na))
                         prmfst%out%dzaa(j)%y_tile = 0.0; prmfst%out%dzaa(j)%y_grid = 0.0
+                    end if
+                end do
+            end if
+            if (.not. allocated(prmfst%out%tzaa)) then
+                allocate(prmfst%out%tzaa(size(prmfst%pm%dzaa_ttol)))
+                do j = 1, size(prmfst%pm%dzaa_ttol)
+                    if (.not. associated(prmfst%out%tzaa(j)%y_tile)) then
+                        allocate(prmfst%out%tzaa(j)%y_tile(nml), prmfst%out%tzaa(j)%y_grid(na))
+                        prmfst%out%tzaa(j)%y_tile = 0.0; prmfst%out%tzaa(j)%y_grid = 0.0
                     end if
                 end do
             end if
@@ -332,21 +343,22 @@ module permafrost_outputs_module
                     where (.not. prmfst%out%altdoy%y_grid > 0.0) prmfst%out%altdoy%y_grid = out%NO_DATA
                 end if
 
-                !> Calculate DZAA using annual temperature envelope (assign NO_DATA value if DZAA == 0.0).
+                !> Calculate DZAA & TZAA using annual temperature envelope (assign NO_DATA value if DZAA == 0.0).
                 if (allocated(prmfst%out%dzaa)) then
                     do j = 1, size(prmfst%pm%dzaa_ttol)
 
                         !> Tile-based.
                         call permafrost_dzaa( &
                             tmax_tile, tmin_tile, zbot, prmfst%pm%dzaa_ttol(j), prmfst%out%dzaa(j)%y_tile, &
-                            shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
+                            prmfst%out%tzaa(j)%y_tile, shd%lc%NML, shd%lc%IGND, 1, shd%lc%NML)
                         where (.not. prmfst%out%dzaa(j)%y_tile > 0.0) prmfst%out%dzaa(j)%y_tile = out%NO_DATA
-
+                        where (.not. prmfst%out%tzaa(j)%y_tile > 0.0) prmfst%out%tzaa(j)%y_tile = out%NO_DATA
                         !> Grid-based.
                         call permafrost_dzaa( &
                             tmax_grid, tmin_grid, zbot, prmfst%pm%dzaa_ttol(j), prmfst%out%dzaa(j)%y_grid, &
-                            shd%NA, shd%lc%IGND, 1, shd%NA)
+                            prmfst%out%tzaa(j)%y_grid, shd%NA, shd%lc%IGND, 1, shd%NA)
                         where (.not. prmfst%out%dzaa(j)%y_grid > 0.0) prmfst%out%dzaa(j)%y_grid = out%NO_DATA
+                        where (.not. prmfst%out%tzaa(j)%y_grid > 0.0) prmfst%out%tzaa(j)%y_grid = out%NO_DATA
                     end do
                 end if
             end if

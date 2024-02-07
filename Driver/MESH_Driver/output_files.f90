@@ -2161,7 +2161,7 @@ module output_files
                     end do
                 case (PMFRSTVN_DZAA)
 
-                    !> User-defined temperature threshold(s)/tolerance(s) for DZAA.
+                    !> User-defined temperature threshold(s)/tolerance(s) for DZAA & TZAA.
                     if (nargs > 1) then
                         do j = 2, nargs
                             if (lowercase(args(j)) == 'ttol') then
@@ -2190,6 +2190,39 @@ module output_files
                             line(index(line, '.'):index(line, '.')) = 'p'
                             line = trim(PMFRSTVN_DZAA) // '_TTOL_' // trim(adjustl(line))
                             call output_files_append_field(fls, shd, ts, line, prmfst%out%dzaa(j), args, nargs, z)
+                        end do
+                    end if
+                case (PMFRSTVN_TZAA)
+
+                    !> User-defined temperature threshold(s)/tolerance(s) for DZAA & TZAA.
+                    if (nargs > 1) then
+                        do j = 2, nargs
+                            if (lowercase(args(j)) == 'ttol') then
+                                if (allocated(prmfst%pm%dzaa_ttol)) then
+                                    call print_error( &
+                                        " Multiple instances of the 'ttol' option exist in outputs_balance.txt" // &
+                                        " or a previous entry of 'DZAA' without the 'ttol' option" // &
+                                        " has activated the default value ('ttol 0.1')." // &
+                                        " Only one instance of the 'ttol' option can exist." // &
+                                        " Combine multiple instances 'ttol' into a single option and add it to the first" // &
+                                        " entry of 'DZAA' in the list.")
+                                    z = 1
+                                    exit
+                                else
+                                    call output_files_parse_indices(args, nargs, prmfst%pm%dzaa_ttol, j, z)
+                                    exit
+                                end if
+                            end if
+                        end do
+                    end if
+                    if (z == 0) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_TZAA)
+                        do j = 1, size(prmfst%pm%dzaa_ttol)
+                            write(line, FMT_GEN) prmfst%pm%dzaa_ttol(j)
+                            call trimzero(line)
+                            line(index(line, '.'):index(line, '.')) = 'p'
+                            line = trim(PMFRSTVN_TZAA) // '_TTOL_' // trim(adjustl(line))
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tzaa(j), args, nargs, z)
                         end do
                     end if
 
