@@ -2143,7 +2143,7 @@ module output_variables
         if (associated(group%tacan)) then
             call output_variables_field_icount_average(group%tacan, group_ts%tacan, group%ican, group_ts%ican)
         end if
-            if (associated(group%qacan)) then
+        if (associated(group%qacan)) then
             call output_variables_field_icount_average(group%qacan, group_ts%qacan, group%ican, group_ts%ican)
         end if
         if (associated(group%uvcan)) then
