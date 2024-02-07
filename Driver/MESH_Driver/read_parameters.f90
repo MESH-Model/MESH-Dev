@@ -341,8 +341,8 @@ subroutine read_parameters(fls, shd, ierr)
                 pm%tile%ks(k) = pm%gru%ks(i)
                 pm%tile%orgm(k, :) = pm%gru%orgm(i, :)
                 pm%tile%zsnl(k) = pm%gru%zsnl(i)
-                pm%tile%zplg(k) = pm%gru%zplg(i)
                 pm%tile%zpls(k) = pm%gru%zpls(i)
+                pm%tile%zplg(k) = pm%gru%zplg(i)
                 if (allocated(RUNCLASS36_flgs%pm%gru%FREZTH)) then
                     if (.not. allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
                         allocate(RUNCLASS36_flgs%pm%tile%FREZTH(shd%lc%NML))

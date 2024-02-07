@@ -63,16 +63,16 @@ module input_parameters
         !* zbld: Height into the atmosphere for aggregating surface roughness (usually in the order of 50-100 m). [m].
         !* zrfh: Reference height (measurement height) for temperature and humidity. [m].
         !* zrfm: Reference height (measurement height) for wind speed. [m].
-        !* zplg: Maximum depth of liquid water allowed to be stored on the ground surface for snow-free areas. [m].
         real, dimension(:), allocatable :: zbld
         real, dimension(:), allocatable :: zrfh
         real, dimension(:), allocatable :: zrfm
-        real, dimension(:), allocatable :: zplg
 
         !* zsnl: Minimum depth to consider 100% cover of snow on the ground surface. [m].
         !* zpls: Maximum depth of liquid water allowed to be stored on the ground surface for snow-covered areas. [m].
+        !* zplg: Maximum depth of liquid water allowed to be stored on the ground surface for snow-free areas. [m].
         real, dimension(:), allocatable :: zsnl
         real, dimension(:), allocatable :: zpls
+        real, dimension(:), allocatable :: zplg
 
         !* sand: Percent content of sand in the mineral soil. [%].
         !* clay: Percent content of clay in the mineral soil. [%].
@@ -182,9 +182,9 @@ module input_parameters
         if (allocated(group%zbld)) group%zbld = 0.0
         if (allocated(group%zrfh)) group%zrfh = 0.0
         if (allocated(group%zrfm)) group%zrfm = 0.0
-        if (allocated(group%zplg)) group%zplg = 0.0
         if (allocated(group%zsnl)) group%zsnl = 0.0
         if (allocated(group%zpls)) group%zpls = 0.0
+        if (allocated(group%zplg)) group%zplg = 0.0
         if (allocated(group%sdep)) group%sdep = 0.0
         if (allocated(group%alwet)) group%alwet = 0.0
         if (allocated(group%aldry)) group%aldry = 0.0
@@ -303,9 +303,9 @@ module input_parameters
         allocate(group%zbld(n), stat = z); if (z /= 0) ierr = z
         allocate(group%zrfh(n), stat = z); if (z /= 0) ierr = z
         allocate(group%zrfm(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%zplg(n), stat = z); if (z /= 0) ierr = z
         allocate(group%zsnl(n), stat = z); if (z /= 0) ierr = z
         allocate(group%zpls(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%zplg(n), stat = z); if (z /= 0) ierr = z
         allocate(group%sdep(n), stat = z); if (z /= 0) ierr = z
         allocate(group%alwet(n), stat = z); if (z /= 0) ierr = z
         allocate(group%aldry(n), stat = z); if (z /= 0) ierr = z
