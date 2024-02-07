@@ -484,6 +484,7 @@ subroutine read_parameters(fls, shd, ierr)
             !> RUNCLASS36.
             if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
                 if (pm%grid%iwf(i) /= -1) pm%tile%iwf(k) = pm%grid%iwf(i)
+                if (pm%grid%zsnl(i) /= 0.0) pm%tile%zsnl(k) = pm%grid%zsnl(i)
                 if (allocated(RUNCLASS36_flgs%pm%grid%FREZTH)) then
                     if (.not. allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
                         allocate(RUNCLASS36_flgs%pm%tile%FREZTH(shd%lc%NML))
