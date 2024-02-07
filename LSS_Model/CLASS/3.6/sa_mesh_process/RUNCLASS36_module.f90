@@ -409,7 +409,7 @@ module RUNCLASS36_module
             FSTRCS(il1:il2)*cdv%FCS(il1:il2) + FSTRC(il1:il2)*cdv%FC(il1:il2) + &
             FSTRG(il1:il2)*cdv%FG(il1:il2) + FSTRGS(il1:il2)*cdv%FGS(il1:il2)
         vs%tile%potevp(il1:il2) = cdv%PET(il1:il2)
-        vs%tile%et(il1:il2) = cdv%QFS(il1:il2) + pbsm%vs%Subl(il1:il2)
+        vs%tile%et(il1:il2) = cdv%QFS(il1:il2) + pbsm%vs%Subl(il1:il2)/ic%dts
         vs%tile%ovrflw(il1:il2) = cdv%ROFO(il1:il2)
         vs%tile%qevp(il1:il2) = cdv%QEVP(il1:il2)
         vs%tile%qsens(il1:il2) = cdv%HFS(il1:il2)
