@@ -88,6 +88,13 @@ module output_variables
         real, dimension(:, :), pointer :: alwssol => null()
         real, dimension(:, :), pointer :: tsol => null()
         real, dimension(:, :), pointer :: gflx => null()
+        real, dimension(:, :), pointer :: hcps => null()
+        real, dimension(:, :), pointer :: hcpc => null()
+        real, dimension(:, :), pointer :: hcpg => null()
+        real, dimension(:, :), pointer :: tctopc => null()
+        real, dimension(:, :), pointer :: tctopg => null()
+        real, dimension(:, :), pointer :: tcbotc => null()
+        real, dimension(:, :), pointer :: tcbotg => null()
         real, dimension(:, :), pointer :: latflw => null()
         real, dimension(:), pointer :: zsolsat => null()
         real, dimension(:), pointer :: drainsol => null()
@@ -689,6 +696,55 @@ module output_variables
                 end if
                 call output_variables_allocate(fields%gflx, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%gflx, n1, n2)
+            case (VN_HCPS)
+                if (.not. allocated(fields%vs%hcps)) then
+                    allocate(fields%vs%hcps(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%hcps = huge(fields%vs%hcps)
+                end if
+                call output_variables_allocate(fields%hcps, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%hcps, n1, n2)
+            case (VN_HCPC)
+                if (.not. allocated(fields%vs%hcpc)) then
+                    allocate(fields%vs%hcpc(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%hcpc = huge(fields%vs%hcpc)
+                end if
+                call output_variables_allocate(fields%hcpc, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%hcpc, n1, n2)
+            case (VN_HCPG)
+                if (.not. allocated(fields%vs%hcpg)) then
+                    allocate(fields%vs%hcpg(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%hcpg = huge(fields%vs%hcpg)
+                end if
+                call output_variables_allocate(fields%hcpg, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%hcpg, n1, n2)
+            case (VN_TCTOPC)
+                if (.not. allocated(fields%vs%tctopc)) then
+                    allocate(fields%vs%tctopc(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%tctopc = huge(fields%vs%tctopc)
+                end if
+                call output_variables_allocate(fields%tctopc, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%tctopc, n1, n2)
+            case (VN_TCTOPG)
+                if (.not. allocated(fields%vs%tctopg)) then
+                    allocate(fields%vs%tctopg(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%tctopg = huge(fields%vs%tctopg)
+                end if
+                call output_variables_allocate(fields%tctopg, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%tctopg, n1, n2)
+            case (VN_TCBOTC)
+                if (.not. allocated(fields%vs%tcbotc)) then
+                    allocate(fields%vs%tcbotc(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%tcbotc = huge(fields%vs%tcbotc)
+                end if
+                call output_variables_allocate(fields%tcbotc, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%tcbotc, n1, n2)
+            case (VN_TCBOTG)
+                if (.not. allocated(fields%vs%tcbotg)) then
+                    allocate(fields%vs%tcbotg(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%tcbotg = huge(fields%vs%tcbotg)
+                end if
+                call output_variables_allocate(fields%tcbotg, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%tcbotg, n1, n2)
             case (VN_LATFLW)
                 if (.not. allocated(fields%vs%latflw)) then
                     allocate(fields%vs%latflw(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
@@ -971,6 +1027,13 @@ module output_variables
         if (associated(group%alwssol)) group%alwssol = out%NO_DATA
         if (associated(group%tsol)) group%tsol = out%NO_DATA
         if (associated(group%gflx)) group%gflx = out%NO_DATA
+        if (associated(group%hcps)) group%hcps = out%NO_DATA
+        if (associated(group%hcpc)) group%hcpc = out%NO_DATA
+        if (associated(group%hcpg)) group%hcpg = out%NO_DATA
+        if (associated(group%tctopc)) group%tctopc = out%NO_DATA
+        if (associated(group%tctopg)) group%tctopg = out%NO_DATA
+        if (associated(group%tcbotc)) group%tcbotc = out%NO_DATA
+        if (associated(group%tcbotg)) group%tcbotg = out%NO_DATA
         if (associated(group%latflw)) group%latflw = out%NO_DATA
         if (associated(group%zsolsat)) group%zsolsat = out%NO_DATA
         if (associated(group%drainsol)) group%drainsol = out%NO_DATA
@@ -1760,6 +1823,69 @@ module output_variables
                 end if
             end if
         end if
+        if (associated(group%hcps)) then
+            if (all(group%hcps == out%NO_DATA)) then
+                if (all(group_vs%hcps /= huge(group_vs%hcps))) then
+                    group%hcps = group_vs%hcps
+                else
+                    group%hcps = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%hcpc)) then
+            if (all(group%hcpc == out%NO_DATA)) then
+                if (all(group_vs%hcpc /= huge(group_vs%hcpc))) then
+                    group%hcpc = group_vs%hcpc
+                else
+                    group%hcpc = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%hcpg)) then
+            if (all(group%hcpg == out%NO_DATA)) then
+                if (all(group_vs%hcpg /= huge(group_vs%hcpg))) then
+                    group%hcpg = group_vs%hcpg
+                else
+                    group%hcpg = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%tctopc)) then
+            if (all(group%tctopc == out%NO_DATA)) then
+                if (all(group_vs%tctopc /= huge(group_vs%tctopc))) then
+                    group%tctopc = group_vs%tctopc
+                else
+                    group%tctopc = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%tctopg)) then
+            if (all(group%tctopg == out%NO_DATA)) then
+                if (all(group_vs%tctopg /= huge(group_vs%tctopg))) then
+                    group%tctopg = group_vs%tctopg
+                else
+                    group%tctopg = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%tcbotc)) then
+            if (all(group%tcbotc == out%NO_DATA)) then
+                if (all(group_vs%tcbotc /= huge(group_vs%tcbotc))) then
+                    group%tcbotc = group_vs%tcbotc
+                else
+                    group%tcbotc = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%tcbotg)) then
+            if (all(group%tcbotg == out%NO_DATA)) then
+                if (all(group_vs%tcbotg /= huge(group_vs%tcbotg))) then
+                    group%tcbotg = group_vs%tcbotg
+                else
+                    group%tcbotg = 0.0
+                end if
+            end if
+        end if
         if (associated(group%latflw)) then
             if (all(group%latflw == out%NO_DATA)) then
                 if (all(group_vs%latflw /= huge(group_vs%latflw))) then
@@ -2271,6 +2397,27 @@ module output_variables
             end if
             if (associated(group%gflx)) then
                 call output_variables_field_update(group%gflx(:, j), group_ts%gflx(:, j), its, 'avg')
+            end if
+            if (associated(group%hcps)) then
+                call output_variables_field_update(group%hcps(:, j), group_ts%hcps(:, j), its, 'avg')
+            end if
+            if (associated(group%hcpc)) then
+                call output_variables_field_update(group%hcpc(:, j), group_ts%hcpc(:, j), its, 'avg')
+            end if
+            if (associated(group%hcpg)) then
+                call output_variables_field_update(group%hcpg(:, j), group_ts%hcpg(:, j), its, 'avg')
+            end if
+            if (associated(group%tctopc)) then
+                call output_variables_field_update(group%tctopc(:, j), group_ts%tctopc(:, j), its, 'avg')
+            end if
+            if (associated(group%tctopg)) then
+                call output_variables_field_update(group%tctopg(:, j), group_ts%tctopg(:, j), its, 'avg')
+            end if
+            if (associated(group%tcbotc)) then
+                call output_variables_field_update(group%tcbotc(:, j), group_ts%tcbotc(:, j), its, 'avg')
+            end if
+            if (associated(group%tcbotg)) then
+                call output_variables_field_update(group%tcbotg(:, j), group_ts%tcbotg(:, j), its, 'avg')
             end if
             if (associated(group%latflw)) then
                 call output_variables_field_update(group%latflw(:, j), group_ts%latflw(:, j), its, 'sum')

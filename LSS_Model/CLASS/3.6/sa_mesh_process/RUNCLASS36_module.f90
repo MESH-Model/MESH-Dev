@@ -426,6 +426,13 @@ module RUNCLASS36_module
         vs%tile%thlqsol(il1:il2, :) = cpv%THLQ(il1:il2, :)
         vs%tile%tsol(il1:il2, :) = cpv%TBAR(il1:il2, :)
         vs%tile%gflx(il1:il2, :) = cdv%GFLX(il1:il2, :)
+        vs%tile%hcps(il1:il2, :) = csfv%HCPS(il1:il2, :)
+        vs%tile%hcpc(il1:il2, :) = HCPC(il1:il2, :)
+        vs%tile%hcpg(il1:il2, :) = HCPG(il1:il2, :)
+        vs%tile%tctopc(il1:il2, :) = TCTOPC(il1:il2, :)
+        vs%tile%tctopg(il1:il2, :) = TCTOPG(il1:il2, :)
+        vs%tile%tcbotc(il1:il2, :) = TCBOTC(il1:il2, :)
+        vs%tile%tcbotg(il1:il2, :) = TCBOTG(il1:il2, :)
         vs%tile%drainsol(il1:il2) = cdv%ROFB(il1:il2)
 
     end subroutine

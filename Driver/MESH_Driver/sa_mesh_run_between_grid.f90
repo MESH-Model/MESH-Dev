@@ -1146,6 +1146,69 @@ module sa_mesh_run_between_grid
                 vs%basin%gflx = huge(vs%basin%gflx)
             end if
         end if
+        if (allocated(vs%basin%hcps) .and. allocated(vs%grid%hcps)) then
+            if (all(vs%grid%hcps /= huge(vs%grid%hcps))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%hcps(:, j) = vs%grid%hcps(:, j)*shd%FRAC
+                end do
+            else
+                vs%basin%hcps = huge(vs%basin%hcps)
+            end if
+        end if
+        if (allocated(vs%basin%hcpc) .and. allocated(vs%grid%hcpc)) then
+            if (all(vs%grid%hcpc /= huge(vs%grid%hcpc))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%hcpc(:, j) = vs%grid%hcpc(:, j)*shd%FRAC
+                end do
+            else
+                vs%basin%hcpc = huge(vs%basin%hcpc)
+            end if
+        end if
+        if (allocated(vs%basin%hcpg) .and. allocated(vs%grid%hcpg)) then
+            if (all(vs%grid%hcpg /= huge(vs%grid%hcpg))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%hcpg(:, j) = vs%grid%hcpg(:, j)*shd%FRAC
+                end do
+            else
+                vs%basin%hcpg = huge(vs%basin%hcpg)
+            end if
+        end if
+        if (allocated(vs%basin%tctopc) .and. allocated(vs%grid%tctopc)) then
+            if (all(vs%grid%tctopc /= huge(vs%grid%tctopc))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%tctopc(:, j) = vs%grid%tctopc(:, j)*shd%FRAC
+                end do
+            else
+                vs%basin%tctopc = huge(vs%basin%tctopc)
+            end if
+        end if
+        if (allocated(vs%basin%tctopg) .and. allocated(vs%grid%tctopg)) then
+            if (all(vs%grid%tctopg /= huge(vs%grid%tctopg))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%tctopg(:, j) = vs%grid%tctopg(:, j)*shd%FRAC
+                end do
+            else
+                vs%basin%tctopg = huge(vs%basin%tctopg)
+            end if
+        end if
+        if (allocated(vs%basin%tcbotc) .and. allocated(vs%grid%tcbotc)) then
+            if (all(vs%grid%tcbotc /= huge(vs%grid%tcbotc))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%tcbotc(:, j) = vs%grid%tcbotc(:, j)*shd%FRAC
+                end do
+            else
+                vs%basin%tcbotc = huge(vs%basin%tcbotc)
+            end if
+        end if
+        if (allocated(vs%basin%tcbotg) .and. allocated(vs%grid%tcbotg)) then
+            if (all(vs%grid%tcbotg /= huge(vs%grid%tcbotg))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%tcbotg(:, j) = vs%grid%tcbotg(:, j)*shd%FRAC
+                end do
+            else
+                vs%basin%tcbotg = huge(vs%basin%tcbotg)
+            end if
+        end if
         if (allocated(vs%basin%latflw) .and. allocated(vs%grid%latflw)) then
             if (all(vs%grid%latflw /= huge(vs%grid%latflw))) then
                 do j = 1, shd%lc%IGND
@@ -1535,6 +1598,41 @@ module sa_mesh_run_between_grid
                         vs%basin%gflx(ii, :) = vs%basin%gflx(ii, :) + vs%basin%gflx(i, :)
                     end if
                 end if
+                if (allocated(vs%basin%hcps)) then
+                    if (all(vs%basin%hcps(i, :) /= huge(vs%basin%hcps))) then
+                        vs%basin%hcps(ii, :) = vs%basin%hcps(ii, :) + vs%basin%hcps(i, :)
+                    end if
+                end if
+                if (allocated(vs%basin%hcpc)) then
+                    if (all(vs%basin%hcpc(i, :) /= huge(vs%basin%hcpc))) then
+                        vs%basin%hcpc(ii, :) = vs%basin%hcpc(ii, :) + vs%basin%hcpc(i, :)
+                    end if
+                end if
+                if (allocated(vs%basin%hcpg)) then
+                    if (all(vs%basin%hcpg(i, :) /= huge(vs%basin%hcpg))) then
+                        vs%basin%hcpg(ii, :) = vs%basin%hcpg(ii, :) + vs%basin%hcpg(i, :)
+                    end if
+                end if
+                if (allocated(vs%basin%tctopc)) then
+                    if (all(vs%basin%tctopc(i, :) /= huge(vs%basin%tctopc))) then
+                        vs%basin%tctopc(ii, :) = vs%basin%tctopc(ii, :) + vs%basin%tctopc(i, :)
+                    end if
+                end if
+                if (allocated(vs%basin%tctopg)) then
+                    if (all(vs%basin%tctopg(i, :) /= huge(vs%basin%tctopg))) then
+                        vs%basin%tctopg(ii, :) = vs%basin%tctopg(ii, :) + vs%basin%tctopg(i, :)
+                    end if
+                end if
+                if (allocated(vs%basin%tcbotc)) then
+                    if (all(vs%basin%tcbotc(i, :) /= huge(vs%basin%tcbotc))) then
+                        vs%basin%tcbotc(ii, :) = vs%basin%tcbotc(ii, :) + vs%basin%tcbotc(i, :)
+                    end if
+                end if
+                if (allocated(vs%basin%tcbotg)) then
+                    if (all(vs%basin%tcbotg(i, :) /= huge(vs%basin%tcbotg))) then
+                        vs%basin%tcbotg(ii, :) = vs%basin%tcbotg(ii, :) + vs%basin%tcbotg(i, :)
+                    end if
+                end if
                 if (allocated(vs%basin%latflw)) then
                     if (all(vs%basin%latflw(i, :) /= huge(vs%basin%latflw))) then
                         vs%basin%latflw(ii, :) = vs%basin%latflw(ii, :) + vs%basin%latflw(i, :)
@@ -1834,6 +1932,55 @@ module sa_mesh_run_between_grid
             if (all(vs%basin%gflx /= huge(vs%basin%gflx))) then
                 do j = 1, shd%lc%IGND
                     vs%basin%gflx(:, j) = vs%basin%gflx(:, j)/frac
+                end do
+            end if
+        end if
+        if (allocated(vs%basin%hcps)) then
+            if (all(vs%basin%hcps /= huge(vs%basin%hcps))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%hcps(:, j) = vs%basin%hcps(:, j)/frac
+                end do
+            end if
+        end if
+        if (allocated(vs%basin%hcpc)) then
+            if (all(vs%basin%hcpc /= huge(vs%basin%hcpc))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%hcpc(:, j) = vs%basin%hcpc(:, j)/frac
+                end do
+            end if
+        end if
+        if (allocated(vs%basin%hcpg)) then
+            if (all(vs%basin%hcpg /= huge(vs%basin%hcpg))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%hcpg(:, j) = vs%basin%hcpg(:, j)/frac
+                end do
+            end if
+        end if
+        if (allocated(vs%basin%tctopc)) then
+            if (all(vs%basin%tctopc /= huge(vs%basin%tctopc))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%tctopc(:, j) = vs%basin%tctopc(:, j)/frac
+                end do
+            end if
+        end if
+        if (allocated(vs%basin%tctopg)) then
+            if (all(vs%basin%tctopg /= huge(vs%basin%tctopg))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%tctopg(:, j) = vs%basin%tctopg(:, j)/frac
+                end do
+            end if
+        end if
+        if (allocated(vs%basin%tcbotc)) then
+            if (all(vs%basin%tcbotc /= huge(vs%basin%tcbotc))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%tcbotc(:, j) = vs%basin%tcbotc(:, j)/frac
+                end do
+            end if
+        end if
+        if (allocated(vs%basin%tctopg)) then
+            if (all(vs%basin%tctopg /= huge(vs%basin%tctopg))) then
+                do j = 1, shd%lc%IGND
+                    vs%basin%tctopg(:, j) = vs%basin%tctopg(:, j)/frac
                 end do
             end if
         end if

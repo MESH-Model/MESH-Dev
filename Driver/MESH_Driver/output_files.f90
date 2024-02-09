@@ -2082,6 +2082,34 @@ module output_files
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, VN_GFLX, args, nargs, z, j)
                     end do
+                case (VN_HCPS, 'SoilHeatCapacity')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_HCPS, args, nargs, z, j)
+                    end do
+                case (VN_HCPC, 'SoilHeatCapacity_Canopy')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_HCPC, args, nargs, z, j)
+                    end do
+                case (VN_HCPG, 'SoilHeatCapacity_Bare')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_HCPG, args, nargs, z, j)
+                    end do
+                case (VN_TCTOPC, 'SoilThermalConductivity_Top_Canopy')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_TCTOPC, args, nargs, z, j)
+                    end do
+                case (VN_TCTOPG, 'SoilThermalConductivity_Top_Bare')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_TCTOPG, args, nargs, z, j)
+                    end do
+                case (VN_TCBOTC, 'SoilThermalConductivity_Bottom_Canopy')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_TCBOTC, args, nargs, z, j)
+                    end do
+                case (VN_TCBOTG, 'SoilThermalConductivity_Bottom_Bare')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_TCBOTG, args, nargs, z, j)
+                    end do
                 case (VN_LATFLW, 'ROFS')
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, VN_LATFLW, args, nargs, z, j, real(ic%dts))
