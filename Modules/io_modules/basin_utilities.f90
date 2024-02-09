@@ -690,6 +690,11 @@ module basin_utilities
                     where (SUBBASIN == 0) gru_nm(:, m) = 0.0
                 end do
 
+                !> Set 'DA' to zero for all cells that are masked by 'SUBBASINFLAG'.
+                do m = 1, shd%NA
+                    where (SUBBASIN == 0) shd%DA = 0.0
+                end do
+
                 !> Print diagnostic information to screen.
                 if (DIAGNOSEMODE) then
                     write(line, FMT_GEN) 'SUBBASIN', 'GRIDS'

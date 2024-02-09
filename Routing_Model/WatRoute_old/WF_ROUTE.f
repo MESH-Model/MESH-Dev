@@ -96,6 +96,7 @@ c data as the values should already be set in the resume.txt file.
 
 c     Initialize
       do n=1,NLTEST              ! na or wf_naa ?
+         if( wf_da(n).eq.0.0 ) cycle
          i=wf_yy(n)
          j=wf_xx(n)
          iset(n)=0
@@ -111,6 +112,7 @@ c        CHANGE for wf_route: use two temporary da arrays
 c     Which elements are at the drainage divide (no upstream channel)
 c     after this routine all drainage divide elements top(n)=1 others top(n)=0
       do n=NLTEST-wf_naa,1,-1
+         if( wf_da(n).eq.0.0 ) cycle
          top(wf_next(n))=0
       end do
 
@@ -143,6 +145,7 @@ c     from downstream gauge flows
             if ( n.le.wf_r(l) ) cycle
             resflag=.false.
             do while( .not.resflag .and. n.le.NLTEST-wf_naa )
+               if( wf_da(n).eq.0.0 ) cycle
                if( qda(n).gt.0.0 ) then
 c                 We're at a gauge and we'll subtract out the release
 c                 Release can't be greater than the gauge flow
@@ -163,6 +166,7 @@ c     according to the nearest downstream gauge recorded flow at
 c     the beginning of the simulation
 c     Reservoir releases are taken off above
       do n=NLTEST-wf_naa,1,-1
+         if( wf_da(n).eq.0.0 ) cycle
          if( qda(n).le.0.0 ) then
 c           We are not at a gauge (with flows)
 c           We'll only assign a flow if it has not done before
@@ -207,6 +211,7 @@ c     Fill in remaining elements
 c     Work downstream, route known flows to outlet, recording
 c     associated drainage area
       do n=1,NLTEST-wf_naa
+         if( wf_da(n).eq.0.0 ) cycle
          nnx=wf_next(n)
          if( iset(nnx).eq.0 ) then
             if( nnx.gt.wf_naa ) then
@@ -224,6 +229,7 @@ c     sub-basin outlet flow
       qUngauged=0.0
       daUngauged=0.0
       do n=NLTEST-wf_naa+1, NLTEST
+         if( wf_da(n).eq.0.0 ) cycle
          if( qda(n).gt.0.0 ) then
             qUngauged=qUngauged+qda(n)
             daUngauged=daUngauged+daflow(n) ! drainage area associated
@@ -233,6 +239,7 @@ c     sub-basin outlet flow
 
 c     Work back upstream, filling basins with no data
       do n=NLTEST,1,-1
+         if( wf_da(n).eq.0.0 ) cycle
          if( iset(n).eq.0 ) then
             if( n.gt.NLTEST-wf_naa ) then
                if( daflow(n).gt.0.0 ) then
@@ -270,6 +277,7 @@ c                       Should never need this line, just a precaution
 
 c     Baseflows should all be set
       do n=1,NLTEST-wf_naa
+         if( wf_da(n).eq.0.0 ) cycle
          wf_qbase(n)=qda(n)
       end do
 
@@ -284,6 +292,7 @@ c     Track the river to the outlet or to the wf_next reservoir.
             if ( n.le.wf_r(l) ) cycle
             resflag=.false.
             do while( .not.resflag .and. n.le.NLTEST-wf_naa )
+               if( wf_da(n).eq.0.0 ) cycle
                qda(n)=qda(n)+qinit(l)
                n=wf_next(n)
                if( wf_r(l).gt.n ) resflag=.true.
@@ -293,6 +302,7 @@ c     Track the river to the outlet or to the wf_next reservoir.
 
 c     This section came from reset.for
       do n=1,NLTEST-wf_naa
+         if( wf_da(n).eq.0.0 ) cycle
          i=wf_yy(n)
          j=wf_xx(n)
          ii=wf_ibn(n)
@@ -387,6 +397,7 @@ c      close(707)
 
 c     Initialize outlet elements
       do n=NLTEST-wf_naa+1, NLTEST
+         if( wf_da(n).eq.0.0 ) cycle
          wf_qi1(n)=0.0
          wf_qi2(n)=0.0
          wf_qo1(n)=0.0
@@ -417,6 +428,7 @@ c     Initializations
 
 c     Convert kg/m^2/s of water (RUNOFF(I)) to cms (wf_qr(i))
       do i=1,NLTEST
+         if( wf_da(i).eq.0.0 ) cycle
          wf_qr(i) = ROFGRD(I)*(wf_al**2)/rhow
       enddo
       retryingIteration=.FALSE.
@@ -427,6 +439,7 @@ c     Convert kg/m^2/s of water (RUNOFF(I)) to cms (wf_qr(i))
 c        Carry forward flows/storage from last time step
          if( .NOT.retryingIteration ) then
             do i=1,NLTEST-wf_naa
+               if( wf_da(i).eq.0.0 ) cycle
                wf_store1(i)=wf_store2(i)
                wf_qo1(i)=wf_qo2(i)
                wf_qo2(i)=0.0
@@ -435,6 +448,7 @@ c        Carry forward flows/storage from last time step
             end do
          else
             do i=1,NLTEST-wf_naa
+               if( wf_da(i).eq.0.0 ) cycle
                wf_qo2(i)=0.0
                wf_qi2(i)=0.0
                wf_store2(i)=wf_store1(i)
@@ -447,6 +461,7 @@ c     Calculations start in the highest element in the watershed
 c     and proceed to the lowest.
 
       do i=1,NLTEST-wf_naa
+        if( wf_da(i).eq.0.0 ) cycle
 
         if( wf_next(i).gt.0.0 ) then ! wf_next < 0 when not in basin
                qadd(i)=wf_qr(i)
