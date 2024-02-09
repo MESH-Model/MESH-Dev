@@ -391,6 +391,7 @@ subroutine read_parameters_nc( &
                     do n = 1, shd%NA
                         pm%grid%iwf(n) = dat2_i(shd%xxx(n), shd%yyy(n))
                     end do
+                end if
             case ('zsnl')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
                     call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
