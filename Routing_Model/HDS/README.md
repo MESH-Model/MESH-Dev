@@ -17,3 +17,5 @@ All changes related to HDS are commented with ! HDS
 ________
 
 # Change log:
+
+* Change HDS inputs to fractions and depth instead of actual areas and volume for easier calibration. Fix bugs when calculating land area and the amount of runoff that bypasses the depressions.
