@@ -3,10 +3,7 @@
 ! change log:
 ! Oct 2023 -> initial implementation of the HDS standalone code into MESH
 ! Feb 2024 -> Migrating the code the new MESH version (1860)
-
-! To be Done
-! 1. Add gatekeeping
-! 2. Activate fractions
+! May 2024 -> code clean up for ECCC
 
 ! The control volume is the depression and all calculations within the HDS is in L^3/T
 module HDS_module
@@ -23,8 +20,6 @@ module HDS_module
 	
 	!!!!=================================================================
 	!!! Exaplanation of the overall HDS and fractions concept
-	! frac_up2rvr: fraction of the basin contributing directly to the river (basin area - small_dep_basin_area)
-	!! Assumptions
 	!! 
 	!!               ┌───────────────┐
 	!!               │ Upland Runoff │
@@ -59,8 +54,6 @@ module HDS_module
     real(rkind), allocatable    :: conArea(:)         		! contributing area fraction per subbasin [-]
     real(rkind), allocatable    :: pondVol(:)         		! pond volume [m3]
     real(rkind), allocatable    :: pondArea(:)        		! pond area [m2] 
-	! real(rkind), allocatable 	:: runoff_fracs(:) 			! runoff fractions [-]: frac_up2rvr: fraction of the upland runoff that bypasses depressions and goes directly to the river
-
   	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!MESH variables
 	type HDS_control_variables
@@ -87,7 +80,6 @@ module HDS_module
 		character(len=100)					:: fnam				! HDS output file name
 		!internal vairables
 		integer 							:: n, k				! grid and gru index
-		! real 								:: sum_fracs		! sum of runoff fracs
 
         !> Return if the process is not active.
         if (.not. HDS_MESH%PROCESS_ACTIVE) then
@@ -100,11 +92,10 @@ module HDS_module
 		! get the number of active grids/subbasins
 		nmesh_grid=shd%NA-1
 
-		! allocate HDS arrays
-        allocate(depressionVol(nmesh_grid), depCatchAreaFrac(nmesh_grid),  p(nmesh_grid), b(nmesh_grid))! allocate variables for grids, area_mult(nmesh_grid),
+		! allocate HDS arrays (parameters, variables, or states for grids)
+        allocate(depressionVol(nmesh_grid), depCatchAreaFrac(nmesh_grid),  p(nmesh_grid), b(nmesh_grid))
 		allocate(depressionArea(nmesh_grid), pondArea(nmesh_grid))
-		! allocate(runoff_fracs(nmesh_grid))! allocate variables for grids
-		allocate(pondVol(nmesh_grid),conArea(nmesh_grid))! allocate variables for grids
+		allocate(pondVol(nmesh_grid),conArea(nmesh_grid))
 		allocate(vMin(nmesh_grid))
         
 
@@ -113,15 +104,12 @@ module HDS_module
 		do n = i1, i2
 			!loop by tile to average canopy fractions.
 			pm%grid%fcan(n, :) = 0.0 !initialize average fcan values (it is zero from the original code)
-			!pm%grid%zrfm(n) = 40.0 !Assume it as 40 because it is commonly used
 			do k = il1, il2
 				if (shd%lc%ILMOS(k) == n) then !if grid number matches n
 					pm%grid%fcan(n, 1) = pm%grid%fcan(n, 1) + (pm%tile%fcan(k, 1)* shd%lc%ACLASS(n,k)) ! needleleaf fraction for the current tile * tile fraction per grid cell
 					pm%grid%fcan(n, 2) = pm%grid%fcan(n, 2) + (pm%tile%fcan(k, 2)* shd%lc%ACLASS(n,k)) ! broadleaf fraction for the current tile * tile fraction per grid cell
 					pm%grid%fcan(n, 3) = pm%grid%fcan(n, 3) + (pm%tile%fcan(k, 3)* shd%lc%ACLASS(n,k)) ! crop fraction for the current tile * tile fraction per grid cell
 					pm%grid%fcan(n, 4) = pm%grid%fcan(n, 4) + (pm%tile%fcan(k, 4)* shd%lc%ACLASS(n,k)) ! grass fraction for the current tile * tile fraction per grid cell
-					!That would cause troubles as the fluxes are estimated at certain depths
-					!pm%grid%zrfm(n) = pm%grid%zrfm(n) + (pm%tile%zrfm(k) * shd%lc%ACLASS(n,k))
 					pm%grid%zrfm(n) = pm%tile%zrfm(k) !just pick the zrfm from the last GRU id within the grid cell
 				end if
 			end do
@@ -135,95 +123,53 @@ module HDS_module
 		read(789,*) !skip the header line
 		! loop by grid to read grid values
 		do n = i1, i2
-						!MESH_grid_no    small_depressionVol       small_depressionArea small_catArea
-			read(789,*) k, depressionVol(n), depressionArea(n), depCatchAreaFrac(n), &!catchmentArea(n), &
-						! big_depressionVol   big_depressionArea	big_catArea	
-						 !depressionVol(n,2), depressionArea(n,2), catchmentArea(n,2), &
+						!MESH_grid_no        depressionVol       depCatchAreaFrac
+			read(789,*) k, depressionVol(n), depressionArea(n), depCatchAreaFrac(n), &
 						!  p, b, &
-						 p(n), b(n) !, & 
-						! frac_up2big, 		frac_sml2rvr			
-						!runoff_fracs(n,1), runoff_fracs(n,3)
-			! Note: depressionArea is being read as a fraction and below is transformed to actual area
+						 p(n), b(n)
+
+			! Note: depressionArea is being read as a fraction and below it is transformed to actual area
 			! This was done to facilitate calibrating the parameters to commonly used ones by modellers
-			! depression Area
+			! calculate depression Area
 			depressionArea(n) =  depressionArea(n) * shd%DA(n) * 1e6 ! km2 -> m2
-			! Note: depressionVol is being read as depth (m) and below is transformed to actual volume
-			depressionVol(n) = depressionVol(n) * depressionArea(n) ! simplified form ignoring exponent (resonable for reading inputs)
-			! calculate frac_up2rvr						
-			! runoff_fracs(n) = max((shd%DA(n) * 1e6) - catchmentArea(n), zero)/(shd%DA(n) * 1e6)
-			!write(*,*) k, depressionVol(n,1), catchmentArea(n,1), depressionVol(n,2), catchmentArea(n,2), area_mult(n), p(n), &
-			!		runoff_fracs(n,1), runoff_fracs(n,2), runoff_fracs(n,3)
-			!read(*,*) k
-			! check input parameters
-			! set small/big ponds parameters to zero if zero or neg values detected in the inputs
+			! Note: depressionVol is being read as depth (m) and below it is transformed to actual volume
+			depressionVol(n) = depressionVol(n) * depressionArea(n) 
+			
+			! set HDS parameters to zero if zero or neg values detected in the inputs
 			if (depressionVol(n) <= 0.0 .or. depCatchAreaFrac(n) <= 0.0) then
-				!small depressions are not active
+				!HDS is not active
 				depressionVol(n) = 0.0 
 				depCatchAreaFrac(n) = 0.0
 				pondVol(n) = 0.0
 				pondArea(n) = 0.0
 				conArea(n) = 1.0
 			end if
-			! !Big pond check
-			! if (depressionVol(n,2) <= 0.0 .or. catchmentArea(n,2) <= 0.0) then
-			! 	!big depression is not active
-			! 	depressionVol(n,2) = 0.0 
-			! 	catchmentArea(n,2) = 0.0
-			! 	pondArea(n,2) = zero
-			! end if
-
-			! fracs check
-			! check if one component is active (small or big)
-			! if(depressionVol(n,1) <= 0.0 .or. depressionVol(n,2) <= 0)then
-			! 	!deactivate frac_up2big and frac_sml2rvr as they don't influence runoff
-			! 	!frac_up2big = frac_sml2rvr = 0.0
-			! 	runoff_fracs(n,1) = 0.0
-			! 	runoff_fracs(n,3) = 0.0
-			! end if
-
-			! !! Frac_up2big + Frac_up2rvr < 1.0
-			! if((runoff_fracs(n,1) + runoff_fracs(n,2)) > 1.0) then
-			! 	! rescale the parameters based on their weight to make them equal 1
-			! 	sum_fracs = runoff_fracs(n,1) + runoff_fracs(n,2)
-			! 	runoff_fracs(n,1) = (runoff_fracs(n,1)/sum_fracs) * 1.0 !*1.0 because the sum needs to = 1
-			! 	runoff_fracs(n,2) = (runoff_fracs(n,2)/sum_fracs) * 1.0
-			! end if
-			!! Frac_sml2rvr < 1.0
-			! runoff_fracs(n,1) = min(runoff_fracs(n,1), 1.0)
-			! runoff_fracs(n,3) = min(runoff_fracs(n,3), 1.0)
-
 		end do
 
 		!!initialize variables
 		vMin(:) = zero       ! time varying model parameter, will be updated later
 
 		! initialize state variables only if modules are active
+		! Below are simplified initialization. Actual values will be updated once HDS runs
 		do n = i1, i2
-			! small depressions
 			if (depressionVol(n) .ne. 0.0 .and. depCatchAreaFrac(n) .ne. 0.0) then
 				pondVol(n) = vs%grid%zpnd(n) * depressionArea(n) !m -> m^3 ! approximate vol calculation, will be updated later in the subroutine
 				pondArea(n) = depressionArea(n)*((pondVol(n)/depressionVol(n))**(two/(p(n) + two)))
-				conArea(n) = pondVol(n)/depressionVol(n) ! assume that contrib_frac = vol_frac_sml for initialization purposes
+				conArea(n) = pondVol(n)/depressionVol(n) ! assume that conArea = volFrac for initialization purposes
 				vMin(n) = pondVol(n)
 			end if
-			! !big depression
-			! if (depressionVol(n,2) .ne. 0.0 .and. catchmentArea(n,2) .ne. 0.0) then
-			! 	pondVol(n,2) = vs%grid%zpnd(n) * depressionArea(n,2) !m -> m^3 ! approximate vol calculation, will be updated later in the subroutine
-			! 	pondArea(n,2) = depressionArea(n,2)*((pondVol(n,2)/depressionVol(n,2))**(two/(p(n) + two)))
-			! end if
-
 		end do
 	
 	!***********************
-		!outputs (dummy for offline run only)
+		!outputs (currently stored in a separate csv file)
+		! This steo creates the csv file header
 		if (ISHEADNODE) then
 			! create the output file
 			fnam= './' // trim(fls%GENDIR_OUT) // '/' // 'HDS_balance.csv' !to write HDS_blanace.csv in the results folder
 			write(*,*)fnam
 			open(99099,file=fnam,status='unknown')
-			write(99099,1110)'year','day','hour','mins','grid_no','precip','pot_evap','runoff_depth','pondVol_sml','vol_frac_sml','pondArea_sml','ConArea','smlpond_outflow', &
-								!'pondVol_big','vol_frac_big','pondArea_big','bigpond_outflow',
-								'total_outflow', 'PET_CLASS'
+			write(99099,1110)'year','day','hour','mins','grid_no','precip','pot_evap','runoff_depth','pondVol','volFrac','pondArea','ConArea','pondOutflow', &
+								'totalOutflow', 'PET_CLASS'
 				
 			1110    format(9999(g15.7e2, ','))
 
@@ -248,25 +194,24 @@ module HDS_module
 		type(fl_ids), intent(in) 			:: fls
         type(ShedGridParams) 				:: shd								! MESH grid/subbasin properties
 		! local variables
-		integer 							:: n, k								! grid and gru index
+		integer 							:: n, k								! grid and gru/tile index
 		integer 							:: year,day,hour,mins				! time variables: year, day, hour, minute
 		real(rkind)							:: runoff_depth						! surface runoff and interflow from all soil layers [mm] (input to HDS)
 		real(rkind), parameter    			:: dt  = 1.0_rkind          		! time step =1 [-] (no substep in the HDS calculation as MESH runs every 30 min so both I/O are at 30 min)
 		real(rkind), parameter    			:: tau = zero 						! time constant linear reservoir to account for infiltration losses (currently deactivated)
 		real(rkind)							:: precip, pot_evap					! precipitation and potential evaporation depths [mm]
+		real(rkind)							:: pot_class						! pot from class (not used in the subroutine)
 		real(rkind)				 			:: rofo_grid			 			! overland runoff for the grid [mm]
-		real(rkind), allocatable 			:: rofs_grid(:)						! interflow runoff for the grid [mm]
-		real(rkind) 						:: total_outflow 					! total outflow [mm] from HDS component (small depressions+big depression+fractions)
-		real(rkind) 						:: smallpond_outflow 				! outflow from small depressions [m3] ! hysteretic component
-		! real(rkind) 						:: bigpond_outflow 					! outflow from big depression [m3] ! gatekeeping component
+		real(rkind), allocatable 			:: rofs_grid(:)						! interflow runoff for the grid for all soil layers [mm]
+		real(rkind) 						:: total_outflow 					! total outflow [mm] from HDS component
+		real(rkind) 						:: pond_outflow      				! outflow from the depressions [m3] ! hysteretic component
 		real(rkind) 						:: drain_area 						! total drainage area of the gridcell [m2]
-		real(rkind) 						:: land_area 						! area of land (basin area - depressions)
+		real(rkind) 						:: land_area 						! area of land (basin area - depressions Area)
 		real(rkind), external 				:: calc_ET0							! Penman-Monteith function for PET calculations
-		real(rkind) 						:: upslopeArea_small 				! upland area contributing to the small depressions [m2]
-		! real(rkind) 						:: upslopeArea_big 					! upland area contributing to the big deperssion [m2]
-		real(rkind) 						:: vol_frac_small, vol_frac_big		! volume fraction for the small and big depressions [-]
+		real(rkind) 						:: upslopeArea      				! upland area contributing to the small depressions [m2]
+		real(rkind) 						:: volFrac                  		! volume fraction for the depressions [-]
 		real(rkind) 						:: Q_det_adj, Q_dix_adj     		! adjusted evapotranspiration & infiltration fluxes [L3 T-1] for mass balance closure (i.e., when losses > pondVol). Zero values mean no adjustment needed.
-		real(rkind)							:: smallpond_evap, total_evap ! evaporation volume from small ponds and the entire basin
+		real(rkind)							:: pond_evap, total_evap            ! evaporation volume from ponds and the entire basin
 		integer								:: nsoillayer, isoillayer			! number of soil layers in MESH & index of soil layer
 		
 		!> Return if the process is not active.
@@ -290,20 +235,21 @@ module HDS_module
 			precip = zero
 			total_outflow = zero
 			! calculate variables
-			!get drainage area
+			!get drainage and land area
 			drain_area = shd%DA(n) * 1e6 ! km2 -> m2
 			land_area = drain_area - depressionArea(n)
 			!calculate upslope (upland area) that drains to depressions
-			upslopeArea_small = max(land_area * depCatchAreaFrac(n), zero)
-			! upslopeArea_big = max(catchmentArea(n,2) - depressionArea(n,2), zero)
+			upslopeArea = max(land_area * depCatchAreaFrac(n), zero)
 
+			! calculations of PET based on grid values
 			pot_evap = calc_ET0( &
                    vs%grid%ta(n), vs%grid%uv(n), vs%grid%qa(n), vs%grid%pres(n), vs%grid%fsin(n), & 
                    shd%ylat(n), shd%xlng(n), shd%ELEV(n), &
                    pm%grid%zrfm(n), pm%grid%fcan(n, 1), pm%grid%fcan(n, 2), pm%grid%fcan(n, 3), pm%grid%fcan(n, 4), & 
                    ic%now%jday, ic%now%hour)*ic%dts !potential evap (penman) mm/s to mm from Penman-Monteith applied every time step
+			pot_class = vs%grid%potevp(n) * ic%dts ! potential evap calculated by CLASS mm/s -> mm (not used)
 			
-			! calculate inputs to the small & big depressions
+			! calculate inputs to the depressions
 			! overland runoff
 			
 			rofo_grid = vs%grid%ovrflw(n) * ic%dts !mm/s -> mm
@@ -314,119 +260,68 @@ module HDS_module
 
 			rofs_grid(:) = vs%grid%latflw(n, :) * ic%dts !mm/s -> mm !sum(vs%grid%rofs(n, :)) * ic%dts !mm/s -> mm
 
-			! do isoillayer = 1, nsoillayer
-			! 	rofs_grid(isoillayer) = vs%grid%latflw(n, isoillayer) * ic%dts !mm/s -> mm !sum(vs%grid%rofs(n, :)) * ic%dts !mm/s -> mm
-			! end do
 			
-			!Total grid runoff 	! runoff_depth:  !surface runoff from the upland & depression (are tha's not wet)land area, q_usx [LT−1]
+			!Total grid runoff
 			runoff_depth =  rofo_grid + sum(rofs_grid) ! mm !surface runoff and interflow from all soil layers
 			
 			! precipitation depth
-			precip = vs%grid%pre(n) * ic%dts !mm/s -> mm !vs%grid%prec(n) for newer versions of MESH
+			precip = vs%grid%pre(n) * ic%dts !mm/s -> mm
 
 			!Initialize variables from pervious timestep
 			!volume fraction
-			vol_frac_small = zero
-			! vol_frac_big = zero
-			if(depressionVol(n)>zero) vol_frac_small = pondVol(n) / depressionVol(n)
-			! if(depressionVol(n,2)>zero) vol_frac_big = pondVol(n,2) / depressionVol(n,2)
-			!initialize outputs
-			! area_frac_sml = 1.0 !updated inside the small_depressoins routine
-			! area_frac_big = 1.0 !updated inside the big_depressoin routine
-			smallpond_outflow = zero
-			! bigpond_outflow = zero
-			! outflow volume from area with no depressions
+			volFrac = zero
+			if(depressionVol(n)>zero) volFrac = pondVol(n) / depressionVol(n)
+			pond_outflow      = zero
+			! add runoff from land area that drains directly to the river network
 			total_outflow = (runoff_depth/1000.0) * land_area * (1.0-depCatchAreaFrac(n)) ! mm -> m3
 			!**************************************
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			!!!		Run HDS on the grid scale	!!
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			!write(*,*)'calling HDS'
-			!write(*,*)'current_pondVol_small',current_pondVol_small
-			! run small depressions routine (hysteretic component) if active
+			! run depressions routine
 			if (depressionVol(n) .ne. 0.0) then
-				! call calculate_small_depressions_outflow(current_pondVol_small, runoff_depth, delta_depth, contrib_frac, &
-				! 										depressionVol(n,1), catchmentArea(n,1), catchmentArea(n,2), &
-				! 										upland_area_frac, p(n), vol_frac_sml, area_frac_sml, &
-				! 										runoff_fracs(n,1), runoff_fracs(n,2), &
-				! 										depth_sml, smallpond_outflow)
 
-				call runDepression(pondVol(n), runoff_depth, precip, pot_evap, depressionArea(n), depressionVol(n), upslopeArea_small, &
-                                	p(n), tau, b(n), vMin(n), dt, Q_det_adj, Q_dix_adj, vol_frac_small, conArea(n), pondArea(n), smallpond_outflow)
-				
-				! if(Q_det_adj>zero .or. Q_dix_adj>zero)then
-					! assign the new evaporation and infiltration volumes as the Q_det_adj, Q_dix_adj in the LSM
-					! to ensure mass balance closure
-				! end if
-				!add the fracs later
+				call runDepression(pondVol(n), runoff_depth, precip, pot_evap, depressionArea(n), depressionVol(n), upslopeArea, &
+                                	p(n), tau, b(n), vMin(n), dt, Q_det_adj, Q_dix_adj, volFrac, conArea(n), pondArea(n), pond_outflow)
 			end if										 
 			
-			total_outflow = total_outflow + smallpond_outflow ! m3
-			! write(*,*)drain_area
+			total_outflow = total_outflow + pond_outflow      ! m3
 			
-			! ! run big depression routine (gatekeeping component)
-			! if (depressionVol(n,2) .ne. 0.0) then
-			! 	! if small depressions are inactive, assume smallpond_outflow as the runoff from upland area
-			! 	! runoff_fracs(n,1) = 0 in this case, but is kept for consistency
-			! 	if(depressionVol(n,1) .eq. 0.0) smallpond_outflow = (runoff_depth * upland_area_frac * (1.0 - runoff_fracs(n,1) - runoff_fracs(n,2))) !runoff from upland
-
-			! 	call calculate_big_depression_outflow(current_pondVol_big, runoff_depth, delta_depth, smallpond_outflow, &
-			! 										depressionVol(n,2), catchmentArea(n,2), &
-			! 										p(n), vol_frac_big, area_frac_big, upland_area_frac, &
-			! 										runoff_fracs(n,1), runoff_fracs(n,2), runoff_fracs(n,3), &
-			! 										depth_big, bigpond_outflow, total_outflow)
-			! end if
-			! !assume total outflow as small depressions outflow if big depression is not active
-			! if (depressionVol(n,2) .eq. 0.0) total_outflow = smallpond_outflow + &
-			! 											 (runoff_depth * upland_area_frac * runoff_fracs(n,2))
-			!1111111111111111111111111111111111111111111111111111111111111111111
-			!1111111111111111111111111111111111111111111111111111111111111111111
-
-			!override runoff and evap values of the grid 
-			!!!!!!The model crashes here, sometime it runs and someother times it doesn't
-			! This happens in debug mode, but the reguar compilation completes with no problem
-			! redistribute total_outflow between ROFO and ROFS using their weights if runoff_depth>0
+			!override runoff and evap values of the grid inside MESH
+			! distribute the total_outflow between surface and interflow based on their original ratio
 			if(runoff_depth>zero)then
-				vs%grid%ovrflw(n) = (((total_outflow*(rofo_grid/runoff_depth))/drain_area)*1000.0) / ic%dts !m3 to mm/s ! to convert to grid average (to match MESH output)
+				vs%grid%ovrflw(n) = (((total_outflow*(rofo_grid/runoff_depth))/drain_area)*1000.0) / ic%dts !m3 to mm/s ! convert to grid average (to match MESH output)
 				do isoillayer = 1, nsoillayer
 					vs%grid%latflw(n,isoillayer) = (((total_outflow*(rofs_grid(isoillayer)/runoff_depth))/drain_area)*1000.0) / ic%dts !m3 to mm/s ! to convert to grid average (to match MESH output)
 				end do
 			else
 				! assign total_outflow as rofo (this can happen when there's a precip, but no surface runoff)
-				vs%grid%ovrflw(n) = ((total_outflow/drain_area)*1000.0) / ic%dts !m3 to mm/s ! to convert to grid average (to match MESH output)
+				vs%grid%ovrflw(n) = ((total_outflow/drain_area)*1000.0) / ic%dts !m3 to mm/s ! convert to grid average (to match MESH output)
 			end if
 			deallocate(rofs_grid)
 
 			! override Evap values to include PET from wet areas
-			! small pond evaporation volume
-			smallpond_evap = (pot_evap/1000.0) * pondArea(n) !mm -> m3
-			if(Q_det_adj > zero) smallpond_evap = Q_det_adj !m3
-			! big pond evaporation volume
-			! bigpond_evap = (pot_evap/1000.0) * pondArea(n,2) ! mm-> m3
-			! do the same Q_det_adj, but for big pond
+			! pond evaporation volume
+			pond_evap = (pot_evap/1000.0) * pondArea(n) !mm -> m3
+			if(Q_det_adj > zero) pond_evap = Q_det_adj !m3
 
-			!grid evaporation
+			!override grid evaporation to account for pond evaporation
 			total_evap = (vs%grid%et(n)* (ic%dts/1000.0) *  (drain_area - pondArea(n))) + & !mm/s -> m3 grid evap from unwet area
-							smallpond_evap !+ bigpond_evap ! POT evap from ponds
+							pond_evap  ! POT evap from ponds
 			
-			vs%grid%et(n) = ((total_evap/drain_area)*1000.0) / ic%dts !m3 to mm/s ! to convert to grid average (to match MESH output)
+			vs%grid%et(n) = ((total_evap/drain_area)*1000.0) / ic%dts !m3 to mm/s ! convert to grid average (to match MESH output)
 
 			if (ISHEADNODE) then
-
-			write(99099,1110)year,day,hour,mins,n,precip,pot_evap,runoff_depth,pondVol(n),vol_frac_small,pondArea(n),ConArea(n),smallpond_outflow, &
-							!pondVol(n,2),vol_frac_big,pondArea(n,2), bigpond_outflow, 
-							total_outflow, (vs%grid%potevp(n)*ic%dts)
+			
+			! write output to file
+			write(99099,1110)year,day,hour,mins,n,precip,pot_evap,runoff_depth,pondVol(n),volFrac,pondArea(n),ConArea(n),pond_outflow, &
+							total_outflow, pot_class
 							
 								
-			1110    format(9999(g15.7e2, ','))
-			
-			!write(*,1110)year,day,hour,mins,n,delta_depth,runoff_depth,depth,vol_frac_sml,water_area_frac,contrib_frac,smallpond_outflow
+			1110    format(9999(g15.7e2, ','))  
 			
 			end if
-		
 		end do
-		
-		!write(*,*)'finished'
 		
 	end subroutine
 	
