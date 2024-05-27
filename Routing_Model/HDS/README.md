@@ -5,6 +5,43 @@ HDS standalone repo: https://github.com/MIsmlAhmed/HDS
 
 MESH repo: https://github.com/MESH-Model/MESH-Dev
 
+# How to run HDS in MESH
+1. In the `MESH_input_run_options.ini` file, add a new control flag `HDSFLAG` and set its value to `on`. The following is a snippet of the run options file with HDS activated:
+
+        MESH input run options file
+        ##### Control Flags #####
+        ----#
+        19 # Number of control flags
+        HOURLYFLAG            60
+        IWF                    1 # Selection of Runoff Generation Algorithms
+        .
+        .
+        other control flags
+        .
+        .
+        .
+        RUNMODE           runrte
+        HDSFLAG              on # HDS flag
+
+2. create an `HDS_parameters.csv` file (in the same MESH inputs directory) that hold HDS parameters value for each grid/subbasin. Note that each line represents HDS parameters for a specific subbasin/grid. The rows should be in the same order as the subbasins (as indicated by `MESH_grid_no` column). The following is an example of the parameters file:
+
+        MESH_grid_no, depressionDepth_m, depressionAreaFrac, deprCatchAreaFrac,    p,    b
+        1,                         0.33,               0.28,              0.97, 1.72,  1.5
+
+The following is a description of the parameters:
+| parameter name      | Description | Units |
+| ------------------- | ----------- | ----- |
+| MESH_grid_no | MESH grid or subbasin id (should be listed in the same order as in the shd file) | - |
+| depressionDepth | average depression depth (depression volume/depression area) | m |
+| depressionAreaFrac | depression area fraction (depression area/basin area) | - |
+| deprCatchAreaFrac | catchment area (fraction of the land area = basin area-depression area) that drains to the depressions | -|
+| p | shape of the slope profile  | - |
+| b | shape of the fractional contributing area curve  | - |
+
+Note that parameters `p` and `b` have a typical value of `1.72` and `1.5`, respectively. The user can use these recommened values or try to calibrate them. The rest of the parameters can be obtained from terrain analysis or by calibration.
+
+3. HDS outputs (states) are stored in the `results` directory of MESH in `HDS_balance.csv`. The altered streamflow values are written in the `MESH_output_streamflow.csv` file.
+________
 # Changes to the MESH code
 
 Changes were made in the following files to implement HDS into MESH
@@ -18,4 +55,5 @@ ________
 
 # Change log:
 
+* Code clean up to be transferred to ECCC
 * Change HDS inputs to fractions and depth instead of actual areas and volume for easier calibration. Fix bugs when calculating land area and the amount of runoff that bypasses the depressions.
