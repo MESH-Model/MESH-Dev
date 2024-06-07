@@ -17,6 +17,15 @@
 !>
 !> D. G. Princz - 2014-11-19.
 !>
+!> Fuad Yassin and Uchechukwu Udenze - 2024-06-07.
+!>
+!> Changes made:
+!> - The original calculation did not remove negative values from the observed streamflow (`qobs`).
+!> - Updated the `calc_abserr_value` function to:
+!>   - Filter out negative values from `qobs`.
+!>   - Adjust the indexing accordingly to handle valid data points only.
+!>   - Calculate the MAE (Mean Absolute Error) using only the valid data points.
+!>
 module calc_abserr
 
     implicit none
@@ -40,7 +49,7 @@ module calc_abserr
 
     contains
 
-    type(model_output_abserr) function calc_abserr_Value(ncal_day_min, ncal_day, qobs, qsim)
+    type(model_output_abserr) function calc_abserr_value(ncal_day_min, ncal_day, qobs, qsim)
 
         !> Variable declarations
         !* ncal_day_min: Minimum number of days for spin-up
@@ -52,7 +61,13 @@ module calc_abserr
 
         !> Local variables
         !* j: Counter (streamflow gauge)
-        integer :: j
+        !* i: Counter (day)
+        !* mask: Mask of valid values (non-negative numbers)
+        !* valid_qobs: List of valid observed values
+        !* valid_qsim: List of valid simulated values
+        integer j, i, n_valid_days
+        logical, dimension(:), allocatable :: mask
+        real, dimension(:), allocatable :: valid_qobs, valid_qsim
 
         !> Allocate the function variable.
         allocate(calc_abserr_value%value_gauge(size(qsim, 2)))
@@ -64,15 +79,34 @@ module calc_abserr
 
             !> Calculate the per gauge value.
             do j = 1, size(qsim, 2)
-                calc_abserr_value%value_gauge(j) = &
-                    sum(abs(qobs(ncal_day_min:ncal_day, j) - qsim(ncal_day_min:ncal_day, j)))/ncal_day
+
+                !> Create a mask of valid values in the accounting for a spin-up period.
+                allocate(mask(ncal_day - ncal_day_min + 1))
+                do i = ncal_day_min, ncal_day
+                    mask(i - ncal_day_min + 1) = (qobs(i, j) >= 0.0)
+                end do
+                n_valid_days = count(mask)
+
+                !> Transfer and calculate the metric of only the valid period.
+                if (n_valid_days > 0) then
+                    allocate(valid_qobs(n_valid_days))
+                    allocate(valid_qsim(n_valid_days))
+                    valid_qobs = pack(qobs(ncal_day_min:ncal_day, j), mask)
+                    valid_qsim = pack(qsim(ncal_day_min:ncal_day, j), mask)
+
+                    !> Calculate the metric.
+                    calc_abserr_value%value_gauge(j) = &
+                        sum(abs(valid_qobs - valid_qsim))/n_valid_days
+                    deallocate(valid_qobs)
+                    deallocate(valid_qsim)
+                end if
+                deallocate(mask)
             end do
 
             !> Calculate the average value.
             calc_abserr_value%value_gauge_avg = &
                 sum(calc_abserr_value%value_gauge)/size(calc_abserr_value%value_gauge)
-
-        end if !(ncal_day > ncal_day_min)
+        end if
 
     end function
 
