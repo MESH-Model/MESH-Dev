@@ -241,13 +241,16 @@ module HDS_module
 			!calculate upslope (upland area) that drains to depressions
 			upslopeArea = max(land_area * depCatchAreaFrac(n), zero)
 
-			! calculations of PET based on grid values
-			pot_evap = calc_ET0( &
-                   vs%grid%ta(n), vs%grid%uv(n), vs%grid%qa(n), vs%grid%pres(n), vs%grid%fsin(n), & 
-                   shd%ylat(n), shd%xlng(n), shd%ELEV(n), &
-                   pm%grid%zrfm(n), pm%grid%fcan(n, 1), pm%grid%fcan(n, 2), pm%grid%fcan(n, 3), pm%grid%fcan(n, 4), & 
-                   ic%now%jday, ic%now%hour)*ic%dts !potential evap (penman) mm/s to mm from Penman-Monteith applied every time step
-			pot_class = vs%grid%potevp(n) * ic%dts ! potential evap calculated by CLASS mm/s -> mm (not used)
+			! calculations of PET based on grid values (using penman monteith -- generates Inf)
+			! pot_evap = calc_ET0( &
+            !        vs%grid%ta(n), vs%grid%uv(n), vs%grid%qa(n), vs%grid%pres(n), vs%grid%fsin(n), & 
+            !        shd%ylat(n), shd%xlng(n), shd%ELEV(n), &
+            !        pm%grid%zrfm(n), pm%grid%fcan(n, 1), pm%grid%fcan(n, 2), pm%grid%fcan(n, 3), pm%grid%fcan(n, 4), & 
+            !        ic%now%jday, ic%now%hour)*ic%dts !potential evap (penman) mm/s to mm from Penman-Monteith applied every time step
+			! pot_class = vs%grid%potevp(n) * ic%dts ! potential evap calculated by CLASS mm/s -> mm (not used)
+			
+			! estimate POT using Oudin's formula
+			pot_evap = calcPotentialEvap_Oudin2005(vs%grid%fsin(n), vs%grid%ta(n)) * ic%dts ! potential evap calculated by Oudin's formula mm/s -> mm/timestep
 			
 			! calculate inputs to the depressions
 			! overland runoff

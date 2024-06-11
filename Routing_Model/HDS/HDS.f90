@@ -40,6 +40,27 @@ module HDS
     end subroutine init_pond_Area_Volume
 
     !=============================================================
+    function calcPotentialEvap_Oudin2005(SWRadAtm, airtemp) result(potentialEvap)
+        ! calculate potential evaporation using Oudin et al. (2005)'s formula for a specific HRU/tile
+        implicit none
+        !function arguments
+        real(rkind),  intent(in)     :: SWRadAtm                ! downwelling shortwave radiaiton [w/m2]
+        real(rkind),  intent(in)     :: airtemp                 ! air temperature  [K]
+      
+        ! local variables
+        real(rkind), parameter       :: LH_vap = 2501000.0_rkind ! latent heat of vaporization          (J kg-1)
+        real(rkind)                  :: potentialEvap            ! pontentail evaporation as calculated by Oudin's formula (mm s-1)
+      
+        ! Oudin (2005)'s formula
+        potentialEvap = (1000._rkind * & 
+        (SWRadAtm * 1e-6 / &                                    ! w/m2 to MJ/m2/s
+        (LH_vap * 1e-6 * rho_w)) * &                            ! J kg-1 to MJ kg-1
+        ((airtemp - 273.15_rkind + 5._rkind)/100._rkind))       ! K to deg C
+          
+        ! check for negative values
+        potentialEvap = max(potentialEvap, zero)
+      
+    end function calcPotentialEvap_Oudin2005
     !=============================================================
     subroutine runDepression(pondVol,                  &       ! input/output:  state variable = pond volume [m3]
                              qSeas, pRate, etPond,     &       ! input:         forcing data = runoff, precipitation, ET [mm/day]
