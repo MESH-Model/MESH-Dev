@@ -90,7 +90,7 @@ module HDS_module
         end if
 
 		! get the number of active grids/subbasins
-		nmesh_grid=shd%NA-1
+		nmesh_grid=shd%NA !-1
 
 		! allocate HDS arrays (parameters, variables, or states for grids)
         allocate(depressionVol(nmesh_grid), depCatchAreaFrac(nmesh_grid),  p(nmesh_grid), b(nmesh_grid))
@@ -101,19 +101,19 @@ module HDS_module
 
 		
 		!loop by grid to get average grid canopy fraction to be used for PET calculations
-		do n = i1, i2
-			!loop by tile to average canopy fractions.
-			pm%grid%fcan(n, :) = 0.0 !initialize average fcan values (it is zero from the original code)
-			do k = il1, il2
-				if (shd%lc%ILMOS(k) == n) then !if grid number matches n
-					pm%grid%fcan(n, 1) = pm%grid%fcan(n, 1) + (pm%tile%fcan(k, 1)* shd%lc%ACLASS(n,k)) ! needleleaf fraction for the current tile * tile fraction per grid cell
-					pm%grid%fcan(n, 2) = pm%grid%fcan(n, 2) + (pm%tile%fcan(k, 2)* shd%lc%ACLASS(n,k)) ! broadleaf fraction for the current tile * tile fraction per grid cell
-					pm%grid%fcan(n, 3) = pm%grid%fcan(n, 3) + (pm%tile%fcan(k, 3)* shd%lc%ACLASS(n,k)) ! crop fraction for the current tile * tile fraction per grid cell
-					pm%grid%fcan(n, 4) = pm%grid%fcan(n, 4) + (pm%tile%fcan(k, 4)* shd%lc%ACLASS(n,k)) ! grass fraction for the current tile * tile fraction per grid cell
-					pm%grid%zrfm(n) = pm%tile%zrfm(k) !just pick the zrfm from the last GRU id within the grid cell
-				end if
-			end do
-		end do	
+		! do n = i1, i2
+		! 	!loop by tile to average canopy fractions.
+		! 	pm%grid%fcan(n, :) = 0.0 !initialize average fcan values (it is zero from the original code)
+		! 	do k = il1, il2
+		! 		if (shd%lc%ILMOS(k) == n) then !if grid number matches n
+		! 			pm%grid%fcan(n, 1) = pm%grid%fcan(n, 1) + (pm%tile%fcan(k, 1)* shd%lc%ACLASS(n,k)) ! needleleaf fraction for the current tile * tile fraction per grid cell
+		! 			pm%grid%fcan(n, 2) = pm%grid%fcan(n, 2) + (pm%tile%fcan(k, 2)* shd%lc%ACLASS(n,k)) ! broadleaf fraction for the current tile * tile fraction per grid cell
+		! 			pm%grid%fcan(n, 3) = pm%grid%fcan(n, 3) + (pm%tile%fcan(k, 3)* shd%lc%ACLASS(n,k)) ! crop fraction for the current tile * tile fraction per grid cell
+		! 			pm%grid%fcan(n, 4) = pm%grid%fcan(n, 4) + (pm%tile%fcan(k, 4)* shd%lc%ACLASS(n,k)) ! grass fraction for the current tile * tile fraction per grid cell
+		! 			pm%grid%zrfm(n) = pm%tile%zrfm(k) !just pick the zrfm from the last GRU id within the grid cell
+		! 		end if
+		! 	end do
+		! end do	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!                      READ HDS model inputs                                 !!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -226,7 +226,7 @@ module HDS_module
 		do n = i1, i2
 
 			!check to see if this cell/subbasin worth calculating (has HDS module active)
-			if (depressionVol(n) .eq. 0.0) cycle !skip and iterate over next grid (n)
+			if (depressionVol(n) <= 0.0) cycle !skip and iterate over next grid (n)
 			
 			! Initialize fluxes
 			runoff_depth = zero
