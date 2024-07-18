@@ -1381,21 +1381,21 @@ module output_variables
                 group%ican = 0.0
             end where
         end if
-        if (associated(group%ican)) then
+        if (associated(group%ican) .and. associated(group%tacan)) then
             where (group%tacan > 0.0)
                 group%ican = 1.0
             elsewhere
                 group%ican = 0.0
             end where
         end if
-        if (associated(group%ican)) then
+        if (associated(group%ican) .and. associated(group%qacan)) then
             where (group%qacan > 0.0)
                 group%ican = 1.0
             elsewhere
                 group%ican = 0.0
             end where
         end if
-        if (associated(group%ican)) then
+        if (associated(group%ican) .and. associated(group%uvcan)) then
             where (group%uvcan > 0.0)
                 group%ican = 1.0
             elsewhere
