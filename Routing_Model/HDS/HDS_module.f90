@@ -98,22 +98,6 @@ module HDS_module
 		allocate(pondVol(nmesh_grid),conArea(nmesh_grid))
 		allocate(vMin(nmesh_grid))
         
-
-		
-		!loop by grid to get average grid canopy fraction to be used for PET calculations
-		! do n = i1, i2
-		! 	!loop by tile to average canopy fractions.
-		! 	pm%grid%fcan(n, :) = 0.0 !initialize average fcan values (it is zero from the original code)
-		! 	do k = il1, il2
-		! 		if (shd%lc%ILMOS(k) == n) then !if grid number matches n
-		! 			pm%grid%fcan(n, 1) = pm%grid%fcan(n, 1) + (pm%tile%fcan(k, 1)* shd%lc%ACLASS(n,k)) ! needleleaf fraction for the current tile * tile fraction per grid cell
-		! 			pm%grid%fcan(n, 2) = pm%grid%fcan(n, 2) + (pm%tile%fcan(k, 2)* shd%lc%ACLASS(n,k)) ! broadleaf fraction for the current tile * tile fraction per grid cell
-		! 			pm%grid%fcan(n, 3) = pm%grid%fcan(n, 3) + (pm%tile%fcan(k, 3)* shd%lc%ACLASS(n,k)) ! crop fraction for the current tile * tile fraction per grid cell
-		! 			pm%grid%fcan(n, 4) = pm%grid%fcan(n, 4) + (pm%tile%fcan(k, 4)* shd%lc%ACLASS(n,k)) ! grass fraction for the current tile * tile fraction per grid cell
-		! 			pm%grid%zrfm(n) = pm%tile%zrfm(k) !just pick the zrfm from the last GRU id within the grid cell
-		! 		end if
-		! 	end do
-		! end do	
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!                      READ HDS model inputs                                 !!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -131,7 +115,7 @@ module HDS_module
 			! Note: depressionArea is being read as a fraction and below it is transformed to actual area
 			! This was done to facilitate calibrating the parameters to commonly used ones by modellers
 			! calculate depression Area
-			depressionArea(n) =  depressionArea(n) * shd%DA(n) * 1e6 ! km2 -> m2
+			depressionArea(n) =  depressionArea(n) * shd%AREA(n) ! m2
 			! Note: depressionVol is being read as depth (m) and below it is transformed to actual volume
 			depressionVol(n) = depressionVol(n) * depressionArea(n) 
 			
@@ -162,14 +146,14 @@ module HDS_module
 	
 	!***********************
 		!outputs (currently stored in a separate csv file)
-		! This steo creates the csv file header
+		! This step creates the csv file header
 		if (ISHEADNODE) then
 			! create the output file
 			fnam= './' // trim(fls%GENDIR_OUT) // '/' // 'HDS_balance.csv' !to write HDS_blanace.csv in the results folder
 			write(*,*)fnam
 			open(99099,file=fnam,status='unknown')
-			write(99099,1110)'year','day','hour','mins','grid_no','precip','pot_evap','runoff_depth','pondVol','volFrac','pondArea','ConArea','pondOutflow', &
-								'totalOutflow', 'PET_CLASS'
+			write(99099,1110)'year','day','hour','mins','grid_index','precip','pot_evap','runoff_depth','pondVol','volFrac','pondArea','ConArea','pondOutflow', &
+								'totalOutflow', 'vMin'
 				
 			1110    format(9999(g15.7e2, ','))
 
@@ -236,19 +220,11 @@ module HDS_module
 			total_outflow = zero
 			! calculate variables
 			!get drainage and land area
-			drain_area = shd%DA(n) * 1e6 ! km2 -> m2
+			drain_area = shd%AREA(n) ! m2
 			land_area = drain_area - depressionArea(n)
 			!calculate upslope (upland area) that drains to depressions
 			upslopeArea = max(land_area * depCatchAreaFrac(n), zero)
 
-			! calculations of PET based on grid values (using penman monteith -- generates Inf)
-			! pot_evap = calc_ET0( &
-            !        vs%grid%ta(n), vs%grid%uv(n), vs%grid%qa(n), vs%grid%pres(n), vs%grid%fsin(n), & 
-            !        shd%ylat(n), shd%xlng(n), shd%ELEV(n), &
-            !        pm%grid%zrfm(n), pm%grid%fcan(n, 1), pm%grid%fcan(n, 2), pm%grid%fcan(n, 3), pm%grid%fcan(n, 4), & 
-            !        ic%now%jday, ic%now%hour)*ic%dts !potential evap (penman) mm/s to mm from Penman-Monteith applied every time step
-			! pot_class = vs%grid%potevp(n) * ic%dts ! potential evap calculated by CLASS mm/s -> mm (not used)
-			
 			! estimate POT using Oudin's formula
 			pot_evap = calcPotentialEvap_Oudin2005(vs%grid%fsin(n), vs%grid%ta(n)) * ic%dts ! potential evap calculated by Oudin's formula mm/s -> mm/timestep
 			
@@ -318,7 +294,7 @@ module HDS_module
 			
 			! write output to file
 			write(99099,1110)year,day,hour,mins,n,precip,pot_evap,runoff_depth,pondVol(n),volFrac,pondArea(n),ConArea(n),pond_outflow, &
-							total_outflow, pot_class
+							total_outflow, vMin(n)
 							
 								
 			1110    format(9999(g15.7e2, ','))  
