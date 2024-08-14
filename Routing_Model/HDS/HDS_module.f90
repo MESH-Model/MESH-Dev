@@ -54,6 +54,8 @@ module HDS_module
     real(rkind), allocatable    :: conArea(:)         		! contributing area fraction per subbasin [-]
     real(rkind), allocatable    :: pondVol(:)         		! pond volume [m3]
     real(rkind), allocatable    :: pondArea(:)        		! pond area [m2] 
+	real(rkind), allocatable    :: oudinPETScaleK1(:)  		! Oudin PET formula scaling factor (deg C)
+	real(rkind), allocatable    :: oudinPETTempThrK2(:)		! Oudin PET formula temperature threshold (deg C)
   	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	!MESH variables
 	type HDS_control_variables
@@ -96,7 +98,7 @@ module HDS_module
         allocate(depressionVol(nmesh_grid), depCatchAreaFrac(nmesh_grid),  p(nmesh_grid), b(nmesh_grid))
 		allocate(depressionArea(nmesh_grid), pondArea(nmesh_grid))
 		allocate(pondVol(nmesh_grid),conArea(nmesh_grid))
-		allocate(vMin(nmesh_grid))
+		allocate(vMin(nmesh_grid), oudinPETScaleK1(nmesh_grid), oudinPETTempThrK2(nmesh_grid))
         
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!                      READ HDS model inputs                                 !!
@@ -109,8 +111,8 @@ module HDS_module
 		do n = i1, i2
 						!MESH_grid_no        depressionVol       depCatchAreaFrac
 			read(789,*) k, depressionVol(n), depressionArea(n), depCatchAreaFrac(n), &
-						!  p, b, &
-						 p(n), b(n)
+						!  p, b,  oudinPETScaleK1, oudinPETTempThrK2
+						 p(n), b(n), oudinPETScaleK1(n), oudinPETTempThrK2(n)
 
 			! Note: depressionArea is being read as a fraction and below it is transformed to actual area
 			! This was done to facilitate calibrating the parameters to commonly used ones by modellers
@@ -226,7 +228,7 @@ module HDS_module
 			upslopeArea = max(land_area * depCatchAreaFrac(n), zero)
 
 			! estimate POT using Oudin's formula
-			pot_evap = calcPotentialEvap_Oudin2005(vs%grid%fsin(n), vs%grid%ta(n)) * ic%dts ! potential evap calculated by Oudin's formula mm/s -> mm/timestep
+			pot_evap = calcPotentialEvap_Oudin2005(vs%grid%fsin(n), vs%grid%ta(n), oudinPETScaleK1(n), oudinPETTempThrK2(n)) * ic%dts ! potential evap calculated by Oudin's formula mm/s -> mm/timestep
 			
 			! calculate inputs to the depressions
 			! overland runoff
