@@ -25,8 +25,8 @@ MESH repo: https://github.com/MESH-Model/MESH-Dev
 
 2. create an `HDS_parameters.csv` file (in the same MESH inputs directory) that hold HDS parameters value for each grid/subbasin. Note that each line represents HDS parameters for a specific subbasin/grid. The rows should be in the same order as the subbasins (as indicated by `MESH_grid_no` column). The following is an example of the parameters file:
 
-        MESH_grid_no, depressionDepth_m, depressionAreaFrac, deprCatchAreaFrac,    p,    b
-        1,                         0.33,               0.28,              0.97, 1.72,  1.5
+        MESH_grid_no, depressionDepth_m, depressionAreaFrac, deprCatchAreaFrac,    p,    b, oudinPETScaleK1,oudinPETTempThrK2
+        1,                         0.33,               0.28,              0.97, 1.72,  1.5,            30.0,              3.0
 
 The following is a description of the parameters:
 | parameter name      | Description | Units |
@@ -37,8 +37,10 @@ The following is a description of the parameters:
 | deprCatchAreaFrac | catchment area (fraction of the land area = basin area-depression area) that drains to the depressions | -|
 | p | shape of the slope profile  | - |
 | b | shape of the fractional contributing area curve  | - |
+| oudinPETScaleK1 | Oudin PET formula scaling factor | deg C|
+| oudinPETTempThrK2 | Oudin PET formula temperature threshold | deg C|
 
-Note that parameters `p` and `b` have a typical value of `1.72` and `1.5`, respectively. The user can use these recommened values or try to calibrate them. The rest of the parameters can be obtained from terrain analysis or by calibration.
+Note that parameters `p`, `b`, `oudinPETScaleK1`, and `oudinPETTempThrK2` have a typical value of `1.72`, `1.5`, `30.0`, and `3.0`, respectively. The user can use these recommended values or try to calibrate them. The rest of the parameters can be obtained from terrain analysis or by calibration.
 
 3. HDS outputs (states) are stored in the `results` directory of MESH in `HDS_balance.csv`. The altered streamflow values are written in the `MESH_output_streamflow.csv` file.
 ________
