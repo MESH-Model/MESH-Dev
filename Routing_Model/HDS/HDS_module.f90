@@ -188,6 +188,7 @@ module HDS_module
 		real(rkind)							:: precip, pot_evap					! precipitation and potential evaporation depths [mm]
 		real(rkind)							:: pot_class						! pot from class (not used in the subroutine)
 		real(rkind)				 			:: rofo_grid			 			! overland runoff for the grid [mm]
+		real(rkind)				 			:: rofb_grid			 			! baseflow: leakage from groundwater/lower zone storage. [mm].
 		real(rkind), allocatable 			:: rofs_grid(:)						! interflow runoff for the grid for all soil layers [mm]
 		real(rkind) 						:: total_outflow 					! total outflow [mm] from HDS component
 		real(rkind) 						:: pond_outflow      				! outflow from the depressions [m3] ! hysteretic component
@@ -217,6 +218,7 @@ module HDS_module
 			! Initialize fluxes
 			runoff_depth = zero
 			rofo_grid = zero
+			rofb_grid = zero
 			pot_evap = zero
 			precip = zero
 			total_outflow = zero
@@ -234,6 +236,8 @@ module HDS_module
 			! overland runoff
 			
 			rofo_grid = vs%grid%ovrflw(n) * ic%dts !mm/s -> mm
+			! baseflow from the bottom of soil column
+ 			rofb_grid = vs%grid%lkg(n) !mm
 			! interflow runoff from all layers within the soil column
 			nsoillayer = size(vs%grid%latflw(n,:))
 			allocate(rofs_grid(nsoillayer))
@@ -243,7 +247,7 @@ module HDS_module
 
 			
 			!Total grid runoff
-			runoff_depth =  rofo_grid + sum(rofs_grid) ! mm !surface runoff and interflow from all soil layers
+			runoff_depth =  rofo_grid + sum(rofs_grid) + rofb_grid ! mm !surface runoff, interflow from all soil layers, and baseflow
 			
 			! precipitation depth
 			precip = vs%grid%pre(n) * ic%dts !mm/s -> mm
@@ -272,6 +276,7 @@ module HDS_module
 			! distribute the total_outflow between surface and interflow based on their original ratio
 			if(runoff_depth>zero)then
 				vs%grid%ovrflw(n) = (((total_outflow*(rofo_grid/runoff_depth))/drain_area)*1000.0) / ic%dts !m3 to mm/s ! convert to grid average (to match MESH output)
+				vs%grid%lkg(n) = (((total_outflow*(rofb_grid/runoff_depth))/drain_area)*1000.0) !m3 to mm ! convert to grid average (to match MESH output)
 				do isoillayer = 1, nsoillayer
 					vs%grid%latflw(n,isoillayer) = (((total_outflow*(rofs_grid(isoillayer)/runoff_depth))/drain_area)*1000.0) / ic%dts !m3 to mm/s ! to convert to grid average (to match MESH output)
 				end do
