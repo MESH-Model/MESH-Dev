@@ -51,8 +51,9 @@ module HDS_module
 	real(rkind), allocatable    :: p(:)   	          		! shape of the slope profile [-]
     real(rkind), allocatable    :: b(:)               		! shape of the fractional contributing area curve [-]
     real(rkind), allocatable    :: vMin(:)            		! minimum pond volume (for small depressions) below which contributing area is zero [m3]
-    real(rkind), allocatable    :: conArea(:)         		! contributing area fraction per subbasin [-]
-    real(rkind), allocatable    :: pondVol(:)         		! pond volume [m3]
+    real(rkind), allocatable    :: depConAreaFrac(:)   		! contributing area fraction of pothole dominated areas [-]
+    real(rkind), allocatable    :: basinConAreaFrac(:) 		! contributing area fraction per the entire subbasin from pothole and non-pothole areas [-]
+	real(rkind), allocatable    :: pondVol(:)         		! pond volume [m3]
     real(rkind), allocatable    :: pondArea(:)        		! pond area [m2] 
 	real(rkind), allocatable    :: oudinPETScaleK1(:)  		! Oudin PET formula scaling factor (deg C)
 	real(rkind), allocatable    :: oudinPETTempThrK2(:)		! Oudin PET formula temperature threshold (deg C)
@@ -97,7 +98,7 @@ module HDS_module
 		! allocate HDS arrays (parameters, variables, or states for grids)
         allocate(depressionVol(nmesh_grid), depCatchAreaFrac(nmesh_grid),  p(nmesh_grid), b(nmesh_grid))
 		allocate(depressionArea(nmesh_grid), pondArea(nmesh_grid))
-		allocate(pondVol(nmesh_grid),conArea(nmesh_grid))
+		allocate(pondVol(nmesh_grid), depConAreaFrac(nmesh_grid), basinConAreaFrac(nmesh_grid))
 		allocate(vMin(nmesh_grid), oudinPETScaleK1(nmesh_grid), oudinPETTempThrK2(nmesh_grid))
         
 	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -128,7 +129,8 @@ module HDS_module
 				depCatchAreaFrac(n) = 0.0
 				pondVol(n) = 0.0
 				pondArea(n) = 0.0
-				conArea(n) = 1.0
+				depConAreaFrac(n) = 1.0
+				basinConAreaFrac(n) = 1.0
 			end if
 		end do
 
@@ -141,7 +143,8 @@ module HDS_module
 			if (depressionVol(n) .ne. 0.0 .and. depCatchAreaFrac(n) .ne. 0.0) then
 				pondVol(n) = vs%grid%zpnd(n) * depressionArea(n) !m -> m^3 ! approximate vol calculation, will be updated later in the subroutine
 				pondArea(n) = depressionArea(n)*((pondVol(n)/depressionVol(n))**(two/(p(n) + two)))
-				conArea(n) = pondVol(n)/depressionVol(n) ! assume that conArea = volFrac for initialization purposes
+				depConAreaFrac(n)= pondVol(n)/depressionVol(n) ! assume that depConAreaFrac = volFrac for initialization purposes
+				basinConAreaFrac(n) = depConAreaFrac(n)
 				vMin(n) = pondVol(n)
 			end if
 		end do
@@ -154,7 +157,7 @@ module HDS_module
 			fnam= './' // trim(fls%GENDIR_OUT) // '/' // 'HDS_balance.csv' !to write HDS_blanace.csv in the results folder
 			write(*,*)fnam
 			open(99099,file=fnam,status='unknown')
-			write(99099,1110)'year','day','hour','mins','grid_index','precip','pot_evap','runoff_depth','pondVol','volFrac','pondArea','ConArea','pondOutflow', &
+			write(99099,1110)'year','day','hour','mins','grid_index','precip','pot_evap','runoff_depth','pondVol','volFrac','pondArea','depConAreaFrac', 'basinConAreaFrac','pondOutflow', &
 								'totalOutflow', 'vMin'
 				
 			1110    format(9999(g15.7e2, ','))
@@ -195,7 +198,8 @@ module HDS_module
 		real(rkind) 						:: drain_area 						! total drainage area of the gridcell [m2]
 		real(rkind) 						:: land_area 						! area of land (basin area - depressions Area)
 		real(rkind), external 				:: calc_ET0							! Penman-Monteith function for PET calculations
-		real(rkind) 						:: upslopeArea      				! upland area contributing to the small depressions [m2]
+		real(rkind) 						:: upslopeArea_dep      			! upland area contributing to the depressions [m2]
+		real(rkind) 						:: upslopeArea_rvr      			! upland area contributing to the river from non-pothole areas [m2]
 		real(rkind) 						:: volFrac                  		! volume fraction for the depressions [-]
 		real(rkind) 						:: Q_det_adj, Q_dix_adj     		! adjusted evapotranspiration & infiltration fluxes [L3 T-1] for mass balance closure (i.e., when losses > pondVol). Zero values mean no adjustment needed.
 		real(rkind)							:: pond_evap, total_evap            ! evaporation volume from ponds and the entire basin
@@ -227,8 +231,9 @@ module HDS_module
 			drain_area = shd%AREA(n) ! m2
 			land_area = drain_area - depressionArea(n)
 			!calculate upslope (upland area) that drains to depressions
-			upslopeArea = max(land_area * depCatchAreaFrac(n), zero)
-
+			upslopeArea_dep = max(land_area * depCatchAreaFrac(n), zero)
+			!calculate upslope (upland area) that drains to river network (outlet)
+			upslopeArea_rvr  = land_area * (1._rkind - depCatchAreaFrac(n))
 			! estimate POT using Oudin's formula
 			pot_evap = calcPotentialEvap_Oudin2005(vs%grid%fsin(n), vs%grid%ta(n), oudinPETScaleK1(n), oudinPETTempThrK2(n)) * ic%dts ! potential evap calculated by Oudin's formula mm/s -> mm/timestep
 			
@@ -258,7 +263,7 @@ module HDS_module
 			if(depressionVol(n)>zero) volFrac = pondVol(n) / depressionVol(n)
 			pond_outflow      = zero
 			! add runoff from land area that drains directly to the river network
-			total_outflow = (runoff_depth/1000.0) * land_area * (1.0-depCatchAreaFrac(n)) ! mm -> m3
+			total_outflow = (runoff_depth/1000.0) * upslopeArea_rvr ! mm -> m3
 			!**************************************
 			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			!!!		Run HDS on the grid scale	!!
@@ -266,12 +271,13 @@ module HDS_module
 			! run depressions routine
 			if (depressionVol(n) .ne. 0.0) then
 
-				call runDepression(pondVol(n), runoff_depth, precip, pot_evap, depressionArea(n), depressionVol(n), upslopeArea, &
-                                	p(n), tau, b(n), vMin(n), dt, Q_det_adj, Q_dix_adj, volFrac, conArea(n), pondArea(n), pond_outflow)
+				call runDepression(pondVol(n), runoff_depth, precip, pot_evap, depressionArea(n), depressionVol(n), upslopeArea_dep, &
+                                	p(n), tau, b(n), vMin(n), dt, Q_det_adj, Q_dix_adj, volFrac, depConAreaFrac(n), pondArea(n), pond_outflow)
 			end if										 
 			
 			total_outflow = total_outflow + pond_outflow      ! m3
-			
+			! calculate the integrated contributing area for the basin (from pothole and non-pothole areas)
+			basinConAreaFrac(n) = ((depConAreaFrac(n) * (depressionArea(n)+upslopeArea_dep)) + upslopeArea_rvr)/drain_area
 			!override runoff and evap values of the grid inside MESH
 			! distribute the total_outflow between surface and interflow based on their original ratio
 			if(runoff_depth>zero)then
@@ -300,8 +306,8 @@ module HDS_module
 			if (ISHEADNODE) then
 			
 			! write output to file
-			write(99099,1110)year,day,hour,mins,n,precip,pot_evap,runoff_depth,pondVol(n),volFrac,pondArea(n),ConArea(n),pond_outflow, &
-							total_outflow, vMin(n)
+			write(99099,1110)year,day,hour,mins,n,precip,pot_evap,runoff_depth,pondVol(n),volFrac,pondArea(n),depConAreaFrac(n), &
+							basinConAreaFrac(n), pond_outflow, total_outflow, vMin(n)
 							
 								
 			1110    format(9999(g15.7e2, ','))  
