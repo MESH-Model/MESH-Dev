@@ -136,7 +136,7 @@ OBJECTS+=	runsvs_mesh.o
 
 
 # ======================================================================
-#reservoir_update (reservoirs)
+#reservoir_update (DZTR reservoirs)
 # Paths.
 VPATH+=	$(DIR_REPO)/Routing_Model/reservoir_update:
 # Files.

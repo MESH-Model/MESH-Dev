@@ -300,7 +300,7 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !     zone-based storage/release
       elseif(b1(l).eq.1.0 .and. b2(l).eq.0.0)then
         call zonebased_reservoir_release(
-     +          0,0,n,l,qi2(n),div*2.0,                     !input
+     +          0,0,n,l,qi2(n),div*2.0_4,                   !input
      +          qo2(n),store2(n))                           !output
         lake_inflow(l,fhr)=qi2(n)
 

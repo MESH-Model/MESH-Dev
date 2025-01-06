@@ -11,13 +11,13 @@ subroutine zonebased_reservoir_release(iyear, ijday, rank, ireach, qi1, dt, qo2,
     !*  ireach: ID of the reservoir/reach outlet. [--].
     !*  qi1: Inflow at the beginning of the current time-step. [m3 s-1].
     integer, intent(in) :: iyear, ijday, rank, ireach
-    real, intent(in) :: qi1
-    real, intent(in) :: dt
+    real(kind = 4), intent(in) :: qi1
+    real(kind = 4), intent(in) :: dt
 
     !> Output variables.
     !*  qo2: Outflow from the reservoir at the end of the time-step. [m3 s-1].
     !*  store2: Storage in the reservoir at the end of the time-step. [m3].
-    real, intent(out) :: qo2, store2
+    real(kind = 4), intent(out) :: qo2, store2
 
     !> Local variables.
 !    integer irsv, imonth, iday
