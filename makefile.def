@@ -112,7 +112,7 @@ DFLAG=-DRUNSVS
 # RMNLIB
 VPATH+=	$(DIR_REPO)/Modules/librmn/19.7.0/base: \
 		$(DIR_REPO)/Modules/librmn/19.7.0/primitives:
-INC_DIRS+=-I./Modules/librmn/19.7.0/CUSTOM_INCLUDES/
+INC_DIRS+=-I$(DIR_REPO)/Modules/librmn/19.7.0/CUSTOM_INCLUDES
 OBJECTS+=	datec.o moduledate.o set_user_lock.o \
 			up2low.o getenvc.o
 # Core routines.
