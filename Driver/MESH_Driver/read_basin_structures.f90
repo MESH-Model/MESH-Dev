@@ -224,6 +224,38 @@ subroutine read_basin_structures(shd, ierr)
                     fms%rsvr%meta%jx(i) = shd%xxx(n)
                 end if
             end do
+
+            !> Assign 'cfn' and 'b' coefficient values (where unassigned).
+            !>  cfn = 1 Insertion (b1 == 0 .and. b2 == 0).
+            !>  cfn = 2 (default) Power function (b1 /= 0 .and. b3 == 0).
+            !>  cfn = 3 Polynomial (2nd - 5th order, b3 /= 0).
+            !>  cfn = 4 Power function based on levels. (not yet implemented)
+            !>  cfn = 5 Polynomial (2nd - 5th order based on levels). (not yet implmemted)
+            !>  cfn = 6 DZTR (RESERVOIRFLAG 2, b1 == 1 .and. b2 == 0).
+            if (fms%rsvr%rls%cfn(i) /= 0) then
+
+                !> Give priority to 'cfn' value (can only back-assign 'b' values where used as on/off flags).
+                !>  'b' values aren't updated in cases where they should be specified as inputs.
+                select case (fms%rsvr%rls%cfn(i))
+                    case (6)
+                        fms%rsvr%rls%b1(i) = 1.0
+                        fms%rsvr%rls%b2(i) = 0.0
+                    case (1)
+                        fms%rsvr%rls%b1(i) = 0.0
+                        fms%rsvr%rls%b2(i) = 0.0
+                    case (3)
+                    case default
+                        fms%rsvr%rls%b3(i) = 0.0
+                end select
+            else if (fms%rsvr%rls%b1(i) == 1.0 .and. fms%rsvr%rls%b2(i) == 0.0) then
+                fms%rsvr%rls%cfn(i) = 6
+            else if (fms%rsvr%rls%b1(i) /= 0.0 .and. fms%rsvr%rls%b3(i) == 0.0) then
+                fms%rsvr%rls%cfn(i) = 2
+            else if (fms%rsvr%rls%b3(i) /= 0.0) then
+                fms%rsvr%rls%cfn(i) = 3
+            else if (fms%rsvr%rls%b1(i) == 0.0 .and. fms%rsvr%rls%b2(i) == 0.0) then
+                fms%rsvr%rls%cfn(i) = 1
+            end if
         end do
         deallocate(dist)
 
