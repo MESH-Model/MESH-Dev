@@ -177,7 +177,7 @@ module save_basin_output
         integer nargs
 !-        integer NA, NSL, ikey, ii, i
         integer n, l, j, i, iun, ierr
-        character(len = 3) nc
+!-        character(len = 3) nc
 
         !> Return if basin output has been disabled.
 !-        if (BASINBALANCEOUTFLAG == 0) return
@@ -263,10 +263,10 @@ module save_basin_output
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
-                        write(nc, '(i3)') bnoflg%wb%ns(n)
+!-                        write(nc, '(i3)') bnoflg%wb%ns(n)
                         open((fls%fl(mfk%f900)%iun*1000 + n), &
                              file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Gauge' // &
-                                    trim(adjustl(nc)) // '.csv', &
+                                    trim(fms%stmg%meta%name(n)) // '.csv', &
                              iostat = ierr)
                         if (bnoflg%wb%fout_header) then
                             call write_water_balance_header(fls, shd, (fls%fl(mfk%f900)%iun*1000 + n), 86400)
@@ -300,10 +300,10 @@ module save_basin_output
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
-                        write(nc, '(i3)') bnoflg%wb%ns(n)
+!-                        write(nc, '(i3)') bnoflg%wb%ns(n)
                         open((902*1000 + n), &
                              file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Monthly_Gauge' // &
-                                    trim(adjustl(nc)) // '.csv', &
+                                    trim(fms%stmg%meta%name(n)) // '.csv', &
                              iostat = ierr)
                         if (bnoflg%wb%fout_header) then
                             call write_water_balance_header(fls, shd, (902*1000 + n), 86400)
@@ -337,10 +337,10 @@ module save_basin_output
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
-                        write(nc, '(i3)') bnoflg%wb%ns(n)
+!-                        write(nc, '(i3)') bnoflg%wb%ns(n)
                         open((903*1000 + n), &
                              file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_Hourly_Gauge' // &
-                                    trim(adjustl(nc)) // '.csv', &
+                                    trim(fms%stmg%meta%name(n)) // '.csv', &
                              iostat = ierr)
                         if (bnoflg%wb%fout_header) then
                             call write_water_balance_header(fls, shd, (903*1000 + n), 3600)
@@ -374,10 +374,10 @@ module save_basin_output
             if (allocated(bnoflg%wb%ns)) then
                 do n = 1, size(bnoflg%wb%ns)
                     if (bnoflg%wb%ns(n) > 0) then
-                        write(nc, '(i3)') bnoflg%wb%ns(n)
+!-                        write(nc, '(i3)') bnoflg%wb%ns(n)
                         open((904*1000 + n), &
-                             file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_ts_Gauge' // &
-                                    trim(adjustl(nc)) // '.csv', &
+                             file = './' // trim(fls%GENDIR_OUT) // '/Basin_average_water_balance_ts_' // &
+                                    trim(fms%stmg%meta%name(n)) // '.csv', &
                              iostat = ierr)
                         if (bnoflg%wb%fout_header) then
                             call write_water_balance_header(fls, shd, (904*1000 + n), ic%dts)
