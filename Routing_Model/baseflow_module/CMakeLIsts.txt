@@ -1,0 +1,10 @@
+add_library(BASEFLOW
+            baseFlow_luo2012.F90 
+            baseflow_wfqlz.f90 
+            baseflow_module.f90
+        )
+
+target_link_libraries(BASEFLOW PUBLIC
+            MPI_MODULE
+            SA_MESH_ROUTINES_1)  
+# target_sources(${samesh_exe} PRIVATE ${BASEFLOW})

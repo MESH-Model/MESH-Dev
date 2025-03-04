@@ -1,0 +1,10 @@
+add_library(PERMAFROST
+            permafrost_alt.f90 
+            permafrost_dzaa.f90 
+            permafrost_outputs_module.f90
+        )
+
+# add_dependencies(PERMAFROST SA_MESH_routines_1)
+target_link_libraries(PERMAFROST PUBLIC
+        SA_MESH_ROUTINES_1
+)
