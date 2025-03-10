@@ -203,13 +203,13 @@ endif
 # ======================================================================
 # Special rules.
 EF_Module.o: EF_ParseUtilities.o
-%.o: %.ftn90
-	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $(DFLAG) $(FTN90PPOPT)$<
+#%.o: %.ftn90
+#	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $(DFLAG) $(FTN90PPOPT)$<
 
 # ======================================================================
 # Files renamed for SVS.
-runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
-	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $(DFLAG) -o runsvs_mod.o $(FTN90PPOPT)$<
+#runsvs_mod.o: runsvs_mod_sa_mesh.ftn90
+#	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $(DFLAG) -o runsvs_mod.o $(FTN90PPOPT)$<
 
 # ======================================================================
 # Make target: all
