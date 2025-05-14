@@ -153,9 +153,9 @@ endif
 # Override compile options if 'DOUBLE' enabled.
 ifdef DOUBLE
 ifeq ($(DIST),intel)
-LFLAG+=-r8
+GFLAG+=-r8
 else
-LFLAG+=-fdefault-double-8 -fdefault-real-8
+GFLAG+=-fdefault-double-8 -fdefault-real-8
 endif
 endif
 
@@ -204,7 +204,7 @@ endif
 # Special rules.
 EF_Module.o: EF_ParseUtilities.o
 %.o: %.ftn90
-	$(FC) $(FTN90PP) $(LFLAG) $(INC_DIRS) $(DFLAG) $(FTN90PPOPT)$<
+	$(FC) $(FTN90PP) $(LFLAG) $(GFLAG) $(INC_DIRS) $(DFLAG) $(FTN90PPOPT)$<
 
 # ======================================================================
 # Files renamed for SVS.
