@@ -219,8 +219,8 @@ C
               CALL XIT('CLASSZ',-5)
           ENDIF
           IF(ABS(WTVSTP(I)-WSUMV).GT.1.0E-3) THEN
-              WRITE(6,6446) N,WTVSTP(I),WSUMV
-6446          FORMAT(2X,'CANOPY WATER BALANCE  ',I8,2F20.8)
+              WRITE(6,6446) N,I,WTVSTP(I),WSUMV
+6446          FORMAT(2X,'CANOPY WATER BALANCE  ',2I8,2F20.8)
               CALL XIT('CLASSZ',-6)
           ENDIF
           IF(ABS(WTSSTP(I)-WSUMS).GT.1.0E-2) THEN
