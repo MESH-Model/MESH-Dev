@@ -474,6 +474,8 @@ module mesh_io
         character(len = DEFAULT_LINE_LENGTH) line_buffer
 #ifdef NETCDF
         character(len = SHORT_FIELD_LENGTH) :: description, units, aname, vname
+        character(len = SHORT_FIELD_LENGTH), allocatable :: dat1_cshort(:)
+        character(len = LONG_FIELD_LENGTH) :: dat_clong
         character(len = :), allocatable :: dat1_c(:), dat_c
         character fill_c
         real(kind = kind(0.0d0)), allocatable :: dat1_d(:)
@@ -1411,8 +1413,11 @@ module mesh_io
                                     if (allocated(dat1_c)) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat1_c, ierr = ierr)
                                         if (ierr == 0) then
+                                            allocate(dat1_cshort(dim_lengths(j)))
+                                            call copy_field(dat1_c, dat1_cshort, ierr)
                                             allocate(file_buffer(n)%field, source = model_variable_char1d( &
-                                                dat = dat1_c, no_data_value = fill_c))
+                                                dat = dat1_cshort, no_data_value = fill_c))
+                                            deallocate(dat1_cshort)
                                         end if
                                         deallocate(dat1_c)
                                         allocate(file_buffer(n)%dim_names(1))
@@ -1422,7 +1427,8 @@ module mesh_io
                                     allocate(character(len = dim_lengths(1)) :: dat_c)
                                     call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat_c, ierr = ierr)
                                     if (ierr == 0) then
-                                        allocate(file_buffer(n)%field, source = model_variable_char(dat = dat_c))
+                                        call copy_field(dat_c, dat_clong, ierr)
+                                        allocate(file_buffer(n)%field, source = model_variable_char(dat = dat_clong))
                                     end if
                                     deallocate(dat_c)
                                 case default
