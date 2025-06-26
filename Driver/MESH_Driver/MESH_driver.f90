@@ -176,6 +176,7 @@ program RUNMESH
     !> Variables for program run times.
     real startprog, endprog
     integer dat(8)
+    integer :: fpos
 
     !> For reading arguments from the command line.
     character(500) fl_listMesh
@@ -942,7 +943,45 @@ program RUNMESH
     ENDDATE = .false.
     ENDDATA = .false.
 
+    !> Run the model for each time-step until the
+    !> end date or end of data is reached.
     do while (.not. ENDDATE .and. .not. ENDDATA)
+
+        !> If hit the end of forcing data, switch to the next forcing dataset file.
+        call check_forcing_data_end(ENDDATA, ierr)
+        if (ierr /= 0) then
+            call reset_tab()
+            call print_error("Errors occurred checking the forcing data end date.")
+            call program_abort()
+        end if
+
+        if (ENDDATA) then
+            !> Switch to the next forcing data file.
+            fpos = fpos + 1
+            call switch_forcing_file( &
+                fpos=fpos, &
+                ENDDATA=ENDDATA, &
+                error_status=ierr)
+            if (ierr /= 0) then
+                call reset_tab()
+                call print_error("Errors occurred switching the forcing data files.")
+                call program_abort()
+            end if
+
+            !> If no switch happened and the end of available data is reached, exit.
+            if (ENDDATA) then
+                exit
+            end if
+
+            !> Read the new file(s).
+            call open_input_forcing_files(ierr)
+            if (ierr /= 0) then
+                call reset_tab()
+                call print_error("Errors occurred opening the forcing files.")
+                call program_abort()
+            end if
+
+        end if ! if (ENDDATA) then
 
         !> Reset output variables.
         call output_variables_reset(shd)
