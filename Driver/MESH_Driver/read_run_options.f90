@@ -10,7 +10,12 @@ subroutine READ_RUN_OPTIONS(fls, shd, ierr)
     use date_utilities, only: jday_to_date
 
     use FLAGS
-    use input_forcing, only: parse_basinforcingflag, forcing_file_hourly_flag_override, forcing_file_temporal_interpolation
+    use input_forcing, only: &
+        parse_basinforcingflag, &
+        forcing_file_hourly_flag_override, &
+        forcing_file_temporal_interpolation, &
+        forcing_files_list
+
     use save_basin_output, only: &
         BASINAVGWBFILEFLAG, BASINAVGEBFILEFLAG, BASINAVGEVPFILEFLAG, BASINSWEOUTFLAG, STREAMFLOWOUTFLAG, REACHOUTFLAG
     use RUNCLASS36_variables
@@ -375,6 +380,12 @@ subroutine READ_RUN_OPTIONS(fls, shd, ierr)
                     call parse_basinforcingflag(trim(line), error_status = z)
                 case ('BASINRECHARGEFLAG')
                     call parse_basinforcingflag(trim(line), error_status = z)
+                !> forcing_files_list is defined in the `input_forcing.f90` module file.
+                case ('FORCINGLIST')
+                    if (.not. allocated(forcing_files_list)) then
+                        allocate(forcing_files_list(1))
+                        forcing_files_list%list_file%full_path = trim(adjustl(args(2))) // '.txt'
+                    end if
 
                 case ('STREAMFLOWFILEFLAG')
                     fms%stmg%qomeas%fls%ffmt = adjustl(args(2))
