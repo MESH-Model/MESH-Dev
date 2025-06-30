@@ -257,6 +257,20 @@ program RUNMESH
 !    NSL = shd%lc%IGND
 !    NML = shd%lc%NML
 
+    !> Initialize forcing files list, if provided
+    if (allocated(forcing_files_list)) then
+        !> Assign the position of the first forcing file to be read to `fpos`.
+        fpos = 1
+        !> Read the forcing files and assign the first file in the list as
+        !> the forcing file to be used for the initialization process.
+        call read_forcing_files_list(fpos=fpos, error_status=ierr)
+        !> If there is any issues, abort.
+        if (ierr /= 0) then
+            call print_error("Errors occurred reading the forcing files list.")
+            call program_abort()
+        end if
+    end if
+
     !> Initialize climate forcing module.
     if (ro%RUNCLIM) then
         call open_input_forcing_files(ierr)
