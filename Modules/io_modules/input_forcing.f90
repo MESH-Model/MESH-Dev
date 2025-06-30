@@ -1176,29 +1176,46 @@ module input_forcing
             !> target line is reached.
             !> Special case: if `ipos` and `fpos` are both 1, read the first line.
             if (forcing_files_list(1)%ipos == 1 .and. fpos == 1) then
+                
+                !> Read the first line from the file.
                 read(forcing_files_list(1)%list_file%iunit, '(A)', iostat = error_status) temp_line
+
+                !> Error handling for reading the first line.
                 if (error_status /= 0) then
                     call print_error("Error reading the forcing files list at line 1")
                     return
                 end if
+
                 !> Set the position to 1 since we are reading the first line.
                 forcing_files_list(1)%ipos = 1
+
             else
-                do while (forcing_files_list(1)%ipos <= fpos)
-                    !> Read the next line from the file.
-                    read(forcing_files_list(1)%list_file%iunit, '(A)', iostat = error_status) temp_line
-                    if (error_status /= 0) then
-                        call writenum(forcing_files_list(1)%ipos, lineno, 'I0')
-                        call print_error("Error reading the forcing files list at line " // trim(adjustl(lineno)))
-                        return
-                    end if
-                    !> Set the position to the current line.
-                    forcing_files_list(1)%ipos = forcing_files_list(1)%ipos + 1
+
+                !> Rewind the file to the beginning.
+                rewind(forcing_files_list(1)%list_file%iunit)
+
+                !> Read the next line from the file.
+                do i = 1, fpos
+                    read(forcing_files_list(1)%list_file%iunit, &
+                        '(A)', &
+                        iostat = error_status) temp_line
                 end do
+
+                !> Error handling for reading lines.
+                if (error_status /= 0) then
+                    call writenum(forcing_files_list(1)%ipos, lineno, 'I0')
+                    call print_error("Error reading the forcing files list at line " // trim(adjustl(lineno)))
+                    return
+                end if
+
+                !> Assigning proper 1-index number of line read.
+                forcing_files_list(1)%ipos = fpos
+
             end if
 
+            !> Error handling for empty lines.
             if (error_status == 0) then
-                forcing_files_list(1)%current_forcing_file%full_path = trim(temp_line)
+                forcing_files_list(1)%current_forcing_file%full_path = trim(adjustl(temp_line))
             end if
 
             !> Print progress
