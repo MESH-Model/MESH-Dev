@@ -285,6 +285,19 @@ subroutine resumerun_save(fls, shd)
             call print_error("An error occurred saving variables to the file '" // trim(fname) // "'.")
             call program_abort()
         end if
+!>>>>>zone-based storage reservoir - writing resume states when nc format is used for resume files - ME
+        if (RESERVOIRFLAG == 2) then
+            iun = 100
+            if (resume_options%save%freq /= FREQ_NUL .and. resume_options%save%freq /= FREQ_NOW) then
+                open(iun, file = 'zone_storage_states.' // trim(adjustl(line)) // '.txt', action = 'write', status = 'replace')
+            else
+                open(iun, file = 'zone_storage_states.txt', action = 'write', status = 'replace')
+            end if
+                write(iun, *) (resrvs%rsvr(i)%stoSIM(1), i = 1, resrvs%nreserv), '# Intstor1(1:NRESV)'
+                write(iun, *) (resrvs%rsvr(i)%flowSIM(1), i = 1, resrvs%nreserv), '# flowO1(1:NRESV)'
+            close(iun)
+        end if
+!<<<<<zone-based storage		
     end if
 
     !> Save the resume date ('next') to the auto resume file.
