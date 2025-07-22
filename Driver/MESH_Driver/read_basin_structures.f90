@@ -349,13 +349,16 @@ subroutine read_basin_structures(shd, ierr)
         if ((fms%rsvr%n - count(fms%rsvr%rls%cfn == 1)) > 0) then
             write(line, FMT_GEN) (fms%rsvr%n - count(fms%rsvr%rls%cfn == 1))
             call print_message('Number of reservoir outlets with routing: ' // trim(adjustl(line)))
-            write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
+            write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)', 'b1   ', 'b2   ', 'b3   ', &
+                'b4   ', 'b5   ', 'b6   ', 'b7   ', 'Initial Level', 'Outflow Function'
             call print_message(trim(line))
             do i = 1, fms%rsvr%n
                 if (fms%rsvr%rls%cfn(i) /= 0) then
                     write(line, FMT_GEN) &
                         fms%rsvr%meta%name(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), &
-                        fms%rsvr%rls%area(i)/1.0e+6
+                        fms%rsvr%rls%area(i)/1.0e+6, fms%rsvr%rls%b1(i), fms%rsvr%rls%b2(i), &
+                        fms%rsvr%rls%b3(i), fms%rsvr%rls%b4(i), fms%rsvr%rls%b5(i), fms%rsvr%rls%b6(i), &
+                        fms%rsvr%rls%b7(i), fms%rsvr%rls%zlvl0(i), fms%rsvr%rls%cfn(i)
                     call print_message(trim(line))
                 end if
             end do
