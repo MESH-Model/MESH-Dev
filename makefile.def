@@ -162,10 +162,9 @@ OBJECTS+=	area_watflood.o rerout.o route.o flowinit.o \
 # SA_MESH routines.
 # Input routines.
 OBJECTS+=	read_initial_inputs.o \
-			read_shed_r2c.o read_shed_nc.o read_shed_csv.o read_soil_levels.o read_shed_nc_subbasin.o \
+			read_soil_levels.o \
 			read_parameters.o \
 			read_parameters_class.o read_parameters_hydrology.o read_parameters_r2c.o read_parameters_nc.o read_parameters_csv.o \
-			check_parameters.o \
 			read_basin_structures.o \
 			read_streamflow_txt.o read_streamflow_tb0.o read_reservoir_txt.o read_reservoir_tb0.o \
 			read_abstractionpoint_tb0.o read_abstractionpoint_txt.o \
