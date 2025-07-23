@@ -950,6 +950,7 @@ program RUNMESH
         !> Load or update climate forcing input.
         if (ro%RUNCLIM) then
             call read_input_forcing_frame(ierr)
+            ENDDATA = (ierr	/= 0)
             if (ierr /= 0) exit
         end if
 
