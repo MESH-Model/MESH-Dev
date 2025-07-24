@@ -287,7 +287,7 @@ module permafrost_outputs_module
             end do
 
             !> End of year outputs (yearly).
-            if (ic%now%year /= ic%next%year) then
+            if (ic%now%year /= ic%next%year .or. ic%now%year == ic%stop%year) then
 
                 !> Calculate statistics and transform the variables to an array compatible with the function call.
                 do j = 1, shd%lc%IGND

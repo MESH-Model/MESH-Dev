@@ -2609,46 +2609,50 @@ module output_files
 
         !> Update data fields for existing output variable frequencies.
         if (btest(field%ffreq, FREQ_YEARLY)) then
-            if (ic%now%year /= ic%next%year) then
+            if (ic%now%year /= ic%next%year .or. ic%now%year == ic%stop%year) then
                 if (field%in_mem) t = ic%iter%year
                 call output_files_update_dates(fls_out%dates%y, t, ic%iter%year, ic%now%year, 1, 1)
                 call output_files_update_group(fls, shd, field, field%y, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%year /= ic%next%year .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
+            if (((ic%now%year /= ic%next%year .or. ic%now%year == ic%stop%year) .and. .not. field%in_mem) .or. &
                 (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, FREQ_YEARLY, field, field%y, fls_out%dates%y)
             end if
         end if
         if (btest(field%ffreq, FREQ_MONTHLY)) then
-            if (ic%now%month /= ic%next%month) then
+            if (ic%now%month /= ic%next%month .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month)) then
                 if (field%in_mem) t = ic%iter%month
                 call output_files_update_dates(fls_out%dates%m, t, ic%iter%month, ic%now%year, ic%now%month, 1)
                 call output_files_update_group(fls, shd, field, field%m, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%month /= ic%next%month .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
-                (field%in_mem .and. fls_out%fclose)) then
+            if (((ic%now%month /= ic%next%month .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month)) &
+                .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, FREQ_MONTHLY, field, field%m, fls_out%dates%m)
             end if
         end if
         if (btest(field%ffreq, FREQ_DAILY)) then
-            if (ic%now%day /= ic%next%day) then
+            if (ic%now%day /= ic%next%day .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month .and. &
+                ic%now%day /= ic%stop%day)) then
                 if (field%in_mem) t = ic%iter%day
                 call output_files_update_dates(fls_out%dates%d, t, ic%iter%day, ic%now%year, ic%now%month, ic%now%day)
                 call output_files_update_group(fls, shd, field, field%d, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%day /= ic%next%day .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
-                (field%in_mem .and. fls_out%fclose)) then
+            if (((ic%now%day /= ic%next%day .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month .and. &
+                ic%now%day /= ic%stop%day)) &
+                .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, FREQ_DAILY, field, field%d, fls_out%dates%d)
             end if
         end if
         if (btest(field%ffreq, FREQ_HOURLY)) then
-            if (ic%now%hour /= ic%next%hour) then
+            if (ic%now%hour /= ic%next%hour .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month .and. &
+                ic%now%day /= ic%stop%day .and. ic%now%hour /= ic%stop%hour)) then
                 if (field%in_mem) t = ic%iter%hour
                 call output_files_update_dates(fls_out%dates%h, t, ic%iter%hour, ic%now%year, ic%now%month, ic%now%day, ic%now%hour)
                 call output_files_update_group(fls, shd, field, field%h, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%hour /= ic%next%hour .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
-                (field%in_mem .and. fls_out%fclose)) then
+            if (((ic%now%hour /= ic%next%hour .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month .and. &
+                ic%now%day /= ic%stop%day .and. ic%now%hour /= ic%stop%hour)) .and. .not. field%in_mem .and. &
+                .not. fls_out%fclose) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, FREQ_HOURLY, field, field%h, fls_out%dates%h)
             end if
         end if
@@ -2685,7 +2689,7 @@ module output_files
 
         !> 'Seasonal' must go last because it changes 't' regardless of the state of 'in_mem'.
         if (btest(field%ffreq, FREQ_SEASONAL)) then
-            if (ic%now%month /= ic%next%month) then
+            if (ic%now%month /= ic%next%month .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month)) then
                 t = ic%now%month
                 call output_files_update_dates(fls_out%dates%s, t, t, ic%now%year, ic%now%month, 1)
                 call output_files_update_group(fls, shd, field, field%s, t, field%cfactorm, field%cfactora, VN_ACC)
