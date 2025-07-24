@@ -353,7 +353,7 @@ subroutine forcing_adjust( &
             pres_frac(k) = pres(k)/grid_sum_pres(nml_grid_map(k))
         end do
         if (ipres /= 0) then
-            pres_adjusted =  pres_adjusted*pres_frac
+            pres_adjusted = pres_adjusted*pres_frac
         end if
     end if
 
@@ -451,7 +451,7 @@ subroutine forcing_adjust( &
         do k = 1, nvals
             rlds_frac(k) = rlds(k)/grid_sum_rlds(nml_grid_map(k))
         end do
-        if (irlds .ne. 0) then
+        if (irlds /= 0) then
             rlds_adjusted = rlds_adjusted*rlds_frac
         end if
     end if
