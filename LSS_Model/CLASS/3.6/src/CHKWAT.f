@@ -120,20 +120,20 @@ C
       IF(ISFC.EQ.1 .OR. ISFC.EQ.3)                                  THEN      
           IF(IPTBAD.NE.0)                                    THEN
              WRITE(6,6100) IPTBAD,JL,ISFC,RAICAN(IPTBAD)
- 6100        FORMAT('0AT (I,JL)=(',I3,',',I3,'), ISFC=',I2,' RAICAN = ',
+ 6100        FORMAT('0AT (I,JL)=(',I8,',',I8,'), ISFC=',I2,' RAICAN = ',
      1               E13.5)
              CALL XIT('CHKWAT',-1)
           ENDIF
           IF(JPTBAD.NE.0)                                           THEN
              WRITE(6,6150) JPTBAD,JL,ISFC,SNOCAN(JPTBAD)
- 6150        FORMAT('0AT (I,JL)=(',I3,',',I3,'), ISFC=',I2,' SNOCAN = ',
+ 6150        FORMAT('0AT (I,JL)=(',I8,',',I8,'), ISFC=',I2,' SNOCAN = ',
      1               E13.5)
              CALL XIT('CHKWAT',-2)
           ENDIF
       ENDIF
       IF(KPTBAD.NE.0)                                           THEN
          WRITE(6,6200) KPTBAD,JL,ISFC,RUNOFF(KPTBAD)
- 6200    FORMAT('0AT (I,JL)=(',I3,',',I3,'), ISFC=',I2,' RUNOFF = ',
+ 6200    FORMAT('0AT (I,JL)=(',I8,',',I8,'), ISFC=',I2,' RUNOFF = ',
      1           E13.5)
          CALL XIT('CHKWAT',-3)
       ENDIF
@@ -149,7 +149,7 @@ C
               WRITE(6,6009) I,J,N,THLIQ(I,J),THPOR(I,J),DELZW(I,J),
      1                      THICE(I,J),THLIQI(I,J),THICEI(I,J),
      1                      ZPOND(I),ZPONDI(I),ISAND(I,J)
-6009          FORMAT(2X,3I6,8F16.8,I6)
+6009          FORMAT(2X,3I8,8F16.8,I6)
               DO 145 K=1,IG
               WRITE(6,6008) K,THLIQ(I,K),THLIQI(I,K),THICE(I,K),
      1                      THICEI(I,K),DELZW(I,K),THPOR(I,K),ISAND(I,K)
@@ -178,26 +178,26 @@ C
       IF(IPTBDI.NE.0)                                               THEN
           WRITE(6,6250) IPTBDI,JL,ISFC,N,THLIQ(IPTBDI,IPTBDJ),
      1                  THPOR(IPTBDI,IPTBDJ),IPTBDJ
- 6250     FORMAT('0AT (I,JL)=(',I6,',',I6,'), ISFC=',I2,' STEP =',I8,
+ 6250     FORMAT('0AT (I,JL)=(',I8,',',I8,'), ISFC=',I2,' STEP =',I8,
      1            ' THLIQ = ',E13.5,' THPOR = ',E13.5,' FOR J=',I2)
           CALL XIT('CHKWAT',-4)
       ENDIF
       IF(JPTBDI.NE.0)                                               THEN
           WRITE(6,6300) JPTBDI,JL,ISFC,THLIQ(JPTBDI,JPTBDJ),JPTBDJ
- 6300     FORMAT('0AT (I,JL)=(',I3,',',I3,'), ISFC=',I2,' THLIQ = ',
+ 6300     FORMAT('0AT (I,JL)=(',I8,',',I8,'), ISFC=',I2,' THLIQ = ',
      1            E13.5,' FOR J=',I2)
           CALL XIT('CHKWAT',-5)
       ENDIF
       IF(KPTBDI.NE.0)                                               THEN
           WRITE(6,6350) KPTBDI,JL,ISFC,THICE(KPTBDI,KPTBDJ),
      1                  THPOR(KPTBDI,KPTBDJ),KPTBDJ
- 6350     FORMAT('0AT (I,JL)=(',I3,',',I3,'), ISFC=',I2,' THICE = ',
+ 6350     FORMAT('0AT (I,JL)=(',I8,',',I8,'), ISFC=',I2,' THICE = ',
      1            E13.5,' THPOR = ',E13.5,' FOR J=',I2)
           CALL XIT('CHKWAT',-6)
       ENDIF
       IF(LPTBDI.NE.0)                                               THEN
           WRITE(6,6400) LPTBDI,JL,ISFC,THICE(LPTBDI,LPTBDJ),LPTBDJ
- 6400     FORMAT('0AT (I,JL)=(',I3,',',I3,'), ISFC=',I2,' THICE = ',
+ 6400     FORMAT('0AT (I,JL)=(',I8,',',I8,'), ISFC=',I2,' THICE = ',
      1            E13.5,' FOR J=',I2)
           CALL XIT('CHKWAT',-7)
       ENDIF

@@ -14,7 +14,8 @@
 !>
 !> Output variables:
 !*  dzaa: Depth of zero annual amplitude where tmax ~= tmin. [m below surface].
-subroutine permafrost_dzaa(tmax, tmin, zbot, ttol, dzaa, ilen, nsl, i1, i2)
+!*  tzaa: Temperature at the depth of zero annual amplitude. [K].
+subroutine permafrost_dzaa(tmax, tmin, zbot, ttol, dzaa, tzaa, ilen, nsl, i1, i2)
 
     implicit none
 
@@ -23,11 +24,11 @@ subroutine permafrost_dzaa(tmax, tmin, zbot, ttol, dzaa, ilen, nsl, i1, i2)
     real tmax(ilen, nsl), tmin(ilen, nsl), zbot(nsl), ttol
 
     !> Output variables.
-    real dzaa(ilen)
+    real dzaa(ilen), tzaa(ilen)
 
     !> Local variables.
     integer i, j
-    real trng(ilen, nsl), zcen(nsl)
+    real tavg(ilen,nsl), trng(ilen, nsl), zcen(nsl)
 
     !> Calculate depth of the middle of the layer, ZCEN.
     zcen(1) = zbot(1)/2.0
@@ -40,6 +41,7 @@ subroutine permafrost_dzaa(tmax, tmin, zbot, ttol, dzaa, ilen, nsl, i1, i2)
 
         !> Calculate the temperature envelope.
         trng(i, :) = tmax(i, :) - tmin(i, :)
+        tavg(i, :) = (tmax(i, :) + tmin(i, :))/2
 
         !> Set DZAA = 0.0 in case no DZAA is found.
         dzaa(i) = 0.0
@@ -47,7 +49,10 @@ subroutine permafrost_dzaa(tmax, tmin, zbot, ttol, dzaa, ilen, nsl, i1, i2)
 
             !> DZAA is interpolated.
             if (sign(1.0, trng(i, j) - ttol) /= sign(1.0, trng(i, j - 1) - ttol)) then
-                dzaa(i) = (zcen(j) - zcen(j - 1))/(trng(i, j - 1) - trng(i, j))*(trng(i, j - 1) - ttol) + zcen(j - 1)
+                dzaa(i) = (zcen(j) - zcen(j - 1))/(trng(i, j) - trng(i, j - 1))*(ttol - trng(i, j - 1)) + zcen(j - 1)
+                tzaa(i) = (tavg(i, j) - tavg(i, j - 1))/(zcen(j) - zcen(j - 1))*(dzaa(i) - zcen(j -1)) + tavg(i, j - 1)
+
+                !> Exit the 'nsl' loop.
                 exit
             end if
         end do

@@ -65,6 +65,7 @@ module sa_mesh_run_within_tile
             if (allocated(vs%tile%cmas)) n = n + 1
             if (allocated(vs%tile%tacan)) n = n + 1
             if (allocated(vs%tile%qacan)) n = n + 1
+            if (allocated(vs%tile%uvcan)) n = n + 1
             if (allocated(vs%tile%tcan)) n = n + 1
             if (allocated(vs%tile%gro)) n = n + 1
             if (allocated(vs%tile%sno)) n = n + 1
@@ -99,6 +100,13 @@ module sa_mesh_run_within_tile
             if (allocated(vs%tile%thicsol)) n = n + size(vs%tile%thicsol, 2)
             if (allocated(vs%tile%tsol)) n = n + size(vs%tile%tsol, 2)
             if (allocated(vs%tile%gflx)) n = n + size(vs%tile%gflx, 2)
+            if (allocated(vs%tile%hcps)) n = n + size(vs%tile%hcps, 2)
+            if (allocated(vs%tile%hcpc)) n = n + size(vs%tile%hcpc, 2)
+            if (allocated(vs%tile%hcpg)) n = n + size(vs%tile%hcpg, 2)
+            if (allocated(vs%tile%tctopc)) n = n + size(vs%tile%tctopc, 2)
+            if (allocated(vs%tile%tctopg)) n = n + size(vs%tile%tctopg, 2)
+            if (allocated(vs%tile%tcbotc)) n = n + size(vs%tile%tcbotc, 2)
+            if (allocated(vs%tile%tcbotg)) n = n + size(vs%tile%tcbotg, 2)
             if (allocated(vs%tile%latflw)) n = n + size(vs%tile%latflw, 2)
             if (allocated(vs%tile%rchg)) n = n + 1
             if (allocated(vs%tile%stggw)) n = n + 1
@@ -137,6 +145,10 @@ module sa_mesh_run_within_tile
                 end if
                 if (allocated(vs%tile%qacan)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%qacan))
+                    n = n + 1
+                end if
+                if (allocated(vs%tile%uvcan)) then
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%uvcan))
                     n = n + 1
                 end if
                 if (allocated(vs%tile%tcan)) then
@@ -282,6 +294,48 @@ module sa_mesh_run_within_tile
                 if (allocated(vs%tile%gflx)) then
                     do j = 1, size(vs%tile%gflx, 2)
                         allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%gflx(:, j)))
+                        n = n + 1
+                    end do
+                end if
+                if (allocated(vs%tile%hcps)) then
+                    do j = 1, size(vs%tile%hcps, 2)
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%hcps(:, j)))
+                        n = n + 1
+                    end do
+                end if
+                if (allocated(vs%tile%hcpc)) then
+                    do j = 1, size(vs%tile%hcpc, 2)
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%hcpc(:, j)))
+                        n = n + 1
+                    end do
+                end if
+                if (allocated(vs%tile%hcpg)) then
+                    do j = 1, size(vs%tile%hcpg, 2)
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%hcpg(:, j)))
+                        n = n + 1
+                    end do
+                end if
+                if (allocated(vs%tile%tctopc)) then
+                    do j = 1, size(vs%tile%tctopc, 2)
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tctopc(:, j)))
+                        n = n + 1
+                    end do
+                end if
+                if (allocated(vs%tile%tctopg)) then
+                    do j = 1, size(vs%tile%tctopg, 2)
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tctopg(:, j)))
+                        n = n + 1
+                    end do
+                end if
+                if (allocated(vs%tile%tcbotc)) then
+                    do j = 1, size(vs%tile%tcbotc, 2)
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tcbotc(:, j)))
+                        n = n + 1
+                    end do
+                end if
+                if (allocated(vs%tile%tcbotg)) then
+                    do j = 1, size(vs%tile%tcbotg, 2)
+                        allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tcbotg(:, j)))
                         n = n + 1
                     end do
                 end if
@@ -831,6 +885,7 @@ module sa_mesh_run_within_tile
 !        if (allocated(vs%tile%cmas)) vs%tile%cmas(il1:il2) = 0.0
 !        if (allocated(vs%tile%tacan)) vs%tile%tacan(il1:il2) = 0.0
 !        if (allocated(vs%tile%qacan)) vs%tile%qacan(il1:il2) = 0.0
+!        if (allocated(vs%tile%uvcan)) vs%tile%uvcan(il1:il2) = 0.0
 !        if (allocated(vs%tile%tcan)) vs%tile%tcan(il1:il2) = 0.0
 !        if (allocated(vs%tile%gro)) vs%tile%gro(il1:il2) = 0.0
 
@@ -877,6 +932,13 @@ module sa_mesh_run_within_tile
 !        if (allocated(vs%tile%fzwssol)) vs%tile%fzwssol(il1:il2, :) = 0.0
 !        if (allocated(vs%tile%tsol)) vs%tile%tsol(il1:il2, :) = 0.0
         if (allocated(vs%tile%gflx)) vs%tile%gflx(il1:il2, :) = 0.0
+        if (allocated(vs%tile%hcps)) vs%tile%hcps(il1:il2, :) = 0.0
+        if (allocated(vs%tile%hcpc)) vs%tile%hcpc(il1:il2, :) = 0.0
+        if (allocated(vs%tile%hcpg)) vs%tile%hcpg(il1:il2, :) = 0.0		
+        if (allocated(vs%tile%tctopc)) vs%tile%tctopc(il1:il2, :) = 0.0
+        if (allocated(vs%tile%tctopg)) vs%tile%tctopg(il1:il2, :) = 0.0
+        if (allocated(vs%tile%tcbotc)) vs%tile%tcbotc(il1:il2, :) = 0.0
+        if (allocated(vs%tile%tcbotg)) vs%tile%tcbotg(il1:il2, :) = 0.0
         if (allocated(vs%tile%latflw)) vs%tile%latflw(il1:il2, :) = 0.0
 !        if (allocated(vs%tile%zsol)) vs%tile%zsol(il1:il2, :) = 0.0
 !        if (allocated(vs%tile%zsolhyd)) vs%tile%zsolhyd(il1:il2, :) = 0.0

@@ -76,7 +76,7 @@ module RUNCLASS36_variables
 
     type CLASS_prognostic_variables
         real, dimension(:), allocatable :: &
-            ALBS, CMAI, GRO, QAC, RCAN, RHOS, SNCAN, SNO, TAC, TBAS, &
+            ALBS, CMAI, GRO, QAC, RCAN, RHOS, SNCAN, SNO, TAC, VAC, TBAS, &
             TCAN, TPND, TSNO, WSNO, ZPND
         real, dimension(:, :), allocatable :: &
             TBAR, THIC, THLQ, TSFS

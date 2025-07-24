@@ -326,7 +326,7 @@ module RUNCLASS36_config
                  cfi%VL(NML), cfi%VMOD(NML))
 
         !> Prognostic variables.
-        allocate(cpv%ALBS(NML), cpv%CMAI(NML), cpv%GRO(NML), cpv%QAC(NML), cpv%RCAN(NML), cpv%RHOS(NML), cpv%SNCAN(NML), &
+        allocate(cpv%ALBS(NML), cpv%CMAI(NML), cpv%GRO(NML), cpv%QAC(NML), cpv%VAC(NML), cpv%RCAN(NML), cpv%RHOS(NML), cpv%SNCAN(NML), &
                  cpv%SNO(NML), cpv%TAC(NML), cpv%TBAS(NML), cpv%TCAN(NML), cpv%TPND(NML), cpv%TSNO(NML), cpv%WSNO(NML), &
                  cpv%ZPND(NML))
         allocate(cpv%TBAR(NML, NSL), cpv%THIC(NML, NSL), cpv%THLQ(NML, NSL))
@@ -434,6 +434,7 @@ module RUNCLASS36_config
         cpv%CMAI(il1:il2) = vs%tile%cmas(il1:il2)
         cpv%WSNO(il1:il2) = vs%tile%lqwssno(il1:il2)
         cpv%QAC(il1:il2) = vs%tile%qacan(il1:il2)
+        cpv%VAC(il1:il2) = vs%tile%uvcan(il1:il2)
         cpv%TCAN(il1:il2) = vs%tile%tcan(il1:il2)
         cpv%TAC(il1:il2) = vs%tile%tacan(il1:il2)
         cpv%TSNO(il1:il2) = vs%tile%tsno(il1:il2)

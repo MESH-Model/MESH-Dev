@@ -30,6 +30,7 @@ module RUNCLASS36_module
 
         integer NA, NTYPE, NML, IGND, k, ik, j, i
         real FRAC
+        REAL SNOROF, WSNROF
 
         !* ierr: Diagnostic error/status return from various subroutines.
         integer :: ierr = 0
@@ -254,7 +255,7 @@ module RUNCLASS36_module
                         cdv%SFCQ, SFRHGAT, cdv%FSGV, cdv%FSGS, cdv%FSGG, cdv%FLGV, cdv%FLGS, cdv%FLGG, &
                         cdv%HFSC, cdv%HFSS, cdv%HFSG, cdv%HEVC, cdv%HEVS, cdv%HEVG, cdv%HMFC, cdv%HMFN, &
                         cdv%HTCC, cdv%HTCS, cdv%HTC, cdv%QFCF, cdv%QFCL, cdv%DR, cdv%WTAB, cdv%ILMO, &
-                        cdv%UE, cdv%HBL, cpv%TAC, cpv%QAC, catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, &
+                        cdv%UE, cdv%HBL, cpv%TAC, cpv%QAC, cpv%VAC, catv%ZRFM, catv%ZRFH, catv%ZDM, catv%ZDH, &
                         catv%VPD, catv%TADP, catv%RHOA, cfi%FSVH, cfi%FSIH, cfi%FDL, cfi%UL, cfi%VL, &
                         cfi%TA, cfi%QA, catv%PADR, cdv%FC, cdv%FG, cdv%FCS, cdv%FGS, RBCOEF, &
                         FSVF, FSVFS, cfi%PRES, cfi%VMOD, ALVSCN, ALIRCN, ALVSG, ALIRG, &
@@ -349,6 +350,31 @@ module RUNCLASS36_module
                 NML, &
                 fls, shd)
 
+            !> LIMIT SNOW MASS TO A MAXIMUM OF 10 METRES TO AVOID
+            !>  SNOW PILING UP AT EDGES OF GLACIERS AT HIGH ELEVATIONS.
+            !>  THIS IS TARGETTED AS OVERLAND RUNOFF.
+            !> Ported from CLASS 3.6.2.
+            do i = il1, il2
+                if (ZSNOW(i) .GT. 10.0) then
+                    SNOROF = (ZSNOW(i) - 10.0)*cpv%RHOS(i)
+                    WSNROF = cpv%WSNO(i)*SNOROF/cpv%SNO(i)
+                    cdv%TROO(i) = &
+                        (cdv%TROO(i)*cdv%ROFO(i) + cpv%TSNO(i)*(SNOROF + WSNROF)/ic%dts)/(cdv%ROFO(i) + &
+                        (SNOROF + WSNROF)/ic%dts)
+                    cdv%ROFO(i) = cdv%ROFO(i) + (SNOROF + WSNROF)/ic%dts
+                    cdv%TROF(i) = &
+                        (cdv%TROF(i)*cdv%ROF(i) + cpv%TSNO(i)*(SNOROF + WSNROF)/ic%dts)/(cdv%ROF(i) + &
+                        (SNOROF + WSNROF)/ic%dts)
+                    cdv%ROF(i) = cdv%ROF(i) + (SNOROF+WSNROF)/ic%dts
+                    cdv%ROFN(i) = cdv%ROFN(i) + (SNOROF+WSNROF)/ic%dts
+                    cdv%PCPG(i) = cdv%PCPG(i) + (SNOROF+WSNROF)/ic%dts
+                    cdv%HTCS(i) = cdv%HTCS(i) - cpv%TSNO(i)*(SPHICE*SNOROF+SPHW*WSNROF)/ic%dts
+                    cpv%SNO(i) = cpv%SNO(i) - SNOROF
+                    cpv%WSNO(i) = cpv%WSNO(i) - WSNROF
+                    ZSNOW(i) = 10.0
+                end if
+            end do
+
             call CLASSZ(1, CTVSTP, CTSSTP, CT1STP, CT2STP, CT3STP, &
                         WTVSTP, WTSSTP, WTGSTP, &
                         cdv%FSGV, cdv%FLGV, cdv%HFSC, cdv%HEVC, cdv%HMFC, cdv%HTCC, &
@@ -391,6 +417,7 @@ module RUNCLASS36_module
         vs%tile%tacan(il1:il2) = cpv%TAC(il1:il2)
         vs%tile%tcan(il1:il2) = cpv%TCAN(il1:il2)
         vs%tile%qacan(il1:il2) = cpv%QAC(il1:il2)
+        vs%tile%uvcan(il1:il2) = cpv%VAC(il1:il2)
         vs%tile%gro(il1:il2) = cpv%GRO(il1:il2)
         vs%tile%sno(il1:il2) = cpv%SNO(il1:il2)
         vs%tile%albsno(il1:il2) = cpv%ALBS(il1:il2)
@@ -408,7 +435,7 @@ module RUNCLASS36_module
             FSTRCS(il1:il2)*cdv%FCS(il1:il2) + FSTRC(il1:il2)*cdv%FC(il1:il2) + &
             FSTRG(il1:il2)*cdv%FG(il1:il2) + FSTRGS(il1:il2)*cdv%FGS(il1:il2)
         vs%tile%potevp(il1:il2) = cdv%PET(il1:il2)
-        vs%tile%et(il1:il2) = cdv%QFS(il1:il2) + pbsm%vs%Subl(il1:il2)
+        vs%tile%et(il1:il2) = cdv%QFS(il1:il2) + pbsm%vs%Subl(il1:il2)/ic%dts
         vs%tile%ovrflw(il1:il2) = cdv%ROFO(il1:il2)
         vs%tile%qevp(il1:il2) = cdv%QEVP(il1:il2)
         vs%tile%qsens(il1:il2) = cdv%HFS(il1:il2)
@@ -425,6 +452,13 @@ module RUNCLASS36_module
         vs%tile%thlqsol(il1:il2, :) = cpv%THLQ(il1:il2, :)
         vs%tile%tsol(il1:il2, :) = cpv%TBAR(il1:il2, :)
         vs%tile%gflx(il1:il2, :) = cdv%GFLX(il1:il2, :)
+        vs%tile%hcps(il1:il2, :) = csfv%HCPS(il1:il2, :)
+        vs%tile%hcpc(il1:il2, :) = HCPC(il1:il2, :)
+        vs%tile%hcpg(il1:il2, :) = HCPG(il1:il2, :)
+        vs%tile%tctopc(il1:il2, :) = TCTOPC(il1:il2, :)
+        vs%tile%tctopg(il1:il2, :) = TCTOPG(il1:il2, :)
+        vs%tile%tcbotc(il1:il2, :) = TCBOTC(il1:il2, :)
+        vs%tile%tcbotg(il1:il2, :) = TCBOTG(il1:il2, :)
         vs%tile%drainsol(il1:il2) = cdv%ROFB(il1:il2)
 
     end subroutine

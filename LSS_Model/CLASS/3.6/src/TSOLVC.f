@@ -469,7 +469,7 @@ C
       DO 225 I=IL1,IL2
 C          IF(FI(I).GT.0. .AND. ITER(I).EQ.-1)                     THEN 
 C              WRITE(6,6250) I,JL,NITER(I),RESID(I),TZERO(I),RIB(I)
-C6250          FORMAT('0SUBCAN ITERATION LIMIT',3X,3I3,3(F8.2,E12.4))
+C6250          FORMAT('0SUBCAN ITERATION LIMIT',3X,3I8,3(F8.2,E12.4))
 C          ENDIF                                            
           IF(FI(I).GT.0.)                                           THEN
               IF(TZERO(I).LT.173.16 .OR. TZERO(I).GT.373.16)    THEN
@@ -854,7 +854,7 @@ C
       DO 625 I=IL1,IL2
 C         IF(FI(I).GT.0. .AND. ITER(I).EQ.-1)                      THEN 
 C             WRITE(6,6350) I,JL,NITER(I),RESID(I),TCAN(I),RIB(I)
-C6350         FORMAT('0CANOPY ITERATION LIMIT',3X,3I3,3(F8.2,E12.4))            
+C6350         FORMAT('0CANOPY ITERATION LIMIT',3X,3I8,3(F8.2,E12.4))            
 C         ENDIF                                            
           IF(FI(I).GT.0. .AND. (TCAN(I).LT.173.16 .OR.
      1                           TCAN(I).GT.373.16))                THEN
@@ -864,7 +864,7 @@ C         ENDIF
 C  
       IF(IBAD.NE.0)                                                 THEN
           WRITE(6,6375) IBAD,JL,TCAN(IBAD),NITER(IBAD),ISNOW
- 6375     FORMAT('0BAD CANOPY ITERATION TEMPERATURE',3X,2I3,F16.2,2I4)
+ 6375     FORMAT('0BAD CANOPY ITERATION TEMPERATURE',3X,2I8,F16.2,2I4)
           WRITE(6,6380) QSWNC(IBAD),QLWIN(IBAD),QLWOG(IBAD),
      1                  QLWOC(IBAD),QSENSG(IBAD),QSENSC(IBAD),
      2                  QEVAPC(IBAD),QSTOR(IBAD),QMELTC(IBAD)

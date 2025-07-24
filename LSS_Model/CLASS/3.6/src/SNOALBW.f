@@ -112,7 +112,7 @@ C
 C
       IF(IPTBAD.NE.0) THEN                                                        
          WRITE(6,6100) IPTBAD,JL,ALBSNO(IPTBAD)
- 6100    FORMAT('0AT (I,J)= (',I3,',',I3,'), ALBSNO = ',F10.5)            
+ 6100    FORMAT('0AT (I,J)= (',I8,',',I8,'), ALBSNO = ',F10.5)            
          CALL XIT('SNOALBW',-1)                                                               
       ENDIF                                                                       
 C                                                                                 

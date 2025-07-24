@@ -39,7 +39,7 @@ module PBSM_module
     type pbsm_container
         type(pbsm_parameters) :: pm_gru, pm_grid, pm
         type(pbsm_variables) :: vs
-        real :: pbsm_fraction_threshold = 0.01
+        real :: pbsm_fraction_threshold = 0.00
         logical :: PROCESS_ACTIVE = .false.
     end type
 
@@ -216,7 +216,7 @@ module PBSM_module
 
     !> Description:
     !>  Distribute blowing snow mass between GRUs.
-	!> ME 6/12/2021 changed FARE to Area_Weight for consistency
+    !> ME 6/12/2021 changed FARE to Area_Weight to account for tile fractions in the redistribution weights
     subroutine PBSM_within_grid( &
         TSNO, ZSNOW, RHOS, SNO, TSNOCS, RHOSCS, TSNOGS, RHOSGS, &
         GC, Area_Weight, WSNOCS, WSNOGS, FCS, FGS, FC, FG, &

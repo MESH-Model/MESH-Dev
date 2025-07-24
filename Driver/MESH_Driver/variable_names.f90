@@ -68,6 +68,9 @@ module variable_names
     character(len = *), parameter :: VN_FZWSCAN = 'FZWSCAN'
     character(len = *), parameter :: VN_CMAS = 'CMAS'
     character(len = *), parameter :: VN_TCAN = 'TCAN'
+    character(len = *), parameter :: VN_TACAN = 'TACAN'
+    character(len = *), parameter :: VN_QACAN = 'QACAN'
+    character(len = *), parameter :: VN_UVCAN = 'UVCAN'
     character(len = *), parameter :: VN_GRO = 'GRO'
 
     !> Snow variables.
@@ -111,6 +114,13 @@ module variable_names
     character(len = *), parameter :: VN_ALWSSOL = 'ALWSSOL'
     character(len = *), parameter :: VN_TSOL = 'TSOL'
     character(len = *), parameter :: VN_GFLX = 'GFLX'
+    character(len = *), parameter :: VN_HCPS = 'HCPS'
+    character(len = *), parameter :: VN_HCPC = 'HCPC'
+    character(len = *), parameter :: VN_HCPG = 'HCPG'
+    character(len = *), parameter :: VN_TCTOPC = 'TCTOPC'
+    character(len = *), parameter :: VN_TCTOPG = 'TCTOPG'
+    character(len = *), parameter :: VN_TCBOTC = 'TCBOTC'
+    character(len = *), parameter :: VN_TCBOTG = 'TCBOTG'
     character(len = *), parameter :: VN_LATFLW = 'LATFLW'
     character(len = *), parameter :: VN_ZSOLSAT = 'ZSOLSAT'
     character(len = *), parameter :: VN_DRAINSOL = 'DRAINSOL'

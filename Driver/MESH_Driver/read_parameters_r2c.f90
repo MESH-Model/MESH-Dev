@@ -235,6 +235,10 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
                     pm%grid%iwf(1:shd%NA) = int(ffield)
                 end if
+            case ('zsnl')
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+                    pm%grid%zsnl(1:shd%NA) = ffield
+                end if
 
             !> Irrigation module.
             case ('irflg')

@@ -39,6 +39,9 @@ module output_variables
         real, dimension(:), pointer :: fzwscan => null()
         real, dimension(:), pointer :: cmas => null()
         real, dimension(:), pointer :: tcan => null()
+        real, dimension(:), pointer :: tacan => null()
+        real, dimension(:), pointer :: qacan => null()
+        real, dimension(:), pointer :: uvcan => null()
         real, dimension(:), pointer :: gro => null()
 
         !> Snow variables.
@@ -85,6 +88,13 @@ module output_variables
         real, dimension(:, :), pointer :: alwssol => null()
         real, dimension(:, :), pointer :: tsol => null()
         real, dimension(:, :), pointer :: gflx => null()
+        real, dimension(:, :), pointer :: hcps => null()
+        real, dimension(:, :), pointer :: hcpc => null()
+        real, dimension(:, :), pointer :: hcpg => null()
+        real, dimension(:, :), pointer :: tctopc => null()
+        real, dimension(:, :), pointer :: tctopg => null()
+        real, dimension(:, :), pointer :: tcbotc => null()
+        real, dimension(:, :), pointer :: tcbotg => null()
         real, dimension(:, :), pointer :: latflw => null()
         real, dimension(:), pointer :: zsolsat => null()
         real, dimension(:), pointer :: drainsol => null()
@@ -409,6 +419,33 @@ module output_variables
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%tcan, n1)
                 call output_variables_allocate(fields%ican, n1)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
+            case (VN_TACAN)
+                if (.not. allocated(fields%vs%tacan)) then
+                    allocate(fields%vs%tacan(fields%vs%dim_length))
+                    fields%vs%tacan = huge(fields%vs%tacan)
+                end if
+                call output_variables_allocate(fields%tacan, n1, pntr)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%tacan, n1)
+                call output_variables_allocate(fields%ican, n1)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
+            case (VN_QACAN)
+                if (.not. allocated(fields%vs%qacan)) then
+                    allocate(fields%vs%qacan(fields%vs%dim_length))
+                    fields%vs%qacan = huge(fields%vs%qacan)
+                end if
+                call output_variables_allocate(fields%qacan, n1, pntr)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%qacan, n1)
+                call output_variables_allocate(fields%ican, n1)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
+            case (VN_UVCAN)
+                if (.not. allocated(fields%vs%uvcan)) then
+                    allocate(fields%vs%uvcan(fields%vs%dim_length))
+                    fields%vs%uvcan = huge(fields%vs%uvcan)
+                end if
+                call output_variables_allocate(fields%uvcan, n1, pntr)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%uvcan, n1)
+                call output_variables_allocate(fields%ican, n1)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
             case (VN_GRO)
                 call output_variables_activate_pntr(fields, VN_TCAN)
                 if (.not. allocated(fields%vs%gro)) then
@@ -659,6 +696,55 @@ module output_variables
                 end if
                 call output_variables_allocate(fields%gflx, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%gflx, n1, n2)
+            case (VN_HCPS)
+                if (.not. allocated(fields%vs%hcps)) then
+                    allocate(fields%vs%hcps(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%hcps = huge(fields%vs%hcps)
+                end if
+                call output_variables_allocate(fields%hcps, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%hcps, n1, n2)
+            case (VN_HCPC)
+                if (.not. allocated(fields%vs%hcpc)) then
+                    allocate(fields%vs%hcpc(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%hcpc = huge(fields%vs%hcpc)
+                end if
+                call output_variables_allocate(fields%hcpc, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%hcpc, n1, n2)
+            case (VN_HCPG)
+                if (.not. allocated(fields%vs%hcpg)) then
+                    allocate(fields%vs%hcpg(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%hcpg = huge(fields%vs%hcpg)
+                end if
+                call output_variables_allocate(fields%hcpg, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%hcpg, n1, n2)
+            case (VN_TCTOPC)
+                if (.not. allocated(fields%vs%tctopc)) then
+                    allocate(fields%vs%tctopc(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%tctopc = huge(fields%vs%tctopc)
+                end if
+                call output_variables_allocate(fields%tctopc, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%tctopc, n1, n2)
+            case (VN_TCTOPG)
+                if (.not. allocated(fields%vs%tctopg)) then
+                    allocate(fields%vs%tctopg(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%tctopg = huge(fields%vs%tctopg)
+                end if
+                call output_variables_allocate(fields%tctopg, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%tctopg, n1, n2)
+            case (VN_TCBOTC)
+                if (.not. allocated(fields%vs%tcbotc)) then
+                    allocate(fields%vs%tcbotc(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%tcbotc = huge(fields%vs%tcbotc)
+                end if
+                call output_variables_allocate(fields%tcbotc, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%tcbotc, n1, n2)
+            case (VN_TCBOTG)
+                if (.not. allocated(fields%vs%tcbotg)) then
+                    allocate(fields%vs%tcbotg(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    fields%vs%tcbotg = huge(fields%vs%tcbotg)
+                end if
+                call output_variables_allocate(fields%tcbotg, n1, n2, pntr, ig)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%tcbotg, n1, n2)
             case (VN_LATFLW)
                 if (.not. allocated(fields%vs%latflw)) then
                     allocate(fields%vs%latflw(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
@@ -892,6 +978,9 @@ module output_variables
         if (associated(group%fzwscan)) group%fzwscan = out%NO_DATA
         if (associated(group%cmas)) group%cmas = out%NO_DATA
         if (associated(group%tcan)) group%tcan = out%NO_DATA
+        if (associated(group%tacan)) group%tacan = out%NO_DATA
+        if (associated(group%qacan)) group%qacan = out%NO_DATA
+        if (associated(group%uvcan)) group%uvcan = out%NO_DATA
         if (associated(group%gro)) group%gro = out%NO_DATA
 
         !> Snow variables.
@@ -938,6 +1027,13 @@ module output_variables
         if (associated(group%alwssol)) group%alwssol = out%NO_DATA
         if (associated(group%tsol)) group%tsol = out%NO_DATA
         if (associated(group%gflx)) group%gflx = out%NO_DATA
+        if (associated(group%hcps)) group%hcps = out%NO_DATA
+        if (associated(group%hcpc)) group%hcpc = out%NO_DATA
+        if (associated(group%hcpg)) group%hcpg = out%NO_DATA
+        if (associated(group%tctopc)) group%tctopc = out%NO_DATA
+        if (associated(group%tctopg)) group%tctopg = out%NO_DATA
+        if (associated(group%tcbotc)) group%tcbotc = out%NO_DATA
+        if (associated(group%tcbotg)) group%tcbotg = out%NO_DATA
         if (associated(group%latflw)) group%latflw = out%NO_DATA
         if (associated(group%zsolsat)) group%zsolsat = out%NO_DATA
         if (associated(group%drainsol)) group%drainsol = out%NO_DATA
@@ -1251,8 +1347,56 @@ module output_variables
                 end if
             end if
         end if
+        if (associated(group%tacan)) then
+            if (all(group%tacan == out%NO_DATA)) then
+                if (all(group_vs%tcan /= huge(group_vs%tacan))) then
+                    group%tacan = group_vs%tacan
+                else
+                    group%tacan = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%qacan)) then
+            if (all(group%qacan == out%NO_DATA)) then
+                if (all(group_vs%qacan /= huge(group_vs%qacan))) then
+                    group%qacan = group_vs%qacan
+                else
+                    group%qacan = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%uvcan)) then
+            if (all(group%uvcan == out%NO_DATA)) then
+                if (all(group_vs%uvcan /= huge(group_vs%uvcan))) then
+                    group%uvcan = group_vs%uvcan
+                else
+                    group%uvcan = 0.0
+                end if
+            end if
+        end if
         if (associated(group%ican)) then
             where (group%tcan > 0.0)
+                group%ican = 1.0
+            elsewhere
+                group%ican = 0.0
+            end where
+        end if
+        if (associated(group%ican) .and. associated(group%tacan)) then
+            where (group%tacan > 0.0)
+                group%ican = 1.0
+            elsewhere
+                group%ican = 0.0
+            end where
+        end if
+        if (associated(group%ican) .and. associated(group%qacan)) then
+            where (group%qacan > 0.0)
+                group%ican = 1.0
+            elsewhere
+                group%ican = 0.0
+            end where
+        end if
+        if (associated(group%ican) .and. associated(group%uvcan)) then
+            where (group%uvcan > 0.0)
                 group%ican = 1.0
             elsewhere
                 group%ican = 0.0
@@ -1679,6 +1823,69 @@ module output_variables
                 end if
             end if
         end if
+        if (associated(group%hcps)) then
+            if (all(group%hcps == out%NO_DATA)) then
+                if (all(group_vs%hcps /= huge(group_vs%hcps))) then
+                    group%hcps = group_vs%hcps
+                else
+                    group%hcps = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%hcpc)) then
+            if (all(group%hcpc == out%NO_DATA)) then
+                if (all(group_vs%hcpc /= huge(group_vs%hcpc))) then
+                    group%hcpc = group_vs%hcpc
+                else
+                    group%hcpc = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%hcpg)) then
+            if (all(group%hcpg == out%NO_DATA)) then
+                if (all(group_vs%hcpg /= huge(group_vs%hcpg))) then
+                    group%hcpg = group_vs%hcpg
+                else
+                    group%hcpg = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%tctopc)) then
+            if (all(group%tctopc == out%NO_DATA)) then
+                if (all(group_vs%tctopc /= huge(group_vs%tctopc))) then
+                    group%tctopc = group_vs%tctopc
+                else
+                    group%tctopc = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%tctopg)) then
+            if (all(group%tctopg == out%NO_DATA)) then
+                if (all(group_vs%tctopg /= huge(group_vs%tctopg))) then
+                    group%tctopg = group_vs%tctopg
+                else
+                    group%tctopg = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%tcbotc)) then
+            if (all(group%tcbotc == out%NO_DATA)) then
+                if (all(group_vs%tcbotc /= huge(group_vs%tcbotc))) then
+                    group%tcbotc = group_vs%tcbotc
+                else
+                    group%tcbotc = 0.0
+                end if
+            end if
+        end if
+        if (associated(group%tcbotg)) then
+            if (all(group%tcbotg == out%NO_DATA)) then
+                if (all(group_vs%tcbotg /= huge(group_vs%tcbotg))) then
+                    group%tcbotg = group_vs%tcbotg
+                else
+                    group%tcbotg = 0.0
+                end if
+            end if
+        end if
         if (associated(group%latflw)) then
             if (all(group%latflw == out%NO_DATA)) then
                 if (all(group_vs%latflw /= huge(group_vs%latflw))) then
@@ -2059,6 +2266,15 @@ module output_variables
         if (associated(group%tcan)) then
             call output_variables_field_icount_average(group%tcan, group_ts%tcan, group%ican, group_ts%ican)
         end if
+        if (associated(group%tacan)) then
+            call output_variables_field_icount_average(group%tacan, group_ts%tacan, group%ican, group_ts%ican)
+        end if
+        if (associated(group%qacan)) then
+            call output_variables_field_icount_average(group%qacan, group_ts%qacan, group%ican, group_ts%ican)
+        end if
+        if (associated(group%uvcan)) then
+            call output_variables_field_icount_average(group%uvcan, group_ts%uvcan, group%ican, group_ts%ican)
+        end if
         if (associated(group%gro)) then
             call output_variables_field_update(group%gro, group_ts%gro, its, 'avg')
         end if
@@ -2181,6 +2397,27 @@ module output_variables
             end if
             if (associated(group%gflx)) then
                 call output_variables_field_update(group%gflx(:, j), group_ts%gflx(:, j), its, 'avg')
+            end if
+            if (associated(group%hcps)) then
+                call output_variables_field_update(group%hcps(:, j), group_ts%hcps(:, j), its, 'avg')
+            end if
+            if (associated(group%hcpc)) then
+                call output_variables_field_update(group%hcpc(:, j), group_ts%hcpc(:, j), its, 'avg')
+            end if
+            if (associated(group%hcpg)) then
+                call output_variables_field_update(group%hcpg(:, j), group_ts%hcpg(:, j), its, 'avg')
+            end if
+            if (associated(group%tctopc)) then
+                call output_variables_field_update(group%tctopc(:, j), group_ts%tctopc(:, j), its, 'avg')
+            end if
+            if (associated(group%tctopg)) then
+                call output_variables_field_update(group%tctopg(:, j), group_ts%tctopg(:, j), its, 'avg')
+            end if
+            if (associated(group%tcbotc)) then
+                call output_variables_field_update(group%tcbotc(:, j), group_ts%tcbotc(:, j), its, 'avg')
+            end if
+            if (associated(group%tcbotg)) then
+                call output_variables_field_update(group%tcbotg(:, j), group_ts%tcbotg(:, j), its, 'avg')
             end if
             if (associated(group%latflw)) then
                 call output_variables_field_update(group%latflw(:, j), group_ts%latflw(:, j), its, 'sum')

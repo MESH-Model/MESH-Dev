@@ -950,6 +950,7 @@ program RUNMESH
         !> Load or update climate forcing input.
         if (ro%RUNCLIM) then
             call read_input_forcing_frame(ierr)
+            ENDDATA = (ierr	/= 0)
             if (ierr /= 0) exit
         end if
 
@@ -1192,15 +1193,27 @@ program RUNMESH
 !-                            shd%xOrigin, shd%yOrigin, shd%xDelta, shd%yDelta)
 !-    end if !(SAVERESUMEFLAG == 2) then
 
-    !> Close output files.
-    call output_files_finalize(fls, shd)
-    call run_save_basin_output_finalize(fls, shd)
-
     !> *********************************************************************
     !> Run is now over, print final results to the screen and close files
     !> *********************************************************************
 
-    if (ENDDATA) call print_message('Reached end of forcing data.')
+    !> Reached end of forcing data.
+    if (ENDDATA) then
+        call print_message('Reached end of forcing data.')
+
+        !> Update the simulation end date before closing output files to
+        !>  ensure writing frames for partial hour/day/month/year.
+        ic%stop%year = ic%now%year
+        ic%stop%month = ic%now%month
+        ic%stop%day = ic%now%day
+        ic%stop%hour = ic%now%hour
+    end if
+
+    !> Close output files.
+    call output_files_finalize(fls, shd)
+    call run_save_basin_output_finalize(fls, shd)
+
+    !> Reached simulation end date.
     if (ENDDATE) call print_message('Reached simulation end date.')
 
     if (ISHEADNODE .and. mtsflg%AUTOCALIBRATIONFLAG > 0) call stats_write(fls)
@@ -1441,10 +1454,10 @@ program RUNMESH
     call cpu_time(endprog)
     endprog = endprog - startprog
     call print_echo_txt(' Time = ' // trim(friendly_time_length(endprog)), no_advance = .true.)
-    if (ic%iter%year > 1) then
-        endprog = endprog/ic%iter%year
+!-    if (ic%iter%year > 1) then
+        endprog = endprog/ic%iter%day*365.25
         call print_echo_txt(' (averaging ' // trim(friendly_time_length(endprog)) // ' per simulation year)', no_advance = .true.)
-    end if
+!-    end if
     call print_echo_txt('.')
 
     !> Absolute termination point (e.g., for worker nodes).

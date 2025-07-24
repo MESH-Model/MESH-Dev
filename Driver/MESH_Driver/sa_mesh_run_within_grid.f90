@@ -306,6 +306,7 @@ module sa_mesh_run_within_grid
         if (allocated(vs%grid%cmas)) vs%grid%cmas(i1:i2) = 0.0
         if (allocated(vs%grid%tacan)) vs%grid%tacan(i1:i2) = 0.0
         if (allocated(vs%grid%qacan)) vs%grid%qacan(i1:i2) = 0.0
+        if (allocated(vs%grid%uvcan)) vs%grid%uvcan(i1:i2) = 0.0
         if (allocated(vs%grid%tcan)) vs%grid%tcan(i1:i2) = 0.0
         if (allocated(vs%grid%gro)) vs%grid%gro(i1:i2) = 0.0
 
@@ -352,6 +353,13 @@ module sa_mesh_run_within_grid
         if (allocated(vs%grid%fzwssol)) vs%grid%fzwssol(i1:i2, :) = 0.0
         if (allocated(vs%grid%tsol)) vs%grid%tsol(i1:i2, :) = 0.0
         if (allocated(vs%grid%gflx)) vs%grid%gflx(i1:i2, :) = 0.0
+        if (allocated(vs%grid%hcps)) vs%grid%hcps(i1:i2, :) = 0.0
+        if (allocated(vs%grid%hcpc)) vs%grid%hcpc(i1:i2, :) = 0.0
+        if (allocated(vs%grid%hcpg)) vs%grid%hcpg(i1:i2, :) = 0.0
+        if (allocated(vs%grid%tctopc)) vs%grid%tctopc(i1:i2, :) = 0.0
+        if (allocated(vs%grid%tctopg)) vs%grid%tctopg(i1:i2, :) = 0.0
+        if (allocated(vs%grid%tcbotc)) vs%grid%tcbotc(i1:i2, :) = 0.0
+        if (allocated(vs%grid%tcbotg)) vs%grid%tcbotg(i1:i2, :) = 0.0
         if (allocated(vs%grid%latflw)) vs%grid%latflw(i1:i2, :) = 0.0
         if (allocated(vs%grid%zsol)) vs%grid%zsol(i1:i2) = 0.0
         if (allocated(vs%grid%zsolhyd)) vs%grid%zsolhyd(i1:i2) = 0.0
@@ -485,6 +493,9 @@ module sa_mesh_run_within_grid
             end if
             if (allocated(vs%grid%qacan) .and. allocated(vs%tile%qacan)) then
                 if (vs%tile%qacan(k) /= huge(vs%tile%qacan)) vs%grid%qacan(ki) = vs%grid%qacan(ki) + vs%tile%qacan(k)*frac
+            end if
+            if (allocated(vs%grid%uvcan) .and. allocated(vs%tile%uvcan)) then
+                if (vs%tile%uvcan(k) /= huge(vs%tile%uvcan)) vs%grid%uvcan(ki) = vs%grid%uvcan(ki) + vs%tile%uvcan(k)*frac
             end if
             if (allocated(vs%tile%tcan)) then
                 if (vs%tile%tcan(k) > 0.0) then
@@ -648,6 +659,41 @@ module sa_mesh_run_within_grid
             if (allocated(vs%grid%gflx) .and. allocated(vs%tile%gflx)) then
                 if (all(vs%tile%gflx(k, :) /= huge(vs%tile%gflx))) then
                     vs%grid%gflx(ki, :) = vs%grid%gflx(ki, :) + vs%tile%gflx(k, :)*frac
+                end if
+            end if
+            if (allocated(vs%grid%hcps) .and. allocated(vs%tile%hcps)) then
+                if (all(vs%tile%hcps(k, :) /= huge(vs%tile%hcps))) then
+                    vs%grid%hcps(ki, :) = vs%grid%hcps(ki, :) + vs%tile%hcps(k, :)*frac
+                end if
+            end if
+            if (allocated(vs%grid%hcpc) .and. allocated(vs%tile%hcpc)) then
+                if (all(vs%tile%hcpc(k, :) /= huge(vs%tile%hcpc))) then
+                    vs%grid%hcpc(ki, :) = vs%grid%hcpc(ki, :) + vs%tile%hcpc(k, :)*frac
+                end if
+            end if
+            if (allocated(vs%grid%hcpg) .and. allocated(vs%tile%hcpg)) then
+                if (all(vs%tile%hcpg(k, :) /= huge(vs%tile%hcpg))) then
+                    vs%grid%hcpg(ki, :) = vs%grid%hcpg(ki, :) + vs%tile%hcpg(k, :)*frac
+                end if
+            end if
+            if (allocated(vs%grid%tctopc) .and. allocated(vs%tile%tctopc)) then
+                if (all(vs%tile%tctopc(k, :) /= huge(vs%tile%tctopc))) then
+                    vs%grid%tctopc(ki, :) = vs%grid%tctopc(ki, :) + vs%tile%tctopc(k, :)*frac
+                end if
+            end if
+            if (allocated(vs%grid%tctopg) .and. allocated(vs%tile%tctopg)) then
+                if (all(vs%tile%tctopg(k, :) /= huge(vs%tile%tctopg))) then
+                    vs%grid%tctopg(ki, :) = vs%grid%tctopg(ki, :) + vs%tile%tctopg(k, :)*frac
+                end if
+            end if
+            if (allocated(vs%grid%tcbotc) .and. allocated(vs%tile%tcbotc)) then
+                if (all(vs%tile%tcbotc(k, :) /= huge(vs%tile%tcbotc))) then
+                    vs%grid%tcbotc(ki, :) = vs%grid%tcbotc(ki, :) + vs%tile%tcbotc(k, :)*frac
+                end if
+            end if
+            if (allocated(vs%grid%tcbotg) .and. allocated(vs%tile%tcbotg)) then
+                if (all(vs%tile%tcbotg(k, :) /= huge(vs%tile%tcbotg))) then
+                    vs%grid%tcbotg(ki, :) = vs%grid%tcbotg(ki, :) + vs%tile%tcbotg(k, :)*frac
                 end if
             end if
             if (allocated(vs%grid%latflw) .and. allocated(vs%tile%latflw)) then

@@ -914,13 +914,13 @@ C
 C
       IF(JPTBAD.NE.0)                                               THEN
           WRITE(6,6625) JPTBAD,JL,TCAN(JPTBAD)
- 6625     FORMAT('0AT (I,J)= (',I3,',',I3,'), TCAN = ',F10.5)
+ 6625     FORMAT('0AT (I,J)= (',I8,',',I8,'), TCAN = ',F10.5)
           CALL XIT('CLASSW2',-2)
       ENDIF
 C
       IF(KPTBAD.NE.0)                                               THEN
           WRITE(6,6626) KPTBAD,JL,TSNOW(KPTBAD)
- 6626     FORMAT('0AT (I,J)= (',I3,',',I3,'), TSNOW = ',F10.5)
+ 6626     FORMAT('0AT (I,J)= (',I8,',',I8,'), TSNOW = ',F10.5)
           CALL XIT('CLASSW2',-3)
       ENDIF
 C
@@ -983,7 +983,7 @@ C          ENDIF
 C
       IF(IPTBAD.NE.0)                                               THEN
           WRITE(6,6600) IPTBAD,JL,TBAR(IPTBAD,1)
- 6600     FORMAT('0AT (I,J)= (',I3,',',I3,'), TBAR(1) = ',F10.5)
+ 6600     FORMAT('0AT (I,J)= (',I8,',',I8,'), TBAR(1) = ',F10.5)
           CALL XIT('CLASSW2',-1)
       ENDIF
 C

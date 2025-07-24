@@ -250,7 +250,7 @@ ccccc      MODULE area5
 
 ! dch
         real*4, DIMENSION(:), ALLOCATABLE :: reach_last
-
+        integer,   dimension(:), allocatable :: cfn
         real*4,    dimension(:), allocatable :: b1,b2,b3,b4,b5,b6,b7
         real*4,    dimension(:), allocatable :: ppsum
 
@@ -377,7 +377,7 @@ ccccc      END MODULE area10
 !	these are read from the str file
 !	iys, jxs are the damage site locations
 !	these are read from the basin\xxxx.str file is s/r strfw
-!	frc( , ) are the polinimial coefficients used for the rating 
+!	frc( , ) are the polynomial coefficients used for the rating 
 !	curves: first at the gages and then at the damage sites.
 !	gage are the gauge names - up to 12 characters
 !     qpeakh( , ) peak instantaneous recorded
