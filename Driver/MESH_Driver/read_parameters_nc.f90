@@ -633,7 +633,7 @@ subroutine read_parameters_nc( &
                     end if
                 end if
 
-            !> SOLARADJUSTFLAG.
+            !> MOUNTAINMESHFLAG.
             case ('elevation')
                 if (.not. allocated(mountain_mesh%pm%elev)) allocate(mountain_mesh%pm%elev(shd%NA, shd%lc%NTYPE))
                 if (nc_subbasin) then
@@ -714,26 +714,6 @@ subroutine read_parameters_nc( &
                         deallocate(dat3_r)
                     end if
                 end if
-            case ('delta_elevmax')
-                if (.not. allocated(mountain_mesh%pm%delta_elevmax)) allocate(mountain_mesh%pm%delta_elevmax(shd%NA, shd%lc%NTYPE))
-                if (nc_subbasin) then
-                    call nc4_get_variable(iun, field, dim_n, dim_m, mountain_mesh%pm%delta_elevmax, fill_r, ierr = ierr)
-                else
-                    if (ndims == 2) then
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                        do n = 1, shd%NA
-                            mountain_mesh%pm%delta_elevmax(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
-                        end do
-                    else
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
-                        do m = 1, ngru
-                            do n = 1, shd%NA
-                                mountain_mesh%pm%delta_elevmax(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
-                            end do
-                        end do
-                        deallocate(dat3_r)
-                    end if
-                end if
             case ('curvature')
                 if (.not. allocated(mountain_mesh%pm%curvature)) allocate(mountain_mesh%pm%curvature(shd%NA, shd%lc%NTYPE))
                 if (nc_subbasin) then
@@ -746,9 +726,29 @@ subroutine read_parameters_nc( &
                         end do
                     else
                         call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
-                        do m = 1, nsol
+                        do m = 1, ngru
                             do n = 1, shd%NA
                                 mountain_mesh%pm%curvature(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            end do
+                        end do
+                        deallocate(dat3_r)
+                    end if
+                end if
+            case ('skyviewfactor')
+                if (.not. allocated(mountain_mesh%pm%skyviewfactor)) allocate(mountain_mesh%pm%skyviewfactor(shd%NA, shd%lc%NTYPE))
+                if (nc_subbasin) then
+                    call nc4_get_variable(iun, field, dim_n, dim_m, mountain_mesh%pm%skyviewfactor, fill_r, ierr = ierr)
+                else
+                    if (ndims == 2) then
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            mountain_mesh%pm%skyviewfactor(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
+                        do m = 1, ngru
+                            do n = 1, shd%NA
+                                mountain_mesh%pm%skyviewfactor(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
                             end do
                         end do
                         deallocate(dat3_r)
