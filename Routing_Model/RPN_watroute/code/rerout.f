@@ -298,15 +298,15 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !        net_lake_inflow(l,jz)=qi2(n)-lake_outflow(l-1,jz)
 
 !     zone-based storage/release
-      elseif(b1(l).eq.1.0 .and. b2(l).eq.0.0)then
+      elseif(cfn(l).eq.6)then
         call zonebased_reservoir_release(
-     +          0,0,n,l,qi2(n),div*2.0,                     !input
+     +          0,0,n,l,qi2(n),div*2.0_4,                   !input
      +          qo2(n),store2(n))                           !output
         lake_inflow(l,fhr)=qi2(n)
 
 !     natural lake or uncontrolled reservoir routing:
 !     NOTE: the lake level is not calculated for reaches other than the Great Lakes and Lake Champlain;
-      elseif(b1(l).ne.0.0)then
+      elseif(cfn(l).ge.2)then
 
 !!!!!!!! NEW WAY: non-zero values of lake area and 0-flow level are read from reservoir template file
         if (b6(l).ne.0.0 .or. b7(l).ne.0.0) then
@@ -328,9 +328,9 @@ c     *      183.2,175.98,174.8,174.01,74.61/
           endif
 
           if(store2(n).gt.0.0)then
-            if(b3(l).eq.0.0)then
+            if(cfn(l).eq.2)then        ! Power Function
               qo2(n)=max(0.0_4,b1(l)*store2(n)**b2(l))
-            else
+            elseif(cfn(l).eq.3)then    ! Polynomial
               qo2(n)=max(0.0_4,store2(n)*(b1(l)+store2(n)*
      *        (b2(l)+store2(n)*
      *        (b3(l)+store2(n)*(b4(l)+b5(l)*store2(n))))))
@@ -357,9 +357,9 @@ c     *      183.2,175.98,174.8,174.01,74.61/
 !         the lake level will be written in output files as zero-valued
           store2(n)=store1(n)+qi2(n)*div
           if(store2(n).gt.0.0)then
-            if(b3(l).eq.0.0)then
+            if(cfn(l).eq.2)then        ! Power Function
               qo2(n)=b1(l)*store2(n)**b2(l)
-            else
+            elseif(cfn(l).eq.3)then    ! Polynomial
               old=qo1(n)
               hold=1.0e+25_4
               do ic=1,20 
@@ -450,15 +450,14 @@ c        dtmin=amin1(at,dtmin)
 ! in a grid cell immediately upstream of a station:
 ! We do not expect to conserve water when imposing dam outflows upstream of observation stations
 ! Nor do we expect the cell to contain sufficient water to supply the prescribed reservoir release
-        if(b1(l).eq.0.0 .and. b2(l).eq.0.0
-     *          .and. resname(l)(1:1)=="0") then
+        if(cfn(l).eq.1 .and. resname(l)(1:1)=="0") then
           store2(n)=store1(n)
         else
           store2(n)=store1(n)+(qi1(n)+qi2(n)-qo1(n)-qo2(n))*div
         end if
 
         if(iopt.ge.2)write(52,6803)l,jm,n,ireach(n),qo2(n)
-      endif   !        if(b1(l).ne.0.0)
+      endif   !        if(resname)
 
       if (nocrashflg == 'y') then
         if (qo2(n) .lt. 0.0) then   ! Reset qo2 to zero to prevent model crashes; does not conserve water

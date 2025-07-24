@@ -69,7 +69,7 @@ C------------------------------------------------------------------
 C
       IF(IPTBAD.NE.0) THEN
          WRITE(6,6100) IPTBAD,JL,ALVSSN(IPTBAD),ALIRSN(IPTBAD)
- 6100    FORMAT('0AT (I,J)= (',I3,',',I3,'), ALVSSN,ALIRSN = ',2F10.5)
+ 6100    FORMAT('0AT (I,J)= (',I8,',',I8,'), ALVSSN,ALIRSN = ',2F10.5)
          CALL XIT('SNOALBA',-1)
       ENDIF
 C

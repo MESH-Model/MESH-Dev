@@ -277,7 +277,7 @@ C
 C
       IF(IPTBAD.NE.0) THEN
           WRITE(6,6100) IPTBAD,JL,ALVSCN(IPTBAD),ALIRCN(IPTBAD)
- 6100     FORMAT('0AT (I,J)= (',I3,',',I3,'), ALVSCN,ALIRCN = ',2F10.5)
+ 6100     FORMAT('0AT (I,J)= (',I8,',',I8,'), ALVSCN,ALIRCN = ',2F10.5)
           CALL XIT('CANALB',-1)    
       ENDIF                                                                                  
 C
@@ -297,7 +297,7 @@ C
 C
       IF(IPTBAD.NE.0) THEN
           WRITE(6,6300) IPTBAD,JL,TRVSCN(IPTBAD),TRIRCN(IPTBAD)
- 6300     FORMAT('0AT (I,J)= (',I3,',',I3,'), TRVSCN,TRIRCN = ',2F10.5)
+ 6300     FORMAT('0AT (I,J)= (',I8,',',I8,'), TRVSCN,TRIRCN = ',2F10.5)
           CALL XIT('CANALB',-3)    
       ENDIF                                                                                  
 C----------------------------------------------------------------------
@@ -463,19 +463,19 @@ C
 C
       IF(IPTBAD.NE.0) THEN
           WRITE(6,6400) IPTBAD,JL,TRVSCS(IPTBAD),TRIRCS(IPTBAD)
- 6400     FORMAT('0AT (I,J)= (',I3,',',I3,'), TRVSCS,TRIRCS = ',2F10.5)
+ 6400     FORMAT('0AT (I,J)= (',I8,',',I8,'), TRVSCS,TRIRCS = ',2F10.5)
           CALL XIT('CANALB',-4)    
       ENDIF
 C
       IF(IPTBAD.NE.0) THEN
           WRITE(6,6200) IPTBAD,JL,ALVSCS(IPTBAD),ALIRCS(IPTBAD)
- 6200     FORMAT('0AT (I,J)= (',I3,',',I3,'), ALVSCS,ALIRCS = ',2F10.5)
+ 6200     FORMAT('0AT (I,J)= (',I8,',',I8,'), ALVSCS,ALIRCS = ',2F10.5)
           CALL XIT('CANALB',-2)    
       ENDIF                                                                                  
 C
       IF(JPTBAD.NE.0) THEN
           WRITE(6,6500) JPTBDI,JL,JPTBAD
- 6500     FORMAT('0AT (I,J)= (',I3,',',I3,'), JPTBAD =  ',I5)
+ 6500     FORMAT('0AT (I,J)= (',I8,',',I8,'), JPTBAD =  ',I5)
           CALL XIT('CANALB',-5)    
       ENDIF                      
 C-----------------------------------------------------------------------

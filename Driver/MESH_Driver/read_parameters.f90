@@ -341,8 +341,8 @@ subroutine read_parameters(fls, shd, ierr)
                 pm%tile%ks(k) = pm%gru%ks(i)
                 pm%tile%orgm(k, :) = pm%gru%orgm(i, :)
                 pm%tile%zsnl(k) = pm%gru%zsnl(i)
-                pm%tile%zplg(k) = pm%gru%zplg(i)
                 pm%tile%zpls(k) = pm%gru%zpls(i)
+                pm%tile%zplg(k) = pm%gru%zplg(i)
                 if (allocated(RUNCLASS36_flgs%pm%gru%FREZTH)) then
                     if (.not. allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
                         allocate(RUNCLASS36_flgs%pm%tile%FREZTH(shd%lc%NML))
@@ -406,7 +406,9 @@ subroutine read_parameters(fls, shd, ierr)
                 pbsm%pm%Ht(k) = pbsm%pm_gru%Ht(i)
                 pbsm%pm%N_S(k) = pbsm%pm_gru%N_S(i)
                 pbsm%pm%A_S(k) = pbsm%pm_gru%A_S(i)
-                pbsm%pm%Distrib(k) = pbsm%pm_gru%Distrib(i)
+
+                !> ME 4/12/2021 scaling Distrib with the tile fraction according to recommendation from JP
+                pbsm%pm%Distrib(k) = vs%tile%Area_Weight(k)*pbsm%pm_gru%Distrib(i)
             end if
 
         end do !k = 1, shd%lc%NML
@@ -482,6 +484,7 @@ subroutine read_parameters(fls, shd, ierr)
             !> RUNCLASS36.
             if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
                 if (pm%grid%iwf(i) /= -1) pm%tile%iwf(k) = pm%grid%iwf(i)
+                if (pm%grid%zsnl(i) /= 0.0) pm%tile%zsnl(k) = pm%grid%zsnl(i)
                 if (allocated(RUNCLASS36_flgs%pm%grid%FREZTH)) then
                     if (.not. allocated(RUNCLASS36_flgs%pm%tile%FREZTH)) then
                         allocate(RUNCLASS36_flgs%pm%tile%FREZTH(shd%lc%NML))
@@ -526,7 +529,9 @@ subroutine read_parameters(fls, shd, ierr)
                 if (pbsm%pm_grid%Ht(i) /= 0.0) pbsm%pm%Ht(k) = pbsm%pm_grid%Ht(i)
                 if (pbsm%pm_grid%N_S(i) /= 0.0) pbsm%pm%N_S(k) = pbsm%pm_grid%N_S(i)
                 if (pbsm%pm_grid%A_S(i) /= 0.0) pbsm%pm%A_S(k) = pbsm%pm_grid%A_S(i)
-                if (pbsm%pm_grid%Distrib(i) /= 0.0) pbsm%pm%Distrib(k) = pbsm%pm_grid%Distrib(i)
+
+                !> ME 4/12/2021 scaling Distrib with the tile fraction according to recommendation from JP
+                if (pbsm%pm_grid%Distrib(i) /= 0.0) pbsm%pm%Distrib(k) = vs%tile%Area_Weight(k)*pbsm%pm_grid%Distrib(i)
             end if
 
         end do !k = 1, shd%lc%NML
@@ -550,25 +555,26 @@ subroutine read_parameters(fls, shd, ierr)
         end if
     end do
 
-    !> Check for impermeable soils.
-    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-
-        !> Check the first layer for impermeable soils.
-        where (pm%tile%sdep == 0.0 .and. pm%tile%sand(:, 1) > -2.5)
-            pm%tile%sand(:, 1) = -3.0
-            pm%tile%clay(:, 1) = -3.0
-            pm%tile%orgm(:, 1) = -3.0
-        end where
-
-        !> Check for impermeable soils.
-        do j = 2, shd%lc%IGND
-            where (pm%tile%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm%tile%sand(:, j) > -2.5)
-                pm%tile%sand(:, j) = -3.0
-                pm%tile%clay(:, j) = -3.0
-                pm%tile%orgm(:, j) = -3.0
-            end where
-        end do
-    end if
+!ME moved to after updating the soil texture if NUDGESDEPFLAG is active.
+!-    !> Check for impermeable soils.
+!-    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+!-
+!-        !> Check the first layer for impermeable soils.
+!-        where (pm%tile%sdep == 0.0 .and. pm%tile%sand(:, 1) > -2.5)
+!-            pm%tile%sand(:, 1) = -3.0
+!-            pm%tile%clay(:, 1) = -3.0
+!-            pm%tile%orgm(:, 1) = -3.0
+!-        end where
+!-
+!-        !> Check for impermeable soils.
+!-        do j = 2, shd%lc%IGND
+!-            where (pm%tile%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.001) .and. pm%tile%sand(:, j) > -2.5)
+!-                pm%tile%sand(:, j) = -3.0
+!-                pm%tile%clay(:, j) = -3.0
+!-                pm%tile%orgm(:, j) = -3.0
+!-            end where
+!-        end do
+!-    end if
 
     !> Nudge SDEP to the nearest interface between soil layers in the profile.
     if (NUDGESDEPFLAG == 1 .and. shd%lc%IGND > 0) then
@@ -592,6 +598,28 @@ subroutine read_parameters(fls, shd, ierr)
             end where
         end do
 
+    end if
+
+    !> Check for impermeable soils.
+    !> ME moved to after updating the soil texture if NUDGESDEPFLAG is active.
+    if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+
+        !> Check the first layer for impermeable soils.
+        where (pm%tile%sdep == 0.0 .and. pm%tile%sand(:, 1) > -2.5)
+            pm%tile%sand(:, 1) = -3.0
+            !pm%tile%clay(:, 1) = -3.0
+            !pm%tile%orgm(:, 1) = -3.0
+        end where
+
+        !> Check for impermeable soils
+        !> ME changed the accurcy threshold from 0.001 to be the same as in CLASSB/BG.
+        do j = 2, shd%lc%IGND
+            where (pm%tile%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.025) .and. pm%tile%sand(:, j) > -2.5)
+                pm%tile%sand(:, j) = -3.0
+                !pm%tile%clay(:, j) = -3.0
+                !pm%tile%orgm(:, j) = -3.0
+            end where
+        end do
     end if
 
     return

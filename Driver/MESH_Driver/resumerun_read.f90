@@ -222,6 +222,19 @@ subroutine resumerun_read(fls, shd, ierr)
                 call print_error("An error occurred reading variables from the file '" // trim(fname) // "'.")
                 call program_abort()
             end if
+!>>>>>zone-based storage reservoir - reading resume states when nc format is used for resume files - ME
+            if (RESERVOIRFLAG == 2) then
+                iun = 100
+                if (resume_options%resume%state == FLAG_AUTO) then
+                    open(iun, file = 'zone_storage_states.' // trim(adjustl(line)) // '.txt', action = 'read', status = 'old')
+                else
+                    open(iun, file = 'zone_storage_states.txt', action = 'read', status = 'old')
+                end if
+                read(iun, *) (resrvs%rsvr(i)%stoSIM(1), i = 1, resrvs%nreserv)
+                read(iun, *) (resrvs%rsvr(i)%flowSIM(1), i = 1, resrvs%nreserv)
+                close(iun)
+            end if
+!<<<<<zone-based storage			
         end if
     end if
 

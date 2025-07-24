@@ -50,7 +50,14 @@ C    along with FLOWINIT.  If not, see <http://www.gnu.org/licenses/>.
 !                                   when 'nnx' is the outlet (where 'qda' is calculated).
 !
 !     changes made to include c&g model stuff  nk  April. 26/07
-!
+!     rev          Apr. 27/21  - ME : Modified the checks for the outflow function to use "cfn"
+!                                      cfn = 1 Insertion
+!                                      cfn = 2 (default) Power Function
+!                                      cfn = 3 Polynomial (2nd - 5th Order)
+!                                      cfn = 4 Power Function based on levels (not yet implemented)
+!                                      cfn = 5 Polynomial (2nd - 5th Order baed on levels - not yet implmemted)
+!                                      cfn = 6 DZTR (RESERVOIRFLAG 2)
+!                                      This makes it explicit and allows for 2nd Degree Polynomial
 !***********************************************************************
 
       USE area_watflood
@@ -1400,14 +1407,14 @@ c         Copied over from runof6.for (thr=1):  AKB July 11, 2002
 !        For control with rating curve, use rating curve.
 !        For controlled reservoirs, just use channel stoage rule
 !        (above) so we at least have some value.
-         if(b1(k).gt.0.0.and.b2(k).gt.0.0)then
+         if(cfn(k).ge.2)then
             if(lake_area(k).gt.0.0.and.lake_elv(k,kt).gt.0.0)then
                store1(n)=lake_elv(k,kt)*lake_area(k)
             elseif(b6(k).gt.0.0.and.lake_elv(k,kt).gt.0.0)then
                store1(n)=max(0.0_4,lake_elv(k,kt)-b7(k))*b6(k)
-            elseif(b3(k).eq.0.0)then
+            elseif(cfn(k).eq.2)then
                store1(n)=(qo2(n)/b1(k))**(1.0_4/b2(k))
-            elseif(b3(k).gt.0.0)then
+            elseif(cfn(k).eq.3)then
                store1(n)=10.0
                trialq=0.0
                do while(trialq.lt.qo2(n))

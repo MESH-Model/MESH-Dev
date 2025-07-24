@@ -136,7 +136,7 @@ module mesh_io
             !> Compare values.
             ltest = .true.
             do i = 1, size(reference_values)
-                ltest = (ltest .and. (reference_values(i) == file_values(i)))
+                ltest = (ltest .and. abs(reference_values(i) - file_values(i)) < 1.0e-10)
             end do
             if (.not. ltest) then
                 if (v) call print_error( &

@@ -724,10 +724,10 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
             write(line, FMT_GEN) shd%lc%NML
             call print_echo_txt('Number of land tiles (NML): ' // trim(adjustl(line)))
             if (shd%lc%NML > 0) then
-                write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU'
+                write(line, FMT_GEN) 'Tile ID', 'Grid', 'GRU', 'GRU Fraction'
                 call print_echo_txt(trim(line))
                 do k = 1, shd%lc%NML
-                    write(line, FMT_GEN) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k)
+                    write(line, FMT_GEN) k, shd%lc%ILMOS(k), shd%lc%JLMOS(k), vs%tile%area_weight(k)
                     call print_echo_txt(trim(line))
                 end do
             end if
