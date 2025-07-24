@@ -5,7 +5,7 @@
 !> Inputs:
 !*  shd: Basin 'shed' object (properties).
 !*  iun: Unit of the input file.
-!*  fname: Full path to the file (default: './MESH_input_parameters.r2c').
+!*  fname: Full path to the file (default: './MESH_intial_values.r2c').
 !>
 !> Outputs:
 !*  ierr: Status (0: Normal).
@@ -17,8 +17,11 @@ subroutine read_initial_values_r2c(shd, iun, fname, ierr)
     use strings
     use sa_mesh_common
     use ensim_io
+    use variable_names
 
     !> Process modules: Required for process variables, parameters.
+    use RUNCLASS36_variables
+    use runsvs_mesh
 
     implicit none
 
@@ -33,7 +36,7 @@ subroutine read_initial_values_r2c(shd, iun, fname, ierr)
     !> Local variables.
     type(ensim_keyword), dimension(:), allocatable :: vkeyword
     type(ensim_attr), dimension(:), allocatable :: vattr
-    integer nkeyword, nattr, ilvl, n, l, j, i, z
+    integer nkeyword, nattr, ilvl, n, l, k, i, ii, z
     character(len = MAX_WORD_LENGTH) tfield, tlvl
     real, dimension(:), allocatable :: ffield
     character(len = DEFAULT_LINE_LENGTH) line
@@ -95,11 +98,17 @@ subroutine read_initial_values_r2c(shd, iun, fname, ierr)
 
         !> Extract variable name and level.
         z = 0
-        tfield = lowercase(vattr(l)%attr)
+        tfield = uppercase(vattr(l)%attr)
         i = index(trim(adjustl(tfield)), ' ')
+        ii = index(trim(tfield), ' ', back = .true.)
         ilvl = 0
         if (i > 0) then
-            tlvl = tfield((i + 1):)
+            if (ii /= i) then
+                ii = index(tfield((i + 1):), ' ')
+                tlvl = tfield((i + 1):(ii + i))
+            else
+                tlvl = tfield((i + 1):)
+            end if
             tfield = tfield(1:i)
             call value(tlvl, ilvl, z)
             if (z /= 0) ilvl = 0
@@ -118,13 +127,76 @@ subroutine read_initial_values_r2c(shd, iun, fname, ierr)
         z = 0
         select case (adjustl(tfield))
 
-            case ('qi1')
+            !> CLASS variables.
+            case ('TBAR', VN_TSOL)
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
+                    if (ilvl == 0) then
+                        do ilvl = 1, shd%lc%IGND
+                            do k = 1, shd%lc%NML
+                                !> Omit GRU's with mosaic ID >= 100 and < 1000 from being assigned grid-based values (special condition).
+                                if (pm%tile%mid(k) >= 100 .and. pm%tile%mid(k) < 1000) cycle
+                                vs%tile%tsol(k, ilvl) = ffield(shd%lc%ILMOS(k))
+                            end do
+                        end do
+                    else if (ilvl <= shd%lc%IGND) then
+                        do k = 1, shd%lc%NML
+                            !> Omit GRU's with mosaic ID >= 100 and < 1000 from being assigned grid-based values (special condition).
+                            if (pm%tile%mid(k) >= 100 .and. pm%tile%mid(k) < 1000) cycle
+                            vs% tile%tsol(k, ilvl) = ffield(shd%lc%ILMOS(k))
+                        end do
+                    else
+                        z = 1
+                    end if
+                end if
+            case (VN_THICSOL)
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
+                    if (ilvl == 0) then
+                        do ilvl = 1, shd%lc%IGND
+                            do k = 1, shd%lc%NML
+                                !> Omit GRU's with mosaic ID >= 100 and < 1000 from being assigned grid-based values (special condition).
+                                if (pm%tile%mid(k) >= 100 .and. pm%tile%mid(k) < 1000) cycle
+                                vs%tile%thicsol(k, ilvl) = ffield(shd%lc%ILMOS(k))
+                            end do
+                        end do
+                    else if (ilvl <= shd%lc%IGND) then
+                        do k = 1, shd%lc%NML
+                            !> Omit GRU's with mosaic ID >= 100 and < 1000 from being assigned grid-based values (special condition).
+                            if (pm%tile%mid(k) >= 100 .and. pm%tile%mid(k) < 1000) cycle
+                            vs% tile%thicsol(k, ilvl) = ffield(shd%lc%ILMOS(k))
+                        end do
+                    else
+                        z = 1
+                    end if
+                end if
+            case (VN_THLQSOL)
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
+                    if (ilvl == 0) then
+                        do ilvl = 1, shd%lc%IGND
+                            do k = 1, shd%lc%NML
+                                !> Omit GRU's with mosaic ID >= 100 and < 1000 from being assigned grid-based values (special condition).
+                                if (pm%tile%mid(k) >= 100 .and. pm%tile%mid(k) < 1000) cycle
+                                vs%tile%thlqsol(k, ilvl) = ffield(shd%lc%ILMOS(k))
+                            end do
+                        end do
+                    else if (ilvl <= shd%lc%IGND) then
+                        do k = 1, shd%lc%NML
+                            !> Omit GRU's with mosaic ID >= 100 and < 1000 from being assigned grid-based values (special condition).
+                            if (pm%tile%mid(k) >= 100 .and. pm%tile%mid(k) < 1000) cycle
+                            vs% tile%thlqsol(k, ilvl) = ffield(shd%lc%ILMOS(k))
+                        end do
+                    else
+                        z = 1
+                    end if
+                end if
+
+            !> WATROUTE variables.
+            case ('QI1')
                 if (allocated(vs%grid%qi)) then
                     vs%grid%qi(1:shd%NA) = ffield
                 else
                     z = 3
                 end if
-            case ('qo1')
+            case ('QO1')
                 if (allocated(vs%grid%qo)) then
                     if (ilvl == 0) then
                         vs%grid%qo(1:shd%NA) = ffield
@@ -134,13 +206,13 @@ subroutine read_initial_values_r2c(shd, iun, fname, ierr)
                 else
                     z = 3
                 end if
-            case ('stor')
+            case ('STOR')
                 if (allocated(vs%grid%stgch)) then
                     vs%grid%stgch(1:shd%NA) = ffield
                 else
                     z = 3
                 end if
-            case ('lzs')
+            case ('LZS')
                 if (allocated(vs%grid%stggw)) then
                     vs%grid%stggw(1:shd%NA) = ffield
                 else

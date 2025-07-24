@@ -11,7 +11,7 @@
      A   FSGV,   FSGS,   FSGG,   FLGV,   FLGS,   FLGG,   
      B   HFSC,   HFSS,   HFSG,   HEVC,   HEVS,   HEVG,   HMFC,   HMFN, 
      C   HTCC,   HTCS,   HTC,    QFCF,   QFCL,   DRAG,   WTABLE, ILMO,    
-     D   UE,     HBL,    TAC,    QAC,    ZREFM,  ZREFH,  ZDIAGM, ZDIAGH, 
+     D   UE,     HBL,    TAC, QAC, VAC, ZREFM,  ZREFH,  ZDIAGM, ZDIAGH, 
      E   VPD,    TADP,   RHOAIR, QSWINV, QSWINI, QLWIN,  UWIND,  VWIND,   
      F   TA,     QA,     PADRY,  FC,     FG,     FCS,    FGS,    RBCOEF,
      G   FSVF,   FSVFS,  PRESSG, VMOD,   ALVSCN, ALIRCN, ALVSG,  ALIRG,  
@@ -34,6 +34,7 @@
      X   ITC,    ITCG,   ITG,    ILG,    IL1,IL2,JL,N,   IC,     
      Y   IG,     IZREF,  ISLFD,  NLANDCS,NLANDGS,NLANDC, NLANDG, NLANDI) 
 C
+C     * APR 26/22 - M.ELSHAMY.  EXPOSING VAC TO MESH
 C     * NOV 11/11 - M.LAZARE.   IMPLEMENT CTEM (INITIALIZATION OF FIELDS
 C     *                         NEAR BEGINNING AND TWO REVISED CALLS TO 
 C     *                         TSOLVC).                 
@@ -186,7 +187,7 @@ C
      9     HMFC  (ILG),   HMFN  (ILG),   HTCC  (ILG),   HTCS  (ILG),   
      A     DRAG  (ILG),   ILMO  (ILG),   UE    (ILG),   HBL   (ILG),   
      B     TAC   (ILG),   QAC   (ILG),   QFCF  (ILG),   QFCL  (ILG),
-     C     FTEMP (ILG),   FVAP  (ILG),   RIB   (ILG)
+     C     FTEMP (ILG),   FVAP  (ILG),   RIB   (ILG),   VAC   (ILG)
 C
       INTEGER  ITERCT(ILG,6,50)
 C
@@ -246,7 +247,7 @@ C
      6     TSNBOT(ILG),   GCOEFFS(ILG),  GCONSTS(ILG),
      7     A1    (ILG),   A2    (ILG),   B1    (ILG),   B2    (ILG),   
      8     C2    (ILG),   ZOM   (ILG),   ZOH   (ILG),   ZOSCLM(ILG),   
-     9     ZOSCLH(ILG),   VAC   (ILG),                  FCOR  (ILG),
+     9     ZOSCLH(ILG),                                 FCOR  (ILG),
      A     CFLUX (ILG),   CDHX  (ILG),   CDMX  (ILG),   
      B     QSWX  (ILG),   QSWNC (ILG),   QSWNG (ILG),   QLWX  (ILG),
      C     QLWOC (ILG),   QLWOG (ILG),   QTRANS(ILG),    

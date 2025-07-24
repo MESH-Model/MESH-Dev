@@ -132,8 +132,8 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !             IF THERE IS, SET INITIAL RESERVOIR STORAGE:
 
 !              if(b1(l).gt.0.0.and.b2(l).gt.0.0)then
-              if(b1(l).ne.0.0.or.b2(l).ne.0.0)then
-
+!              if(b1(l).ne.0.0.or.b2(l).ne.0.0)then
+              if(cfn(l).ge.2)then
 !               WE HAVE A NATURAL CONTROL & WE NEED INITIAL
 !               RESERVOIR STORAGE
 !               INITIAL FLOWS ARE CALC IN SUB SO LEAVE THEM ALONE 
@@ -171,7 +171,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 
 !                  if(poliflg.ne.'y'.or.
 !     *                 abs(b3(l)+b4(l)+b5(l)).le.0.1e-32)then
-                if(poliflg(l).ne.'y')then
+!                if(poliflg(l).ne.'y')then
 
 !                 don't get rid of the poliflg because of the format
 !                 for the header section is not compatible with the old files
@@ -181,20 +181,20 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                     store1(n)=(qo1(lll)/b1(l))**(1.0_4/b2(l))
                   endif
 
-                else
+!              else
 
-                  if(b3(l).eq.0.0)then
+                  if(cfn(l).eq.2)then
 !                   use 2 coefficients  
                     if(resumflg.ne.'y')then
                       store1(n)=(qo1(lll)/b1(l))**(1.0_4/b2(l))
                     endif
-                  else
+                  elseif(cfn(l).eq.3)then
 !                   use bisection to get init flow
 !                   actually, I made the int. storage a little larger
                     if(resumflg.ne.'y')then
                       store1(n)=100.
                       try1=0.0
-!                     use 2-5 coefficients
+!                     use polynomial coefficients
                       write(52,*)'         n           l          try1',    
      *                     '         qo1        store1'
                       do while(try1.lt.qo1(lll))
@@ -227,7 +227,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
                 write(52,*)n,l,try1,qo1(n),store1(n),'done'
                 write(52,*)
 
-                endif
+!                endif
 
                   if(resumflg.ne.'y')then
                     store1(n)=max(100.0_4,store1(n))

@@ -332,12 +332,14 @@ module rte_module
 !todo: water class for lakes.
         ii_water = ntype
 
+        !> Set fhr to 1 (the counting of incremental hours in the routing simulation is not used like it is in standalone WATROUTE).
+        fhr = 1
+
         !> Reservoirs.
         !*  noresv: Number of reservoirs/lakes.
         !*  Nreaches: (rerout.f) Copy of noresv.
         noresv = fms%rsvr%n
         Nreaches = fms%rsvr%n
-!todo: fix fhr use (999999).
         if (fms%rsvr%n > 0) then
 
             !> Book-keeping variables (when fhr > 1).
@@ -346,7 +348,7 @@ module rte_module
             !*  lake_stor: Copy of reservoir storage. [m3].
             !*  lake_outflow: Copy of reservoir outflow. [m3 s-1].
             !*  del_store: Storage change considering inflow minus outflow. [m3].
-            allocate(lake_inflow(noresv, 999999), lake_stor(noresv, 999999), lake_outflow(noresv, 999999), del_stor(noresv, 999999))
+            allocate(lake_inflow(noresv, fhr), lake_stor(noresv, fhr), lake_outflow(noresv, fhr), del_stor(noresv, fhr))
             lake_inflow = 0.0; lake_stor = 0.0; lake_outflow = 0.0; del_stor = 0.0
 
             !> Reservoir/lake meta-data (from file).
@@ -361,7 +363,7 @@ module rte_module
             resindex = fms%rsvr%meta%rnk
 
             !> Routing coefficients.
-            allocate(b1(noresv), b2(noresv), b3(noresv), b4(noresv), b5(noresv), b6(noresv), b7(noresv))
+            allocate(b1(noresv), b2(noresv), b3(noresv), b4(noresv), b5(noresv), b6(noresv), b7(noresv), cfn(noresv))
 !                poliflg(noresv)
             b1 = real(fms%rsvr%rls%b1, kind(b1))
             b2 = real(fms%rsvr%rls%b2, kind(b2))
@@ -370,6 +372,7 @@ module rte_module
             b5 = real(fms%rsvr%rls%b5, kind(b5))
             b6 = real(fms%rsvr%rls%b6, kind(b6))
             b7 = real(fms%rsvr%rls%b7, kind(b7))
+            cfn = fms%rsvr%rls%cfn
 !            where (b3 == 0.0)
 !                poliflg = 'n'
 !            elsewhere
@@ -382,10 +385,10 @@ module rte_module
             !> Measured outflow (from file).
             !*  qrel: Measured outflow when reservoir releases are replaced with measured values. [m3 s-1].
             !*  qdwpr: (Local variable in route.f) Used to accumulate flow in reaches that span multiple cells to the reservoir outlet. [m3 s-1].
-            allocate(qdwpr(noresv, 999999), qrel(noresv, 999999))
+            allocate(qdwpr(noresv, fhr), qrel(noresv, fhr))
             qdwpr = 0.0
-            if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0)), kind(qrel))
+            if (count(fms%rsvr%rls%cfn == 1) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
+                qrel(1:count(fms%rsvr%rls%cfn == 1), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%cfn == 1)), kind(qrel))
             else
                 qrel(:, 1) = real(fms%rsvr%rlsmeas%val, kind(qrel))
             end if
@@ -394,7 +397,7 @@ module rte_module
             !*  reach_last: (Used in Great Lakes routing) Stores level of last time-step. [m].
             !*  lake_area: Used to convert reservoir storage to level (for diagnostic output). [m2].
             !*  lake_elv: Lake elevation (for diagnostic output). [m].
-            allocate(reach_last(noresv), lake_area(noresv), lake_elv(noresv, 999999))
+            allocate(reach_last(noresv), lake_area(noresv), lake_elv(noresv, fhr))
             lake_area = real(fms%rsvr%rls%area, kind(lake_area))
             lake_elv(:, 1) = real(fms%rsvr%rls%zlvl0, kind(lake_elv))
         end if
@@ -404,8 +407,7 @@ module rte_module
         if (fms%stmg%n > 0) then
             allocate( &
                 iflowgrid(no), nopt(no), &
-!todo: fix this (999999).
-                qhyd(no, 999999))
+                qhyd(no, fhr))
             iflowgrid = fms%stmg%meta%rnk
             nopt = -1
             qhyd(:, 1) = real(fms%stmg%qomeas%val, kind(qhyd))
@@ -582,6 +584,7 @@ module rte_module
         !> Local variables.
         integer(kind = 4) fhr_i4
         integer ierr, iun
+        real(kind = 4), dimension(:, :), allocatable :: lake_elv_temp
 
         !> Return if not the head node or if the process is not active.
         if (.not. ISHEADNODE .or. .not. rteflg%PROCESS_ACTIVE) return
@@ -599,13 +602,18 @@ module rte_module
         read(iun) store2
         read(iun) qi2
         if (fms%rsvr%n > 0) then
-            read(iun) lake_elv(:, fhr)
+            allocate(lake_elv_temp(noresv, fhr))
+            read(iun) lake_elv_temp(:, fhr)
+            lake_elv(:, 1) = lake_elv_temp(:, fhr)
         else
             read(iun)
         end if
 
         !> Close the file to free the unit.
         close(iun)
+
+        !> Set fhr to 1 (the counting of incremental hours in the routing simulation is not used like it is in standalone WATROUTE).
+        fhr = 1
 
         !> Update SA_MESH output variables.
         if (associated(out%ts%grid%qi)) out%ts%grid%qi = qi2
@@ -710,7 +718,7 @@ module rte_module
         integer indexi, no_dtold
 
         !> Local variables for output averaging.
-        real, dimension(:), allocatable :: inline_qi, inline_stgch, inline_qo
+        real, dimension(na) :: inline_qi, inline_stgch, inline_qo
 
         !> Local diagnostic variables.
 !        integer year_last, month_last, day_last, hour_last
@@ -743,7 +751,7 @@ module rte_module
         if (ic%now%hour == ic%next%hour) return
 
         !> Increment counters.
-        fhr = fhr + 1
+!-        fhr = fhr + 1
 
         !> Diversion data.
         if (nodiv > 0) then
@@ -786,8 +794,8 @@ module rte_module
         store2_strt(1:naa) = store2(1:naa)
         if (fms%stmg%n > 0) qhyd(:, fhr) = real(fms%stmg%qomeas%val, kind(qhyd))
         if (fms%rsvr%n > 0) then
-            if (count(fms%rsvr%rls%b1 == 0.0) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
-                qrel(1:count(fms%rsvr%rls%b1 == 0.0), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%b1 == 0.0)), kind(qrel))
+            if (count(fms%rsvr%rls%cfn == 1) > 0 .and. fms%rsvr%rlsmeas%readmode /= 'n') then
+                qrel(1:count(fms%rsvr%rls%cfn == 1), 1) = real(fms%rsvr%rlsmeas%val(1:count(fms%rsvr%rls%cfn == 1)), kind(qrel))
             else
                 qrel(:, 1) = real(fms%rsvr%rlsmeas%val, kind(qrel))
             end if
@@ -877,9 +885,6 @@ module rte_module
         !> Re-specifying dtmin as dtminusr cancels the effect of the code immediately above.
         !> However, if the iteration loop in route is unstable, dtmin still decreases.
         dtmin = dtminusr
-
-        !> Allocate the local variables for output averaging.
-        allocate(inline_qi(na), inline_stgch(na), inline_qo(na))
 
         !> Let the time step be as small as mindtmin.
 17      dtmin = max(mindtmin, dtmin)
@@ -973,9 +978,6 @@ module rte_module
         if (associated(out%ts%grid%qi)) out%ts%grid%qi = inline_qi/no_dt*(3600/ic%dts)
         if (associated(out%ts%grid%stgch)) out%ts%grid%stgch = inline_stgch/no_dt*(3600/ic%dts)
         if (associated(out%ts%grid%qo)) out%ts%grid%qo = inline_qo/no_dt*(3600/ic%dts) !same as avr_qo
-
-        !> Deallocate the local variables for output averaging.
-        deallocate(inline_qi, inline_stgch, inline_qo)
 
         !> Update SA_MESH variables.
         !> Used by other processes and/or for resume file.

@@ -1,10 +1,12 @@
       SUBROUTINE REDISTRIB_SNOW(NA,NTYPE,ILG,NML,IL1,IL2,TSNOW,ZSNOW,
      1     RHOSNO,SNO,TSNOCS,ZSNOCS,HCPSCS,RHOSCS,TSNOGS,
      2     ZSNOGS,HCPSGS,RHOSGS,TSNOWC,ZSNOWC,HCPSC,RHOSC,TSNOWG,
-     3     ZSNOWG,HCPSG,RHOSG,GC,GRID_SQUARE,Drift,FARE,
+     3     ZSNOWG,HCPSG,RHOSG,GC,GRID_SQUARE,Drift,Area_Weight,
      4     TSNOWds,distrib,WSNOCS,WSNOGS,FCS,FGS,FC,FG,Deposition,
      5     TOVRFL,OVRFLW,TRUNOF,RUNOFF,ROFN,PCPG,HTCS,WSNOW,N)
 C
+C     * DEC 2021 - M.ELSHAMY Replaced FARE with Area_Weight as FARE has 
+C     *                      been changed from its original definition    
 C     * MAY 2017 - D.PRINCZ. Changed order of initial variables in
 C     *                      subroutine call because not all should be
 C     *                      allocated to ILG or NML. Most variables
@@ -32,7 +34,7 @@ C
 C     * INPUT ARRAYS.
 C
       REAL GC(NML),Drift(NML),
-     1     FARE(NML),TSNOWds(NML),distrib(NML),WSNOCS(NML),
+     1     Area_Weight(NML),TSNOWds(NML),distrib(NML),WSNOCS(NML),
      2     WSNOGS(NML),FCS(NML),FGS(NML),FC(NML),FG(NML),
      3     DistribLoss(NML)
       INTEGER GRID_SQUARE(ILG)
@@ -85,13 +87,14 @@ C
               ! TSNOWSumDrift: Kelvin following below calculation
                 ! set temperature of drifting snow in grid square
                 TSNOWSumDrift=(TSNOWSumDriftPREV*(SumDrift
-     1                     /RHOSNOSumDrift)*HCPSNOSumDrift 
-     2                +TSNOWds(K)*(Drift(K)*FARE(K)/RHOSNOSumDrift)*
-     3                    HCPSNOSumDrift)/((SumDrift/RHOSNOSumDrift) 
-     4                    *HCPSNOSumDrift +
-     5               (Drift(K)*FARE(K)/RHOSNOSumDrift)*HCPSNOSumDrift)
+     1                     /RHOSNOSumDrift)*HCPSNOSumDrift +
+     2           TSNOWds(K)*(Drift(K)*Area_Weight(K)/RHOSNOSumDrift)*
+     3           HCPSNOSumDrift)/((SumDrift/RHOSNOSumDrift) 
+     4           *HCPSNOSumDrift +
+     5           (Drift(K)*Area_Weight(K)/
+     6            RHOSNOSumDrift)*HCPSNOSumDrift)
               ! total snow drift in grid square
-              SumDrift=SumDrift+Drift(K)*FARE(K)
+              SumDrift=SumDrift+Drift(K)*Area_Weight(K)
              ENDIF !(Drift(K).GT.0.)
             GRUsInGS=GRUsInGS+1 !number of GRUs in grid square
             ENDIF !(GRID_SQUARE(K).EQ.I)
@@ -101,6 +104,8 @@ C
         total=0.0
 
         DO 400 nn=1,GRUsInGS
+          !> FY found nn to be wrongly checked against 1 (first tile on first grid not 1st tile in each grid)
+          !> Additionaly he found no need to distinguish the first tile anyway - commented the whole block
 C          !First GRU
 C          IF(nn.EQ.1) THEN
 C            IF(distrib(nn).GT.0.) THEN
@@ -185,8 +190,8 @@ C          ELSE
 	    	     DO 500 jj=nn,GRUsInGS  !> calculate denominator
                    total=total+distrib(jj+PrevNumTiles)
   500            CONTINUE
-	    	     !> determine contribution and scale
-	    	     transport=SumDrift*distrib(J)/total/FARE(J)
+                 !> determine contribution and scale
+                 transport=SumDrift*distrib(J)/total/Area_Weight(J)
                  !Redistribute transport and calculate snowpack properties at subarea-level
                  IF(FCS(J).GT.0.) THEN
                    HTCS(J)=HTCS(J)-FCS(J)*HCPSCS(J)*(TSNOCS(J)+TFREZ)*
@@ -258,7 +263,8 @@ C          ELSE
      1                  ZSNOWG(J)/DELT
                    IF(FG(J).GT.0. .AND. ZSNOWG(J).GT.0.) XSNOWG=1.0
                  ENDIF
-	    		 !> Calculate snowpack properties & add drift at GRU-level
+
+                 !> Calculate snowpack properties & add drift at GRU-level
                  TSNOW(J)=(FCS(J)*(TSNOCS(J)+TFREZ)*HCPSCS(J)*
      1                  ZSNOCS(J)*XSNOCS +
      2                  FGS(J)*(TSNOGS(J)+TFREZ)*HCPSGS(J)*
@@ -284,13 +290,13 @@ C          ELSE
                  SNO(J)=ZSNOW(J)*RHOSNO(J)
                  !> remove drift used from total available
                  Deposition(J)=transport
-                 SumDrift=SumDrift-transport*FARE(J)
-	    	   ELSE
-	    	     Deposition(J)=0.
-	    	   ENDIF
-	     ELSE
-	       Deposition(J)=0.
-	     ENDIF !>(SumDrift.GT.0.0)
+                 SumDrift=SumDrift-transport*Area_Weight(J)
+              ELSE
+                  Deposition(J)=0.
+              ENDIF !>(distrib(J).GT.0)
+          ELSE
+              Deposition(J)=0.
+          ENDIF !>(SumDrift.GT.0.0)
 C	    ENDIF !(nn.EQ.1) THEN
 	   !ELSE
 	   !  Deposition(J)=0.

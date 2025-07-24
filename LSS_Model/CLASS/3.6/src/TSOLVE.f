@@ -298,7 +298,7 @@ C
 c     DO 185 I=IL1,IL2
 C         IF(FI(I).GT.0. .AND. ITER(I).EQ.-1)                      THEN 
 C             WRITE(6,6250) I,JL,RESID(I),TZERO(I),RIB(I)
-C6250         FORMAT('0GROUND ITERATION LIMIT',3X,2I3,3(F8.2,E12.4))            
+C6250         FORMAT('0GROUND ITERATION LIMIT',3X,2I8,3(F8.2,E12.4))            
 C         ENDIF                              
 c 185 CONTINUE
 C
@@ -403,7 +403,7 @@ C
 C
       IF(IBAD.NE.0)                                                 THEN
           WRITE(6,6275) IBAD,JL,TZERO(IBAD),NITER(IBAD),ISNOW
- 6275     FORMAT('0BAD ITERATION TEMPERATURE',3X,2I3,F16.2,2I4)
+ 6275     FORMAT('0BAD ITERATION TEMPERATURE',3X,2I8,F16.2,2I4)
           WRITE(6,6280) QSWNET(IBAD),QLWIN(IBAD),QSENS(IBAD),
      1        QEVAP(IBAD),GZERO(IBAD),CFLUX(IBAD),RIB(IBAD)
  6280     FORMAT(2X,7F12.4)

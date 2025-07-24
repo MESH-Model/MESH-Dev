@@ -237,13 +237,11 @@ C
               WRITE(6,6448) N,I,WTGSTP(I),WSUMG
 6448          FORMAT(2X,'GROUND WATER BALANCE  ',2I8,2F20.8)
               WRITE(6,6450) PCPG(I)*DELT,QFG(I)*DELT,
-     1            QFC(I,1)*DELT,QFC(I,2)*DELT,
-     2            QFC(I,3)*DELT,ROF(I)*DELT,
-     3            WTRG(I)*DELT
+     *            ROF(I)*DELT,WTRG(I)*DELT
               DO 390 J=1,IG
                   WRITE(6,6450) THLIQ(I,J)*RHOW*DELZW(I,J),
      *                THICE(I,J)*RHOICE*DELZW(I,J),
-     *                DELZW(I,J)
+     *                DELZW(I,J),QFC(I,J)*DELT
 390           CONTINUE
               WRITE(6,6450) ZPOND(I)*RHOW,ICE(I)
 6450          FORMAT(2X,7F15.6)

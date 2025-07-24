@@ -501,10 +501,10 @@ module SIMSTATS
             iun = mtsfl%fl(mtsk%out)%iun
             open(iun, file = trim(fls%GENDIR_OUT) // '/' // trim(mtsfl%fl(mtsk%out)%fn))
             write(iun, "(9999(g15.7e2, ' '))") &
-                "Gauge", "MAE", "RMSE", "BIAS", "AbsBIAS", "NSD", "NegNSD", "lnNSD", "NeglnNSD", "TPD", "KGE", "NegKGE"
+                "Num", "Gauge", "MAE", "RMSE", "BIAS", "AbsBIAS", "NSD", "NegNSD", "lnNSD", "NeglnNSD", "TPD", "KGE", "NegKGE"
             do j = 1, size(qobs, 2)
                 write(iun, "(9999(g15.7e2, ' '))") &
-                    j, st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), abs(bias(j)), &
+                    j, fms%stmg%meta%name(j), st_abserr%value_gauge(j), st_drms%value_gauge(j), bias(j), abs(bias(j)), &
                     nsd(j), (-1.0*nsd(j)), lnsd(j), (-1.0*lnsd(j)), int(tpd(j)), fkge(j), (-1.0*fkge(j))
             end do
             close(iun)

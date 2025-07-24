@@ -1155,14 +1155,24 @@ module output_files
                 lopen = .false.
                 inquire(file = trim(fname) // '_' // VN_GRD // '.nc', opened = lopen)
                 if (.not. lopen) then
-                    call nc4_define_output_variable_xyt( &
-                        trim(fname) // '_' // VN_GRD // '.nc', field%vname, shd%CoordSys%Proj, ffreq, &
-                        shd%CoordSys%lat, shd%CoordSys%lon, shd%CoordSys%rlat, shd%CoordSys%rlon, &
-                        shd%CoordSys%xylat, shd%CoordSys%xylon, &
-                        shd%CoordSys%Ellips, shd%CoordSys%Zone, shd%CoordSys%earth_radius, shd%CoordSys%grid_north_pole_latitude, &
-                        shd%CoordSys%grid_north_pole_longitude, &
-                        quiet = .true., fill = out%NO_DATA, &
-                        vid = group%grid%vid, vtime = group%grid%tid, iun = group%grid%nid, ierr = z)
+                    if (SHDFILEFMT == 5) then
+                        call nc4_define_output_variable_nt( &
+                            trim(fname) // '_' // VN_GRD // '.nc', field%vname, shd%CoordSys%Proj, ffreq, &
+                            shd%xxx, shd%CoordSys%lat, shd%CoordSys%lon, &
+                            shd%CoordSys%Ellips, shd%CoordSys%Zone, shd%CoordSys%earth_radius, &
+                            shd%CoordSys%grid_north_pole_latitude, shd%CoordSys%grid_north_pole_longitude, &
+                            quiet = .true., fill = out%NO_DATA, &
+                            vid = group%grid%vid, vtime = group%grid%tid, iun = group%grid%nid, ierr = z)
+                    else
+                        call nc4_define_output_variable_xyt( &
+                            trim(fname) // '_' // VN_GRD // '.nc', field%vname, shd%CoordSys%Proj, ffreq, &
+                            shd%CoordSys%lat, shd%CoordSys%lon, shd%CoordSys%rlat, shd%CoordSys%rlon, &
+                            shd%CoordSys%xylat, shd%CoordSys%xylon, &
+                            shd%CoordSys%Ellips, shd%CoordSys%Zone, shd%CoordSys%earth_radius, &
+                            shd%CoordSys%grid_north_pole_latitude, shd%CoordSys%grid_north_pole_longitude, &
+                            quiet = .true., fill = out%NO_DATA, &
+                            vid = group%grid%vid, vtime = group%grid%tid, iun = group%grid%nid, ierr = z)
+                    end if
                     if (ierr /= 0) then
                         call print_error("Unable to open file for output: " // trim(fname) // "_" // VN_GRD // ".nc")
                         ierr = z
@@ -1984,6 +1994,12 @@ module output_files
                     call output_files_append_field(fls, shd, ts, VN_CMAS, args, nargs, z)
                 case (VN_TCAN)
                     call output_files_append_field(fls, shd, ts, VN_TCAN, args, nargs, z)
+                case (VN_TACAN)
+                    call output_files_append_field(fls, shd, ts, VN_TACAN, args, nargs, z)
+                case (VN_QACAN)
+                    call output_files_append_field(fls, shd, ts, VN_QACAN, args, nargs, z)
+                case (VN_UVCAN)
+                    call output_files_append_field(fls, shd, ts, VN_UVCAN, args, nargs, z)
                 case (VN_GRO)
                     call output_files_append_field(fls, shd, ts, VN_GRO, args, nargs, z)
 
@@ -2076,6 +2092,34 @@ module output_files
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, VN_GFLX, args, nargs, z, j)
                     end do
+                case (VN_HCPS, 'SoilHeatCapacity')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_HCPS, args, nargs, z, j)
+                    end do
+                case (VN_HCPC, 'SoilHeatCapacity_Canopy')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_HCPC, args, nargs, z, j)
+                    end do
+                case (VN_HCPG, 'SoilHeatCapacity_Bare')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_HCPG, args, nargs, z, j)
+                    end do
+                case (VN_TCTOPC, 'SoilThermalConductivity_Top_Canopy')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_TCTOPC, args, nargs, z, j)
+                    end do
+                case (VN_TCTOPG, 'SoilThermalConductivity_Top_Bare')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_TCTOPG, args, nargs, z, j)
+                    end do
+                case (VN_TCBOTC, 'SoilThermalConductivity_Bottom_Canopy')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_TCBOTC, args, nargs, z, j)
+                    end do
+                case (VN_TCBOTG, 'SoilThermalConductivity_Bottom_Bare')
+                    do j = 1, shd%lc%IGND
+                        call output_files_append_field(fls, shd, ts, VN_TCBOTG, args, nargs, z, j)
+                    end do
                 case (VN_LATFLW, 'ROFS')
                     do j = 1, shd%lc%IGND
                         call output_files_append_field(fls, shd, ts, VN_LATFLW, args, nargs, z, j, real(ic%dts))
@@ -2155,7 +2199,7 @@ module output_files
                     end do
                 case (PMFRSTVN_DZAA)
 
-                    !> User-defined temperature threshold(s)/tolerance(s) for DZAA.
+                    !> User-defined temperature threshold(s)/tolerance(s) for DZAA & TZAA.
                     if (nargs > 1) then
                         do j = 2, nargs
                             if (lowercase(args(j)) == 'ttol') then
@@ -2184,6 +2228,39 @@ module output_files
                             line(index(line, '.'):index(line, '.')) = 'p'
                             line = trim(PMFRSTVN_DZAA) // '_TTOL_' // trim(adjustl(line))
                             call output_files_append_field(fls, shd, ts, line, prmfst%out%dzaa(j), args, nargs, z)
+                        end do
+                    end if
+                case (PMFRSTVN_TZAA)
+
+                    !> User-defined temperature threshold(s)/tolerance(s) for DZAA & TZAA.
+                    if (nargs > 1) then
+                        do j = 2, nargs
+                            if (lowercase(args(j)) == 'ttol') then
+                                if (allocated(prmfst%pm%dzaa_ttol)) then
+                                    call print_error( &
+                                        " Multiple instances of the 'ttol' option exist in outputs_balance.txt" // &
+                                        " or a previous entry of 'DZAA' without the 'ttol' option" // &
+                                        " has activated the default value ('ttol 0.1')." // &
+                                        " Only one instance of the 'ttol' option can exist." // &
+                                        " Combine multiple instances 'ttol' into a single option and add it to the first" // &
+                                        " entry of 'DZAA' in the list.")
+                                    z = 1
+                                    exit
+                                else
+                                    call output_files_parse_indices(args, nargs, prmfst%pm%dzaa_ttol, j, z)
+                                    exit
+                                end if
+                            end if
+                        end do
+                    end if
+                    if (z == 0) then
+                        call permafrost_outputs_init(fls, shd, PMFRSTVN_TZAA)
+                        do j = 1, size(prmfst%pm%dzaa_ttol)
+                            write(line, FMT_GEN) prmfst%pm%dzaa_ttol(j)
+                            call trimzero(line)
+                            line(index(line, '.'):index(line, '.')) = 'p'
+                            line = trim(PMFRSTVN_TZAA) // '_TTOL_' // trim(adjustl(line))
+                            call output_files_append_field(fls, shd, ts, line, prmfst%out%tzaa(j), args, nargs, z)
                         end do
                     end if
 
@@ -2292,9 +2369,14 @@ module output_files
 #ifdef NETCDF
             if (btest(field%ffmt, FILE_TYPE_NC4)) then
                 z = 0
-                call nc4_add_data_xyt( &
-                    group%grid%nid, field%vname, ffreq, group%grid%tid, group%grid%vid, shd%xxx, shd%yyy, &
-                    shd%xCount, shd%yCount, out%NO_DATA, group%grid%dat, dates, z)
+                if (SHDFILEFMT == 5) then
+                    call nc4_add_data_nt( &
+                        group%grid%nid, field%vname, ffreq, group%grid%tid, group%grid%vid, out%NO_DATA, group%grid%dat, dates, z)
+                else
+                    call nc4_add_data_xyt( &
+                        group%grid%nid, field%vname, ffreq, group%grid%tid, group%grid%vid, shd%xxx, shd%yyy, &
+                        shd%xCount, shd%yCount, out%NO_DATA, group%grid%dat, dates, z)
+                end if
                 if (z /= 0) then
                     call print_error("Unable to write to output file: " // trim(group%grid%fname) // "_" // VN_GRD // ".nc")
                     call program_abort()
@@ -2527,46 +2609,50 @@ module output_files
 
         !> Update data fields for existing output variable frequencies.
         if (btest(field%ffreq, FREQ_YEARLY)) then
-            if (ic%now%year /= ic%next%year) then
+            if (ic%now%year /= ic%next%year .or. ic%now%year == ic%stop%year) then
                 if (field%in_mem) t = ic%iter%year
                 call output_files_update_dates(fls_out%dates%y, t, ic%iter%year, ic%now%year, 1, 1)
                 call output_files_update_group(fls, shd, field, field%y, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%year /= ic%next%year .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
+            if (((ic%now%year /= ic%next%year .or. ic%now%year == ic%stop%year) .and. .not. field%in_mem) .or. &
                 (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, FREQ_YEARLY, field, field%y, fls_out%dates%y)
             end if
         end if
         if (btest(field%ffreq, FREQ_MONTHLY)) then
-            if (ic%now%month /= ic%next%month) then
+            if (ic%now%month /= ic%next%month .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month)) then
                 if (field%in_mem) t = ic%iter%month
                 call output_files_update_dates(fls_out%dates%m, t, ic%iter%month, ic%now%year, ic%now%month, 1)
                 call output_files_update_group(fls, shd, field, field%m, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%month /= ic%next%month .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
-                (field%in_mem .and. fls_out%fclose)) then
+            if (((ic%now%month /= ic%next%month .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month)) &
+                .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, FREQ_MONTHLY, field, field%m, fls_out%dates%m)
             end if
         end if
         if (btest(field%ffreq, FREQ_DAILY)) then
-            if (ic%now%day /= ic%next%day) then
+            if (ic%now%day /= ic%next%day .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month .and. &
+                ic%now%day /= ic%stop%day)) then
                 if (field%in_mem) t = ic%iter%day
                 call output_files_update_dates(fls_out%dates%d, t, ic%iter%day, ic%now%year, ic%now%month, ic%now%day)
                 call output_files_update_group(fls, shd, field, field%d, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%day /= ic%next%day .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
-                (field%in_mem .and. fls_out%fclose)) then
+            if (((ic%now%day /= ic%next%day .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month .and. &
+                ic%now%day /= ic%stop%day)) &
+                .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, FREQ_DAILY, field, field%d, fls_out%dates%d)
             end if
         end if
         if (btest(field%ffreq, FREQ_HOURLY)) then
-            if (ic%now%hour /= ic%next%hour) then
+            if (ic%now%hour /= ic%next%hour .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month .and. &
+                ic%now%day /= ic%stop%day .and. ic%now%hour /= ic%stop%hour)) then
                 if (field%in_mem) t = ic%iter%hour
                 call output_files_update_dates(fls_out%dates%h, t, ic%iter%hour, ic%now%year, ic%now%month, ic%now%day, ic%now%hour)
                 call output_files_update_group(fls, shd, field, field%h, t, field%cfactorm, field%cfactora, field%fn)
             end if
-            if ((ic%now%hour /= ic%next%hour .and. .not. field%in_mem .and. .not. fls_out%fclose) .or. &
-                (field%in_mem .and. fls_out%fclose)) then
+            if (((ic%now%hour /= ic%next%hour .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month .and. &
+                ic%now%day /= ic%stop%day .and. ic%now%hour /= ic%stop%hour)) .and. .not. field%in_mem .and. &
+                .not. fls_out%fclose) .or. (field%in_mem .and. fls_out%fclose)) then
                 call output_files_update_file(fls, shd, FREQ_HOURLY, field, field%h, fls_out%dates%h)
             end if
         end if
@@ -2603,7 +2689,7 @@ module output_files
 
         !> 'Seasonal' must go last because it changes 't' regardless of the state of 'in_mem'.
         if (btest(field%ffreq, FREQ_SEASONAL)) then
-            if (ic%now%month /= ic%next%month) then
+            if (ic%now%month /= ic%next%month .or. (ic%now%year == ic%stop%year .and. ic%now%month == ic%stop%month)) then
                 t = ic%now%month
                 call output_files_update_dates(fls_out%dates%s, t, t, ic%now%year, ic%now%month, 1)
                 call output_files_update_group(fls, shd, field, field%s, t, field%cfactorm, field%cfactora, VN_ACC)

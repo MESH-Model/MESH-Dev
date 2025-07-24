@@ -3,7 +3,8 @@
      2                  WEXCES,THLMAX,THTEST,THPOR,THLRET,THLMIN,
      3                  BI,PSISAT,GRKSAT,THFC,DELZW,XDRAIN,ISAND,LZF,
      4                  IGRN,IGRD,IGDR,IG,IGP1,IGP2,ILG,IL1,IL2,JL,N)
-C
+C     * APR 06/18 - M.ELSHAMY.  LOOP 500 IS DONE TWICE TO OVERCOME
+C     *                         SUPER-SATURATION.
 C     * OCT 18/11 - M.LAZARE.   PASS IN "IGDR" AS AN INPUT FIELD 
 C     *                         (ORIGINATING IN CLASSB) RATHER
 C     *                         THAN REPEATING THE CALCULATION HERE
@@ -86,7 +87,7 @@ C
 C
 C     * INTEGER CONSTANTS.
 C
-      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,IPTBAD,N 
+      INTEGER IVEG,IG,IGP1,IGP2,ILG,IL1,IL2,JL,I,J,K,M,IPTBAD,N
 C
 C     * INPUT/OUTPUT FIELDS.
 C
@@ -298,7 +299,7 @@ C
 C
       IF(IPTBAD.NE.0)                                           THEN
           WRITE(6,6500) IPTBAD,JL,IVEG,THICE(IPTBAD,1)
- 6500     FORMAT('0AT (I,J)=(',I3,',',I3,'), IVEG=',I2,' THICE(1)= ',
+ 6500     FORMAT('0AT (I,J)=(',I8,',',I8,'), IVEG=',I2,' THICE(1)= ',
      1            E13.5)
           CALL XIT('GRDRAN',-1)
       ENDIF
@@ -354,6 +355,7 @@ C
         ENDIF
   400 CONTINUE               
 C
+      DO 500 M=1,2
       DO 500 J=IG,1,-1
       DO 500 I=IL1,IL2
           IF(IGRD(I).GT.0)  THEN

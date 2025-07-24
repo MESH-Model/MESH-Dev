@@ -53,6 +53,7 @@ module model_variables
         !* cmas: Organic mass of the canopy. [kg m**-2].
         !* tacan: Air temperature in the canopy. [K].
         !* qacan: Specific humidity of air in the canopy. [kg kg**-1].
+        !* uvcan: Wind speed of air in the canopy. [m s**-1].
         !* tcan: Vegetation canopy temperature. [K].
         !* gro: Vegetation growth index. [--].
         real, dimension(:), allocatable :: lqwscan
@@ -60,6 +61,7 @@ module model_variables
         real, dimension(:), allocatable :: cmas
         real, dimension(:), allocatable :: tacan
         real, dimension(:), allocatable :: qacan
+        real, dimension(:), allocatable :: uvcan
         real, dimension(:), allocatable :: tcan
         real, dimension(:), allocatable :: gro
 
@@ -134,6 +136,10 @@ module model_variables
         !* fzwssol: Frozen water storage in the soil. [kg m**-2].
         !* tsol: Temperature of the soil. [K].
         !* gflx: Heat conduction between soil layers. [W m**-2].
+        !* hcps: Heat Capcity of soil material (soil base not including mositure). [J m-3 K-1].
+        !* hcpc, hcpg: Heat Capacity of soil under canopy and under bare ground (considering moisture content (water & ice). [J m-3 K-1].
+        !* tctopc, tcbotc: Thermal conductivity of soil under canopy at the top & bottom of the layer (considering moisture content). [W m-1 K-1].
+        !* tctopg, tcbotg: Thermal conductivity of soil under bare ground at the top & bottom of the layer (considering moisture content). [W m-1 K-1].
         !* latflw: Interflow runoff rate. [kg m**-2 s**-1].
         !* zsol: Depth to the bottom of the soil column. [m].
         !* zsolhyd: Permeable depth of the soil layer. [m].
@@ -149,6 +155,13 @@ module model_variables
         real, dimension(:, :), allocatable :: fzwssol
         real, dimension(:, :), allocatable :: tsol
         real, dimension(:, :), allocatable :: gflx
+        real, dimension(:, :), allocatable :: hcps
+        real, dimension(:, :), allocatable :: hcpc
+        real, dimension(:, :), allocatable :: hcpg
+        real, dimension(:, :), allocatable :: tctopc
+        real, dimension(:, :), allocatable :: tctopg
+        real, dimension(:, :), allocatable :: tcbotc
+        real, dimension(:, :), allocatable :: tcbotg
         real, dimension(:, :), allocatable :: latflw
         real, dimension(:), allocatable :: zsol
         real, dimension(:), allocatable :: zsolhyd
@@ -294,6 +307,7 @@ module model_variables
         if (allocated(group%cmas)) group%cmas = 0.0
         if (allocated(group%tacan)) group%tacan = 0.0
         if (allocated(group%qacan)) group%qacan = 0.0
+        if (allocated(group%uvcan)) group%uvcan = 0.0
         if (allocated(group%tcan)) group%tcan = 0.0
         if (allocated(group%gro)) group%gro = 0.0
 
@@ -340,6 +354,13 @@ module model_variables
         if (allocated(group%fzwssol)) group%fzwssol = 0.0
         if (allocated(group%tsol)) group%tsol = 0.0
         if (allocated(group%gflx)) group%gflx = 0.0
+        if (allocated(group%hcps)) group%hcps = 0.0
+        if (allocated(group%hcpc)) group%hcpc = 0.0
+        if (allocated(group%hcpg)) group%hcpg = 0.0
+        if (allocated(group%tctopc)) group%tctopc = 0.0
+        if (allocated(group%tcbotc)) group%tcbotc = 0.0
+        if (allocated(group%tctopg)) group%tctopg = 0.0
+        if (allocated(group%tcbotg)) group%tcbotg = 0.0
         if (allocated(group%latflw)) group%latflw = 0.0
         if (allocated(group%zsol)) group%zsol = 0.0
         if (allocated(group%zsolhyd)) group%zsolhyd = 0.0
@@ -460,6 +481,7 @@ module model_variables
         allocate(group%cmas(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tacan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qacan(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%uvcan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tcan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%gro(n), stat = z); if (z /= 0) ierr = z
 
@@ -506,6 +528,13 @@ module model_variables
         allocate(group%fzwssol(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%tsol(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%gflx(n, nsl), stat = z); if (z /= 0) ierr = z
+        allocate(group%hcps(n, nsl), stat = z); if (z /= 0) ierr = z
+        allocate(group%hcpc(n, nsl), stat = z); if (z /= 0) ierr = z
+        allocate(group%hcpg(n, nsl), stat = z); if (z /= 0) ierr = z
+        allocate(group%tctopc(n, nsl), stat = z); if (z /= 0) ierr = z
+        allocate(group%tctopg(n, nsl), stat = z); if (z /= 0) ierr = z
+        allocate(group%tcbotc(n, nsl), stat = z); if (z /= 0) ierr = z
+        allocate(group%tcbotg(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%latflw(n, nsl), stat = z); if (z /= 0) ierr = z
         allocate(group%zsol(n), stat = z); if (z /= 0) ierr = z
         allocate(group%zsolhyd(n), stat = z); if (z /= 0) ierr = z
