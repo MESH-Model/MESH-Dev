@@ -1442,10 +1442,10 @@ program RUNMESH
     call cpu_time(endprog)
     endprog = endprog - startprog
     call print_echo_txt(' Time = ' // trim(friendly_time_length(endprog)), no_advance = .true.)
-    if (ic%iter%year > 1) then
-        endprog = endprog/ic%iter%year
+!-    if (ic%iter%year > 1) then
+        endprog = endprog/ic%iter%day*365.25
         call print_echo_txt(' (averaging ' // trim(friendly_time_length(endprog)) // ' per simulation year)', no_advance = .true.)
-    end if
+!-    end if
     call print_echo_txt('.')
 
     !> Absolute termination point (e.g., for worker nodes).
