@@ -211,6 +211,7 @@ c            write(53,*)n,frac(ii_water),grid_area(n),lake_area(l)
 
 !mesh_io      write(53,*)'    grid no  ch width     rch lngth    chaarea'
       do n=1,naa
+         if(da(n).eq.0.0)cycle
 !     rev. 9.2.15  Sep.  30/05  - NK: Fixed bug for opt in flowinit
 !       removed slope(n)=..... and elev(n)=.....  already done in rdshed
 !        rl(n)=al*mndr(ii)    !  now read in<<<<<<<<<<<<<<<<<,
@@ -314,6 +315,7 @@ c          wetxa(n)=wcap(n)/rl(n)/abs(theta(ii))
 
 
       do n=1,naa
+         if(da(n).eq.0.0)cycle
          i=yyy(n)
          j=xxx(n)
          iset(n)=0
@@ -732,6 +734,7 @@ c      stop 'program aborted in flowinit @ 164'
 
 !mesh_io      write(53,6044)
       do n=1,naa
+         if(da(n).eq.0.0)cycle
 !        CURRENT LOCATION:
          i=yyy(n)
          j=xxx(n)
@@ -789,6 +792,7 @@ c      stop 'program aborted in flowinit @ 164'
 
 
       do n=naa,1,-1
+         if(da(n).eq.0.0)cycle
          if(qda(n).le.0.0)then
 !           THIS MEANS WE ARE NOT AT A GAUGE (WITH FLOWS)
 !           WE'LL ONLY ASSIGN A FLOW IF IT HAS NOT DONE BEFORE
@@ -940,6 +944,7 @@ c      stop 'program aborted in flowinit @ 164'
 
 !     prorate flow wrt. drainage areas  nk  Dec. 22/05
       do n=1,naa
+         if(da(n).eq.0.0)cycle
          if(iset(n).eq.2)then
             qda(n)=qda(n)*da(n)/datemp(n)
             iset(n)=1
@@ -956,6 +961,7 @@ c      stop 'program aborted in flowinit @ 164'
 
 !mesh_io      write(53,5557)
       do n=1,naa
+         if(da(n).eq.0.0)cycle
          i=yyy(n)
          j=xxx(n)
          qdagrd(i,j)=qda(n)
@@ -990,6 +996,7 @@ c      stop 'program aborted in flowinit @ 164'
 
 !     this loop revised Dec. 22/05  nk
       do n=naa,1,-1
+         if(da(n).eq.0.0)cycle
          if(iset(n).eq.0)then
 !         THIS MEANS PROPER BASE FLOWS HAVEN'T BEEN ASSIGNED YET
             nnx=next(n)
@@ -1162,6 +1169,7 @@ c      stop 'program aborted in flowinit @ 164'
 !mesh_io      write(51,9801)dacheck
 
       do n=1,naa
+         if (da(n).eq.0.0) cycle
          i=yyy(n)
          j=xxx(n)
          ii=ibn(n)
@@ -1328,6 +1336,7 @@ c         endif
 !     This section moved from soilinit   June 13/03
 !     Why was it there anyway???????
       do n=1,naa
+         if(da(n).eq.0.0)cycle
          if(da(n).gt.0.0)then
             qbase(n)=qbase(n)/da(n)*step2*frac(n)
 ! * * * * * * *  TS  - added initializations * * * * * * * *

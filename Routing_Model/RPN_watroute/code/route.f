@@ -122,6 +122,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !       once per time step
 
         do n=1,naa
+          if(da(n).eq.0.0)cycle
           lll=next(n)
           do l=1,noresv
 
@@ -300,7 +301,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
       if(iopt.eq.2)print*, 'In route before the 1-naa loop'
 
       do n=1,naa
-       
+        if(da(n).eq.0.0)cycle
 !       REV. 8.23 - Mar.  25/96 - FIXED BUG IN ROUTE, KEEP QO2 FOR RES
         store1(n)=store2(n)
         wstore1(n)=wstore2(n)
@@ -358,7 +359,7 @@ C    along with WATROUTE.  If not, see <http://www.gnu.org/licenses/>.
 !     ROUTING LOOP:
 
       do n=1,naa
-
+        if(da(n).eq.0.0)cycle
         if(iopt.eq.2.and.n.eq.1)print*,'In route, passed 101'
 
         i=yyy(n)
