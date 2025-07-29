@@ -207,7 +207,7 @@ subroutine forcing_adjust( &
         wind_adjusted = wind*windcorr
     else
 
-        !>  No adjustment.
+        !> No adjustment.
         wind_adjusted = wind
     end if
 
@@ -286,7 +286,7 @@ subroutine forcing_adjust( &
         end if
     else
 
-        !>  No adjustment.
+        !> No adjustment.
         rain_adjusted = rain
     end if
 
@@ -311,7 +311,7 @@ subroutine forcing_adjust( &
         end do
     else
 
-        !>  No adjustment.
+        !> No adjustment.
         temp_adjusted = temp
     end if
 
@@ -338,7 +338,7 @@ subroutine forcing_adjust( &
         pres_adjusted = pres*exp(-(delta*GCons)/(RCons*temp_adjusted))
     else
 
-        !>  No adjustment.
+        !> No adjustment.
         pres_adjusted = pres
     end if
 
@@ -381,7 +381,7 @@ subroutine forcing_adjust( &
         humd_adjusted = 0.622*ea_adjusted/(pres_adjusted - 0.378*ea_adjusted)
     else
 
-        !>  No adjustment.
+        !> No adjustment.
         ea = pres*minhumd/(0.378*minhumd + 0.622)
         where (temp >= 273.16)
             es = 611.21*exp(17.502*(temp - 273.16)/(temp - 273.16 + 240.97))
@@ -437,7 +437,7 @@ subroutine forcing_adjust( &
         rlds_adjusted = rlds + (lwlapse(now_month)*delta/1000.0)
     else
 
-        !>  No adjustment.
+        !> No adjustment.
         rlds_adjusted = rlds
     end if
 
@@ -713,7 +713,7 @@ subroutine forcing_adjust( &
         rsrd_adjusted = Qdirect + Qdiffuse
     else
 
-        !>  No adjustment.
+        !> No adjustment.
         rsrd_adjusted = rsrd
     end if
 
