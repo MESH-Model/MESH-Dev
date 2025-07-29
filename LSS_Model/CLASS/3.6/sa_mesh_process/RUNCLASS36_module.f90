@@ -95,6 +95,7 @@ module RUNCLASS36_module
 
             !> Grab states.
             cpv%QAC(il1:il2) = vs%tile%qacan(il1:il2)
+            cpv%VAC(il1:il2) = vs%tile%uvcan(il1:il2)
             cpv%RCAN(il1:il2) = vs%tile%lqwscan(il1:il2)
             cpv%SNCAN(il1:il2) = vs%tile%fzwscan(il1:il2)
             cpv%TAC(il1:il2) = vs%tile%tacan(il1:il2)
@@ -355,7 +356,7 @@ module RUNCLASS36_module
             !>  THIS IS TARGETTED AS OVERLAND RUNOFF.
             !> Ported from CLASS 3.6.2.
             do i = il1, il2
-                if (ZSNOW(i) .GT. 10.0) then
+                if (ZSNOW(i) > 10.0) then
                     SNOROF = (ZSNOW(i) - 10.0)*cpv%RHOS(i)
                     WSNROF = cpv%WSNO(i)*SNOROF/cpv%SNO(i)
                     cdv%TROO(i) = &
