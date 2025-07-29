@@ -325,7 +325,7 @@ subroutine forcing_adjust( &
         do k = 1, nvals
             temp_frac(k) = temp(k)/grid_sum_temp(nml_grid_map(k))
         end do
-        if (itemp .ne. 0) then
+        if (itemp /= 0) then
             temp_adjusted = temp_adjusted*temp_frac
         end if
     end if
