@@ -113,8 +113,8 @@ program RUNMESH
     !> Constants.
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.5.1'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = 'r1861 pre-release'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.5.2'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = 'r1861 pre-release update 2'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
