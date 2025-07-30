@@ -189,8 +189,8 @@ C
                   EVPMAX(I)=RHOSNO(I)*ZSNOW(I)/DELT
               ELSE
                   KF(I)=6
-                  EVPMAX(I)=RHOW*(ZPOND(I)+(THLIQ(I,1)-THLMIN(I,1)) * 
-     1               DELZW(I,1)) / DELT
+                  EVPMAX(I)=RHOW*(ZPOND(I)+(THLIQ(I,1)-THLMIN(I,1))*
+     1               DELZW(I,1))/DELT
               ENDIF
           ENDIF
    50 CONTINUE
@@ -260,8 +260,8 @@ C
                   QSENS(I)=RHOAIR(I)*SPHAIR*CFLUX(I)*(TZERO(I)-
      1                TPOTA(I))
               ENDIF
-              EVAP(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QA(I))
-              IF (EVAP(I).GT.EVPMAX(I))   EVAP(I)=EVPMAX(I)
+              EVAP(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QA(I)) 
+              IF(EVAP(I).GT.EVPMAX(I)) EVAP(I)=EVPMAX(I)
               QEVAP(I)=CPHCH(I)*EVAP(I)      
               GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
               RESID(I)=QSWNET(I)+QLWIN(I)-QLWOUT(I)-QSENS(I)-QEVAP(I)-
@@ -373,7 +373,7 @@ C
                   ELSE
                       QEVAP(I)=RESID(I)*0.5
                   ENDIF
-                  if (IEVAP(I).EQ.0)   QEVAP(I)=0.0
+                  IF(IEVAP(I).EQ.0) QEVAP(I)=0.0
                   QSENS(I)=RESID(I)-QEVAP(I)
                   RESID(I)=0.
                   EVAP(I)=QEVAP(I)/CPHCH(I)
@@ -468,7 +468,7 @@ C
      1                TPOTA(I))
               ENDIF
               EVAP(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QA(I)) 
-              if (EVAP(I).GT.EVPMAX(I))   EVAP(I)=EVPMAX(I)
+              IF(EVAP(I).GT.EVPMAX(I)) EVAP(I)=EVPMAX(I)
               QEVAP(I)=CPHCH(I)*EVAP(I)       
               GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
               QMELT(I)=QSWNET(I)+QLWIN(I)-QLWOUT(I)-QSENS(I)-QEVAP(I)-
