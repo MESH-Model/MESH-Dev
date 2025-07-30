@@ -890,7 +890,7 @@ c      stop 'program aborted in flowinit @ 164'
 !        FLOW MAY HAVE BEEN ROUTED DOWN A TRIBUTARY OR
 !        THERE IS A GAUGE DOWNSTREAM
             nnx=next(n)
-            if(nnx.eq.0) cycle
+            if(nnx.eq.0)cycle
 
             msg1='a'
             if(iopt.ge.2)then
@@ -1169,7 +1169,7 @@ c      stop 'program aborted in flowinit @ 164'
 !mesh_io      write(51,9801)dacheck
 
       do n=1,naa
-         if (da(n).eq.0.0) cycle
+         if(da(n).eq.0.0)cycle
          i=yyy(n)
          j=xxx(n)
          ii=ibn(n)

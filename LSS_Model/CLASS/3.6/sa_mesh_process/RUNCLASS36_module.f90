@@ -355,7 +355,7 @@ module RUNCLASS36_module
             !>  THIS IS TARGETTED AS OVERLAND RUNOFF.
             !> Ported from CLASS 3.6.2.
             do i = il1, il2
-                if (ZSNOW(i) .GT. 10.0) then
+                if (ZSNOW(i) > 10.0) then
                     SNOROF = (ZSNOW(i) - 10.0)*cpv%RHOS(i)
                     WSNROF = cpv%WSNO(i)*SNOROF/cpv%SNO(i)
                     cdv%TROO(i) = &

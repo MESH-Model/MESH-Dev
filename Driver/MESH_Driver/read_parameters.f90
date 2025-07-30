@@ -612,7 +612,7 @@ subroutine read_parameters(fls, shd, ierr)
         end where
 
         !> Check for impermeable soils
-        !> ME changed the accurcy threshold from 0.001 to be the same as in CLASSB/BG.
+        !> ME changed the accuracy threshold from 0.001 to be the same as in CLASSB/BG.
         do j = 2, shd%lc%IGND
             where (pm%tile%sdep < (shd%lc%sl%ZBOT(j - 1) + 0.025) .and. pm%tile%sand(:, j) > -2.5)
                 pm%tile%sand(:, j) = -3.0
