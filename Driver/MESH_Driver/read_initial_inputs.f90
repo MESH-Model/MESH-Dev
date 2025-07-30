@@ -75,6 +75,7 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
     !> Assign default configuration
     SHDFILEFMT = 1
     SHDTOMAPFLAG = .false.
+    SHDPADOUTLETS = .false.
 
     !> Parse 'SHDFILEFLAG'.
     call parse(SHDFILEFLAG, ' ', args, n)
@@ -93,6 +94,8 @@ subroutine READ_INITIAL_INPUTS(fls, shd, release, ierr)
                     SHDFILEFMT = 5
                 case ('to_map')
                     SHDTOMAPFLAG = .true.
+                case ('pad_outlets')
+                    SHDPADOUTLETS = .true.
             end select
         end do
     end if
