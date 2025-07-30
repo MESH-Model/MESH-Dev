@@ -98,6 +98,21 @@ module basin_utilities
                     !> Map the array of 'Rank' in the desired X/Y order.
                     call map_dimensions(dat2_i, dat1_i, vs%grid%from_grid_xy, ierr)
 
+                    !> Add an extra subbasin or cell to pad all outlets.
+                    if (SHDPADOUTLETS) then
+
+                        !> Add an extra column in the 'x' direction.
+                        deallocate(dat2_i)
+                        x = size(vs%grid%from_grid_xy, 1)
+                        y = size(vs%grid%from_grid_xy, 2)
+                        allocate(dat2_i((x + 1), y))
+                        dat2_i = 0
+                        dat2_i(1:x, 1:y) = vs%grid%from_grid_xy
+
+                        !> Add an extra ID.
+                        dat2_i((x + 1), 1) = maxval(vs%grid%from_grid_xy) + 1
+                    end if
+
                     !> Count the number of active cells.
                     vs%cell_count = count(vs%grid%from_grid_xy > 0)
                     vs%grid%dim_length = vs%cell_count
@@ -450,6 +465,22 @@ module basin_utilities
             allocate(vs%basin)
             vs%basin%dim_name = 'basin'
             vs%basin%dim_length = vs%cell_count
+
+            !> Add an extra subbasin or cell to pad all outlets.
+            if (SHDPADOUTLETS) then
+
+                !> Summarize info to screen and output.
+                call print_info("'SHDPADOUTLETS' is active.")
+                n = vs%cell_count - 1
+                write(code, *) count(vs%grid%next_id(1:n) == 0)
+                message = "Re-routing outflows at " // trim(adjustl(code)) // " in-basin outlets to 'Rank "
+                write(code, *) vs%cell_count
+                message = message // trim(adjustl(code)) // "'."
+                call print_remark(message)
+
+                !> Change in-basin outlets to point to the added subbasin/cell.
+                where (vs%grid%next_id(1:n) == 0) vs%grid%next_id = vs%cell_count
+            end if
 
             !> Derive the number of points inside the basin.
             vs%active_cell_count = count(vs%grid%next_id /= 0)

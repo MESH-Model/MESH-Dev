@@ -216,4 +216,7 @@ module shd_variables
     !* SHDTOMAPFLAG: Option to create a WATFLOOD 'map' file from the drainage database.
     logical, save  :: SHDTOMAPFLAG = .false.
 
+    !* SHDPADOUTLETS: Option to add an extra subbasin or cell and pad all in-basin outlets.
+    logical, save :: SHDPADOUTLETS = .false.
+
 end module
