@@ -1958,18 +1958,29 @@ module parse_utilities
 
         !> Local variables.
         integer y, m, d, i, z
+        character(len=len(datetime)) :: datetime_local  ! Local copy of datetime (NOT a dummy argument)
         character(len = DEFAULT_FIELD_LENGTH) cdate, ctime
+
+        !> Initialize local variable for datetime_local
+        datetime_local = datetime
+
+        !> Replace 'T' with a space if present (ISO 8601 format).
+        do i = 1, len(datetime_local)
+            if (datetime_local(i:i) == 'T') then
+                datetime_local(i:i) = ' '
+            end if
+        end do
 
         !> Initialize return variable.
         istat = radix(istat)**pstat%NORMAL_STATUS
 
         !> Check dimensions of the variable.
-        if (len_trim(datetime) > len(cdate)) then
+        if (len_trim(datetime_local) > len(cdate)) then
             istat = radix(istat)**pstat%MISMATCHED_PRECISION
         else
 
             !> Assign to local variable.
-            cdate = adjustl(datetime)
+            cdate = adjustl(datetime_local)
         end if
 
         !> Compact the line.
