@@ -128,6 +128,8 @@ module irrigation_module
                             lqsum =  vs%tile%thlqsol(k, j)
                             if (lqsum < check)then ! check if sum of soil moisture is less than 50% of FC
                                 ir = (pm%tile%thfc(k, j) - lqsum)*vs%tile%dzsolhyd(k, j) ! calculate irrigation water to field capacity for each permeable soil depth
+                                ! use the following line if you want to adjust the irrigation demand by crop growth factor gro
+                                !ir = (pm%tile%thfc(k, j) - lqsum)*vs%tile%dzwat(k, j)*vs%tile%gro(k) ! calculate irrigation water to field capacity for each permeable soil depth, scaled by crop growth factor
                             else
                                 ir = 0.0
                             end if
@@ -202,6 +204,9 @@ module irrigation_module
 
                 !> If running over grids, check demand against available storage.
                 if (ro%RUNGRID) then
+                ! if you want free irrigation in which it is not limited by availablity, then comment the 'if' line above
+                ! and activate the 'if' line below
+                !if (ro%RUNGRID .and. .false.) then
 
                     !> Determine abstraction point source.
                     if (pm%tile%iabsp(k) > 0 .and. pm%tile%iabsp(k) <= fms%absp%n) then
