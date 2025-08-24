@@ -1256,11 +1256,24 @@ module mesh_io
                                 error_status = 1
                                 return
                             else
+                                !> Derive the start-time (from the first record of the 'time' variable).
                                 call nc4_get_time( &
                                     input_file%iunit, &
                                     year = input_file%series%start%year, month = input_file%series%start%month, &
                                     day = input_file%series%start%day, jday = input_file%series%start%jday, &
                                     hour = input_file%series%start%hour, minutes = input_file%series%start%minutes, &
+                                    time_shift = input_file%series%time_offset, &
+                                    ierr = ierr)
+                                if (ierr /= 0) then
+                                    error_status = 1
+                                    return
+                                end if
+                                ! > Derive the end-time (from the last record of the 'time' variable).
+                                call nc4_get_time_last( &
+                                    input_file%iunit, &
+                                    year = input_file%series%end%year, month = input_file%series%end%month, &
+                                    day = input_file%series%end%day, jday = input_file%series%end%jday, &
+                                    hour = input_file%series%end%hour, minutes = input_file%series%end%minutes, &
                                     time_shift = input_file%series%time_offset, &
                                     ierr = ierr)
                                 if (ierr /= 0) then
