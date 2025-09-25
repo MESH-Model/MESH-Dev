@@ -93,7 +93,7 @@ module reservoir
 
         !> Input variables.
         integer, intent(in) :: rank
-        
+
         !> Output variables.
         integer, intent(out) :: irsv
 
@@ -145,7 +145,7 @@ module reservoir
 
         !> Input variables.
         real(kind = 4), intent(in) :: icor                ! = resrv%inflowcorr
-        integer, intent(in) :: cse              ! = resrv%modeltype             ! if cse=1 inflow is not used in zone 3, else it is used 
+        integer, intent(in) :: cse                        ! = resrv%modeltype             ! if cse=1 inflow is not used in zone 3, else it is used
         real(kind = 4), intent(in) :: Ld                  ! = resrv%deadst
         real(kind = 4), dimension(:), intent(in) :: flowI ! = resrv%flowINF(1:2)          ! observed u/s inflow
         real(kind = 4), intent(in) :: smax                ! = resrv%SMAX                  ! maximum reservoir storage (m3)
@@ -157,8 +157,8 @@ module reservoir
         real(kind = 4), intent(in) :: qnorm               ! = resrv%Qnor(mId)
         real(kind = 4), intent(in) :: qnd                 ! = resrv%Qnd(mId)
         real(kind = 4), intent(in) :: Rx                  ! = 2*resrv%RXN*rnd + resrv%RXN ! Rx not inclued in the Matlab code, but added based on MESH code
-        integer, intent(in) :: t                ! = t                           ! current time-step
-        integer, intent(in) :: niter            ! = 40                          ! it was 1000 in the Matlab code but 40 in the MESH code
+        integer, intent(in) :: t                          ! = t                           ! current time-step
+        integer, intent(in) :: niter                      ! = 40                          ! it was 1000 in the Matlab code but 40 in the MESH code
         real(kind = 4), intent(in) :: dt                  ! = dt                          ! time-step length/duration
 
         !> Local variables.
@@ -201,6 +201,7 @@ module reservoir
 !-        integer            :: irsv, MT, i
 !-        real(kind = 4)               :: FU, LD, LC, LN, LF, RX, ICORR
         real(kind = 4) rnd
+        real(kind = 4) Rx
 
         !> Get random number.
         call random_number(rnd)         ! rnd sould be between 0.0 and 1.0
@@ -278,13 +279,14 @@ module reservoir
 
         !> Update local variable for inflow.
         resrv%flowINF(t) = flowIn
+        Rx = 2.0_4*resrv%RXN*rnd + resrv%RXN
 
         !> Call reservoir release routine.
         call SIMRES15( &
 
             !> Input variables.
             resrv%inflowcorr, &                  ! = icor
-            resrv%modeltype, &                   ! = cse     ! if cse=1 inflow is not used in zone 3, else it is used 
+            resrv%modeltype, &                   ! = cse     ! if cse=1 inflow is not used in zone 3, else it is used
             resrv%deadst, &                      ! = Ld
             resrv%flowINF(1:2), &                ! = flowI   ! observed u/s inflow
             resrv%SMAX, &                        ! = smax    ! maximum reservoir storage (m3)
@@ -295,7 +297,7 @@ module reservoir
             resrv%Qmin(mId), &                   ! = qmin
             resrv%Qnor(mId), &                   ! = qnorm
             resrv%Qnd(mId), &                    ! = qnd
-            (2.0_4*resrv%RXN*rnd + resrv%RXN), & ! = Rx      ! Rx not inclued in the Matlab code, but added based on MESH code
+            Rx, &                                ! = Rx      ! Rx not inclued in the Matlab code, but added based on MESH code
             t, &                                 ! = t       ! current time-step
             40, &                                ! = niter   ! it was 1000 in the Matlab code but 40 in the MESH code
             dt, &                                ! = dt      ! time-step length/duration
