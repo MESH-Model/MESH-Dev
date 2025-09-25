@@ -1958,7 +1958,7 @@ module parse_utilities
 
         !> Local variables.
         integer y, m, d, i, z
-        character(len=len(datetime)) :: datetime_local  ! Local copy of datetime (NOT a dummy argument)
+        character(len = len(datetime)) :: datetime_local  ! Local copy of datetime (NOT a dummy argument)
         character(len = DEFAULT_FIELD_LENGTH) cdate, ctime
 
         !> Initialize local variable for datetime_local
@@ -2041,3 +2041,4 @@ module parse_utilities
     end subroutine
 
 end module
+
