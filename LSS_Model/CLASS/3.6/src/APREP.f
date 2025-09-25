@@ -470,13 +470,15 @@ C
 C
           IF(IWF(I).EQ.0) THEN
               IF(ISAND(I,1).EQ.-4) THEN
-                  ZPLIMG(I)=0.001
+                  ZPLIMG(I)=MAX(0.001,ZPLMG0(I))
               ELSEIF(ISAND(I,1).EQ.-3) THEN
-                  ZPLIMG(I)=0.001
+                  ZPLIMG(I)=MAX(0.001,ZPLMG0(I))
               ELSE
-                  ZPLIMG(I)=0.002
+                  ZPLIMG(I)=MAX(0.002,ZPLMG0(I))
               ENDIF
-              IF(FGS(I).GT.0.0) THEN
+              IF(FGS(I).GT.0.0 .AND. ZPLMS0(I).GT.0.0) THEN
+                  ZPLMGS(I)=ZPLMS0(I)
+              ELSEIF(FGS(I).GT.0.0) THEN
                   ZPLMGS(I)=(ZPLIMG(I)*FSNOW(I)*(1.0-FCANMX(I,1)-
      1                      FCANMX(I,2)-FCANMX(I,3)-FCANMX(I,4))+
      2                      ZPLIMG(I)*(FSNOW(I)*FCANMX(I,3)-
@@ -485,13 +487,17 @@ C
               ELSE
                   ZPLMGS(I)=0.0
               ENDIF
-              IF(FC(I).GT.0.0) THEN
+              IF(FC(I).GT.0.0 .AND. ZPLMG0(I).GT.0.0) THEN
+                  ZPLIMC(I)=ZPLMG0(I)
+              ELSEIF(FC(I).GT.0.0) THEN
                   ZPLIMC(I)=(0.01*(FCAN(I,1)+FCAN(I,2))+0.003*
      1                      (FCAN(I,3)+FCAN(I,4)))/FC(I)
               ELSE
                   ZPLIMC(I)=0.0
               ENDIF
-              IF(FCS(I).GT.0.0) THEN
+              IF(FCS(I).GT.0.0 .AND. ZPLMS0(I).GT.0.0) THEN
+                  ZPLMCS(I)=ZPLMS0(I)
+              ELSEIF(FCS(I).GT.0.0) THEN
                   ZPLMCS(I)=(0.01*(FCANS(I,1)+FCANS(I,2))+0.003*
      1                      (FCANS(I,3)+FCANS(I,4)))/FCS(I)
               ELSE
