@@ -257,16 +257,19 @@ program RUNMESH
 !    NSL = shd%lc%IGND
 !    NML = shd%lc%NML
 
-    !> Initialize forcing files list, if provided
+    !> Initialize forcing files list, if provided.
     if (allocated(forcing_files_list)) then
-        !> Assign the position of the first forcing file to be read to `fpos`.
+
+        !> Assign the position of the first forcing file to be read.
         fpos = 1
+
         !> Read the forcing files and assign the first file in the list as
         !> the forcing file to be used for the initialization process.
-        call read_forcing_files_list(fpos=fpos, error_status=ierr)
+        call read_forcing_files_list(fpos = fpos, error_status = ierr)
+
         !> If there is any issues, abort.
         if (ierr /= 0) then
-            call print_error("Errors occurred reading the forcing files list.")
+            call print_error("An error occurred reading the forcing files list.")
             call program_abort()
         end if
     end if
@@ -957,8 +960,7 @@ program RUNMESH
     ENDDATE = .false.
     ENDDATA = .false.
 
-    !> Run the model for each time-step until the
-    !> end date or end of data is reached.
+    !> Run the model for each time-step until the end date or end of data is reached.
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
         !> If hit the end of forcing data, switch to the next forcing dataset file.
@@ -970,12 +972,10 @@ program RUNMESH
         end if
 
         if (ENDDATA) then
+
             !> Switch to the next forcing data file.
             fpos = fpos + 1
-            call switch_forcing_file( &
-                fpos=fpos, &
-                ENDDATA=ENDDATA, &
-                error_status=ierr)
+            call switch_forcing_file(fpos = fpos, ENDDATA = ENDDATA, error_status = ierr)
             if (ierr /= 0) then
                 call reset_tab()
                 call print_error("Errors occurred switching the forcing data files.")
@@ -994,7 +994,6 @@ program RUNMESH
                 call print_error("Errors occurred opening the forcing files.")
                 call program_abort()
             end if
-
         end if ! if (ENDDATA) then
 
         !> Reset output variables.

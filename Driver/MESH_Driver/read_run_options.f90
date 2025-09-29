@@ -380,8 +380,9 @@ subroutine READ_RUN_OPTIONS(fls, shd, ierr)
                     call parse_basinforcingflag(trim(line), error_status = z)
                 case ('BASINRECHARGEFLAG')
                     call parse_basinforcingflag(trim(line), error_status = z)
-                !> forcing_files_list is defined in the `input_forcing.f90` module file.
                 case ('FORCINGLIST')
+
+                    !> 'forcing_files_list' is defined in 'input_forcing' module.
                     if (.not. allocated(forcing_files_list)) then
                         allocate(forcing_files_list(1))
                         forcing_files_list%list_file%full_path = trim(adjustl(args(2))) // '.txt'

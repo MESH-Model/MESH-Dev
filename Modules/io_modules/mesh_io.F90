@@ -1256,7 +1256,8 @@ module mesh_io
                                 error_status = 1
                                 return
                             else
-                                !> Derive the start-time (from the first record of the 'time' variable).
+
+                                !> Get the start-time from the first record of the 'time' variable.
                                 call nc4_get_time( &
                                     input_file%iunit, &
                                     year = input_file%series%start%year, month = input_file%series%start%month, &
@@ -1268,7 +1269,8 @@ module mesh_io
                                     error_status = 1
                                     return
                                 end if
-                                ! > Derive the end-time (from the last record of the 'time' variable).
+
+                                !> Get the end-time from the last record of the 'time' variable.
                                 call nc4_get_time_last( &
                                     input_file%iunit, &
                                     year = input_file%series%end%year, month = input_file%series%end%month, &

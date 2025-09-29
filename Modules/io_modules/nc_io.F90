@@ -396,8 +396,7 @@ module nc_io
             ierr = 1
         else
 
-            !> Calculate the reference datetime in hours.
-            !> Converting Gregorian calendar date to Julian Day Number (JDN) 
+            !> Calculate the reference datetime in hours from Gregorian calendar date to Julian Day Number (JDN).
             nc4_time_from_date_components = &
                 real( &
                     (1461*(year + 4800 + (month - 14)/12))/4 + (367*(month - 2 - 12*((month - 14)/12)))/12 - &
@@ -698,6 +697,7 @@ module nc_io
             return
         end if
 
+        !> The last index is the length of the dimension.
         last_idx = dimlen
 
         !> Allocate array to read the last value.
@@ -732,7 +732,6 @@ module nc_io
         call nc4_date_components_from_time(t1_r8(1), year, month, day, jday, hour, minutes, seconds, ierr)
 
     end subroutine
-
 
     logical function nc4_inquire_attribute(iun, attribute_name, vid)
 
