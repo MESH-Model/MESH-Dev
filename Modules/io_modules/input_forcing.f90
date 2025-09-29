@@ -1317,7 +1317,9 @@ module input_forcing
     subroutine switch_forcing_file(fpos, ENDDATA, error_status)
 
         !> Modules.
+#ifdef NETCDF
         use nc_io
+#endif
 
         !> Input/output variables.
         !* ENDDATA: Flag indicating if the end of data has been reached
@@ -1345,6 +1347,7 @@ module input_forcing
             if (error_status /= 0) return
 
             !> Necessary preparations for switching files.
+#ifdef NETCDF
             do i = 1, size(forcing_files)
 
                 !> Close the previously opened file.
@@ -1356,6 +1359,12 @@ module input_forcing
                     forcing_files(i)%series%ipos = 1
                 end if
             end do
+#else
+
+            !> Print an error and abort if NetCDF is not enabled.
+            call print_error("A version of MESH compiled with the NetCDF library must be used to support 'FORCINGLIST'.")
+            call program_abort()
+#endif
         end if
 
         if (error_status /= 0) then
