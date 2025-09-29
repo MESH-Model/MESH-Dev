@@ -99,6 +99,7 @@ module file_types
         integer :: freq_interval = 0
         integer :: istep = 1
         type(io_datetime) start
+        type(io_datetime) end
         real :: time_offset = 0.0
         integer :: block_interval = 1
         integer :: iblock = 1
@@ -160,6 +161,19 @@ module file_types
         character(len = SHORT_FIELD_LENGTH), dimension(:, :), allocatable :: field_map
         type(field_overrides) overrides
         class(*), allocatable :: container
+    end type
+
+    !> Description:
+    !>  File list structure.
+    !>
+    !> Variables:
+    !*  ipos: Current position in the file list (start: 1).
+    !*  number_of_files: Number of files in the list.
+    type file_list
+        type(file_info) current_forcing_file
+        type(file_info) list_file
+        integer :: ipos = 0
+        integer :: number_of_files = 0
     end type
 
 end module

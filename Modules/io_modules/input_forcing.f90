@@ -5,6 +5,9 @@ module input_forcing
 
     implicit none
 
+    !* forcing_files_list: List of discontinuous forcing files.
+    type(file_list), dimension(:), allocatable, save :: forcing_files_list
+
     !* forcing_files: List of forcing files (of type 'io_file', private).
     type(io_file), dimension(:), allocatable, private, save :: forcing_files
 
@@ -1101,5 +1104,277 @@ module input_forcing
         end do
 
     end subroutine
+
+    !> Description:
+    !>  This subroutine reads a list of forcing files from a specified
+    !>  position in the list file.
+    subroutine read_forcing_files_list(fpos, error_status)
+
+        !> Modules.
+        use model_dates, only: ic
+
+        !> Input/output variables.
+        integer, intent(out) :: error_status
+        integer, intent(in) :: fpos
+
+        !> Local variables.
+        integer i, j
+        character(len = 2000) :: temp_line
+        character(len = 8) :: lineno
+
+        !> Status.
+        error_status = 0
+
+        !> Check if a list of forcing files are provided.
+        if (allocated(forcing_files_list)) then
+
+            !> If 'ipos' and 'number_of_files' are set to zero, initialize the process.
+            if (forcing_files_list(1)%ipos == 0 .and. forcing_files_list(1)%number_of_files == 0) then
+
+                !> Set the position of file counter to 1.
+                forcing_files_list(1)%ipos = 1
+
+                !> Print a message about using the forcing files list.
+                call print_message("READING: " // trim(forcing_files_list(1)%list_file%full_path))
+
+                !> Open the forcing files list.
+                open(&
+                    newunit = forcing_files_list(1)%list_file%iunit, &
+                    file = forcing_files_list(1)%list_file%full_path, &
+                    status = 'old', &
+                    action = 'read', &
+                    iostat = error_status)
+
+                !> If the file could not be opened, print an error message and return.
+                if (error_status /= 0) then
+                    call print_error("Cannot open the forcing files list: " // trim(forcing_files_list(1)%list_file%full_path))
+                    return
+                end if
+
+                !> Count the total number of lines in the file and assign it to 'number_of_files'.
+                rewind(forcing_files_list(1)%list_file%iunit)
+                forcing_files_list(1)%number_of_files = 0
+                do
+                    read(forcing_files_list(1)%list_file%iunit, '(A)', iostat = error_status) temp_line
+                    if (error_status /= 0) exit
+                    forcing_files_list(1)%number_of_files = forcing_files_list(1)%number_of_files + 1
+                end do
+            end if
+
+            !> Print an error if 'ipos' is larger than 'number_of_files'.
+            if (forcing_files_list(1)%ipos > forcing_files_list(1)%number_of_files) then
+                call print_error("The current position in the forcing files list exceeds the number of files.")
+                error_status = 1
+                return
+            end if
+
+            !> Revert back to the first line of the forcing files list.
+            rewind(forcing_files_list(1)%list_file%iunit)
+            if (forcing_files_list(1)%ipos == 1 .and. fpos == 1) then
+
+                !> If 'ipos' and 'fpos' are both 1, read the first line from the file.
+                read(forcing_files_list(1)%list_file%iunit, '(A)', iostat = error_status) temp_line
+
+                !> Error handling for reading the first line.
+                if (error_status /= 0) then
+                    call print_error("Error reading the forcing files list at line 1.")
+                    return
+                end if
+
+                !> Set the position to 1 since we are reading the first line.
+                forcing_files_list(1)%ipos = 1
+            else
+
+                !> Rewind the file to the beginning.
+                rewind(forcing_files_list(1)%list_file%iunit)
+
+                !> Read the next line from the file.
+                do i = 1, fpos
+                    read(forcing_files_list(1)%list_file%iunit, '(A)', iostat = error_status) temp_line
+                end do
+
+                !> Error handling for reading lines.
+                if (error_status /= 0) then
+                    write(lineno, *) forcing_files_list(1)%ipos
+                    call print_error("Error reading the forcing files list at line " // trim(adjustl(lineno)))
+                    return
+                end if
+
+                !> Save current position.
+                forcing_files_list(1)%ipos = fpos
+            end if
+
+            !> Error handling for empty lines.
+            if (error_status == 0) then
+                forcing_files_list(1)%current_forcing_file%full_path = trim(adjustl(temp_line))
+            end if
+
+            !> Print progress.
+            call print_message( &
+                message="Assigning '" // trim(forcing_files_list(1)%current_forcing_file%full_path) // "' as the forcing file.", &
+                level = 2)
+
+            !> Change the path names in 'forcing_files' to the current file in the list.
+            if (allocated(forcing_files)) then
+                if (size(forcing_files) > 0) then
+
+                    !> Iterate through the forcing files array.
+                    do i = 1, size(forcing_files)
+
+                        !> Rename the forcing file to the first file in the list.
+                        forcing_files(i)%file_info%full_path = forcing_files_list(1)%current_forcing_file%full_path
+                    end do
+                end if
+            else
+                call print_error("Forcing files array is not allocated properly.")
+                error_status = 1
+                return
+            end if
+        else
+
+            !> Print an error message if the forcing files list is not allocated.
+            call print_error("Forcing files list is not allocated. Please check the input configurations.")
+            error_status = 1
+            return
+        end if
+
+    end subroutine read_forcing_files_list
+
+    !> Description:
+    !>  This subroutine checks if the end of data has been reached in any
+    !>  forcing file. If the current model time exceeds the end time of any
+    !>  forcing file, it sets the ENDDATA flag to .true. and returns.
+    subroutine check_forcing_data_end(ENDDATA, error_status)
+
+        !> Modules.
+        use date_utilities, only: date_components_to_time
+        use model_dates, only: ic
+
+        !> Input/output variables.
+        !*  ENDDATA: Flag indicating if the end of data has been reached
+        !*    in any forcing file (.false.: not reached).
+        !*  error_status: Status returned by the operation (optional; 0: normal).
+        logical, intent(inout) :: ENDDATA
+        integer, intent(out) :: error_status
+
+        !* time variables.
+        real(kind=kind(0.0d0)) :: forcing_file_end_time
+        real(kind=kind(0.0d0)) :: now_time
+
+        !> Local variables.
+        integer i
+
+        !> Status.
+        error_status = 0
+
+        !> Check if the end of data has been reached in any forcing file.
+        do i = 1, size(forcing_files)
+
+            !> Forcing file end time in JDN.
+            forcing_file_end_time = date_components_to_time( &
+                forcing_files(i)%series%end%year, &
+                forcing_files(i)%series%end%month, &
+                forcing_files(i)%series%end%day, &
+                forcing_files(i)%series%end%hour, &
+                forcing_files(i)%series%end%minutes, &
+                error_status = error_status)
+
+            !> Check for errors in time conversion.
+            if (error_status /= 0) then
+                call print_error("An error occurred getting the end time of the forcing file in JDN.")
+                return
+            end if
+
+            !> Current time-step in JDN time.
+            now_time = date_components_to_time( &
+                ic%now%year, &
+                ic%now%month, &
+                ic%now%day, &
+                ic%now%hour, &
+                ic%now%mins, &
+                error_status = error_status)
+
+            !> Check for errors in time conversion.
+            if (error_status /= 0) then
+                call print_error("An error occurred getting the current model's time-step in JDN.")
+                return
+            end if
+
+            !> Check the end of data for the forcing file.
+            if (now_time > forcing_file_end_time) then
+                !> Indicate the end of data has been reached.
+                ENDDATA = .true.
+                exit
+            end if
+        end do
+
+    end subroutine check_forcing_data_end
+
+    !> Description:
+    !>  This subroutine switches to the next forcing file in the list.
+    !>  If the position exceeds the number of files, it sets ENDDATA to .true.
+    !>  and returns without reading a new file.
+    subroutine switch_forcing_file(fpos, ENDDATA, error_status)
+
+        !> Modules.
+#ifdef NETCDF
+        use nc_io
+#endif
+
+        !> Input/output variables.
+        !* ENDDATA: Flag indicating if the end of data has been reached
+        !* fpos: Position in the forcing files list to switch to.
+        !* error_status: Status returned by the operation (optional; 0: normal).
+        logical, intent(inout) :: ENDDATA
+        integer, intent(in) :: fpos
+        integer, intent(out) :: error_status
+
+        !> Local variables.
+        integer i
+
+        !> Status.
+        error_status = 0
+
+        !> If fpos turns out to be greater than number_of_files, set the ENDDATA to .true. and return.
+        if (fpos > forcing_files_list(1)%number_of_files) then
+            call print_warning("Reached the end of the forcing files list. No more files to read.")
+            ENDDATA = .true.
+            return
+        else
+
+            !> Read the next forcing file from the list.
+            call read_forcing_files_list(fpos, error_status)
+            if (error_status /= 0) return
+
+            !> Necessary preparations for switching files.
+#ifdef NETCDF
+            do i = 1, size(forcing_files)
+
+                !> Close the previously opened file.
+                call nc4_close_file(forcing_files(i)%file_info%iunit, forcing_files(i)%file_info%full_path, ierr = error_status)
+
+                !> Empty the fields from the forcing files as well as setting ipos to 1.
+                if (allocated(forcing_files(i)%fields)) then
+                    deallocate(forcing_files(i)%fields)
+                    forcing_files(i)%series%ipos = 1
+                end if
+            end do
+#else
+
+            !> Print an error and abort if NetCDF is not enabled.
+            call print_error("A version of MESH compiled with the NetCDF library must be used to support 'FORCINGLIST'.")
+            call program_abort()
+#endif
+        end if
+
+        if (error_status /= 0) then
+            call print_error("An error occurred while switching forcing files.")
+            return
+        end if
+
+        !> Reset ENDDATA to .false. to resume reading.
+        if (ENDDATA) ENDDATA = .false.
+
+    end subroutine switch_forcing_file
 
 end module

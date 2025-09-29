@@ -396,7 +396,7 @@ module nc_io
             ierr = 1
         else
 
-            !> Calculate the reference datetime in hours.
+            !> Calculate the reference datetime in hours from Gregorian calendar date to Julian Day Number (JDN).
             nc4_time_from_date_components = &
                 real( &
                     (1461*(year + 4800 + (month - 14)/12))/4 + (367*(month - 2 - 12*((month - 14)/12)))/12 - &
@@ -607,6 +607,104 @@ module nc_io
 
         !> Get the time value.
         ierr = nf90_get_var(iun, vid, t1_r8, start = start)
+        if (ierr /= 0) return
+
+        !> Add the value to the reference time (converting to units of 'hours').
+        i = index(vunits, 'since')
+        if (i > 1) then
+            select case (vunits(1:(i - 1)))
+                case ('seconds')
+                    t1_r8 = t0 + t1_r8/24.0/60.0/60.0
+                case ('minutes')
+                    t1_r8 = t0 + t1_r8/24.0/60.0
+                case ('hours')
+                    t1_r8 = t0 + t1_r8/24.0
+                case ('days')
+                    t1_r8 = t0 + t1_r8
+                case default
+                    call print_error( &
+                        "Unsupported units for the '" // trim(vname) // "' variable. " // &
+                        "The units should be in the format: [seconds/minutes/hours/days] since yyyy/MM/dd HH:mm:ss[.SSSSSS]")
+                    ierr = 1
+                    return
+            end select
+        end if
+
+        !> Calculate the components.
+        call nc4_date_components_from_time(t1_r8(1), year, month, day, jday, hour, minutes, seconds, ierr)
+
+    end subroutine
+
+    subroutine nc4_get_time_last( &
+        iun, &
+        tid, reference_time, units, name_time, time_shift, &
+        year, month, day, jday, hour, minutes, seconds, &
+        ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: tid
+        real(kind = EightByteReal), intent(in), optional :: reference_time
+        character(len = *), intent(in), optional :: units
+        character(len = *), intent(in), optional :: name_time
+        real, intent(in), optional :: time_shift
+
+        !> Output variables (optional).
+        integer, intent(out), optional :: year, month, day, jday, hour, minutes, seconds
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) vname, vunits, field, code
+        integer i, vid, dimids(NF90_MAX_VAR_DIMS), ndims, dimlen, last_idx
+        real(kind = EightByteReal), allocatable :: t1_r8(:)
+        real(kind = EightByteReal) t0
+
+        !> Set the variable name.
+        if (present(name_time)) then
+            vname = trim(name_time)
+        else
+            vname = 'time'
+        end if
+
+        !> Get the reference time and variables (if not provided).
+        if (.not. present(tid) .or. .not. present(reference_time) .or. .not. present(units)) then
+            call nc4_get_reference_time(iun, vname, time_shift, tid = vid, units = vunits, reference_time = t0, ierr = ierr)
+            if (ierr /= 0) return
+        end if
+
+        !> Assign optional variables.
+        if (present(tid)) vid = tid
+        if (present(units)) vunits = units
+        if (present(reference_time)) t0 = reference_time
+
+        !> Get dimension info for the time variable.
+        ierr = nf90_inquire_variable(iun, vid, ndims = ndims, dimids = dimids)
+        if (ierr /= NF90_NOERR .or. ndims < 1) then
+            call print_error("Unable to get time variable dimensions.")
+            ierr = 1
+            return
+        end if
+
+        !> Get the length of the time dimension (assume first dimension is time).
+        ierr = nf90_inquire_dimension(iun, dimids(1), len = dimlen)
+        if (ierr /= NF90_NOERR) then
+            call print_error("Unable to get time dimension length.")
+            ierr = 1
+            return
+        end if
+
+        !> The last index is the length of the dimension.
+        last_idx = dimlen
+
+        !> Allocate array to read the last value.
+        allocate(t1_r8(1))
+
+        !> Read the last time value.
+        ierr = nf90_get_var(iun, vid, t1_r8, start = (/last_idx/), count = (/1/))
         if (ierr /= 0) return
 
         !> Add the value to the reference time (converting to units of 'hours').
