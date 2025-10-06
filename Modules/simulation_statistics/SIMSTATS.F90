@@ -202,7 +202,7 @@ module SIMSTATS
         if (.not. nad > 0) return
 
         !> Calculate BIAS.
-        bias = 100.0*sum(sim(ilf:n) - obs(ilf:n), mask = obs(ilf:n) > 0.0) / (sum(obs(ilf:n), mask = obs(ilf:n) >= 0.0))
+        bias = 100.0*sum(sim(ilf:n) - obs(ilf:n), mask = obs(ilf:n) >= 0.0) / (sum(obs(ilf:n), mask = obs(ilf:n) >= 0.0))
 
         !> Calculate NSD.
         obsdm = sum(obs(ilf:n), mask = obs(ilf:n) >= 0.0)/nad
@@ -270,7 +270,7 @@ module SIMSTATS
             days_in_year = is_leap_year(adj_year)
             end_day = min(start_day + days_in_year - adj_jday, n)
             if (sum(sim(start_day:end_day)) >= 0.0 .and. end_day - start_day + 1 > 200) then
-                ipo = maxloc(sim(start_day:end_day)) !, mask = sim(start_day:end_day) >= 0.0)
+                ipo = maxloc(sim(start_day:end_day))
                 errtp = ipo(1)
                 ycount = ycount + 1
             else
@@ -295,7 +295,7 @@ module SIMSTATS
                 do k = start_day, end_day
                     if (obs(k) >= 0.0) tcom_obs = tcom_obs + (k - start_day + 1)*obs(k)
                 end do
-                tcom_obs = tcom_obs/sum(obs(start_day:end_day), mask = sim(start_day:end_day) >= 0.0)
+                tcom_obs = tcom_obs/sum(obs(start_day:end_day), mask = obs(start_day:end_day) >= 0.0)
                 tcom_sum = tcom_sum + tcom_obs
                 ycount = ycount + 1
             end if
@@ -338,7 +338,7 @@ module SIMSTATS
             min_cum_sum = 1.0E38
             onset_day = 0.0
             if (sum(obs(start_day:end_day)) >= 0.0 .and. end_day - start_day + 1 > 200) then
-                mean_val = sum(obs(start_day:end_day), mask = sim(start_day:end_day) >= 0.0)/(end_day - start_day + 1)
+                mean_val = sum(obs(start_day:end_day), mask = obs(start_day:end_day) >= 0.0)/(end_day - start_day + 1)
                 do k = start_day, end_day
                     if (obs(k) >= 0.0) cum_sum = cum_sum + (obs(k) - mean_val)
                     if (cum_sum < min_cum_sum) then
