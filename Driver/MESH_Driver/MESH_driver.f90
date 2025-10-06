@@ -113,8 +113,8 @@ program RUNMESH
     !> Constants.
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.5.2'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = 'r1861 pre-release update 2'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.5'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1.5.3'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -176,6 +176,7 @@ program RUNMESH
     !> Variables for program run times.
     real startprog, endprog
     integer dat(8)
+    integer :: fpos
 
     !> For reading arguments from the command line.
     character(500) fl_listMesh
@@ -255,6 +256,23 @@ program RUNMESH
 !    NTYPE = shd%lc%NTYPE
 !    NSL = shd%lc%IGND
 !    NML = shd%lc%NML
+
+    !> Initialize forcing files list, if provided.
+    if (allocated(forcing_files_list)) then
+
+        !> Assign the position of the first forcing file to be read.
+        fpos = 1
+
+        !> Read the forcing files and assign the first file in the list as
+        !> the forcing file to be used for the initialization process.
+        call read_forcing_files_list(fpos = fpos, error_status = ierr)
+
+        !> If there is any issues, abort.
+        if (ierr /= 0) then
+            call print_error("An error occurred reading the forcing files list.")
+            call program_abort()
+        end if
+    end if
 
     !> Initialize climate forcing module.
     if (ro%RUNCLIM) then
@@ -942,7 +960,41 @@ program RUNMESH
     ENDDATE = .false.
     ENDDATA = .false.
 
+    !> Run the model for each time-step until the end date or end of data is reached.
     do while (.not. ENDDATE .and. .not. ENDDATA)
+
+        !> If hit the end of forcing data, switch to the next forcing dataset file.
+        call check_forcing_data_end(ENDDATA, ierr)
+        if (ierr /= 0) then
+            call reset_tab()
+            call print_error("Errors occurred checking the forcing data end date.")
+            call program_abort()
+        end if
+
+        if (ENDDATA) then
+
+            !> Switch to the next forcing data file.
+            fpos = fpos + 1
+            call switch_forcing_file(fpos = fpos, ENDDATA = ENDDATA, error_status = ierr)
+            if (ierr /= 0) then
+                call reset_tab()
+                call print_error("Errors occurred switching the forcing data files.")
+                call program_abort()
+            end if
+
+            !> If no switch happened and the end of available data is reached, exit.
+            if (ENDDATA) then
+                exit
+            end if
+
+            !> Read the new file(s).
+            call open_input_forcing_files(ierr)
+            if (ierr /= 0) then
+                call reset_tab()
+                call print_error("Errors occurred opening the forcing files.")
+                call program_abort()
+            end if
+        end if ! if (ENDDATA) then
 
         !> Reset output variables.
         call output_variables_reset(shd)
@@ -1466,3 +1518,4 @@ program RUNMESH
     call program_end()
 
 end program
+
