@@ -114,7 +114,7 @@ program RUNMESH
     !*  RELEASE: MESH family/program release.
     !*  VERSION: MESH_DRIVER version.
     character(len = DEFAULT_FIELD_LENGTH), parameter :: RELEASE = '1.5'
-    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1.5.3.1'
+    character(len = DEFAULT_FIELD_LENGTH), parameter :: VERSION = '1.5.4'
 
     !> Local variables.
     character(len = DEFAULT_LINE_LENGTH) RELEASE_STRING
@@ -1523,5 +1523,6 @@ program RUNMESH
     call program_end()
 
 end program
+
 
 
