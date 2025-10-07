@@ -963,38 +963,43 @@ program RUNMESH
     !> Run the model for each time-step until the end date or end of data is reached.
     do while (.not. ENDDATE .and. .not. ENDDATA)
 
-        !> If hit the end of forcing data, switch to the next forcing dataset file.
-        call check_forcing_data_end(ENDDATA, ierr)
-        if (ierr /= 0) then
-            call reset_tab()
-            call print_error("Errors occurred checking the forcing data end date.")
-            call program_abort()
-        end if
+        !> Check if using a forcing file list before reading data.
+        if (allocated(forcing_files_list)) then
 
-        if (ENDDATA) then
-
-            !> Switch to the next forcing data file.
-            fpos = fpos + 1
-            call switch_forcing_file(fpos = fpos, ENDDATA = ENDDATA, error_status = ierr)
+            !> Check if at the end of forcing data to switch to the next file.
+            call check_forcing_data_end(ENDDATA, ierr)
             if (ierr /= 0) then
                 call reset_tab()
-                call print_error("Errors occurred switching the forcing data files.")
-                call program_abort()
-            end if
+                call print_error("An errors occurred checking the forcing data end date.")
 
-            !> If no switch happened and the end of available data is reached, exit.
-            if (ENDDATA) then
+                !> Flag end-od-data and exit the loop on error.
+                ENDDATA = .true.
                 exit
-            end if
+            else if (ENDDATA) then
 
-            !> Read the new file(s).
-            call open_input_forcing_files(ierr)
-            if (ierr /= 0) then
-                call reset_tab()
-                call print_error("Errors occurred opening the forcing files.")
-                call program_abort()
+                !> Switch to the next forcing data file.
+                fpos = fpos + 1
+                call switch_forcing_file(fpos = fpos, ENDDATA = ENDDATA, error_status = ierr)
+                if (ierr /= 0) then
+                    call reset_tab()
+                    call print_error("Errors occurred switching the forcing data files.")
+                    call program_abort()
+                end if
+
+                !> If no switch happened and the end of available data is reached, exit.
+                if (ENDDATA) then
+                    exit
+                end if
+
+                !> Open the next data file(s).
+                call open_input_forcing_files(ierr)
+                if (ierr /= 0) then
+                    call reset_tab()
+                    call print_error("Errors occurred opening the forcing files.")
+                    call program_abort()
+                end if
             end if
-        end if ! if (ENDDATA) then
+        end if
 
         !> Reset output variables.
         call output_variables_reset(shd)
