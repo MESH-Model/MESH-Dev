@@ -2594,24 +2594,24 @@ module mesh_io
             if (i == input_field%mapping%time_order) then
 
                 !> Set an initial index to the 'time' dimension.
-                if (associated(vs%grid)) input_field%mapping%cell_map(i, :) = 1
-                if (associated(vs%tile)) input_field%mapping%tile_map(i, :) = 1
+                if (allocated(input_field%mapping%cell_map)) input_field%mapping%cell_map(i, :) = 1
+                if (allocated(input_field%mapping%tile_map)) input_field%mapping%tile_map(i, :) = 1
             else if (dim_lengths(i) == 1) then
 
                 !> Allow a map if the size of the unmapped dimensions is one.
-                if (associated(vs%grid)) then
+                if (allocated(input_field%mapping%cell_map)) then
                     if (all(input_field%mapping%cell_map(i, :) == 0)) input_field%mapping%cell_map(i, :) = 1
                 end if
-                if (associated(vs%tile)) then
+                if (allocated(input_field%mapping%tile_map)) then
                     if (all(input_field%mapping%tile_map(i, :) == 0)) input_field%mapping%tile_map(i, :) = 1
                 end if
             else
 
                 !> Check for unassigned field.
-                if (associated(vs%grid)) then
+                if (allocated(input_field%mapping%cell_map)) then
                     if (all(input_field%mapping%cell_map(i, :) == 0)) error_status = 1
                 end if
-                if (associated(vs%tile)) then
+                if (allocated(input_field%mapping%tile_map)) then
                     if (all(input_field%mapping%tile_map(i, :) == 0)) error_status = 1
                 end if
             end if
@@ -2724,7 +2724,8 @@ module mesh_io
         end if
 
         !> Special conditions not covered by mapping alone.
-        if (allocated(input_field%mapping%cell_map) .and. allocated(input_field%mapping%tile_map)) then
+        if ((.not. allocated(input_field%mapping%cell_map) .and. allocated(input_field%mapping%mapped_to_cell)) .and. &
+            allocated(input_field%mapping%tile_map)) then
             select type (cell => input_field%mapping%mapped_to_cell)
                 type is (model_variable_real1d)
                     select type (tile => input_field%mapping%mapped_to_tile)

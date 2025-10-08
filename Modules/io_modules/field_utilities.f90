@@ -6781,10 +6781,10 @@ module field_utilities
         error_status = 0
 
         !> Assign field.
-        if (allocated(input_field%mapping%mapped_to_cell)) then
+        if (allocated(input_field%mapping%cell_map)) then
             call assign_mapped_value(input_field, input_field%mapping%mapped_to_cell, input_field%mapping%cell_map, error_status)
         end if
-        if (allocated(input_field%mapping%mapped_to_tile)) then
+        if (allocated(input_field%mapping%tile_map)) then
             call assign_mapped_value(input_field, input_field%mapping%mapped_to_tile, input_field%mapping%tile_map, error_status)
         end if
 
