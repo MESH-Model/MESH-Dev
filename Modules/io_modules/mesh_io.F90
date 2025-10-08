@@ -2554,6 +2554,12 @@ module mesh_io
                     input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_Y), :) = vs%tile%from_grid_y
                 end if
             else if (input_field%mapping%mapped_dim_order(MAP_ORDER_M) > 0) then
+                if (allocated(input_field%mapping%cell_map)) then
+                    call print_warning( &
+                        "The variable '" // trim(input_field%label) // "' cannot be mapped from the elemental dimension '" // &
+                        trim(DIM_NAME_GRU) // "' to '" // trim(DIM_NAME_SUBBASIN) // "' or '" // trim(DIM_NAME_CELL) // "'.")
+                    deallocate(input_field%mapping%cell_map)
+                end if
                 if (allocated(input_field%mapping%tile_map)) then
                     input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_M), :) = vs%tile%from_gru
                 end if
@@ -2581,6 +2587,13 @@ module mesh_io
                     input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_B), :) = 1
                 end if
             else if (input_field%mapping%mapped_dim_order(MAP_ORDER_G) > 0) then
+                if (allocated(input_field%mapping%cell_map)) then
+                    call print_warning( &
+                        "The variable '" // trim(input_field%label) // "' cannot be mapped from the elemental dimension '" // &
+                        trim(DIM_NAME_LANDTILE) // "' to '" // &
+                        trim(DIM_NAME_SUBBASIN) // "' or '" // trim(DIM_NAME_CELL) // "'.")
+                    deallocate(input_field%mapping%cell_map)
+                end if
                 if (allocated(input_field%mapping%tile_map)) then
                     do j = 1, vs%tile%dim_length
                         input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_G), j) = j
