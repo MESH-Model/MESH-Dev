@@ -491,6 +491,10 @@ module field_utilities
         class(*) output_field(:, :, :, :, :)
         integer, intent(out) :: error_status
 
+        !> Local variables.
+        real rhuge
+        integer ihuge
+
         !> Compare the shapes of the input and output fields.
         if (any(shape(input_field) /= shape(output_field))) then
             error_status = 1
@@ -508,10 +512,12 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        where (input_field > huge(output_field))
-                            output_field = huge(output_field)
-                        elsewhere (input_field < -huge(output_field))
-                            output_field = -huge(output_field)
+                        ihuge = huge(output_field)
+                        rhuge = real(ihuge)
+                        where (input_field > rhuge)
+                            output_field = ihuge
+                        elsewhere (input_field < -rhuge)
+                            output_field = -ihuge
                         elsewhere
                             output_field = int(input_field)
                         end where
@@ -540,6 +546,10 @@ module field_utilities
         class(*) output_field(:, :, :, :)
         integer, intent(out) :: error_status
 
+        !> Local variables.
+        real rhuge
+        integer ihuge
+
         !> Compare the shapes of the input and output fields.
         if (any(shape(input_field) /= shape(output_field))) then
             error_status = 1
@@ -557,10 +567,12 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        where (input_field > huge(output_field))
-                            output_field = huge(output_field)
-                        elsewhere (input_field < -huge(output_field))
-                            output_field = -huge(output_field)
+                        ihuge = huge(output_field)
+                        rhuge = real(ihuge)
+                        where (input_field > rhuge)
+                            output_field = ihuge
+                        elsewhere (input_field < -rhuge)
+                            output_field = -ihuge
                         elsewhere
                             output_field = int(input_field)
                         end where
@@ -589,6 +601,10 @@ module field_utilities
         class(*) output_field(:, :, :)
         integer, intent(out) :: error_status
 
+        !> Local variables.
+        real rhuge
+        integer ihuge
+
         !> Compare the shapes of the input and output fields.
         if (any(shape(input_field) /= shape(output_field))) then
             error_status = 1
@@ -606,10 +622,12 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        where (input_field > huge(output_field))
-                            output_field = huge(output_field)
-                        elsewhere (input_field < -huge(output_field))
-                            output_field = -huge(output_field)
+                        ihuge = huge(output_field)
+                        rhuge = real(ihuge)
+                        where (input_field > rhuge)
+                            output_field = ihuge
+                        elsewhere (input_field < -rhuge)
+                            output_field = -ihuge
                         elsewhere
                             output_field = int(input_field)
                         end where
@@ -638,6 +656,10 @@ module field_utilities
         class(*) output_field(:, :)
         integer, intent(out) :: error_status
 
+        !> Local variables.
+        real rhuge
+        integer ihuge
+
         !> Compare the shapes of the input and output fields.
         if (any(shape(input_field) /= shape(output_field))) then
             error_status = 1
@@ -655,10 +677,12 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        where (input_field > huge(output_field))
-                            output_field = huge(output_field)
-                        elsewhere (input_field < -huge(output_field))
-                            output_field = -huge(output_field)
+                        ihuge = huge(output_field)
+                        rhuge = real(ihuge)
+                        where (input_field > rhuge)
+                            output_field = ihuge
+                        elsewhere (input_field < -rhuge)
+                            output_field = -ihuge
                         elsewhere
                             output_field = int(input_field)
                         end where
@@ -688,7 +712,8 @@ module field_utilities
         integer, intent(out) :: error_status
 
         !> Local variables.
-        integer i, ierr
+        real rhuge
+        integer ihuge, i, ierr
 
         !> Compare the shapes of the input and output fields.
         if (any(shape(input_field) /= shape(output_field))) then
@@ -707,10 +732,12 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        where (input_field > huge(output_field))
-                            output_field = huge(output_field)
-                        elsewhere (input_field < -huge(output_field))
-                            output_field = -huge(output_field)
+                        ihuge = huge(output_field)
+                        rhuge = real(ihuge)
+                        where (input_field > rhuge)
+                            output_field = ihuge
+                        elsewhere (input_field < -rhuge)
+                            output_field = -ihuge
                         elsewhere
                             output_field = int(input_field)
                         end where
@@ -777,7 +804,8 @@ module field_utilities
         integer, intent(out) :: error_status
 
         !> Local variables.
-        integer ierr
+        real rhuge
+        integer ihuge, ierr
 
         !> Return status.
         error_status = 0
@@ -789,10 +817,12 @@ module field_utilities
                     type is (real)
                         output_field = input_field
                     type is (integer)
-                        if (input_field > huge(output_field)) then
-                            output_field = huge(output_field)
-                        else if (input_field < -huge(output_field)) then
-                            output_field = -huge(output_field)
+                        ihuge = huge(output_field)
+                        rhuge = real(ihuge)
+                        if (input_field > rhuge) then
+                            output_field = ihuge
+                        else if (input_field < -rhuge) then
+                            output_field = -ihuge
                         else
                             output_field = int(input_field)
                         end if
