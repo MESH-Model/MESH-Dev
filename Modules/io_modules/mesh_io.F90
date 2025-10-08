@@ -2539,96 +2539,96 @@ module mesh_io
         if (.not. allocated(dim_lengths)) return
 
         !> Map known dimensions.
-        do i = 1, size(input_field%mapping%mapped_dim_order)
+        associate (field_mapping => input_field%mapping)
+            associate (dim_order => field_mapping%mapped_dim_order)
 
-            !> Identify the map.
-            if ( &
-                input_field%mapping%mapped_dim_order(MAP_ORDER_X) > 0 .and. &
-                input_field%mapping%mapped_dim_order(MAP_ORDER_Y) > 0) then
-                if (allocated(input_field%mapping%cell_map)) then
-                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_X), :) = vs%grid%from_grid_x
-                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_Y), :) = vs%grid%from_grid_y
+                !> Identify the map.
+                if (dim_order(MAP_ORDER_X) > 0 .and. dim_order(MAP_ORDER_Y) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        field_mapping%cell_map(dim_order(MAP_ORDER_X), :) = vs%grid%from_grid_x
+                        field_mapping%cell_map(dim_order(MAP_ORDER_Y), :) = vs%grid%from_grid_y
+                    end if
+                    if (allocated(input_field%mapping%tile_map)) then
+                        field_mapping%tile_map(dim_order(MAP_ORDER_X), :) = vs%tile%from_grid_x
+                        field_mapping%tile_map(dim_order(MAP_ORDER_Y), :) = vs%tile%from_grid_y
+                    end if
+                else if (dim_order(MAP_ORDER_M) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        call print_warning( &
+                            "The variable '" // trim(input_field%label) // "' cannot be mapped from the elemental dimension '" // &
+                            trim(DIM_NAME_GRU) // "' to '" // trim(DIM_NAME_SUBBASIN) // "' or '" // trim(DIM_NAME_CELL) // "'.")
+                        deallocate(field_mapping%cell_map)
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        field_mapping%tile_map(dim_order(MAP_ORDER_M), :) = vs%tile%from_gru
+                    end if
+                else if (dim_order(MAP_ORDER_K) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        field_mapping%cell_map(dim_order(MAP_ORDER_K), :) = vs%grid%from_riverclass
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        field_mapping%tile_map(dim_order(MAP_ORDER_K), :) = vs%tile%from_riverclass
+                    end if
+                else if (dim_order(MAP_ORDER_N) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        do j = 1, vs%grid%dim_length
+                            field_mapping%cell_map(dim_order(MAP_ORDER_N), j) = j
+                        end do
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        field_mapping%tile_map(dim_order(MAP_ORDER_N), :) = vs%tile%from_cell
+                    end if
+                else if (dim_order(MAP_ORDER_B) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        field_mapping%cell_map(dim_order(MAP_ORDER_B), :) = 1
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        field_mapping%tile_map(dim_order(MAP_ORDER_B), :) = 1
+                    end if
+                else if (dim_order(MAP_ORDER_G) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        call print_warning( &
+                            "The variable '" // trim(input_field%label) // "' cannot be mapped from the elemental dimension '" // &
+                            trim(DIM_NAME_LANDTILE) // "' to '" // &
+                            trim(DIM_NAME_SUBBASIN) // "' or '" // trim(DIM_NAME_CELL) // "'.")
+                        deallocate(field_mapping%cell_map)
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        do j = 1, vs%tile%dim_length
+                            field_mapping%tile_map(dim_order(MAP_ORDER_G), j) = j
+                        end do
+                    end if
                 end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_X), :) = vs%tile%from_grid_x
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_Y), :) = vs%tile%from_grid_y
-                end if
-            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_M) > 0) then
-                if (allocated(input_field%mapping%cell_map)) then
-                    call print_warning( &
-                        "The variable '" // trim(input_field%label) // "' cannot be mapped from the elemental dimension '" // &
-                        trim(DIM_NAME_GRU) // "' to '" // trim(DIM_NAME_SUBBASIN) // "' or '" // trim(DIM_NAME_CELL) // "'.")
-                    deallocate(input_field%mapping%cell_map)
-                end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_M), :) = vs%tile%from_gru
-                end if
-            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_K) > 0) then
-                if (allocated(input_field%mapping%cell_map)) then
-                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_K), :) = vs%grid%from_riverclass
-                end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_K), :) = vs%tile%from_riverclass
-                end if
-            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_N) > 0) then
-                if (allocated(input_field%mapping%cell_map)) then
-                    do j = 1, vs%grid%dim_length
-                        input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_N), j) = j
-                    end do
-                end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_N), :) = vs%tile%from_cell
-                end if
-            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_B) > 0) then
-                if (allocated(input_field%mapping%cell_map)) then
-                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_B), :) = 1
-                end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_B), :) = 1
-                end if
-            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_G) > 0) then
-                if (allocated(input_field%mapping%cell_map)) then
-                    call print_warning( &
-                        "The variable '" // trim(input_field%label) // "' cannot be mapped from the elemental dimension '" // &
-                        trim(DIM_NAME_LANDTILE) // "' to '" // &
-                        trim(DIM_NAME_SUBBASIN) // "' or '" // trim(DIM_NAME_CELL) // "'.")
-                    deallocate(input_field%mapping%cell_map)
-                end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    do j = 1, vs%tile%dim_length
-                        input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_G), j) = j
-                    end do
-                end if
-            end if
-        end do
+            end associate
 
-        !> Check for unmapped dimensions.
-        do i = 1, size(dim_lengths)
-            if (i == input_field%mapping%time_order) then
+            !> Check for unmapped dimensions.
+            do i = 1, size(dim_lengths)
+                if (i == field_mapping%time_order) then
 
-                !> Set an initial index to the 'time' dimension.
-                if (allocated(input_field%mapping%cell_map)) input_field%mapping%cell_map(i, :) = 1
-                if (allocated(input_field%mapping%tile_map)) input_field%mapping%tile_map(i, :) = 1
-            else if (dim_lengths(i) == 1) then
+                    !> Set an initial index to the 'time' dimension.
+                    if (allocated(field_mapping%cell_map)) field_mapping%cell_map(i, :) = 1
+                    if (allocated(field_mapping%tile_map)) field_mapping%tile_map(i, :) = 1
+                else if (dim_lengths(i) == 1) then
 
-                !> Allow a map if the size of the unmapped dimensions is one.
-                if (allocated(input_field%mapping%cell_map)) then
-                    if (all(input_field%mapping%cell_map(i, :) == 0)) input_field%mapping%cell_map(i, :) = 1
-                end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    if (all(input_field%mapping%tile_map(i, :) == 0)) input_field%mapping%tile_map(i, :) = 1
-                end if
-            else
+                    !> Allow a map if the size of the unmapped dimensions is one.
+                    if (allocated(field_mapping%cell_map)) then
+                        if (all(field_mapping%cell_map(i, :) == 0)) field_mapping%cell_map(i, :) = 1
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        if (all(field_mapping%tile_map(i, :) == 0)) field_mapping%tile_map(i, :) = 1
+                    end if
+                else
 
-                !> Check for unassigned field.
-                if (allocated(input_field%mapping%cell_map)) then
-                    if (all(input_field%mapping%cell_map(i, :) == 0)) error_status = 1
+                    !> Check for unassigned field.
+                    if (allocated(field_mapping%cell_map)) then
+                        if (all(field_mapping%cell_map(i, :) == 0)) error_status = 1
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        if (all(field_mapping%tile_map(i, :) == 0)) error_status = 1
+                    end if
                 end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    if (all(input_field%mapping%tile_map(i, :) == 0)) error_status = 1
-                end if
-            end if
-        end do
+            end do
+        end associate
 
     end subroutine
 
