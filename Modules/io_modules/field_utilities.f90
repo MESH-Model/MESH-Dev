@@ -3040,8 +3040,22 @@ module field_utilities
                 flattened_dims(j) = i
                 j = j + 1
             else
-                if (present(targeted_dims)) targeted_dims(k) = i
-                if (present(target_size)) target_size(k) = field_shape(i)
+                if (present(targeted_dims)) then
+                    if (k > size(targeted_dims)) then
+                        flattened_dims = 0
+                        exit
+                    else
+                        targeted_dims(k) = i
+                    end if
+                end if
+                if (present(target_size)) then
+                    if (k > size(targeted_dims)) then
+                        flattened_dims = 0
+                    else
+                        target_size(k) = field_shape(i)
+                        exit
+                    end if
+                end if
                 k = k + 1
             end if
         end do
