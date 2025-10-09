@@ -221,7 +221,7 @@ module basin_utilities
                                 lat_xy(:, 1) = pj%lat
                             else if (size(pj%lat) == vs%grid_y) then
                                 do y = 1, size(pj%lat)
-                                    lat_xy(:, y) = pj%lat
+                                    lat_xy(:, y) = pj%lat(y)
                                 end do
                             end if
                         end if
@@ -248,7 +248,7 @@ module basin_utilities
                                 lon_xy(:, 1) = pj%lon
                             else if (size(pj%lon) == vs%grid_x) then
                                 do x = 1, size(pj%lon)
-                                    lon_xy(x, :) = pj%lon
+                                    lon_xy(x, :) = pj%lon(x)
                                 end do
                             end if
                         end if
@@ -278,52 +278,65 @@ module basin_utilities
             end if
         end do
 
+        !> Derive 'lat' and 'lon' (for file formats that use lower-left reference and equidistant projection).
+        if (pj%llc_y /= 0.0 .and. pj%dy /= 0.0 .and. pj%llc_x /= 0.0 .and. pj%dx /= 0.0) then
+
+            !> Derive reference 'lat' and 'lon' (to support outputs in other formats).
+            if (allocated(pj%lat)) deallocate(pj%lat)
+            if (allocated(pj%lon)) deallocate(pj%lon)
+            allocate(pj%lat(vs%grid_y), pj%lon(vs%grid_x))
+            do y = 1, vs%grid_y
+                pj%lat(y) = pj%llc_y + pj%dy*y - pj%dy/2.0
+            end do
+            do x = 1, vs%grid_x
+                pj%lon(x) = pj%llc_x + pj%dx*x - pj%dx/2.0
+            end do
+
+            !> Derive gridded 'lat' and 'lon' if not already defined (from non-equidistant mapped projection).
+            if (all(lat_xy == NO_DATA_REAL) .and. all(lon_xy == NO_DATA_REAL)) then
+                if (allocated(pj%lat_xy)) deallocate(pj%lat_xy)
+                if (allocated(pj%lon_xy)) deallocate(pj%lon_xy)
+                allocate(pj%lat_xy(vs%grid_x, vs%grid_y), pj%lon_xy(vs%grid_x, vs%grid_y))
+                do y = 1, vs%grid_y
+                    pj%lat_xy(:, y) = pj%lat(y)
+                end do
+                call copy_field(pj%lat_xy, lat_xy, ierr)
+                if (ierr /= 0) call print_warning("An error occurred transferring the reference 'lat_xy' variable.")
+                do x = 1, vs%grid_x
+                    pj%lon_xy(x, :) = pj%lon(x)
+                end do
+                call copy_field(pj%lon_xy, lon_xy, ierr)
+                if (ierr /= 0) call print_warning("An error occurred transferring the reference 'lon_xy' variable.")
+            end if
+        else
+
+            !> From alternate file formats.
+            if (pj%dy == 0.0 .and. allocated(pj%lat)) then
+                do i = 2, size(pj%lat)
+                    pj%dy = pj%dy + (pj%lat(i) - pj%lat(i - 1))
+                end do
+                pj%dy = pj%dy/(size(pj%lat) - 1)
+                pj%llc_y = pj%lat(1) - pj%dy/2.0
+            end if
+            if (pj%dx == 0.0 .and. allocated(pj%lon)) then
+                do i = 2, size(pj%lon)
+                    pj%dx = pj%dx + (pj%lon(i) - pj%lon(i - 1))
+                end do
+                pj%dx = pj%dx/(size(pj%lon) - 1)
+                pj%llc_x = pj%lon(1) - pj%dx/2.0
+            end if
+        end if
+
         !> Validate the spatial reference.
         select case (lowercase(pj%projection))
 
             !> Regular lat/lon projection.
             case ('latlong')
 
-                !> Try to derive missing coordinates (where inconsistent by file specification).
-                if (pj%llc_y /= 0.0 .and. pj%dy /= 0.0 .and. pj%llc_x /= 0.0 .and. pj%dx /= 0.0) then
-
-                    !> From EnSim Hydrologic/Green Kenue geometry (for outputs in alternate file formats).
-                    if (allocated(pj%lat_xy)) deallocate(pj%lat_xy)
-                    if (allocated(pj%lat)) deallocate(pj%lat)
-                    if (allocated(pj%lon_xy)) deallocate(pj%lon_xy)
-                    if (allocated(pj%lon)) deallocate(pj%lon)
-                    allocate( &
-                        pj%lat_xy(vs%grid_x, vs%grid_y), pj%lat(vs%grid_y), &
-                        pj%lon_xy(vs%grid_x, vs%grid_y), pj%lon(vs%grid_x))
-                    pj%lat_xy = 0.0
-                    do y = 1, vs%grid_y
-                        pj%lat_xy(:, y) = pj%llc_y + pj%dy*y - pj%dy/2.0
-                        pj%lat(y) = pj%lat_xy(1, y)
-                    end do
-                    lat_xy = pj%lat_xy
-                    pj%lon_xy = 0.0
-                    do x = 1, vs%grid_x
-                        pj%lon_xy(x, :) = pj%llc_x + pj%dx*x - pj%dx/2.0
-                        pj%lon(x) = pj%lon_xy(x, 1)
-                    end do
-                    lon_xy = pj%lon_xy
-                else
-
-                    !> From alternate file formats.
-                    if (pj%dy == 0.0 .and. allocated(pj%lat)) then
-                        do i = 2, size(pj%lat)
-                            pj%dy = pj%dy + (pj%lat(i) - pj%lat(i - 1))
-                        end do
-                        pj%dy = pj%dy/(size(pj%lat) - 1)
-                        pj%llc_y = pj%lat(1) - pj%dy/2.0
-                    end if
-                    if (pj%dx == 0.0 .and. allocated(pj%lon)) then
-                        do i = 2, size(pj%lon)
-                            pj%dx = pj%dx + (pj%lon(i) - pj%lon(i - 1))
-                        end do
-                        pj%dx = pj%dx/(size(pj%lon) - 1)
-                        pj%llc_x = pj%lon(1) - pj%dx/2.0
-                    end if
+                !> Check if dimensions are allocated.
+                if (.not. allocated(pj%lat) .or. .not. allocated(pj%lon)) then
+                    call print_error("The 'lat' or 'lon' variables could not be mapped or are not defined.")
+                    error_status = 1
                 end if
 
                 !> Determine the ellipsoid/datum reference (NetCDF; reference: GK Manual, Sep 2010).
@@ -350,6 +363,12 @@ module basin_utilities
 
             !> Rotated lat/lon projection.
             case ('rotlatlong', 'rotated_latitude_longitude')
+
+                !> Check if dimensions are allocated.
+                if (.not. allocated(pj%lat) .or. .not. allocated(pj%lon)) then
+                    call print_error("The 'rlat' or 'rlon' variables could not be mapped or are not defined.")
+                    error_status = 1
+                end if
 
                 !> Regular lat/lon conversion must be read from file, check if the fields exist.
                 if (.not. allocated(pj%lat_xy)) then
@@ -632,14 +651,30 @@ module basin_utilities
 !>>temp
         shd%CoordSys%Proj = trim(pj%projection)
         shd%CoordSys%Ellips = trim(pj%ellipsoid)
+        shd%CoordSys%Zone = trim(pj%zone)
+        shd%CoordSys%CentreLatitude = pj%centre_latitude
+        shd%CoordSys%CentreLongitude = pj%centre_longitude
+        shd%CoordSys%RotationLatitude = pj%rotation_latitude
+        shd%CoordSys%RotationLongitude = pj%rotation_longitude
+        shd%CoordSys%earth_radius = pj%earth_radius
+        shd%CoordSys%grid_north_pole_latitude = pj%grid_north_pole_latitude
+        shd%CoordSys%grid_north_pole_longitude = pj%grid_north_pole_longitude
         allocate(shd%CoordSys%lon(size(pj%lon)), source = pj%lon)
         shd%xCount = size(pj%lon)
         shd%xOrigin = pj%llc_x
         shd%xDelta = pj%dx
+        if (allocated(pj%lon_xy)) then
+            allocate(shd%CoordSys%xylon(size(pj%lon_xy, 1), size(pj%lon_xy, 2)), source = pj%lon_xy)
+            allocate(shd%CoordSys%rlon(size(pj%lon)), source = pj%lon)
+        end if
         allocate(shd%CoordSys%lat(size(pj%lat)), source = pj%lat)
         shd%yCount = size(pj%lat)
         shd%yOrigin = pj%llc_y
         shd%yDelta = pj%dy
+        if (allocated(pj%lat_xy)) then
+            allocate(shd%CoordSys%xylat(size(pj%lat_xy, 1), size(pj%lat_xy, 2)), source = pj%lat_xy)
+            allocate(shd%CoordSys%rlat(size(pj%lat)), source = pj%lat)
+        end if
         shd%NA = vs%grid%dim_length
         if (SHDFILEFMT == 5) shd%yCount = 1 !ME: adjustment for nc_subbasin
         if (allocated(vs%grid%next_id)) then
