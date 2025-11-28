@@ -525,14 +525,28 @@ module output_variables
 
             !> Surface variables.
             case (VN_ALBT)
+                if (.not. allocated(fields%vs%albt)) then
+                    allocate(fields%vs%albt(fields%vs%dim_length))
+                    fields%vs%albt = huge(fields%vs%albt)
+                end if
+                call output_variables_activate_pntr(fields, VN_ALVS)
+                call output_variables_activate_pntr(fields, VN_ALIR)
                 call output_variables_activate_pntr(fields, VN_FSIN)
                 call output_variables_allocate(fields%albt, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%albt, n1)
             case (VN_ALVS)
+                if (.not. allocated(fields%vs%alvs)) then
+                    allocate(fields%vs%alvs(fields%vs%dim_length))
+                    fields%vs%alvs = huge(fields%vs%alvs)
+                end if
                 call output_variables_activate_pntr(fields, VN_FSIN)
                 call output_variables_allocate(fields%alvs, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%alvs, n1)
             case (VN_ALIR)
+                if (.not. allocated(fields%vs%alir)) then
+                    allocate(fields%vs%alir(fields%vs%dim_length))
+                    fields%vs%alir = huge(fields%vs%alir)
+                end if
                 call output_variables_activate_pntr(fields, VN_FSIN)
                 call output_variables_allocate(fields%alir, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%alir, n1)
