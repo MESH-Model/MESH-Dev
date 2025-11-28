@@ -208,7 +208,7 @@ module variable_maps
 
         !> Activate and initialize variables.
         do i = 1, size(variable_names)
-            call model_variable_activate_from_name(group, variable_names(i), quiet, variables_assigned(i), error_status)
+            call model_variable_activate_from_name(group, variable_names(i), quiet, variables_assigned(i), z)
             if (z /= 0) error_status = z
         end do
 
