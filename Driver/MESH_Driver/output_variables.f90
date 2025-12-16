@@ -665,14 +665,14 @@ module output_variables
             !> Subsurface/soil variables.
             case (VN_THLQSOL)
                 if (.not. allocated(fields%vs%thlqsol)) then
-                    allocate(fields%vs%thlqsol(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%thlqsol(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%thlqsol = huge(fields%vs%thlqsol)
                 end if
                 call output_variables_allocate(fields%thlqsol, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%thlqsol, n1, n2)
             case (VN_THICSOL)
                 if (.not. allocated(fields%vs%thicsol)) then
-                    allocate(fields%vs%thicsol(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%thicsol(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%thicsol = huge(fields%vs%thicsol)
                 end if
                 call output_variables_allocate(fields%thicsol, n1, n2, pntr, ig)
@@ -680,7 +680,7 @@ module output_variables
             case (VN_LQWSSOL)
                 if (allocated(fields%vs%dzsolhyd)) then
                     if (.not. allocated(fields%vs%lqwssol)) then
-                        allocate(fields%vs%lqwssol(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                        allocate(fields%vs%lqwssol(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                         fields%vs%lqwssol = huge(fields%vs%lqwssol)
                     end if
                     call output_variables_allocate(fields%lqwssol, n1, n2, pntr, ig)
@@ -689,7 +689,7 @@ module output_variables
             case (VN_FZWSSOL)
                 if (allocated(fields%vs%dzsolhyd)) then
                     if (.not. allocated(fields%vs%fzwssol)) then
-                        allocate(fields%vs%fzwssol(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                        allocate(fields%vs%fzwssol(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                         fields%vs%fzwssol = huge(fields%vs%fzwssol)
                     end if
                     call output_variables_allocate(fields%fzwssol, n1, n2, pntr, ig)
@@ -702,70 +702,70 @@ module output_variables
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%alwssol, n1, n2)
             case (VN_TSOL)
                 if (.not. allocated(fields%vs%tsol)) then
-                    allocate(fields%vs%tsol(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%tsol(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%tsol = huge(fields%vs%tsol)
                 end if
                 call output_variables_allocate(fields%tsol, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%tsol, n1, n2)
             case (VN_GFLX)
                 if (.not. allocated(fields%vs%gflx)) then
-                    allocate(fields%vs%gflx(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%gflx(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%gflx = huge(fields%vs%gflx)
                 end if
                 call output_variables_allocate(fields%gflx, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%gflx, n1, n2)
             case (VN_HCPS)
                 if (.not. allocated(fields%vs%hcps)) then
-                    allocate(fields%vs%hcps(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%hcps(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%hcps = huge(fields%vs%hcps)
                 end if
                 call output_variables_allocate(fields%hcps, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%hcps, n1, n2)
             case (VN_HCPC)
                 if (.not. allocated(fields%vs%hcpc)) then
-                    allocate(fields%vs%hcpc(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%hcpc(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%hcpc = huge(fields%vs%hcpc)
                 end if
                 call output_variables_allocate(fields%hcpc, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%hcpc, n1, n2)
             case (VN_HCPG)
                 if (.not. allocated(fields%vs%hcpg)) then
-                    allocate(fields%vs%hcpg(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%hcpg(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%hcpg = huge(fields%vs%hcpg)
                 end if
                 call output_variables_allocate(fields%hcpg, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%hcpg, n1, n2)
             case (VN_TCTOPC)
                 if (.not. allocated(fields%vs%tctopc)) then
-                    allocate(fields%vs%tctopc(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%tctopc(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%tctopc = huge(fields%vs%tctopc)
                 end if
                 call output_variables_allocate(fields%tctopc, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%tctopc, n1, n2)
             case (VN_TCTOPG)
                 if (.not. allocated(fields%vs%tctopg)) then
-                    allocate(fields%vs%tctopg(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%tctopg(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%tctopg = huge(fields%vs%tctopg)
                 end if
                 call output_variables_allocate(fields%tctopg, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%tctopg, n1, n2)
             case (VN_TCBOTC)
                 if (.not. allocated(fields%vs%tcbotc)) then
-                    allocate(fields%vs%tcbotc(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%tcbotc(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%tcbotc = huge(fields%vs%tcbotc)
                 end if
                 call output_variables_allocate(fields%tcbotc, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%tcbotc, n1, n2)
             case (VN_TCBOTG)
                 if (.not. allocated(fields%vs%tcbotg)) then
-                    allocate(fields%vs%tcbotg(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%tcbotg(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%tcbotg = huge(fields%vs%tcbotg)
                 end if
                 call output_variables_allocate(fields%tcbotg, n1, n2, pntr, ig)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%tcbotg, n1, n2)
             case (VN_LATFLW)
                 if (.not. allocated(fields%vs%latflw)) then
-                    allocate(fields%vs%latflw(fields%vs%dim_length, size(fields%vs%dzsol, 1)))
+                    allocate(fields%vs%latflw(fields%vs%dim_length, size(fields%vs%dzsol, 2)))
                     fields%vs%latflw = huge(fields%vs%latflw)
                 end if
                 call output_variables_allocate(fields%latflw, n1, n2, pntr, ig)
