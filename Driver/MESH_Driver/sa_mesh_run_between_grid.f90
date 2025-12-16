@@ -801,11 +801,11 @@ module sa_mesh_run_between_grid
                 vs%basin%fzwscan = huge(vs%basin%fzwscan)
             end if
         end if
-        if (allocated(vs%basin%cmas) .and. allocated(vs%grid%cmas)) then
-            if (all(vs%grid%cmas /= huge(vs%grid%cmas))) then
-                vs%basin%cmas = vs%grid%cmas*shd%FRAC
+        if (allocated(vs%basin%cmai) .and. allocated(vs%grid%cmai)) then
+            if (all(vs%grid%cmai /= huge(vs%grid%cmai))) then
+                vs%basin%cmai = vs%grid%cmai*shd%FRAC
             else
-                vs%basin%cmas = huge(vs%basin%cmas)
+                vs%basin%cmai = huge(vs%basin%cmai)
             end if
         end if
         if (allocated(vs%basin%tacan) .and. allocated(vs%grid%tacan)) then
@@ -1411,8 +1411,8 @@ module sa_mesh_run_between_grid
                         vs%basin%fzwscan(ii) = vs%basin%fzwscan(ii) + vs%basin%fzwscan(i)
                     end if
                 end if
-                if (allocated(vs%basin%cmas)) then
-                    if (vs%basin%cmas(i) /= huge(vs%basin%cmas)) vs%basin%cmas(ii) = vs%basin%cmas(ii) + vs%basin%cmas(i)
+                if (allocated(vs%basin%cmai)) then
+                    if (vs%basin%cmai(i) /= huge(vs%basin%cmai)) vs%basin%cmai(ii) = vs%basin%cmai(ii) + vs%basin%cmai(i)
                 end if
                 if (allocated(vs%basin%tacan)) then
                     if (vs%basin%tacan(i) /= huge(vs%basin%tacan)) vs%basin%tacan(ii) = vs%basin%tacan(ii) + vs%basin%tacan(i)
@@ -1765,8 +1765,8 @@ module sa_mesh_run_between_grid
         if (allocated(vs%basin%fzwscan)) then
             if (all(vs%basin%fzwscan /= huge(vs%basin%fzwscan))) vs%basin%fzwscan = vs%basin%fzwscan/frac
         end if
-        if (allocated(vs%basin%cmas)) then
-            if (all(vs%basin%cmas /= huge(vs%basin%cmas))) where (tcanfrac > 0.0) vs%basin%cmas = vs%basin%cmas/tcanfrac
+        if (allocated(vs%basin%cmai)) then
+            if (all(vs%basin%cmai /= huge(vs%basin%cmai))) where (tcanfrac > 0.0) vs%basin%cmai = vs%basin%cmai/tcanfrac
         end if
         if (allocated(vs%basin%tacan)) then
             if (all(vs%basin%tacan /= huge(vs%basin%tacan))) where (tcanfrac > 0.0) vs%basin%tacan = vs%basin%tacan/tcanfrac

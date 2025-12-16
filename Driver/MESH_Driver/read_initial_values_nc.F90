@@ -66,7 +66,7 @@ subroutine read_initial_states_nc(fls, shd, fname, ierr)
             if (z == 0) then
                 do i = 1, shd%lc%NML
                     if (dat_xm(shd%xxx(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) /= fill_r) then
-                        vs%tile%cmas(i) = dat_xm(shd%xxx(shd%lc%ILMOS(i)), shd%lc%JLMOS(i))
+                        vs%tile%cmai(i) = dat_xm(shd%xxx(shd%lc%ILMOS(i)), shd%lc%JLMOS(i))
                     end if
                 end do
             end if
@@ -238,7 +238,7 @@ subroutine read_initial_states_nc(fls, shd, fname, ierr)
             if (z == 0) then
                 do i = 1, shd%lc%NML
                     if (dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) /= fill_r) then
-                        vs%tile%cmas(i) = dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i))
+                        vs%tile%cmai(i) = dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i))
                     end if
                 end do
             end if

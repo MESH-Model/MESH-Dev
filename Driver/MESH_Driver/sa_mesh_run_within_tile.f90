@@ -62,7 +62,7 @@ module sa_mesh_run_within_tile
             if (allocated(vs%tile%presno)) n = n + 1
             if (allocated(vs%tile%lqwscan)) n = n + 1
             if (allocated(vs%tile%fzwscan)) n = n + 1
-            if (allocated(vs%tile%cmas)) n = n + 1
+            if (allocated(vs%tile%cmai)) n = n + 1
             if (allocated(vs%tile%tacan)) n = n + 1
             if (allocated(vs%tile%qacan)) n = n + 1
             if (allocated(vs%tile%uvcan)) n = n + 1
@@ -135,8 +135,8 @@ module sa_mesh_run_within_tile
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%fzwscan))
                     n = n + 1
                 end if
-                if (allocated(vs%tile%cmas)) then
-                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%cmas))
+                if (allocated(vs%tile%cmai)) then
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%cmai))
                     n = n + 1
                 end if
                 if (allocated(vs%tile%tacan)) then
@@ -882,7 +882,7 @@ module sa_mesh_run_within_tile
         !> Canopy variables.
 !        if (allocated(vs%tile%lqwscan)) vs%tile%lqwscan(il1:il2) = 0.0
 !        if (allocated(vs%tile%fzwscan)) vs%tile%fzwscan(il1:il2) = 0.0
-!        if (allocated(vs%tile%cmas)) vs%tile%cmas(il1:il2) = 0.0
+!        if (allocated(vs%tile%cmai)) vs%tile%cmai(il1:il2) = 0.0
 !        if (allocated(vs%tile%tacan)) vs%tile%tacan(il1:il2) = 0.0
 !        if (allocated(vs%tile%qacan)) vs%tile%qacan(il1:il2) = 0.0
 !        if (allocated(vs%tile%uvcan)) vs%tile%uvcan(il1:il2) = 0.0

@@ -42,16 +42,16 @@ module save_basin_output
     !> For energy balance.
     !*  FSIN: Incoming shortwave radiation at the surface. [J m-2 during acc.; W m-2 output].
     !*  ALBT: Total albedo of the surface (visible and near-infrared). [--].
-    !*  FSOUT: Outgoing shortwave radiation at the surface. [J m-2 during acc.; W m-2 output].
+    !*  FSNET: Net shortwave radiation at the surface. [J m-2 during acc.; W m-2 output].
     !*  FLIN: Incoming longwave radiation at the surface. [J m-2 during acc.; W m-2 output].
     !*  GTE: Effective black-body temperature at the surface. [dC].
-    !*  FLOUT: Outgoing longwave radiation at the surface. [J m-2 during acc.; W m-2 output].
+    !*  FLNET: Net longwave radiation at the surface. [J m-2 during acc.; W m-2 output].
     !*  QH: Sensible heat flux at the surface. [J m-2 during acc.; W m-2 output].
     !*  QE: Latent heat flux at the surface. [J m-2 during acc.; W m-2 output].
     !*  GZERO: Heat flux into the ground. [J m-2 during acc.; W m-2 output].
     !*  TA: Air temperature. [dC].
     !*  TCAN: Vegetation canopy temperature. [dC].
-    !*  CMAS: Vegetation canopy mass. [kg m-2].
+    !*  CMAI: Vegetation canopy mass. [kg m-2].
     !*  TSNOW: Snowpack temperature. [dC].
     !*  TPOND: Temperature of ponded water. [dC].
     !*  TBAR: Temperature of soil layers. [dC].
@@ -1535,8 +1535,8 @@ module save_basin_output
         !> Allocate output variables.
         call output_variables_activate( &
             series%basin, (/ &
-                VN_DUMMY_LENGTH, VN_FSIN, VN_FSOUT, VN_ALBT, VN_FLIN, VN_FLOUT, VN_GTE, VN_QEVP, VN_QSENS, VN_GZERO, &
-                VN_TA, VN_TCAN, VN_CMAS, VN_TSNO, VN_TPND, VN_TSOL, VN_TICE, VN_QA, VN_UV, VN_PRES /))
+                VN_DUMMY_LENGTH, VN_FSIN, VN_FSNET, VN_ALBT, VN_FLIN, VN_FLNET, VN_GTE, VN_QEVP, VN_QSENS, VN_GZERO, &
+                VN_TA, VN_TCAN, VN_CMAI, VN_TSNO, VN_TPND, VN_TSOL, VN_TICE, VN_QA, VN_UV, VN_PRES /))
 
     end subroutine
 
@@ -1739,8 +1739,8 @@ module save_basin_output
 
         !> Variable names.
         write(fik, 1010, advance = 'no') &
-            VN_FSIN, VN_FSOUT, VN_ALBT, VN_FLIN, VN_FLOUT, VN_GTE, VN_QSENS, VN_QEVP, VN_GZERO, &
-            VN_TA, VN_TCAN, VN_CMAS, VN_TSNO, VN_TPND
+            VN_FSIN, VN_FSNET, VN_ALBT, VN_FLIN, VN_FLNET, VN_GTE, VN_QSENS, VN_QEVP, VN_GZERO, &
+            VN_TA, VN_TCAN, VN_CMAI, VN_TSNO, VN_TPND
         do j = 1, shd%lc%IGND
             write(ffmti, '(i3)') j
             write(fik, 1010, advance = 'no') VN_TSOL // trim(adjustl(ffmti))
@@ -1769,7 +1769,7 @@ module save_basin_output
         !> Local variables.
         integer j
 !-        real frac
-        real :: albt = 0.0, gte = 0.0, ta = 0.0, tcan = 0.0, cmas = 0.0, tsno = 0.0, tpnd = 0.0
+        real :: albt = 0.0, gte = 0.0, ta = 0.0, tcan = 0.0, cmai = 0.0, tsno = 0.0, tpnd = 0.0
         real tbar(shd%lc%IGND)
         real :: TFREZ = 273.16
 
@@ -1781,12 +1781,12 @@ module save_basin_output
 !-        frac = shd%DA(ina)/((shd%AL/1000.0)**2)
 
         !> Check for 'NO_DATA' values and transform temperatures to degrees C.
-        albt = 0.0; gte = 0.0; ta = 0.0; tcan = 0.0; cmas = 0.0; tsno = 0.0; tpnd = 0.0
+        albt = 0.0; gte = 0.0; ta = 0.0; tcan = 0.0; cmai = 0.0; tsno = 0.0; tpnd = 0.0
         if (series%basin%albt(ina) /= out%NO_DATA) albt = series%basin%albt(ina)
         if (series%basin%gte(ina) > (TFREZ - 100.0)) gte = series%basin%gte(ina) - TFREZ
         if (series%basin%ta(ina) > (TFREZ - 100.0)) ta = series%basin%ta(ina) - TFREZ
         if (series%basin%tcan(ina) > (TFREZ - 100.0)) tcan = series%basin%tcan(ina) - TFREZ
-        if (series%basin%cmas(ina) /= out%NO_DATA) cmas = series%basin%cmas(ina)
+        if (series%basin%cmai(ina) /= out%NO_DATA) cmai = series%basin%cmai(ina)
         if (series%basin%tsno(ina) > (TFREZ - 100.0)) tsno = series%basin%tsno(ina) - TFREZ
         if (series%basin%tpnd(ina) > (TFREZ - 100.0)) tpnd = series%basin%tpnd(ina) - TFREZ
         tbar = 0.0
@@ -1806,12 +1806,12 @@ module save_basin_output
 
         !> Write the variables to file.
         write(fik, 1010) &
-            series%basin%fsin(ina), series%basin%fsout(ina), &
+            series%basin%fsin(ina), series%basin%fsnet(ina), &
             albt, &
-            series%basin%flin(ina), series%basin%flout(ina), gte, &
+            series%basin%flin(ina), series%basin%flnet(ina), gte, &
             series%basin%qsens(ina), series%basin%qevp(ina), &
             series%basin%gzero(ina), &
-            ta, tcan, cmas, &
+            ta, tcan, cmai, &
             tsno, tpnd, &
             (tbar(j), j = 1, shd%lc%IGND), series%basin%tice(ina), &
             series%basin%qa(ina), series%basin%uv(ina), series%basin%pres(ina)

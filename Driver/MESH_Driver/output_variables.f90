@@ -16,9 +16,9 @@ module output_variables
         real, dimension(:), pointer :: fsir => null()
         real, dimension(:), pointer :: fsdr => null()
         real, dimension(:), pointer :: fsdff => null()
-        real, dimension(:), pointer :: fsout => null()
+        real, dimension(:), pointer :: fsnet => null()
         real, dimension(:), pointer :: flin => null()
-        real, dimension(:), pointer :: flout => null()
+        real, dimension(:), pointer :: flnet => null()
         real, dimension(:), pointer :: ta => null()
         real, dimension(:), pointer :: qa => null()
         real, dimension(:), pointer :: pres => null()
@@ -37,7 +37,7 @@ module output_variables
         real, dimension(:), pointer :: ican => null()
         real, dimension(:), pointer :: lqwscan => null()
         real, dimension(:), pointer :: fzwscan => null()
-        real, dimension(:), pointer :: cmas => null()
+        real, dimension(:), pointer :: cmai => null()
         real, dimension(:), pointer :: tcan => null()
         real, dimension(:), pointer :: tacan => null()
         real, dimension(:), pointer :: qacan => null()
@@ -283,11 +283,11 @@ module output_variables
                 end if
                 call output_variables_allocate(fields%fsdff, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsdff, n1)
-            case (VN_FSOUT)
+            case (VN_FSNET)
                 call output_variables_activate_pntr(fields, VN_FSIN)
                 call output_variables_activate_pntr(fields, VN_ALBT)
-                call output_variables_allocate(fields%fsout, n1, pntr)
-                if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsout, n1)
+                call output_variables_allocate(fields%fsnet, n1, pntr)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsnet, n1)
             case (VN_FLIN)
                 if (.not. allocated(fields%vs%flin)) then
                     allocate(fields%vs%flin(fields%vs%dim_length))
@@ -295,13 +295,13 @@ module output_variables
                 end if
                 call output_variables_allocate(fields%flin, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%flin, n1)
-            case (VN_FLOUT)
+            case (VN_FLNET)
                 if (.not. allocated(fields%vs%gte)) then
                     allocate(fields%vs%gte(fields%vs%dim_length))
                     fields%vs%gte = huge(fields%vs%gte)
                 end if
-                call output_variables_allocate(fields%flout, n1, pntr)
-                if (associated(fields%ts)) call output_variables_allocate(fields%ts%flout, n1)
+                call output_variables_allocate(fields%flnet, n1, pntr)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%flnet, n1)
             case (VN_TA)
                 if (.not. allocated(fields%vs%ta)) then
                     allocate(fields%vs%ta(fields%vs%dim_length))
@@ -402,14 +402,14 @@ module output_variables
                 end if
                 call output_variables_allocate(fields%fzwscan, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%fzwscan, n1)
-            case (VN_CMAS)
+            case (VN_CMAI)
                 call output_variables_activate_pntr(fields, VN_TCAN)
-                if (.not. allocated(fields%vs%cmas)) then
-                    allocate(fields%vs%cmas(fields%vs%dim_length))
-                    fields%vs%cmas = huge(fields%vs%cmas)
+                if (.not. allocated(fields%vs%cmai)) then
+                    allocate(fields%vs%cmai(fields%vs%dim_length))
+                    fields%vs%cmai = huge(fields%vs%cmai)
                 end if
-                call output_variables_allocate(fields%cmas, n1, pntr)
-                if (associated(fields%ts)) call output_variables_allocate(fields%ts%cmas, n1)
+                call output_variables_allocate(fields%cmai, n1, pntr)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%cmai, n1)
             case (VN_TCAN)
                 if (.not. allocated(fields%vs%tcan)) then
                     allocate(fields%vs%tcan(fields%vs%dim_length))
@@ -976,9 +976,9 @@ module output_variables
         if (associated(group%fsir)) group%fsir = out%NO_DATA
         if (associated(group%fsdr)) group%fsdr = out%NO_DATA
         if (associated(group%fsdff)) group%fsdff = out%NO_DATA
-        if (associated(group%fsout)) group%fsout = out%NO_DATA
+        if (associated(group%fsnet)) group%fsnet = out%NO_DATA
         if (associated(group%flin)) group%flin = out%NO_DATA
-        if (associated(group%flout)) group%flout = out%NO_DATA
+        if (associated(group%flnet)) group%flnet = out%NO_DATA
         if (associated(group%ta)) group%ta = out%NO_DATA
         if (associated(group%qa)) group%qa = out%NO_DATA
         if (associated(group%pres)) group%pres = out%NO_DATA
@@ -997,7 +997,7 @@ module output_variables
         if (associated(group%ican)) group%ican = 0.0
         if (associated(group%lqwscan)) group%lqwscan = out%NO_DATA
         if (associated(group%fzwscan)) group%fzwscan = out%NO_DATA
-        if (associated(group%cmas)) group%cmas = out%NO_DATA
+        if (associated(group%cmai)) group%cmai = out%NO_DATA
         if (associated(group%tcan)) group%tcan = out%NO_DATA
         if (associated(group%tacan)) group%tacan = out%NO_DATA
         if (associated(group%qacan)) group%qacan = out%NO_DATA
@@ -1449,16 +1449,16 @@ module output_variables
                 end if
             end if
         end if
-        if (associated(group%cmas)) then
-            if (all(group%cmas == out%NO_DATA)) then
-                if (all(group_vs%cmas /= huge(group_vs%cmas))) then
+        if (associated(group%cmai)) then
+            if (all(group%cmai == out%NO_DATA)) then
+                if (all(group_vs%cmai /= huge(group_vs%cmai))) then
                     where (group%ican == 1.0)
-                        group%cmas = group_vs%cmas
+                        group%cmai = group_vs%cmai
                     elsewhere
-                        group%cmas = 0.0
+                        group%cmai = 0.0
                     end where
                 else
-                    group%cmas = 0.0
+                    group%cmai = 0.0
                 end if
             end if
         end if
@@ -1609,12 +1609,12 @@ module output_variables
                 end if
             end if
         end if
-        if (associated(group%fsout)) then
-            if (all(group%fsout == out%NO_DATA)) then
+        if (associated(group%fsnet)) then
+            if (all(group%fsnet == out%NO_DATA)) then
                 where (group%ifsin == 1.0)
-                    group%fsout = group%fsin*(1.0 - group%albt)
+                    group%fsnet = group%fsin*(1.0 - group%albt)
                 elsewhere
-                    group%fsout = 0.0
+                    group%fsnet = 0.0
                 end where
             end if
         end if
@@ -1625,12 +1625,12 @@ module output_variables
                 else
                     group%gte = 0.0
                 end if
-                if (associated(group%flout)) then
-                    if (all(group%flout == out%NO_DATA)) then
+                if (associated(group%flnet)) then
+                    if (all(group%flnet == out%NO_DATA)) then
                         where (group%gte > 0.0)
-                            group%flout = 5.66796E-8*group%gte**4
+                            group%flnet = 5.66796E-8*group%gte**4
                         elsewhere
-                            group%flout = 0.0
+                            group%flnet = 0.0
                         end where
                     end if
                 end if
@@ -2222,14 +2222,14 @@ module output_variables
         if (associated(group%fsdff)) then
             call output_variables_field_update(group%fsdff, group_ts%fsdff, its, 'avg')
         end if
-        if (associated(group%fsout)) then
-            call output_variables_field_update(group%fsout, group_ts%fsout, its, 'avg')
+        if (associated(group%fsnet)) then
+            call output_variables_field_update(group%fsnet, group_ts%fsnet, its, 'avg')
         end if
         if (associated(group%flin)) then
             call output_variables_field_update(group%flin, group_ts%flin, its, 'avg')
         end if
-        if (associated(group%flout)) then
-            call output_variables_field_update(group%flout, group_ts%flout, its, 'avg')
+        if (associated(group%flnet)) then
+            call output_variables_field_update(group%flnet, group_ts%flnet, its, 'avg')
         end if
         if (associated(group%ta)) then
             call output_variables_field_update(group%ta, group_ts%ta, its, 'avg')
@@ -2281,8 +2281,8 @@ module output_variables
         if (associated(group%fzwscan)) then
             call output_variables_field_update(group%fzwscan, group_ts%fzwscan, its, 'avg')
         end if
-        if (associated(group%cmas)) then
-            call output_variables_field_icount_average(group%cmas, group_ts%cmas, group%ican, group_ts%ican)
+        if (associated(group%cmai)) then
+            call output_variables_field_icount_average(group%cmai, group_ts%cmai, group%ican, group_ts%ican)
         end if
         if (associated(group%tcan)) then
             call output_variables_field_icount_average(group%tcan, group_ts%tcan, group%ican, group_ts%ican)

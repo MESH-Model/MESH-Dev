@@ -99,7 +99,7 @@ module RUNCLASS36_module
             cpv%SNCAN(il1:il2) = vs%tile%fzwscan(il1:il2)
             cpv%TAC(il1:il2) = vs%tile%tacan(il1:il2)
             cpv%TCAN(il1:il2) = vs%tile%tcan(il1:il2)
-            cpv%CMAI(il1:il2) = vs%tile%cmas(il1:il2)
+            cpv%CMAI(il1:il2) = vs%tile%cmai(il1:il2)
             cpv%GRO(il1:il2) = vs%tile%gro(il1:il2)
             cpv%SNO(il1:il2) = vs%tile%sno(il1:il2)
             cpv%ALBS(il1:il2) = vs%tile%albsno(il1:il2)
@@ -413,7 +413,7 @@ module RUNCLASS36_module
         if (allocated(vs%tile%presno)) vs%tile%presno(il1:il2) = catv%SPCP(il1:il2)*catv%RHSI(il1:il2) !from [m s-1] to [kg ms-2 s-1].
         vs%tile%lqwscan(il1:il2) = cpv%RCAN(il1:il2)
         vs%tile%fzwscan(il1:il2) = cpv%SNCAN(il1:il2)
-        vs%tile%cmas(il1:il2) = cpv%CMAI(il1:il2)
+        vs%tile%cmai(il1:il2) = cpv%CMAI(il1:il2)
         vs%tile%tacan(il1:il2) = cpv%TAC(il1:il2)
         vs%tile%tcan(il1:il2) = cpv%TCAN(il1:il2)
         vs%tile%qacan(il1:il2) = cpv%QAC(il1:il2)
