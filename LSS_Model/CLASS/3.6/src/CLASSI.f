@@ -3,6 +3,8 @@
      2                  TA,QA,PCPR,RRATE,SRATE,PRESSG,
      3                  IPCP,NL,IL1,IL2)
 C
+C     * JUL 31/25 - F.YASSIN.   ADDED IPCP=5 BASED ON HARDER & POMEROY
+C     *                         (2013) CONVERTED FROM CHRM.
 C     * NOV 17/11 - M.LAZARE.   REMOVE CALCULATION OF PCPR
 C     *                         FOR IPCP=4 (REDUNDANT SINCE
 C     *                         PCPR MUST BE PASSED IN FOR
@@ -49,7 +51,8 @@ C
 C
 C     * TEMPORARY VARIABLES.
 C
-      REAL EA,CA,CB,EASAT,CONST
+      REAL EA,CA,CB,EASAT,CONST,DFU,LMDA,LFU,PTA,CRIT,CRIT1,
+     1     TI1,TI2,TT1,TT2,AA,BB,CC,GRUICBULB
 C
 C     * COMMON BLOCK PARAMETERS.
 C
@@ -138,6 +141,56 @@ C
                   RPCP(I)=RRATE(I)/RHOW
                   IF(RPCP(I).GT.0.0) TRPCP(I)=MAX((TA(I)-TFREZ),0.0) 
                   SPCP(I)=SRATE(I)/RHOSNI(I)
+                  IF(SPCP(I).GT.0.0) TSPCP(I)=MIN((TA(I)-TFREZ),0.0)
+              ELSEIF(IPCP.EQ.5)                       THEN
+                  DFU=2.06*(10.0e-05)*(TA(I)/273.15)**1.75
+                  LMDA=0.000063*TA(I)+0.00673
+                  IF(TA(I)<273.16) THEN
+                      LFU=1000.0*(2834.1-0.29*(TA(I)-273.16)-0.004*
+     1                    (TA(I)-273.16)**2)
+                  ELSE
+                      LFU=1000.0*(2501.0-(2.361*(TA(I)-273.16)))
+                  ENDIF
+                  PTA=0.01801528*(EA/EASAT)*611.0*
+     1             EXP(17.3*(TA(I)-273.16)/(237.3+(TA(I)-273.16)))/
+     2             (8.31441*TA(I))
+                  TI1=250.0
+                  CRIT=9999.0
+                  DO WHILE (CRIT > 0.0001) !Iteration solution optimised by using the Newton-Raphston method.
+                      TT1=TI1+0.001*TI1
+                      TT2=TI1-0.001*TI1
+                      AA=-TI1+TA(I)+
+     1                    (LFU*DFU/LMDA)*(PTA-0.01801528*611.0*
+     2                    EXP(17.3*(TI1-273.16)/(237.3+(TI1-273.16)))/
+     3                    (8.31441*TI1))
+                      BB=-TT1+TA(I)+
+     1                    (LFU*DFU/LMDA)*(PTA-0.01801528*611.0*
+     2                    EXP(17.3*(TT1-273.16)/(237.3+(TT1-273.16)))/
+     3                    (8.31441*TT1))
+                      CC=-TT2+TA(I)+
+     1                    (LFU*DFU/LMDA)*(PTA-0.01801528*611.0*
+     2                    EXP(17.3*(TT2-273.16)/(237.3+(TT2-273.16)))/
+     3                    (8.31441*TT2))
+                      TI2=TI1-real(AA/((BB-CC)/(0.002*TI1)))
+                      CRIT1=TI1-TI2
+                      IF(CRIT1<0.0) THEN
+                          CRIT=-CRIT1
+                      ELSE
+                          CRIT=CRIT1
+                      ENDIF
+                      TI1=TI2
+                  END DO
+                  GRUICBULB=TI1-273.16
+                  IF(GRUICBULB<-10.0) THEN !Eoverflow if ratio calculated with icebulb < -39C.
+                      PHASE(I)=1.0
+                  ELSE
+                      PHASE(I)=1.0-(1.0/(1.0 + 2.50286*
+     1                    (0.125006**GRUICBULB)))
+                      PHASE(I)=MAX(0.0,MIN(1.0,PHASE(I)))
+                  ENDIF
+                  RPCP(I)=(1.0-PHASE(I))*PCPR(I)/RHOW
+                  IF(RPCP(I).GT.0.0) TRPCP(I)=MAX((TA(I)-TFREZ),0.0)
+                  SPCP(I)=PHASE(I)*PCPR(I)/RHOSNI(I)
                   IF(SPCP(I).GT.0.0) TSPCP(I)=MIN((TA(I)-TFREZ),0.0)
               ENDIF
           ENDIF

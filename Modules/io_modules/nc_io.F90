@@ -250,7 +250,7 @@ module nc_io
         ierr = nf90_inq_varid(iun, crs_name, vid)
         if (ierr /= NF90_NOERR) then
             write(code, FMT_GEN) ierr
-            call print_error( &
+            call print_warning( &
                 "A CRS projection '" // trim(crs_name) // "' was not found in the file (Code " // trim(adjustl(code)) // ").")
             ierr = 1
             return
@@ -396,7 +396,7 @@ module nc_io
             ierr = 1
         else
 
-            !> Calculate the reference datetime in hours.
+            !> Calculate the reference datetime in hours from Gregorian calendar date to Julian Day Number (JDN).
             nc4_time_from_date_components = &
                 real( &
                     (1461*(year + 4800 + (month - 14)/12))/4 + (367*(month - 2 - 12*((month - 14)/12)))/12 - &
@@ -607,6 +607,104 @@ module nc_io
 
         !> Get the time value.
         ierr = nf90_get_var(iun, vid, t1_r8, start = start)
+        if (ierr /= 0) return
+
+        !> Add the value to the reference time (converting to units of 'hours').
+        i = index(vunits, 'since')
+        if (i > 1) then
+            select case (vunits(1:(i - 1)))
+                case ('seconds')
+                    t1_r8 = t0 + t1_r8/24.0/60.0/60.0
+                case ('minutes')
+                    t1_r8 = t0 + t1_r8/24.0/60.0
+                case ('hours')
+                    t1_r8 = t0 + t1_r8/24.0
+                case ('days')
+                    t1_r8 = t0 + t1_r8
+                case default
+                    call print_error( &
+                        "Unsupported units for the '" // trim(vname) // "' variable. " // &
+                        "The units should be in the format: [seconds/minutes/hours/days] since yyyy/MM/dd HH:mm:ss[.SSSSSS]")
+                    ierr = 1
+                    return
+            end select
+        end if
+
+        !> Calculate the components.
+        call nc4_date_components_from_time(t1_r8(1), year, month, day, jday, hour, minutes, seconds, ierr)
+
+    end subroutine
+
+    subroutine nc4_get_time_last( &
+        iun, &
+        tid, reference_time, units, name_time, time_shift, &
+        year, month, day, jday, hour, minutes, seconds, &
+        ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun
+
+        !> Input variables (optional).
+        integer, intent(in), optional :: tid
+        real(kind = EightByteReal), intent(in), optional :: reference_time
+        character(len = *), intent(in), optional :: units
+        character(len = *), intent(in), optional :: name_time
+        real, intent(in), optional :: time_shift
+
+        !> Output variables (optional).
+        integer, intent(out), optional :: year, month, day, jday, hour, minutes, seconds
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) vname, vunits, field, code
+        integer i, vid, dimids(NF90_MAX_VAR_DIMS), ndims, dimlen, last_idx
+        real(kind = EightByteReal), allocatable :: t1_r8(:)
+        real(kind = EightByteReal) t0
+
+        !> Set the variable name.
+        if (present(name_time)) then
+            vname = trim(name_time)
+        else
+            vname = 'time'
+        end if
+
+        !> Get the reference time and variables (if not provided).
+        if (.not. present(tid) .or. .not. present(reference_time) .or. .not. present(units)) then
+            call nc4_get_reference_time(iun, vname, time_shift, tid = vid, units = vunits, reference_time = t0, ierr = ierr)
+            if (ierr /= 0) return
+        end if
+
+        !> Assign optional variables.
+        if (present(tid)) vid = tid
+        if (present(units)) vunits = units
+        if (present(reference_time)) t0 = reference_time
+
+        !> Get dimension info for the time variable.
+        ierr = nf90_inquire_variable(iun, vid, ndims = ndims, dimids = dimids)
+        if (ierr /= NF90_NOERR .or. ndims < 1) then
+            call print_error("Unable to get time variable dimensions.")
+            ierr = 1
+            return
+        end if
+
+        !> Get the length of the time dimension (assume first dimension is time).
+        ierr = nf90_inquire_dimension(iun, dimids(1), len = dimlen)
+        if (ierr /= NF90_NOERR) then
+            call print_error("Unable to get time dimension length.")
+            ierr = 1
+            return
+        end if
+
+        !> The last index is the length of the dimension.
+        last_idx = dimlen
+
+        !> Allocate array to read the last value.
+        allocate(t1_r8(1))
+
+        !> Read the last time value.
+        ierr = nf90_get_var(iun, vid, t1_r8, start = (/last_idx/), count = (/1/))
         if (ierr /= 0) return
 
         !> Add the value to the reference time (converting to units of 'hours').
@@ -7478,6 +7576,21 @@ module nc_io
         !> Close the file.
         q = .true.
         if (present(quiet)) q = quiet
+
+        !> Sync output.
+        ierr = nf90_sync(iun)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            if (q) then
+                call print_error("An error occurred closing the file (Code: " // trim(adjustl(code)) // "): " // trim(fpath))
+            else
+                call print_error("Unable to close the file (Code: " // trim(adjustl(code)) // ").")
+            end if
+            ierr = 1
+        else
+            ierr = 0
+        end if
+
         ierr = nf90_close(iun)
         if (ierr /= NF90_NOERR) then
             write(code, FMT_GEN) ierr
@@ -7653,6 +7766,86 @@ module nc_io
 
     end subroutine
 
+    subroutine nc4_define_output_variable_nt( &
+        fpath, standard_name, projection, ts_freq, &
+        subbasins, lats, lons, &
+        datum, zone_id, earth_radius, grid_north_pole_latitude, grid_north_pole_longitude, &
+        quiet, long_name, units, fill, constmul, constadd, constrmax, constrmin, &
+        vid, vtime, dn, dtime, &
+        iun, ierr)
+
+        !> Input variables.
+        character(len = *), intent(in) :: fpath, standard_name, projection
+        integer, intent(in) :: ts_freq
+        integer, dimension(:), intent(in) :: subbasins
+        real, dimension(:), intent(in), optional :: lats, lons
+
+        !> Input variables (optional).
+        character(len = *), intent(in), optional :: long_name, units, datum, zone_id
+        real, intent(in), optional :: &
+            earth_radius, grid_north_pole_latitude, grid_north_pole_longitude, fill, constmul, constadd, constrmax, constrmin
+        logical, intent(in), optional :: quiet
+
+        !> Output variables (optional).
+        integer, intent(out), optional :: vid, vtime, dn,  dtime
+
+        !> Output variables.
+        integer, intent(out) :: iun, ierr
+
+        !> Local variables.
+        integer :: n = -1, t = -1, v = -1, vt = -1
+
+        !> Open the file (for output).
+        call nc4_open_output(fpath, quiet, iun, ierr)
+
+        !> Add projection.
+        if (ierr == 0) then
+            call nc4_add_projection( &
+                iun, projection, &
+                datum, zone_id, earth_radius, grid_north_pole_latitude, grid_north_pole_longitude, &
+                ierr)
+        end if
+
+        !> Define dimensions and add coordinates.
+        if (ierr == 0) then
+            if (ierr == 0) call nc4_define_dimension(iun, 'subbasin', size(subbasins), n, ierr = ierr)
+            if (ierr == 0) call nc4_add_variable(iun, 'subbasin', n, subbasins, ierr = ierr)
+            if (ierr == 0) call nc4_add_variable(iun, 'lon', n, lons, ierr = ierr)
+            if (ierr == 0) call nc4_add_variable(iun, 'lat', n, lats, ierr = ierr)
+        end if
+
+        !> Add time.
+        if (ierr == 0) call nc4_add_time(iun, NF90_INT, ts_freq, dtime = t, vtime = vt, ierr = ierr)
+
+        !> Define the data variable.
+        if (ierr == 0) then
+            call nc4_define_variable( &
+                iun, standard_name, NF90_REAL, &
+                dim1_id = n, dim2_id = t, &
+                vid = v, &
+                ierr = ierr)
+        end if
+
+        !> Set attributes.
+        if (ierr == 0) then
+            call nc4_set_variable_attributes_real( &
+                iun, v, standard_name, &
+                long_name = long_name, units = units, &
+                fill = fill, constmul = constmul, constadd = constadd, constrmax = constrmax, constrmin = constrmin, &
+                ierr = ierr)
+        end if
+
+        !> Set CRS.
+        if (ierr == 0) call nc4_set_crs(iun, v, standard_name, 'lon lat', ierr)
+
+        !> Assign output variables.
+        if (present(vid)) vid = v
+        if (present(vtime)) vtime = vt
+        if (present(dn)) dn = n
+        if (present(dtime)) dtime = t
+
+    end subroutine
+
     subroutine nc4_add_data_xy(iun, standard_name, vid, xxx, yyy, size_x, size_y, fill, dat, ierr)
 
         !> Input variables.
@@ -7708,6 +7901,7 @@ module nc_io
         real, dimension(size_x, size_y, size(dat, 2)) :: dat3
         real(kind = EightByteReal) t0_r8, t1_r8
         real f
+        character(len = DEFAULT_FIELD_LENGTH) code
 
         !> Get attributes from the file.
         ierr = 0
@@ -7771,6 +7965,107 @@ module nc_io
 
         !> Write data.
         if (ierr == 0) call nc4_add_data(iun, standard_name, vid, dat3, start = (/1, 1, dates(1, 1)/), ierr = ierr)
+
+        !> Sync output.
+        ierr = nf90_sync(iun)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error("Unable to sync the file (Code: " // trim(adjustl(code)) // ").")
+            ierr = 1
+        else
+            ierr = 0
+        end if
+
+    end subroutine
+
+    subroutine nc4_add_data_nt(iun, standard_name, ts_freq, tid, vid, fill, dat, dates, ierr)
+
+        !> Input variables.
+        integer, intent(in) :: iun, ts_freq, tid, vid
+        character(len = *), intent(in) :: standard_name
+        real, dimension(:, :), intent(in) :: dat
+        integer, dimension(:, :), intent(in) :: dates
+
+        !> Input variables (optional).
+        real, intent(in), optional :: fill
+
+        !> Output variables.
+        integer, intent(out) :: ierr
+
+        !> Local variables.
+        integer t, z
+        integer, dimension(size(dat, 2)) :: dat1
+        real(kind = EightByteReal) t0_r8, t1_r8
+        real f
+
+        !> Local variables.
+        character(len = DEFAULT_FIELD_LENGTH) code
+
+        !> Get attributes from the file.
+        ierr = 0
+        if (present(fill)) then
+            f = fill
+        else
+            call nc4_get_fillvalue(iun, standard_name, vid, f, ierr)
+        end if
+
+        !> Calculate the reference time.
+        t0_r8 = nc4_time_from_date_components( &
+            ic%start%year, ic%start%month, ic%start%day, ic%start%hour, ic%start%mins, ierr = ierr)
+        select case (ts_freq)
+            case (FREQ_MONTHLY, FREQ_SEASONAL, FREQ_DAILY)
+                t0_r8 = t0_r8
+            case (FREQ_YEARLY)
+                t0_r8 = ic%start%year
+            case (FREQ_HOURLY)
+                t0_r8 = t0_r8*24.0
+            case (FREQ_PTS)
+                t0_r8 = t0_r8*24.0*60.0
+            case default
+                t0_r8 = t0_r8*24.0*60.0*60.0
+        end select
+
+        !> Loop for time.
+        do t = 1, size(dat, 2)
+
+            !> Calculate the offset from the reference time and save to the 'dat1' array.
+            !>  dates(2, t) -> year
+            !>  dates(3, t) -> month
+            !>  dates(4, t) -> day
+            !>  dates(5, t) -> hour
+            !>  dates(6, t) -> mins
+            t1_r8 = nc4_time_from_date_components( &
+                dates(2, t), dates(3, t), dates(4, t), dates(5, t), dates(6, t), ierr = ierr)
+            select case (ts_freq)
+                case (FREQ_MONTHLY, FREQ_SEASONAL, FREQ_DAILY)
+                    t1_r8 = t1_r8
+                case (FREQ_YEARLY)
+                    t1_r8 = dates(2, t)
+                case (FREQ_HOURLY)
+                    t1_r8 = t1_r8*24.0
+                case (FREQ_PTS)
+                    t1_r8 = t1_r8*24.0*60.0
+                case default
+                    t1_r8 = t1_r8*24.0*60.0*60.0
+            end select
+            dat1(t) = int(t1_r8 - t0_r8)
+        end do
+
+        !> Write time.
+        if (ierr == 0) call nc4_add_data(iun, standard_name, tid, dat1, start = (/dates(1, 1)/), ierr = ierr)
+
+        !> Write data.
+        if (ierr == 0) call nc4_add_data(iun, standard_name, vid, dat, start = (/1, dates(1, 1)/), ierr = ierr)
+
+        !> Sync output.
+        ierr = nf90_sync(iun)
+        if (ierr /= NF90_NOERR) then
+            write(code, FMT_GEN) ierr
+            call print_error("Unable to sync the file (Code: " // trim(adjustl(code)) // ").")
+            ierr = 1
+        else
+            ierr = 0
+        end if
 
     end subroutine
 #endif

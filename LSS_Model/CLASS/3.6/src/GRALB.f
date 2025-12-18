@@ -93,6 +93,10 @@ C
             ELSE IF(ISAND(I,1).EQ.-4)                    THEN
                 ALVSG(I)=ALVSI
                 ALIRG(I)=ALIRI
+            ELSE IF(ISAND(I,1).EQ.-3 .AND.
+     &              ALVSU(I).GT.0.0 .AND. ALIRU(I).GT.0.0)THEN
+                ALVSG(I)=ALVSU(I)
+                ALIRG(I)=ALIRU(I)
             ELSE IF(ISAND(I,1).EQ.-3)                    THEN
                 ALVSG(I)=2.0*ALBRCK/3.0                                                        
                 ALIRG(I)=2.0*ALVSG(I)                                                             
@@ -110,7 +114,7 @@ C
 C
       IF(IPTBAD.NE.0) THEN
          WRITE(6,6100) IPTBAD,JL,ALVSG(IPTBAD),ALIRG(IPTBAD)
- 6100    FORMAT('0AT (I,J)= (',I8,',',I3,'), ALVSG,ALIRG = ',2F10.5)
+ 6100    FORMAT('0AT (I,J)= (',I8,',',I8,'), ALVSG,ALIRG = ',2F10.5)
          CALL XIT('GRALB',-1)
       ENDIF
 

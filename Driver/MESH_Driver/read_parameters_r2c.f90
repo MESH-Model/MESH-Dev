@@ -235,6 +235,10 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
                     pm%grid%iwf(1:shd%NA) = int(ffield)
                 end if
+            case ('zsnl')
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+                    pm%grid%zsnl(1:shd%NA) = ffield
+                end if
 
             !> Irrigation module.
             case ('irflg')
@@ -337,17 +341,6 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                 else
                     z = 1
                 end if
-            case ('delta_elevmax')
-                if (.not. allocated(mountain_mesh%pm%delta_elevmax)) allocate(mountain_mesh%pm%delta_elevmax(shd%NA, shd%lc%NTYPE))
-                if (ilvl == 0) then
-                    do ilvl = 1, shd%lc%NTYPE
-                        mountain_mesh%pm%delta_elevmax(:, ilvl) = ffield
-                    end do
-                else if (ilvl <= shd%lc%NTYPE) then
-                    mountain_mesh%pm%delta_elevmax(:, ilvl) = ffield
-                else
-                    z = 1
-                end if
             case ('curvature')
                 if (.not. allocated(mountain_mesh%pm%curvature)) allocate(mountain_mesh%pm%curvature(shd%NA, shd%lc%NTYPE))
                 if (ilvl == 0) then
@@ -356,6 +349,17 @@ subroutine read_parameters_r2c(shd, iun, fname, ierr)
                     end do
                 else if (ilvl <= shd%lc%NTYPE) then
                     mountain_mesh%pm%curvature(:, ilvl) = ffield
+                else
+                    z = 1
+                end if
+            case ('skyviewfactor')
+                if (.not. allocated(mountain_mesh%pm%skyviewfactor)) allocate(mountain_mesh%pm%skyviewfactor(shd%NA, shd%lc%NTYPE))
+                if (ilvl == 0) then
+                    do ilvl = 1, shd%lc%NTYPE
+                        mountain_mesh%pm%skyviewfactor(:, ilvl) = ffield
+                    end do
+                else if (ilvl <= shd%lc%NTYPE) then
+                    mountain_mesh%pm%skyviewfactor(:, ilvl) = ffield
                 else
                     z = 1
                 end if

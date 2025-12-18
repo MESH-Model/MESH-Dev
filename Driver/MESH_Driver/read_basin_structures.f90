@@ -224,6 +224,38 @@ subroutine read_basin_structures(shd, ierr)
                     fms%rsvr%meta%jx(i) = shd%xxx(n)
                 end if
             end do
+
+            !> Assign 'cfn' and 'b' coefficient values (where unassigned).
+            !>  cfn = 1 Insertion (b1 == 0 .and. b2 == 0).
+            !>  cfn = 2 (default) Power function (b1 /= 0 .and. b3 == 0).
+            !>  cfn = 3 Polynomial (2nd - 5th order, b3 /= 0).
+            !>  cfn = 4 Power function based on levels. (not yet implemented)
+            !>  cfn = 5 Polynomial (2nd - 5th order based on levels). (not yet implmemted)
+            !>  cfn = 6 DZTR (RESERVOIRFLAG 2, b1 == 1 .and. b2 == 0).
+            if (fms%rsvr%rls%cfn(i) /= 0) then
+
+                !> Give priority to 'cfn' value (can only back-assign 'b' values where used as on/off flags).
+                !>  'b' values aren't updated in cases where they should be specified as inputs.
+                select case (fms%rsvr%rls%cfn(i))
+                    case (6)
+                        fms%rsvr%rls%b1(i) = 1.0
+                        fms%rsvr%rls%b2(i) = 0.0
+                    case (1)
+                        fms%rsvr%rls%b1(i) = 0.0
+                        fms%rsvr%rls%b2(i) = 0.0
+                    case (3)
+                    case default
+                        fms%rsvr%rls%b3(i) = 0.0
+                end select
+            else if (fms%rsvr%rls%b1(i) == 1.0 .and. fms%rsvr%rls%b2(i) == 0.0) then
+                fms%rsvr%rls%cfn(i) = 6
+            else if (fms%rsvr%rls%b1(i) /= 0.0 .and. fms%rsvr%rls%b3(i) == 0.0) then
+                fms%rsvr%rls%cfn(i) = 2
+            else if (fms%rsvr%rls%b3(i) /= 0.0) then
+                fms%rsvr%rls%cfn(i) = 3
+            else if (fms%rsvr%rls%b1(i) == 0.0 .and. fms%rsvr%rls%b2(i) == 0.0) then
+                fms%rsvr%rls%cfn(i) = 1
+            end if
         end do
         deallocate(dist)
 
@@ -266,12 +298,12 @@ subroutine read_basin_structures(shd, ierr)
         end do
 
         !> Initialize reservoir release values if such a type of reservoir has been defined.
-        if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
+        if (count(fms%rsvr%rls%cfn == 1) > 0) then
 
             !> Re-allocate release values to the number of controlled reservoirs.
             if (fms%rsvr%rlsmeas%readmode /= 'n') then
                 deallocate(fms%rsvr%rlsmeas%val)
-                allocate(fms%rsvr%rlsmeas%val(count(fms%rsvr%rls%b1 == 0.0)))
+                allocate(fms%rsvr%rlsmeas%val(count(fms%rsvr%rls%cfn == 1)))
                 fms%rsvr%rlsmeas%val = 0.0
             end if
 
@@ -314,27 +346,30 @@ subroutine read_basin_structures(shd, ierr)
         end if
 
         !> Print a summary of locations to file.
-        if ((fms%rsvr%n - count(fms%rsvr%rls%b1 == 0.0)) > 0) then
-            write(line, FMT_GEN) (fms%rsvr%n - count(fms%rsvr%rls%b1 == 0.0))
+        if ((fms%rsvr%n - count(fms%rsvr%rls%cfn == 1)) > 0) then
+            write(line, FMT_GEN) (fms%rsvr%n - count(fms%rsvr%rls%cfn == 1))
             call print_message('Number of reservoir outlets with routing: ' // trim(adjustl(line)))
-            write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
+            write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)', 'b1   ', 'b2   ', 'b3   ', &
+                'b4   ', 'b5   ', 'b6   ', 'b7   ', 'Initial Level', 'Outflow Function'
             call print_message(trim(line))
             do i = 1, fms%rsvr%n
-                if (fms%rsvr%rls%b1(i) /= 0) then
+                if (fms%rsvr%rls%cfn(i) /= 0) then
                     write(line, FMT_GEN) &
                         fms%rsvr%meta%name(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), &
-                        fms%rsvr%rls%area(i)/1.0e+6
+                        fms%rsvr%rls%area(i)/1.0e+6, fms%rsvr%rls%b1(i), fms%rsvr%rls%b2(i), &
+                        fms%rsvr%rls%b3(i), fms%rsvr%rls%b4(i), fms%rsvr%rls%b5(i), fms%rsvr%rls%b6(i), &
+                        fms%rsvr%rls%b7(i), fms%rsvr%rls%zlvl0(i), fms%rsvr%rls%cfn(i)
                     call print_message(trim(line))
                 end if
             end do
         end if
-        if (count(fms%rsvr%rls%b1 == 0.0) > 0) then
-            write(line, FMT_GEN) count(fms%rsvr%rls%b1 == 0.0)
+        if (count(fms%rsvr%rls%cfn == 1) > 0) then
+            write(line, FMT_GEN) count(fms%rsvr%rls%cfn == 1)
             call print_message('Number of reservoir outlets with insertion: ' // trim(adjustl(line)))
             write(line, FMT_GEN) 'OUTLET', 'IY', 'JX', 'RANK', 'AREA (km2)'
             call print_message(trim(line))
             do i = 1, fms%rsvr%n
-                if (fms%rsvr%rls%b1(i) == 0.0) then
+                if (fms%rsvr%rls%cfn(i) == 1) then
                     write(line, FMT_GEN) &
                         fms%rsvr%meta%name(i), fms%rsvr%meta%iy(i), fms%rsvr%meta%jx(i), fms%rsvr%meta%rnk(i), &
                         fms%rsvr%rls%area(i)/1.0e+6

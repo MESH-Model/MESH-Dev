@@ -50,7 +50,14 @@ C    along with FLOWINIT.  If not, see <http://www.gnu.org/licenses/>.
 !                                   when 'nnx' is the outlet (where 'qda' is calculated).
 !
 !     changes made to include c&g model stuff  nk  April. 26/07
-!
+!     rev          Apr. 27/21  - ME : Modified the checks for the outflow function to use "cfn"
+!                                      cfn = 1 Insertion
+!                                      cfn = 2 (default) Power Function
+!                                      cfn = 3 Polynomial (2nd - 5th Order)
+!                                      cfn = 4 Power Function based on levels (not yet implemented)
+!                                      cfn = 5 Polynomial (2nd - 5th Order baed on levels - not yet implmemted)
+!                                      cfn = 6 DZTR (RESERVOIRFLAG 2)
+!                                      This makes it explicit and allows for 2nd Degree Polynomial
 !***********************************************************************
 
       USE area_watflood
@@ -204,6 +211,7 @@ c            write(53,*)n,frac(ii_water),grid_area(n),lake_area(l)
 
 !mesh_io      write(53,*)'    grid no  ch width     rch lngth    chaarea'
       do n=1,naa
+         if(da(n).eq.0.0)cycle
 !     rev. 9.2.15  Sep.  30/05  - NK: Fixed bug for opt in flowinit
 !       removed slope(n)=..... and elev(n)=.....  already done in rdshed
 !        rl(n)=al*mndr(ii)    !  now read in<<<<<<<<<<<<<<<<<,
@@ -307,6 +315,7 @@ c          wetxa(n)=wcap(n)/rl(n)/abs(theta(ii))
 
 
       do n=1,naa
+         if(da(n).eq.0.0)cycle
          i=yyy(n)
          j=xxx(n)
          iset(n)=0
@@ -725,6 +734,7 @@ c      stop 'program aborted in flowinit @ 164'
 
 !mesh_io      write(53,6044)
       do n=1,naa
+         if(da(n).eq.0.0)cycle
 !        CURRENT LOCATION:
          i=yyy(n)
          j=xxx(n)
@@ -782,6 +792,7 @@ c      stop 'program aborted in flowinit @ 164'
 
 
       do n=naa,1,-1
+         if(da(n).eq.0.0)cycle
          if(qda(n).le.0.0)then
 !           THIS MEANS WE ARE NOT AT A GAUGE (WITH FLOWS)
 !           WE'LL ONLY ASSIGN A FLOW IF IT HAS NOT DONE BEFORE
@@ -879,7 +890,7 @@ c      stop 'program aborted in flowinit @ 164'
 !        FLOW MAY HAVE BEEN ROUTED DOWN A TRIBUTARY OR
 !        THERE IS A GAUGE DOWNSTREAM
             nnx=next(n)
-            if(nnx.eq.0) cycle
+            if(nnx.eq.0)cycle
 
             msg1='a'
             if(iopt.ge.2)then
@@ -933,6 +944,7 @@ c      stop 'program aborted in flowinit @ 164'
 
 !     prorate flow wrt. drainage areas  nk  Dec. 22/05
       do n=1,naa
+         if(da(n).eq.0.0)cycle
          if(iset(n).eq.2)then
             qda(n)=qda(n)*da(n)/datemp(n)
             iset(n)=1
@@ -949,6 +961,7 @@ c      stop 'program aborted in flowinit @ 164'
 
 !mesh_io      write(53,5557)
       do n=1,naa
+         if(da(n).eq.0.0)cycle
          i=yyy(n)
          j=xxx(n)
          qdagrd(i,j)=qda(n)
@@ -983,6 +996,7 @@ c      stop 'program aborted in flowinit @ 164'
 
 !     this loop revised Dec. 22/05  nk
       do n=naa,1,-1
+         if(da(n).eq.0.0)cycle
          if(iset(n).eq.0)then
 !         THIS MEANS PROPER BASE FLOWS HAVEN'T BEEN ASSIGNED YET
             nnx=next(n)
@@ -1155,6 +1169,7 @@ c      stop 'program aborted in flowinit @ 164'
 !mesh_io      write(51,9801)dacheck
 
       do n=1,naa
+         if(da(n).eq.0.0)cycle
          i=yyy(n)
          j=xxx(n)
          ii=ibn(n)
@@ -1321,6 +1336,7 @@ c         endif
 !     This section moved from soilinit   June 13/03
 !     Why was it there anyway???????
       do n=1,naa
+         if(da(n).eq.0.0)cycle
          if(da(n).gt.0.0)then
             qbase(n)=qbase(n)/da(n)*step2*frac(n)
 ! * * * * * * *  TS  - added initializations * * * * * * * *
@@ -1400,14 +1416,14 @@ c         Copied over from runof6.for (thr=1):  AKB July 11, 2002
 !        For control with rating curve, use rating curve.
 !        For controlled reservoirs, just use channel stoage rule
 !        (above) so we at least have some value.
-         if(b1(k).gt.0.0.and.b2(k).gt.0.0)then
+         if(cfn(k).ge.2)then
             if(lake_area(k).gt.0.0.and.lake_elv(k,kt).gt.0.0)then
                store1(n)=lake_elv(k,kt)*lake_area(k)
             elseif(b6(k).gt.0.0.and.lake_elv(k,kt).gt.0.0)then
                store1(n)=max(0.0_4,lake_elv(k,kt)-b7(k))*b6(k)
-            elseif(b3(k).eq.0.0)then
+            elseif(cfn(k).eq.2)then
                store1(n)=(qo2(n)/b1(k))**(1.0_4/b2(k))
-            elseif(b3(k).gt.0.0)then
+            elseif(cfn(k).eq.3)then
                store1(n)=10.0
                trialq=0.0
                do while(trialq.lt.qo2(n))

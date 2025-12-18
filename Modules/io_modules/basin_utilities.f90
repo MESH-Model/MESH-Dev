@@ -10,12 +10,14 @@ module basin_utilities
 
     contains
 
-    subroutine basin_info_from_field_list(field_list, error_status)
+    subroutine basin_info_from_field_list(field_list, shd, error_status)
 
         !> Variables.
         use projection_variables, only: pj
         use model_variables
         use control_variables, only: ro
+        use sa_mesh_common
+        use FLAGS, only: SUBBASINFLAG
 
         !> Parsing utilities.
         use strings, only: uppercase, lowercase
@@ -26,13 +28,17 @@ module basin_utilities
         !* error_status: Status returned by the operation (optional; 0: normal).
         type(io_field), dimension(:), intent(in) :: field_list
         integer, intent(out) :: error_status
+!>>temp
+        type(ShedGridParams) shd
+!<<temp
 
         !> Local variables.
         character(len = SHORT_FIELD_LENGTH) field, level, code
+        character(len = LONG_FIELD_LENGTH) line
         character(len = :), allocatable :: message
         real, allocatable :: dat1_r(:), lat_xy(:, :), lon_xy(:, :), gru_n(:), gru_nm(:, :)
-        integer, allocatable :: dat1_i(:), dat2_i(:, :)
-        integer y, x, n, m, k, i, ierr
+        integer, allocatable :: SUBBASIN(:), dat1_i(:), dat2_i(:, :)
+        integer y, x, n, m, k, l, i, ierr
 
         !> Status.
         error_status = 0
@@ -91,6 +97,21 @@ module basin_utilities
 
                     !> Map the array of 'Rank' in the desired X/Y order.
                     call map_dimensions(dat2_i, dat1_i, vs%grid%from_grid_xy, ierr)
+
+                    !> Add an extra subbasin or cell to pad all outlets.
+                    if (SHDPADOUTLETS) then
+
+                        !> Add an extra column in the 'x' direction.
+                        deallocate(dat2_i)
+                        x = size(vs%grid%from_grid_xy, 1)
+                        y = size(vs%grid%from_grid_xy, 2)
+                        allocate(dat2_i((x + 1), y))
+                        dat2_i = 0
+                        dat2_i(1:x, 1:y) = vs%grid%from_grid_xy
+
+                        !> Add an extra ID.
+                        dat2_i((x + 1), 1) = maxval(vs%grid%from_grid_xy) + 1
+                    end if
 
                     !> Count the number of active cells.
                     vs%cell_count = count(vs%grid%from_grid_xy > 0)
@@ -200,7 +221,7 @@ module basin_utilities
                                 lat_xy(:, 1) = pj%lat
                             else if (size(pj%lat) == vs%grid_y) then
                                 do y = 1, size(pj%lat)
-                                    lat_xy(:, y) = pj%lat
+                                    lat_xy(:, y) = pj%lat(y)
                                 end do
                             end if
                         end if
@@ -227,7 +248,7 @@ module basin_utilities
                                 lon_xy(:, 1) = pj%lon
                             else if (size(pj%lon) == vs%grid_x) then
                                 do x = 1, size(pj%lon)
-                                    lon_xy(x, :) = pj%lon
+                                    lon_xy(x, :) = pj%lon(x)
                                 end do
                             end if
                         end if
@@ -257,52 +278,65 @@ module basin_utilities
             end if
         end do
 
+        !> Derive 'lat' and 'lon' (for file formats that use lower-left reference and equidistant projection).
+        if (pj%llc_y /= 0.0 .and. pj%dy /= 0.0 .and. pj%llc_x /= 0.0 .and. pj%dx /= 0.0) then
+
+            !> Derive reference 'lat' and 'lon' (to support outputs in other formats).
+            if (allocated(pj%lat)) deallocate(pj%lat)
+            if (allocated(pj%lon)) deallocate(pj%lon)
+            allocate(pj%lat(vs%grid_y), pj%lon(vs%grid_x))
+            do y = 1, vs%grid_y
+                pj%lat(y) = pj%llc_y + pj%dy*y - pj%dy/2.0
+            end do
+            do x = 1, vs%grid_x
+                pj%lon(x) = pj%llc_x + pj%dx*x - pj%dx/2.0
+            end do
+
+            !> Derive gridded 'lat' and 'lon' if not already defined (from non-equidistant mapped projection).
+            if (all(lat_xy == NO_DATA_REAL) .and. all(lon_xy == NO_DATA_REAL)) then
+                if (allocated(pj%lat_xy)) deallocate(pj%lat_xy)
+                if (allocated(pj%lon_xy)) deallocate(pj%lon_xy)
+                allocate(pj%lat_xy(vs%grid_x, vs%grid_y), pj%lon_xy(vs%grid_x, vs%grid_y))
+                do y = 1, vs%grid_y
+                    pj%lat_xy(:, y) = pj%lat(y)
+                end do
+                call copy_field(pj%lat_xy, lat_xy, ierr)
+                if (ierr /= 0) call print_warning("An error occurred transferring the reference 'lat_xy' variable.")
+                do x = 1, vs%grid_x
+                    pj%lon_xy(x, :) = pj%lon(x)
+                end do
+                call copy_field(pj%lon_xy, lon_xy, ierr)
+                if (ierr /= 0) call print_warning("An error occurred transferring the reference 'lon_xy' variable.")
+            end if
+        else
+
+            !> From alternate file formats.
+            if (pj%dy == 0.0 .and. allocated(pj%lat)) then
+                do i = 2, size(pj%lat)
+                    pj%dy = pj%dy + (pj%lat(i) - pj%lat(i - 1))
+                end do
+                pj%dy = pj%dy/(size(pj%lat) - 1)
+                pj%llc_y = pj%lat(1) - pj%dy/2.0
+            end if
+            if (pj%dx == 0.0 .and. allocated(pj%lon)) then
+                do i = 2, size(pj%lon)
+                    pj%dx = pj%dx + (pj%lon(i) - pj%lon(i - 1))
+                end do
+                pj%dx = pj%dx/(size(pj%lon) - 1)
+                pj%llc_x = pj%lon(1) - pj%dx/2.0
+            end if
+        end if
+
         !> Validate the spatial reference.
         select case (lowercase(pj%projection))
 
             !> Regular lat/lon projection.
             case ('latlong')
 
-                !> Try to derive missing coordinates (where inconsistent by file specification).
-                if (pj%llc_y /= 0.0 .and. pj%dy /= 0.0 .and. pj%llc_x /= 0.0 .and. pj%dx /= 0.0) then
-
-                    !> From EnSim Hydrologic/Green Kenue geometry (for outputs in alternate file formats).
-                    if (allocated(pj%lat_xy)) deallocate(pj%lat_xy)
-                    if (allocated(pj%lat)) deallocate(pj%lat)
-                    if (allocated(pj%lon_xy)) deallocate(pj%lon_xy)
-                    if (allocated(pj%lon)) deallocate(pj%lon)
-                    allocate( &
-                        pj%lat_xy(vs%grid_x, vs%grid_y), pj%lat(vs%grid_y), &
-                        pj%lon_xy(vs%grid_x, vs%grid_y), pj%lon(vs%grid_x))
-                    pj%lat_xy = 0.0
-                    do y = 1, vs%grid_y
-                        pj%lat_xy(:, y) = pj%llc_y + pj%dy*y - pj%dy/2.0
-                        pj%lat(y) = pj%lat_xy(1, y)
-                    end do
-                    lat_xy = pj%lat_xy
-                    pj%lon_xy = 0.0
-                    do x = 1, vs%grid_x
-                        pj%lon_xy(x, :) = pj%llc_x + pj%dx*x - pj%dx/2.0
-                        pj%lon(x) = pj%lon_xy(x, 1)
-                    end do
-                    lon_xy = pj%lon_xy
-                else
-
-                    !> From alternate file formats.
-                    if (pj%dy == 0.0 .and. allocated(pj%lat)) then
-                        do i = 2, size(pj%lat)
-                            pj%dy = pj%dy + (pj%lat(i) - pj%lat(i - 1))
-                        end do
-                        pj%dy = pj%dy/(size(pj%lat) - 1)
-                        pj%llc_y = pj%lat(1) - pj%dy/2.0
-                    end if
-                    if (pj%dx == 0.0 .and. allocated(pj%lon)) then
-                        do i = 2, size(pj%lon)
-                            pj%dx = pj%dx + (pj%lon(i) - pj%lon(i - 1))
-                        end do
-                        pj%dx = pj%dx/(size(pj%lon) - 1)
-                        pj%llc_x = pj%lon(1) - pj%dx/2.0
-                    end if
+                !> Check if dimensions are allocated.
+                if (.not. allocated(pj%lat) .or. .not. allocated(pj%lon)) then
+                    call print_error("The 'lat' or 'lon' variables could not be mapped or are not defined.")
+                    error_status = 1
                 end if
 
                 !> Determine the ellipsoid/datum reference (NetCDF; reference: GK Manual, Sep 2010).
@@ -329,6 +363,12 @@ module basin_utilities
 
             !> Rotated lat/lon projection.
             case ('rotlatlong', 'rotated_latitude_longitude')
+
+                !> Check if dimensions are allocated.
+                if (.not. allocated(pj%lat) .or. .not. allocated(pj%lon)) then
+                    call print_error("The 'rlat' or 'rlon' variables could not be mapped or are not defined.")
+                    error_status = 1
+                end if
 
                 !> Regular lat/lon conversion must be read from file, check if the fields exist.
                 if (.not. allocated(pj%lat_xy)) then
@@ -433,99 +473,6 @@ module basin_utilities
             end if
         end if
 
-        !> Check if GRUs (land cover) were found (used for mapping).
-        ro%RUNTILE = .false.
-        if (ro%RUNLSS) then
-            if (vs%gru_count == 0 .or. .not. allocated(gru_nm)) then
-
-                !> Define a single active GRU (and one for the inactive impervious cover) if none were found.
-                call print_remark( &
-                    "At least one GRU (land cover) is required when tile-processing (HLSS) is enabled. " // &
-                    "The number of GRUs is not defined or the 'GRU' or 'LandCover' map is missing in the file. " // &
-                    "Assuming one active GRU.")
-                vs%gru_count = 2
-                allocate(gru_nm(vs%cell_count, vs%gru_count))
-                gru_nm(:, 1) = 1.0
-                gru_nm(:, 2) = 0.0
-            end if
-
-            !> Adjust the land cover count to exclude impervious areas (the last GRU).
-            vs%gru_count = vs%gru_count - 1
-
-            !> Derive the 'landtile' map if tile-processing (HLSS) is enabled.
-            vs%landtile_count = 0
-            do m = 1, vs%gru_count
-
-                !> Count the number of tiles.
-                do n = 1, vs%cell_count
-                    if (gru_nm(n, m) > 0.0) vs%landtile_count = vs%landtile_count + 1
-                end do
-
-                !> Print a remark if the land cover is not active.
-                if (sum(gru_nm(:, m)) == 0.0) then
-                    write(code, *) m
-                    call print_remark("'GRU " // trim(adjustl(code)) // "' has zero coverage in the basin and is not active.")
-                end if
-            end do
-            if (vs%landtile_count == 0) then
-                call print_error( &
-                    "The basin is configured to contain GRUs (land cover) but the fraction of cover of all GRUs is zero.")
-                error_status = 1
-                return
-            end if
-
-            !> Allocate 'tile' variables.
-            allocate(vs%tile)
-            vs%tile%dim_name = 'landtile'
-            vs%tile%dim_length = vs%landtile_count
-            ro%RUNTILE = .true.
-
-            !> Allocate and assign maps.
-            allocate( &
-                vs%tile%from_cell(vs%landtile_count), vs%tile%from_gru(vs%landtile_count), vs%tile%from_grid_x(vs%landtile_count), &
-                vs%tile%from_grid_y(vs%landtile_count), vs%tile%from_riverclass(vs%landtile_count), &
-                vs%tile%lat(vs%landtile_count), vs%tile%lon(vs%landtile_count), vs%tile%area_weight(vs%landtile_count))
-            k = 1
-            do n = 1, size(gru_nm, 1)
-
-                !> Re-adjust GRU-fraction that does not add to 1.0.
-                if (abs(sum(gru_nm(n, :)) - 1.0) > 0.0 .and. sum(gru_nm(n, :)) > 0.0) then
-
-                    !> Print a warning if the missing fraction is significant (> 1%).
-                    if (abs(sum(gru_nm(n, :)) - 1.0) > 0.1) then
-                        write(code, *) n
-                        message = "'Rank " // trim(adjustl(code)) // "'"
-                        write(code, *) sum(gru_nm(n, :))
-                        call print_remark( &
-                            "The total fraction of GRUs (land cover) at " // message // " is adjusted from " // &
-                            trim(adjustl(code)) // " to 1.0.")
-                    end if
-                    gru_nm(n, :) = gru_nm(n, :)/sum(gru_nm(n, :))
-                end if
-
-                !> Assign the maps and GRU-fraction.
-                do m = 1, size(gru_nm, 2)
-                    if (gru_nm(n, m) > 0.0) then
-
-                        !> Update the maps.
-                        vs%tile%from_cell(k) = n
-                        vs%tile%from_gru(k) = m
-                        vs%tile%from_grid_x(k) = vs%grid%from_grid_x(n)
-                        vs%tile%from_grid_y(k) = vs%grid%from_grid_y(n)
-                        if (ro%RUNCHNL) vs%tile%from_riverclass(k) = vs%grid%from_riverclass(n)
-
-                        !> Transfer fields.
-                        vs%tile%lon(k) = vs%grid%lon(n)
-                        vs%tile%lat(k) = vs%grid%lat(n)
-                        vs%tile%area_weight(k) = gru_nm(n, m)
-
-                        !> Increment the tile ID.
-                        k = k + 1
-                    end if
-                end do
-            end do
-        end if
-
         !> Assign remaining variables.
         call create_mapped_output_from_field_list(field_list, error_status = error_status)
         if (error_status /= 0) return
@@ -537,6 +484,22 @@ module basin_utilities
             allocate(vs%basin)
             vs%basin%dim_name = 'basin'
             vs%basin%dim_length = vs%cell_count
+
+            !> Add an extra subbasin or cell to pad all outlets.
+            if (SHDPADOUTLETS) then
+
+                !> Summarize info to screen and output.
+                call print_info("'SHDPADOUTLETS' is active.")
+                n = vs%cell_count - 1
+                write(code, *) count(vs%grid%next_id(1:n) == 0)
+                message = "Re-routing outflows at " // trim(adjustl(code)) // " in-basin outlets to 'Rank "
+                write(code, *) vs%cell_count
+                message = message // trim(adjustl(code)) // "'."
+                call print_remark(message)
+
+                !> Change in-basin outlets to point to the added subbasin/cell.
+                where (vs%grid%next_id(1:n) == 0) vs%grid%next_id = vs%cell_count
+            end if
 
             !> Derive the number of points inside the basin.
             vs%active_cell_count = count(vs%grid%next_id /= 0)
@@ -634,9 +597,6 @@ module basin_utilities
         !> Set to unit weight 1.0 where 'area_weight' is zero.
 !        where (vs%grid%area_weight == 0.0) vs%grid%area_weight = 1.0
 
-        !> Adjust 'tile' areas by their active GRU-fraction.
-        if (ro%RUNLSS) vs%tile%surface_area = vs%tile%surface_area*vs%tile%area_weight
-
         !> Validate individual values.
         ierr = 0
         do n = 1, vs%active_cell_count
@@ -688,22 +648,260 @@ module basin_utilities
             return
         end if
 
+!>>temp
+        shd%CoordSys%Proj = trim(pj%projection)
+        shd%CoordSys%Ellips = trim(pj%ellipsoid)
+        shd%CoordSys%Zone = trim(pj%zone)
+        shd%CoordSys%CentreLatitude = pj%centre_latitude
+        shd%CoordSys%CentreLongitude = pj%centre_longitude
+        shd%CoordSys%RotationLatitude = pj%rotation_latitude
+        shd%CoordSys%RotationLongitude = pj%rotation_longitude
+        shd%CoordSys%earth_radius = pj%earth_radius
+        shd%CoordSys%grid_north_pole_latitude = pj%grid_north_pole_latitude
+        shd%CoordSys%grid_north_pole_longitude = pj%grid_north_pole_longitude
+        allocate(shd%CoordSys%lon(size(pj%lon)), source = pj%lon)
+        shd%xCount = size(pj%lon)
+        shd%xOrigin = pj%llc_x
+        shd%xDelta = pj%dx
+        if (allocated(pj%lon_xy)) then
+            allocate(shd%CoordSys%xylon(size(pj%lon_xy, 1), size(pj%lon_xy, 2)), source = pj%lon_xy)
+            allocate(shd%CoordSys%rlon(size(pj%lon)), source = pj%lon)
+        end if
+        allocate(shd%CoordSys%lat(size(pj%lat)), source = pj%lat)
+        shd%yCount = size(pj%lat)
+        shd%yOrigin = pj%llc_y
+        shd%yDelta = pj%dy
+        if (allocated(pj%lat_xy)) then
+            allocate(shd%CoordSys%xylat(size(pj%lat_xy, 1), size(pj%lat_xy, 2)), source = pj%lat_xy)
+            allocate(shd%CoordSys%rlat(size(pj%lat)), source = pj%lat)
+        end if
+        shd%NA = vs%grid%dim_length
+        if (SHDFILEFMT == 5) shd%yCount = 1 !ME: adjustment for nc_subbasin
+        if (allocated(vs%grid%next_id)) then
+            shd%NAA = count(vs%grid%next_id > 0)
+            allocate(shd%NEXT(vs%grid%dim_length), source = vs%grid%next_id)
+        else
+            shd%NAA = 1
+        end if
+        allocate(shd%AREA(vs%grid%dim_length), source = vs%grid%surface_area)
+        if (ro%RUNCHNL) then
+            allocate(shd%IAK(vs%grid%dim_length), source = vs%grid%from_riverclass)
+            shd%NRVR = maxval(vs%grid%from_riverclass)
+            allocate(shd%SLOPE_CHNL(vs%grid%dim_length), source = vs%grid%chnl_slope)
+            allocate(shd%CHNL_LEN(vs%grid%dim_length), source = vs%grid%chnl_length)
+            allocate(shd%ICHNL(vs%grid%dim_length), source = vs%grid%ichnl)
+            allocate(shd%IREACH(vs%grid%dim_length), source = vs%grid%ireach)
+            allocate(shd%DA(vs%grid%dim_length), source = vs%grid%drainage_area)
+            allocate(shd%BNKFLL(vs%grid%dim_length), source = vs%grid%bankfull)
+            allocate(shd%IROUGH(vs%grid%dim_length))
+            shd%IROUGH = 0
+        end if
+        allocate(shd%ELEV(vs%grid%dim_length))
+        shd%ELEV = 0.0
+        shd%AL = pj%nominal_side_length
+        allocate(shd%xlng(vs%grid%dim_length), source = vs%grid%lon)
+        allocate(shd%ylat(vs%grid%dim_length), source = vs%grid%lat)
+        allocate(shd%xxx(vs%grid%dim_length), source = vs%grid%from_grid_x)
+        allocate(shd%yyy(vs%grid%dim_length), source = vs%grid%from_grid_y)
+        allocate(shd%FRAC(vs%grid%dim_length), source = vs%grid%area_weight)
+!<<temp
+
+!>>>
+        !> Check for basin structures.
+        if (ro%RUNCHNL) then
+            call read_basin_structures(shd, error_status)
+            if (error_status /= 0) return
+
+            !> Deactivate land cover in cells outside the range of subbasins to
+            !>  exclude them from NML. The original method used the CLASS 'FARE'
+            !>  parameter to do this via GATPREP when CLASS was still integrated
+            !>  in 'MESH_driver' directly. This approach doesn't work when the
+            !>  'tile' variables were moved to the 'MESH_driver' level to
+            !>  accommodate removal of the CLASS GATHER/SCATTER routines in r733
+            !>  and the addition of the MPI exchanges in r1022.
+            if (SUBBASINFLAG > 0 .and. allocated(gru_nm)) then
+
+                !> Print message to screen.
+                call reset_tab()
+                call print_message('SUBBASIN mask is ACTIVE.')
+                call increase_tab()
+
+                !> Allocate and initialize local variables.
+                allocate(SUBBASIN(vs%cell_count))
+                SUBBASIN = 0
+
+                !> Set gauge locations to 1.
+                do l = 1, fms%stmg%n
+                    SUBBASIN(fms%stmg%meta%rnk(l)) = l
+                end do
+                if (DIAGNOSEMODE) then
+                    write(code, FMT_GEN) fms%stmg%n
+                    call print_message('Masking domains for ' // trim(adjustl(code)) // ' subbasins.')
+                end if
+
+                !> Mask grids upstream of gauge locations.
+                i = 1
+                do while (i > 0)
+                    i = 0
+                    do n = 1, vs%active_cell_count
+                        if (SUBBASIN(vs%grid%next_id(n)) > 0 .and. SUBBASIN(n) == 0) then
+                            SUBBASIN(n) = SUBBASIN(vs%grid%next_id(n))
+                            i = 1
+                        end if
+                    end do
+                end do
+
+                !> Set GRU fraction 'ACLASS' to zero for all cells in the grid.
+                do m = 1, vs%gru_count
+                    where (SUBBASIN == 0) gru_nm(:, m) = 0.0
+                end do
+
+                !> Set 'DA' to zero for all cells that are masked by 'SUBBASINFLAG'.
+                do m = 1, shd%NA
+                    where (SUBBASIN == 0) shd%DA = 0.0
+                end do
+
+                !> Print diagnostic information to screen.
+                if (DIAGNOSEMODE) then
+                    write(line, FMT_GEN) 'SUBBASIN', 'GRIDS'
+                    call print_message(line)
+                    do l = 1, fms%stmg%n
+                        write(line, FMT_GEN) l, count(SUBBASIN == l)
+                        call print_message(line)
+                    end do
+                end if
+            end if
+        end if
+!<<<
+
         !> Print a summary.
         write(code, *) vs%cell_count
         call print_message("Total number of grids: " // trim(adjustl(code)))
         write(code, *) vs%active_cell_count
         call print_message("Total number of grids inside the basin: " // trim(adjustl(code)))
+        write(field, FMT_GEN) vs%grid_x
+        call print_message('Total number of Columns: ' // trim(adjustl(field)))
+        write(field, FMT_GEN) vs%grid_y
+        call print_message('Total number of Rows: ' // trim(adjustl(field)))
         write(code, *) pj%nominal_side_length
         call print_message("Side length of grid: " // trim(adjustl(code)) // " m")
+        if (ro%RUNCHNL) then
+            write(code, *) vs%riverclass_count
+            call print_message("Number of river classes: " // trim(adjustl(code)))
+        end if
+
+        !> Check if GRUs (land cover) were found (used for mapping).
+        ro%RUNTILE = .false.
         if (ro%RUNLSS) then
+            if (vs%gru_count == 0 .or. .not. allocated(gru_nm)) then
+
+                !> Define a single active GRU (and one for the inactive impervious cover) if none were found.
+                call print_remark( &
+                    "At least one GRU (land cover) is required when tile-processing (HLSS) is enabled. " // &
+                    "The number of GRUs is not defined or the 'GRU' or 'LandCover' map is missing in the file. " // &
+                    "Assuming one active GRU.")
+                vs%gru_count = 2
+                allocate(gru_nm(vs%cell_count, vs%gru_count))
+                gru_nm(:, 1) = 1.0
+                gru_nm(:, 2) = 0.0
+            end if
+
+            !> Adjust the land cover count to exclude impervious areas (the last GRU).
+            vs%gru_count = vs%gru_count - 1
+
+            !> Derive the 'landtile' map if tile-processing (HLSS) is enabled.
+            vs%landtile_count = 0
+            do m = 1, vs%gru_count
+
+                !> Count the number of tiles.
+                do n = 1, vs%cell_count
+                    if (gru_nm(n, m) > 0.0) vs%landtile_count = vs%landtile_count + 1
+                end do
+
+                !> Print a remark if the land cover is not active.
+                if (sum(gru_nm(:, m)) == 0.0) then
+                    write(code, *) m
+                    call print_remark("'GRU " // trim(adjustl(code)) // "' has zero coverage in the basin and is not active.")
+                end if
+            end do
+            if (vs%landtile_count == 0) then
+                call print_error( &
+                    "The basin is configured to contain GRUs (land cover) but the fraction of cover of all GRUs is zero.")
+                error_status = 1
+                return
+            end if
+
+            !> Allocate 'tile' variables.
+            allocate(vs%tile)
+            vs%tile%dim_name = 'landtile'
+            vs%tile%dim_length = vs%landtile_count
+            ro%RUNTILE = .true.
+
+            !> Allocate and assign maps.
+            allocate( &
+                vs%tile%from_cell(vs%landtile_count), vs%tile%from_gru(vs%landtile_count), vs%tile%from_grid_x(vs%landtile_count), &
+                vs%tile%from_grid_y(vs%landtile_count), vs%tile%from_riverclass(vs%landtile_count), &
+                vs%tile%lat(vs%landtile_count), vs%tile%lon(vs%landtile_count), vs%tile%area_weight(vs%landtile_count), &
+                vs%tile%surface_area(vs%landtile_count))
+            k = 1
+            do n = 1, size(gru_nm, 1)
+
+                !> Re-adjust GRU-fraction that does not add to 1.0.
+                if (abs(sum(gru_nm(n, :)) - 1.0) > 0.0 .and. sum(gru_nm(n, :)) > 0.0) then
+
+                    !> Print a warning if the missing fraction is significant (> 1%).
+                    if (abs(sum(gru_nm(n, :)) - 1.0) > 0.1) then
+                        write(code, *) n
+                        message = "'Rank " // trim(adjustl(code)) // "'"
+                        write(code, *) sum(gru_nm(n, :))
+                        call print_remark( &
+                            "The total fraction of GRUs (land cover) at " // message // " is adjusted from " // &
+                            trim(adjustl(code)) // " to 1.0.")
+                    end if
+                    gru_nm(n, :) = gru_nm(n, :)/sum(gru_nm(n, :))
+                end if
+
+                !> Assign the maps and GRU-fraction.
+                do m = 1, size(gru_nm, 2)
+                    if (gru_nm(n, m) > 0.0) then
+
+                        !> Update the maps.
+                        vs%tile%from_cell(k) = n
+                        vs%tile%from_gru(k) = m
+                        vs%tile%from_grid_x(k) = vs%grid%from_grid_x(n)
+                        vs%tile%from_grid_y(k) = vs%grid%from_grid_y(n)
+                        if (ro%RUNCHNL) vs%tile%from_riverclass(k) = vs%grid%from_riverclass(n)
+
+                        !> Transfer fields.
+                        vs%tile%lon(k) = vs%grid%lon(n)
+                        vs%tile%lat(k) = vs%grid%lat(n)
+                        vs%tile%area_weight(k) = gru_nm(n, m)
+                        vs%tile%surface_area(k) = vs%grid%surface_area(n)*gru_nm(n, m)
+
+                        !> Increment the tile ID.
+                        k = k + 1
+                    end if
+                end do
+            end do
+
+!>>temp
+            shd%lc%NTYPE = vs%gru_count
+            shd%lc%NML = vs%tile%dim_length
+            shd%lc%ILG = vs%tile%dim_length
+            allocate(shd%lc%ILMOS(vs%tile%dim_length), source = vs%tile%from_cell)
+            allocate(shd%lc%JLMOS(vs%tile%dim_length), source = vs%tile%from_gru)
+            allocate(shd%lc%ACLASS(vs%grid%dim_length, vs%gru_count + 1))
+            shd%lc%ACLASS = 0.0
+            do k = 1, vs%tile%dim_length
+                shd%lc%ACLASS(vs%tile%from_cell(k), vs%tile%from_gru(k)) = vs%tile%area_weight(k)
+            end do
+!<<temp
+
+            !> Print a summary.
             write(code, *) vs%gru_count
             call print_message("Number of GRUs: " // trim(adjustl(code)))
             write(code, *) vs%landtile_count
             call print_message("Number of land-based tiles: " // trim(adjustl(code)))
-        end if
-        if (ro%RUNCHNL) then
-            write(code, *) vs%riverclass_count
-            call print_message("Number of river classes: " // trim(adjustl(code)))
         end if
 
     end subroutine

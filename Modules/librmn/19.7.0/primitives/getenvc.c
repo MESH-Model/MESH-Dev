@@ -22,6 +22,7 @@
 #endif
 #include <stdlib.h>
 #include <rpnmacros.h>
+#include <string.h>
 /*
    La routine getenvc fouille l'environnement pour une chaine
    de type "name=xxx", retournant "xxx" ou une chaine vide 

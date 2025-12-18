@@ -136,7 +136,7 @@ module mesh_io
             !> Compare values.
             ltest = .true.
             do i = 1, size(reference_values)
-                ltest = (ltest .and. (reference_values(i) == file_values(i)))
+                ltest = (ltest .and. abs(reference_values(i) - file_values(i)) < 1.0e-10)
             end do
             if (.not. ltest) then
                 if (v) call print_error( &
@@ -474,6 +474,8 @@ module mesh_io
         character(len = DEFAULT_LINE_LENGTH) line_buffer
 #ifdef NETCDF
         character(len = SHORT_FIELD_LENGTH) :: description, units, aname, vname
+        character(len = SHORT_FIELD_LENGTH), allocatable :: dat1_cshort(:)
+        character(len = LONG_FIELD_LENGTH) :: dat_clong
         character(len = :), allocatable :: dat1_c(:), dat_c
         character fill_c
         real(kind = kind(0.0d0)), allocatable :: dat1_d(:)
@@ -1254,11 +1256,26 @@ module mesh_io
                                 error_status = 1
                                 return
                             else
+
+                                !> Get the start-time from the first record of the 'time' variable.
                                 call nc4_get_time( &
                                     input_file%iunit, &
                                     year = input_file%series%start%year, month = input_file%series%start%month, &
                                     day = input_file%series%start%day, jday = input_file%series%start%jday, &
                                     hour = input_file%series%start%hour, minutes = input_file%series%start%minutes, &
+                                    time_shift = input_file%series%time_offset, &
+                                    ierr = ierr)
+                                if (ierr /= 0) then
+                                    error_status = 1
+                                    return
+                                end if
+
+                                !> Get the end-time from the last record of the 'time' variable.
+                                call nc4_get_time_last( &
+                                    input_file%iunit, &
+                                    year = input_file%series%end%year, month = input_file%series%end%month, &
+                                    day = input_file%series%end%day, jday = input_file%series%end%jday, &
+                                    hour = input_file%series%end%hour, minutes = input_file%series%end%minutes, &
                                     time_shift = input_file%series%time_offset, &
                                     ierr = ierr)
                                 if (ierr /= 0) then
@@ -1411,8 +1428,11 @@ module mesh_io
                                     if (allocated(dat1_c)) then
                                         call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat1_c, ierr = ierr)
                                         if (ierr == 0) then
+                                            allocate(dat1_cshort(dim_lengths(j)))
+                                            call copy_field(dat1_c, dat1_cshort, ierr)
                                             allocate(file_buffer(n)%field, source = model_variable_char1d( &
-                                                dat = dat1_c, no_data_value = fill_c))
+                                                dat = dat1_cshort, no_data_value = fill_c))
+                                            deallocate(dat1_cshort)
                                         end if
                                         deallocate(dat1_c)
                                         allocate(file_buffer(n)%dim_names(1))
@@ -1422,7 +1442,8 @@ module mesh_io
                                     allocate(character(len = dim_lengths(1)) :: dat_c)
                                     call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat_c, ierr = ierr)
                                     if (ierr == 0) then
-                                        allocate(file_buffer(n)%field, source = model_variable_char(dat = dat_c))
+                                        call copy_field(dat_c, dat_clong, ierr)
+                                        allocate(file_buffer(n)%field, source = model_variable_char(dat = dat_clong))
                                     end if
                                     deallocate(dat_c)
                                 case default
@@ -2518,83 +2539,96 @@ module mesh_io
         if (.not. allocated(dim_lengths)) return
 
         !> Map known dimensions.
-        do i = 1, size(input_field%mapping%mapped_dim_order)
+        associate (field_mapping => input_field%mapping)
+            associate (dim_order => field_mapping%mapped_dim_order)
 
-            !> Identify the map.
-            if ( &
-                input_field%mapping%mapped_dim_order(MAP_ORDER_X) > 0 .and. &
-                input_field%mapping%mapped_dim_order(MAP_ORDER_Y) > 0) then
-                if (allocated(input_field%mapping%cell_map)) then
-                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_X), :) = vs%grid%from_grid_x
-                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_Y), :) = vs%grid%from_grid_y
+                !> Identify the map.
+                if (dim_order(MAP_ORDER_X) > 0 .and. dim_order(MAP_ORDER_Y) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        field_mapping%cell_map(dim_order(MAP_ORDER_X), :) = vs%grid%from_grid_x
+                        field_mapping%cell_map(dim_order(MAP_ORDER_Y), :) = vs%grid%from_grid_y
+                    end if
+                    if (allocated(input_field%mapping%tile_map)) then
+                        field_mapping%tile_map(dim_order(MAP_ORDER_X), :) = vs%tile%from_grid_x
+                        field_mapping%tile_map(dim_order(MAP_ORDER_Y), :) = vs%tile%from_grid_y
+                    end if
+                else if (dim_order(MAP_ORDER_M) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        call print_warning( &
+                            "The variable '" // trim(input_field%label) // "' cannot be mapped from the elemental dimension '" // &
+                            trim(DIM_NAME_GRU) // "' to '" // trim(DIM_NAME_SUBBASIN) // "' or '" // trim(DIM_NAME_CELL) // "'.")
+                        deallocate(field_mapping%cell_map)
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        field_mapping%tile_map(dim_order(MAP_ORDER_M), :) = vs%tile%from_gru
+                    end if
+                else if (dim_order(MAP_ORDER_K) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        field_mapping%cell_map(dim_order(MAP_ORDER_K), :) = vs%grid%from_riverclass
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        field_mapping%tile_map(dim_order(MAP_ORDER_K), :) = vs%tile%from_riverclass
+                    end if
+                else if (dim_order(MAP_ORDER_N) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        do j = 1, vs%grid%dim_length
+                            field_mapping%cell_map(dim_order(MAP_ORDER_N), j) = j
+                        end do
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        field_mapping%tile_map(dim_order(MAP_ORDER_N), :) = vs%tile%from_cell
+                    end if
+                else if (dim_order(MAP_ORDER_B) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        field_mapping%cell_map(dim_order(MAP_ORDER_B), :) = 1
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        field_mapping%tile_map(dim_order(MAP_ORDER_B), :) = 1
+                    end if
+                else if (dim_order(MAP_ORDER_G) > 0) then
+                    if (allocated(field_mapping%cell_map)) then
+                        call print_warning( &
+                            "The variable '" // trim(input_field%label) // "' cannot be mapped from the elemental dimension '" // &
+                            trim(DIM_NAME_LANDTILE) // "' to '" // &
+                            trim(DIM_NAME_SUBBASIN) // "' or '" // trim(DIM_NAME_CELL) // "'.")
+                        deallocate(field_mapping%cell_map)
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        do j = 1, vs%tile%dim_length
+                            field_mapping%tile_map(dim_order(MAP_ORDER_G), j) = j
+                        end do
+                    end if
                 end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_X), :) = vs%tile%from_grid_x
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_Y), :) = vs%tile%from_grid_y
-                end if
-            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_M) > 0) then
-                if (allocated(input_field%mapping%tile_map)) then
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_M), :) = vs%tile%from_gru
-                end if
-            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_K) > 0) then
-                if (allocated(input_field%mapping%cell_map)) then
-                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_K), :) = vs%grid%from_riverclass
-                end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_K), :) = vs%tile%from_riverclass
-                end if
-            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_N) > 0) then
-                if (allocated(input_field%mapping%cell_map)) then
-                    do j = 1, vs%grid%dim_length
-                        input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_N), j) = j
-                    end do
-                end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_N), :) = vs%tile%from_cell
-                end if
-            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_B) > 0) then
-                if (allocated(input_field%mapping%cell_map)) then
-                    input_field%mapping%cell_map(input_field%mapping%mapped_dim_order(MAP_ORDER_B), :) = 1
-                end if
-                if (allocated(input_field%mapping%tile_map)) then
-                    input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_B), :) = 1
-                end if
-            else if (input_field%mapping%mapped_dim_order(MAP_ORDER_G) > 0) then
-                if (allocated(input_field%mapping%tile_map)) then
-                    do j = 1, vs%tile%dim_length
-                        input_field%mapping%tile_map(input_field%mapping%mapped_dim_order(MAP_ORDER_G), j) = j
-                    end do
-                end if
-            end if
-        end do
+            end associate
 
-        !> Check for unmapped dimensions.
-        do i = 1, size(dim_lengths)
-            if (i == input_field%mapping%time_order) then
+            !> Check for unmapped dimensions.
+            do i = 1, size(dim_lengths)
+                if (i == field_mapping%time_order) then
 
-                !> Set an initial index to the 'time' dimension.
-                if (associated(vs%grid)) input_field%mapping%cell_map(i, :) = 1
-                if (associated(vs%tile)) input_field%mapping%tile_map(i, :) = 1
-            else if (dim_lengths(i) == 1) then
+                    !> Set an initial index to the 'time' dimension.
+                    if (allocated(field_mapping%cell_map)) field_mapping%cell_map(i, :) = 1
+                    if (allocated(field_mapping%tile_map)) field_mapping%tile_map(i, :) = 1
+                else if (dim_lengths(i) == 1) then
 
-                !> Allow a map if the size of the unmapped dimensions is one.
-                if (associated(vs%grid)) then
-                    if (all(input_field%mapping%cell_map(i, :) == 0)) input_field%mapping%cell_map(i, :) = 1
-                end if
-                if (associated(vs%tile)) then
-                    if (all(input_field%mapping%tile_map(i, :) == 0)) input_field%mapping%tile_map(i, :) = 1
-                end if
-            else
+                    !> Allow a map if the size of the unmapped dimensions is one.
+                    if (allocated(field_mapping%cell_map)) then
+                        if (all(field_mapping%cell_map(i, :) == 0)) field_mapping%cell_map(i, :) = 1
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        if (all(field_mapping%tile_map(i, :) == 0)) field_mapping%tile_map(i, :) = 1
+                    end if
+                else
 
-                !> Check for unassigned field.
-                if (associated(vs%grid)) then
-                    if (all(input_field%mapping%cell_map(i, :) == 0)) error_status = 1
+                    !> Check for unassigned field.
+                    if (allocated(field_mapping%cell_map)) then
+                        if (all(field_mapping%cell_map(i, :) == 0)) error_status = 1
+                    end if
+                    if (allocated(field_mapping%tile_map)) then
+                        if (all(field_mapping%tile_map(i, :) == 0)) error_status = 1
+                    end if
                 end if
-                if (associated(vs%tile)) then
-                    if (all(input_field%mapping%tile_map(i, :) == 0)) error_status = 1
-                end if
-            end if
-        end do
+            end do
+        end associate
 
     end subroutine
 
@@ -2703,7 +2737,8 @@ module mesh_io
         end if
 
         !> Special conditions not covered by mapping alone.
-        if (allocated(input_field%mapping%cell_map) .and. allocated(input_field%mapping%tile_map)) then
+        if ((.not. allocated(input_field%mapping%cell_map) .and. allocated(input_field%mapping%mapped_to_cell)) .and. &
+            allocated(input_field%mapping%tile_map)) then
             select type (cell => input_field%mapping%mapped_to_cell)
                 type is (model_variable_real1d)
                     select type (tile => input_field%mapping%mapped_to_tile)

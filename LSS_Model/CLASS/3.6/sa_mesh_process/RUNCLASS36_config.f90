@@ -326,7 +326,7 @@ module RUNCLASS36_config
                  cfi%VL(NML), cfi%VMOD(NML))
 
         !> Prognostic variables.
-        allocate(cpv%ALBS(NML), cpv%CMAI(NML), cpv%GRO(NML), cpv%QAC(NML), cpv%RCAN(NML), cpv%RHOS(NML), cpv%SNCAN(NML), &
+        allocate(cpv%ALBS(NML), cpv%CMAI(NML), cpv%GRO(NML), cpv%QAC(NML), cpv%VAC(NML), cpv%RCAN(NML), cpv%RHOS(NML), cpv%SNCAN(NML), &
                  cpv%SNO(NML), cpv%TAC(NML), cpv%TBAS(NML), cpv%TCAN(NML), cpv%TPND(NML), cpv%TSNO(NML), cpv%WSNO(NML), &
                  cpv%ZPND(NML))
         allocate(cpv%TBAR(NML, NSL), cpv%THIC(NML, NSL), cpv%THLQ(NML, NSL))
@@ -434,6 +434,7 @@ module RUNCLASS36_config
         cpv%CMAI(il1:il2) = vs%tile%cmas(il1:il2)
         cpv%WSNO(il1:il2) = vs%tile%lqwssno(il1:il2)
         cpv%QAC(il1:il2) = vs%tile%qacan(il1:il2)
+        cpv%VAC(il1:il2) = vs%tile%uvcan(il1:il2)
         cpv%TCAN(il1:il2) = vs%tile%tcan(il1:il2)
         cpv%TAC(il1:il2) = vs%tile%tacan(il1:il2)
         cpv%TSNO(il1:il2) = vs%tile%tsno(il1:il2)
@@ -598,21 +599,24 @@ module RUNCLASS36_config
 
     subroutine read_init_prog_variables_class_row(fls, shd)
 
+        !> Modules.
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
 
+        !> Input variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
 
-        !> For SAVERESUMEFLAG 3
-        real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+        !> Local variables.
+        real(kind = 4), dimension(:, :), allocatable :: &
+            ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
             RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
             TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW
         real(kind = 4), dimension(:, :, :), allocatable :: TBARROW, THICROW, THLQROW, TSFSROW
-
         integer NA, NTYPE, NSL, k, ik, jk, iun, ierr
+        character(len = DEFAULT_LINE_LENGTH) :: resume_fn = ''
 
         !> Return if the process is not active.
         if (.not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
@@ -622,17 +626,22 @@ module RUNCLASS36_config
         NTYPE = shd%lc%NTYPE
         NSL = shd%lc%IGND
 
-        !> Open the resume state file.
+        !> Open the resume state file for reading.
         iun = fls%fl(mfk%f883)%iun
-        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'old', action = 'read', &
-             form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
+        resume_fn = trim(adjustl(fls%fl(mfk%f883)%fn))
+        open( &
+            iun, file = resume_fn, status = 'old', action = 'read', form = 'unformatted', access = 'sequential', iostat = ierr)
+        if (ierr /= 0) then
+            call print_error("Error opening CLASS resume file: " // trim(adjustl(resume_fn)))
+            call program_abort()
+        end if
 
         !> Allocate temporary variables.
-        allocate(ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
-                 RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
-                 TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
-                 TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
+        allocate( &
+            ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
+            RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
+            TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
+            TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
 
         !> Read inital values from the file.
         read(iun) ALBSROW
@@ -689,30 +698,34 @@ module RUNCLASS36_config
         end do
 
         !> Deallocate temporary variables.
-        deallocate(ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
-                   RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
-                   TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
-                   TBARROW, THICROW, THLQROW, TSFSROW)
+        deallocate( &
+            ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+            RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
+            TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
+            TBARROW, THICROW, THLQROW, TSFSROW)
 
     end subroutine
 
     subroutine save_init_prog_variables_class_row(fls, shd)
 
+        !> Modules.
         use mpi_module
         use model_files_variables
         use sa_mesh_common
         use model_dates
 
+        !> Input variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
 
-        !> For SAVERESUMEFLAG 3
-        real(kind = 4), dimension(:, :), allocatable :: ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+        !> Local variables.
+        real(kind = 4), dimension(:, :), allocatable :: &
+            ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
             RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
             TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW
         real(kind = 4), dimension(:, :, :), allocatable :: TBARROW, THICROW, THLQROW, TSFSROW
-
         integer NA, NTYPE, NSL, k, ik, jk, iun, ierr
+        character(len = DEFAULT_LINE_LENGTH) :: resume_fn = ''
 
         !> Return if not the head node or if the process is not active.
         if (.not. ISHEADNODE .or. .not. RUNCLASS36_flgs%PROCESS_ACTIVE) return
@@ -722,17 +735,22 @@ module RUNCLASS36_config
         NTYPE = shd%lc%NTYPE
         NSL = shd%lc%IGND
 
-        !> Open the resume state file.
+        !> Open the resume state file for writing.
         iun = fls%fl(mfk%f883)%iun
-        open(iun, file = trim(adjustl(fls%fl(mfk%f883)%fn)), status = 'replace', action = 'write', &
-             form = 'unformatted', access = 'sequential', iostat = ierr)
-!todo: condition for ierr.
+        resume_fn = trim(adjustl(fls%fl(mfk%f883)%fn))
+        open( &
+            iun, file = resume_fn, status = 'replace', action = 'write', form = 'unformatted', access = 'sequential', iostat = ierr)
+        if (ierr /= 0) then
+            call print_error("Error saving CLASS resume file: " // trim(adjustl(resume_fn)))
+            call program_abort()
+        end if
 
         !> Allocate and initialize temporary variables.
-        allocate(ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
-                 RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
-                 TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
-                 TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
+        allocate( &
+            ALBSROW(NA, NTYPE), CMAIROW(NA, NTYPE), GROROW(NA, NTYPE), QACROW(NA, NTYPE), RCANROW(NA, NTYPE), &
+            RHOSROW(NA, NTYPE), SCANROW(NA, NTYPE), SNOROW(NA, NTYPE), TACROW(NA, NTYPE), TBASROW(NA, NTYPE), &
+            TCANROW(NA, NTYPE), TPNDROW(NA, NTYPE), TSNOROW(NA, NTYPE), WSNOROW(NA, NTYPE), ZPNDROW(NA, NTYPE), &
+            TBARROW(NA, NTYPE, NSL), THICROW(NA, NTYPE, NSL), THLQROW(NA, NTYPE, NSL), TSFSROW(NA, NTYPE, 4))
         ALBSROW = 0.0; CMAIROW = 0.0; GROROW = 0.0; QACROW = 0.0; RCANROW = 0.0; RHOSROW = 0.0
         SCANROW = 0.0; SNOROW = 0.0; TACROW = 0.0; TBASROW = 0.0; TCANROW = 0.0; TPNDROW = 0.0
         TSNOROW = 0.0; WSNOROW = 0.0; ZPNDROW = 0.0
@@ -793,10 +811,11 @@ module RUNCLASS36_config
         close(iun)
 
         !> Deallocate temporary variables.
-        deallocate(ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
-                   RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
-                   TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
-                   TBARROW, THICROW, THLQROW, TSFSROW)
+        deallocate( &
+            ALBSROW, CMAIROW, GROROW, QACROW, RCANROW, &
+            RHOSROW, SCANROW, SNOROW, TACROW, TBASROW, &
+            TCANROW, TPNDROW, TSNOROW, WSNOROW, ZPNDROW, &
+            TBARROW, THICROW, THLQROW, TSFSROW)
 
     end subroutine
 

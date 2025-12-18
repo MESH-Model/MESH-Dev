@@ -79,9 +79,13 @@ subroutine read_reservoir_tb0(shd, iun, fname, ierr)
     call get_keyword_value(iun, vkeyword, nkeyword, ':Coeff6', fms%rsvr%rls%b6, fms%rsvr%n, z)
     call get_keyword_value(iun, vkeyword, nkeyword, ':Coeff7', fms%rsvr%rls%b7, fms%rsvr%n, z)
     call get_keyword_value(iun, vkeyword, nkeyword, ':InitLvl', fms%rsvr%rls%zlvl0, fms%rsvr%n, z)
+    call get_keyword_value(iun, vkeyword, nkeyword, ':OutflowFunction', fms%rsvr%rls%cfn, fms%rsvr%n, z)
 
     !> Replace 'area' with 'b6' if available.
     if (any(fms%rsvr%rls%b6 > 0.0)) fms%rsvr%rls%area = fms%rsvr%rls%b6
+
+    !> Set default value for 'OutflowFunction' to the power function (2) if not specified from file.
+!-    if (any(fms%rsvr%rls%cfn == 0)) fms%rsvr%rls%cfn = 2
 
     !> Get the start time of the first record in the file.
     call parse_starttime( &

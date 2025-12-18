@@ -51,13 +51,13 @@ subroutine read_parameters_nc( &
 
     !> Local variables (reading).
     character(len = DEFAULT_FIELD_LENGTH) :: &
-        dim_x = '', dim_y = '', dim_m = '', dim_c = '', dim_v = '', dim_s = '', projection, units, field, code
+        dim_x = '', dim_y = '', dim_n = '', dim_m = '', dim_c = '', dim_v = '', dim_s = '', projection, units, field, code
     real, allocatable :: dat_r(:), dat2_r(:, :), dat3_r(:, :, :)
     real fill_r
     real, parameter :: deg_threshold = 1.0E-4
     integer, allocatable :: nvf_levels(:), dat2_i(:, :)
     integer :: ngru = -1, ncan = -1, nvf = -1, nsol = -1, fill_i, iun, nvars, ndims, ncount, m, n, k, i, z
-    logical ltest
+    logical nc_subbasin, ltest
 
     !> Initialize the return status.
     ierr = 0
@@ -81,46 +81,65 @@ subroutine read_parameters_nc( &
         if (DIAGNOSEMODE) call print_message("The projection of the file is '" // trim(shd%CoordSys%Proj) // "'.")
     end if
 
+    !> Get the name of the first dimension.
+    call nc4_get_dimension_name(iun, 1, dim_name = dim_n, ierr = ierr)
+    if (ierr /= 0) then
+        goto 999
+    else
+        dim_n = lowercase(dim_n)
+        nc_subbasin = (dim_n == 'subbasin')
+    end if
+
     !> Check bounds.
     if (present(dim_x_name)) dim_x = dim_x_name
     if (present(dim_y_name)) dim_y = dim_y_name
     select case (shd%CoordSys%Proj)
         case ('LATLONG')
-
-            !> Check longitude values.
-            if (len_trim(dim_x) == 0) dim_x = 'lon'
-            call nc4_get_variable(iun, dim_x, dat = dat_r, fill = fill_r, units = units, ierr = z)
-            if (z /= 0) then
-                ierr = z
+            if (nc_subbasin) then
+                if (len_trim(dim_x) == 0) dim_x = 'lon'
+                if (len_trim(dim_y) == 0) dim_y = 'lat'
+                call nc4_get_variable(iun, dim_x, dat = dat_r, fill = fill_r, units = units, ierr = z)
+                call nc4_get_variable(iun, dim_y, dat = dat_r, fill = fill_r, units = units, ierr = z)
+                dim_x = 'subbasin'
             else
-                ltest = (size(dat_r) == shd%xCount)
-                if (ltest) then
-                    do n = 1, shd%NA
-                        ltest = (ltest .and. (shd%CoordSys%lon(n) == dat_r(shd%xxx(n))))
-                    end do
-                end if
-                if (.not. ltest) then
-                    call print_error("The longitudinal reference in the file ('" // trim(dim_x) // "') does not match the domain.")
-                    ierr = 1
-                end if
-            end if
-            deallocate(dat_r)
 
-            !> Check latitude values.
-            if (len_trim(dim_y) == 0) dim_y = 'lat'
-            call nc4_get_variable(iun, dim_y, dat = dat_r, fill = fill_r, units = units, ierr = z)
-            if (z /= 0) then
-                ierr = z
-            else
-                ltest = (size(dat_r) == shd%yCount)
-                if (ltest) then
-                    do n = 1, shd%NA
-                        ltest = (ltest .and. (shd%CoordSys%lat(n) == dat_r(shd%yyy(n))))
-                    end do
+                !> Check longitude values.
+                if (len_trim(dim_x) == 0) dim_x = 'lon'
+                call nc4_get_variable(iun, dim_x, dat = dat_r, fill = fill_r, units = units, ierr = z)
+                if (z /= 0) then
+                    ierr = z
+                else
+                    ltest = (size(dat_r) == shd%xCount)
+                    if (ltest) then
+                        do n = 1, shd%NA
+                            ltest = (ltest .and. (shd%CoordSys%lon(n) == dat_r(shd%xxx(n))))
+                        end do
+                    end if
+                    if (.not. ltest) then
+                        call print_error( &
+                            "The longitudinal reference in the file ('" // trim(dim_x) // "') does not match the domain.")
+                        ierr = 1
+                    end if
                 end if
-                if (.not. ltest) then
-                    call print_error("The latitudinal reference in the file ('" // trim(dim_y) // "') does not match the domain.")
-                    ierr = 1
+                deallocate(dat_r)
+
+                !> Check latitude values.
+                if (len_trim(dim_y) == 0) dim_y = 'lat'
+                call nc4_get_variable(iun, dim_y, dat = dat_r, fill = fill_r, units = units, ierr = z)
+                if (z /= 0) then
+                    ierr = z
+                else
+                    ltest = (size(dat_r) == shd%yCount)
+                    if (ltest) then
+                        do n = 1, shd%NA
+                            ltest = (ltest .and. (shd%CoordSys%lat(n) == dat_r(shd%yyy(n))))
+                        end do
+                    end if
+                    if (.not. ltest) then
+                        call print_error( &
+                            "The latitudinal reference in the file ('" // trim(dim_y) // "') does not match the domain.")
+                        ierr = 1
+                    end if
                 end if
             end if
         case ('rotated_latitude_longitude')
@@ -177,7 +196,8 @@ subroutine read_parameters_nc( &
             ngru = -1
         else if (ngru /= shd%lc%NTYPE) then
             write(field, FMT_GEN) shd%lc%NTYPE
-            call print_error("The number of GRUs '" // trim(dim_m) // "' does not match the expected value of " // trim(adjustl(field)) // ".")
+            call print_error( &
+                "The number of GRUs '" // trim(dim_m) // "' does not match the expected value of " // trim(adjustl(field)) // ".")
             ierr = 1
         end if
     end if
@@ -256,75 +276,106 @@ subroutine read_parameters_nc( &
             !> RUNCLASS36 and RUNSVS113.
             case ('fcan')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-                    if (ndims == 2) then
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                        do n = 1, shd%NA
-                            pm%grid%fcan(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
-                        end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, dim_c, pm%grid%fcan, fill_r, ierr = ierr)
                     else
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_c, dat3_r, fill_r, ierr = ierr)
-                        do m = 1, ncan
+                        if (ndims == 2) then
+                            call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
                             do n = 1, shd%NA
-                                pm%grid%fcan(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                                pm%grid%fcan(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
                             end do
-                        end do
-                        deallocate(dat3_r)
+                        else
+                            call nc4_get_variable(iun, field, dim_x, dim_y, dim_c, dat3_r, fill_r, ierr = ierr)
+                            do m = 1, ncan
+                                do n = 1, shd%NA
+                                    pm%grid%fcan(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                                end do
+                            end do
+                            deallocate(dat3_r)
+                        end if
                     end if
                 end if
             case ('lnz0')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-                    if (ndims == 2) then
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                        do n = 1, shd%NA
-                            pm%grid%lnz0(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
-                        end do
-                        if (svs_mesh%PROCESS_ACTIVE) then
-                            if (.not. allocated(svs_mesh%vs%lnz0)) allocate(svs_mesh%vs%lnz0(shd%lc%NML))
-                            do k = 1, shd%lc%NML
-                                svs_mesh%vs%lnz0(k) = dat2_r(shd%xxx(shd%lc%ILMOS(k)), shd%yyy(shd%lc%ILMOS(k)))
-                            end do
-                        end if
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, dim_c, pm%grid%lnz0, fill_r, ierr = ierr)
                     else
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_c, dat3_r, fill_r, ierr = ierr)
-                        do m = 1, ncan
+                        if (ndims == 2) then
+                            call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
                             do n = 1, shd%NA
-                                pm%grid%lnz0(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                                pm%grid%lnz0(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
                             end do
-                        end do
-                        deallocate(dat3_r)
+                            if (svs_mesh%PROCESS_ACTIVE) then
+                                if (.not. allocated(svs_mesh%vs%lnz0)) allocate(svs_mesh%vs%lnz0(shd%lc%NML))
+                                do k = 1, shd%lc%NML
+                                    svs_mesh%vs%lnz0(k) = dat2_r(shd%xxx(shd%lc%ILMOS(k)), shd%yyy(shd%lc%ILMOS(k)))
+                                end do
+                            end if
+                        else
+                            call nc4_get_variable(iun, field, dim_x, dim_y, dim_c, dat3_r, fill_r, ierr = ierr)
+                            do m = 1, ncan
+                                do n = 1, shd%NA
+                                    pm%grid%lnz0(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                                end do
+                            end do
+                            deallocate(dat3_r)
+                        end if
                     end if
                 end if
             case ('vf')
                 if (svs_mesh%PROCESS_ACTIVE) then
                     if (.not. allocated(svs_mesh%vs%vf)) allocate(svs_mesh%vs%vf(shd%lc%NML, nvf))
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dim_v, dat3_r, fill_r, ierr = ierr)
-                    do m = 1, nvf
-                        do k = 1, shd%lc%NML
-                            svs_mesh%vs%vf(k, 1200 - nvf_levels(m)) = dat3_r(shd%xxx(shd%lc%ILMOS(k)), shd%yyy(shd%lc%ILMOS(k)), m)
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, dim_v, dat2_r, fill_r, ierr = ierr)
+                        do m = 1, nvf
+                            do k = 1, shd%lc%NML
+                                svs_mesh%vs%vf(k, 1200 - nvf_levels(m)) = dat2_r(k, m)
+                            end do
                         end do
-                    end do
-                    deallocate(dat3_r)
+                        deallocate(dat2_r)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_v, dat3_r, fill_r, ierr = ierr)
+                        do m = 1, nvf
+                            do k = 1, shd%lc%NML
+                                svs_mesh%vs%vf(k, 1200 - nvf_levels(m)) = &
+                                    dat3_r(shd%xxx(shd%lc%ILMOS(k)), shd%yyy(shd%lc%ILMOS(k)), m)
+                            end do
+                        end do
+                        deallocate(dat3_r)
+                    end if
                 end if
             case ('sdep')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        pm%grid%sdep(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, pm%grid%sdep, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            pm%grid%sdep(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('xslp')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        pm%grid%xslp(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, pm%grid%xslp, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            pm%grid%xslp(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('dd', 'dden')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        pm%grid%dd(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, pm%grid%dd, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            pm%grid%dd(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
 
                     !> Unit conversion to m m**-2 if units are km km**-2 (WATROF/WATDRN expects m m**-2).
                     if (index(lowercase(units), 'km') > 0) then
@@ -334,251 +385,374 @@ subroutine read_parameters_nc( &
                 end if
             case ('sand')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-                    if (ndims == 2) then
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                        do n = 1, shd%NA
-                            pm%grid%sand(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
-                        end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, dim_s, pm%grid%sand, fill_r, ierr = ierr)
                     else
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_s, dat3_r, fill_r, ierr = ierr)
-                        do m = 1, nsol
+                        if (ndims == 2) then
+                            call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
                             do n = 1, shd%NA
-                                pm%grid%sand(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                                pm%grid%sand(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
                             end do
-                        end do
-                        deallocate(dat3_r)
+                        else
+                            call nc4_get_variable(iun, field, dim_x, dim_y, dim_s, dat3_r, fill_r, ierr = ierr)
+                            do m = 1, nsol
+                                do n = 1, shd%NA
+                                    pm%grid%sand(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                                end do
+                            end do
+                            deallocate(dat3_r)
+                        end if
                     end if
                 end if
             case ('clay')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-                    if (ndims == 2) then
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                        do n = 1, shd%NA
-                            pm%grid%clay(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
-                        end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, dim_s, pm%grid%clay, fill_r, ierr = ierr)
                     else
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_s, dat3_r, fill_r, ierr = ierr)
-                        do m = 1, nsol
+                        if (ndims == 2) then
+                            call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
                             do n = 1, shd%NA
-                                pm%grid%clay(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                                pm%grid%clay(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
                             end do
-                        end do
-                        deallocate(dat3_r)
+                        else
+                            call nc4_get_variable(iun, field, dim_x, dim_y, dim_s, dat3_r, fill_r, ierr = ierr)
+                            do m = 1, nsol
+                                do n = 1, shd%NA
+                                    pm%grid%clay(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                                end do
+                            end do
+                            deallocate(dat3_r)
+                        end if
                     end if
                 end if
             case ('orgm')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
-                    if (ndims == 2) then
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                        do n = 1, shd%NA
-                            pm%grid%orgm(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
-                        end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, dim_s, pm%grid%orgm, fill_r, ierr = ierr)
                     else
-                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_s, dat3_r, fill_r, ierr = ierr)
-                        do m = 1, nsol
+                        if (ndims == 2) then
+                            call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
                             do n = 1, shd%NA
-                                pm%grid%orgm(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                                pm%grid%orgm(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
                             end do
-                        end do
-                        deallocate(dat3_r)
+                        else
+                            call nc4_get_variable(iun, field, dim_x, dim_y, dim_s, dat3_r, fill_r, ierr = ierr)
+                            do m = 1, nsol
+                                do n = 1, shd%NA
+                                    pm%grid%orgm(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                                end do
+                            end do
+                            deallocate(dat3_r)
+                        end if
                     end if
                 end if
 
             !> RUNCLASS36.
             case ('iwf')
                 if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_i, fill_i, ierr = ierr)
-                    do n = 1, shd%NA
-                        pm%grid%iwf(n) = dat2_i(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, pm%grid%iwf, fill_i, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_i, fill_i, ierr = ierr)
+                        do n = 1, shd%NA
+                             pm%grid%iwf(n) = dat2_i(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
+                end if
+            case ('zsnl')
+                if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, pm%grid%zsnl, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            pm%grid%zsnl(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
 
             !> BASEFLOWFLAG == 2 (lower zone storage).
             case ('pwr')
                 if (bflm%BASEFLOWFLAG == 2) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        bflm%pm_grid%pwr(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, bflm%pm_grid%pwr, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            bflm%pm_grid%pwr(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('flz')
                 if (bflm%BASEFLOWFLAG == 2) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        bflm%pm_grid%flz(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, bflm%pm_grid%flz, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            bflm%pm_grid%flz(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
 
             !> RPN RTE (Watflood, 2007).
             case ('r1n')
                 if (rteflg%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        rtepm%r1n(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, rtepm%r1n, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            rtepm%r1n(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('r2n')
                 if (rteflg%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        rtepm%r2n(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, rtepm%r2n, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            rtepm%r2n(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('mndr')
                 if (rteflg%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        rtepm%mndr(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, rtepm%mndr, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            rtepm%mndr(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('widep')
                 if (rteflg%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        rtepm%widep(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, rtepm%widep, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            rtepm%widep(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('aa2')
                 if (rteflg%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        rtepm%aa2(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, rtepm%aa2, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            rtepm%aa2(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('aa3')
                 if (rteflg%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        rtepm%aa3(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, rtepm%aa3, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            rtepm%aa3(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('aa4')
                 if (rteflg%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        rtepm%aa4(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, rtepm%aa4, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            rtepm%aa4(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
-!                case ('theta')
-!                case ('kcond')
+!            case ('theta')
+!            case ('kcond')
 
             !> PBSM (blowing snow).
             case ('fetch')
                 if (pbsm%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        pbsm%pm_grid%fetch(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, pbsm%pm_grid%fetch, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            pbsm%pm_grid%fetch(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('ht')
                 if (pbsm%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        pbsm%pm_grid%Ht(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, pbsm%pm_grid%Ht, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            pbsm%pm_grid%Ht(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('n_s')
                 if (pbsm%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        pbsm%pm_grid%N_S(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, pbsm%pm_grid%N_S, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            pbsm%pm_grid%N_S(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('a_s')
                 if (pbsm%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        pbsm%pm_grid%A_S(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, pbsm%pm_grid%A_S, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            pbsm%pm_grid%A_S(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
             case ('distrib')
                 if (pbsm%PROCESS_ACTIVE) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        pbsm%pm_grid%Distrib(n) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                    if (nc_subbasin) then
+                        call nc4_get_variable(iun, field, dim_n, pbsm%pm_grid%Distrib, fill_r, ierr = ierr)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            pbsm%pm_grid%Distrib(n) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    end if
                 end if
 
-            !> SOLARADJUSTFLAG.
+            !> MOUNTAINMESHFLAG.
             case ('elevation')
                 if (.not. allocated(mountain_mesh%pm%elev)) allocate(mountain_mesh%pm%elev(shd%NA, shd%lc%NTYPE))
-                if (ndims == 2) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        mountain_mesh%pm%elev(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                if (nc_subbasin) then
+                    call nc4_get_variable(iun, field, dim_n, dim_m, mountain_mesh%pm%elev, fill_r, ierr = ierr)
                 else
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
-                    do m = 1, ngru
+                    if (ndims == 2) then
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
                         do n = 1, shd%NA
-                            mountain_mesh%pm%elev(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            mountain_mesh%pm%elev(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
                         end do
-                    end do
-                    deallocate(dat3_r)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
+                        do m = 1, ngru
+                            do n = 1, shd%NA
+                                mountain_mesh%pm%elev(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            end do
+                        end do
+                        deallocate(dat3_r)
+                    end if
                 end if
             case ('slope')
                 if (.not. allocated(mountain_mesh%pm%slope)) allocate(mountain_mesh%pm%slope(shd%NA, shd%lc%NTYPE))
-                if (ndims == 2) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        mountain_mesh%pm%slope(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                if (nc_subbasin) then
+                    call nc4_get_variable(iun, field, dim_n, dim_m, mountain_mesh%pm%slope, fill_r, ierr = ierr)
                 else
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
-                    do m = 1, ngru
+                    if (ndims == 2) then
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
                         do n = 1, shd%NA
-                            mountain_mesh%pm%slope(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            mountain_mesh%pm%slope(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
                         end do
-                    end do
-                    deallocate(dat3_r)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
+                        do m = 1, ngru
+                            do n = 1, shd%NA
+                                mountain_mesh%pm%slope(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            end do
+                        end do
+                        deallocate(dat3_r)
+                    end if
                 end if
             case ('aspect')
                 if (.not. allocated(mountain_mesh%pm%aspect)) allocate(mountain_mesh%pm%aspect(shd%NA, shd%lc%NTYPE))
-                if (ndims == 2) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        mountain_mesh%pm%aspect(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                if (nc_subbasin) then
+                    call nc4_get_variable(iun, field, dim_n, dim_m, mountain_mesh%pm%aspect, fill_r, ierr = ierr)
                 else
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
-                    do m = 1, ngru
+                    if (ndims == 2) then
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
                         do n = 1, shd%NA
-                            mountain_mesh%pm%aspect(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            mountain_mesh%pm%aspect(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
                         end do
-                    end do
-                    deallocate(dat3_r)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
+                        do m = 1, ngru
+                            do n = 1, shd%NA
+                                mountain_mesh%pm%aspect(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            end do
+                        end do
+                        deallocate(dat3_r)
+                    end if
                 end if
             case ('delta')
                 if (.not. allocated(mountain_mesh%pm%delta)) allocate(mountain_mesh%pm%delta(shd%NA, shd%lc%NTYPE))
-                if (ndims == 2) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        mountain_mesh%pm%delta(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                if (nc_subbasin) then
+                    call nc4_get_variable(iun, field, dim_n, dim_m, mountain_mesh%pm%delta, fill_r, ierr = ierr)
                 else
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
-                    do m = 1, ngru
+                    if (ndims == 2) then
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
                         do n = 1, shd%NA
-                            mountain_mesh%pm%delta(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            mountain_mesh%pm%delta(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
                         end do
-                    end do
-                    deallocate(dat3_r)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
+                        do m = 1, ngru
+                            do n = 1, shd%NA
+                                mountain_mesh%pm%delta(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            end do
+                        end do
+                        deallocate(dat3_r)
+                    end if
                 end if
             case ('curvature')
                 if (.not. allocated(mountain_mesh%pm%curvature)) allocate(mountain_mesh%pm%curvature(shd%NA, shd%lc%NTYPE))
-                if (ndims == 2) then
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
-                    do n = 1, shd%NA
-                        mountain_mesh%pm%curvature(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
-                    end do
+                if (nc_subbasin) then
+                    call nc4_get_variable(iun, field, dim_n, dim_m, mountain_mesh%pm%curvature, fill_r, ierr = ierr)
                 else
-                    call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
-                    do m = 1, nsol
+                    if (ndims == 2) then
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
                         do n = 1, shd%NA
-                            mountain_mesh%pm%curvature(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            mountain_mesh%pm%curvature(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
                         end do
-                    end do
-                    deallocate(dat3_r)
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
+                        do m = 1, ngru
+                            do n = 1, shd%NA
+                                mountain_mesh%pm%curvature(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            end do
+                        end do
+                        deallocate(dat3_r)
+                    end if
+                end if
+            case ('skyviewfactor')
+                if (.not. allocated(mountain_mesh%pm%skyviewfactor)) allocate(mountain_mesh%pm%skyviewfactor(shd%NA, shd%lc%NTYPE))
+                if (nc_subbasin) then
+                    call nc4_get_variable(iun, field, dim_n, dim_m, mountain_mesh%pm%skyviewfactor, fill_r, ierr = ierr)
+                else
+                    if (ndims == 2) then
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dat2_r, fill_r, ierr = ierr)
+                        do n = 1, shd%NA
+                            mountain_mesh%pm%skyviewfactor(n, :) = dat2_r(shd%xxx(n), shd%yyy(n))
+                        end do
+                    else
+                        call nc4_get_variable(iun, field, dim_x, dim_y, dim_m, dat3_r, fill_r, ierr = ierr)
+                        do m = 1, ngru
+                            do n = 1, shd%NA
+                                mountain_mesh%pm%skyviewfactor(n, m) = dat3_r(shd%xxx(n), shd%yyy(n), m)
+                            end do
+                        end do
+                        deallocate(dat3_r)
+                    end if
                 end if
         end select
 

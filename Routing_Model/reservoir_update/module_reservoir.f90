@@ -8,24 +8,24 @@ module reservoir
         integer :: id           ! Reservoir ID
         integer :: rank         ! Rank value to identify the grid cell as a reservoir
         integer :: modeltype    ! Model type (reservoir storage zone release)
-        real :: lat             ! Lat location of the reservoir (decimal degrees)
-        real :: long            ! Lon location of the reservoir (decimal degrees)
-        real :: SMAX            ! Max reservoir capacity (m3)
-        real :: flowO1          ! Initial discharge (m3 s-1)
-        real :: Intstor1        ! Initial storage (m3)
-        real :: qmaxmax         ! Downstream channel capacity
-        real :: inflowcorr      ! Inflow correction factor for evaporation
-        real :: deadst          ! Dead storage fraction of maximum storage ( 0.1 means 10% of max storage)
-        real :: RXN             ! Random term variance or range
-        real :: dsto(12)        ! Monthly min storage 12 values one per month (m3)
-        real :: nsto(12)        ! Monthly normal upper storage (m3)
-        real :: ndsto(12)       ! Monthly upper storage (m3)
-        real :: Qmin(12)        ! Monthly min release (m3 s-1)
-        real :: Qnor(12)        ! Monthly normal upper release (m3 s-1)
-        real :: Qnd(12)         ! Monthly upper release (m3 s-1)
-        real :: stoSIM(2)       ! storage time series of the reservoir
-        real :: flowSIM(2)      ! storage time series of the reservoir
-        real :: flowINF(2)      ! inflow time series of the reservoir
+        real(kind = 4) :: lat             ! Lat location of the reservoir (decimal degrees)
+        real(kind = 4) :: long            ! Lon location of the reservoir (decimal degrees)
+        real(kind = 4) :: SMAX            ! Max reservoir capacity (m3)
+        real(kind = 4) :: flowO1          ! Initial discharge (m3 s-1)
+        real(kind = 4) :: Intstor1        ! Initial storage (m3)
+        real(kind = 4) :: qmaxmax         ! Downstream channel capacity
+        real(kind = 4) :: inflowcorr      ! Inflow correction factor for evaporation
+        real(kind = 4) :: deadst          ! Dead storage fraction of maximum storage ( 0.1 means 10% of max storage)
+        real(kind = 4) :: RXN             ! Random term variance or range
+        real(kind = 4) :: dsto(12)        ! Monthly min storage 12 values one per month (m3)
+        real(kind = 4) :: nsto(12)        ! Monthly normal upper storage (m3)
+        real(kind = 4) :: ndsto(12)       ! Monthly upper storage (m3)
+        real(kind = 4) :: Qmin(12)        ! Monthly min release (m3 s-1)
+        real(kind = 4) :: Qnor(12)        ! Monthly normal upper release (m3 s-1)
+        real(kind = 4) :: Qnd(12)         ! Monthly upper release (m3 s-1)
+        real(kind = 4) :: stoSIM(2)       ! storage time series of the reservoir
+        real(kind = 4) :: flowSIM(2)      ! storage time series of the reservoir
+        real(kind = 4) :: flowINF(2)      ! inflow time series of the reservoir
     end type
 
     type reservoirs
@@ -93,7 +93,7 @@ module reservoir
 
         !> Input variables.
         integer, intent(in) :: rank
-        
+
         !> Output variables.
         integer, intent(out) :: irsv
 
@@ -110,10 +110,10 @@ module reservoir
 
     end subroutine get_reservoir
 
-    real function S2Q1JAN(Fu, Ld, Lc, Ln, Lf, qmin, qnorm, qnd, dt, smax, Inflow, qds, cse, Rx) result(qout)
+    real(kind = 4) function S2Q1JAN(Fu, Ld, Lc, Ln, Lf, qmin, qnorm, qnd, dt, smax, Inflow, qds, cse, Rx) result(qout)
 
         !> Input variables.
-        real, intent(in) :: Fu, Ld, Lc, Ln, Lf, qmin, qnorm, qnd, dt, smax, Inflow, qds, Rx
+        real(kind = 4), intent(in) :: Fu, Ld, Lc, Ln, Lf, qmin, qnorm, qnd, dt, smax, Inflow, qds, Rx
         integer, intent(in) :: cse
 
         !> Initialize the output variables.
@@ -137,45 +137,45 @@ module reservoir
         end if
 
         !> Check for negative value.
-        qout = max(qout, 0.0)
+        qout = max(qout, 0.0_4)
 
     end function
 
     subroutine SIMRES15(icor, cse, Ld, flowI, smax, qds, Lc, Ln, Lf, qmin, qnorm, qnd, Rx, t, niter, dt, flowSIM, stoSIM)
 
         !> Input variables.
-        real, intent(in) :: icor                ! = resrv%inflowcorr
-        integer, intent(in) :: cse              ! = resrv%modeltype             ! if cse=1 inflow is not used in zone 3, else it is used 
-        real, intent(in) :: Ld                  ! = resrv%deadst
-        real, dimension(:), intent(in) :: flowI ! = resrv%flowINF(1:2)          ! observed u/s inflow
-        real, intent(in) :: smax                ! = resrv%SMAX                  ! maximum reservoir storage (m3)
-        real, intent(in) :: qds                 ! = resrv%qmaxmax               ! downstream channel capacity (m3/s)
-        real, intent(in) :: Lc                  ! = resrv%dsto(mId)/resrv%SMAX  ! monthly lower storage threshold
-        real, intent(in) :: Ln                  ! = resrv%nsto(mId)/resrv%SMAX  ! monthly upper storage threshold
-        real, intent(in) :: Lf                  ! = resrv%ndsto(mId)/resrv%SMAX ! inflow starts affecting release
-        real, intent(in) :: qmin                ! = resrv%Qmin(mId)
-        real, intent(in) :: qnorm               ! = resrv%Qnor(mId)
-        real, intent(in) :: qnd                 ! = resrv%Qnd(mId)
-        real, intent(in) :: Rx                  ! = 2*resrv%RXN*rnd + resrv%RXN ! Rx not inclued in the Matlab code, but added based on MESH code
-        integer, intent(in) :: t                ! = t                           ! current time-step
-        integer, intent(in) :: niter            ! = 40                          ! it was 1000 in the Matlab code but 40 in the MESH code
-        real, intent(in) :: dt                  ! = dt                          ! time-step length/duration
+        real(kind = 4), intent(in) :: icor                ! = resrv%inflowcorr
+        integer, intent(in) :: cse                        ! = resrv%modeltype             ! if cse=1 inflow is not used in zone 3, else it is used
+        real(kind = 4), intent(in) :: Ld                  ! = resrv%deadst
+        real(kind = 4), dimension(:), intent(in) :: flowI ! = resrv%flowINF(1:2)          ! observed u/s inflow
+        real(kind = 4), intent(in) :: smax                ! = resrv%SMAX                  ! maximum reservoir storage (m3)
+        real(kind = 4), intent(in) :: qds                 ! = resrv%qmaxmax               ! downstream channel capacity (m3/s)
+        real(kind = 4), intent(in) :: Lc                  ! = resrv%dsto(mId)/resrv%SMAX  ! monthly lower storage threshold
+        real(kind = 4), intent(in) :: Ln                  ! = resrv%nsto(mId)/resrv%SMAX  ! monthly upper storage threshold
+        real(kind = 4), intent(in) :: Lf                  ! = resrv%ndsto(mId)/resrv%SMAX ! inflow starts affecting release
+        real(kind = 4), intent(in) :: qmin                ! = resrv%Qmin(mId)
+        real(kind = 4), intent(in) :: qnorm               ! = resrv%Qnor(mId)
+        real(kind = 4), intent(in) :: qnd                 ! = resrv%Qnd(mId)
+        real(kind = 4), intent(in) :: Rx                  ! = 2*resrv%RXN*rnd + resrv%RXN ! Rx not inclued in the Matlab code, but added based on MESH code
+        integer, intent(in) :: t                          ! = t                           ! current time-step
+        integer, intent(in) :: niter                      ! = 40                          ! it was 1000 in the Matlab code but 40 in the MESH code
+        real(kind = 4), intent(in) :: dt                  ! = dt                          ! time-step length/duration
 
         !> Local variables.
-        real stoflo, Inflow, Fu
+        real(kind = 4) stoflo, Inflow, Fu
         integer it
 
         !> Output variables.
-        real, dimension(:), intent(out) :: flowSIM  ! = resrv%flowSIM(1:2)
-        real, dimension(:), intent(out) :: stoSIM   ! = resrv%stoSIM(1:2)
+        real(kind = 4), dimension(:), intent(out) :: flowSIM  ! = resrv%flowSIM(1:2)
+        real(kind = 4), dimension(:), intent(out) :: stoSIM   ! = resrv%stoSIM(1:2)
 
         !> Determine release and storage at current time-step.
-        stoflo = stoSIM(t - 1) + (dt/2.0)*(flowI(t)*icor + flowI(t - 1)*icor - flowSIM(t - 1))
+        stoflo = stoSIM(t - 1) + (dt/2.0_4)*(flowI(t)*icor + flowI(t - 1)*icor - flowSIM(t - 1))
         Inflow = flowI(t)
         Fu = stoflo/smax
         flowSIM(t) = S2Q1JAN(Fu, Ld, Lc, Ln, Lf, qmin, qnorm, qnd, dt, smax, Inflow, qds, cse, Rx)
         do it = 1, niter
-            stoSIM(t)  = stoflo - (dt/2.0)*(flowSIM(t))
+            stoSIM(t)  = stoflo - (dt/2.0_4)*(flowSIM(t))
             Fu = stoSIM(t)/smax
             flowSIM(t) = S2Q1JAN(Fu, Ld, Lc, Ln, Lf, qmin, qnorm, qnd, dt, smax, Inflow, qds, cse, Rx)
         end do
@@ -189,18 +189,19 @@ module reservoir
     subroutine compute_reservoir(resrv, flowIn, t, dt, mId)
 
         !> Input variables.
-        real, intent(in) :: flowIn  ! flow from downstream grid cell from routing
+        real(kind = 4), intent(in) :: flowIn  ! flow from downstream grid cell from routing
         integer, intent(in) :: mId  ! month to idenfy monthly variable parameters
         integer, intent(in) :: t    ! current time step
-        real, intent(in) :: dt      ! time-step length/duration
+        real(kind = 4), intent(in) :: dt      ! time-step length/duration
 
         !> Input/output variables.
         type(reservoir_f) :: resrv  ! reservoir object
 
         !> Local variables.
 !-        integer            :: irsv, MT, i
-!-        real               :: FU, LD, LC, LN, LF, RX, ICORR
-        real rnd
+!-        real(kind = 4)               :: FU, LD, LC, LN, LF, RX, ICORR
+        real(kind = 4) rnd
+        real(kind = 4) Rx
 
         !> Get random number.
         call random_number(rnd)         ! rnd sould be between 0.0 and 1.0
@@ -278,27 +279,28 @@ module reservoir
 
         !> Update local variable for inflow.
         resrv%flowINF(t) = flowIn
+        Rx = 2.0_4*resrv%RXN*rnd + resrv%RXN
 
         !> Call reservoir release routine.
         call SIMRES15( &
 
             !> Input variables.
-            resrv%inflowcorr, &                 ! = icor
-            resrv%modeltype, &                  ! = cse     ! if cse=1 inflow is not used in zone 3, else it is used 
-            resrv%deadst, &                     ! = Ld
-            resrv%flowINF(1:2), &               ! = flowI   ! observed u/s inflow
-            resrv%SMAX, &                       ! = smax    ! maximum reservoir storage (m3)
-            resrv%qmaxmax, &                    ! = qds     ! downstream channel capacity (m3/s)
-            (resrv%dsto(mId)/resrv%SMAX), &     ! = Lc      ! monthly lower storage threshold
-            (resrv%nsto(mId)/resrv%SMAX), &     ! = Ln      ! monthly upper storage threshold
-            (resrv%ndsto(mId)/resrv%SMAX), &    ! = Lf      ! inflow starts affecting release
-            resrv%Qmin(mId), &                  ! = qmin
-            resrv%Qnor(mId), &                  ! = qnorm
-            resrv%Qnd(mId), &                   ! = qnd
-            (2.0*resrv%RXN*rnd + resrv%RXN), &  ! = Rx      ! Rx not inclued in the Matlab code, but added based on MESH code
-            t, &                                ! = t       ! current time-step
-            40, &                               ! = niter   ! it was 1000 in the Matlab code but 40 in the MESH code
-            dt, &                               ! = dt      ! time-step length/duration
+            resrv%inflowcorr, &                  ! = icor
+            resrv%modeltype, &                   ! = cse     ! if cse=1 inflow is not used in zone 3, else it is used
+            resrv%deadst, &                      ! = Ld
+            resrv%flowINF(1:2), &                ! = flowI   ! observed u/s inflow
+            resrv%SMAX, &                        ! = smax    ! maximum reservoir storage (m3)
+            resrv%qmaxmax, &                     ! = qds     ! downstream channel capacity (m3/s)
+            (resrv%dsto(mId)/resrv%SMAX), &      ! = Lc      ! monthly lower storage threshold
+            (resrv%nsto(mId)/resrv%SMAX), &      ! = Ln      ! monthly upper storage threshold
+            (resrv%ndsto(mId)/resrv%SMAX), &     ! = Lf      ! inflow starts affecting release
+            resrv%Qmin(mId), &                   ! = qmin
+            resrv%Qnor(mId), &                   ! = qnorm
+            resrv%Qnd(mId), &                    ! = qnd
+            Rx, &                                ! = Rx      ! Rx not inclued in the Matlab code, but added based on MESH code
+            t, &                                 ! = t       ! current time-step
+            40, &                                ! = niter   ! it was 1000 in the Matlab code but 40 in the MESH code
+            dt, &                                ! = dt      ! time-step length/duration
 
             !> Output variables.
             resrv%flowSIM(1:2), &   ! = flowSIM

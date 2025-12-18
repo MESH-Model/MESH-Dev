@@ -60,7 +60,7 @@ OBJECTS+=	cropland_irrigation_variables.o \
 			calc_ET0.o
 OBJECTS+=	irrigation_demand_module.o
 OBJECTS+=	SIMSTATS_config.o \
-			KGE.o NSE.o SAE.o SORT.o SAESRT.o calc_drms.o calc_abserr.o \
+			NSE.o SAE.o SORT.o SAESRT.o \
 			SIMSTATS.o
 #todo: fix dependency on RUNCLASS36_constants;
 OBJECTS+=	RUNCLASS36_constants.o
@@ -112,7 +112,7 @@ DFLAG=-DRUNSVS
 # RMNLIB
 VPATH+=	$(DIR_REPO)/Modules/librmn/19.7.0/base: \
 		$(DIR_REPO)/Modules/librmn/19.7.0/primitives:
-INC_DIRS+=-I./Modules/librmn/19.7.0/CUSTOM_INCLUDES/
+INC_DIRS+=-I$(DIR_REPO)/Modules/librmn/19.7.0/CUSTOM_INCLUDES
 OBJECTS+=	datec.o moduledate.o set_user_lock.o \
 			up2low.o getenvc.o
 # Core routines.
@@ -136,7 +136,7 @@ OBJECTS+=	runsvs_mesh.o
 
 
 # ======================================================================
-#reservoir_update (reservoirs)
+#reservoir_update (DZTR reservoirs)
 # Paths.
 VPATH+=	$(DIR_REPO)/Routing_Model/reservoir_update:
 # Files.
@@ -169,10 +169,9 @@ OBJECTS+=	type_HDS.o HDS.o HDS_module.o
 # SA_MESH routines.
 # Input routines.
 OBJECTS+=	read_initial_inputs.o \
-			read_shed_r2c.o read_shed_nc.o read_shed_csv.o read_soil_levels.o read_shed_nc_subbasin.o \
+			read_soil_levels.o \
 			read_parameters.o \
 			read_parameters_class.o read_parameters_hydrology.o read_parameters_r2c.o read_parameters_nc.o read_parameters_csv.o \
-			check_parameters.o \
 			read_basin_structures.o \
 			read_streamflow_txt.o read_streamflow_tb0.o read_reservoir_txt.o read_reservoir_tb0.o \
 			read_abstractionpoint_tb0.o read_abstractionpoint_txt.o \

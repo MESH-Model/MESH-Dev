@@ -6,6 +6,7 @@
      5                  ALVISG,ALNIRG,CRIB,CPHCH,CEVAP,TVIRTA,
      6                  ZOSCLH,ZOSCLM,ZRSLFH,ZRSLFM,ZOH,ZOM,FCOR,
      7                  GCONST,GCOEFF,TSTART,TRSNOW,PCPR,
+     7                  THLIQ,THLMIN,DELZW,RHOSNO,ZSNOW,ZPOND,
      8                  IWATER,IEVAP,ITERCT,ISAND,
      9                  ISLFD,ITG,ILG,IG,IL1,IL2,JL,
      A                  TSTEP,TVIRTS,EVBETA,Q0SAT,RESID,
@@ -109,7 +110,9 @@ C
      3     CPHCH (ILG),    CEVAP (ILG),    TVIRTA(ILG),    
      4     ZOSCLH(ILG),    ZOSCLM(ILG),    ZRSLFH(ILG),    ZRSLFM(ILG),
      5     ZOH   (ILG),    ZOM   (ILG),    GCONST(ILG),    GCOEFF(ILG),
-     6     TSTART(ILG),    TRSNOW(ILG),    FCOR  (ILG),    PCPR  (ILG)
+     6     TSTART(ILG),    TRSNOW(ILG),    FCOR  (ILG),    PCPR  (ILG),
+     7     THLIQ(ILG,IG),  THLMIN(ILG,IG), DELZW(ILG,IG),
+     8     RHOSNO(ILG),    ZSNOW(ILG),     ZPOND(ILG)
 
 C
       INTEGER          IWATER(ILG),        IEVAP (ILG)   
@@ -121,7 +124,7 @@ C
      1     RESID (ILG),    DCFLXM(ILG),    CFLUXM(ILG),    TRTOP (ILG),    
      2     A     (ILG),    B     (ILG),
      3     LZZ0  (ILG),    LZZ0T (ILG),    FM    (ILG),    FH    (ILG),
-     4     WZERO (ILG)
+     4     WZERO (ILG),    EVPMAX(ILG)
 C
       INTEGER              ITER  (ILG),    NITER (ILG),    JEVAP (ILG),
      1                     KF    (ILG)
@@ -183,8 +186,11 @@ C
               CFLUX(I)=0.0
               IF(ISNOW.EQ.1)                      THEN
                   KF(I)=3
+                  EVPMAX(I)=RHOSNO(I)*ZSNOW(I)/DELT
               ELSE
                   KF(I)=6
+                  EVPMAX(I)=RHOW*(ZPOND(I)+(THLIQ(I,1)-THLMIN(I,1))*
+     1               DELZW(I,1))/DELT
               ENDIF
           ENDIF
    50 CONTINUE
@@ -255,6 +261,7 @@ C
      1                TPOTA(I))
               ENDIF
               EVAP(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QA(I)) 
+              IF(EVAP(I).GT.EVPMAX(I)) EVAP(I)=EVPMAX(I)
               QEVAP(I)=CPHCH(I)*EVAP(I)      
               GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
               RESID(I)=QSWNET(I)+QLWIN(I)-QLWOUT(I)-QSENS(I)-QEVAP(I)-
@@ -298,7 +305,7 @@ C
 c     DO 185 I=IL1,IL2
 C         IF(FI(I).GT.0. .AND. ITER(I).EQ.-1)                      THEN 
 C             WRITE(6,6250) I,JL,RESID(I),TZERO(I),RIB(I)
-C6250         FORMAT('0GROUND ITERATION LIMIT',3X,2I3,3(F8.2,E12.4))            
+C6250         FORMAT('0GROUND ITERATION LIMIT',3X,2I8,3(F8.2,E12.4))            
 C         ENDIF                              
 c 185 CONTINUE
 C
@@ -366,6 +373,7 @@ C
                   ELSE
                       QEVAP(I)=RESID(I)*0.5
                   ENDIF
+                  IF(IEVAP(I).EQ.0) QEVAP(I)=0.0
                   QSENS(I)=RESID(I)-QEVAP(I)
                   RESID(I)=0.
                   EVAP(I)=QEVAP(I)/CPHCH(I)
@@ -403,7 +411,7 @@ C
 C
       IF(IBAD.NE.0)                                                 THEN
           WRITE(6,6275) IBAD,JL,TZERO(IBAD),NITER(IBAD),ISNOW
- 6275     FORMAT('0BAD ITERATION TEMPERATURE',3X,2I3,F16.2,2I4)
+ 6275     FORMAT('0BAD ITERATION TEMPERATURE',3X,2I8,F16.2,2I4)
           WRITE(6,6280) QSWNET(IBAD),QLWIN(IBAD),QSENS(IBAD),
      1        QEVAP(IBAD),GZERO(IBAD),CFLUX(IBAD),RIB(IBAD)
  6280     FORMAT(2X,7F12.4)
@@ -460,6 +468,7 @@ C
      1                TPOTA(I))
               ENDIF
               EVAP(I)=RHOAIR(I)*CFLUX(I)*(QZERO(I)-QA(I)) 
+              IF(EVAP(I).GT.EVPMAX(I)) EVAP(I)=EVPMAX(I)
               QEVAP(I)=CPHCH(I)*EVAP(I)       
               GZERO(I)=GCOEFF(I)*TZERO(I)+GCONST(I)
               QMELT(I)=QSWNET(I)+QLWIN(I)-QLWOUT(I)-QSENS(I)-QEVAP(I)-

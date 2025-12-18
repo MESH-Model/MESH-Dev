@@ -368,13 +368,13 @@ subroutine resumerun_config(fls, shd, ierr)
             close(iun)
         else
 
-            !> Print a warning if the resume file does not exist.
+            !> Print a warning if the auto resume file does not exist.
             call print_warning( &
-                "Auto-resume is active but '" // trim(fname) // "' cannot be found. A previous run state will not be resumed.")
-            call print_message("RESUMEFLAG is revised: RESUMEFLAG off")
+                "Auto-resume is active but '" // trim(fname) // "' cannot be found. The 'auto' option is ignored at this time.")
+            call print_message("Reverting to regular RESUMEFLAG behavior.")
 
-            !> Override the resume functionality.
-            resume_options%resume%state = FLAG_OFF
+            !> Override the auto resume functionality.
+            resume_options%resume%state = FLAG_ON
         end if
     end if
 
