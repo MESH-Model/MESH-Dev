@@ -1199,11 +1199,11 @@ module output_variables
         !> Meteorology/climatology variables.
         if (associated(group%fsin)) then
             if (all(group%fsin == out%NO_DATA)) then
-                if (all(group_vs%fsin /= huge(group_vs%fsin))) then
+                where (group_vs%fsin /= huge(group_vs%fsin))
                     group%fsin = group_vs%fsin
-                else
+                elsewhere
                     group%fsin = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%ifsin)) then
@@ -1233,101 +1233,101 @@ module output_variables
         end if
         if (associated(group%fsdr)) then
             if (all(group%fsdr == out%NO_DATA)) then
-                if (all(group_vs%fsdr /= huge(group_vs%fsdr))) then
+                where (group_vs%fsdr /= huge(group_vs%fsdr))
                     group%fsdr = group_vs%fsdr
-                else
+                elsewhere
                     group%fsdr = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%fsdff)) then
             if (all(group%fsdff == out%NO_DATA)) then
-                if (all(group_vs%fsdff /= huge(group_vs%fsdff))) then
+                where (group_vs%fsdff /= huge(group_vs%fsdff))
                     group%fsdff = group_vs%fsdff
-                else
+                elsewhere
                     group%fsdff = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%flin)) then
             if (all(group%flin == out%NO_DATA)) then
-                if (all(group_vs%flin /= huge(group_vs%flin))) then
+                where (group_vs%flin /= huge(group_vs%flin))
                     group%flin = group_vs%flin
-                else
+                elsewhere
                     group%flin = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%ta)) then
             if (all(group%ta == out%NO_DATA)) then
-                if (all(group_vs%ta /= huge(group_vs%ta))) then
+                where (group_vs%ta /= huge(group_vs%ta))
                     group%ta = group_vs%ta
-                else
+                elsewhere
                     group%ta = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%qa)) then
             if (all(group%qa == out%NO_DATA)) then
-                if (all(group_vs%qa /= huge(group_vs%qa))) then
+                where (group_vs%qa /= huge(group_vs%qa))
                     group%qa = group_vs%qa
-                else
+                elsewhere
                     group%qa = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%pres)) then
             if (all(group%pres == out%NO_DATA)) then
-                if (all(group_vs%pres /= huge(group_vs%pres))) then
+                where (group_vs%pres /= huge(group_vs%pres))
                     group%pres = group_vs%pres
-                else
+                elsewhere
                     group%pres = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%uu)) then
             if (all(group%uu == out%NO_DATA)) then
-                if (all(group_vs%uu /= huge(group_vs%uu))) then
+                where (group_vs%uu /= huge(group_vs%uu))
                     group%uu = group_vs%uu
-                else
+                elsewhere
                     group%uu = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%vv)) then
             if (all(group%vv == out%NO_DATA)) then
-                if (all(group_vs%vv /= huge(group_vs%vv))) then
+                where (group_vs%vv /= huge(group_vs%vv))
                     group%vv = group_vs%vv
-                else
+                elsewhere
                     group%vv = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%uv)) then
             if (all(group%uv == out%NO_DATA)) then
-                if (all(group_vs%uv /= huge(group_vs%uv))) then
+                where (group_vs%uv /= huge(group_vs%uv))
                     group%uv = group_vs%uv
-                else
+                elsewhere
                     group%uv = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%wdir)) then
             if (all(group%wdir == out%NO_DATA)) then
-                if (all(group_vs%wdir /= huge(group_vs%wdir))) then
+                where (group_vs%wdir /= huge(group_vs%wdir))
                     group%wdir = group_vs%wdir
-                else
+                elsewhere
                     group%wdir = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%prern)) then
             if (all(group%prern == out%NO_DATA)) then
-                if (all(group_vs%prern /= huge(group_vs%prern))) then
+                where (group_vs%prern /= huge(group_vs%prern))
                     group%prern = group_vs%prern
-                else
+                elsewhere
                     group%prern = 0.0
-                end if
+                end where
                 if (associated(group%precrn)) then
                     if (all(group%precrn == out%NO_DATA)) group%precrn = group%prern*ic%dts
                 end if
@@ -1335,11 +1335,11 @@ module output_variables
         end if
         if (associated(group%presno)) then
             if (all(group%presno == out%NO_DATA)) then
-                if (all(group_vs%presno /= huge(group_vs%presno))) then
+                where (group_vs%presno /= huge(group_vs%presno))
                     group%presno = group_vs%presno
-                else
+                elsewhere
                     group%presno = 0.0
-                end if
+                end where
                 if (associated(group%precsno)) then
                     if (all(group%precsno == out%NO_DATA)) group%precsno = group%presno*ic%dts
                 end if
@@ -1347,11 +1347,11 @@ module output_variables
         end if
         if (associated(group%pre)) then
             if (all(group%pre == out%NO_DATA)) then
-                if (all(group_vs%pre /= huge(group_vs%pre))) then
+                where (group_vs%pre /= huge(group_vs%pre))
                     group%pre = group_vs%pre
-                else
+                elsewhere
                     group%pre = 0.0
-                end if
+                end where
                 if (associated(group%prec)) then
                     if (all(group%prec == out%NO_DATA)) group%prec = group%pre*ic%dts
                 end if
@@ -1361,38 +1361,38 @@ module output_variables
         !> Canopy variables.
         if (associated(group%tcan)) then
             if (all(group%tcan == out%NO_DATA)) then
-                if (all(group_vs%tcan /= huge(group_vs%tcan))) then
+                where (group_vs%tcan /= huge(group_vs%tcan))
                     group%tcan = group_vs%tcan
-                else
+                elsewhere
                     group%tcan = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%tacan)) then
             if (all(group%tacan == out%NO_DATA)) then
-                if (all(group_vs%tcan /= huge(group_vs%tacan))) then
+                where (group_vs%tcan /= huge(group_vs%tacan))
                     group%tacan = group_vs%tacan
-                else
+                elsewhere
                     group%tacan = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%qacan)) then
             if (all(group%qacan == out%NO_DATA)) then
-                if (all(group_vs%qacan /= huge(group_vs%qacan))) then
+                where (group_vs%qacan /= huge(group_vs%qacan))
                     group%qacan = group_vs%qacan
-                else
+                elsewhere
                     group%qacan = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%uvcan)) then
             if (all(group%uvcan == out%NO_DATA)) then
-                if (all(group_vs%uvcan /= huge(group_vs%uvcan))) then
+                where (group_vs%uvcan /= huge(group_vs%uvcan))
                     group%uvcan = group_vs%uvcan
-                else
+                elsewhere
                     group%uvcan = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%ican)) then
@@ -1425,54 +1425,54 @@ module output_variables
 !-        end if
         if (associated(group%lqwscan)) then
             if (all(group%lqwscan == out%NO_DATA)) then
-                if (all(group_vs%lqwscan /= huge(group_vs%lqwscan))) then
+                where (group_vs%lqwscan /= huge(group_vs%lqwscan))
                     where (group%ican == 1.0)
                         group%lqwscan = group_vs%lqwscan
                     elsewhere
                         group%lqwscan = 0.0
                     end where
-                else
+                elsewhere
                     group%lqwscan = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%fzwscan)) then
             if (all(group%fzwscan == out%NO_DATA)) then
-                if (all(group_vs%fzwscan /= huge(group_vs%fzwscan))) then
+                where (group_vs%fzwscan /= huge(group_vs%fzwscan))
                     where (group%ican == 1.0)
                         group%fzwscan = group_vs%fzwscan
                     elsewhere
                         group%fzwscan = 0.0
                     end where
-                else
+                elsewhere
                     group%fzwscan = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%cmai)) then
             if (all(group%cmai == out%NO_DATA)) then
-                if (all(group_vs%cmai /= huge(group_vs%cmai))) then
+                where (group_vs%cmai /= huge(group_vs%cmai))
                     where (group%ican == 1.0)
                         group%cmai = group_vs%cmai
                     elsewhere
                         group%cmai = 0.0
                     end where
-                else
+                elsewhere
                     group%cmai = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%gro)) then
             if (all(group%gro == out%NO_DATA)) then
-                if (all(group_vs%gro /= huge(group_vs%gro))) then
+                where (group_vs%gro /= huge(group_vs%gro))
                     where (group%ican == 1.0)
                         group%gro = group_vs%gro
                     elsewhere
                         group%gro = 0.0
                     end where
-                else
+                elsewhere
                     group%gro = 0.0
-                end if
+                end where
             end if
         end if
 
@@ -1486,41 +1486,41 @@ module output_variables
         end if
         if (associated(group%fsno)) then
             if (all(group%fsno == out%NO_DATA)) then
-                if (all(group_vs%fsno /= huge(group_vs%fsno))) then
+                where (group_vs%fsno /= huge(group_vs%fsno))
                     where (group%isno == 1.0)
                         group%fsno = group_vs%fsno
                     elsewhere
                         group%fsno = 0.0
                     end where
-                else
+                elsewhere
                     group%fsno = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%sno)) then
             if (all(group%sno == out%NO_DATA)) then
-                if (all(group_vs%sno /= huge(group_vs%sno))) then
+                where (group_vs%sno /= huge(group_vs%sno))
                     where (group%isno == 1.0)
                         group%sno = group_vs%sno
                     elsewhere
                         group%sno = 0.0
                     end where
-                else
+                elsewhere
                     group%sno = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%rhosno)) then
             if (all(group%rhosno == out%NO_DATA)) then
-                if (all(group_vs%rhosno /= huge(group_vs%rhosno))) then
+                where (group_vs%rhosno /= huge(group_vs%rhosno))
                     where (group%isno == 1.0)
                         group%rhosno = group_vs%rhosno
                     elsewhere
                         group%rhosno = 0.0
                     end where
-                else
+                elsewhere
                     group%rhosno = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%zsno)) then
@@ -1534,79 +1534,79 @@ module output_variables
         end if
         if (associated(group%lqwssno)) then
             if (all(group%lqwssno == out%NO_DATA)) then
-                if (all(group_vs%lqwssno /= huge(group_vs%lqwssno))) then
+                where (group_vs%lqwssno /= huge(group_vs%lqwssno))
                     where (group%isno == 1.0)
                         group%lqwssno = group_vs%lqwssno
                     elsewhere
                         group%lqwssno = 0.0
                     end where
-                else
+                elsewhere
                     group%lqwssno = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%tsno)) then
             if (all(group%tsno == out%NO_DATA)) then
-                if (all(group_vs%tsno /= huge(group_vs%tsno))) then
+                where (group_vs%tsno /= huge(group_vs%tsno))
                     group%tsno = group_vs%tsno
-                else
+                elsewhere
                     group%tsno = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%albsno)) then
             if (all(group%albsno == out%NO_DATA)) then
-                if (all(group_vs%albsno /= huge(group_vs%albsno))) then
+                where (group_vs%albsno /= huge(group_vs%albsno))
                     where (group%isno == 1.0)
                         group%albsno = group_vs%albsno
                     elsewhere
                         group%albsno = 0.0
                     end where
-                else
+                elsewhere
                     group%albsno = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%drainsno)) then
             if (all(group%drainsno == out%NO_DATA)) then
-                if (all(group_vs%drainsno /= huge(group_vs%drainsno))) then
+                where (group_vs%drainsno /= huge(group_vs%drainsno))
                     where (group%isno == 1.0)
                         group%drainsno = group_vs%drainsno
                     elsewhere
                         group%drainsno = 0.0
                     end where
-                else
+                elsewhere
                     group%drainsno = 0.0
-                end if
+                end where
             end if
         end if
 
         !> Surface variables.
         if (associated(group%albt)) then
             if (all(group%albt == out%NO_DATA)) then
-                if (all(group_vs%albt /= huge(group_vs%albt))) then
+                where (group_vs%albt /= huge(group_vs%albt))
                     group%albt = group_vs%albt
-                else
+                elsewhere
                     group%albt = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%alvs)) then
             if (all(group%alvs == out%NO_DATA)) then
-                if (all(group_vs%alvs /= huge(group_vs%alvs))) then
+                where (group_vs%alvs /= huge(group_vs%alvs))
                     group%alvs = group_vs%alvs
-                else
+                elsewhere
                     group%alvs = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%alir)) then
             if (all(group%alir == out%NO_DATA)) then
-                if (all(group_vs%alir /= huge(group_vs%alir))) then
+                where (group_vs%alir /= huge(group_vs%alir))
                     group%alir = group_vs%alir
-                else
+                elsewhere
                     group%alir = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%fsnet)) then
@@ -1620,11 +1620,11 @@ module output_variables
         end if
         if (associated(group%gte)) then
             if (all(group%gte == out%NO_DATA)) then
-                if (all(group_vs%gte /= huge(group_vs%gte))) then
+                where (group_vs%gte /= huge(group_vs%gte))
                     group%gte = group_vs%gte
-                else
+                elsewhere
                     group%gte = 0.0
-                end if
+                end where
                 if (associated(group%flnet)) then
                     if (all(group%flnet == out%NO_DATA)) then
                         where (group%gte > 0.0)
@@ -1638,11 +1638,11 @@ module output_variables
         end if
         if (associated(group%tpnd)) then
             if (all(group%tpnd == out%NO_DATA)) then
-                if (all(group_vs%tpnd /= huge(group_vs%tpnd))) then
+                where (group_vs%tpnd /= huge(group_vs%tpnd))
                     group%tpnd = group_vs%tpnd
-                else
+                elsewhere
                     group%tpnd = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%ipnd)) then
@@ -1654,11 +1654,11 @@ module output_variables
         end if
         if (associated(group%zpnd)) then
             if (all(group%zpnd == out%NO_DATA)) then
-                if (all(group_vs%zpnd /= huge(group_vs%zpnd))) then
+                where (group_vs%zpnd /= huge(group_vs%zpnd))
                     group%zpnd = group_vs%zpnd
-                else
+                elsewhere
                     group%zpnd = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%lqwspnd)) then
@@ -1666,29 +1666,29 @@ module output_variables
         end if
         if (associated(group%pndcaf)) then
             if (all(group%pndcaf == out%NO_DATA)) then
-                if (all(group_vs%pndcaf /= huge(group_vs%pndcaf))) then
+                where (group_vs%pndcaf /= huge(group_vs%pndcaf))
                     group%pndcaf = group_vs%pndcaf
-                else
+                elsewhere
                     group%pndcaf = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%potevp)) then
             if (all(group%potevp == out%NO_DATA)) then
-                if (all(group_vs%potevp /= huge(group_vs%potevp))) then
+                where (group_vs%potevp /= huge(group_vs%potevp))
                     group%potevp = group_vs%potevp
-                else
+                elsewhere
                     group%potevp = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%et)) then
             if (all(group%et == out%NO_DATA)) then
-                if (all(group_vs%et /= huge(group_vs%et))) then
+                where (group_vs%et /= huge(group_vs%et))
                     group%et = group_vs%et
-                else
+                elsewhere
                     group%et = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%evpb)) then
@@ -1711,58 +1711,58 @@ module output_variables
         end if
         if (associated(group%ovrflw)) then
             if (all(group%ovrflw == out%NO_DATA)) then
-                if (all(group_vs%ovrflw /= huge(group_vs%ovrflw))) then
+                where (group_vs%ovrflw /= huge(group_vs%ovrflw))
                     group%ovrflw = group_vs%ovrflw
-                else
+                elsewhere
                     group%ovrflw = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%qevp)) then
             if (all(group%qevp == out%NO_DATA)) then
-                if (all(group_vs%qevp /= huge(group_vs%qevp))) then
+                where (group_vs%qevp /= huge(group_vs%qevp))
                     group%qevp = group_vs%qevp
-                else
+                elsewhere
                     group%qevp = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%qsens)) then
             if (all(group%qsens == out%NO_DATA)) then
-                if (all(group_vs%qsens /= huge(group_vs%qsens))) then
+                where (group_vs%qsens /= huge(group_vs%qsens))
                     group%qsens = group_vs%qsens
-                else
+                elsewhere
                     group%qsens = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%gzero)) then
             if (all(group%gzero == out%NO_DATA)) then
-                if (all(group_vs%gzero /= huge(group_vs%gzero))) then
+                where (group_vs%gzero /= huge(group_vs%gzero))
                     group%gzero = group_vs%gzero
-                else
+                elsewhere
                     group%gzero = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%tsurf)) then
             if (all(group%tsurf == out%NO_DATA)) then
-                if (all(group_vs%tsurf /= huge(group_vs%tsurf))) then
+                where (group_vs%tsurf /= huge(group_vs%tsurf))
                     group%tsurf = group_vs%tsurf
-                else
+                elsewhere
                     group%tsurf = 0.0
-                end if
+                end where
             end if
         end if
 
         !> Ice/glacier variables.
         if (associated(group%tice)) then
             if (all(group%tice == out%NO_DATA)) then
-                if (all(group_vs%tice /= huge(group_vs%tice))) then
+                where (group_vs%tice /= huge(group_vs%tice))
                     group%tice = group_vs%tice
-                else
+                elsewhere
                     group%tice = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%iice)) then
@@ -1774,49 +1774,49 @@ module output_variables
         end if
         if (associated(group%lqwsice)) then
             if (all(group%lqwsice == out%NO_DATA)) then
-                if (all(group_vs%lqwsice /= huge(group_vs%lqwsice))) then
+                where (group_vs%lqwsice /= huge(group_vs%lqwsice))
                     group%lqwsice = group_vs%lqwsice
-                else
+                elsewhere
                     group%lqwsice = 0.0
-                end if
+                end where
             end if
         end if
 
         !> Subsurface/soil variables.
         if (associated(group%thlqsol)) then
             if (all(group%thlqsol == out%NO_DATA)) then
-                if (all(group_vs%thlqsol /= huge(group_vs%thlqsol))) then
+                where (group_vs%thlqsol /= huge(group_vs%thlqsol))
                     group%thlqsol = group_vs%thlqsol
-                else
+                elsewhere
                     group%thlqsol = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%thicsol)) then
             if (all(group%thicsol == out%NO_DATA)) then
-                if (all(group_vs%thicsol /= huge(group_vs%thicsol))) then
+                where (group_vs%thicsol /= huge(group_vs%thicsol))
                     group%thicsol = group_vs%thicsol
-                else
+                elsewhere
                     group%thicsol = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%lqwssol)) then
             if (all(group%lqwssol == out%NO_DATA)) then
-                if (all(group_vs%lqwssol /= huge(group_vs%lqwssol))) then
+                where (group_vs%lqwssol /= huge(group_vs%lqwssol))
                     group%lqwssol = group_vs%lqwssol
-                else
+                elsewhere
                     group%lqwssol = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%fzwssol)) then
             if (all(group%fzwssol == out%NO_DATA)) then
-                if (all(group_vs%fzwssol /= huge(group_vs%fzwssol))) then
+                where (group_vs%fzwssol /= huge(group_vs%fzwssol))
                     group%fzwssol = group_vs%fzwssol
-                else
+                elsewhere
                     group%fzwssol = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%alwssol)) then
@@ -1828,139 +1828,139 @@ module output_variables
         end if
         if (associated(group%tsol)) then
             if (all(group%tsol == out%NO_DATA)) then
-                if (all(group_vs%tsol /= huge(group_vs%tsol))) then
+                where (group_vs%tsol /= huge(group_vs%tsol))
                     group%tsol = group_vs%tsol
-                else
+                elsewhere
                     group%tsol = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%gflx)) then
             if (all(group%gflx == out%NO_DATA)) then
-                if (all(group_vs%gflx /= huge(group_vs%gflx))) then
+                where (group_vs%gflx /= huge(group_vs%gflx))
                     group%gflx = group_vs%gflx
-                else
+                elsewhere
                     group%gflx = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%hcps)) then
             if (all(group%hcps == out%NO_DATA)) then
-                if (all(group_vs%hcps /= huge(group_vs%hcps))) then
+                where (group_vs%hcps /= huge(group_vs%hcps))
                     group%hcps = group_vs%hcps
-                else
+                elsewhere
                     group%hcps = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%hcpc)) then
             if (all(group%hcpc == out%NO_DATA)) then
-                if (all(group_vs%hcpc /= huge(group_vs%hcpc))) then
+                where (group_vs%hcpc /= huge(group_vs%hcpc))
                     group%hcpc = group_vs%hcpc
-                else
+                elsewhere
                     group%hcpc = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%hcpg)) then
             if (all(group%hcpg == out%NO_DATA)) then
-                if (all(group_vs%hcpg /= huge(group_vs%hcpg))) then
+                where (group_vs%hcpg /= huge(group_vs%hcpg))
                     group%hcpg = group_vs%hcpg
-                else
+                elsewhere
                     group%hcpg = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%tctopc)) then
             if (all(group%tctopc == out%NO_DATA)) then
-                if (all(group_vs%tctopc /= huge(group_vs%tctopc))) then
+                where (group_vs%tctopc /= huge(group_vs%tctopc))
                     group%tctopc = group_vs%tctopc
-                else
+                elsewhere
                     group%tctopc = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%tctopg)) then
             if (all(group%tctopg == out%NO_DATA)) then
-                if (all(group_vs%tctopg /= huge(group_vs%tctopg))) then
+                where (group_vs%tctopg /= huge(group_vs%tctopg))
                     group%tctopg = group_vs%tctopg
-                else
+                elsewhere
                     group%tctopg = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%tcbotc)) then
             if (all(group%tcbotc == out%NO_DATA)) then
-                if (all(group_vs%tcbotc /= huge(group_vs%tcbotc))) then
+                where (group_vs%tcbotc /= huge(group_vs%tcbotc))
                     group%tcbotc = group_vs%tcbotc
-                else
+                elsewhere
                     group%tcbotc = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%tcbotg)) then
             if (all(group%tcbotg == out%NO_DATA)) then
-                if (all(group_vs%tcbotg /= huge(group_vs%tcbotg))) then
+                where (group_vs%tcbotg /= huge(group_vs%tcbotg))
                     group%tcbotg = group_vs%tcbotg
-                else
+                elsewhere
                     group%tcbotg = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%latflw)) then
             if (all(group%latflw == out%NO_DATA)) then
-                if (all(group_vs%latflw /= huge(group_vs%latflw))) then
+                where (group_vs%latflw /= huge(group_vs%latflw))
                     group%latflw = group_vs%latflw
-                else
+                elsewhere
                     group%latflw = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%zsolsat)) then
             if (all(group%zsolsat == out%NO_DATA)) then
-                if (all(group_vs%zsolsat /= huge(group_vs%zsolsat))) then
+                where (group_vs%zsolsat /= huge(group_vs%zsolsat))
                     group%zsolsat = group_vs%zsolsat
-                else
+                elsewhere
                     group%zsolsat = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%drainsol)) then
             if (all(group%drainsol == out%NO_DATA)) then
-                if (all(group_vs%drainsol /= huge(group_vs%drainsol))) then
+                where (group_vs%drainsol /= huge(group_vs%drainsol))
                     group%drainsol = group_vs%drainsol
-                else
+                elsewhere
                     group%drainsol = 0.0
-                end if
+                end where
             end if
         end if
 
         !> Groundwater/lower zone storage variables.
         if (associated(group%rchg)) then
             if (all(group%rchg == out%NO_DATA)) then
-                if (all(group_vs%rchg /= huge(group_vs%rchg))) then
+                where (group_vs%rchg /= huge(group_vs%rchg))
                     group%rchg = group_vs%rchg
-                else
+                elsewhere
                     group%rchg = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%stggw)) then
             if (all(group%stggw == out%NO_DATA)) then
-                if (all(group_vs%stggw /= huge(group_vs%stggw))) then
+                where (group_vs%stggw /= huge(group_vs%stggw))
                     group%stggw = group_vs%stggw
-                else
+                elsewhere
                     group%stggw = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%lkg)) then
             if (all(group%lkg == out%NO_DATA)) then
-                if (all(group_vs%lkg /= huge(group_vs%lkg))) then
+                where (group_vs%lkg /= huge(group_vs%lkg))
                     group%lkg = group_vs%lkg
-                else
+                elsewhere
                     group%lkg = 0.0
-                end if
+                end where
             end if
         end if
 !-        if (associated(group%dzs)) then
@@ -2010,11 +2010,11 @@ module output_variables
         !> Routing variables.
         if (associated(group%rff)) then
             if (all(group%rff == out%NO_DATA)) then
-                if (all(group_vs%rff /= huge(group_vs%rff))) then
+                where (group_vs%rff /= huge(group_vs%rff))
                     group%rff = group_vs%rff
-                else
+                elsewhere
                     group%rff = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%rof)) then
@@ -2029,38 +2029,38 @@ module output_variables
         end if
         if (associated(group%qi)) then
             if (all(group%qi == out%NO_DATA)) then
-                if (all(group_vs%qi /= huge(group_vs%qi))) then
+                where (group_vs%qi /= huge(group_vs%qi))
                     group%qi = group_vs%qi
-                else
+                elsewhere
                     group%qi = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%qo)) then
             if (all(group%qo == out%NO_DATA)) then
-                if (all(group_vs%qo /= huge(group_vs%qo))) then
+                where (group_vs%qo /= huge(group_vs%qo))
                     group%qo = group_vs%qo
-                else
+                elsewhere
                     group%qo = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%stgch)) then
             if (all(group%stgch == out%NO_DATA)) then
-                if (all(group_vs%stgch /= huge(group_vs%stgch))) then
+                where (group_vs%stgch /= huge(group_vs%stgch))
                     group%stgch = group_vs%stgch
-                else
+                elsewhere
                     group%stgch = 0.0
-                end if
+                end where
             end if
         end if
         if (associated(group%zlvl)) then
             if (all(group%zlvl == out%NO_DATA)) then
-                if (all(group_vs%zlvl /= huge(group_vs%zlvl))) then
+                where (group_vs%zlvl /= huge(group_vs%zlvl))
                     group%zlvl = group_vs%zlvl
-                else
+                elsewhere
                     group%zlvl = 0.0
-                end if
+                end where
             end if
         end if
 

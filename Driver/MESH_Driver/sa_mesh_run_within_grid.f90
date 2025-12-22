@@ -774,39 +774,39 @@ module sa_mesh_run_within_grid
 
         !> Fractional averages.
         if (allocated(vs%grid%cmai)) then
-            if (all(vs%grid%cmai(i1:i2) /= huge(vs%grid%cmai))) then
+            where (vs%grid%cmai(i1:i2) /= huge(vs%grid%cmai))
                 where (tcanfrac(i1:i2) > 0.0) vs%grid%cmai(i1:i2) = vs%grid%cmai(i1:i2)/tcanfrac(i1:i2)
-            end if
+            end where
         end if
         if (allocated(vs%grid%tcan)) then
-            if (all(vs%grid%tcan(i1:i2) /= huge(vs%grid%tcan))) then
+            where (vs%grid%tcan(i1:i2) /= huge(vs%grid%tcan))
                 where (tcanfrac(i1:i2) > 0.0) vs%grid%tcan(i1:i2) = vs%grid%tcan(i1:i2)/tcanfrac(i1:i2)
-            end if
+            end where
         end if
         if (allocated(vs%grid%gro)) then
-            if (all(vs%grid%gro(i1:i2) /= huge(vs%grid%gro))) then
+            where (vs%grid%gro(i1:i2) /= huge(vs%grid%gro))
                 where (tcanfrac(i1:i2) > 0.0) vs%grid%gro(i1:i2) = vs%grid%gro(i1:i2)/tcanfrac(i1:i2)
-            end if
+            end where
         end if
         if (allocated(vs%grid%tsno)) then
-            if (all(vs%grid%tsno(i1:i2) /= huge(vs%grid%tsno))) then
+            where (vs%grid%tsno(i1:i2) /= huge(vs%grid%tsno))
                 where (tsnofrac(i1:i2) > 0.0) vs%grid%tsno(i1:i2) = vs%grid%tsno(i1:i2)/tsnofrac(i1:i2)
-            end if
+            end where
         end if
         if (allocated(vs%grid%rhosno)) then
-            if (all(vs%grid%rhosno(i1:i2) /= huge(vs%grid%rhosno))) then
+            where (vs%grid%rhosno(i1:i2) /= huge(vs%grid%rhosno))
                 where (tsnofrac(i1:i2) > 0.0) vs%grid%rhosno(i1:i2) = vs%grid%rhosno(i1:i2)/tsnofrac(i1:i2)
-            end if
+            end where
         end if
         if (allocated(vs%grid%tpnd)) then
-            if (all(vs%grid%tpnd(i1:i2) /= huge(vs%grid%tpnd))) then
+            where (vs%grid%tpnd(i1:i2) /= huge(vs%grid%tpnd))
                 where (tpndfrac(i1:i2) > 0.0) vs%grid%tpnd(i1:i2) = vs%grid%tpnd(i1:i2)/tpndfrac(i1:i2)
-            end if
+            end where
         end if
         if (allocated(vs%grid%tice)) then
-            if (all(vs%grid%tice(i1:i2) /= huge(vs%grid%tice))) then
+            where (vs%grid%tice(i1:i2) /= huge(vs%grid%tice))
                 where (ticefrac(i1:i2) > 0.0) vs%grid%tice(i1:i2) = vs%grid%tice(i1:i2)/ticefrac(i1:i2)
-            end if
+            end where
         end if
 
     end subroutine
