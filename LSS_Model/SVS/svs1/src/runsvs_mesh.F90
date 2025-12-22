@@ -453,10 +453,16 @@ module runsvs_mesh
             do j = 1, nl_svs
 ! EG_MOD: WFC IS NOT KNOWN AT THIS POINT (COMPUTED LATER BY INISOILI_SVS); USE CRITWATER INSTEAD
 !                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlqsol(il1 + k, j), bus(wfc + k))
-                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlqsol(il1 + k, j), CRITWATER)
-                if (allocated(svs_mesh%vs%wsoil)) bus(wsoil + (j - 1)*NG + k) = max(svs_mesh%vs%wsoil(isvs, j), CRITWATER)
-                bus(isoil + (j - 1)*NG + k) = vs%tile%thicsol(il1 + k, j)
-                if (allocated(svs_mesh%vs%isoil)) bus(isoil + (j - 1)*NG + k) = svs_mesh%vs%isoil(isvs, j)
+                if (allocated(svs_mesh%vs%wsoil)) then
+                    bus(wsoil + (j - 1)*NG + k) = max(svs_mesh%vs%wsoil(isvs, j), CRITWATER)
+                else
+                    bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlqsol(il1 + k, j), CRITWATER)
+                end if
+                if (allocated(svs_mesh%vs%isoil)) then
+                    bus(isoil + (j - 1)*NG + k) = svs_mesh%vs%isoil(isvs, j)
+                else
+                    bus(isoil + (j - 1)*NG + k) = vs%tile%thicsol(il1 + k, j)
+                end if
             end do
 
             !> Map soil temperature.
@@ -465,21 +471,28 @@ module runsvs_mesh
             !>       2               2
 !            bus(tsoil + k) = vs%tile%tsol(il1 + k, 1)! + tcdk
 !            bus(tsoil + NG + k) = vs%tile%tsol(il1 + k, 2)! + tcdk
-            bus(tground + k) = vs%tile%tsol(il1 + k, 1)! + tcdk
-            bus(tground + NG + k) = vs%tile%tsol(il1 + k, 2)! + tcdk
             if (allocated(svs_mesh%vs%tground)) then
                 do j = 1, svs_mesh%vs%kthermal
                     bus(tground + (j - 1)*NG + k) = svs_mesh%vs%tground(isvs, j)
                 end do
+            else
+                bus(tground + k) = vs%tile%tsol(il1 + k, 1)! + tcdk
+                bus(tground + NG + k) = vs%tile%tsol(il1 + k, 2)! + tcdk
             end if
 
             !> Map vegetation temperature.
             do j = 0, 1
-                bus(tvege + j*NG + k) = vs%tile%tcan(il1 + k)! + tcdk
-                if (allocated(svs_mesh%vs%tvege)) bus(tvege + j*NG + k) = svs_mesh%vs%tvege(isvs, j + 1)
+                if (allocated(svs_mesh%vs%tvege)) then
+                    bus(tvege + j*NG + k) = svs_mesh%vs%tvege(isvs, j + 1)
+                else
+                    bus(tvege + j*NG + k) = vs%tile%tcan(il1 + k)! + tcdk
+                end if
             end do
-            bus(wveg + k) = vs%tile%lqwscan(il1 + k)
-            if (allocated(svs_mesh%vs%wveg)) bus(wveg + k) = svs_mesh%vs%wveg(isvs)
+            if (allocated(svs_mesh%vs%wveg)) then
+                bus(wveg + k) = svs_mesh%vs%wveg(isvs)
+            else
+                bus(wveg + k) = vs%tile%lqwscan(il1 + k)
+            end if
 
             !> Map snow properties.
             !* snoro: Density (kg/m3) to relative density wrt ice.
