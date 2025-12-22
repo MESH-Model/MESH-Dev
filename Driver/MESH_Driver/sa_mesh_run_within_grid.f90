@@ -15,6 +15,9 @@ module sa_mesh_run_within_grid
 
     subroutine run_within_grid_init(fls, shd)
 
+        !> Process modules.
+        use HDS_module, only: HDS_init
+
         !> Input/output variables.
         type(fl_ids) fls
         type(ShedGridParams) shd
@@ -25,6 +28,9 @@ module sa_mesh_run_within_grid
         !> Update variables.
         call run_within_grid_stas_update(fls, shd)
 
+        !> Call processes.
+        call HDS_init(fls, shd)
+
     end subroutine
 
     subroutine run_within_grid(fls, shd)
@@ -34,6 +40,7 @@ module sa_mesh_run_within_grid
 
         !> Process modules.
         use baseflow_module
+        use HDS_module, only: HDS_within_grid
 
         !> Input/output variables.
         type(fl_ids) fls
@@ -50,6 +57,7 @@ module sa_mesh_run_within_grid
 
         !> Call processes.
         call bflm_within_grid(fls, shd)
+        call HDS_within_grid(fls, shd)
 
         !> Post-process update of variables.
 !        if (allocated(vs%grid%rchg) .and. allocated(vs%grid%drainsol)) then

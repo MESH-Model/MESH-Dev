@@ -30,6 +30,7 @@ subroutine READ_RUN_OPTIONS(fls, shd, ierr)
     use PBSM_module
     use mountain_module
     use resume_run
+    use HDS_module, only: HDS_MESH
 
     implicit none
 
@@ -591,6 +592,16 @@ subroutine READ_RUN_OPTIONS(fls, shd, ierr)
                 !> MOUNTAINMESH (formerly: SOLARADJUSTFLAG).
                 case('MOUNTAINMESH', 'SOLARADJUSTFLAG')
                     mountain_mesh%RUNOPTIONSFLAG = adjustl(lowercase(line))
+
+                !> HDS.
+                case ('HDSFLAG')
+                    HDS_MESH%PROCESS_ACTIVE = .false.
+                    do j = 2, nargs
+                        select case (lowercase(args(j)))
+                            case ('1', 'on')
+                                HDS_MESH%PROCESS_ACTIVE = .true.
+                        end select
+                    end do
 
                 !> Unrecognized flag.
                 case default
