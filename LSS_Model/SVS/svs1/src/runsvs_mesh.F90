@@ -455,12 +455,12 @@ module runsvs_mesh
 !                bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlqsol(il1 + k, j), bus(wfc + k))
                 if (allocated(svs_mesh%vs%wsoil)) then
                     bus(wsoil + (j - 1)*NG + k) = max(svs_mesh%vs%wsoil(isvs, j), CRITWATER)
-                else
+                else if (vs%tile%thlqsol(il1 + k, j) /= huge(vs%tile%thlqsol)) then
                     bus(wsoil + (j - 1)*NG + k) = max(vs%tile%thlqsol(il1 + k, j), CRITWATER)
                 end if
                 if (allocated(svs_mesh%vs%isoil)) then
                     bus(isoil + (j - 1)*NG + k) = svs_mesh%vs%isoil(isvs, j)
-                else
+                else if (vs%tile%thicsol(il1 + k, j) /= huge(vs%tile%thicsol)) then
                     bus(isoil + (j - 1)*NG + k) = vs%tile%thicsol(il1 + k, j)
                 end if
             end do
@@ -475,7 +475,7 @@ module runsvs_mesh
                 do j = 1, svs_mesh%vs%kthermal
                     bus(tground + (j - 1)*NG + k) = svs_mesh%vs%tground(isvs, j)
                 end do
-            else
+            else if (vs%tile%tsol(il1 + k, 1) /= huge(vs%tile%tsol) .and. vs%tile%tsol(il1 + k, 2) /= huge(vs%tile%tsol)) then
                 bus(tground + k) = vs%tile%tsol(il1 + k, 1)! + tcdk
                 bus(tground + NG + k) = vs%tile%tsol(il1 + k, 2)! + tcdk
             end if
@@ -484,19 +484,19 @@ module runsvs_mesh
             do j = 0, 1
                 if (allocated(svs_mesh%vs%tvege)) then
                     bus(tvege + j*NG + k) = svs_mesh%vs%tvege(isvs, j + 1)
-                else
+                else if (vs%tile%tcan(il1 + k) /= huge(vs%tile%tcan)) then
                     bus(tvege + j*NG + k) = vs%tile%tcan(il1 + k)! + tcdk
                 end if
             end do
             if (allocated(svs_mesh%vs%wveg)) then
                 bus(wveg + k) = svs_mesh%vs%wveg(isvs)
-            else
+            else if (vs%tile%lqwscan(il1 + k) /= huge(vs%tile%lqwscan)) then
                 bus(wveg + k) = vs%tile%lqwscan(il1 + k)
             end if
 
             !> Map snow properties.
             !* snoro: Density (kg/m3) to relative density wrt ice.
-            if (vs%tile%sno(il1 + k) > 0.0) then
+            if (vs%tile%sno(il1 + k) /= huge(vs%tile%sno) .and. vs%tile%sno(il1 + k) > 0.0) then
                 do j = 0, 1
                     bus(tsnow + j*NG + k) = vs%tile%tsno(il1 + k)! + tcdk
                 end do
