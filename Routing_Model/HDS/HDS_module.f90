@@ -82,7 +82,7 @@ module HDS_module
         integer 							:: nmesh_grid 		! number of active grids/subbasins within the domain
 		character(len=100)					:: fnam				! HDS output file name
 		!internal vairables
-		integer 							:: n, k				! grid and gru index
+		integer 							:: n, k, z			! grid and gru index
 
         !> Return if the process is not active.
         if (.not. HDS_MESH%PROCESS_ACTIVE) then
@@ -149,6 +149,27 @@ module HDS_module
 			end if
 		end do
 	
+        !> Check for required variables.
+        z = 0
+        if (.not. allocated(vs%tile%fsin)) then
+            call print_error("The driving variable '" // VN_FSIN // "' is not active or not associated with an input file.")
+            z = 1
+        end if
+        if (.not. allocated(vs%tile%ta)) then
+            call print_error("The driving variable '" // VN_TA // "' is not active or not associated with an input file.")
+            z = 1
+        end if
+        if (.not. allocated(vs%tile%pre)) then
+            call print_error("The driving variable '" // VN_PRE // "' is not active or not associated with an input file.")
+            z = 1
+        end if
+        if (z /= 0) then
+            call reset_tab()
+            call print_error( &
+                "The variables required to drive the model are not active or have not been associated with an input file.")
+            call program_abort()
+        end if
+
 	!***********************
 		!outputs (currently stored in a separate csv file)
 		! This step creates the csv file header
