@@ -296,10 +296,7 @@ module output_variables
                 call output_variables_allocate(fields%flin, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%flin, n1)
             case (VN_FLNET)
-                if (.not. allocated(fields%vs%gte)) then
-                    allocate(fields%vs%gte(n1))
-                    fields%vs%gte = huge(fields%vs%gte)
-                end if
+                call output_variables_activate_pntr(fields, VN_GTE)
                 call output_variables_allocate(fields%flnet, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%flnet, n1)
             case (VN_TA)
