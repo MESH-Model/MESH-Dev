@@ -97,6 +97,7 @@ module output_variables
         real, dimension(:, :), pointer :: tcbotg => null()
         real, dimension(:, :), pointer :: latflw => null()
         real, dimension(:), pointer :: zsolsat => null()
+        real, dimension(:), pointer :: tbas => null()
         real, dimension(:), pointer :: drainsol => null()
 
         !> Groundwater/lower zone storage variables.
@@ -774,6 +775,13 @@ module output_variables
                 end if
                 call output_variables_allocate(fields%zsolsat, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%zsolsat, n1)
+            case (VN_TBAS)
+                if (.not. allocated(fields%vs%tbas)) then
+                    allocate(fields%vs%tbas(n1))
+                    fields%vs%tbas = huge(fields%vs%tbas)
+                end if
+                call output_variables_allocate(fields%tbas, n1, pntr)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%tbas, n1)
             case (VN_DRAINSOL)
                 if (.not. allocated(fields%vs%drainsol)) then
                     allocate(fields%vs%drainsol(n1))
@@ -1054,6 +1062,7 @@ module output_variables
         if (associated(group%tcbotg)) group%tcbotg = out%NO_DATA
         if (associated(group%latflw)) group%latflw = out%NO_DATA
         if (associated(group%zsolsat)) group%zsolsat = out%NO_DATA
+        if (associated(group%tbas)) group%tbas = out%NO_DATA
         if (associated(group%drainsol)) group%drainsol = out%NO_DATA
 
         !> Groundwater/lower zone storage variables.
@@ -1922,6 +1931,15 @@ module output_variables
                 end where
             end if
         end if
+        if (associated(group%tbas)) then
+            if (all(group%tbas == out%NO_DATA)) then
+                where (group_vs%tbas /= huge(group_vs%tbas))
+                    group%tbas = group_vs%tbas
+                elsewhere
+                    group%tbas = 0.0
+                end where
+            end if
+        end if
         if (associated(group%drainsol)) then
             if (all(group%drainsol == out%NO_DATA)) then
                 where (group_vs%drainsol /= huge(group_vs%drainsol))
@@ -2443,6 +2461,9 @@ module output_variables
         end do
         if (associated(group%zsolsat)) then
             call output_variables_field_update(group%zsolsat, group_ts%zsolsat, its, 'avg')
+        end if
+        if (associated(group%tbas)) then
+            call output_variables_field_update(group%tbas, group_ts%tbas, its, 'sum')
         end if
         if (associated(group%drainsol)) then
             call output_variables_field_update(group%drainsol, group_ts%drainsol, its, 'sum')

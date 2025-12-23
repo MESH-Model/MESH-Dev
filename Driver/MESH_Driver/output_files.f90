@@ -2126,6 +2126,8 @@ module output_files
                     end do
                 case (VN_ZSOLSAT)
                     call output_files_append_field(fls, shd, ts, VN_ZSOLSAT, args, nargs, z, -1)
+                case (VN_TBAS)
+                    call output_files_append_field(fls, shd, ts, VN_TBAS, args, nargs, z, -1, real(ic%dts))
                 case (VN_DRAINSOL, 'ROFB')
                     call output_files_append_field(fls, shd, ts, VN_DRAINSOL, args, nargs, z, -1, real(ic%dts))
 
