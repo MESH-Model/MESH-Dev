@@ -166,7 +166,7 @@ module model_variables
         real, dimension(:), allocatable :: zsol
         real, dimension(:), allocatable :: zsolhyd
         real, dimension(:), allocatable :: zsolsat
-        real, dimension(:), allocatable :: ggeo
+!-        real, dimension(:), allocatable :: ggeo
         real, dimension(:), allocatable :: tbas
         real, dimension(:), allocatable :: drainsol
 
@@ -365,7 +365,7 @@ module model_variables
         if (allocated(group%zsol)) group%zsol = 0.0
         if (allocated(group%zsolhyd)) group%zsolhyd = 0.0
         if (allocated(group%zsolsat)) group%zsolsat = 0.0
-        if (allocated(group%ggeo)) group%ggeo = 0.0
+!-        if (allocated(group%ggeo)) group%ggeo = 0.0
         if (allocated(group%tbas)) group%tbas = 0.0
         if (allocated(group%drainsol)) group%drainsol = 0.0
 
@@ -539,7 +539,7 @@ module model_variables
         allocate(group%zsol(n), stat = z); if (z /= 0) ierr = z
         allocate(group%zsolhyd(n), stat = z); if (z /= 0) ierr = z
         allocate(group%zsolsat(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%ggeo(n), stat = z); if (z /= 0) ierr = z
+!-        allocate(group%ggeo(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tbas(n), stat = z); if (z /= 0) ierr = z
         allocate(group%drainsol(n), stat = z); if (z /= 0) ierr = z
 

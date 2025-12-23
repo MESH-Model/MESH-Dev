@@ -1209,13 +1209,13 @@ module sa_mesh_run_between_grid
                 vs%basin%zsolsat = 0.0
             end where
         end if
-        if (allocated(vs%basin%ggeo) .and. allocated(vs%grid%ggeo)) then
-            where (vs%grid%ggeo /= huge(vs%grid%ggeo))
-                vs%basin%ggeo = vs%grid%ggeo*shd%FRAC
-            elsewhere
-                vs%basin%ggeo = 0.0
-            end where
-        end if
+!-        if (allocated(vs%basin%ggeo) .and. allocated(vs%grid%ggeo)) then
+!-            where (vs%grid%ggeo /= huge(vs%grid%ggeo))
+!-                vs%basin%ggeo = vs%grid%ggeo*shd%FRAC
+!-            elsewhere
+!-                vs%basin%ggeo = 0.0
+!-            end where
+!-        end if
         if (allocated(vs%basin%tbas) .and. allocated(vs%grid%tbas)) then
             where (vs%grid%tbas /= huge(vs%grid%tbas))
                 vs%basin%tbas = vs%grid%tbas*shd%FRAC
@@ -1621,9 +1621,9 @@ module sa_mesh_run_between_grid
                         vs%basin%zsolsat(ii) = vs%basin%zsolsat(ii) + vs%basin%zsolsat(i)
                     end if
                 end if
-                if (allocated(vs%basin%ggeo)) then
-                    if (vs%basin%ggeo(i) /= huge(vs%basin%ggeo)) vs%basin%ggeo(ii) = vs%basin%ggeo(ii) + vs%basin%ggeo(i)
-                end if
+!-                if (allocated(vs%basin%ggeo)) then
+!-                    if (vs%basin%ggeo(i) /= huge(vs%basin%ggeo)) vs%basin%ggeo(ii) = vs%basin%ggeo(ii) + vs%basin%ggeo(i)
+!-                end if
                 if (allocated(vs%basin%tbas)) then
                     if (vs%basin%tbas(i) /= huge(vs%basin%tbas)) vs%basin%tbas(ii) = vs%basin%tbas(ii) + vs%basin%tbas(i)
                 end if
@@ -1906,9 +1906,9 @@ module sa_mesh_run_between_grid
         if (allocated(vs%basin%zsolsat)) then
             where (vs%basin%zsolsat /= huge(vs%basin%zsolsat)) vs%basin%zsolsat = vs%basin%zsolsat/frac
         end if
-        if (allocated(vs%basin%ggeo)) then
-            where (vs%basin%ggeo /= huge(vs%basin%ggeo)) vs%basin%ggeo = vs%basin%ggeo/frac
-        end if
+!-        if (allocated(vs%basin%ggeo)) then
+!-            where (vs%basin%ggeo /= huge(vs%basin%ggeo)) vs%basin%ggeo = vs%basin%ggeo/frac
+!-        end if
         if (allocated(vs%basin%tbas)) then
             where (vs%basin%tbas /= huge(vs%basin%tbas)) vs%basin%tbas = vs%basin%tbas/frac
         end if
