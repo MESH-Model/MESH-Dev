@@ -941,9 +941,11 @@ module ensim_io
         !> Local variables.
         character(len = MAX_LINE_LENGTH) line
 
+        !> Set the error status.
+        ierr = 0
+
         !> Rewind to the beginning of the file, then read until the end of the EnSim header.
         rewind(iun)
-        ierr = 0
         do while (ierr == 0)
             call read_ensim_line(iun, line, ierr)
             if (ierr /= 0) exit
