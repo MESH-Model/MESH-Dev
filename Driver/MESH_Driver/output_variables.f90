@@ -420,32 +420,35 @@ module output_variables
                 call output_variables_allocate(fields%ican, n1)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
             case (VN_TACAN)
+                call output_variables_activate_pntr(fields, VN_TCAN)
                 if (.not. allocated(fields%vs%tacan)) then
                     allocate(fields%vs%tacan(fields%vs%dim_length))
                     fields%vs%tacan = huge(fields%vs%tacan)
                 end if
                 call output_variables_allocate(fields%tacan, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%tacan, n1)
-                call output_variables_allocate(fields%ican, n1)
-                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
+!-                call output_variables_allocate(fields%ican, n1)
+!-                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
             case (VN_QACAN)
+                call output_variables_activate_pntr(fields, VN_TCAN)
                 if (.not. allocated(fields%vs%qacan)) then
                     allocate(fields%vs%qacan(fields%vs%dim_length))
                     fields%vs%qacan = huge(fields%vs%qacan)
                 end if
                 call output_variables_allocate(fields%qacan, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%qacan, n1)
-                call output_variables_allocate(fields%ican, n1)
-                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
+!-                call output_variables_allocate(fields%ican, n1)
+!-                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
             case (VN_UVCAN)
+                call output_variables_activate_pntr(fields, VN_TCAN)
                 if (.not. allocated(fields%vs%uvcan)) then
                     allocate(fields%vs%uvcan(fields%vs%dim_length))
                     fields%vs%uvcan = huge(fields%vs%uvcan)
                 end if
                 call output_variables_allocate(fields%uvcan, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%uvcan, n1)
-                call output_variables_allocate(fields%ican, n1)
-                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
+!-                call output_variables_allocate(fields%ican, n1)
+!-                if (associated(fields%ts)) call output_variables_allocate(fields%ts%ican, n1)
             case (VN_GRO)
                 call output_variables_activate_pntr(fields, VN_TCAN)
                 if (.not. allocated(fields%vs%gro)) then
@@ -465,14 +468,13 @@ module output_variables
                 call output_variables_allocate(fields%fsno, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%fsno, n1)
             case (VN_SNO)
+                call output_variables_activate_pntr(fields, VN_TSNO)
                 if (.not. allocated(fields%vs%sno)) then
                     allocate(fields%vs%sno(fields%vs%dim_length))
                     fields%vs%sno = huge(fields%vs%sno)
                 end if
                 call output_variables_allocate(fields%sno, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%sno, n1)
-                call output_variables_allocate(fields%isno, n1)
-                if (associated(fields%ts)) call output_variables_allocate(fields%ts%isno, n1)
             case (VN_RHOSNO)
                 call output_variables_activate_pntr(fields, VN_SNO)
                 if (.not. allocated(fields%vs%rhosno)) then
@@ -495,13 +497,15 @@ module output_variables
                 call output_variables_allocate(fields%lqwssno, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%lqwssno, n1)
             case (VN_TSNO)
-                call output_variables_activate_pntr(fields, VN_SNO)
+!-                call output_variables_activate_pntr(fields, VN_SNO)
                 if (.not. allocated(fields%vs%tsno)) then
                     allocate(fields%vs%tsno(fields%vs%dim_length))
                     fields%vs%tsno = huge(fields%vs%tsno)
                 end if
                 call output_variables_allocate(fields%tsno, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%tsno, n1)
+                call output_variables_allocate(fields%isno, n1)
+                if (associated(fields%ts)) call output_variables_allocate(fields%ts%isno, n1)
             case (VN_ALBSNO)
                 call output_variables_activate_pntr(fields, VN_SNO)
                 if (.not. allocated(fields%vs%albsno)) then
@@ -521,14 +525,28 @@ module output_variables
 
             !> Surface variables.
             case (VN_ALBT)
+                if (.not. allocated(fields%vs%albt)) then
+                    allocate(fields%vs%albt(fields%vs%dim_length))
+                    fields%vs%albt = huge(fields%vs%albt)
+                end if
+                call output_variables_activate_pntr(fields, VN_ALVS)
+                call output_variables_activate_pntr(fields, VN_ALIR)
                 call output_variables_activate_pntr(fields, VN_FSIN)
                 call output_variables_allocate(fields%albt, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%albt, n1)
             case (VN_ALVS)
+                if (.not. allocated(fields%vs%alvs)) then
+                    allocate(fields%vs%alvs(fields%vs%dim_length))
+                    fields%vs%alvs = huge(fields%vs%alvs)
+                end if
                 call output_variables_activate_pntr(fields, VN_FSIN)
                 call output_variables_allocate(fields%alvs, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%alvs, n1)
             case (VN_ALIR)
+                if (.not. allocated(fields%vs%alir)) then
+                    allocate(fields%vs%alir(fields%vs%dim_length))
+                    fields%vs%alir = huge(fields%vs%alir)
+                end if
                 call output_variables_activate_pntr(fields, VN_FSIN)
                 call output_variables_allocate(fields%alir, n1, pntr)
                 if (associated(fields%ts)) call output_variables_allocate(fields%ts%alir, n1)
@@ -831,6 +849,9 @@ module output_variables
 
             !> Routing variables.
             case (VN_RFF)
+                call output_variables_activate_pntr(fields, VN_OVRFLW)
+                call output_variables_activate_pntr(fields, VN_LATFLW)
+                call output_variables_activate_pntr(fields, VN_LKG)
                 if (.not. allocated(fields%vs%rff)) then
                     allocate(fields%vs%rff(fields%vs%dim_length))
                     fields%vs%rff = huge(fields%vs%rff)
@@ -1381,27 +1402,27 @@ module output_variables
                 group%ican = 0.0
             end where
         end if
-        if (associated(group%ican) .and. associated(group%tacan)) then
-            where (group%tacan > 0.0)
-                group%ican = 1.0
-            elsewhere
-                group%ican = 0.0
-            end where
-        end if
-        if (associated(group%ican) .and. associated(group%qacan)) then
-            where (group%qacan > 0.0)
-                group%ican = 1.0
-            elsewhere
-                group%ican = 0.0
-            end where
-        end if
-        if (associated(group%ican) .and. associated(group%uvcan)) then
-            where (group%uvcan > 0.0)
-                group%ican = 1.0
-            elsewhere
-                group%ican = 0.0
-            end where
-        end if
+!-        if (associated(group%ican) .and. associated(group%tacan)) then
+!-            where (group%tacan > 0.0)
+!-                group%ican = 1.0
+!-            elsewhere
+!-                group%ican = 0.0
+!-            end where
+!-        end if
+!-        if (associated(group%ican) .and. associated(group%qacan)) then
+!-            where (group%qacan > 0.0)
+!-                group%ican = 1.0
+!-            elsewhere
+!-                group%ican = 0.0
+!-            end where
+!-        end if
+!-        if (associated(group%ican) .and. associated(group%uvcan)) then
+!-            where (group%uvcan > 0.0)
+!-                group%ican = 1.0
+!-            elsewhere
+!-                group%ican = 0.0
+!-            end where
+!-        end if
         if (associated(group%lqwscan)) then
             if (all(group%lqwscan == out%NO_DATA)) then
                 if (all(group_vs%lqwscan /= huge(group_vs%lqwscan))) then

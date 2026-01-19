@@ -1030,10 +1030,12 @@ module sa_mesh_run_within_tile
 !-        end if
         if (allocated(vs%tile%dzsolhyd)) then
             if (allocated(vs%tile%lqwssol) .and. allocated(vs%tile%thlqsol)) then
-                vs%tile%lqwssol(il1:il2, :) = vs%tile%thlqsol(il1:il2, :)*vs%tile%dzsolhyd(il1:il2, :)*RHOW
+                where (vs%tile%thlqsol(il1:il2, :) /= NO_DATA_REAL) &
+                    vs%tile%lqwssol(il1:il2, :) = vs%tile%thlqsol(il1:il2, :)*vs%tile%dzsolhyd(il1:il2, :)*RHOW
             end if
             if (allocated(vs%tile%fzwssol) .and. allocated(vs%tile%thicsol)) then
-                vs%tile%fzwssol(il1:il2, :) = vs%tile%thicsol(il1:il2, :)*vs%tile%dzsolhyd(il1:il2, :)*RHOICE
+                where (vs%tile%thicsol(il1:il2, :) /= NO_DATA_REAL) &
+                    vs%tile%fzwssol(il1:il2, :) = vs%tile%thicsol(il1:il2, :)*vs%tile%dzsolhyd(il1:il2, :)*RHOICE
             end if
         end if
         if (allocated(vs%tile%rchg) .and. allocated(vs%tile%drainsol)) then
