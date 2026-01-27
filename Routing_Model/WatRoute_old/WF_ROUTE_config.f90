@@ -147,9 +147,12 @@ module WF_ROUTE_config
         WF_NHYD = 0.0
         WF_QBASE = 0.0
         WF_QI1 = 0.0
+        vs%grid%qi = 0.0
         WF_QO1 = 0.0
+        vs%grid%qo = 0.0
         WF_QR = 0.0
         WF_STORE1 = 0.0
+        vs%grid%stgch = 0.0
 
         !> *************************************************************
         !>  Open and read in values from MESH_input_reservoir.txt file

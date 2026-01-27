@@ -56,9 +56,12 @@ subroutine resumerun_read(fls, shd, ierr)
         !> RUNCLASS36 and RUNSVS113.
         if (RUNCLASS36_flgs%PROCESS_ACTIVE .or. svs_mesh%PROCESS_ACTIVE) then
             vs%tile%tcan(k) = vs%gru%tcan(m) + TFREZ
+            vs%tile%lqwscan(k) = vs%gru%lqwscan(m)
             vs%tile%tsno(k) = vs%gru%tsno(m) + TFREZ
+            vs%tile%sno(k) = vs%gru%sno(m)
             vs%tile%rhosno(k) = vs%gru%rhosno(m)
             vs%tile%albsno(k) = vs%gru%albsno(m)
+            vs%tile%lqwssno(k) = 0.0
             vs%tile%tsol(k, :) = vs%gru%tsol(m, :) + TFREZ
             vs%tile%thlqsol(k, :) = vs%gru%thlqsol(m, :)
             vs%tile%thicsol(k, :) = vs%gru%thicsol(m, :)
@@ -68,11 +71,10 @@ subroutine resumerun_read(fls, shd, ierr)
         if (RUNCLASS36_flgs%PROCESS_ACTIVE) then
             vs%tile%tacan(k) = vs%gru%tcan(m) + TFREZ
             vs%tile%qacan(k) = 0.5e-2
+            vs%tile%cmai(k) = 0.0
             vs%tile%tpnd(k) = vs%gru%tpnd(m) + TFREZ
             vs%tile%zpnd(k) = vs%gru%zpnd(m)
-            vs%tile%lqwscan(k) = vs%gru%lqwscan(m)
             vs%tile%fzwscan(k) = vs%gru%fzwscan(m)
-            vs%tile%sno(k) = vs%gru%sno(m)
             vs%tile%gro(k) = vs%gru%gro(m)
             vs%tile%tsfs(k, 1) = TFREZ
             vs%tile%tsfs(k, 2) = TFREZ

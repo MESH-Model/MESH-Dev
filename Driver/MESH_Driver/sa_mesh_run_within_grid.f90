@@ -311,7 +311,7 @@ module sa_mesh_run_within_grid
         !> Canopy variables.
         if (allocated(vs%grid%lqwscan)) vs%grid%lqwscan(i1:i2) = 0.0
         if (allocated(vs%grid%fzwscan)) vs%grid%fzwscan(i1:i2) = 0.0
-        if (allocated(vs%grid%cmas)) vs%grid%cmas(i1:i2) = 0.0
+        if (allocated(vs%grid%cmai)) vs%grid%cmai(i1:i2) = 0.0
         if (allocated(vs%grid%tacan)) vs%grid%tacan(i1:i2) = 0.0
         if (allocated(vs%grid%qacan)) vs%grid%qacan(i1:i2) = 0.0
         if (allocated(vs%grid%uvcan)) vs%grid%uvcan(i1:i2) = 0.0
@@ -493,8 +493,8 @@ module sa_mesh_run_within_grid
                     vs%grid%fzwscan(ki) = vs%grid%fzwscan(ki) + vs%tile%fzwscan(k)*frac
                 end if
             end if
-            if (allocated(vs%grid%cmas) .and. allocated(vs%tile%cmas)) then
-                if (vs%tile%cmas(k) /= huge(vs%tile%cmas)) vs%grid%cmas(ki) = vs%grid%cmas(ki) + vs%tile%cmas(k)*frac
+            if (allocated(vs%grid%cmai) .and. allocated(vs%tile%cmai)) then
+                if (vs%tile%cmai(k) /= huge(vs%tile%cmai)) vs%grid%cmai(ki) = vs%grid%cmai(ki) + vs%tile%cmai(k)*frac
             end if
             if (allocated(vs%grid%tacan) .and. allocated(vs%tile%tacan)) then
                 if (vs%tile%tacan(k) /= huge(vs%tile%tacan)) vs%grid%tacan(ki) = vs%grid%tacan(ki) + vs%tile%tacan(k)*frac
@@ -773,40 +773,40 @@ module sa_mesh_run_within_grid
         end do
 
         !> Fractional averages.
-        if (allocated(vs%grid%cmas)) then
-            if (all(vs%grid%cmas(i1:i2) /= huge(vs%grid%cmas))) then
-                where (tcanfrac(i1:i2) > 0.0) vs%grid%cmas(i1:i2) = vs%grid%cmas(i1:i2)/tcanfrac(i1:i2)
-            end if
+        if (allocated(vs%grid%cmai)) then
+            where (vs%grid%cmai(i1:i2) /= huge(vs%grid%cmai))
+                where (tcanfrac(i1:i2) > 0.0) vs%grid%cmai(i1:i2) = vs%grid%cmai(i1:i2)/tcanfrac(i1:i2)
+            end where
         end if
         if (allocated(vs%grid%tcan)) then
-            if (all(vs%grid%tcan(i1:i2) /= huge(vs%grid%tcan))) then
+            where (vs%grid%tcan(i1:i2) /= huge(vs%grid%tcan))
                 where (tcanfrac(i1:i2) > 0.0) vs%grid%tcan(i1:i2) = vs%grid%tcan(i1:i2)/tcanfrac(i1:i2)
-            end if
+            end where
         end if
         if (allocated(vs%grid%gro)) then
-            if (all(vs%grid%gro(i1:i2) /= huge(vs%grid%gro))) then
+            where (vs%grid%gro(i1:i2) /= huge(vs%grid%gro))
                 where (tcanfrac(i1:i2) > 0.0) vs%grid%gro(i1:i2) = vs%grid%gro(i1:i2)/tcanfrac(i1:i2)
-            end if
+            end where
         end if
         if (allocated(vs%grid%tsno)) then
-            if (all(vs%grid%tsno(i1:i2) /= huge(vs%grid%tsno))) then
+            where (vs%grid%tsno(i1:i2) /= huge(vs%grid%tsno))
                 where (tsnofrac(i1:i2) > 0.0) vs%grid%tsno(i1:i2) = vs%grid%tsno(i1:i2)/tsnofrac(i1:i2)
-            end if
+            end where
         end if
         if (allocated(vs%grid%rhosno)) then
-            if (all(vs%grid%rhosno(i1:i2) /= huge(vs%grid%rhosno))) then
+            where (vs%grid%rhosno(i1:i2) /= huge(vs%grid%rhosno))
                 where (tsnofrac(i1:i2) > 0.0) vs%grid%rhosno(i1:i2) = vs%grid%rhosno(i1:i2)/tsnofrac(i1:i2)
-            end if
+            end where
         end if
         if (allocated(vs%grid%tpnd)) then
-            if (all(vs%grid%tpnd(i1:i2) /= huge(vs%grid%tpnd))) then
+            where (vs%grid%tpnd(i1:i2) /= huge(vs%grid%tpnd))
                 where (tpndfrac(i1:i2) > 0.0) vs%grid%tpnd(i1:i2) = vs%grid%tpnd(i1:i2)/tpndfrac(i1:i2)
-            end if
+            end where
         end if
         if (allocated(vs%grid%tice)) then
-            if (all(vs%grid%tice(i1:i2) /= huge(vs%grid%tice))) then
+            where (vs%grid%tice(i1:i2) /= huge(vs%grid%tice))
                 where (ticefrac(i1:i2) > 0.0) vs%grid%tice(i1:i2) = vs%grid%tice(i1:i2)/ticefrac(i1:i2)
-            end if
+            end where
         end if
 
     end subroutine

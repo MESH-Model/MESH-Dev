@@ -431,7 +431,7 @@ module RUNCLASS36_config
         csfv%SAND(il1:il2, :) = pm%tile%sand(il1:il2, :)
         csfv%CLAY(il1:il2, :) = pm%tile%clay(il1:il2, :)
         csfv%ORGM(il1:il2, :) = pm%tile%orgm(il1:il2, :)
-        cpv%CMAI(il1:il2) = vs%tile%cmas(il1:il2)
+        cpv%CMAI(il1:il2) = vs%tile%cmai(il1:il2)
         cpv%WSNO(il1:il2) = vs%tile%lqwssno(il1:il2)
         cpv%QAC(il1:il2) = vs%tile%qacan(il1:il2)
         cpv%VAC(il1:il2) = vs%tile%uvcan(il1:il2)
@@ -676,7 +676,7 @@ module RUNCLASS36_config
 
             !> Assign values.
             vs%tile%albsno(k) = ALBSROW(ik, jk)
-            vs%tile%cmas(k) = CMAIROW(ik, jk)
+            vs%tile%cmai(k) = CMAIROW(ik, jk)
             vs%tile%gro(k) = GROROW(ik, jk)
             vs%tile%qacan(k) = QACROW(ik, jk)
             vs%tile%lqwscan(k) = RCANROW(ik, jk)
@@ -765,7 +765,7 @@ module RUNCLASS36_config
 
             !> Assign values.
             ALBSROW(ik, jk) = real(vs%tile%albsno(k), kind = 4)
-            CMAIROW(ik, jk) = real(vs%tile%cmas(k), kind = 4)
+            CMAIROW(ik, jk) = real(vs%tile%cmai(k), kind = 4)
             GROROW(ik, jk) = real(vs%tile%gro(k), kind = 4)
             QACROW(ik, jk) = real(vs%tile%qacan(k), kind = 4)
             RCANROW(ik, jk) = real(vs%tile%lqwscan(k), kind = 4)

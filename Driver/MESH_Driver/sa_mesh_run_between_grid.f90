@@ -674,202 +674,202 @@ module sa_mesh_run_between_grid
 
         !> Meteorology/climatology variables.
         if (allocated(vs%basin%fsin) .and. allocated(vs%grid%fsin)) then
-            if (all(vs%grid%fsin /= huge(vs%grid%fsin))) then
+            where (vs%grid%fsin /= huge(vs%grid%fsin))
                 vs%basin%fsin = vs%grid%fsin*shd%FRAC
-            else
-                vs%basin%fsin = huge(vs%basin%fsin)
-            end if
+            elsewhere
+                vs%basin%fsin = 0.0
+            end where
         end if
         if (allocated(vs%basin%fsvs) .and. allocated(vs%grid%fsvs)) then
-            if (all(vs%grid%fsvs /= huge(vs%grid%fsvs))) then
+            where (vs%grid%fsvs /= huge(vs%grid%fsvs))
                 vs%basin%fsvs = vs%grid%fsvs*shd%FRAC
-            else
-                vs%basin%fsvs = huge(vs%basin%fsvs)
-            end if
+            elsewhere
+                vs%basin%fsvs = 0.0
+            end where
         end if
         if (allocated(vs%basin%fsir) .and. allocated(vs%grid%fsir)) then
-            if (all(vs%grid%fsir /= huge(vs%grid%fsir))) then
+            where (vs%grid%fsir /= huge(vs%grid%fsir))
                 vs%basin%fsir = vs%grid%fsir*shd%FRAC
-            else
-                vs%basin%fsir = huge(vs%basin%fsir)
-            end if
+            elsewhere
+                vs%basin%fsir = 0.0
+            end where
         end if
         if (allocated(vs%basin%fsdr) .and. allocated(vs%grid%fsdr)) then
-            if (all(vs%grid%fsdr /= huge(vs%grid%fsdr))) then
+            where (vs%grid%fsdr /= huge(vs%grid%fsdr))
                 vs%basin%fsdr = vs%grid%fsdr*shd%FRAC
-            else
-                vs%basin%fsdr = huge(vs%basin%fsdr)
-            end if
+            elsewhere
+                vs%basin%fsdr = 0.0
+            end where
         end if
         if (allocated(vs%basin%fsdff) .and. allocated(vs%grid%fsdff)) then
-            if (all(vs%grid%fsdff /= huge(vs%grid%fsdff))) then
+            where (vs%grid%fsdff /= huge(vs%grid%fsdff))
                 vs%basin%fsdff = vs%grid%fsdff*shd%FRAC
-            else
-                vs%basin%fsdff = huge(vs%basin%fsdff)
-            end if
+            elsewhere
+                vs%basin%fsdff = 0.0
+            end where
         end if
         if (allocated(vs%basin%flin) .and. allocated(vs%grid%flin)) then
-            if (all(vs%grid%flin /= huge(vs%grid%flin))) then
+            where (vs%grid%flin /= huge(vs%grid%flin))
                 vs%basin%flin = vs%grid%flin*shd%FRAC
-            else
-                vs%basin%flin = huge(vs%basin%flin)
-            end if
+            elsewhere
+                vs%basin%flin = 0.0
+            end where
         end if
         if (allocated(vs%basin%ta) .and. allocated(vs%grid%ta)) then
-            if (all(vs%grid%ta /= huge(vs%grid%ta))) then
+            where (vs%grid%ta /= huge(vs%grid%ta))
                 vs%basin%ta = vs%grid%ta*shd%FRAC
-            else
-                vs%basin%ta = huge(vs%basin%ta)
-            end if
+            elsewhere
+                vs%basin%ta = 0.0
+            end where
         end if
         if (allocated(vs%basin%qa) .and. allocated(vs%grid%qa)) then
-            if (all(vs%grid%qa /= huge(vs%grid%qa))) then
+            where (vs%grid%qa /= huge(vs%grid%qa))
                 vs%basin%qa = vs%grid%qa*shd%FRAC
-            else
-                vs%basin%qa = huge(vs%basin%qa)
-            end if
+            elsewhere
+                vs%basin%qa = 0.0
+            end where
         end if
         if (allocated(vs%basin%pres) .and. allocated(vs%grid%pres)) then
-            if (all(vs%grid%pres /= huge(vs%grid%pres))) then
+            where (vs%grid%pres /= huge(vs%grid%pres))
                 vs%basin%pres = vs%grid%pres*shd%FRAC
-            else
-                vs%basin%pres = huge(vs%basin%pres)
-            end if
+            elsewhere
+                vs%basin%pres = 0.0
+            end where
         end if
         if (allocated(vs%basin%uu) .and. allocated(vs%grid%uu)) then
-            if (all(vs%grid%uu /= huge(vs%grid%uu))) then
+            where (vs%grid%uu /= huge(vs%grid%uu))
                 vs%basin%uu = vs%grid%uu*shd%FRAC
-            else
-                vs%basin%uu = huge(vs%basin%uu)
-            end if
+            elsewhere
+                vs%basin%uu = 0.0
+            end where
         end if
         if (allocated(vs%basin%vv) .and. allocated(vs%grid%vv)) then
-            if (all(vs%grid%vv /= huge(vs%grid%vv))) then
+            where (vs%grid%vv /= huge(vs%grid%vv))
                 vs%basin%vv = vs%grid%vv*shd%FRAC
-            else
-                vs%basin%vv = huge(vs%basin%vv)
-            end if
+            elsewhere
+                vs%basin%vv = 0.0
+            end where
         end if
         if (allocated(vs%basin%uv) .and. allocated(vs%grid%uv)) then
-            if (all(vs%grid%uv /= huge(vs%grid%uv))) then
+            where (vs%grid%uv /= huge(vs%grid%uv))
                 vs%basin%uv = vs%grid%uv*shd%FRAC
-            else
-                vs%basin%uv = huge(vs%basin%uv)
-            end if
+            elsewhere
+                vs%basin%uv = 0.0
+            end where
         end if
         if (allocated(vs%basin%wdir) .and. allocated(vs%grid%wdir)) then
-            if (all(vs%grid%wdir /= huge(vs%grid%wdir))) then
+            where (vs%grid%wdir /= huge(vs%grid%wdir))
                 vs%basin%wdir = vs%grid%wdir*shd%FRAC
-            else
-                vs%basin%wdir = huge(vs%basin%wdir)
-            end if
+            elsewhere
+                vs%basin%wdir = 0.0
+            end where
         end if
         if (allocated(vs%basin%prern) .and. allocated(vs%grid%prern)) then
-            if (all(vs%grid%prern /= huge(vs%grid%prern))) then
+            where (vs%grid%prern /= huge(vs%grid%prern))
                 vs%basin%prern = vs%grid%prern*shd%FRAC
-            else
-                vs%basin%prern = huge(vs%basin%prern)
-            end if
+            elsewhere
+                vs%basin%prern = 0.0
+            end where
         end if
         if (allocated(vs%basin%presno) .and. allocated(vs%grid%presno)) then
-            if (all(vs%grid%presno /= huge(vs%grid%presno))) then
+            where (vs%grid%presno /= huge(vs%grid%presno))
                 vs%basin%presno = vs%grid%presno*shd%FRAC
-            else
-                vs%basin%presno = huge(vs%basin%presno)
-            end if
+            elsewhere
+                vs%basin%presno = 0.0
+            end where
         end if
         if (allocated(vs%basin%pre) .and. allocated(vs%grid%pre)) then
-            if (all(vs%grid%pre /= huge(vs%grid%pre))) then
+            where (vs%grid%pre /= huge(vs%grid%pre))
                 vs%basin%pre = vs%grid%pre*shd%FRAC
-            else
-                vs%basin%pre = huge(vs%basin%pre)
-            end if
+            elsewhere
+                vs%basin%pre = 0.0
+            end where
         end if
 
         !> Canopy variables.
         if (allocated(vs%basin%lqwscan) .and. allocated(vs%grid%lqwscan)) then
-            if (all(vs%grid%lqwscan /= huge(vs%grid%lqwscan))) then
+            where (vs%grid%lqwscan /= huge(vs%grid%lqwscan))
                 vs%basin%lqwscan = vs%grid%lqwscan*shd%FRAC
-            else
-                vs%basin%lqwscan = huge(vs%basin%lqwscan)
-            end if
+            elsewhere
+                vs%basin%lqwscan = 0.0
+            end where
         end if
         if (allocated(vs%basin%fzwscan) .and. allocated(vs%grid%fzwscan)) then
-            if (all(vs%grid%fzwscan /= huge(vs%grid%fzwscan))) then
+            where (vs%grid%fzwscan /= huge(vs%grid%fzwscan))
                 vs%basin%fzwscan = vs%grid%fzwscan*shd%FRAC
-            else
-                vs%basin%fzwscan = huge(vs%basin%fzwscan)
-            end if
+            elsewhere
+                vs%basin%fzwscan = 0.0
+            end where
         end if
-        if (allocated(vs%basin%cmas) .and. allocated(vs%grid%cmas)) then
-            if (all(vs%grid%cmas /= huge(vs%grid%cmas))) then
-                vs%basin%cmas = vs%grid%cmas*shd%FRAC
-            else
-                vs%basin%cmas = huge(vs%basin%cmas)
-            end if
+        if (allocated(vs%basin%cmai) .and. allocated(vs%grid%cmai)) then
+            where (vs%grid%cmai /= huge(vs%grid%cmai))
+                vs%basin%cmai = vs%grid%cmai*shd%FRAC
+            elsewhere
+                vs%basin%cmai = 0.0
+            end where
         end if
         if (allocated(vs%basin%tacan) .and. allocated(vs%grid%tacan)) then
-            if (all(vs%grid%tacan /= huge(vs%grid%tacan))) then
+            where (vs%grid%tacan /= huge(vs%grid%tacan))
                 vs%basin%tacan = vs%grid%tacan*shd%FRAC
-            else
-                vs%basin%tacan = huge(vs%basin%tacan)
-            end if
+            elsewhere
+                vs%basin%tacan = 0.0
+            end where
         end if
         if (allocated(vs%basin%qacan) .and. allocated(vs%grid%qacan)) then
-            if (all(vs%grid%qacan /= huge(vs%grid%qacan))) then
+            where (vs%grid%qacan /= huge(vs%grid%qacan))
                 vs%basin%qacan = vs%grid%qacan*shd%FRAC
-            else
-                vs%basin%qacan = huge(vs%basin%qacan)
-            end if
+            elsewhere
+                vs%basin%qacan = 0.0
+            end where
         end if
         if (allocated(vs%basin%uvcan) .and. allocated(vs%grid%uvcan)) then
-            if (all(vs%grid%uvcan /= huge(vs%grid%uvcan))) then
+            where (vs%grid%uvcan /= huge(vs%grid%uvcan))
                 vs%basin%uvcan = vs%grid%uvcan*shd%FRAC
-            else
-                vs%basin%uvcan = huge(vs%basin%uvcan)
-            end if
+            elsewhere
+                vs%basin%uvcan = 0.0
+            end where
         end if
         if (allocated(vs%basin%tcan) .and. allocated(vs%grid%tcan)) then
-            if (all(vs%grid%tcan /= huge(vs%grid%tcan))) then
+            where (vs%grid%tcan /= huge(vs%grid%tcan))
                 vs%basin%tcan = vs%grid%tcan*shd%FRAC
                 where (vs%basin%tcan > 0.0)
                     tcanfrac = shd%FRAC
                 elsewhere
                     tcanfrac = 0.0
                 end where
-            else
-                vs%basin%tcan = huge(vs%basin%tcan)
-            end if
+            elsewhere
+                vs%basin%tcan = 0.0
+            end where
         end if
         if (allocated(vs%basin%gro) .and. allocated(vs%grid%gro)) then
-            if (all(vs%grid%gro /= huge(vs%grid%gro))) then
+            where (vs%grid%gro /= huge(vs%grid%gro))
                 vs%basin%gro = vs%grid%gro*shd%FRAC
-            else
-                vs%basin%gro = huge(vs%basin%gro)
-            end if
+            elsewhere
+                vs%basin%gro = 0.0
+            end where
         end if
 
         !> Snow variables.
         if (allocated(vs%basin%fsno) .and. allocated(vs%grid%fsno)) then
-            if (all(vs%grid%fsno /= huge(vs%grid%fsno))) then
+            where (vs%grid%fsno /= huge(vs%grid%fsno))
                 vs%basin%fsno = vs%grid%fsno*shd%FRAC
-            else
-                vs%basin%fsno = huge(vs%basin%fsno)
-            end if
+            elsewhere
+                vs%basin%fsno = 0.0
+            end where
         end if
         if (allocated(vs%basin%sno) .and. allocated(vs%grid%sno)) then
-            if (all(vs%grid%sno /= huge(vs%grid%sno))) then
+            where (vs%grid%sno /= huge(vs%grid%sno))
                 vs%basin%sno = vs%grid%sno*shd%FRAC
-            else
-                vs%basin%sno = huge(vs%basin%sno)
-            end if
+            elsewhere
+                vs%basin%sno = 0.0
+            end where
         end if
         if (allocated(vs%basin%rhosno) .and. allocated(vs%grid%rhosno)) then
-            if (all(vs%grid%rhosno /= huge(vs%grid%rhosno))) then
+            where (vs%grid%rhosno /= huge(vs%grid%rhosno))
                 vs%basin%rhosno = vs%grid%rhosno*shd%FRAC
-            else
-                vs%basin%rhosno = huge(vs%basin%rhosno)
-            end if
+            elsewhere
+                vs%basin%rhosno = 0.0
+            end where
         end if
 !-        if (allocated(vs%basin%zsno) .and. allocated(vs%grid%zsno)) then
 !-            if (all(vs%grid%zsno /= huge(vs%grid%zsno))) then
@@ -879,79 +879,79 @@ module sa_mesh_run_between_grid
 !-            end if
 !-        end if
         if (allocated(vs%basin%lqwssno) .and. allocated(vs%grid%lqwssno)) then
-            if (all(vs%grid%lqwssno /= huge(vs%grid%lqwssno))) then
+            where (vs%grid%lqwssno /= huge(vs%grid%lqwssno))
                 vs%basin%lqwssno = vs%grid%lqwssno*shd%FRAC
-            else
-                vs%basin%lqwssno = huge(vs%basin%lqwssno)
-            end if
+            elsewhere
+                vs%basin%lqwssno = 0.0
+            end where
         end if
         if (allocated(vs%basin%tsno) .and. allocated(vs%grid%tsno)) then
-            if (all(vs%grid%tsno /= huge(vs%grid%tsno))) then
+            where (vs%grid%tsno /= huge(vs%grid%tsno))
                 vs%basin%tsno = vs%grid%tsno*shd%FRAC
                 where (vs%basin%tsno > 0.0)
                     tsnofrac = shd%FRAC
                 elsewhere
                     tsnofrac = 0.0
                 end where
-            else
-                vs%basin%tsno = huge(vs%basin%tsno)
-            end if
+            elsewhere
+                vs%basin%tsno = 0.0
+            end where
         end if
         if (allocated(vs%basin%albsno) .and. allocated(vs%grid%albsno)) then
-            if (all(vs%grid%albsno /= huge(vs%grid%albsno))) then
+            where (vs%grid%albsno /= huge(vs%grid%albsno))
                 vs%basin%albsno = vs%grid%albsno*shd%FRAC
-            else
-                vs%basin%albsno = huge(vs%basin%albsno)
-            end if
+            elsewhere
+                vs%basin%albsno = 0.0
+            end where
         end if
         if (allocated(vs%basin%drainsno) .and. allocated(vs%grid%drainsno)) then
-            if (all(vs%grid%drainsno /= huge(vs%grid%drainsno))) then
+            where (vs%grid%drainsno /= huge(vs%grid%drainsno))
                 vs%basin%drainsno = vs%grid%drainsno*shd%FRAC
-            else
-                vs%basin%drainsno = huge(vs%basin%drainsno)
-            end if
+            elsewhere
+                vs%basin%drainsno = 0.0
+            end where
         end if
 
         !> Surface variables.
         if (allocated(vs%basin%albt) .and. allocated(vs%grid%albt)) then
-            if (all(vs%grid%albt /= huge(vs%grid%albt))) then
+            where (vs%grid%albt /= huge(vs%grid%albt))
                 vs%basin%albt = vs%grid%albt*shd%FRAC
                 where (vs%basin%albt > 0.0)
                     albtfrac = shd%FRAC
                 elsewhere
                     albtfrac = 0.0
                 end where
-            else
-                vs%basin%albt = huge(vs%basin%albt)
-            end if
+            elsewhere
+                vs%basin%albt = 0.0
+            end where
         end if
         if (allocated(vs%basin%alvs) .and. allocated(vs%grid%alvs)) then
-            if (all(vs%grid%alvs /= huge(vs%grid%alvs))) then
+            where (vs%grid%alvs /= huge(vs%grid%alvs))
                 vs%basin%alvs = vs%grid%alvs*shd%FRAC
-            else
-                vs%basin%alvs = huge(vs%basin%alvs)
-            end if
+            elsewhere
+                vs%basin%alvs = 0.0
+            end where
         end if
         if (allocated(vs%basin%alir) .and. allocated(vs%grid%alir)) then
-            if (all(vs%grid%alir /= huge(vs%grid%alir))) then
+            where (vs%grid%alir /= huge(vs%grid%alir))
                 vs%basin%alir = vs%grid%alir*shd%FRAC
-            else
-                vs%basin%alir = huge(vs%basin%alir)
-            end if
+            elsewhere
+                vs%basin%alir = 0.0
+            end where
         end if
         if (allocated(vs%basin%gte) .and. allocated(vs%grid%gte)) then
-            if (all(vs%grid%gte /= huge(vs%grid%gte))) then
+            where (vs%grid%gte /= huge(vs%grid%gte))
                 vs%basin%gte = vs%grid%gte*shd%FRAC
-            else
-                vs%basin%gte = huge(vs%basin%gte)
-            end if
+            elsewhere
+                vs%basin%gte = 0.0
+            end where
         end if
         if (allocated(vs%basin%zpnd) .and. allocated(vs%grid%zpnd)) then
-            if (all(vs%grid%zpnd /= huge(vs%grid%zpnd))) then
+            where (vs%grid%zpnd /= huge(vs%grid%zpnd))
                 vs%basin%zpnd = vs%grid%zpnd*shd%FRAC
-            else
-                vs%basin%zpnd = huge(vs%basin%zpnd)
-            end if
+            elsewhere
+                vs%basin%zpnd = 0.0
+            end where
         end if
 !-        if (allocated(vs%basin%lqwspnd) .and. allocated(vs%grid%lqwspnd)) then
 !-            if (all(vs%grid%lqwspnd /= huge(vs%grid%lqwspnd))) then
@@ -961,37 +961,37 @@ module sa_mesh_run_between_grid
 !-            end if
 !-        end if
         if (allocated(vs%basin%tpnd) .and. allocated(vs%grid%tpnd)) then
-            if (all(vs%grid%tpnd /= huge(vs%grid%tpnd))) then
+            where (vs%grid%tpnd /= huge(vs%grid%tpnd))
                 vs%basin%tpnd = vs%grid%tpnd*shd%FRAC
                 where (vs%basin%tpnd > 0.0)
                     tpndfrac = shd%FRAC
                 elsewhere
                     tpndfrac = 0.0
                 end where
-            else
-                vs%basin%tpnd = huge(vs%basin%tpnd)
-            end if
+            elsewhere
+                vs%basin%tpnd = 0.0
+            end where
         end if
         if (allocated(vs%basin%pndcaf) .and. allocated(vs%grid%pndcaf)) then
-            if (all(vs%grid%pndcaf /= huge(vs%grid%pndcaf))) then
+            where (vs%grid%pndcaf /= huge(vs%grid%pndcaf))
                 vs%basin%pndcaf = vs%grid%pndcaf*shd%FRAC
-            else
-                vs%basin%pndcaf = huge(vs%basin%pndcaf)
-            end if
+            elsewhere
+                vs%basin%pndcaf = 0.0
+            end where
         end if
         if (allocated(vs%basin%potevp) .and. allocated(vs%grid%potevp)) then
-            if (all(vs%grid%potevp /= huge(vs%grid%potevp))) then
+            where (vs%grid%potevp /= huge(vs%grid%potevp))
                 vs%basin%potevp = vs%grid%potevp*shd%FRAC
-            else
-                vs%basin%potevp = huge(vs%basin%potevp)
-            end if
+            elsewhere
+                vs%basin%potevp = 0.0
+            end where
         end if
         if (allocated(vs%basin%et) .and. allocated(vs%grid%et)) then
-            if (all(vs%grid%et /= huge(vs%grid%et))) then
+            where (vs%grid%et /= huge(vs%grid%et))
                 vs%basin%et = vs%grid%et*shd%FRAC
-            else
-                vs%basin%et = huge(vs%basin%et)
-            end if
+            elsewhere
+                vs%basin%et = 0.0
+            end where
         end if
 !-        if (allocated(vs%basin%evpb) .and. allocated(vs%grid%evpb)) then
 !-            if (all(vs%grid%evpb /= huge(vs%grid%evpb))) then
@@ -1008,280 +1008,250 @@ module sa_mesh_run_between_grid
 !-            end if
 !-        end if
         if (allocated(vs%basin%ovrflw) .and. allocated(vs%grid%ovrflw)) then
-            if (all(vs%grid%ovrflw /= huge(vs%grid%ovrflw))) then
+            where (vs%grid%ovrflw /= huge(vs%grid%ovrflw))
                 vs%basin%ovrflw = vs%grid%ovrflw*shd%FRAC
-            else
-                vs%basin%ovrflw = huge(vs%basin%ovrflw)
-            end if
+            elsewhere
+                vs%basin%ovrflw = 0.0
+            end where
         end if
         if (allocated(vs%basin%qevp) .and. allocated(vs%grid%qevp)) then
-            if (all(vs%grid%qevp /= huge(vs%grid%qevp))) then
+            where (vs%grid%qevp /= huge(vs%grid%qevp))
                 vs%basin%qevp = vs%grid%qevp*shd%FRAC
-            else
-                vs%basin%qevp = huge(vs%basin%qevp)
-            end if
+            elsewhere
+                vs%basin%qevp = 0.0
+            end where
         end if
         if (allocated(vs%basin%qsens) .and. allocated(vs%grid%qsens)) then
-            if (all(vs%grid%qsens /= huge(vs%grid%qsens))) then
+            where (vs%grid%qsens /= huge(vs%grid%qsens))
                 vs%basin%qsens = vs%grid%qsens*shd%FRAC
-            else
-                vs%basin%qsens = huge(vs%basin%qsens)
-            end if
+            elsewhere
+                vs%basin%qsens = 0.0
+            end where
         end if
         if (allocated(vs%basin%gzero) .and. allocated(vs%grid%gzero)) then
-            if (all(vs%grid%gzero /= huge(vs%grid%gzero))) then
+            where (vs%grid%gzero /= huge(vs%grid%gzero))
                 vs%basin%gzero = vs%grid%gzero*shd%FRAC
-            else
-                vs%basin%gzero = huge(vs%basin%gzero)
-            end if
+            elsewhere
+                vs%basin%gzero = 0.0
+            end where
         end if
         if (allocated(vs%basin%tsfs) .and. allocated(vs%grid%tsfs)) then
-            if (all(vs%grid%tsfs /= huge(vs%grid%tsfs))) then
-                do j = 1, 4
+            do j = 1, 4
+                where (vs%grid%tsfs(:, j) /= huge(vs%grid%tsfs))
                     vs%basin%tsfs(:, j) = vs%grid%tsfs(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%tsfs = huge(vs%basin%tsfs)
-            end if
+                elsewhere
+                    vs%basin%tsfs(:, j) = 0.0
+                end where
+            end do
         end if
         if (allocated(vs%basin%tsurf) .and. allocated(vs%grid%tsurf)) then
-            if (all(vs%grid%tsurf /= huge(vs%grid%tsurf))) then
+            where (vs%grid%tsurf /= huge(vs%grid%tsurf))
                 vs%basin%tsurf = vs%grid%tsurf*shd%FRAC
-            else
-                vs%basin%tsurf = huge(vs%basin%tsurf)
-            end if
+            elsewhere
+                vs%basin%tsurf = 0.0
+            end where
         end if
 
         !> Ice/glacier variables.
         if (allocated(vs%basin%lqwsice) .and. allocated(vs%grid%lqwsice)) then
-            if (all(vs%grid%lqwsice /= huge(vs%grid%lqwsice))) then
+            where (vs%grid%lqwsice /= huge(vs%grid%lqwsice))
                 vs%basin%lqwsice = vs%grid%lqwsice*shd%FRAC
-            else
-                vs%basin%lqwsice = huge(vs%basin%lqwsice)
-            end if
+            elsewhere
+                vs%basin%lqwsice = 0.0
+            end where
         end if
         if (allocated(vs%basin%tice) .and. allocated(vs%grid%tice)) then
-            if (all(vs%grid%tice /= huge(vs%grid%tice))) then
+            where (vs%grid%tice /= huge(vs%grid%tice))
                 vs%basin%tice = vs%grid%tice*shd%FRAC
                 where (vs%basin%tice > 0.0)
                     ticefrac = shd%FRAC
                 elsewhere
                     ticefrac = 0.0
                 end where
-            else
-                vs%basin%tice = huge(vs%basin%tice)
-            end if
+            elsewhere
+                vs%basin%tice = 0.0
+            end where
         end if
 
         !> Subsurface/soil variables.
-        if (allocated(vs%basin%dzsol) .and. allocated(vs%grid%dzsol)) then
-            if (all(vs%grid%dzsol /= huge(vs%grid%dzsol))) then
-                do j = 1, shd%lc%IGND
+        do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%dzsol) .and. allocated(vs%grid%dzsol)) then
+                where (vs%grid%dzsol(:, j) /= huge(vs%grid%dzsol))
                     vs%basin%dzsol(:, j) = vs%grid%dzsol(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%dzsol = huge(vs%basin%dzsol)
+                elsewhere
+                    vs%basin%dzsol(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%dzsolhyd) .and. allocated(vs%grid%dzsolhyd)) then
-            if (all(vs%grid%dzsolhyd /= huge(vs%grid%dzsolhyd))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%dzsolhyd) .and. allocated(vs%grid%dzsolhyd)) then
+                where (vs%grid%dzsolhyd(:, j) /= huge(vs%grid%dzsolhyd))
                     vs%basin%dzsolhyd(:, j) = vs%grid%dzsolhyd(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%dzsolhyd = huge(vs%basin%dzsolhyd)
+                elsewhere
+                    vs%basin%dzsolhyd(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%thlqsol) .and. allocated(vs%grid%thlqsol)) then
-            if (all(vs%grid%thlqsol /= huge(vs%grid%thlqsol))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%thlqsol) .and. allocated(vs%grid%thlqsol)) then
+                where (vs%grid%thlqsol(:, j) /= huge(vs%grid%thlqsol))
                     vs%basin%thlqsol(:, j) = vs%grid%thlqsol(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%thlqsol = huge(vs%basin%thlqsol)
+                elsewhere
+                    vs%basin%thlqsol(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%thicsol) .and. allocated(vs%grid%thicsol)) then
-            if (all(vs%grid%thicsol /= huge(vs%grid%thicsol))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%thicsol) .and. allocated(vs%grid%thicsol)) then
+                where (vs%grid%thicsol(:, j) /= huge(vs%grid%thicsol))
                     vs%basin%thicsol(:, j) = vs%grid%thicsol(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%thicsol = huge(vs%basin%thicsol)
+                elsewhere
+                    vs%basin%thicsol(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%lqwssol) .and. allocated(vs%grid%lqwssol)) then
-            if (all(vs%grid%lqwssol /= huge(vs%grid%lqwssol))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%lqwssol) .and. allocated(vs%grid%lqwssol)) then
+                where (vs%grid%lqwssol(:, j) /= huge(vs%grid%lqwssol))
                     vs%basin%lqwssol(:, j) = vs%grid%lqwssol(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%lqwssol = huge(vs%basin%lqwssol)
+                elsewhere
+                    vs%basin%lqwssol(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%fzwssol) .and. allocated(vs%grid%fzwssol)) then
-            if (all(vs%grid%fzwssol /= huge(vs%grid%fzwssol))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%fzwssol) .and. allocated(vs%grid%fzwssol)) then
+                where (vs%grid%fzwssol(:, j) /= huge(vs%grid%fzwssol))
                     vs%basin%fzwssol(:, j) = vs%grid%fzwssol(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%fzwssol = huge(vs%basin%fzwssol)
+                elsewhere
+                    vs%basin%fzwssol(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%tsol) .and. allocated(vs%grid%tsol)) then
-            if (all(vs%grid%tsol /= huge(vs%grid%tsol))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%tsol) .and. allocated(vs%grid%tsol)) then
+                where (vs%grid%tsol(:, j) /= huge(vs%grid%tsol))
                     vs%basin%tsol(:, j) = vs%grid%tsol(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%tsol = huge(vs%basin%tsol)
+                elsewhere
+                    vs%basin%tsol(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%gflx) .and. allocated(vs%grid%gflx)) then
-            if (all(vs%grid%gflx /= huge(vs%grid%gflx))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%gflx) .and. allocated(vs%grid%gflx)) then
+                where (vs%grid%gflx(:, j) /= huge(vs%grid%gflx))
                     vs%basin%gflx(:, j) = vs%grid%gflx(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%gflx = huge(vs%basin%gflx)
+                elsewhere
+                    vs%basin%gflx(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%hcps) .and. allocated(vs%grid%hcps)) then
-            if (all(vs%grid%hcps /= huge(vs%grid%hcps))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%hcps) .and. allocated(vs%grid%hcps)) then
+                where (vs%grid%hcps(:, j) /= huge(vs%grid%hcps))
                     vs%basin%hcps(:, j) = vs%grid%hcps(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%hcps = huge(vs%basin%hcps)
+                elsewhere
+                    vs%basin%hcps(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%hcpc) .and. allocated(vs%grid%hcpc)) then
-            if (all(vs%grid%hcpc /= huge(vs%grid%hcpc))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%hcpc) .and. allocated(vs%grid%hcpc)) then
+                where (vs%grid%hcpc(:, j) /= huge(vs%grid%hcpc))
                     vs%basin%hcpc(:, j) = vs%grid%hcpc(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%hcpc = huge(vs%basin%hcpc)
+                elsewhere
+                    vs%basin%hcpc(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%hcpg) .and. allocated(vs%grid%hcpg)) then
-            if (all(vs%grid%hcpg /= huge(vs%grid%hcpg))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%hcpg) .and. allocated(vs%grid%hcpg)) then
+                where (vs%grid%hcpg(:, j) /= huge(vs%grid%hcpg))
                     vs%basin%hcpg(:, j) = vs%grid%hcpg(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%hcpg = huge(vs%basin%hcpg)
+                elsewhere
+                    vs%basin%hcpg(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%tctopc) .and. allocated(vs%grid%tctopc)) then
-            if (all(vs%grid%tctopc /= huge(vs%grid%tctopc))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%tctopc) .and. allocated(vs%grid%tctopc)) then
+                where (vs%grid%tctopc(:, j) /= huge(vs%grid%tctopc))
                     vs%basin%tctopc(:, j) = vs%grid%tctopc(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%tctopc = huge(vs%basin%tctopc)
+                elsewhere
+                    vs%basin%tctopc(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%tctopg) .and. allocated(vs%grid%tctopg)) then
-            if (all(vs%grid%tctopg /= huge(vs%grid%tctopg))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%tctopg) .and. allocated(vs%grid%tctopg)) then
+                where (vs%grid%tctopg(:, j) /= huge(vs%grid%tctopg))
                     vs%basin%tctopg(:, j) = vs%grid%tctopg(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%tctopg = huge(vs%basin%tctopg)
+                elsewhere
+                    vs%basin%tctopg(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%tcbotc) .and. allocated(vs%grid%tcbotc)) then
-            if (all(vs%grid%tcbotc /= huge(vs%grid%tcbotc))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%tcbotc) .and. allocated(vs%grid%tcbotc)) then
+                where (vs%grid%tcbotc(:, j) /= huge(vs%grid%tcbotc))
                     vs%basin%tcbotc(:, j) = vs%grid%tcbotc(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%tcbotc = huge(vs%basin%tcbotc)
+                elsewhere
+                    vs%basin%tcbotc(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%tcbotg) .and. allocated(vs%grid%tcbotg)) then
-            if (all(vs%grid%tcbotg /= huge(vs%grid%tcbotg))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%tcbotg) .and. allocated(vs%grid%tcbotg)) then
+                where (vs%grid%tcbotg(:, j) /= huge(vs%grid%tcbotg))
                     vs%basin%tcbotg(:, j) = vs%grid%tcbotg(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%tcbotg = huge(vs%basin%tcbotg)
+                elsewhere
+                    vs%basin%tcbotg(:, j) = 0.0
+                end where
             end if
-        end if
-        if (allocated(vs%basin%latflw) .and. allocated(vs%grid%latflw)) then
-            if (all(vs%grid%latflw /= huge(vs%grid%latflw))) then
-                do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%latflw) .and. allocated(vs%grid%latflw)) then
+                where (vs%grid%latflw(:, j) /= huge(vs%grid%latflw))
                     vs%basin%latflw(:, j) = vs%grid%latflw(:, j)*shd%FRAC
-                end do
-            else
-                vs%basin%latflw = huge(vs%basin%latflw)
+                elsewhere
+                    vs%basin%latflw(:, j) = 0.0
+                end where
             end if
-        end if
+        end do
         if (allocated(vs%basin%zsol) .and. allocated(vs%grid%zsol)) then
-            if (all(vs%grid%zsol /= huge(vs%grid%zsol))) then
+            where (vs%grid%zsol /= huge(vs%grid%zsol))
                 vs%basin%zsol = vs%grid%zsol*shd%FRAC
-            else
-                vs%basin%zsol = huge(vs%basin%zsol)
-            end if
+            elsewhere
+                vs%basin%zsol = 0.0
+            end where
         end if
         if (allocated(vs%basin%zsolhyd) .and. allocated(vs%grid%zsolhyd)) then
-            if (all(vs%grid%zsolhyd /= huge(vs%grid%zsolhyd))) then
+            where (vs%grid%zsolhyd /= huge(vs%grid%zsolhyd))
                 vs%basin%zsolhyd = vs%grid%zsolhyd*shd%FRAC
-            else
-                vs%basin%zsolhyd = huge(vs%basin%zsolhyd)
-            end if
+            elsewhere
+                vs%basin%zsolhyd = 0.0
+            end where
         end if
         if (allocated(vs%basin%zsolsat) .and. allocated(vs%grid%zsolsat)) then
-            if (all(vs%grid%zsolsat /= huge(vs%grid%zsolsat))) then
+            where (vs%grid%zsolsat /= huge(vs%grid%zsolsat))
                 vs%basin%zsolsat = vs%grid%zsolsat*shd%FRAC
-            else
-                vs%basin%zsolsat = huge(vs%basin%zsolsat)
-            end if
+            elsewhere
+                vs%basin%zsolsat = 0.0
+            end where
         end if
         if (allocated(vs%basin%ggeo) .and. allocated(vs%grid%ggeo)) then
-            if (all(vs%grid%ggeo /= huge(vs%grid%ggeo))) then
+            where (vs%grid%ggeo /= huge(vs%grid%ggeo))
                 vs%basin%ggeo = vs%grid%ggeo*shd%FRAC
-            else
-                vs%basin%ggeo = huge(vs%basin%ggeo)
-            end if
+            elsewhere
+                vs%basin%ggeo = 0.0
+            end where
         end if
         if (allocated(vs%basin%tbas) .and. allocated(vs%grid%tbas)) then
-            if (all(vs%grid%tbas /= huge(vs%grid%tbas))) then
+            where (vs%grid%tbas /= huge(vs%grid%tbas))
                 vs%basin%tbas = vs%grid%tbas*shd%FRAC
-            else
-                vs%basin%tbas = huge(vs%basin%tbas)
-            end if
+            elsewhere
+                vs%basin%tbas = 0.0
+            end where
         end if
         if (allocated(vs%basin%drainsol) .and. allocated(vs%grid%drainsol)) then
-            if (all(vs%grid%drainsol /= huge(vs%grid%drainsol))) then
+            where (vs%grid%drainsol /= huge(vs%grid%drainsol))
                 vs%basin%drainsol = vs%grid%drainsol*shd%FRAC
-            else
-                vs%basin%drainsol = huge(vs%basin%drainsol)
-            end if
+            elsewhere
+                vs%basin%drainsol = 0.0
+            end where
         end if
 
         !> Groundwater/lower zone storage variables.
         if (allocated(vs%basin%rchg) .and. allocated(vs%grid%rchg)) then
-            if (all(vs%grid%rchg /= huge(vs%grid%rchg))) then
+            where (vs%grid%rchg /= huge(vs%grid%rchg))
                 vs%basin%rchg = vs%grid%rchg*shd%FRAC
-            else
-                vs%basin%rchg = huge(vs%basin%rchg)
-            end if
+            elsewhere
+                vs%basin%rchg = 0.0
+            end where
         end if
         if (allocated(vs%basin%stggw) .and. allocated(vs%grid%stggw)) then
-            if (all(vs%grid%stggw /= huge(vs%grid%stggw))) then
+            where (vs%grid%stggw /= huge(vs%grid%stggw))
                 vs%basin%stggw = vs%grid%stggw*shd%FRAC
-            else
-                vs%basin%stggw = huge(vs%basin%stggw)
-            end if
+            elsewhere
+                vs%basin%stggw = 0.0
+            end where
         end if
         if (allocated(vs%basin%lkg) .and. allocated(vs%grid%lkg)) then
-            if (all(vs%grid%lkg /= huge(vs%grid%lkg))) then
+            where (vs%grid%lkg /= huge(vs%grid%lkg))
                 vs%basin%lkg = vs%grid%lkg*shd%FRAC
-            else
-                vs%basin%lkg = huge(vs%basin%lkg)
-            end if
+            elsewhere
+                vs%basin%lkg = 0.0
+            end where
         end if
 !-        if (allocated(vs%basin%dzs) .and. allocated(vs%grid%dzs)) then
 !-            if (all(vs%grid%dzs /= huge(vs%grid%dzs))) then
@@ -1293,11 +1263,11 @@ module sa_mesh_run_between_grid
 
         !> Routing variables.
         if (allocated(vs%basin%rff) .and. allocated(vs%grid%rff)) then
-            if (all(vs%grid%rff /= huge(vs%grid%rff))) then
+            where (vs%grid%rff /= huge(vs%grid%rff))
                 vs%basin%rff = vs%grid%rff*shd%FRAC
-            else
-                vs%basin%rff = huge(vs%basin%rff)
-            end if
+            elsewhere
+                vs%basin%rff = 0.0
+            end where
         end if
 !        if (allocated(vs%basin%qi) .and. allocated(vs%grid%qi)) then
 !            if (all(vs%grid%qi /= huge(vs%grid%qi))) then
@@ -1411,8 +1381,8 @@ module sa_mesh_run_between_grid
                         vs%basin%fzwscan(ii) = vs%basin%fzwscan(ii) + vs%basin%fzwscan(i)
                     end if
                 end if
-                if (allocated(vs%basin%cmas)) then
-                    if (vs%basin%cmas(i) /= huge(vs%basin%cmas)) vs%basin%cmas(ii) = vs%basin%cmas(ii) + vs%basin%cmas(i)
+                if (allocated(vs%basin%cmai)) then
+                    if (vs%basin%cmai(i) /= huge(vs%basin%cmai)) vs%basin%cmai(ii) = vs%basin%cmai(ii) + vs%basin%cmai(i)
                 end if
                 if (allocated(vs%basin%tacan)) then
                     if (vs%basin%tacan(i) /= huge(vs%basin%tacan)) vs%basin%tacan(ii) = vs%basin%tacan(ii) + vs%basin%tacan(i)
@@ -1710,136 +1680,136 @@ module sa_mesh_run_between_grid
 
         !> Meteorology/climatology variables.
         if (allocated(vs%basin%fsin)) then
-            if (all(vs%basin%fsin /= huge(vs%basin%fsin))) vs%basin%fsin = vs%basin%fsin/frac
+            where (vs%basin%fsin /= huge(vs%basin%fsin)) vs%basin%fsin = vs%basin%fsin/frac
         end if
         if (allocated(vs%basin%fsvs)) then
-            if (all(vs%basin%fsvs /= huge(vs%basin%fsvs))) vs%basin%fsvs = vs%basin%fsvs/frac
+            where (vs%basin%fsvs /= huge(vs%basin%fsvs)) vs%basin%fsvs = vs%basin%fsvs/frac
         end if
         if (allocated(vs%basin%fsir)) then
-            if (all(vs%basin%fsir /= huge(vs%basin%fsir))) vs%basin%fsir = vs%basin%fsir/frac
+            where (vs%basin%fsir /= huge(vs%basin%fsir)) vs%basin%fsir = vs%basin%fsir/frac
         end if
         if (allocated(vs%basin%fsdr)) then
-            if (all(vs%basin%fsdr /= huge(vs%basin%fsdr))) vs%basin%fsdr = vs%basin%fsdr/frac
+            where (vs%basin%fsdr /= huge(vs%basin%fsdr)) vs%basin%fsdr = vs%basin%fsdr/frac
         end if
         if (allocated(vs%basin%fsdff)) then
-            if (all(vs%basin%fsdff /= huge(vs%basin%fsdff))) vs%basin%fsdff = vs%basin%fsdff/frac
+            where (vs%basin%fsdff /= huge(vs%basin%fsdff)) vs%basin%fsdff = vs%basin%fsdff/frac
         end if
         if (allocated(vs%basin%flin)) then
-            if (all(vs%basin%flin /= huge(vs%basin%flin))) vs%basin%flin = vs%basin%flin/frac
+            where (vs%basin%flin /= huge(vs%basin%flin)) vs%basin%flin = vs%basin%flin/frac
         end if
         if (allocated(vs%basin%ta)) then
-            if (all(vs%basin%ta /= huge(vs%basin%ta))) vs%basin%ta = vs%basin%ta/frac
+            where (vs%basin%ta /= huge(vs%basin%ta)) vs%basin%ta = vs%basin%ta/frac
         end if
         if (allocated(vs%basin%qa)) then
-            if (all(vs%basin%qa /= huge(vs%basin%qa))) vs%basin%qa = vs%basin%qa/frac
+            where (vs%basin%qa /= huge(vs%basin%qa)) vs%basin%qa = vs%basin%qa/frac
         end if
         if (allocated(vs%basin%pres)) then
-            if (all(vs%basin%pres /= huge(vs%basin%pres))) vs%basin%pres = vs%basin%pres/frac
+            where (vs%basin%pres /= huge(vs%basin%pres)) vs%basin%pres = vs%basin%pres/frac
         end if
         if (allocated(vs%basin%uu)) then
-            if (all(vs%basin%uu /= huge(vs%basin%uu))) vs%basin%uu = vs%basin%uu/frac
+            where (vs%basin%uu /= huge(vs%basin%uu)) vs%basin%uu = vs%basin%uu/frac
         end if
         if (allocated(vs%basin%vv)) then
-            if (all(vs%basin%vv /= huge(vs%basin%vv))) vs%basin%vv = vs%basin%vv/frac
+            where (vs%basin%vv /= huge(vs%basin%vv)) vs%basin%vv = vs%basin%vv/frac
         end if
         if (allocated(vs%basin%uv)) then
-            if (all(vs%basin%uv /= huge(vs%basin%uv))) vs%basin%uv = vs%basin%uv/frac
+            where (vs%basin%uv /= huge(vs%basin%uv)) vs%basin%uv = vs%basin%uv/frac
         end if
         if (allocated(vs%basin%wdir)) then
-            if (all(vs%basin%wdir /= huge(vs%basin%wdir))) vs%basin%wdir = vs%basin%wdir/frac
+            where (vs%basin%wdir /= huge(vs%basin%wdir)) vs%basin%wdir = vs%basin%wdir/frac
         end if
         if (allocated(vs%basin%prern)) then
-            if (all(vs%basin%prern /= huge(vs%basin%prern))) vs%basin%prern = vs%basin%prern/frac
+            where (vs%basin%prern /= huge(vs%basin%prern)) vs%basin%prern = vs%basin%prern/frac
         end if
         if (allocated(vs%basin%presno)) then
-            if (all(vs%basin%presno /= huge(vs%basin%presno))) vs%basin%presno = vs%basin%presno/frac
+            where (vs%basin%presno /= huge(vs%basin%presno)) vs%basin%presno = vs%basin%presno/frac
         end if
         if (allocated(vs%basin%pre)) then
-            if (all(vs%basin%pre /= huge(vs%basin%pre))) vs%basin%pre = vs%basin%pre/frac
+            where (vs%basin%pre /= huge(vs%basin%pre)) vs%basin%pre = vs%basin%pre/frac
         end if
 
         !> Canopy variables.
         if (allocated(vs%basin%lqwscan)) then
-            if (all(vs%basin%lqwscan /= huge(vs%basin%lqwscan))) vs%basin%lqwscan = vs%basin%lqwscan/frac
+            where (vs%basin%lqwscan /= huge(vs%basin%lqwscan)) vs%basin%lqwscan = vs%basin%lqwscan/frac
         end if
         if (allocated(vs%basin%fzwscan)) then
-            if (all(vs%basin%fzwscan /= huge(vs%basin%fzwscan))) vs%basin%fzwscan = vs%basin%fzwscan/frac
+            where (vs%basin%fzwscan /= huge(vs%basin%fzwscan)) vs%basin%fzwscan = vs%basin%fzwscan/frac
         end if
-        if (allocated(vs%basin%cmas)) then
-            if (all(vs%basin%cmas /= huge(vs%basin%cmas))) where (tcanfrac > 0.0) vs%basin%cmas = vs%basin%cmas/tcanfrac
+        if (allocated(vs%basin%cmai)) then
+            where (vs%basin%cmai /= huge(vs%basin%cmai) .and. tcanfrac > 0.0) vs%basin%cmai = vs%basin%cmai/tcanfrac
         end if
         if (allocated(vs%basin%tacan)) then
-            if (all(vs%basin%tacan /= huge(vs%basin%tacan))) where (tcanfrac > 0.0) vs%basin%tacan = vs%basin%tacan/tcanfrac
+            where (vs%basin%tacan /= huge(vs%basin%tacan) .and. tcanfrac > 0.0) vs%basin%tacan = vs%basin%tacan/tcanfrac
         end if
         if (allocated(vs%basin%qacan)) then
-            if (all(vs%basin%qacan /= huge(vs%basin%qacan))) where (tcanfrac > 0.0) vs%basin%qacan = vs%basin%qacan/tcanfrac
+            where (vs%basin%qacan /= huge(vs%basin%qacan) .and. tcanfrac > 0.0) vs%basin%qacan = vs%basin%qacan/tcanfrac
         end if
         if (allocated(vs%basin%uvcan)) then
-            if (all(vs%basin%uvcan /= huge(vs%basin%uvcan))) where (tcanfrac > 0.0) vs%basin%uvcan = vs%basin%uvcan/tcanfrac
+            where (vs%basin%uvcan /= huge(vs%basin%uvcan) .and. tcanfrac > 0.0) vs%basin%uvcan = vs%basin%uvcan/tcanfrac
         end if
         if (allocated(vs%basin%tcan)) then
-            if (all(vs%basin%tcan /= huge(vs%basin%tcan))) where (tcanfrac > 0.0) vs%basin%tcan = vs%basin%tcan/tcanfrac
+            where (vs%basin%tcan /= huge(vs%basin%tcan) .and. tcanfrac > 0.0) vs%basin%tcan = vs%basin%tcan/tcanfrac
         end if
         if (allocated(vs%basin%gro)) then
-            if (all(vs%basin%gro /= huge(vs%basin%gro))) where (tcanfrac > 0.0) vs%basin%gro = vs%basin%gro/tcanfrac
+            where (vs%basin%gro /= huge(vs%basin%gro) .and. tcanfrac > 0.0) vs%basin%gro = vs%basin%gro/tcanfrac
         end if
 
         !> Snow variables.
         if (allocated(vs%basin%fsno)) then
-            if (all(vs%basin%fsno /= huge(vs%basin%fsno))) vs%basin%fsno = vs%basin%fsno/frac
+            where (vs%basin%fsno /= huge(vs%basin%fsno)) vs%basin%fsno = vs%basin%fsno/frac
         end if
         if (allocated(vs%basin%sno)) then
-            if (all(vs%basin%sno /= huge(vs%basin%sno))) vs%basin%sno = vs%basin%sno/frac
+            where (vs%basin%sno /= huge(vs%basin%sno)) vs%basin%sno = vs%basin%sno/frac
         end if
         if (allocated(vs%basin%rhosno)) then
-            if (all(vs%basin%rhosno /= huge(vs%basin%rhosno))) where (tsnofrac > 0.0) vs%basin%rhosno = vs%basin%rhosno/tsnofrac
+            where (vs%basin%rhosno /= huge(vs%basin%rhosno) .and. tsnofrac > 0.0) vs%basin%rhosno = vs%basin%rhosno/tsnofrac
         end if
 !-        if (allocated(vs%basin%zsno)) then
 !-            if (all(vs%basin%zsno /= huge(vs%basin%zsno))) vs%basin%zsno = vs%basin%zsno/frac
 !-        end if
         if (allocated(vs%basin%lqwssno)) then
-            if (all(vs%basin%lqwssno /= huge(vs%basin%lqwssno))) vs%basin%lqwssno = vs%basin%lqwssno/frac
+            where (vs%basin%lqwssno /= huge(vs%basin%lqwssno)) vs%basin%lqwssno = vs%basin%lqwssno/frac
         end if
         if (allocated(vs%basin%tsno)) then
-            if (all(vs%basin%tsno /= huge(vs%basin%tsno))) where (tsnofrac > 0.0) vs%basin%tsno = vs%basin%tsno/tsnofrac
+            where (vs%basin%tsno /= huge(vs%basin%tsno) .and. tsnofrac > 0.0) vs%basin%tsno = vs%basin%tsno/tsnofrac
         end if
         if (allocated(vs%basin%albsno)) then
-            if (all(vs%basin%albsno /= huge(vs%basin%albsno))) where (tsnofrac > 0.0) vs%basin%albsno = vs%basin%albsno/tsnofrac
+            where (vs%basin%albsno /= huge(vs%basin%albsno) .and. tsnofrac > 0.0) vs%basin%albsno = vs%basin%albsno/tsnofrac
         end if
         if (allocated(vs%basin%drainsno)) then
-            if (all(vs%basin%drainsno /= huge(vs%basin%drainsno))) vs%basin%drainsno = vs%basin%drainsno/frac
+            where (vs%basin%drainsno /= huge(vs%basin%drainsno)) vs%basin%drainsno = vs%basin%drainsno/frac
         end if
 
         !> Surface variables.
         if (allocated(vs%basin%albt)) then
-            if (all(vs%basin%albt /= huge(vs%basin%albt))) where (albtfrac > 0.0) vs%basin%albt = vs%basin%albt/albtfrac
+            where (vs%basin%albt /= huge(vs%basin%albt) .and. albtfrac > 0.0) vs%basin%albt = vs%basin%albt/albtfrac
         end if
         if (allocated(vs%basin%alvs)) then
-            if (all(vs%basin%alvs /= huge(vs%basin%alvs))) where (albtfrac > 0.0) vs%basin%alvs = vs%basin%alvs/albtfrac
+            where (vs%basin%alvs /= huge(vs%basin%alvs) .and. albtfrac > 0.0) vs%basin%alvs = vs%basin%alvs/albtfrac
         end if
         if (allocated(vs%basin%alir)) then
-            if (all(vs%basin%alir /= huge(vs%basin%alir))) where (albtfrac > 0.0) vs%basin%alir = vs%basin%alir/albtfrac
+            where (vs%basin%alir /= huge(vs%basin%alir) .and. albtfrac > 0.0) vs%basin%alir = vs%basin%alir/albtfrac
         end if
         if (allocated(vs%basin%gte)) then
-            if (all(vs%basin%gte /= huge(vs%basin%gte))) vs%basin%gte = vs%basin%gte/frac
+            where (vs%basin%gte /= huge(vs%basin%gte)) vs%basin%gte = vs%basin%gte/frac
         end if
         if (allocated(vs%basin%zpnd)) then
-            if (all(vs%basin%zpnd /= huge(vs%basin%zpnd))) vs%basin%zpnd = vs%basin%zpnd/frac
+            where (vs%basin%zpnd /= huge(vs%basin%zpnd)) vs%basin%zpnd = vs%basin%zpnd/frac
         end if
 !-        if (allocated(vs%basin%lqwspnd)) then
 !-            if (all(vs%basin%lqwspnd /= huge(vs%basin%lqwspnd))) vs%basin%lqwspnd = vs%basin%lqwspnd/frac
 !-        end if
         if (allocated(vs%basin%tpnd)) then
-            if (all(vs%basin%tpnd /= huge(vs%basin%tpnd))) where (tpndfrac > 0.0) vs%basin%tpnd = vs%basin%tpnd/tpndfrac
+            where (vs%basin%tpnd /= huge(vs%basin%tpnd) .and. tpndfrac > 0.0) vs%basin%tpnd = vs%basin%tpnd/tpndfrac
         end if
         if (allocated(vs%basin%pndcaf)) then
-            if (all(vs%basin%pndcaf /= huge(vs%basin%pndcaf))) where (tpndfrac > 0.0) vs%basin%pndcaf = vs%basin%pndcaf/tpndfrac
+            where (vs%basin%pndcaf /= huge(vs%basin%pndcaf) .and. tpndfrac > 0.0) vs%basin%pndcaf = vs%basin%pndcaf/tpndfrac
         end if
         if (allocated(vs%basin%potevp)) then
-            if (all(vs%basin%potevp /= huge(vs%basin%potevp))) vs%basin%potevp = vs%basin%potevp/frac
+            where (vs%basin%potevp /= huge(vs%basin%potevp)) vs%basin%potevp = vs%basin%potevp/frac
         end if
         if (allocated(vs%basin%et)) then
-            if (all(vs%basin%et /= huge(vs%basin%et))) vs%basin%et = vs%basin%et/frac
+            where (vs%basin%et /= huge(vs%basin%et)) vs%basin%et = vs%basin%et/frac
         end if
 !-        if (allocated(vs%basin%evpb)) then
 !-            if (all(vs%basin%evpb /= huge(vs%basin%evpb))) vs%basin%evpb = vs%basin%evpb/frac
@@ -1848,177 +1818,113 @@ module sa_mesh_run_between_grid
 !-            if (all(vs%basin%arrd /= huge(vs%basin%arrd))) vs%basin%arrd = vs%basin%arrd/frac
 !-        end if
         if (allocated(vs%basin%ovrflw)) then
-            if (all(vs%basin%ovrflw /= huge(vs%basin%ovrflw))) vs%basin%ovrflw = vs%basin%ovrflw/frac
+            where (vs%basin%ovrflw /= huge(vs%basin%ovrflw)) vs%basin%ovrflw = vs%basin%ovrflw/frac
         end if
         if (allocated(vs%basin%qevp)) then
-            if (all(vs%basin%qevp /= huge(vs%basin%qevp))) vs%basin%qevp = vs%basin%qevp/frac
+            where (vs%basin%qevp /= huge(vs%basin%qevp)) vs%basin%qevp = vs%basin%qevp/frac
         end if
         if (allocated(vs%basin%qsens)) then
-            if (all(vs%basin%qsens /= huge(vs%basin%qsens))) vs%basin%qsens = vs%basin%qsens/frac
+            where (vs%basin%qsens /= huge(vs%basin%qsens)) vs%basin%qsens = vs%basin%qsens/frac
         end if
         if (allocated(vs%basin%gzero)) then
-            if (all(vs%basin%gzero /= huge(vs%basin%gzero))) vs%basin%gzero = vs%basin%gzero/frac
+            where (vs%basin%gzero /= huge(vs%basin%gzero)) vs%basin%gzero = vs%basin%gzero/frac
         end if
         if (allocated(vs%basin%tsfs)) then
-            if (all(vs%basin%tsfs /= huge(vs%basin%tsfs))) then
-                do j = 1, 4
-                    vs%basin%tsfs(:, j) = vs%basin%tsfs(:, j)/frac
-                end do
-            end if
+            do j = 1, 4
+                where (vs%basin%tsfs(:, j) /= huge(vs%basin%tsfs)) vs%basin%tsfs(:, j) = vs%basin%tsfs(:, j)/frac
+            end do
         end if
         if (allocated(vs%basin%tsurf)) then
-            if (all(vs%basin%tsurf /= huge(vs%basin%tsurf))) vs%basin%tsurf = vs%basin%tsurf/frac
+            where (vs%basin%tsurf /= huge(vs%basin%tsurf)) vs%basin%tsurf = vs%basin%tsurf/frac
         end if
 
         !> Ice/glacier variables.
         if (allocated(vs%basin%lqwsice)) then
-            if (all(vs%basin%lqwsice /= huge(vs%basin%lqwsice))) vs%basin%lqwsice = vs%basin%lqwsice/frac
+            where (vs%basin%lqwsice /= huge(vs%basin%lqwsice)) vs%basin%lqwsice = vs%basin%lqwsice/frac
         end if
         if (allocated(vs%basin%tice)) then
-            if (all(vs%basin%tice /= huge(vs%basin%tice))) where (ticefrac > 0.0) vs%basin%tice = vs%basin%tice/ticefrac
+            where (vs%basin%tice /= huge(vs%basin%tice) .and. ticefrac > 0.0) vs%basin%tice = vs%basin%tice/ticefrac
         end if
 
         !> Subsurface/soil variables.
-        if (allocated(vs%basin%dzsol)) then
-            if (all(vs%basin%dzsol /= huge(vs%basin%dzsol))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%dzsol(:, j) = vs%basin%dzsol(:, j)/frac
-                end do
+        do j = 1, shd%lc%IGND
+            if (allocated(vs%basin%dzsol)) then
+                where(vs%basin%dzsol(:, j) /= huge(vs%basin%dzsol)) vs%basin%dzsol(:, j) = vs%basin%dzsol(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%dzsolhyd)) then
-            if (all(vs%basin%dzsolhyd /= huge(vs%basin%dzsolhyd))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%dzsolhyd(:, j) = vs%basin%dzsolhyd(:, j)/frac
-                end do
+            if (allocated(vs%basin%dzsolhyd)) then
+                where (vs%basin%dzsolhyd(:, j) /= huge(vs%basin%dzsolhyd)) vs%basin%dzsolhyd(:, j) = vs%basin%dzsolhyd(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%thlqsol)) then
-            if (all(vs%basin%thlqsol /= huge(vs%basin%thlqsol))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%thlqsol(:, j) = vs%basin%thlqsol(:, j)/frac
-                end do
+            if (allocated(vs%basin%thlqsol)) then
+                where (vs%basin%thlqsol(:, j) /= huge(vs%basin%thlqsol)) vs%basin%thlqsol(:, j) = vs%basin%thlqsol(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%thicsol)) then
-            if (all(vs%basin%thicsol /= huge(vs%basin%thicsol))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%thicsol(:, j) = vs%basin%thicsol(:, j)/frac
-                end do
+            if (allocated(vs%basin%thicsol)) then
+                where (vs%basin%thicsol(:, j) /= huge(vs%basin%thicsol)) vs%basin%thicsol(:, j) = vs%basin%thicsol(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%lqwssol)) then
-            if (all(vs%basin%lqwssol /= huge(vs%basin%lqwssol))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%lqwssol(:, j) = vs%basin%lqwssol(:, j)/frac
-                end do
+            if (allocated(vs%basin%lqwssol)) then
+                where (vs%basin%lqwssol(:, j) /= huge(vs%basin%lqwssol)) vs%basin%lqwssol(:, j) = vs%basin%lqwssol(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%fzwssol)) then
-            if (all(vs%basin%fzwssol /= huge(vs%basin%fzwssol))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%fzwssol(:, j) = vs%basin%fzwssol(:, j)/frac
-                end do
+            if (allocated(vs%basin%fzwssol)) then
+                where (vs%basin%fzwssol(:, j) /= huge(vs%basin%fzwssol)) vs%basin%fzwssol(:, j) = vs%basin%fzwssol(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%tsol)) then
-            if (all(vs%basin%tsol /= huge(vs%basin%tsol))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%tsol(:, j) = vs%basin%tsol(:, j)/frac
-                end do
+            if (allocated(vs%basin%tsol)) then
+                where (vs%basin%tsol(:, j) /= huge(vs%basin%tsol)) vs%basin%tsol(:, j) = vs%basin%tsol(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%gflx)) then
-            if (all(vs%basin%gflx /= huge(vs%basin%gflx))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%gflx(:, j) = vs%basin%gflx(:, j)/frac
-                end do
+            if (allocated(vs%basin%gflx)) then
+                where (vs%basin%gflx(:, j) /= huge(vs%basin%gflx)) vs%basin%gflx(:, j) = vs%basin%gflx(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%hcps)) then
-            if (all(vs%basin%hcps /= huge(vs%basin%hcps))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%hcps(:, j) = vs%basin%hcps(:, j)/frac
-                end do
+            if (allocated(vs%basin%hcps)) then
+                where (vs%basin%hcps(:, j) /= huge(vs%basin%hcps)) vs%basin%hcps(:, j) = vs%basin%hcps(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%hcpc)) then
-            if (all(vs%basin%hcpc /= huge(vs%basin%hcpc))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%hcpc(:, j) = vs%basin%hcpc(:, j)/frac
-                end do
+            if (allocated(vs%basin%hcpc)) then
+                where (vs%basin%hcpc(:, j) /= huge(vs%basin%hcpc)) vs%basin%hcpc(:, j) = vs%basin%hcpc(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%hcpg)) then
-            if (all(vs%basin%hcpg /= huge(vs%basin%hcpg))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%hcpg(:, j) = vs%basin%hcpg(:, j)/frac
-                end do
+            if (allocated(vs%basin%hcpg)) then
+                where (vs%basin%hcpg(:, j) /= huge(vs%basin%hcpg)) vs%basin%hcpg(:, j) = vs%basin%hcpg(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%tctopc)) then
-            if (all(vs%basin%tctopc /= huge(vs%basin%tctopc))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%tctopc(:, j) = vs%basin%tctopc(:, j)/frac
-                end do
+            if (allocated(vs%basin%tctopc)) then
+                where (vs%basin%tctopc(:, j) /= huge(vs%basin%tctopc)) vs%basin%tctopc(:, j) = vs%basin%tctopc(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%tctopg)) then
-            if (all(vs%basin%tctopg /= huge(vs%basin%tctopg))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%tctopg(:, j) = vs%basin%tctopg(:, j)/frac
-                end do
+            if (allocated(vs%basin%tctopg)) then
+                where (vs%basin%tctopg(:, j) /= huge(vs%basin%tctopg)) vs%basin%tctopg(:, j) = vs%basin%tctopg(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%tcbotc)) then
-            if (all(vs%basin%tcbotc /= huge(vs%basin%tcbotc))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%tcbotc(:, j) = vs%basin%tcbotc(:, j)/frac
-                end do
+            if (allocated(vs%basin%tcbotc)) then
+                where (vs%basin%tcbotc(:, j) /= huge(vs%basin%tcbotc)) vs%basin%tcbotc(:, j) = vs%basin%tcbotc(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%tctopg)) then
-            if (all(vs%basin%tctopg /= huge(vs%basin%tctopg))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%tctopg(:, j) = vs%basin%tctopg(:, j)/frac
-                end do
+            if (allocated(vs%basin%tctopg)) then
+                where (vs%basin%tctopg(:, j) /= huge(vs%basin%tctopg)) vs%basin%tctopg(:, j) = vs%basin%tctopg(:, j)/frac
             end if
-        end if
-        if (allocated(vs%basin%latflw)) then
-            if (all(vs%basin%latflw /= huge(vs%basin%latflw))) then
-                do j = 1, shd%lc%IGND
-                    vs%basin%latflw(:, j) = vs%basin%latflw(:, j)/frac
-                end do
+            if (allocated(vs%basin%latflw)) then
+                where (vs%basin%latflw(:, j) /= huge(vs%basin%latflw)) vs%basin%latflw(:, j) = vs%basin%latflw(:, j)/frac
             end if
-        end if
+        end do
         if (allocated(vs%basin%zsol)) then
-            if (all(vs%basin%zsol /= huge(vs%basin%zsol))) vs%basin%zsol = vs%basin%zsol/frac
+            where (vs%basin%zsol /= huge(vs%basin%zsol)) vs%basin%zsol = vs%basin%zsol/frac
         end if
         if (allocated(vs%basin%zsolhyd)) then
-            if (all(vs%basin%zsolhyd /= huge(vs%basin%zsolhyd))) vs%basin%zsolhyd = vs%basin%zsolhyd/frac
+            where (vs%basin%zsolhyd /= huge(vs%basin%zsolhyd)) vs%basin%zsolhyd = vs%basin%zsolhyd/frac
         end if
         if (allocated(vs%basin%zsolsat)) then
-            if (all(vs%basin%zsolsat /= huge(vs%basin%zsolsat))) vs%basin%zsolsat = vs%basin%zsolsat/frac
+            where (vs%basin%zsolsat /= huge(vs%basin%zsolsat)) vs%basin%zsolsat = vs%basin%zsolsat/frac
         end if
         if (allocated(vs%basin%ggeo)) then
-            if (all(vs%basin%ggeo /= huge(vs%basin%ggeo))) vs%basin%ggeo = vs%basin%ggeo/frac
+            where (vs%basin%ggeo /= huge(vs%basin%ggeo)) vs%basin%ggeo = vs%basin%ggeo/frac
         end if
         if (allocated(vs%basin%tbas)) then
-            if (all(vs%basin%tbas /= huge(vs%basin%tbas))) vs%basin%tbas = vs%basin%tbas/frac
+            where (vs%basin%tbas /= huge(vs%basin%tbas)) vs%basin%tbas = vs%basin%tbas/frac
         end if
         if (allocated(vs%basin%drainsol)) then
-            if (all(vs%basin%drainsol /= huge(vs%basin%drainsol))) vs%basin%drainsol = vs%basin%drainsol/frac
+            where (vs%basin%drainsol /= huge(vs%basin%drainsol)) vs%basin%drainsol = vs%basin%drainsol/frac
         end if
 
         !> Groundwater/lower zone storage variables.
         if (allocated(vs%basin%rchg)) then
-            if (all(vs%basin%rchg /= huge(vs%basin%rchg))) vs%basin%rchg = vs%basin%rchg/frac
+            where (vs%basin%rchg /= huge(vs%basin%rchg)) vs%basin%rchg = vs%basin%rchg/frac
         end if
         if (allocated(vs%basin%stggw)) then
-            if (all(vs%basin%stggw /= huge(vs%basin%stggw))) vs%basin%stggw = vs%basin%stggw/frac
+            where (vs%basin%stggw /= huge(vs%basin%stggw)) vs%basin%stggw = vs%basin%stggw/frac
         end if
         if (allocated(vs%basin%lkg)) then
-            if (all(vs%basin%lkg /= huge(vs%basin%lkg))) vs%basin%lkg = vs%basin%lkg/frac
+            where (vs%basin%lkg /= huge(vs%basin%lkg)) vs%basin%lkg = vs%basin%lkg/frac
         end if
 !-        if (allocated(vs%basin%dzs)) then
 !-            if (all(vs%basin%dzs /= huge(vs%basin%dzs))) vs%basin%dzs = vs%basin%dzs/frac
@@ -2026,7 +1932,7 @@ module sa_mesh_run_between_grid
 
         !> Routing variables.
         if (allocated(vs%basin%rff)) then
-            if (all(vs%basin%rff /= huge(vs%basin%rff))) vs%basin%rff = vs%basin%rff/frac
+            where (vs%basin%rff /= huge(vs%basin%rff)) vs%basin%rff = vs%basin%rff/frac
         end if
 !        if (allocated(vs%basin%qi)) then
 !            if (all(vs%basin%qi /= huge(vs%basin%qi))) vs%basin%qi = vs%basin%qi/frac

@@ -50,7 +50,7 @@ module model_variables
         !> Canopy variables.
         !* lqwscan: Liquid water interception in the canopy. [kg m**-2].
         !* fzwscan: Frozen water interception in the canopy. [kg m**-2].
-        !* cmas: Organic mass of the canopy. [kg m**-2].
+        !* cmai: Organic mass of the canopy. [kg m**-2].
         !* tacan: Air temperature in the canopy. [K].
         !* qacan: Specific humidity of air in the canopy. [kg kg**-1].
         !* uvcan: Wind speed of air in the canopy. [m s**-1].
@@ -58,7 +58,7 @@ module model_variables
         !* gro: Vegetation growth index. [--].
         real, dimension(:), allocatable :: lqwscan
         real, dimension(:), allocatable :: fzwscan
-        real, dimension(:), allocatable :: cmas
+        real, dimension(:), allocatable :: cmai
         real, dimension(:), allocatable :: tacan
         real, dimension(:), allocatable :: qacan
         real, dimension(:), allocatable :: uvcan
@@ -304,7 +304,7 @@ module model_variables
         !> Canopy variables.
         if (allocated(group%lqwscan)) group%lqwscan = 0.0
         if (allocated(group%fzwscan)) group%fzwscan = 0.0
-        if (allocated(group%cmas)) group%cmas = 0.0
+        if (allocated(group%cmai)) group%cmai = 0.0
         if (allocated(group%tacan)) group%tacan = 0.0
         if (allocated(group%qacan)) group%qacan = 0.0
         if (allocated(group%uvcan)) group%uvcan = 0.0
@@ -478,7 +478,7 @@ module model_variables
         !> Canopy variables.
         allocate(group%lqwscan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%fzwscan(n), stat = z); if (z /= 0) ierr = z
-        allocate(group%cmas(n), stat = z); if (z /= 0) ierr = z
+        allocate(group%cmai(n), stat = z); if (z /= 0) ierr = z
         allocate(group%tacan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%qacan(n), stat = z); if (z /= 0) ierr = z
         allocate(group%uvcan(n), stat = z); if (z /= 0) ierr = z
