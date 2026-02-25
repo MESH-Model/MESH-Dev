@@ -372,7 +372,7 @@ module sa_mesh_run_within_grid
         if (allocated(vs%grid%zsol)) vs%grid%zsol(i1:i2) = 0.0
         if (allocated(vs%grid%zsolhyd)) vs%grid%zsolhyd(i1:i2) = 0.0
         if (allocated(vs%grid%zsolsat)) vs%grid%zsolsat(i1:i2) = 0.0
-        if (allocated(vs%grid%ggeo)) vs%grid%ggeo(i1:i2) = 0.0
+!-        if (allocated(vs%grid%ggeo)) vs%grid%ggeo(i1:i2) = 0.0
         if (allocated(vs%grid%tbas)) vs%grid%tbas(i1:i2) = 0.0
         if (allocated(vs%grid%drainsol)) vs%grid%drainsol(i1:i2) = 0.0
 
@@ -722,9 +722,9 @@ module sa_mesh_run_within_grid
                     vs%grid%zsolsat(ki) = vs%grid%zsolsat(ki) + vs%tile%zsolsat(k)*frac
                 end if
             end if
-            if (allocated(vs%grid%ggeo) .and. allocated(vs%tile%ggeo)) then
-                if (vs%tile%ggeo(k) /= huge(vs%tile%ggeo)) vs%grid%ggeo(ki) = vs%grid%ggeo(ki) + vs%tile%ggeo(k)*frac
-            end if
+!-            if (allocated(vs%grid%ggeo) .and. allocated(vs%tile%ggeo)) then
+!-                if (vs%tile%ggeo(k) /= huge(vs%tile%ggeo)) vs%grid%ggeo(ki) = vs%grid%ggeo(ki) + vs%tile%ggeo(k)*frac
+!-            end if
             if (allocated(vs%grid%tbas) .and. allocated(vs%tile%tbas)) then
                 if (vs%tile%tbas(k) /= huge(vs%tile%tbas)) vs%grid%tbas(ki) = vs%grid%tbas(ki) + vs%tile%tbas(k)*frac
             end if

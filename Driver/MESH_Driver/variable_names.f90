@@ -123,6 +123,7 @@ module variable_names
     character(len = *), parameter :: VN_TCBOTG = 'TCBOTG'
     character(len = *), parameter :: VN_LATFLW = 'LATFLW'
     character(len = *), parameter :: VN_ZSOLSAT = 'ZSOLSAT'
+    character(len = *), parameter :: VN_TBAS = 'TBAS'
     character(len = *), parameter :: VN_DRAINSOL = 'DRAINSOL'
 
     !> Groundwater/lower zone storage variables.
