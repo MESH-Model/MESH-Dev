@@ -696,13 +696,25 @@ module basin_utilities
             allocate(shd%IROUGH(vs%grid%dim_length))
             shd%IROUGH = 0
         end if
-        allocate(shd%ELEV(vs%grid%dim_length))
-        shd%ELEV = 0.0
+        if (allocated(vs%grid%topo_elev)) then
+            allocate(shd%ELEV(vs%grid%dim_length), source = vs%grid%topo_elev)
+        else
+            allocate(shd%ELEV(vs%grid%dim_length))
+            shd%ELEV = 0.0
+        end if
+!        if (allocated(vs%grid%topo_slope)) then
+!            allocate(shd%SLOPE_INT(vs%grid%dim_length), source = vs%grid%topo_slope)
+!        end if
         shd%AL = pj%nominal_side_length
         allocate(shd%xlng(vs%grid%dim_length), source = vs%grid%lon)
         allocate(shd%ylat(vs%grid%dim_length), source = vs%grid%lat)
         allocate(shd%xxx(vs%grid%dim_length), source = vs%grid%from_grid_x)
         allocate(shd%yyy(vs%grid%dim_length), source = vs%grid%from_grid_y)
+!        allocate(shd%RNKGRD(vs%grid_y, vs%grid_x))
+!        do y = 1, vs%grid_y
+!            shd%RNKGRD(y, :) = vs%grid%from_grid_xy(:, y)
+!        end do
+        allocate(shd%RNKGRD(vs%grid_y, vs%grid_x), source = transpose(vs%grid%from_grid_xy))
         allocate(shd%FRAC(vs%grid%dim_length), source = vs%grid%area_weight)
 !<<temp
 
