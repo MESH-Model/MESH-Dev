@@ -62,7 +62,7 @@ module sa_mesh_run_within_tile
             if (allocated(vs%tile%presno)) n = n + 1
             if (allocated(vs%tile%lqwscan)) n = n + 1
             if (allocated(vs%tile%fzwscan)) n = n + 1
-            if (allocated(vs%tile%cmas)) n = n + 1
+            if (allocated(vs%tile%cmai)) n = n + 1
             if (allocated(vs%tile%tacan)) n = n + 1
             if (allocated(vs%tile%qacan)) n = n + 1
             if (allocated(vs%tile%uvcan)) n = n + 1
@@ -93,7 +93,7 @@ module sa_mesh_run_within_tile
             if (allocated(vs%tile%lqwsice)) n = n + 1
             if (allocated(vs%tile%tice)) n = n + 1
             if (allocated(vs%tile%zsolsat)) n = n + 1
-            if (allocated(vs%tile%ggeo)) n = n + 1
+!-            if (allocated(vs%tile%ggeo)) n = n + 1
             if (allocated(vs%tile%tbas)) n = n + 1
             if (allocated(vs%tile%drainsol)) n = n + 1
             if (allocated(vs%tile%thlqsol)) n = n + size(vs%tile%thlqsol, 2)
@@ -135,8 +135,8 @@ module sa_mesh_run_within_tile
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%fzwscan))
                     n = n + 1
                 end if
-                if (allocated(vs%tile%cmas)) then
-                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%cmas))
+                if (allocated(vs%tile%cmai)) then
+                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%cmai))
                     n = n + 1
                 end if
                 if (allocated(vs%tile%tacan)) then
@@ -261,10 +261,10 @@ module sa_mesh_run_within_tile
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%zsolsat))
                     n = n + 1
                 end if
-                if (allocated(vs%tile%ggeo)) then
-                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%ggeo))
-                    n = n + 1
-                end if
+!-                if (allocated(vs%tile%ggeo)) then
+!-                    allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%ggeo))
+!-                    n = n + 1
+!-                end if
                 if (allocated(vs%tile%tbas)) then
                     allocate(model_variables_to_head(n)%field, source = model_variable_pointer_1d(dat = vs%tile%tbas))
                     n = n + 1
@@ -882,7 +882,7 @@ module sa_mesh_run_within_tile
         !> Canopy variables.
 !        if (allocated(vs%tile%lqwscan)) vs%tile%lqwscan(il1:il2) = 0.0
 !        if (allocated(vs%tile%fzwscan)) vs%tile%fzwscan(il1:il2) = 0.0
-!        if (allocated(vs%tile%cmas)) vs%tile%cmas(il1:il2) = 0.0
+!        if (allocated(vs%tile%cmai)) vs%tile%cmai(il1:il2) = 0.0
 !        if (allocated(vs%tile%tacan)) vs%tile%tacan(il1:il2) = 0.0
 !        if (allocated(vs%tile%qacan)) vs%tile%qacan(il1:il2) = 0.0
 !        if (allocated(vs%tile%uvcan)) vs%tile%uvcan(il1:il2) = 0.0
@@ -943,7 +943,7 @@ module sa_mesh_run_within_tile
 !        if (allocated(vs%tile%zsol)) vs%tile%zsol(il1:il2, :) = 0.0
 !        if (allocated(vs%tile%zsolhyd)) vs%tile%zsolhyd(il1:il2, :) = 0.0
         if (allocated(vs%tile%zsolsat)) vs%tile%zsolsat(il1:il2) = 0.0
-!        if (allocated(vs%tile%ggeo)) vs%tile%ggeo(il1:il2) = 0.0
+!-        if (allocated(vs%tile%ggeo)) vs%tile%ggeo(il1:il2) = 0.0
 !        if (allocated(vs%tile%tbas)) vs%tile%tbas(il1:il2) = 0.0
         if (allocated(vs%tile%drainsol)) vs%tile%drainsol(il1:il2) = 0.0
 
@@ -1030,10 +1030,12 @@ module sa_mesh_run_within_tile
 !-        end if
         if (allocated(vs%tile%dzsolhyd)) then
             if (allocated(vs%tile%lqwssol) .and. allocated(vs%tile%thlqsol)) then
-                vs%tile%lqwssol(il1:il2, :) = vs%tile%thlqsol(il1:il2, :)*vs%tile%dzsolhyd(il1:il2, :)*RHOW
+                where (vs%tile%thlqsol(il1:il2, :) /= NO_DATA_REAL) &
+                    vs%tile%lqwssol(il1:il2, :) = vs%tile%thlqsol(il1:il2, :)*vs%tile%dzsolhyd(il1:il2, :)*RHOW
             end if
             if (allocated(vs%tile%fzwssol) .and. allocated(vs%tile%thicsol)) then
-                vs%tile%fzwssol(il1:il2, :) = vs%tile%thicsol(il1:il2, :)*vs%tile%dzsolhyd(il1:il2, :)*RHOICE
+                where (vs%tile%thicsol(il1:il2, :) /= NO_DATA_REAL) &
+                    vs%tile%fzwssol(il1:il2, :) = vs%tile%thicsol(il1:il2, :)*vs%tile%dzsolhyd(il1:il2, :)*RHOICE
             end if
         end if
         if (allocated(vs%tile%rchg) .and. allocated(vs%tile%drainsol)) then

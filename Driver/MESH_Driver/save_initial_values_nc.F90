@@ -98,7 +98,7 @@ subroutine save_initial_states_nc(fls, shd, fname, ierr)
             if (z == 0) then
                 dat_xm = NO_DATA
                 do i = 1, shd%lc%NML
-                    dat_xm(shd%lc%ILMOS(i), shd%lc%JLMOS(i)) = vs%tile%cmas(i)
+                    dat_xm(shd%lc%ILMOS(i), shd%lc%JLMOS(i)) = vs%tile%cmai(i)
                 end do
                 call nc4_add_variable( &
                     iun, 'tile_cmas', x, m, dat_xm, long_name = 'Tile-based values for cmas', fill = NO_DATA, ierr = z)
@@ -270,7 +270,7 @@ subroutine save_initial_states_nc(fls, shd, fname, ierr)
             if (z == 0) then
                 dat_xym = NO_DATA
                 do i = 1, shd%lc%NML
-                    dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%cmas(i)
+                    dat_xym(shd%xxx(shd%lc%ILMOS(i)), shd%yyy(shd%lc%ILMOS(i)), shd%lc%JLMOS(i)) = vs%tile%cmai(i)
                 end do
                 call nc4_add_variable( &
                     iun, 'tile_cmas', x, y, m, dat_xym, long_name = 'Tile-based values for cmas', fill = NO_DATA, ierr = z)

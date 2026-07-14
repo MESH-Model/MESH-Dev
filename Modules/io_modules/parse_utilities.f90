@@ -1242,9 +1242,12 @@ module parse_utilities
         if (.not. btest(istat, pstat%ALLOCATION_ERROR) .and. n >= 1) then
 
             !> Check field length.
-            if (len_trim(values(i)) > len(field) .and. .not. btest(istat, pstat%MISMATCHED_PRECISION)) then
-                istat = istat + radix(istat)**pstat%MISMATCHED_PRECISION
-            end if
+            do i = 1, n
+                if (len_trim(values(i)) > len(field) .and. .not. btest(istat, pstat%MISMATCHED_PRECISION)) then
+                    istat = istat + radix(istat)**pstat%MISMATCHED_PRECISION
+                    exit
+                end if
+            end do
 
             !> Assign value.
             do i = 1, min(size1, size(field))

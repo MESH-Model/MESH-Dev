@@ -178,7 +178,7 @@ subroutine resumerun_save(fls, shd)
         write(iun, FMT_GEN) 'QOSIMD', out%d%grid%qo(fms%stmg%meta%rnk(:))
         if (ro%RUNTILE) then
             write(iun, '(a)') '!< MESHTILE'
-            write(iun, FMT_GEN) 'CMAS', 'GAT', vs%tile%cmas
+            write(iun, FMT_GEN) 'CMAI', 'GAT', vs%tile%cmai
             write(iun, FMT_GEN) 'GRO', 'GAT', vs%tile%gro
             write(iun, FMT_GEN) 'QAC', 'GAT', vs%tile%qacan
             write(iun, FMT_GEN) 'RCAN', 'GAT', vs%tile%lqwscan

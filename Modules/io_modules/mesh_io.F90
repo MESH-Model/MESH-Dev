@@ -2860,7 +2860,7 @@ module mesh_io
                 end do
             type is (model_variable_char)
                 if (size(ranked_output) > 0) then
-                    read(this%dat, *, iostat = ierr) ranked_output(i)
+                    read(this%dat, *, iostat = ierr) ranked_output(1)
                     if (ierr /= 0) then
                         error_status = 1
                     else
@@ -2962,7 +2962,7 @@ module mesh_io
                 end do
             type is (model_variable_char)
                 if (size(ranked_output) > 0) then
-                    read(this%dat, *, iostat = ierr) ranked_output(i)
+                    read(this%dat, *, iostat = ierr) ranked_output(1)
                     if (ierr /= 0) then
                         error_status = 1
                     else
@@ -3064,7 +3064,7 @@ module mesh_io
                 end do
             type is (model_variable_char)
                 if (size(ranked_output) > 0) then
-                    read(this%dat, *, iostat = ierr) ranked_output(i)
+                    read(this%dat, *, iostat = ierr) ranked_output(1)
                     if (ierr /= 0) then
                         error_status = 1
                     else
@@ -3166,7 +3166,7 @@ module mesh_io
                 end do
             type is (model_variable_char)
                 if (size(ranked_output) > 0) then
-                    read(this%dat, *, iostat = ierr) ranked_output(i)
+                    read(this%dat, *, iostat = ierr) ranked_output(1)
                     if (ierr /= 0) then
                         error_status = 1
                     else

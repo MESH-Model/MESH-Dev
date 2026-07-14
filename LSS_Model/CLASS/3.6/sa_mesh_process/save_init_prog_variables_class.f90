@@ -57,7 +57,7 @@ subroutine save_init_prog_variables_class(fls, shd)
 
     !> Write the current state of these variables to the file.
     write(iun) real(vs%tile%albsno, kind = 4)   !1 (NML)
-    write(iun) real(vs%tile%cmas, kind = 4)     !2 (NML)
+    write(iun) real(vs%tile%cmai, kind = 4)     !2 (NML)
     write(iun) real(vs%tile%gro, kind = 4)      !3 (NML)
     write(iun) real(vs%tile%qacan, kind = 4)    !4 (NML)
     write(iun) real(vs%tile%lqwscan, kind = 4)  !5 (NML)

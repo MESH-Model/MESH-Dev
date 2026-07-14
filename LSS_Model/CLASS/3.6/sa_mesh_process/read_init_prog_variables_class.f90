@@ -98,7 +98,7 @@ subroutine read_init_prog_variables_class(fls, shd)
 
     !> Assign values.
     vs%tile%albsno = real(ALBS, kind(vs%tile%albsno))
-    vs%tile%cmas = real(CMAI, kind(vs%tile%cmas))
+    vs%tile%cmai = real(CMAI, kind(vs%tile%cmai))
     vs%tile%gro = real(GRO, kind(vs%tile%gro))
     vs%tile%qacan = real(QAC, kind(vs%tile%qacan))
     vs%tile%lqwscan = real(RCAN, kind(vs%tile%lqwscan))

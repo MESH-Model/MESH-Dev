@@ -109,7 +109,7 @@ module cropland_irrigation_init
         end if
 
         !> Identify crop GRUs.
-        civ%icrop(k) = 0
+        civ%icrop = 0
         do k = il1, il2
 
             !> FCAN(3) identifies as 'crop' in CLASS.ini.

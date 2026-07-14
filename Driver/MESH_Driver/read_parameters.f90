@@ -408,7 +408,7 @@ subroutine read_parameters(fls, shd, ierr)
                 pbsm%pm%A_S(k) = pbsm%pm_gru%A_S(i)
 
                 !> ME 4/12/2021 scaling Distrib with the tile fraction according to recommendation from JP
-                pbsm%pm%Distrib(k) = vs%tile%Area_Weight(k)*pbsm%pm_gru%Distrib(i)
+                pbsm%pm%Distrib(k) = vs%tile%area_weight(k)*pbsm%pm_gru%Distrib(i)
             end if
 
         end do !k = 1, shd%lc%NML
@@ -531,7 +531,7 @@ subroutine read_parameters(fls, shd, ierr)
                 if (pbsm%pm_grid%A_S(i) /= 0.0) pbsm%pm%A_S(k) = pbsm%pm_grid%A_S(i)
 
                 !> ME 4/12/2021 scaling Distrib with the tile fraction according to recommendation from JP
-                if (pbsm%pm_grid%Distrib(i) /= 0.0) pbsm%pm%Distrib(k) = vs%tile%Area_Weight(k)*pbsm%pm_grid%Distrib(i)
+                if (pbsm%pm_grid%Distrib(i) /= 0.0) pbsm%pm%Distrib(k) = vs%tile%area_weight(k)*pbsm%pm_grid%Distrib(i)
             end if
 
         end do !k = 1, shd%lc%NML
