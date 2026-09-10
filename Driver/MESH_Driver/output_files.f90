@@ -1158,7 +1158,9 @@ module output_files
                     if (SHDFILEFMT == 5) then
                         call nc4_define_output_variable_nt( &
                             trim(fname) // '_' // VN_GRD // '.nc', field%vname, shd%CoordSys%Proj, ffreq, &
-                            shd%xxx, shd%CoordSys%lat, shd%CoordSys%lon, &
+                            shd%xxx, &
+                            shd%CoordSys%lat, shd%CoordSys%lon, shd%CoordSys%rlat, shd%CoordSys%rlon, &
+                            shd%CoordSys%xylat, shd%CoordSys%xylon, &
                             shd%CoordSys%Ellips, shd%CoordSys%Zone, shd%CoordSys%earth_radius, &
                             shd%CoordSys%grid_north_pole_latitude, shd%CoordSys%grid_north_pole_longitude, &
                             quiet = .true., fill = out%NO_DATA, &

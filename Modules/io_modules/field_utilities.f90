@@ -6808,7 +6808,8 @@ module field_utilities
         error_status = 0
 
         !> Check dimension names.
-        if (.not. allocated(mapped_dim_order)) allocate(mapped_dim_order(size(desired_dim_names)))
+        if (allocated(mapped_dim_order)) deallocate(mapped_dim_order)
+        allocate(mapped_dim_order(size(desired_dim_names)))
         mapped_dim_order = 0
         do i = 1, size(desired_dim_names)
             if (any(DIM_NAMES_OF_Y == uppercase(desired_dim_names(i)))) then

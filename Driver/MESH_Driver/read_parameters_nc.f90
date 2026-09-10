@@ -143,41 +143,49 @@ subroutine read_parameters_nc( &
                 end if
             end if
         case ('rotated_latitude_longitude')
-
-            !> Check rotated longitude values.
-            if (len_trim(dim_x) == 0) dim_x = 'rlon'
-            call nc4_get_variable(iun, dim_x, dat = dat_r, fill = fill_r, units = units, ierr = z)
-            if (z /= 0) then
-                ierr = z
+            if (nc_subbasin) then
+                if (len_trim(dim_x) == 0) dim_x = 'rlon'
+                if (len_trim(dim_y) == 0) dim_y = 'rlat'
+                call nc4_get_variable(iun, dim_x, dat = dat_r, fill = fill_r, units = units, ierr = z)
+                call nc4_get_variable(iun, dim_y, dat = dat_r, fill = fill_r, units = units, ierr = z)
+                dim_x = 'subbasin'
             else
-                ltest = (size(dat_r) == shd%xCount)
-                if (ltest) then
-                    do i = 1, shd%xCount
-                        ltest = (ltest .and. (shd%CoordSys%rlon(i) == dat_r(i)))
-                    end do
-                end if
-                if (.not. ltest) then
-                    call print_error("The longitudinal reference in the file ('" // trim(dim_x) // "') does not match the domain.")
-                    ierr = 1
-                end if
-            end if
-            deallocate(dat_r)
 
-            !> Check rotated latitude values.
-            if (len_trim(dim_y) == 0) dim_y = 'rlat'
-            call nc4_get_variable(iun, dim_y, dat = dat_r, fill = fill_r, units = units, ierr = z)
-            if (z /= 0) then
-                ierr = z
-            else
-                ltest = (size(dat_r) == shd%yCount)
-                if (ltest) then
-                    do i = 1, shd%yCount
-                        ltest = (ltest .and. (shd%CoordSys%rlat(i) == dat_r(i)))
-                    end do
+                !> Check rotated longitude values.
+                if (len_trim(dim_x) == 0) dim_x = 'rlon'
+                call nc4_get_variable(iun, dim_x, dat = dat_r, fill = fill_r, units = units, ierr = z)
+                if (z /= 0) then
+                    ierr = z
+                else
+                    ltest = (size(dat_r) == shd%xCount)
+                    if (ltest) then
+                        do i = 1, shd%xCount
+                            ltest = (ltest .and. (shd%CoordSys%rlon(i) == dat_r(i)))
+                        end do
+                    end if
+                    if (.not. ltest) then
+                        call print_error("The longitudinal reference in the file ('" // trim(dim_x) // "') does not match the domain.")
+                        ierr = 1
+                    end if
                 end if
-                if (.not. ltest) then
-                    call print_error("The latitudinal reference in the file ('" // trim(dim_y) // "') does not match the domain.")
-                    ierr = 1
+                deallocate(dat_r)
+
+                !> Check rotated latitude values.
+                if (len_trim(dim_y) == 0) dim_y = 'rlat'
+                call nc4_get_variable(iun, dim_y, dat = dat_r, fill = fill_r, units = units, ierr = z)
+                if (z /= 0) then
+                    ierr = z
+                else
+                    ltest = (size(dat_r) == shd%yCount)
+                    if (ltest) then
+                        do i = 1, shd%yCount
+                            ltest = (ltest .and. (shd%CoordSys%rlat(i) == dat_r(i)))
+                        end do
+                    end if
+                    if (.not. ltest) then
+                        call print_error("The latitudinal reference in the file ('" // trim(dim_y) // "') does not match the domain.")
+                        ierr = 1
+                    end if
                 end if
             end if
     end select

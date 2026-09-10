@@ -473,7 +473,7 @@ module mesh_io
         character(len = SHORT_FIELD_LENGTH), dimension(:), allocatable :: dim_names, args
         character(len = DEFAULT_LINE_LENGTH) line_buffer
 #ifdef NETCDF
-        character(len = SHORT_FIELD_LENGTH) :: description, units, aname, vname
+        character(len = SHORT_FIELD_LENGTH) :: description, units, aname, vname, dname_m
         character(len = SHORT_FIELD_LENGTH), allocatable :: dat1_cshort(:)
         character(len = LONG_FIELD_LENGTH) :: dat_clong
         character(len = :), allocatable :: dat1_c(:), dat_c
@@ -866,11 +866,25 @@ module mesh_io
             type is (io_type_nc)
 
                 !> Get the number of attribute and variables.
-                call nc4_inquire_file(input_file%iunit, natts = natts, nvars = nvars, ierr = ierr)
+                call nc4_inquire_file(input_file%iunit, ndims = ndims, natts = natts, nvars = nvars, ierr = ierr)
                 if (ierr /= 0) then
                     error_status = 1
                     return
                 end if
+
+                !> Loop through the dimensions for special cases.
+                dname_m = ''
+                do i = 1, ndims
+
+                    !> Get the dimension name.
+                    call nc4_get_dimension_name(input_file%iunit, i, dim_name = aname, ierr = ierr)
+                    if (ierr /= 0) then
+                        error_status = 1
+                        return
+                    else if (any(DIM_NAMES_OF_M == to_uppercase(aname))) then
+                        dname_m = trim(adjustl(aname))
+                    end if
+                end do
 
                 !> Allocate the working list of fields.
                 allocate(file_buffer(natts + nvars))
@@ -1098,195 +1112,203 @@ module mesh_io
 
                             !> Cycle to skip assigning the 'crs' variable itself.
                             cycle
+                    end select
 
-                        !> GRUs.
-                        case (DIM_NAME_GRU, DIM_NAME_LANDCOVER)
+                    !> GRU variables.
+                    if (any(DIM_NAMES_OF_M == to_uppercase(vname)) .and. len_trim(dname_m) > 0) then
 
-                            !> Get dimensions (assuming 'ndims' from known variable).
-                            call get_dimension_order(dim_names, (/DIM_NAME_M/), mapped_dim_order, ierr)
+                        !> Get dimensions (assuming 'ndims' from known variable).
+                        call get_dimension_order( &
+                            dim_names, (/DIM_NAME_M, DIM_NAME_X, DIM_NAME_Y, DIM_NAME_N/), mapped_dim_order, ierr)
 
-                            !> Get dimension length.
-                            call nc4_get_dimension( &
-                                input_file%iunit, dim_names(mapped_dim_order(1)), dim_length = class_count, ierr = ierr)
-                            if (ierr /= 0) cycle
-
-                            !> Add the GRUs.
-                            if (class_count > 0) then
-
-                                !> Expand variable list.
-                                call expand_field_list(file_buffer, class_count + 1, ierr)
-
-                                !> Add a field for the dimension.
-                                file_buffer(n)%label = trim(DIM_NAME_NGRU)
-                                file_buffer(n)%id = i
-                                allocate(file_buffer(n)%field, source = model_variable_int(dat = class_count))
-                                n = n + 1
-
-                                !> Read the variable from file (assuming possible shapes from known variable).
-                                ierr = 0
-                                select case (size(dim_names))
-                                    case (2)
-                                        allocate(dat2_r(dim_lengths(1), dim_lengths(2)))
-                                        call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat2_r, ierr = ierr)
-                                    case (3)
-                                        allocate(dat3_r(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
-                                        call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat3_r, ierr = ierr)
-                                    case default
-                                        call print_warning( &
-                                            "Unknown format of GRU (land cover) inputs from '" // trim(vname) // "'.")
-                                        cycle
-                                end select
-                                if (ierr /= 0) then
-                                    call print_warning("An error occurred reading the '" // trim(vname) // "' variable from file.")
-                                    cycle
-                                end if
-
-                                !> Assign each GRU as a new field (assuming 'dtype' from known variable).
-                                do j = 1, class_count
-
-                                    !> Read the variable from file (assuming possible shapes from known variable).
-                                    if (allocated(dat2_r)) then
-                                        select case (mapped_dim_order(1))
-                                            case (2)
-                                                allocate(dat1_r(size(dat2_r, 1)))
-                                                dat1_r = dat2_r(:, j)
-                                                allocate(file_buffer(n)%field, source = model_variable_real1d( &
-                                                    dat = dat1_r, const_mul = const_mul_r, const_add = const_add_r, &
-                                                    valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
-                                                deallocate(dat1_r)
-                                                allocate(file_buffer(n)%dim_names(1))
-                                                file_buffer(n)%dim_names = (/dim_names(1)/)
-                                            case default
-                                                allocate(dat1_r(size(dat2_r, 2)))
-                                                dat1_r = dat2_r(j, :)
-                                                allocate(file_buffer(n)%field, source = model_variable_real1d( &
-                                                    dat = dat1_r, const_mul = const_mul_r, const_add = const_add_r, &
-                                                    valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
-                                                deallocate(dat1_r)
-                                                allocate(file_buffer(n)%dim_names(1))
-                                                file_buffer(n)%dim_names = (/dim_names(2)/)
-                                        end select
-                                    else if (allocated(dat3_r)) then
-                                        select case (mapped_dim_order(1))
-                                            case (3)
-                                                allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 2)))
-                                                dat2_r = dat3_r(:, :, j)
-                                                allocate(file_buffer(n)%field, source = model_variable_real2d( &
-                                                    dat = dat2_r, const_mul = const_mul_r, const_add = const_add_r, &
-                                                    valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
-                                                deallocate(dat2_r)
-                                                allocate(file_buffer(n)%dim_names(2))
-                                                file_buffer(n)%dim_names = (/dim_names(1), dim_names(2)/)
-                                            case (2)
-                                                allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 3)))
-                                                dat2_r = dat3_r(:, j, :)
-                                                allocate(file_buffer(n)%field, source = model_variable_real2d( &
-                                                    dat = dat2_r, const_mul = const_mul_r, const_add = const_add_r, &
-                                                    valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
-                                                deallocate(dat2_r)
-                                                allocate(file_buffer(n)%dim_names(2))
-                                                file_buffer(n)%dim_names = (/dim_names(1), dim_names(3)/)
-                                            case default
-                                                allocate(dat2_r(size(dat3_r, 2), size(dat3_r, 3)))
-                                                dat2_r = dat3_r(j, :, :)
-                                                allocate(file_buffer(n)%field, source = model_variable_real2d( &
-                                                    dat = dat2_r, const_mul = const_mul_r, const_add = const_add_r, &
-                                                    valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
-                                                deallocate(dat2_r)
-                                                allocate(file_buffer(n)%dim_names(2))
-                                                file_buffer(n)%dim_names = (/dim_names(2), dim_names(3)/)
-                                        end select
-                                    end if
-                                    write(code, *) j
-                                    file_buffer(n)%label = trim(DIM_NAME_GRU) // ' ' // trim(adjustl(code))
-                                    file_buffer(n)%id = i
-                                    file_buffer(n)%meta%label = 'GRU'
-                                    file_buffer(n)%meta%description = description
-                                    file_buffer(n)%meta%units = units
-                                    n = n + 1
-                                    nplus = nplus + 1
-                                end do
-                            end if
-                            if (allocated(dat2_r)) deallocate(dat2_r)
-                            if (allocated(dat3_r)) deallocate(dat3_r)
-                            if (allocated(mapped_dim_order)) deallocate(mapped_dim_order)
-
-                            !> Cycle to skip assinging the 'gru' variable itself.
+                        !> Skip GRU variables that not associated with space (X, Y, N).
+                        if (.not. any(mapped_dim_order(2:) > 0)) then
+                            call print_remark("Skipping non-spatial variable '" // trim(vname) // "'.")
                             cycle
+                        end if
 
-                        !> Time (if multi-frame).
-                        case (DIM_NAME_TIME, DIM_NAME_T)
+                        !> Get dimension length.
+                        call nc4_get_dimension( &
+                            input_file%iunit, dname_m, dim_length = class_count, ierr = ierr)
+                        if (ierr /= 0) cycle
+
+                        !> Add the GRUs.
+                        if (class_count > 0) then
 
                             !> Expand variable list.
-                            call expand_field_list(file_buffer, nattrs, ierr)
+                            call expand_field_list(file_buffer, class_count + 1, ierr)
 
-                            !> Check calendar.
-                            call nc4_get_attribute_type(input_file%iunit, i, 'calendar', length = alength, ierr = ierr)
-                            if (ierr == 0) then
-                                allocate(character(len = alength) :: dat_c)
-                                call nc4_get_attribute(input_file%iunit, 'calendar', dat_c, vid = i, ierr = ierr)
-                                if (ierr /= 0) then
-                                    if (v) call print_warning( &
-                                        "Unable to read the 'calendar' attribute from the '" // trim(vname) // "' variable.")
-                                else
-                                    select case (dat_c)
-                                        case ('gregorian', 'standard')
+                            !> Add a field for the dimension.
+                            file_buffer(n)%label = trim(dname_m)
+                            file_buffer(n)%id = i
+                            allocate(file_buffer(n)%field, source = model_variable_int(dat = class_count))
+                            n = n + 1
+
+                            !> Read the variable from file (assuming possible shapes from known variable).
+                            ierr = 0
+                            select case (size(dim_names))
+                                case (2)
+                                    allocate(dat2_r(dim_lengths(1), dim_lengths(2)))
+                                    call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat2_r, ierr = ierr)
+                                case (3)
+                                    allocate(dat3_r(dim_lengths(1), dim_lengths(2), dim_lengths(3)))
+                                    call nc4_get_data(input_file%iunit, vname, vid = i, dat = dat3_r, ierr = ierr)
+                                case default
+                                    call print_warning( &
+                                        "Unknown format of GRU (land cover) inputs from '" // trim(vname) // "'.")
+                                    cycle
+                            end select
+                            if (ierr /= 0) then
+                                call print_warning("An error occurred reading the '" // trim(vname) // "' variable from file.")
+                                cycle
+                            end if
+
+                            !> Assign each GRU as a new field (assuming 'dtype' from known variable).
+                            do j = 1, class_count
+
+                                !> Read the variable from file (assuming possible shapes from known variable).
+                                if (allocated(dat2_r)) then
+                                    select case (mapped_dim_order(1))
+                                        case (2)
+                                            allocate(dat1_r(size(dat2_r, 1)))
+                                            dat1_r = dat2_r(:, j)
+                                            allocate(file_buffer(n)%field, source = model_variable_real1d( &
+                                                dat = dat1_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                                valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
+                                            deallocate(dat1_r)
+                                            allocate(file_buffer(n)%dim_names(1))
+                                            file_buffer(n)%dim_names = (/dim_names(1)/)
                                         case default
-                                            if (v) call print_warning( &
-                                                "The calendar '" // dat_c // "' of the '" // trim(vname) // &
-                                                "' variable is unknown or not supported.")
+                                            allocate(dat1_r(size(dat2_r, 2)))
+                                            dat1_r = dat2_r(j, :)
+                                            allocate(file_buffer(n)%field, source = model_variable_real1d( &
+                                                dat = dat1_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                                valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
+                                            deallocate(dat1_r)
+                                            allocate(file_buffer(n)%dim_names(1))
+                                            file_buffer(n)%dim_names = (/dim_names(2)/)
+                                    end select
+                                else if (allocated(dat3_r)) then
+                                    select case (mapped_dim_order(1))
+                                        case (3)
+                                            allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 2)))
+                                            dat2_r = dat3_r(:, :, j)
+                                            allocate(file_buffer(n)%field, source = model_variable_real2d( &
+                                                dat = dat2_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                                valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
+                                            deallocate(dat2_r)
+                                            allocate(file_buffer(n)%dim_names(2))
+                                            file_buffer(n)%dim_names = (/dim_names(1), dim_names(2)/)
+                                        case (2)
+                                            allocate(dat2_r(size(dat3_r, 1), size(dat3_r, 3)))
+                                            dat2_r = dat3_r(:, j, :)
+                                            allocate(file_buffer(n)%field, source = model_variable_real2d( &
+                                                dat = dat2_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                                valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
+                                            deallocate(dat2_r)
+                                            allocate(file_buffer(n)%dim_names(2))
+                                            file_buffer(n)%dim_names = (/dim_names(1), dim_names(3)/)
+                                        case default
+                                            allocate(dat2_r(size(dat3_r, 2), size(dat3_r, 3)))
+                                            dat2_r = dat3_r(j, :, :)
+                                            allocate(file_buffer(n)%field, source = model_variable_real2d( &
+                                                dat = dat2_r, const_mul = const_mul_r, const_add = const_add_r, &
+                                                valid_max = valid_max_r, valid_min = valid_min_r, no_data_value = fill_r))
+                                            deallocate(dat2_r)
+                                            allocate(file_buffer(n)%dim_names(2))
+                                            file_buffer(n)%dim_names = (/dim_names(2), dim_names(3)/)
                                     end select
                                 end if
-                                deallocate(dat_c)
+                                write(code, *) j
+                                file_buffer(n)%label = trim(vname) // ' ' // trim(adjustl(code))
+                                file_buffer(n)%id = i
+                                file_buffer(n)%meta%label = vname
+                                file_buffer(n)%meta%description = description
+                                file_buffer(n)%meta%units = units
+                                n = n + 1
+                                nplus = nplus + 1
+                            end do
+                        end if
+                        if (allocated(dat2_r)) deallocate(dat2_r)
+                        if (allocated(dat3_r)) deallocate(dat3_r)
+                        if (allocated(mapped_dim_order)) deallocate(mapped_dim_order)
+
+                        !> Cycle to skip assinging the 'gru' variable itself.
+                        cycle
+
+                    !> Time (if multi-frame).
+                    else if (any(DIM_NAMES_OF_T == to_uppercase(vname))) then
+
+                        !> Expand variable list.
+                        call expand_field_list(file_buffer, nattrs, ierr)
+
+                        !> Check calendar.
+                        call nc4_get_attribute_type(input_file%iunit, i, 'calendar', length = alength, ierr = ierr)
+                        if (ierr == 0) then
+                            allocate(character(len = alength) :: dat_c)
+                            call nc4_get_attribute(input_file%iunit, 'calendar', dat_c, vid = i, ierr = ierr)
+                            if (ierr /= 0) then
+                                if (v) call print_warning( &
+                                    "Unable to read the 'calendar' attribute from the '" // trim(vname) // "' variable.")
+                            else
+                                select case (dat_c)
+                                    case ('gregorian', 'standard')
+                                    case default
+                                        if (v) call print_warning( &
+                                            "The calendar '" // dat_c // "' of the '" // trim(vname) // &
+                                            "' variable is unknown or not supported.")
+                                end select
                             end if
+                            deallocate(dat_c)
+                        end if
 
-                            !> Mark file as multi-frame.
-                            if (time_order > 0) input_file%series%multi_frame = .true.
+                        !> Mark file as multi-frame.
+                        if (time_order > 0) input_file%series%multi_frame = .true.
 
-                            !> Set the current position in the file.
-                            input_file%series%ipos = 1
+                        !> Set the current position in the file.
+                        input_file%series%ipos = 1
 
-                            !> Derive the start-time (from the first record of the 'time' variable).
-                            if (ndims /= 1) then
-                                write(code, *) ndims
-                                call print_error( &
-                                    "The '" // trim(vname) // "' variable contains an incompatible number of dimensions " // &
-                                    "for the time dimension (" // trim(adjustl(code)) // "). " // &
-                                    "The variable must contain only one dimension.")
+                        !> Derive the start-time (from the first record of the 'time' variable).
+                        if (ndims /= 1) then
+                            write(code, *) ndims
+                            call print_error( &
+                                "The '" // trim(vname) // "' variable contains an incompatible number of dimensions " // &
+                                "for the time dimension (" // trim(adjustl(code)) // "). " // &
+                                "The variable must contain only one dimension.")
+                            error_status = 1
+                            return
+                        else
+
+                            !> Get the start-time from the first record of the 'time' variable.
+                            call nc4_get_time( &
+                                input_file%iunit, &
+                                year = input_file%series%start%year, month = input_file%series%start%month, &
+                                day = input_file%series%start%day, jday = input_file%series%start%jday, &
+                                hour = input_file%series%start%hour, minutes = input_file%series%start%minutes, &
+                                time_shift = input_file%series%time_offset, &
+                                ierr = ierr)
+                            if (ierr /= 0) then
                                 error_status = 1
                                 return
-                            else
-
-                                !> Get the start-time from the first record of the 'time' variable.
-                                call nc4_get_time( &
-                                    input_file%iunit, &
-                                    year = input_file%series%start%year, month = input_file%series%start%month, &
-                                    day = input_file%series%start%day, jday = input_file%series%start%jday, &
-                                    hour = input_file%series%start%hour, minutes = input_file%series%start%minutes, &
-                                    time_shift = input_file%series%time_offset, &
-                                    ierr = ierr)
-                                if (ierr /= 0) then
-                                    error_status = 1
-                                    return
-                                end if
-
-                                !> Get the end-time from the last record of the 'time' variable.
-                                call nc4_get_time_last( &
-                                    input_file%iunit, &
-                                    year = input_file%series%end%year, month = input_file%series%end%month, &
-                                    day = input_file%series%end%day, jday = input_file%series%end%jday, &
-                                    hour = input_file%series%end%hour, minutes = input_file%series%end%minutes, &
-                                    time_shift = input_file%series%time_offset, &
-                                    ierr = ierr)
-                                if (ierr /= 0) then
-                                    error_status = 1
-                                    return
-                                end if
                             end if
 
-                            !> Cycle to skip assinging the 'time' variable itself.
-                            cycle
-                    end select
+                            !> Get the end-time from the last record of the 'time' variable.
+                            call nc4_get_time_last( &
+                                input_file%iunit, &
+                                year = input_file%series%end%year, month = input_file%series%end%month, &
+                                day = input_file%series%end%day, jday = input_file%series%end%jday, &
+                                hour = input_file%series%end%hour, minutes = input_file%series%end%minutes, &
+                                time_shift = input_file%series%time_offset, &
+                                ierr = ierr)
+                            if (ierr /= 0) then
+                                error_status = 1
+                                return
+                            end if
+                        end if
+
+                        !> Cycle to skip assinging the 'time' variable itself.
+                        cycle
+                    end if
 
                     !> Register the field.
                     ierr = 0
@@ -2543,14 +2565,22 @@ module mesh_io
             associate (dim_order => field_mapping%mapped_dim_order)
 
                 !> Identify the map.
-                if (dim_order(MAP_ORDER_X) > 0 .and. dim_order(MAP_ORDER_Y) > 0) then
-                    if (allocated(field_mapping%cell_map)) then
-                        field_mapping%cell_map(dim_order(MAP_ORDER_X), :) = vs%grid%from_grid_x
-                        field_mapping%cell_map(dim_order(MAP_ORDER_Y), :) = vs%grid%from_grid_y
+                if (dim_order(MAP_ORDER_X) > 0 .or. dim_order(MAP_ORDER_Y) > 0) then
+                    if (dim_order(MAP_ORDER_X) > 0) then
+                        if (allocated(field_mapping%cell_map)) then
+                            field_mapping%cell_map(dim_order(MAP_ORDER_X), :) = vs%grid%from_grid_x
+                        end if
+                        if (allocated(field_mapping%tile_map)) then
+                            field_mapping%tile_map(dim_order(MAP_ORDER_X), :) = vs%tile%from_grid_x
+                        end if
                     end if
-                    if (allocated(input_field%mapping%tile_map)) then
-                        field_mapping%tile_map(dim_order(MAP_ORDER_X), :) = vs%tile%from_grid_x
-                        field_mapping%tile_map(dim_order(MAP_ORDER_Y), :) = vs%tile%from_grid_y
+                    if (dim_order(MAP_ORDER_Y) > 0) then
+                        if (allocated(field_mapping%cell_map)) then
+                            field_mapping%cell_map(dim_order(MAP_ORDER_Y), :) = vs%grid%from_grid_y
+                        end if
+                        if (allocated(field_mapping%tile_map)) then
+                            field_mapping%tile_map(dim_order(MAP_ORDER_Y), :) = vs%tile%from_grid_y
+                        end if
                     end if
                 else if (dim_order(MAP_ORDER_M) > 0) then
                     if (allocated(field_mapping%cell_map)) then

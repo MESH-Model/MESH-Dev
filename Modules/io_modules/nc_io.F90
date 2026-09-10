@@ -7768,32 +7768,34 @@ module nc_io
 
     subroutine nc4_define_output_variable_nt( &
         fpath, standard_name, projection, ts_freq, &
-        subbasins, lats, lons, &
+        subbasins, &
+        lats, lons, rlats, rlons, xylats, xylons, &
         datum, zone_id, earth_radius, grid_north_pole_latitude, grid_north_pole_longitude, &
         quiet, long_name, units, fill, constmul, constadd, constrmax, constrmin, &
-        vid, vtime, dn, dtime, &
+        vid, vtime, dn, dx, dy, dtime, &
         iun, ierr)
 
         !> Input variables.
         character(len = *), intent(in) :: fpath, standard_name, projection
         integer, intent(in) :: ts_freq
         integer, dimension(:), intent(in) :: subbasins
-        real, dimension(:), intent(in), optional :: lats, lons
 
         !> Input variables (optional).
         character(len = *), intent(in), optional :: long_name, units, datum, zone_id
+        real, dimension(:), intent(in), optional :: lats, lons, rlats, rlons
+        real, dimension(:, :), intent(in), optional :: xylats, xylons
         real, intent(in), optional :: &
             earth_radius, grid_north_pole_latitude, grid_north_pole_longitude, fill, constmul, constadd, constrmax, constrmin
         logical, intent(in), optional :: quiet
 
         !> Output variables (optional).
-        integer, intent(out), optional :: vid, vtime, dn,  dtime
+        integer, intent(out), optional :: vid, vtime, dn, dx, dy, dtime
 
         !> Output variables.
         integer, intent(out) :: iun, ierr
 
         !> Local variables.
-        integer :: n = -1, t = -1, v = -1, vt = -1
+        integer :: n = -1, x = -1, y = -1, t = -1, v = -1, vt = -1
 
         !> Open the file (for output).
         call nc4_open_output(fpath, quiet, iun, ierr)
@@ -7807,11 +7809,17 @@ module nc_io
         end if
 
         !> Define dimensions and add coordinates.
+        if (ierr == 0) call nc4_define_dimension(iun, 'subbasin', size(subbasins), n, ierr = ierr)
+        if (ierr == 0) call nc4_add_variable(iun, 'subbasin', n, subbasins, ierr = ierr)
         if (ierr == 0) then
-            if (ierr == 0) call nc4_define_dimension(iun, 'subbasin', size(subbasins), n, ierr = ierr)
-            if (ierr == 0) call nc4_add_variable(iun, 'subbasin', n, subbasins, ierr = ierr)
-            if (ierr == 0) call nc4_add_variable(iun, 'lon', n, lons, ierr = ierr)
-            if (ierr == 0) call nc4_add_variable(iun, 'lat', n, lats, ierr = ierr)
+!-            if (ierr == 0) call nc4_add_variable(iun, 'lon', n, lons, ierr = ierr)
+!-            if (ierr == 0) call nc4_add_variable(iun, 'lat', n, lats, ierr = ierr)
+            call nc4_add_coordinates( &
+                iun, projection, &
+                lats, lons, rlats, rlons, xylats, xylons, &
+                datum, zone_id, earth_radius, grid_north_pole_latitude, grid_north_pole_longitude, &
+                dim1_id = y, dim2_id = x, &
+                ierr = ierr)
         end if
 
         !> Add time.
@@ -7842,6 +7850,8 @@ module nc_io
         if (present(vid)) vid = v
         if (present(vtime)) vtime = vt
         if (present(dn)) dn = n
+        if (present(dx)) dx = x
+        if (present(dy)) dy = y
         if (present(dtime)) dtime = t
 
     end subroutine

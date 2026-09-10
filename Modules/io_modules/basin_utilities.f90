@@ -420,18 +420,20 @@ module basin_utilities
         !> Check for fields used for mapping.
         do i = 1, size(field_list)
 
-            !> Assign the field.
-            ierr = 0
-            select case (field_list(i)%field_name)
+            !> Mapping can only occur from dimensioned fields.
+            if (allocated(field_list(i)%dim_names)) then
+
+                !> Reset the error status.
+                ierr = 0
 
                 !> River class.
-                case ('IRVR', 'IAK')
+                if (any(DIM_NAMES_OF_K == uppercase(field_list(i)%field_name))) then
                     call create_ranked_field_and_maps(field_list(i), ierr)
                     if (ierr == 0) call map_field_to_ranked_output(field_list(i), error_status = ierr)
                     if (ierr == 0) call assign_cell_values(field_list(i), vs%grid%from_riverclass, ierr)
 
                 !> GRUs.
-                case ('GRU', 'LANDCOVER')
+                else if (any(DIM_NAMES_OF_M == uppercase(field_list(i)%field_name))) then
                     if (vs%gru_count > 0 .and. field_list(i)%level_id > 0) then
                         if (.not. allocated(gru_nm)) then
                             allocate(gru_nm(vs%cell_count, vs%gru_count))
@@ -443,11 +445,12 @@ module basin_utilities
                         if (ierr == 0) gru_nm(:, field_list(i)%level_id) = gru_n
                         if (allocated(gru_n)) deallocate(gru_n)
                     end if
-            end select
+                end if
 
-            !> Check for errors.
-            if (ierr /= 0) then
-                call print_warning("An error occurred assigning the '" // trim(field_list(i)%label) // "' variable.")
+                !> Check for errors.
+                if (ierr /= 0) then
+                    call print_warning("An error occurred assigning the '" // trim(field_list(i)%label) // "' variable.")
+                end if
             end if
         end do
 
